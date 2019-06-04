@@ -19,18 +19,19 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.txpool.TxPoolModule;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public interface Web3TxPoolModule {
 
-    default String txpool_content() {
+    default JsonNode txpool_content() {
         return getTxPoolModule().content();
     }
 
-    default String txpool_inspect() {
+    default JsonNode txpool_inspect() {
         return getTxPoolModule().inspect();
     }
 
-    default String txpool_status() {
+    default JsonNode txpool_status() {
         return getTxPoolModule().status();
     }
 

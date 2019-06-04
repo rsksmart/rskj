@@ -22,17 +22,12 @@ import co.rsk.net.messages.Message;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
 
 /**
  * Created by ajlopez on 5/14/2016.
  */
 public class RskMessage extends EthMessage {
     private Message message;
-
-    public RskMessage(byte[] encoded) {
-        super(encoded);
-    }
 
     public RskMessage(Message message) {
         this.message = message;
@@ -45,19 +40,7 @@ public class RskMessage extends EthMessage {
     }
 
     public Message getMessage() {
-        if (!this.parsed) {
-            parse();
-        }
-
         return this.message;
-    }
-
-    protected void parse() {
-        RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
-
-        this.message = Message.create((RLPList) paramsList.get(0));
-
-        this.parsed = true;
     }
 
     @Override
@@ -83,10 +66,6 @@ public class RskMessage extends EthMessage {
 
     @Override
     public String toString() {
-        if (!parsed) {
-            parse();
-        }
-        
         return "[" + this.getCommand().name() +
                 " message=" + this.message +
                 "]";

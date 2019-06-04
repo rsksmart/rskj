@@ -20,11 +20,14 @@ package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
+import co.rsk.db.StateRootHandler;
+import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.*;
 import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
@@ -37,6 +40,7 @@ import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3Impl;
+import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
@@ -59,31 +63,36 @@ public class Web3RskImpl extends Web3Impl {
     private final NetworkStateExporter networkStateExporter;
     private final BlockStore blockStore;
 
-    public Web3RskImpl(Ethereum eth,
-                       Blockchain blockchain,
-                       TransactionPool transactionPool,
-                       RskSystemProperties properties,
-                       MinerClient minerClient,
-                       MinerServer minerServer,
-                       PersonalModule personalModule,
-                       EthModule ethModule,
-                       TxPoolModule txPoolModule,
-                       MnrModule mnrModule,
-                       DebugModule debugModule,
-                       ChannelManager channelManager,
-                       Repository repository,
-                       PeerScoringManager peerScoringManager,
-                       NetworkStateExporter networkStateExporter,
-                       BlockStore blockStore,
-                       ReceiptStore receiptStore,
-                       PeerServer peerServer,
-                       BlockProcessor nodeBlockProcessor,
-                       HashRateCalculator hashRateCalculator,
-                       ConfigCapabilities configCapabilities) {
+    public Web3RskImpl(
+            Ethereum eth,
+            Blockchain blockchain,
+            TransactionPool transactionPool,
+            RskSystemProperties properties,
+            MinerClient minerClient,
+            MinerServer minerServer,
+            PersonalModule personalModule,
+            EthModule ethModule,
+            EvmModule evmModule,
+            TxPoolModule txPoolModule,
+            MnrModule mnrModule,
+            DebugModule debugModule,
+            ChannelManager channelManager,
+            Repository repository,
+            PeerScoringManager peerScoringManager,
+            NetworkStateExporter networkStateExporter,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            PeerServer peerServer,
+            BlockProcessor nodeBlockProcessor,
+            HashRateCalculator hashRateCalculator,
+            ConfigCapabilities configCapabilities,
+            BuildInfo buildInfo,
+            BlocksBloomStore blocksBloomStore,
+            StateRootHandler stateRootHandler) {
         super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
-              personalModule, ethModule, txPoolModule, mnrModule, debugModule,
+              personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule,
               channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor,
-              hashRateCalculator, configCapabilities);
+              hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, stateRootHandler);
 
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;

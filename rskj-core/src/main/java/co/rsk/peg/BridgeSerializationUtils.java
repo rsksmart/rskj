@@ -23,9 +23,11 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.BigIntegers;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.util.BigIntegers;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -37,7 +39,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Created by mario on 20/04/17.
@@ -47,7 +48,13 @@ public class BridgeSerializationUtils {
     private static final int FEDERATION_RLP_LIST_SIZE = 3;
     private static final int FEDERATION_CREATION_TIME_INDEX = 0;
     private static final int FEDERATION_CREATION_BLOCK_NUMBER_INDEX = 1;
-    private static final int FEDERATION_PUB_KEYS_INDEX = 2;
+    private static final int FEDERATION_MEMBERS_INDEX = 2;
+
+    private static final int FEDERATION_MEMBER_LIST_SIZE = 3;
+    private static final int FEDERATION_MEMBER_BTC_KEY_INDEX = 0;
+    private static final int FEDERATION_MEMBER_RSK_KEY_INDEX = 1;
+    private static final int FEDERATION_MEMBER_MST_KEY_INDEX = 2;
+
 
     private BridgeSerializationUtils(){}
 
@@ -201,24 +208,42 @@ public class BridgeSerializationUtils {
         return map;
     }
 
-    // A federation is serialized as a list in the following order:
-    // creation time
-    // list of public keys -> [pubkey1, pubkey2, ..., pubkeyn], sorted
-    // using the lexicographical order of the public keys (see BtcECKey.PUBKEY_COMPARATOR).
-    public static byte[] serializeFederation(Federation federation) {
-        List<byte[]> publicKeys = federation.getPublicKeys().stream()
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(key -> RLP.encodeElement(key.getPubKey()))
+    private interface FederationMemberSerializer {
+        byte[] serialize(FederationMember federationMember);
+    }
+
+    private interface FederationMemberDesserializer {
+        FederationMember deserialize(byte[] data);
+    }
+
+    /**
+     * A federation is serialized as a list in the following order:
+     * - creation time
+     * - creation block number
+     * - list of federation members -> [member1, member2, ..., membern], sorted
+     * using the lexicographical order of the public keys of the members
+     * (see FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).
+     * Each federation member is in turn serialized using the provided FederationMemberSerializer.
+     */
+    private static byte[] serializeFederationWithSerializer(Federation federation, FederationMemberSerializer federationMemberSerializer) {
+        List<byte[]> federationMembers = federation.getMembers().stream()
+                .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
+                .map(member -> RLP.encodeElement(federationMemberSerializer.serialize(member)))
                 .collect(Collectors.toList());
+
         byte[][] rlpElements = new byte[FEDERATION_RLP_LIST_SIZE][];
         rlpElements[FEDERATION_CREATION_TIME_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli()));
         rlpElements[FEDERATION_CREATION_BLOCK_NUMBER_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationBlockNumber()));
-        rlpElements[FEDERATION_PUB_KEYS_INDEX] = RLP.encodeList((byte[][])publicKeys.toArray(new byte[publicKeys.size()][]));
+        rlpElements[FEDERATION_MEMBERS_INDEX] = RLP.encodeList((byte[][])federationMembers.toArray(new byte[federationMembers.size()][]));
         return RLP.encodeList(rlpElements);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeFederation
-    public static Federation deserializeFederation(byte[] data, Context btcContext) {
+    // For the serialization format, see BridgeSerializationUtils::serializeFederationWithSerializer
+    private static Federation deserializeFederationWithDesserializer(
+        byte[] data,
+        NetworkParameters networkParameters,
+        FederationMemberDesserializer federationMemberDesserializer) {
+
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
@@ -228,27 +253,123 @@ public class BridgeSerializationUtils {
         byte[] creationTimeBytes = rlpList.get(FEDERATION_CREATION_TIME_INDEX).getRLPData();
         Instant creationTime = Instant.ofEpochMilli(BigIntegers.fromUnsignedByteArray(creationTimeBytes).longValue());
 
-        List<BtcECKey> pubKeys = ((RLPList) rlpList.get(FEDERATION_PUB_KEYS_INDEX)).stream()
-                .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
-                .collect(Collectors.toList());
-
         byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
         long creationBlockNumber = BigIntegers.fromUnsignedByteArray(creationBlockNumberBytes).longValue();
 
-        return new Federation(pubKeys, creationTime, creationBlockNumber, btcContext.getParams());
+        List<FederationMember> federationMembers = ((RLPList) rlpList.get(FEDERATION_MEMBERS_INDEX)).stream()
+                .map(memberBytes -> federationMemberDesserializer.deserialize(memberBytes.getRLPData()))
+                .collect(Collectors.toList());
+
+        return new Federation(federationMembers, creationTime, creationBlockNumber, networkParameters);
     }
 
-    // A pending federation is serialized as the
-    // public keys conforming it.
-    // See BridgeSerializationUtils::serializePublicKeys
+    /**
+     * For the federation serialization format, see serializeFederationWithSerializer.
+     * For compatibility with blocks before the "secondFork" network upgrade,
+     * each federation member is serialized only as its compressed BTC public key.
+     */
+    public static byte[] serializeFederationOnlyBtcKeys(Federation federation) {
+        return serializeFederationWithSerializer(federation,
+                federationMember -> federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true));
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializeFederationOnlyBtcKeys
+    public static Federation deserializeFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
+        return deserializeFederationWithDesserializer(data, networkParameters,
+                (pubKeyBytes -> FederationMember.getFederationMemberFromKey(BtcECKey.fromPublicOnly(pubKeyBytes))));
+    }
+
+    /**
+     * For the federation serialization format, see serializeFederationWithSerializer.
+     * For the federation member serialization format, see serializeFederationMember.
+     */
+    public static byte[] serializeFederation(Federation federation) {
+        return serializeFederationWithSerializer(federation,
+                BridgeSerializationUtils::serializeFederationMember);
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializeFederation
+    public static Federation deserializeFederation(byte[] data, NetworkParameters networkParameters) {
+        return deserializeFederationWithDesserializer(data, networkParameters,
+                BridgeSerializationUtils::deserializeFederationMember);
+    }
+
+    /**
+     * A FederationMember is serialized as a list in the following order:
+     * - BTC public key
+     * - RSK public key
+     * - MST public key
+     * All keys are stored in their COMPRESSED versions.
+     */
+    public static byte[] serializeFederationMember(FederationMember federationMember) {
+        byte[][] rlpElements = new byte[FEDERATION_MEMBER_LIST_SIZE][];
+        rlpElements[FEDERATION_MEMBER_BTC_KEY_INDEX] = RLP.encodeElement(
+                federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true)
+        );
+        rlpElements[FEDERATION_MEMBER_RSK_KEY_INDEX] = RLP.encodeElement(federationMember.getRskPublicKey().getPubKey(true));
+        rlpElements[FEDERATION_MEMBER_MST_KEY_INDEX] = RLP.encodeElement(federationMember.getMstPublicKey().getPubKey(true));
+        return RLP.encodeList(rlpElements);
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializeFederationMember
+    private static FederationMember deserializeFederationMember(byte[] data) {
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
+            throw new RuntimeException(String.format("Invalid serialized FederationMember. Expected %d elements but got %d", FEDERATION_MEMBER_LIST_SIZE, rlpList.size()));
+        }
+
+        BtcECKey btcKey = BtcECKey.fromPublicOnly(rlpList.get(FEDERATION_MEMBER_BTC_KEY_INDEX).getRLPData());
+        ECKey rskKey = ECKey.fromPublicOnly(rlpList.get(FEDERATION_MEMBER_RSK_KEY_INDEX).getRLPData());
+        ECKey mstKey = ECKey.fromPublicOnly(rlpList.get(FEDERATION_MEMBER_MST_KEY_INDEX).getRLPData());
+
+        return new FederationMember(btcKey, rskKey, mstKey);
+    }
+
+    /**
+     * A pending federation is serialized as the
+     * public keys conforming it.
+     * This is a legacy format for blocks before the "secondFork"
+     * network upgrade.
+     * See BridgeSerializationUtils::serializeBtcPublicKeys
+     */
+    public static byte[] serializePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) {
+        return serializeBtcPublicKeys(pendingFederation.getBtcPublicKeys());
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys
+    // and serializePublicKeys::deserializeBtcPublicKeys
+    public static PendingFederation deserializePendingFederationOnlyBtcKeys(byte[] data) {
+        // BTC, RSK and MST keys are the same
+        List<FederationMember> members = deserializeBtcPublicKeys(data).stream().map(pk ->
+            FederationMember.getFederationMemberFromKey(pk)
+        ).collect(Collectors.toList());
+
+        return new PendingFederation(members);
+    }
+
+    /**
+     * A pending federation is serialized as the
+     * list of its sorted members serialized.
+     * For the member serialization format, see BridgeSerializationUtils::serializeFederationMember
+     */
     public static byte[] serializePendingFederation(PendingFederation pendingFederation) {
-        return serializeBtcPublicKeys(pendingFederation.getPublicKeys());
+        List<byte[]> encodedMembers = pendingFederation.getMembers().stream()
+                .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
+                .map(BridgeSerializationUtils::serializeFederationMember)
+                .collect(Collectors.toList());
+        return RLP.encodeList(encodedMembers.toArray(new byte[0][]));
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePendingFederation
-    // and serializePublicKeys::deserializePublicKeys
     public static PendingFederation deserializePendingFederation(byte[] data) {
-        return new PendingFederation(deserializeBtcPublicKeys(data));
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        List<FederationMember> members = rlpList.stream()
+                .map(memberBytes -> deserializeFederationMember(memberBytes.getRLPData()))
+                .collect(Collectors.toList());
+
+        return new PendingFederation(members);
     }
 
     // An ABI call election is serialized as a list of the votes, like so:
@@ -486,6 +607,14 @@ public class BridgeSerializationUtils {
         }
 
         return new ReleaseTransactionSet(entries);
+    }
+
+    public static byte[] serializeInteger(Integer value) {
+        return RLP.encodeBigInteger(BigInteger.valueOf(value));
+    }
+
+    public static Integer deserializeInteger(byte[] data) {
+        return RLP.decodeBigInteger(data, 0).intValue();
     }
 
     // An ABI call spec is serialized as:

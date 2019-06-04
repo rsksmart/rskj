@@ -19,9 +19,7 @@
 package co.rsk.validators;
 
 import co.rsk.core.Coin;
-import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -35,7 +33,6 @@ import java.util.List;
 public class TxsMinGasPriceRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     @Override
     public boolean isValid(Block block) {
@@ -46,12 +43,10 @@ public class TxsMinGasPriceRule implements BlockValidationRule {
         }
 
         Coin blockMgp = block.getMinimumGasPrice();
-        if(CollectionUtils.isNotEmpty(block.getTransactionsList())) {
-            for (Transaction tx : txs) {
-                if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(blockMgp) < 0) {
-                    logger.warn("Tx gas price is under the Min gas Price of the block tx={}", tx.getHash());
-                    return false;
-                }
+        for (Transaction tx : txs) {
+            if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(blockMgp) < 0) {
+                logger.warn("Tx gas price is under the Min gas Price of the block tx={}", tx.getHash());
+                return false;
             }
         }
 

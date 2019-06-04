@@ -17,39 +17,31 @@
  */
 package co.rsk;
 
-import co.rsk.blocks.BlockPlayer;
-import co.rsk.blocks.FileBlockPlayer;
-import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
-import co.rsk.core.RskImpl;
-import co.rsk.db.PruneConfiguration;
-import co.rsk.db.PruneService;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.mine.TxBuilder;
-import co.rsk.mine.TxBuilderEx;
-import co.rsk.net.*;
+import co.rsk.net.BlockProcessor;
+import co.rsk.net.MessageHandler;
+import co.rsk.net.TransactionGateway;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.rpc.netty.Web3WebSocketServer;
-import org.ethereum.core.*;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.Nullable;
 import java.util.stream.Collectors;
 
-@Component
 public class FullNodeRunner implements NodeRunner {
     private static Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
@@ -72,10 +64,8 @@ public class FullNodeRunner implements NodeRunner {
     private final PeerServer peerServer;
     private final SyncPool.PeerClientFactory peerClientFactory;
     private final TransactionGateway transactionGateway;
+    private final BuildInfo buildInfo;
 
-    private final PruneService pruneService;
-
-    @Autowired
     public FullNodeRunner(
             Rsk rsk,
             UDPServer udpServer,
@@ -94,7 +84,8 @@ public class FullNodeRunner implements NodeRunner {
             TransactionPool transactionPool,
             PeerServer peerServer,
             SyncPool.PeerClientFactory peerClientFactory,
-            TransactionGateway transactionGateway) {
+            TransactionGateway transactionGateway,
+            BuildInfo buildInfo) {
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
@@ -113,9 +104,7 @@ public class FullNodeRunner implements NodeRunner {
         this.peerServer = peerServer;
         this.peerClientFactory = peerClientFactory;
         this.transactionGateway = transactionGateway;
-
-        PruneConfiguration pruneConfiguration = rskSystemProperties.getPruneConfiguration();
-        this.pruneService = new PruneService(pruneConfiguration, rskSystemProperties, blockchain, PrecompiledContracts.REMASC_ADDR);
+        this.buildInfo = buildInfo;
     }
 
     @Override
@@ -128,7 +117,7 @@ public class FullNodeRunner implements NodeRunner {
                 rskSystemProperties.projectVersion(),
                 rskSystemProperties.projectVersionModifier()
         );
-        BuildInfo.printInfo();
+        buildInfo.printInfo(logger);
 
         transactionGateway.start();
         // this should be the genesis block at this point
@@ -141,24 +130,14 @@ public class FullNodeRunner implements NodeRunner {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
             logger.info("Capability eth version: [{}]", versions);
         }
-        if (rskSystemProperties.isBlocksEnabled()) {
-            setupRecorder(rskSystemProperties.blocksRecorder());
-            setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
-        }
 
         if (!"".equals(rskSystemProperties.blocksLoader())) {
             rskSystemProperties.setSyncEnabled(Boolean.FALSE);
             rskSystemProperties.setDiscoveryEnabled(Boolean.FALSE);
         }
 
-        Metrics.registerNodeID(rskSystemProperties.nodeId());
-
         if (rskSystemProperties.simulateTxs()) {
             enableSimulateTxs();
-        }
-
-        if (rskSystemProperties.simulateTxsEx()) {
-            enableSimulateTxsEx();
         }
 
         startWeb3(rskSystemProperties);
@@ -179,12 +158,8 @@ public class FullNodeRunner implements NodeRunner {
             minerServer.start();
 
             if (rskSystemProperties.isMinerClientEnabled()) {
-                minerClient.mine();
+                minerClient.start();
             }
-        }
-
-        if (rskSystemProperties.isPruneEnabled()) {
-            pruneService.start();
         }
 
         logger.info("done");
@@ -214,15 +189,11 @@ public class FullNodeRunner implements NodeRunner {
     }
 
     private void enableSimulateTxs() {
-        new TxBuilder(rskSystemProperties, rsk, nodeBlockProcessor, repository).simulateTxs();
-    }
-
-    private void enableSimulateTxsEx() {
-        new TxBuilderEx(rskSystemProperties, rsk, repository, nodeBlockProcessor, transactionPool).simulateTxs();
+        new TxBuilder(rskSystemProperties.getNetworkConstants(), rsk, nodeBlockProcessor, repository).simulateTxs();
     }
 
     private void waitRskSyncDone() throws InterruptedException {
-        while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync() || rsk.isPlayingBlocks()) {
+        while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync()) {
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e1) {
@@ -235,10 +206,6 @@ public class FullNodeRunner implements NodeRunner {
     @Override
     public void stop() {
         logger.info("Shutting down RSK node");
-
-        if (rskSystemProperties.isPruneEnabled()) {
-            pruneService.stop();
-        }
 
         syncPool.stop();
 
@@ -282,38 +249,5 @@ public class FullNodeRunner implements NodeRunner {
         }
 
         logger.info("RSK node Shut down");
-    }
-
-    private void setupRecorder(@Nullable String blocksRecorderFileName) {
-        if (blocksRecorderFileName != null) {
-            blockchain.setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
-        }
-    }
-
-    private void setupPlayer(Rsk rsk, ChannelManager cm, Blockchain bc, @Nullable String blocksPlayerFileName) {
-        if (blocksPlayerFileName == null) {
-            return;
-        }
-
-        new Thread(() -> {
-            RskImpl rskImpl = (RskImpl) rsk;
-            try (FileBlockPlayer bplayer = new FileBlockPlayer(rskSystemProperties, blocksPlayerFileName)) {
-                rskImpl.setIsPlayingBlocks(true);
-                connectBlocks(bplayer, bc, cm);
-            } catch (Exception e) {
-                logger.error("Error", e);
-            } finally {
-                rskImpl.setIsPlayingBlocks(false);
-            }
-        }).start();
-    }
-
-    private void connectBlocks(BlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
-        for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
-            ImportResult tryToConnectResult = bc.tryToConnect(block);
-            if (BlockProcessResult.importOk(tryToConnectResult)) {
-                cm.broadcastBlock(block);
-            }
-        }
     }
 }

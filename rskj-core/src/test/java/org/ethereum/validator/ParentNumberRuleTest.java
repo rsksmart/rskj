@@ -20,6 +20,8 @@ package org.ethereum.validator;
 
 import co.rsk.core.BlockDifficulty;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.junit.Test;
 
@@ -31,6 +33,7 @@ import static org.junit.Assert.assertTrue;
  * @since 02.23.2016
  */
 public class ParentNumberRuleTest {
+    private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
     private ParentNumberRule rule = new ParentNumberRule();
 
     @Test // pass rule
@@ -55,10 +58,8 @@ public class ParentNumberRuleTest {
     }
 
     private static BlockHeader getHeader(long number) {
-        BlockHeader header = new BlockHeader(null, null, TestUtils.randomAddress().getBytes(),
+        return blockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(),
                 null, BlockDifficulty.ZERO.getBytes(), number, null, 0,
                 0, null, null, 0);
-
-        return header;
     }
 }

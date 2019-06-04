@@ -24,7 +24,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
@@ -43,7 +42,7 @@ public class ReversibleTransactionExecutorTest {
     public void executeTransactionHello() {
         TestContract hello = TestContract.hello();
         CallTransaction.Function helloFn = hello.functions.get("hello");
-        ContractDetails contract = contractRunner.addContract(hello.runtimeBytecode);
+        RskAddress contractAddress = contractRunner.addContract(hello.runtimeBytecode);
 
         RskAddress from = TestUtils.randomAddress();
         byte[] gasPrice = Hex.decode("00");
@@ -57,7 +56,7 @@ public class ReversibleTransactionExecutorTest {
                 bestBlock.getCoinbase(),
                 gasPrice,
                 gasLimit,
-                contract.getAddress(),
+                contractAddress.getBytes(),
                 value,
                 helloFn.encode(),
                 from
@@ -91,7 +90,7 @@ public class ReversibleTransactionExecutorTest {
     public void executeTransactionGreeterOtherSender() {
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
-        ContractDetails contract = contractRunner.addContract(greeter.runtimeBytecode);
+        RskAddress contractAddress = contractRunner.addContract(greeter.runtimeBytecode);
 
         RskAddress from = new RskAddress("0000000000000000000000000000000000000023"); // someone else
         byte[] gasPrice = Hex.decode("00");
@@ -105,7 +104,7 @@ public class ReversibleTransactionExecutorTest {
                 bestBlock.getCoinbase(),
                 gasPrice,
                 gasLimit,
-                contract.getAddress(),
+                contractAddress.getBytes(),
                 value,
                 greeterFn.encode("greet me"),
                 from
@@ -118,7 +117,7 @@ public class ReversibleTransactionExecutorTest {
     public void executeTransactionCountCallsMultipleTimes() {
         TestContract countcalls = TestContract.countcalls();
         CallTransaction.Function callsFn = countcalls.functions.get("calls");
-        ContractDetails contract = contractRunner.addContract(countcalls.runtimeBytecode);
+        RskAddress contractAddress = contractRunner.addContract(countcalls.runtimeBytecode);
 
         RskAddress from = new RskAddress("0000000000000000000000000000000000000023"); // someone else
         byte[] gasPrice = Hex.decode("00");
@@ -132,7 +131,7 @@ public class ReversibleTransactionExecutorTest {
                 bestBlock.getCoinbase(),
                 gasPrice,
                 gasLimit,
-                contract.getAddress(),
+                contractAddress.getBytes(),
                 value,
                 callsFn.encodeSignature(),
                 from
@@ -148,7 +147,7 @@ public class ReversibleTransactionExecutorTest {
                 bestBlock.getCoinbase(),
                 gasPrice,
                 gasLimit,
-                contract.getAddress(),
+                contractAddress.getBytes(),
                 value,
                 callsFn.encodeSignature(),
                 from

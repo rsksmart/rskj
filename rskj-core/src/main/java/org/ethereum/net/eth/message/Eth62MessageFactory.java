@@ -20,8 +20,10 @@
 package org.ethereum.net.eth.message;
 
 import co.rsk.net.eth.RskMessage;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.net.message.Message;
-import org.ethereum.net.message.MessageFactory;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 
 import static org.ethereum.net.eth.EthVersion.V62;
 
@@ -29,32 +31,23 @@ import static org.ethereum.net.eth.EthVersion.V62;
  * @author Mikhail Kalinin
  * @since 04.09.2015
  */
-public class Eth62MessageFactory implements MessageFactory {
+public class Eth62MessageFactory {
 
-    @Override
+    private final BlockFactory blockFactory;
+
+    public Eth62MessageFactory(BlockFactory blockFactory) {
+        this.blockFactory = blockFactory;
+    }
+
     public Message create(byte code, byte[] encoded) {
 
         EthMessageCodes receivedCommand = EthMessageCodes.fromByte(code, V62);
         switch (receivedCommand) {
             case STATUS:
                 return new StatusMessage(encoded);
-            case NEW_BLOCK_HASHES:
-                return new NewBlockHashesMessage(encoded);
-            case TRANSACTIONS:
-                return new TransactionsMessage(encoded);
-            case GET_BLOCK_HEADERS:
-                return new GetBlockHeadersMessage(encoded);
-            case BLOCK_HEADERS:
-                return new BlockHeadersMessage(encoded);
-            case GET_BLOCK_BODIES:
-                return new GetBlockBodiesMessage(encoded);
-            case BLOCK_BODIES:
-                return new BlockBodiesMessage(encoded);
-            case NEW_BLOCK:
-                return new NewBlockMessage(encoded);
-            // RSK new message
             case RSK_MESSAGE:
-                return new RskMessage(encoded);
+                RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+                return new RskMessage(co.rsk.net.messages.Message.create(blockFactory, (RLPList) paramsList.get(0)));
             default:
                 throw new IllegalArgumentException("No such message");
         }

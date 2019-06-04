@@ -81,7 +81,7 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
 
     @Override
     public void channelRead0(final ChannelHandlerContext ctx, EthMessage msg) throws InterruptedException {
-        logger.debug("Read message: " + msg.toString());
+        logger.debug("Read message: {}", msg);
 
         if (EthMessageCodes.inRange(msg.getCommand().asByte(), version)) {
             logger.trace("EthHandler invoke: [{}]", msg.getCommand());
@@ -120,7 +120,7 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
 
     @Override
     public void sendMessage(EthMessage message) {
-        logger.debug("Send message: " + message.toString());
+        logger.debug("Send message: {}", message);
 
         msgQueue.sendMessage(message);
         channel.getNodeStatistics().ethOutbound.add();

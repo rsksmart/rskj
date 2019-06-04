@@ -28,9 +28,4 @@ public class MinerManager {
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
         minerClient.mineBlock();
     }
-
-    public void fallbackMineBlock(Blockchain blockchain, MinerClient minerClient, MinerServer minerServer) {
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-        minerClient.fallbackMineBlock();
-    }
 }

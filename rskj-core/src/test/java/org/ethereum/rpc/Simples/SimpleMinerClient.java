@@ -27,12 +27,8 @@ public class SimpleMinerClient implements MinerClient {
 
     public boolean isMining = false;
 
-    public void mine() {
+    public void start() {
         isMining = true;
-    }
-
-    public boolean fallbackMineBlock() {
-        return false;
     }
 
     public boolean mineBlock() {

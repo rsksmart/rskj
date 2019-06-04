@@ -18,16 +18,13 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.rpc.Web3DebugModule;
-import co.rsk.rpc.Web3EthModule;
-import co.rsk.rpc.Web3MnrModule;
-import co.rsk.rpc.Web3TxPoolModule;
+import co.rsk.rpc.*;
 import co.rsk.scoring.PeerScoringInformation;
 
 import java.util.Arrays;
 import java.util.Map;
 
-public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3MnrModule, Web3DebugModule {
+public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule {
     class SyncingResult {
         public String startingBlock;
         public String currentBlock;
@@ -156,16 +153,6 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3MnrModule, We
     boolean personal_unlockAccount(String key, String passphrase, String duration);
     boolean personal_lockAccount(String key);
     String personal_dumpRawKey(String address) throws Exception;
-
-    String evm_snapshot();
-    boolean evm_revert(String snapshotId);
-    void evm_reset();
-    void evm_mine();
-    void evm_fallbackMine();
-    void evm_startMining();
-    void evm_stopMining();
-
-    String evm_increaseTime(String seconds);
 
     void sco_banAddress(String address);
     void sco_unbanAddress(String address);

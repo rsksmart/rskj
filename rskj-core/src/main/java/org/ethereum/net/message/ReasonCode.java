@@ -82,6 +82,8 @@ public enum ReasonCode {
 
     USER_REASON(0x10),
 
+    UNEXPECTED_GENESIS(0x11),
+
     /**
      * [0xFF] Reason not specified
      */

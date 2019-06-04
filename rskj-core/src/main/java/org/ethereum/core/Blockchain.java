@@ -19,13 +19,13 @@
 
 package org.ethereum.core;
 
-import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public interface Blockchain {
@@ -57,33 +57,18 @@ public interface Blockchain {
      */
     Block getBestBlock();
 
-    void setBlockRecorder(BlockRecorder blockRecorder);
-
     long getSize();
 
     ImportResult tryToConnect(Block block);
-
-    void setBestBlock(Block block);
 
     void setStatus(Block block, BlockDifficulty totalDifficulty);
 
     BlockChainStatus getStatus();
 
+    @Nullable
     TransactionInfo getTransactionInfo(byte[] hash);
 
-    void close();
-
-    void setTotalDifficulty(BlockDifficulty totalDifficulty);
-
     byte[] getBestBlockHash();
-
-    void setExitOn(long exitOn);
-
-    boolean isBlockExist(byte[] hash);
-
-    List<BlockHeader> getListOfHeadersStartFrom(BlockIdentifier identifier, int skip, int limit, boolean reverse);
-
-    List<byte[]> getListOfBodiesByHashes(List<byte[]> hashes);
 
     List<Block> getBlocksByNumber(long blockNr);
 
@@ -96,8 +81,4 @@ public interface Blockchain {
     List<BlockInformation> getBlocksInformationByNumber(long number);
 
     boolean hasBlockInSomeBlockchain(byte[] hash);
-
-    void suspendProcess();
-
-    void resumeProcess();
 }

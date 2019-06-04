@@ -18,8 +18,11 @@
 
 package co.rsk.rpc.modules.debug;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 public interface DebugModule {
 
     String wireProtocolQueueSize();
 
+    JsonNode traceTransaction(String transactionHash) throws Exception;
 }

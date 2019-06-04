@@ -21,20 +21,19 @@ package org.ethereum.vm.trace;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.Repository;
-import org.ethereum.db.ContractDetails;
-import org.ethereum.db.RepositoryTrack;
+import co.rsk.core.bc.AccountInformationProvider;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
+import org.ethereum.vm.program.Memory;
+import org.ethereum.vm.program.Stack;
+import org.ethereum.vm.program.Storage;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bouncycastle.util.encoders.Hex;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static java.lang.String.format;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -44,38 +43,49 @@ public class ProgramTrace {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("vm");
 
-    private List<Op> ops = new LinkedList<>();
+    private String contractAddress;
+    private Map<String, String> initStorage = new HashMap<>();
+
+    private List<Op> structLogs = new LinkedList<>();
     private String result;
     private String error;
-    private Map<String, String> initStorage = new HashMap<>();
-    private boolean fullStorage;
+
     private int storageSize;
-    private String contractAddress;
+
+    private Map<String, String> currentStorage = new HashMap<>();
+
+    @JsonIgnore
+    private boolean fullStorage;
+
+    @JsonIgnore
+    private DataWord storageKey;
 
     public ProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
         if (config.vmTrace() && programInvoke != null) {
             contractAddress = Hex.toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
 
-            ContractDetails contractDetails = getContractDetails(programInvoke);
-            if (contractDetails == null) {
+            AccountInformationProvider informationProvider = getInformationProvider(programInvoke);
+            RskAddress ownerAddress = new RskAddress(programInvoke.getOwnerAddress());
+            if (!informationProvider.isContract(ownerAddress)) {
                 storageSize = 0;
                 fullStorage = true;
             } else {
-                storageSize = contractDetails.getStorageSize();
+                storageSize = informationProvider.getStorageKeysCount(ownerAddress);
                 if (storageSize <= config.vmTraceInitStorageLimit()) {
                     fullStorage = true;
 
                     String address = toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
-                    for (Map.Entry<DataWord, DataWord> entry : contractDetails.getStorage().entrySet()) {
+                    Iterator<DataWord> keysIterator = informationProvider.getStorageKeys(ownerAddress);
+                    while (keysIterator.hasNext()) {
                         // TODO: solve NULL key/value storage problem
-                        DataWord key = entry.getKey();
-                        DataWord value = entry.getValue();
+                        DataWord key = keysIterator.next();
+                        byte[] value = informationProvider.getStorageBytes(ownerAddress, key);
                         if (key == null || value == null) {
-                            LOGGER.info("Null storage key/value: address[{}]" ,address);
+                            LOGGER.info("Null storage key/value: address[{}]", address);
                             continue;
                         }
 
-                        initStorage.put(key.toString(), value.toString());
+                        initStorage.put(key.toString(), DataWord.valueOf(value).toString());
                     }
 
                     if (!initStorage.isEmpty()) {
@@ -83,25 +93,29 @@ public class ProgramTrace {
                     }
                 }
             }
+
+            saveCurrentStorage(initStorage);
         }
     }
 
-    private static ContractDetails getContractDetails(ProgramInvoke programInvoke) {
-        Repository repository = programInvoke.getRepository();
-        if (repository instanceof RepositoryTrack) {
-            repository = ((RepositoryTrack) repository).getOriginRepository();
-        }
-
-        RskAddress addr = new RskAddress(programInvoke.getOwnerAddress());
-        return repository.getContractDetails(addr);
+    private void saveCurrentStorage(Map<String, String> storage) {
+        this.currentStorage = new HashMap<>(storage);
+    }
+    
+    public boolean isEmpty() {
+        return contractAddress == null;
     }
 
-    public List<Op> getOps() {
-        return ops;
+    private static AccountInformationProvider getInformationProvider(ProgramInvoke programInvoke) {
+        return programInvoke.getRepository();
     }
 
-    public void setOps(List<Op> ops) {
-        this.ops = ops;
+    public List<Op> getStructLogs() {
+        return structLogs;
+    }
+
+    public void setStructLogs(List<Op> structLogs) {
+        this.structLogs = structLogs;
     }
 
     public String getResult() {
@@ -162,15 +176,44 @@ public class ProgramTrace {
         return this;
     }
 
-    public Op addOp(byte code, int pc, int deep, long gas, OpActions actions) {
+    public void saveGasCost(long gasCost) {
+        structLogs.get(structLogs.size() - 1).setGasCost(gasCost);
+    }
+
+    public Op addOp(byte code, int pc, int deep, long gas, Memory memory, Stack stack, Storage storage) {
         Op op = new Op();
-        op.setActions(actions);
-        op.setCode(OpCode.code(code));
-        op.setDeep(deep);
+        OpCode opcode = OpCode.code(code);
+        op.setOp(opcode);
+        op.setDepth(deep);
         op.setGas(gas);
         op.setPc(pc);
 
-        ops.add(op);
+        op.setMemory(memory);
+        op.setStack(stack);
+
+        if (this.storageKey != null) {
+            RskAddress currentAddress = new RskAddress(this.contractAddress);
+            DataWord value = storage.getStorageValue(currentAddress, this.storageKey);
+
+            if (value != null) {
+                this.currentStorage = new HashMap<>(this.currentStorage);
+                this.currentStorage.put(this.storageKey.toString(), value.toString());
+            }
+            else {
+                this.currentStorage.remove(this.storageKey.toString());
+            }
+
+            this.storageSize = this.currentStorage.size();
+            this.storageKey = null;
+        }
+
+        if (opcode == OpCode.SSTORE || opcode == OpCode.SLOAD) {
+            this.storageKey = stack.peek();
+        }
+
+        op.setStorage(this.currentStorage);
+
+        structLogs.add(op);
 
         return op;
     }
@@ -179,7 +222,7 @@ public class ProgramTrace {
      * Used for merging sub calls execution.
      */
     public void merge(ProgramTrace programTrace) {
-        this.ops.addAll(programTrace.ops);
+        this.structLogs.addAll(programTrace.structLogs);
     }
 
     public String asJsonString(boolean formatted) {

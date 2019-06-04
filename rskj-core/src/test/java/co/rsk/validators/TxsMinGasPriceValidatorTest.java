@@ -37,16 +37,6 @@ public class TxsMinGasPriceValidatorTest {
     private static final Coin BLOCK_MGP = Coin.valueOf(10);
 
     @Test
-    public void blockWithNullTxList() {
-        Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getTransactionsList()).thenReturn(null);
-        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
-        TxsMinGasPriceRule tmgpv = new TxsMinGasPriceRule();
-
-        Assert.assertTrue(tmgpv.isValid(block));
-    }
-
-    @Test
     public void blockWithEmptyTxList() {
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getTransactionsList()).thenReturn(new ArrayList<>());

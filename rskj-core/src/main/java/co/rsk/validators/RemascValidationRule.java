@@ -20,7 +20,6 @@ package co.rsk.validators;
 
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
@@ -40,7 +39,7 @@ public class RemascValidationRule implements BlockValidationRule{
     @Override
     public boolean isValid(Block block) {
         List<Transaction> txs = block.getTransactionsList();
-        boolean result = CollectionUtils.isNotEmpty(txs) && (txs.get(txs.size()-1) instanceof RemascTransaction);
+        boolean result = !txs.isEmpty() && (txs.get(txs.size()-1) instanceof RemascTransaction);
         if(!result) {
             logger.warn("Remasc tx not found in block");
             panicProcessor.panic("invalidremasctx", "Remasc tx not found in block");

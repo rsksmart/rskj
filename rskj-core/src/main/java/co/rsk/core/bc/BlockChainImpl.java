@@ -18,22 +18,20 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.BlockDifficulty;
-import co.rsk.net.Metrics;
+import co.rsk.db.StateRootHandler;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +73,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 
 public class BlockChainImpl implements Blockchain {
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
@@ -82,7 +81,8 @@ public class BlockChainImpl implements Blockchain {
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
-    private EthereumListener listener;
+    private final StateRootHandler stateRootHandler;
+    private final EthereumListener listener;
     private BlockValidator blockValidator;
 
     private volatile BlockChainStatus status = new BlockChainStatus(null, BlockDifficulty.ZERO);
@@ -94,7 +94,6 @@ public class BlockChainImpl implements Blockchain {
     private final boolean flushEnabled;
     private final int flushNumberOfBlocks;
     private final BlockExecutor blockExecutor;
-    private BlockRecorder blockRecorder;
     private boolean noValidation;
 
     public BlockChainImpl(Repository repository,
@@ -105,7 +104,8 @@ public class BlockChainImpl implements Blockchain {
                           BlockValidator blockValidator,
                           boolean flushEnabled,
                           int flushNumberOfBlocks,
-                          BlockExecutor blockExecutor) {
+                          BlockExecutor blockExecutor,
+                          StateRootHandler stateRootHandler) {
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
@@ -115,6 +115,7 @@ public class BlockChainImpl implements Blockchain {
         this.flushNumberOfBlocks = flushNumberOfBlocks;
         this.blockExecutor = blockExecutor;
         this.transactionPool = transactionPool;
+        this.stateRootHandler = stateRootHandler;
     }
 
     @Override
@@ -124,12 +125,6 @@ public class BlockChainImpl implements Blockchain {
 
     @Override
     public BlockStore getBlockStore() { return blockStore; }
-
-    public EthereumListener getListener() { return listener; }
-
-    public void setListener(EthereumListener listener) { this.listener = listener; }
-
-    public BlockValidator getBlockValidator() { return blockValidator; }
 
     @VisibleForTesting
     public void setBlockValidator(BlockValidator validator) {
@@ -165,10 +160,6 @@ public class BlockChainImpl implements Blockchain {
                 block.seal();
             }
 
-            if (blockRecorder != null) {
-                blockRecorder.writeBlock(block);
-            }
-
             try {
                 logger.trace("Try connect block hash: {}, number: {}",
                              block.getShortHash(),
@@ -192,23 +183,15 @@ public class BlockChainImpl implements Blockchain {
         }
     }
 
-    @Override
-    public void suspendProcess() {
-        this.lock.writeLock().lock();
-    }
-
-    @Override
-    public void resumeProcess() {
-        this.lock.writeLock().unlock();
-    }
-
     private ImportResult internalTryToConnect(Block block) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BEFORE_BLOCK_EXEC);
+
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
                 !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                          block.getShortHash(),
                          block.getNumber());
-
+            profiler.stop(metric);
             return ImportResult.EXIST;
         }
 
@@ -237,12 +220,14 @@ public class BlockChainImpl implements Blockchain {
             parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
             if (parent == null) {
+                profiler.stop(metric);
                 return ImportResult.NO_PARENT;
             }
 
             parentTotalDifficulty = blockStore.getTotalDifficultyForHash(parent.getHash().getBytes());
 
             if (parentTotalDifficulty == null || parentTotalDifficulty.equals(BlockDifficulty.ZERO)) {
+                profiler.stop(metric);
                 return ImportResult.NO_PARENT;
             }
         }
@@ -252,35 +237,42 @@ public class BlockChainImpl implements Blockchain {
             long blockNumber = block.getNumber();
             logger.warn("Invalid block with number: {}", blockNumber);
             panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, block.getHash()));
+            profiler.stop(metric);
             return ImportResult.INVALID_BLOCK;
         }
 
+        profiler.stop(metric);
         BlockResult result = null;
 
         if (parent != null) {
             long saveTime = System.nanoTime();
             logger.trace("execute start");
 
-            if (this.noValidation) {
-                result = blockExecutor.executeAll(block, parent.getStateRoot());
-            } else {
-                result = blockExecutor.execute(block, parent.getStateRoot(), false);
-            }
+            result = blockExecutor.execute(block, parent.getHeader(), false, noValidation);
 
             logger.trace("execute done");
 
+            metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
             boolean isValid = noValidation ? true : blockExecutor.validate(block, result);
 
             logger.trace("validate done");
 
             if (!isValid) {
+                profiler.stop(metric);
                 return ImportResult.INVALID_BLOCK;
             }
+            // Now that we know it's valid, we can commit the changes made by the block
+            // to the parent's repository.
 
             long totalTime = System.nanoTime() - saveTime;
             logger.trace("block: num: [{}] hash: [{}], executed after: [{}]nano", block.getNumber(), block.getShortHash(), totalTime);
+
+            // the block is valid at this point
+            stateRootHandler.register(block.getHeader(), result.getFinalState());
+            profiler.stop(metric);
         }
 
+        metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
         // the new accumulated difficulty
         BlockDifficulty totalDifficulty = parentTotalDifficulty.add(block.getCumulativeDifficulty());
         logger.trace("TD: updated to {}", totalDifficulty);
@@ -290,10 +282,9 @@ public class BlockChainImpl implements Blockchain {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
                 logger.trace("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
-                        status.getTotalDifficulty().toString(), totalDifficulty.toString());
+                        status.getTotalDifficulty(), totalDifficulty);
                 BlockFork fork = new BlockFork();
                 fork.calculate(bestBlock, block, blockStore);
-                Metrics.rebranch(bestBlock, block, fork.getNewBlocks().size() + fork.getOldBlocks().size());
                 blockStore.reBranch(block);
             }
 
@@ -317,6 +308,7 @@ public class BlockChainImpl implements Blockchain {
                 logger.info("*** Last block added [ #{} ]", block.getNumber());
             }
 
+            profiler.stop(metric);
             return ImportResult.IMPORTED_BEST;
         }
         // It is not the new best block
@@ -324,7 +316,7 @@ public class BlockChainImpl implements Blockchain {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
                 logger.trace("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
-                        status.getTotalDifficulty().toString(), totalDifficulty.toString());
+                        status.getTotalDifficulty(), totalDifficulty);
             }
 
             logger.trace("Start extendAlternativeBlockChain");
@@ -341,7 +333,7 @@ public class BlockChainImpl implements Blockchain {
             }
 
             logger.trace("Block not imported {} {}", block.getNumber(), block.getShortHash());
-
+            profiler.stop(metric);
             return ImportResult.IMPORTED_NOT_BEST;
         }
     }
@@ -362,33 +354,13 @@ public class BlockChainImpl implements Blockchain {
         synchronized (accessLock) {
             status = new BlockChainStatus(block, totalDifficulty);
             blockStore.saveBlock(block, totalDifficulty, true);
-            repository.syncToRoot(block.getStateRoot());
+            repository.syncToRoot(stateRootHandler.translate(block.getHeader()).getBytes());
         }
     }
 
     @Override
     public Block getBlockByHash(byte[] hash) {
         return blockStore.getBlockByHash(hash);
-    }
-
-    @Override
-    public void setExitOn(long exitOn) {
-
-    }
-
-    @Override
-    public boolean isBlockExist(byte[] hash) {
-        return blockStore.isBlockExist(hash);
-    }
-
-    @Override
-    public List<BlockHeader> getListOfHeadersStartFrom(BlockIdentifier identifier, int skip, int limit, boolean reverse) {
-        return null;
-    }
-
-    @Override
-    public List<byte[]> getListOfBodiesByHashes(List<byte[]> hashes) {
-        return null;
     }
 
     @Override
@@ -442,11 +414,6 @@ public class BlockChainImpl implements Blockchain {
     public Block getBlockByNumber(long number) { return blockStore.getChainBlockByNumber(number); }
 
     @Override
-    public void setBestBlock(Block block) {
-        this.setStatus(block, status.getTotalDifficulty());
-    }
-
-    @Override
     public Block getBestBlock() {
         return this.status.getBestBlock();
     }
@@ -476,18 +443,8 @@ public class BlockChainImpl implements Blockchain {
     }
 
     @Override
-    public void close() {
-
-    }
-
-    @Override
     public BlockDifficulty getTotalDifficulty() {
         return status.getTotalDifficulty();
-    }
-
-    @Override
-    public void setTotalDifficulty(BlockDifficulty totalDifficulty) {
-        setStatus(status.getBestBlock(), totalDifficulty);
     }
 
     @Override @VisibleForTesting
@@ -495,17 +452,8 @@ public class BlockChainImpl implements Blockchain {
         return getBestBlock().getHash().getBytes();
     }
 
-    @Override
-    public void setBlockRecorder(BlockRecorder blockRecorder) {
-        this.blockRecorder = blockRecorder;
-    }
-
     private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
-        synchronized (accessLock) {
-            storeBlock(block, totalDifficulty, true);
-            status = new BlockChainStatus(block, totalDifficulty);
-            repository.syncToRoot(block.getStateRoot());
-        }
+        setStatus(block, totalDifficulty);
     }
 
     private void extendAlternativeBlockChain(Block block, BlockDifficulty totalDifficulty) {
@@ -548,11 +496,10 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private boolean isValid(Block block) {
-        if (block.isGenesis()) {
-            return true;
-        }
-
-        return blockValidator.isValid(block);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_VALIDATION);
+        boolean validation =  blockValidator.isValid(block);
+        profiler.stop(metric);
+        return validation;
     }
 
     // Rolling counter that helps doing flush every RskSystemProperties.CONFIG.flushNumberOfBlocks() flush attempts
@@ -572,23 +519,5 @@ public class BlockChainImpl implements Blockchain {
         }
         nFlush++;
         nFlush = nFlush % flushNumberOfBlocks;
-    }
-
-    public static byte[] calcTxTrie(List<Transaction> transactions) {
-        return Block.getTxTrie(transactions).getHash().getBytes();
-    }
-
-    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
-        Trie receiptsTrie = new TrieImpl();
-
-        if (receipts == null || receipts.isEmpty()) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
-        }
-
-        return receiptsTrie.getHash().getBytes();
     }
 }

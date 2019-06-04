@@ -17,7 +17,6 @@
  */
 package co.rsk;
 
-import org.ethereum.config.DefaultConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +27,7 @@ public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
     public static void main(String[] args) {
-        NodeBootstrapper ctx = new SpringNodeBootstrapper(DefaultConfig.class, args);
+        RskContext ctx = new RskContext(args);
         NodeRunner runner = ctx.getNodeRunner();
         try {
             runner.run();

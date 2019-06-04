@@ -18,10 +18,12 @@
 
 package co.rsk.core;
 
-import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -39,6 +41,8 @@ import java.util.List;
  */
 public class BlockEncodingTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
+
+    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test(expected = ArithmeticException.class)
     public void testBadBlockEncoding1() {
@@ -73,7 +77,7 @@ public class BlockEncodingTest {
                 new byte[0],                    // mixHash
                 new byte[]{0},         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                BlockChainImpl.calcTxTrie(txs), // transaction root
+                BlockHashesHelper.getTxTrieRoot(txs, false),// transaction root
                 HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 null,  // uncle list
@@ -82,7 +86,7 @@ public class BlockEncodingTest {
         );
 
         // Now decode, and re-encode
-        Block parsedBlock = new Block(fblock.getEncoded());
+        Block parsedBlock = blockFactory.decodeBlock(fblock.getEncoded());
         // must throw java.lang.ArithmeticException
         parsedBlock.getGasLimit(); // forced parse
 

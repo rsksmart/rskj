@@ -22,10 +22,10 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.WalletAccount;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
-import org.ethereum.config.net.RegTestConfig;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
@@ -33,7 +33,6 @@ import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -55,10 +54,10 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     @Override
-    public void init(RskSystemProperties properties) {
+    public void init() {
         // dev node has 10 accouts with balance (in rsk-dev.json
         // with seed cow, cow1..cow9
-        if (properties.getBlockchainConfig() instanceof RegTestConfig) {
+        if (config.getNetworkConstants().seedCowAccounts()) {
             newAccountWithSeed("cow");
 
             for (int k = 1; k <= 9; k++) {
@@ -70,13 +69,13 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         // which is then used to set the current miner coinbase address.
         // Generally used for testing, since you usually don't want to store
         // wallets in production for security reasons.
-        Account coinbaseAccount = properties.localCoinbaseAccount();
+        Account coinbaseAccount = config.localCoinbaseAccount();
         if (coinbaseAccount != null) {
             this.wallet.addAccount(coinbaseAccount);
         }
 
         // initializes wallet accounts based on configuration
-        for (WalletAccount acc : properties.walletAccounts()) {
+        for (WalletAccount acc : config.walletAccounts()) {
             this.wallet.addAccountWithPrivateKey(Hex.decode(acc.getPrivateKey()));
         }
     }
@@ -133,7 +132,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         try {
             return s = sendTransaction(args, getAccount(args.from, passphrase));
         } finally {
-            LOGGER.debug("eth_sendTransaction(" + args + "): " + s);
+            LOGGER.debug("eth_sendTransaction({}): {}", args,  s);
         }
     }
 
@@ -191,7 +190,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
             args.data = args.data.substring(2);
         }
 
-        Transaction tx = Transaction.create(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
+        Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, config.getNetworkConstants().getChainId());
 
         tx.sign(account.getEcKey().getPrivKeyBytes());
 

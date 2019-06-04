@@ -74,9 +74,13 @@ public class Web3RskImplTest {
         Wallet wallet = WalletFactory.createWallet();
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
-        EthModule em = new EthModule(config, blockchain, null, new ExecutionBlockRetriever(blockchain, null, null), new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
+        EthModule em = new EthModule(
+                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
+                null, new ExecutionBlockRetriever(blockchain, null, null),
+                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null
+        );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
+        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
         Web3RskImpl web3 = new Web3RskImpl(
                 rsk,
                 blockchain,
@@ -86,6 +90,7 @@ public class Web3RskImplTest {
                 Web3Mocks.getMockMinerServer(),
                 pm,
                 em,
+                null,
                 tpm,
                 null,
                 dm,
@@ -94,6 +99,9 @@ public class Web3RskImplTest {
                 null,
                 networkStateExporter,
                 blockStore,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -109,8 +117,8 @@ public class Web3RskImplTest {
         byte[] valueToTest = HashUtil.keccak256(new byte[]{1});
         Mockito.when(logInfo.getData()).thenReturn(valueToTest);
         List<DataWord> topics = new ArrayList<>();
-        topics.add(new DataWord("c1"));
-        topics.add(new DataWord("c2"));
+        topics.add(DataWord.valueFromHex("c1"));
+        topics.add(DataWord.valueFromHex("c2"));
         Mockito.when(logInfo.getTopics()).thenReturn(topics);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHash()).thenReturn(new Keccak256(valueToTest));

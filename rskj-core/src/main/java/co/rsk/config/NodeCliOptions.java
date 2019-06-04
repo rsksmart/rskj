@@ -35,6 +35,12 @@ public enum NodeCliOptions implements OptionalizableCliArg {
                     .withValue(SystemProperties.PROPERTY_RPC_CORS, ConfigValueFactory.fromAnyRef(configValue));
         }
     },
+    BASE_PATH("base-path", true) {
+        @Override
+        public Config withConfig(Config config, String configValue) {
+            return config.withValue(SystemProperties.PROPERTY_BASE_PATH, ConfigValueFactory.fromAnyRef(configValue));
+        }
+    },
     ;
 
     private final String optionName;

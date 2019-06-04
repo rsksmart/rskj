@@ -4,7 +4,8 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.BlockChainImplTest;
+import co.rsk.core.bc.BlockExecutorTest;
+import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
@@ -34,13 +35,13 @@ public class BlockUnclesValidationRuleTest {
 
         Block block = blockGenerator.createChildBlock(block1, null, uncles, 1, null);
 
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
+        BlockChainImpl blockChain = new BlockChainBuilder().setListener(new BlockExecutorTest.SimpleEthereumListener()).build();
         BlockStore store = blockChain.getBlockStore();
 
         store.saveBlock(genesis, new BlockDifficulty(BigInteger.valueOf(1)), true);
         store.saveBlock(block1, new BlockDifficulty(BigInteger.valueOf(2)), true);
 
-        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(config, store, 10, 10, new BlockCompositeRule(), new BlockParentCompositeRule());
+        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(store, 10, 10, new BlockHeaderCompositeRule(), new BlockHeaderParentCompositeRule());
 
         Assert.assertFalse(rule.isValid(block));
     }
@@ -58,13 +59,13 @@ public class BlockUnclesValidationRuleTest {
 
         Block block = blockGenerator.createChildBlock(block1, null, uncles, 1, null);
 
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
+        BlockChainImpl blockChain = new BlockChainBuilder().setListener(new BlockExecutorTest.SimpleEthereumListener()).build();
         BlockStore store = blockChain.getBlockStore();
 
         store.saveBlock(genesis, new BlockDifficulty(BigInteger.valueOf(1)), true);
         store.saveBlock(block1, new BlockDifficulty(BigInteger.valueOf(2)), true);
 
-        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(config, store, 10, 10, new BlockCompositeRule(), new BlockParentCompositeRule());
+        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(store, 10, 10, new BlockHeaderCompositeRule(), new BlockHeaderParentCompositeRule());
 
         Assert.assertFalse(rule.isValid(block));
     }

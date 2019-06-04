@@ -37,7 +37,7 @@ public class RskAddress {
     /**
      * This is the size of an RSK address in bytes.
      */
-    private static final int LENGTH_IN_BYTES = 20;
+    public static final int LENGTH_IN_BYTES = 20;
 
     private static final RskAddress NULL_ADDRESS = new RskAddress();
 
@@ -93,6 +93,10 @@ public class RskAddress {
         return bytes;
     }
 
+    public String toHexString() {
+        return Hex.toHexString(bytes);
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -112,8 +116,11 @@ public class RskAddress {
         return Arrays.hashCode(bytes);
     }
 
+    /**
+     * @return a DEBUG representation of the address, mainly used for logging.
+     */
     @Override
     public String toString() {
-        return Hex.toHexString(bytes);
+        return toHexString();
     }
 }

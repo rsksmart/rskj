@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.net.TransactionValidationResult;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
@@ -31,17 +32,22 @@ import java.math.BigInteger;
 public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         if (isFreeTx) {
-            return true;
+            return TransactionValidationResult.ok();
         }
 
         if (state == null) {
-            return false;
+            return TransactionValidationResult.withError("the sender account doesn't exist");
         }
 
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
         Coin maximumPrice = tx.getGasPrice().multiply(txGasLimit);
-        return state.getBalance().compareTo(maximumPrice) >= 0;
+        if (state.getBalance().compareTo(maximumPrice) >= 0) {
+            return TransactionValidationResult.ok();
+        }
+
+        return TransactionValidationResult.withError("insufficient funds");
     }
+
 }

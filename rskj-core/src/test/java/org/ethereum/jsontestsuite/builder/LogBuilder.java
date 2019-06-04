@@ -37,7 +37,7 @@ public class LogBuilder {
 
         List<DataWord> topics = new ArrayList<>();
         for (String topicTck : logTck.getTopics())
-            topics.add(new DataWord(parseData(topicTck)));
+            topics.add(DataWord.valueOf(parseData(topicTck)));
 
         return new LogInfo(address, topics, data);
     }

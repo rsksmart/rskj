@@ -23,18 +23,16 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
-
 public class TxValidatorNotNullValidatorTest {
     @Test
     public void nullTx() {
         TxNotNullValidator validator = new TxNotNullValidator();
-        Assert.assertFalse(validator.validate(null, null, null, null, 0, false));
+        Assert.assertFalse(validator.validate(null, null, null, null, 0, false).transactionIsValid());
     }
 
     @Test
     public void tx() {
         TxNotNullValidator validator = new TxNotNullValidator();
-        Assert.assertTrue(validator.validate(Mockito.mock(Transaction.class), null, null, null, 0, false));
+        Assert.assertTrue(validator.validate(Mockito.mock(Transaction.class), null, null, null, 0, false).transactionIsValid());
     }
 }

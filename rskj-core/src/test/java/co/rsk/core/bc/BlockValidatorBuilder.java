@@ -20,10 +20,15 @@ package co.rsk.core.bc;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.db.StateRootHandler;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.*;
 import org.ethereum.core.Repository;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.mockito.Mockito;
+
+import java.util.HashMap;
 
 /**
  * Created by mario on 19/01/17.
@@ -31,6 +36,7 @@ import org.mockito.Mockito;
 public class BlockValidatorBuilder {
 
     private final TestSystemProperties config = new TestSystemProperties();
+
     private BlockTxsValidationRule blockTxsValidationRule;
 
     private BlockTxsFieldsValidationRule blockTxsFieldsValidationRule;
@@ -65,7 +71,10 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockTxsValidationRule(Repository repository) {
-        this.blockTxsValidationRule = new BlockTxsValidationRule(repository);
+        this.blockTxsValidationRule = new BlockTxsValidationRule(
+                repository,
+                new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>())
+        );
         return this;
     }
 
@@ -85,25 +94,25 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore) {
-        BlockValidationRule validationRule = Mockito.mock(BlockValidationRule.class);
+        BlockHeaderValidationRule validationRule = Mockito.mock(BlockHeaderValidationRule.class);
         Mockito.when(validationRule.isValid(Mockito.any())).thenReturn(true);
 
-        BlockParentDependantValidationRule parentValidationRule = Mockito.mock(BlockParentDependantValidationRule.class);
+        BlockHeaderParentDependantValidationRule parentValidationRule = Mockito.mock(BlockHeaderParentDependantValidationRule.class);
         Mockito.when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
 
         this.addBlockUnclesValidationRule(blockStore, validationRule, parentValidationRule);
         return this;
     }
 
-    public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockValidationRule validationRule, BlockParentDependantValidationRule parentValidationRule) {
-        int uncleListLimit = config.getBlockchainConfig().getCommonConstants().getUncleListLimit();
-        int uncleGenLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
-        this.blockUnclesValidationRule = new BlockUnclesValidationRule(config, blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
+    public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockHeaderValidationRule validationRule, BlockHeaderParentDependantValidationRule parentValidationRule) {
+        int uncleListLimit = config.getNetworkConstants().getUncleListLimit();
+        int uncleGenLimit = config.getNetworkConstants().getUncleGenerationLimit();
+        this.blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
         return this;
     }
 
     public BlockValidatorBuilder addBlockRootValidationRule() {
-        this.blockRootValidationRule = new BlockRootValidationRule();
+        this.blockRootValidationRule = new BlockRootValidationRule(config.getActivationConfig());
         return this;
     }
 
@@ -118,23 +127,12 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addDifficultyRule() {
-        this.difficultyRule = new BlockDifficultyRule(new DifficultyCalculator(config));
+        this.difficultyRule = new BlockDifficultyRule(new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()));
         return this;
     }
 
     public BlockValidatorBuilder addParentGasLimitRule() {
-        parentGasLimitRule = new BlockParentGasLimitRule(config.getBlockchainConfig().
-                        getCommonConstants().getGasLimitBoundDivisor());
-        return this;
-    }
-
-    public BlockValidatorBuilder blockCompositeRule(BlockCompositeRule blockCompositeRule) {
-        this.blockCompositeRule = blockCompositeRule;
-        return this;
-    }
-
-    public BlockValidatorBuilder blockParentCompositeRule(BlockParentCompositeRule blockParentCompositeRule) {
-        this.blockParentCompositeRule = blockParentCompositeRule;
+        parentGasLimitRule = new BlockParentGasLimitRule(config.getNetworkConstants().getGasLimitBoundDivisor());
         return this;
     }
 

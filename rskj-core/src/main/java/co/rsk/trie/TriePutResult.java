@@ -23,7 +23,7 @@ package co.rsk.trie;
  */
 public class TriePutResult {
 
-    private TrieImpl trie;
+    private Trie trie;
 
     private ResultAction action;
 
@@ -31,7 +31,7 @@ public class TriePutResult {
 
     private int sonToDeleteNumberOfSons;
 
-    public TriePutResult(ResultAction action, TrieImpl trie) {
+    public TriePutResult(ResultAction action, Trie trie) {
         this.trie = trie;
         this.action = action;
     }
@@ -47,7 +47,7 @@ public class TriePutResult {
         this.sonToDeleteNumberOfSons = sonToDeleteNumberOfSons;
     }
 
-    public TrieImpl getTrie() {
+    public Trie getTrie() {
         return trie;
     }
 

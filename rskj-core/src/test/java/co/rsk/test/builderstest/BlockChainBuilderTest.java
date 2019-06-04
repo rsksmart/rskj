@@ -35,7 +35,5 @@ public class BlockChainBuilderTest {
         Assert.assertNotNull(blockChain);
         Assert.assertNotNull(blockChain.getRepository());
         Assert.assertNotNull(blockChain.getBlockStore());
-        Assert.assertNotNull(blockChain.getListener());
-        Assert.assertNotNull(blockChain.getBlockValidator());
     }
 }

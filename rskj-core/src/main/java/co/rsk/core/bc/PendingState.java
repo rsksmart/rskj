@@ -60,8 +60,28 @@ public class PendingState implements AccountInformationProvider {
     }
 
     @Override
+    public byte[] getStorageBytes(RskAddress addr, DataWord key) {
+        return postExecutionReturn(executedRepository -> executedRepository.getStorageBytes(addr, key));
+    }
+
+    @Override
+    public Iterator<DataWord> getStorageKeys(RskAddress addr) {
+        return postExecutionReturn(executedRepository -> executedRepository.getStorageKeys(addr));
+    }
+
+    @Override
+    public int getStorageKeysCount(RskAddress addr) {
+        return postExecutionReturn(executedRepository -> executedRepository.getStorageKeysCount(addr));
+    }
+
+    @Override
     public byte[] getCode(RskAddress addr) {
         return postExecutionReturn(executedRepository -> executedRepository.getCode(addr));
+    }
+
+    @Override
+    public boolean isContract(RskAddress addr) {
+        return postExecutionReturn(executedRepository -> executedRepository.isContract(addr));
     }
 
     @Override
@@ -159,5 +179,9 @@ public class PendingState implements AccountInformationProvider {
 
     private interface PostExecutionAction<T> {
         T execute(Repository executedRepository);
+    }
+
+    public interface TransactionExecutorFactory {
+        TransactionExecutor newInstance(Repository repository, Transaction tx);
     }
 }

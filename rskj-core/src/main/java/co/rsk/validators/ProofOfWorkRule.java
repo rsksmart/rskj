@@ -26,10 +26,12 @@ import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.util.ListArrayUtil;
+import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Pack;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.ECKey;
@@ -38,8 +40,6 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -49,26 +49,23 @@ import java.util.List;
 /**
  * Checks proof value against its boundary for the block header.
  */
-@Component
 public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
-    private final RskSystemProperties config;
-    private final BlockchainNetConfig blockchainConfig;
     private final BridgeConstants bridgeConstants;
     private final Constants constants;
+    private final ActivationConfig activationConfig;
     private boolean fallbackMiningEnabled = true;
 
-    @Autowired
     public ProofOfWorkRule(RskSystemProperties config) {
-        this.config = config;
-        this.blockchainConfig = config.getBlockchainConfig();
-        this.bridgeConstants = blockchainConfig.getCommonConstants().getBridgeConstants();
-        this.constants = blockchainConfig.getCommonConstants();
+        this.activationConfig = config.getActivationConfig();
+        this.constants = config.getNetworkConstants();
+        this.bridgeConstants = constants.getBridgeConstants();
     }
 
+    @VisibleForTesting
     public ProofOfWorkRule setFallbackMiningEnabled(boolean e) {
         fallbackMiningEnabled = e;
         return this;
@@ -79,13 +76,8 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         return isValid(block.getHeader());
     }
 
-    public static boolean isFallbackMiningPossible(RskSystemProperties config, BlockHeader header) {
-        if (config.getBlockchainConfig().getConfigForBlock(header.getNumber()).isRskip98()) {
-            return false;
-        }
-
-        Constants constants = config.getBlockchainConfig().getCommonConstants();
-        if (header.getNumber() >= constants.getEndOfFallbackMiningBlockNumber()) {
+    private boolean isFallbackMiningPossible(BlockHeader header) {
+        if (activationConfig.isActive(ConsensusRule.RSKIP98, header.getNumber())) {
             return false;
         }
 
@@ -100,7 +92,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         return true;
     }
 
-    public boolean isFallbackMiningPossibleAndBlockSigned(BlockHeader header) {
+    private boolean isFallbackMiningPossibleAndBlockSigned(BlockHeader header) {
 
         if (header.getBitcoinMergedMiningCoinbaseTransaction() != null) {
             return false;
@@ -115,7 +107,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        return isFallbackMiningPossible(config, header);
+        return isFallbackMiningPossible(header);
 
     }
 
@@ -134,7 +126,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = bridgeConstants.getBtcParams();
         MerkleProofValidator mpValidator;
         try {
-            if (blockchainConfig.getConfigForBlock(header.getNumber()).isRskip92()) {
+            if (activationConfig.isActive(ConsensusRule.RSKIP92, header.getNumber())) {
                 mpValidator = new Rskip92MerkleProofValidator(header.getBitcoinMergedMiningMerkleProof());
             } else {
                 mpValidator = new GenesisMerkleProofValidator(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());

@@ -19,10 +19,6 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
-import co.rsk.db.PruneConfiguration;
-import co.rsk.net.eth.MessageFilter;
-import co.rsk.net.eth.MessageRecorder;
-import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
@@ -31,17 +27,9 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,8 +39,6 @@ import java.util.List;
  * Created by ajlopez on 3/3/2016.
  */
 public class RskSystemProperties extends SystemProperties {
-    private static final Logger logger = LoggerFactory.getLogger("config");
-
     /** while timeout period is lower than clean period it doesn't affect much since
     requests will be checked after a clean period.
      **/
@@ -60,14 +46,14 @@ public class RskSystemProperties extends SystemProperties {
     private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; //miliseconds
     private static final int PD_DEFAULT_REFRESH_PERIOD = 60000; //miliseconds
 
+    private static final String REGTEST_BLOCKCHAIN_CONFIG = "regtest";
+
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
-
-    private MessageRecorder messageRecorder;
 
     private List<ModuleDescription> moduleDescriptions;
 
@@ -102,6 +88,14 @@ public class RskSystemProperties extends SystemProperties {
             return null;
         }
 
+        // Regtest always has MINER_COINBASE_SECRET_CONFIG set in regtest.conf file. When MINER_REWARD_ADDRESS_CONFIG is set both values exist
+        // and that does not pass the checks below. If MINER_REWARD_ADDRESS_CONFIG exists, that value must be used so consider that
+        // special regtest case by adding this guard.
+        if(configFromFiles.getString(PROPERTY_BC_CONFIG_NAME).equals(REGTEST_BLOCKCHAIN_CONFIG) &&
+                configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
+            return null;
+        }
+
         if (configFromFiles.hasPath(MINER_COINBASE_SECRET_CONFIG) &&
                 configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
             throw new RskConfigurationException("It is required to have only one of " + MINER_REWARD_ADDRESS_CONFIG + " or " + MINER_COINBASE_SECRET_CONFIG);
@@ -132,12 +126,20 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getDuration("miner.client.delayBetweenRefreshes");
     }
 
+    public boolean minerClientAutoMine() {
+        return configFromFiles.getBoolean("miner.client.autoMine");
+    }
+
     public boolean isMinerServerEnabled() {
         return configFromFiles.getBoolean("miner.server.enabled");
     }
 
+    public boolean isMinerServerFixedClock() {
+        return configFromFiles.getBoolean("miner.server.isFixedClock");
+    }
+
     public long minerMinGasPrice() {
-        return getLong("miner.minGasPrice", 0);
+        return configFromFiles.getLong("miner.minGasPrice");
     }
 
     public double minerGasUnitInDollars() {
@@ -150,18 +152,6 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean simulateTxs() {
         return getBoolean("simulateTxs.enabled", false);
-    }
-
-    public boolean simulateTxsEx() {
-        return getBoolean("simulateTxsEx.enabled", false);
-    }
-
-    public Long simulateTxsExFounding() {
-        return getLong("simulateTxsEx.foundingAmount", 10000000000L);
-    }
-
-    public String simulateTxsExAccountSeed() {
-        return getString("simulateTxsEx.accountSeed", "this is a seed");
     }
 
     public boolean waitForSync() {
@@ -194,18 +184,6 @@ public class RskSystemProperties extends SystemProperties {
         return ret;
     }
 
-    public boolean isBlocksEnabled() {
-        return getBoolean("blocks.enabled", false);
-    }
-
-    public String blocksRecorder() {
-        return getString("blocks.recorder", null);
-    }
-
-    public String blocksPlayer() {
-        return getString("blocks.player", null);
-    }
-
     public boolean isFlushEnabled() {
         return getBoolean("blockchain.flush", true);
     }
@@ -226,13 +204,8 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-    public void disableRemasc() {
-        this.remascEnabled = false;
-    }
-
-    //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-    public void enableRemasc() {
-        this.remascEnabled = true;
+    public void setRemascEnabled(boolean remascEnabled) {
+        this.remascEnabled = remascEnabled;
     }
 
     public long peerDiscoveryMessageTimeOut() {
@@ -294,49 +267,12 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getStringList("messages.recorder.commands");
     }
 
-    public MessageRecorder getMessageRecorder() {
-        if (messageRecorder != null) {
-            return messageRecorder;
-        }
-
-        if (!hasMessageRecorderEnabled()) {
-            return null;
-        }
-
-        String database = this.databaseDir();
-        String filename = "messages";
-        Path filePath;
-
-        if (Paths.get(database).isAbsolute()) {
-            filePath = Paths.get(database, filename);
-        } else {
-            filePath = Paths.get(System.getProperty("user.dir"), database, filename);
-        }
-
-        String fullFilename = filePath.toString();
-
-        MessageFilter filter = new MessageFilter(this.getMessageRecorderCommands());
-
-        try {
-            messageRecorder = new WriterMessageRecorder(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fullFilename), StandardCharsets.UTF_8)), filter);
-        }
-        catch (IOException ex) {
-            logger.error("Exception creating message recorder: ", ex);
-        }
-
-        return messageRecorder;
-    }
-
     public long getTargetGasLimit() {
         return getLong("targetgaslimit",6_800_000L);
     }
 
     public boolean getForceTargetGasLimit() {
         return getBoolean("forcegaslimit", true);
-    }
-
-    public int getAverageFallbackMiningTime() {
-        return getInt("fallbackMining.blockTime", 0);
     }
 
     // Sync config properties
@@ -369,29 +305,6 @@ public class RskSystemProperties extends SystemProperties {
         return new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle());
     }
 
-    // New prune service properties
-    public boolean isPruneEnabled() {
-        return configFromFiles.getBoolean("prune.enabled");
-    }
-
-    public int getPruneNoBlocksToCopy() {
-        return configFromFiles.getInt("prune.blocks.toCopy");
-    }
-
-    public int getPruneNoBlocksToWait() {
-        return configFromFiles.getInt("prune.blocks.toWait");
-    }
-
-    public int getPruneNoBlocksToAvoidForks() {
-        return configFromFiles.getInt("prune.blocks.toAvoidForks");
-    }
-
-    public PruneConfiguration getPruneConfiguration() {
-        return new PruneConfiguration(this.getPruneNoBlocksToCopy(),
-                                      this.getPruneNoBlocksToAvoidForks(),
-                                      this.getPruneNoBlocksToWait());
-    }
-
     public long peerDiscoveryCleanPeriod() {
         return PD_DEFAULT_CLEAN_PERIOD;
     }
@@ -402,5 +315,9 @@ public class RskSystemProperties extends SystemProperties {
 
     public Integer getGasPriceBump() {
         return configFromFiles.getInt("transaction.gasPriceBump");
+    }
+
+    public int getStatesCacheSize() {
+        return configFromFiles.getInt("cache.states.max-elements");
     }
 }

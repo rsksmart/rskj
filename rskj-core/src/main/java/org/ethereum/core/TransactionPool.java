@@ -33,7 +33,7 @@ public interface TransactionPool {
      *
      * @param tx transaction
      */
-    boolean addTransaction(Transaction tx);
+    TransactionPoolAddResult addTransaction(Transaction tx);
 
     /**
      * Adds a list of transactions to the list of pending state txs or

@@ -28,7 +28,10 @@ import co.rsk.mine.MinerUtils;
 import co.rsk.mine.ParameterizedNetworkUpgradeTest;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -48,17 +51,23 @@ import static org.junit.Assert.assertTrue;
  */
 public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
 
+    private final ActivationConfig activationConfig;
+    private final Constants networkConstants;
     private ProofOfWorkRule rule;
+    private BlockFactory blockFactory;
 
     public ProofOfWorkRuleTest(TestSystemProperties config) {
         super(config);
         this.rule = new ProofOfWorkRule(config).setFallbackMiningEnabled(false);
+        this.activationConfig = config.getActivationConfig();
+        this.networkConstants = config.getNetworkConstants();
+        this.blockFactory = new BlockFactory(activationConfig);
     }
 
     @Test
     public void test_1() {
         // mined block
-        Block b = new BlockMiner(config).mineBlock(new BlockGenerator(config).getBlock(1));
+        Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
         assertTrue(rule.isValid(b));
     }
 
@@ -66,7 +75,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
     @Test // invalid block
     public void test_2() {
         // mined block
-        Block b = new BlockMiner(config).mineBlock(new BlockGenerator(config).getBlock(1));
+        Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
         byte[] mergeMiningHeader = b.getBitcoinMergedMiningHeader();
         // TODO improve, the mutated block header could be still valid
         mergeMiningHeader[0]++;
@@ -78,11 +87,11 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
     @Test
     public void test_RLPEncoding() {
         // mined block
-        Block b = new BlockMiner(config).mineBlock(new BlockGenerator(config).getBlock(1));
+        Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
         byte[] lastField = b.getBitcoinMergedMiningCoinbaseTransaction(); // last field
         b.flushRLP();// force re-encode
         byte[] encoded = b.getEncoded();
-        Block b2 = new Block(encoded);
+        Block b2 = blockFactory.decodeBlock(encoded);
         byte[] lastField2 = b2.getBitcoinMergedMiningCoinbaseTransaction(); // last field
         b2.flushRLP();// force re-encode
         byte[] encoded2 = b2.getEncoded();
@@ -96,7 +105,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         int iterCnt = 1_000_000;
 
         // mined block
-        Block b = new BlockMiner(config).mineBlock(new BlockGenerator(config).getBlock(1));
+        Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
 
         long start = System.currentTimeMillis();
         for (int i = 0; i < iterCnt; i++)
@@ -109,7 +118,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void test_noRSKTagInCoinbaseTransaction() {
-        BlockGenerator blockGenerator = new BlockGenerator(config);
+        BlockGenerator blockGenerator = new BlockGenerator(networkConstants, activationConfig);
 
         // mined block
         Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), new byte[100]);
@@ -120,7 +129,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
     @Test
     public void test_RSKTagInCoinbaseTransactionTooFar() {
         /* This test is about a rsk block, with a compressed coinbase that leaves more than 64 bytes before the start of the RSK tag. */
-        BlockGenerator blockGenerator = new BlockGenerator(config);
+        BlockGenerator blockGenerator = new BlockGenerator(networkConstants, activationConfig);
         byte[] prefix = new byte[1000];
         byte[] bytes = org.bouncycastle.util.Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG);
 
@@ -139,15 +148,14 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
 
         BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
 
-        new BlockMiner(config).findNonce(bitcoinMergedMiningBlock, targetBI);
+        new BlockMiner(activationConfig).findNonce(bitcoinMergedMiningBlock, targetBI);
 
-        // We need to clone to allow modifications
-        Block newBlock = new Block(block.getEncoded()).cloneBlock();
+        Block newBlock = blockFactory.cloneBlockForModification(block);
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 
         byte[] merkleProof = MinerUtils.buildMerkleProof(
-                config.getBlockchainConfig(),
+                activationConfig,
                 pb -> pb.buildFromBlock(bitcoinMergedMiningBlock),
                 newBlock.getNumber()
         );

@@ -22,7 +22,6 @@ package org.ethereum.db;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.db.RemascCache;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -32,8 +31,6 @@ import java.util.List;
  * @since 08.01.2015
  */
 public interface BlockStore extends RemascCache {
-
-    byte[] getBlockHashByNumber(long blockNumber);
 
     /**
      * Gets the block hash by its index.
@@ -53,13 +50,11 @@ public interface BlockStore extends RemascCache {
 
     Block getBlockByHashAndDepth(byte[] hash, long depth);
 
+    Block getBlockAtDepthStartingAt(long depth, byte[] hash);
+
     boolean isBlockExist(byte[] hash);
 
     List<byte[]> getListHashesEndWith(byte[] hash, long qty);
-
-    List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty);
-
-    List<Block> getListBlocksEndWith(byte[] hash, long qty);
 
     void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain);
 

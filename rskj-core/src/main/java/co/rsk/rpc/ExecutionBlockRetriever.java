@@ -24,8 +24,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.util.Utils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
@@ -34,7 +32,6 @@ import java.util.Optional;
  * Encapsulates the logic to retrieve or create an execution block
  * for Web3 calls.
  */
-@Component
 public class ExecutionBlockRetriever {
     private static final String LATEST_ID = "latest";
     private static final String PENDING_ID = "pending";
@@ -46,7 +43,6 @@ public class ExecutionBlockRetriever {
     @Nullable
     private Block cachedBlock;
 
-    @Autowired
     public ExecutionBlockRetriever(Blockchain blockchain, MinerServer minerServer, BlockToMineBuilder builder) {
         this.blockchain = blockchain;
         this.minerServer = minerServer;

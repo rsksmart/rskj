@@ -1,4 +1,22 @@
 package co.rsk.util;
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Array;
@@ -36,30 +54,12 @@ public class ListArrayUtil {
     }
 
     /**
-     * Checks if an array of Object is not empty and not null.
-     * @return
-     */
-    public static boolean isEmpty(final Object[] o){
-        return (o == null || o.length == 0);
-    }
-
-    /**
      *  Checks if an array of Object is not empty and not null.
      * @param o
      * @return
      */
     public static boolean isEmpty(final byte[] o){
         return (o == null || o.length == 0);
-    }
-
-    /**
-     * Checks if an array of Object is not empty and not null.
-     * @param Object[] o
-     * @return
-     *     true if the array is not empty and not null
-     */
-    public static boolean isNotEmpty(final Object[] o){
-        return !(o == null || o.length == 0);
     }
 
     /**

@@ -25,18 +25,6 @@ public class ListArrayUtilTest {
     }
 
     @Test
-    public void testEmptLyst(){
-        Object[] o = null;
-        Assert.assertTrue(ListArrayUtil.isEmpty(o));
-    }
-
-    @Test
-    public void testNotEmptLyst(){
-        Object[] o = new Object[0];
-        Assert.assertFalse(ListArrayUtil.isNotEmpty(o));
-    }
-
-    @Test
     public void testNullToEmpty(){
         Assert.assertNotNull(ListArrayUtil.nullToEmpty(null));
     }

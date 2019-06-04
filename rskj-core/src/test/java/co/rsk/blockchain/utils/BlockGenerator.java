@@ -18,34 +18,28 @@
 
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.peg.simples.SimpleRskTransaction;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
-import org.apache.commons.collections4.CollectionUtils;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
-import org.ethereum.core.genesis.InitialAddressState;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.ethereum.core.Genesis.getZeroHash;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
@@ -62,27 +56,29 @@ public class BlockGenerator {
     private static final Block[] blockCache = new Block[5];
 
     private final DifficultyCalculator difficultyCalculator;
+    private final BlockFactory blockFactory;
     private int count = 0;
-    private TestSystemProperties config;
+    private ActivationConfig activationConfig;
 
     public BlockGenerator() {
-        this(new TestSystemProperties());
+        this(Constants.regtest(), ActivationConfigsForTest.all());
     }
 
-    public BlockGenerator(TestSystemProperties config) {
-        this.config = config;
-        this.difficultyCalculator = new DifficultyCalculator(this.config);
+    public BlockGenerator(Constants networkConstants, ActivationConfig activationConfig) {
+        this.activationConfig = activationConfig;
+        this.difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
+        this.blockFactory = new BlockFactory(activationConfig);
     }
 
     public Genesis getGenesisBlock() {
-        return getNewGenesisBlock(3141592, null, new byte[] { 2, 0, 0});
+        return getNewGenesisBlock(3141592, Collections.emptyMap(), new byte[] { 2, 0, 0});
     }
 
-    private Genesis getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap, byte[] difficulty) {
+    public Genesis getGenesisBlock(Map<RskAddress, AccountState> accounts) {
+        return getNewGenesisBlock(3141592, accounts, new byte[] {2, 0, 0});
+    }
 
-        byte[] nonce       = new byte[]{0};
-        byte[] mixHash     = new byte[]{0};
-
+    private Genesis getNewGenesisBlock(long initialGasLimit, Map<RskAddress, AccountState> accounts, byte[] difficulty) {
         /* Unimportant address. Because there is no subsidy
         ECKey ecKey;
         byte[] address;
@@ -99,45 +95,13 @@ public class BlockGenerator {
 
         long   gasLimit         = initialGasLimit;
 
-        byte[] bitcoinMergedMiningHeader = null;
-        byte[] bitcoinMergedMiningMerkleProof = null;
-        byte[] bitcoinMergedMiningCoinbaseTransaction = null;
-
-        Genesis genesis = new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+        boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, 0);
+        return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
-                mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray());
-
-        if (preMineMap != null) {
-            Map<RskAddress, InitialAddressState> preMineMap2 = generatePreMine(preMineMap);
-            genesis.setPremine(preMineMap2);
-
-            byte[] rootHash = generateRootHash(preMineMap2);
-            genesis.setStateRoot(rootHash);
-        }
-
-        return genesis;
-    }
-
-    private byte[] generateRootHash(Map<RskAddress, InitialAddressState> premine){
-        Trie state = new TrieImpl(null, true);
-
-        for (RskAddress addr : premine.keySet()) {
-            state = state.put(addr.getBytes(), premine.get(addr).getAccountState().getEncoded());
-        }
-
-        return state.getHash().getBytes();
-    }
-
-    private Map<RskAddress, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
-        Map<RskAddress, InitialAddressState> premine = new HashMap<>();
-
-        for (byte[] key : alloc.keySet()) {
-            AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(alloc.get(key)));
-            premine.put(new RskAddress(key), new InitialAddressState(acctState, null));
-        }
-
-        return premine;
+                null, null, null, BigInteger.valueOf(100L).toByteArray(), useRskip92Encoding,
+                isRskip126Enabled, accounts, Collections.emptyMap(), Collections.emptyMap()
+        );
     }
 
     public Block getBlock(int number) {
@@ -166,29 +130,18 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
-        List<Transaction> txs = new ArrayList<>();
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        return new Block(
-                parent.getHash().getBytes(), // parent hash
-                unclesListHash, // uncle hash
-                parent.getCoinbase().getBytes(),
-                ByteUtils.clone(new Bloom().getData()),
-                difficulty, // difficulty
-                parent.getNumber() + 1,
-                parent.getGasLimit(),
-                parent.getGasUsed(),
-                parent.getTimestamp() + ++count,
-                EMPTY_BYTE_ARRAY,   // extraData
-                EMPTY_BYTE_ARRAY,   // mixHash
-                BigInteger.ZERO.toByteArray(),  // provisory nonce
-                EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
-                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                uncles,        // uncle list
-                null,
-                Coin.valueOf(fees)
+        return blockFactory.newBlock(
+                blockFactory.newHeader(
+                        parent.getHash().getBytes(), unclesListHash, parent.getCoinbase().getBytes(),
+                        ByteUtils.clone(parent.getStateRoot()), EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
+                        ByteUtils.clone(new Bloom().getData()), difficulty, parent.getNumber() + 1,
+                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count, EMPTY_BYTE_ARRAY,
+                        Coin.valueOf(fees), null, null, null, null, uncles.size()
+                ),
+                Collections.emptyList(),
+                uncles
         );
 //        return createChildBlock(parent, 0);
     }
@@ -200,30 +153,18 @@ public class BlockGenerator {
     public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot, byte[] coinbase) {
         Bloom logBloom = new Bloom();
 
-        if (txs == null) {
-            txs = new ArrayList<>();
-        }
-
-        return new Block(
-                parent.getHash().getBytes(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
-                coinbase, // coinbase
-                logBloom.getData(), // logs bloom
-                parent.getDifficulty().getBytes(), // difficulty
-                parent.getNumber() + 1,
-                parent.getGasLimit(),
-                parent.getGasUsed(),
-                parent.getTimestamp() + ++count,
-                EMPTY_BYTE_ARRAY,   // extraData
-                EMPTY_BYTE_ARRAY,   // mixHash
-                BigInteger.ZERO.toByteArray(),  // provisory nonce
-                EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
-                stateRoot, //EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                null,        // uncle list
-                null,
-                Coin.ZERO
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+        return blockFactory.newBlock(
+                blockFactory.newHeader(
+                        parent.getHash().getBytes(), EMPTY_LIST_HASH, coinbase,
+                        stateRoot, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled),
+                        EMPTY_TRIE_HASH, logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
+                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
+                ),
+                txs,
+                Collections.emptyList(),
+                false
         );
     }
 
@@ -252,8 +193,9 @@ public class BlockGenerator {
         return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, parent.getGasLimit());
     }
 
+
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
-                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit) {
+                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase) {
         if (txs == null) {
             txs = new ArrayList<>();
         }
@@ -264,9 +206,9 @@ public class BlockGenerator {
 
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        BlockHeader newHeader = new BlockHeader(parent.getHash().getBytes(),
+        BlockHeader newHeader = blockFactory.newHeader(parent.getHash().getBytes(),
                 unclesListHash,
-                parent.getCoinbase().getBytes(),
+                coinbase.getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 new byte[]{1},
                 parent.getNumber()+1,
@@ -278,7 +220,7 @@ public class BlockGenerator {
                 new byte[]{},
                 new byte[]{},
                 (minGasPrice != null) ? minGasPrice.toByteArray() : null,
-                CollectionUtils.size(uncles)
+                uncles.size()
         );
 
         if (difficulty == 0) {
@@ -288,13 +230,17 @@ public class BlockGenerator {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+        newHeader.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled));
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
-        Block newBlock = new Block(newHeader, txs, uncles);
+        return blockFactory.newBlock(newHeader, txs, uncles, false);
+    }
 
-        return newBlock;
+    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit) {
+        return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, gasLimit, parent.getCoinbase());
     }
 
     public Block createBlock(int number, int ntxs) {
@@ -308,28 +254,19 @@ public class BlockGenerator {
         }
 
         Coin previousMGP = parent.getMinimumGasPrice() != null ? parent.getMinimumGasPrice() : Coin.valueOf(10L);
-        Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
+        Coin minimumGasPrice = new MinimumGasPriceCalculator(Coin.valueOf(100L)).calculate(previousMGP);
 
-        return new Block(
-                parent.getHash().getBytes(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase().getBytes(), // coinbase
-                logBloom.getData(), // logs bloom
-                parent.getDifficulty().getBytes(), // difficulty
-                number,
-                parent.getGasLimit(),
-                parent.getGasUsed(),
-                parent.getTimestamp() + ++count,
-                EMPTY_BYTE_ARRAY,   // extraData
-                EMPTY_BYTE_ARRAY,   // mixHash
-                BigInteger.ZERO.toByteArray(),  // provisory nonce
-                EMPTY_TRIE_HASH,   // receipts root
-                EMPTY_TRIE_HASH,  // transaction receipts
-                EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                null,        // uncle list
-                minimumGasPrice.getBytes(),
-                Coin.ZERO
+        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+        return blockFactory.newBlock(
+                blockFactory.newHeader(
+                        parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
+                        EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled), EMPTY_TRIE_HASH,
+                        logBloom.getData(), parent.getDifficulty().getBytes(), number,
+                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, minimumGasPrice.getBytes(), 0
+                ),
+                txs,
+                Collections.emptyList()
         );
     }
 
@@ -342,85 +279,17 @@ public class BlockGenerator {
             txs.add(new SimpleRskTransaction(PegTestUtils.createHash3().getBytes()));
         }
 
-        return new SimpleBlock(
-                parent.getHash().getBytes(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase().getBytes(), // coinbase
-                logBloom.getData(), // logs bloom
-                parent.getDifficulty().getBytes(), // difficulty
-                parent.getNumber() + 1,
-                parent.getGasLimit(),
-                parent.getGasUsed(),
-                parent.getTimestamp() + ++count,
-                EMPTY_BYTE_ARRAY,   // extraData
-                EMPTY_BYTE_ARRAY,   // mixHash
-                BigInteger.ZERO.toByteArray(),  // provisory nonce
-                EMPTY_TRIE_HASH,   // receipts root
-                EMPTY_TRIE_HASH,  // transaction receipts
-                EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                null        // uncle list
+        return blockFactory.newBlock(
+                blockFactory.newHeader(
+                        parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
+                        EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
+                        logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
+                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, Coin.valueOf(10).getBytes(), 0
+                ),
+                txs,
+                Collections.emptyList()
         );
-    }
-
-    public Block createFallbackMinedChildBlockWithTimeStamp(Block parent, byte[] difficulty, long timeStamp, boolean goodSig) {
-        List<Transaction> txs = new ArrayList<>();
-        Block block = new Block(
-                parent.getHash().getBytes(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase().getBytes(),
-                ByteUtils.clone(new Bloom().getData()),
-                difficulty, // difficulty
-                parent.getNumber() + 1,
-                parent.getGasLimit(),
-                parent.getGasUsed(),
-                timeStamp,
-                EMPTY_BYTE_ARRAY,   // extraData
-                EMPTY_BYTE_ARRAY,   // mixHash
-                BigInteger.ZERO.toByteArray(),  // provisory nonce
-                EMPTY_TRIE_HASH,   // receipts root
-                BlockChainImpl.calcTxTrie(txs),  // transaction root
-                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
-                txs,       // transaction list
-                null,        // uncle list
-                null,
-                Coin.ZERO
-        );
-
-        ECKey fallbackMiningKey0 = ECKey.fromPrivate(BigInteger.TEN);
-        ECKey fallbackMiningKey1 = ECKey.fromPrivate(BigInteger.TEN.add(BigInteger.ONE));
-
-        ECKey fallbackKey;
-
-        if (block.getNumber() % 2 == 0) {
-            fallbackKey = fallbackMiningKey0;
-        } else {
-            fallbackKey = fallbackMiningKey1;
-        }
-
-        byte[] signature = fallbackSign(block.getHashForMergedMining(), fallbackKey);
-
-        if (!goodSig) {
-            // just make it a little bad
-            signature[5] = (byte) (signature[5]+1);
-        }
-
-        block.setBitcoinMergedMiningHeader(signature);
-        return block;
-    }
-
-    byte[] fallbackSign(byte[] hash, ECKey privKey) {
-        ECKey.ECDSASignature signature = privKey.sign(hash);
-
-        byte vdata = signature.v;
-        byte[] rdata = signature.r.toByteArray();
-        byte[] sdata = signature.s.toByteArray();
-
-        byte[] vencoded =  RLP.encodeByte(vdata);
-        byte[] rencoded = RLP.encodeElement(rdata);
-        byte[] sencoded = RLP.encodeElement(sdata);
-
-        return RLP.encodeList(vencoded, rencoded, sencoded);
     }
 
     public List<Block> getBlockChain(int size) {
@@ -477,7 +346,7 @@ public class BlockGenerator {
                     BigInteger.valueOf(1));
 
             if (withMining) {
-                newblock = new BlockMiner(config).mineBlock(newblock);
+                newblock = new BlockMiner(activationConfig).mineBlock(newblock);
             }
 
             chain.add(newblock);
@@ -514,7 +383,13 @@ public class BlockGenerator {
     }
 
     public Block getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap) {
-        return getNewGenesisBlock(initialGasLimit,preMineMap, new byte[] { 0 });
+        Map<RskAddress, AccountState> accounts = new HashMap<>();
+        for (Map.Entry<byte[], BigInteger> accountEntry : preMineMap.entrySet()) {
+            AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(accountEntry.getValue()));
+            accounts.put(new RskAddress(accountEntry.getKey()), acctState);
+        }
+
+        return getNewGenesisBlock(initialGasLimit, accounts, new byte[] { 0 });
     }
 
     private static byte[] nullReplace(byte[] e) {

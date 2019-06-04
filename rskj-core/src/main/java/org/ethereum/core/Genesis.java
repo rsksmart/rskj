@@ -19,19 +19,20 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.core.genesis.GenesisLoader;
-import org.ethereum.core.genesis.InitialAddressState;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.DataWord;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * The genesis block is the first block in the chain and has fixed values according to
@@ -52,7 +53,9 @@ import java.util.Map;
  */
 public class Genesis extends Block {
 
-    private Map<RskAddress, InitialAddressState> premine = new HashMap<>();
+    private final Map<RskAddress, AccountState> initialAccounts;
+    private final Map<RskAddress, byte[]> initialCodes;
+    private final Map<RskAddress, Map<DataWord, byte[]>> initialStorages;
 
     private static final byte[] ZERO_HASH_2048 = new byte[256];
     protected static final long NUMBER = 0;
@@ -60,26 +63,41 @@ public class Genesis extends Block {
     public Genesis(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                    byte[] difficulty, long number, long gasLimit,
                    long gasUsed, long timestamp,
-                   byte[] extraData, byte[] mixHash, byte[] nonce,
+                   byte[] extraData,
                    byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                   byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] minimumGasPrice){
+                   byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] minimumGasPrice,
+                   boolean useRskip92Encoding, boolean isRskip126Enabled,
+                   Map<RskAddress, AccountState> initialAccounts,
+                   Map<RskAddress, byte[]> initialCodes,
+                   Map<RskAddress, Map<DataWord, byte[]>> initialStorages){
         super(
-                new BlockHeader(parentHash, unclesHash, coinbase, logsBloom, difficulty,
-                        number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData,
-                        bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                        bitcoinMergedMiningCoinbaseTransaction, minimumGasPrice, 0) {
+                new BlockHeader(
+                        parentHash, unclesHash, new RskAddress(coinbase), ByteUtils.clone(EMPTY_TRIE_HASH),
+                        ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH), logsBloom, RLP.parseBlockDifficulty(difficulty),
+                        number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData, Coin.ZERO,
+                        bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
+                        RLP.parseSignedCoinNonNullZero(minimumGasPrice), 0, false, useRskip92Encoding) {
 
                     @Override
                     protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {
                         return RLP.encodeElement(difficulty);
                     }
-                });
-
+                },
+                Collections.emptyList(),
+                Collections.emptyList(),
+                isRskip126Enabled,
+                false
+        );
+        if (!initialAccounts.keySet().containsAll(initialCodes.keySet())) {
+            throw new IllegalArgumentException("Code must have an associated account");
+        }
+        if (!initialAccounts.keySet().containsAll(initialStorages.keySet())) {
+            throw new IllegalArgumentException("Storage must have an associated account");
+        }
+        this.initialAccounts = Collections.unmodifiableMap(initialAccounts);
+        this.initialCodes = Collections.unmodifiableMap(initialCodes);
+        this.initialStorages = Collections.unmodifiableMap(initialStorages);
         setTransactionsList(Collections.emptyList());
-    }
-
-    public static Block getInstance(RskSystemProperties config) {
-        return GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false);
     }
 
     public static byte[] getZeroHash(){
@@ -97,11 +115,15 @@ public class Genesis extends Block {
         return Keccak256.ZERO_HASH;
     }
 
-    public Map<RskAddress, InitialAddressState> getPremine() {
-        return premine;
+    public Map<RskAddress, AccountState> getAccounts() {
+        return initialAccounts;
     }
 
-    public void setPremine(Map<RskAddress, InitialAddressState> premine) {
-        this.premine = premine;
+    public Map<RskAddress, byte[]> getCodes() {
+        return initialCodes;
+    }
+
+    public Map<RskAddress, Map<DataWord, byte[]>> getStorages() {
+        return initialStorages;
     }
 }

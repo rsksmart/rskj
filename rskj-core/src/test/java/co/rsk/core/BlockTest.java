@@ -20,13 +20,13 @@ package co.rsk.core;
 
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.peg.PegTestUtils;
-import org.ethereum.TestUtils;
-import org.ethereum.core.*;
-import org.bouncycastle.util.encoders.Hex;
 import co.rsk.remasc.RemascTransaction;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -41,6 +41,8 @@ import java.util.List;
 
 public class BlockTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
+
+    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
     public void testParseRemascTransaction() {
@@ -69,29 +71,19 @@ public class BlockTest {
         Transaction remascTx = new RemascTransaction(1);
         txs.add(remascTx);
 
-        Block block =  new Block(
-                PegTestUtils.createHash3().getBytes(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
-                TestUtils.randomAddress().getBytes(),            // coinbase
-                new Bloom().getData(),          // logs bloom
-                BigInteger.ONE.toByteArray(),    // difficulty
-                1,
-                BigInteger.valueOf(4000000).toByteArray(), // gasLimit
-                3000000, // gasUsed
-                100, //timestamp
-                new byte[0],                    // extraData
-                new byte[0],                    // mixHash
-                new byte[]{0},         // provisory nonce
-                HashUtil.EMPTY_TRIE_HASH,       // receipts root
-                BlockChainImpl.calcTxTrie(txs), // transaction root
-                HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
-                txs,                            // transaction list
-                null,  // uncle list
-                BigInteger.TEN.toByteArray(),
-                Coin.ZERO
+        Block block = blockFactory.newBlock(
+                blockFactory.newHeader(
+                        PegTestUtils.createHash3().getBytes(), EMPTY_LIST_HASH, TestUtils.randomAddress().getBytes(),
+                        HashUtil.EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, true),
+                        HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), BigInteger.ONE.toByteArray(), 1,
+                        BigInteger.valueOf(4000000).toByteArray(), 3000000, 100, new byte[0], Coin.ZERO,
+                        null, null, null, BigInteger.TEN.toByteArray(), 0
+                ),
+                txs,
+                Collections.emptyList()
         );
 
-        Block parsedBlock = new Block(block.getEncoded());
+        Block parsedBlock = blockFactory.decodeBlock(block.getEncoded());
         Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(0).getClass());
         Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(1).getClass());
         Assert.assertEquals(RemascTransaction.class, parsedBlock.getTransactionsList().get(2).getClass());
@@ -107,23 +99,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockAddUncle() {
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Block block = blockGenerator.createBlock(10, 0);
-        Block uncle = blockGenerator.createBlock(9, 0);
-
-        block.seal();
-
-        try {
-            block.addUncle(uncle.getHeader());
-            Assert.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assert.assertEquals("Sealed block: trying to add uncle", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockSetStateRoot() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
@@ -135,21 +110,6 @@ public class BlockTest {
         }
         catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter state root", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockSetExtraData() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.setExtraData(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assert.assertEquals("Sealed block: trying to alter extra data", ex.getMessage());
         }
     }
 
@@ -274,51 +234,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockHeaderSetTimestamp() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setTimestamp(10);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter timestamp", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockHeaderSetNumber() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setNumber(10);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter number", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockHeaderSetGasLimit() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setGasLimit(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter gas limit", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockHeaderSetPaidFees() {
         Block block = new BlockGenerator().createBlock(10, 0);
 
@@ -360,21 +275,6 @@ public class BlockTest {
         }
         catch (SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter logs bloom", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockHeaderSetExtraData() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setExtraData(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter extra data", ex.getMessage());
         }
     }
 
@@ -436,8 +336,8 @@ public class BlockTest {
     @Test
     public void checkTxTrieShouldBeEqualForHeaderAndBody() {
         Block block = new BlockGenerator().createBlock(10, 5);
-        Keccak256 trieHash = new Keccak256(block.getTxTrieRoot());
-        Keccak256 trieListHash = Block.getTxTrie(block.getTransactionsList()).getHash();
-        Assert.assertEquals(trieHash, trieListHash);
+        byte[] trieHash = block.getTxTrieRoot();
+        byte[] trieListHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), true);
+        Assert.assertArrayEquals(trieHash, trieListHash);
     }
 }

@@ -23,8 +23,6 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.p2p.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -37,7 +35,6 @@ import java.util.regex.Pattern;
  * @author Roman Mandeleil
  * @since 13.04.14
  */
-@Component
 public class StaticMessages {
 
     private final SystemProperties config;
@@ -48,7 +45,6 @@ public class StaticMessages {
     public static final GetPeersMessage GET_PEERS_MESSAGE = new GetPeersMessage();
     public static final DisconnectMessage DISCONNECT_MESSAGE = new DisconnectMessage(ReasonCode.REQUESTED);
 
-    @Autowired
     public StaticMessages(SystemProperties config, ConfigCapabilities configCapabilities) {
         this.config = config;
         this.configCapabilities = configCapabilities;

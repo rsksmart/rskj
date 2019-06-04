@@ -68,11 +68,6 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public Transaction createTransaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, byte[] receiveAddress, BigInteger value, byte[] data) {
-        return null;
-    }
-
-    @Override
     public void submitTransaction(Transaction transaction) {
         tx = transaction;
     }

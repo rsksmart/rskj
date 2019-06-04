@@ -23,14 +23,13 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
-import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.rpc.Simples.SimpleEthereum;
@@ -39,6 +38,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -48,18 +48,24 @@ import java.util.concurrent.Callable;
 public class MinerManagerTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
-    private BlockChainImpl blockchain;
+    private Blockchain blockchain;
     private TransactionPool transactionPool;
     private Repository repository;
+    private StateRootHandler stateRootHandler;
     private BlockStore blockStore;
+    private BlockFactory blockFactory;
+    private BlockExecutor blockExecutor;
 
     @Before
     public void setup() {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
         repository = factory.getRepository();
+        stateRootHandler = factory.getStateRootHandler();
         blockStore = factory.getBlockStore();
+        blockFactory = factory.getBlockFactory();
+        blockExecutor = factory.getBlockExecutor();
     }
 
     @Test
@@ -162,31 +168,6 @@ public class MinerManagerTest {
     }
 
     @Test
-    public void mineBlockWhilePlayingBlocks() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        RskImplForTest rsk = new RskImplForTest() {
-            @Override
-            public boolean hasBetterBlockToSync() {
-                return false;
-            }
-
-            @Override
-            public boolean isPlayingBlocks() {
-                return true;
-            }
-        };
-        MinerServerImpl minerServer = getMinerServer();
-        MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
-
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-
-        Assert.assertFalse(minerClient.mineBlock());
-
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-    }
-
-    @Test
     public void doWork() {
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
@@ -252,7 +233,7 @@ public class MinerManagerTest {
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
         Assert.assertFalse(blockchain.getBestBlock().getTransactionsList().isEmpty());
 
-        SnapshotManager snapshotManager = new SnapshotManager(blockchain, transactionPool);
+        SnapshotManager snapshotManager = new SnapshotManager(blockchain, transactionPool, minerServer);
         snapshotManager.resetSnapshots();
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
@@ -269,69 +250,47 @@ public class MinerManagerTest {
         Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
     }
 
-    @Test
-    public void mineBlockUsingTimeTravel() {
-        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
-
-        MinerManager manager = new MinerManager();
-
-        MinerServerImpl minerServer = getMinerServer();
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        long currentTime = minerServer.getCurrentTimeInSeconds();
-
-        minerServer.increaseTime(10);
-
-        manager.mineBlock(blockchain, minerClient, minerServer);
-
-        Block block = blockchain.getBestBlock();
-        Assert.assertEquals(1, block.getNumber());
-
-        Assert.assertTrue(currentTime + 10 <= block.getTimestamp());
-        Assert.assertTrue(currentTime + 11 > block.getTimestamp());
-    }
-
     private static MinerClientImpl getMinerClient(MinerServerImpl minerServer) {
         return getMinerClient(new RskImplForTest() {
             @Override
             public boolean hasBetterBlockToSync() {
                 return false;
             }
-
-            @Override
-            public boolean isPlayingBlocks() {
-                return false;
-            }
         }, minerServer);
     }
 
     private static MinerClientImpl getMinerClient(RskImplForTest rsk, MinerServerImpl minerServer) {
-        return new MinerClientImpl(rsk, minerServer, config);
+        return new MinerClientImpl(rsk, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
     }
 
     private MinerServerImpl getMinerServer() {
         SimpleEthereum ethereum = new SimpleEthereum();
         ethereum.repository = repository;
         ethereum.blockchain = blockchain;
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
         return new MinerServerImpl(
                 config,
                 ethereum,
                 blockchain,
                 null,
-                difficultyCalculator,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         new BlockValidationRuleDummy(),
-                        config,
-                        null
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
+                clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
     }
@@ -345,8 +304,7 @@ public class MinerManagerTest {
 
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
-            super(null, null, null, null,
-                  new TestCompositeEthereumListener(), null, null, null);
+            super(null, null, new TestCompositeEthereumListener(), null, null);
         }
     }
 }

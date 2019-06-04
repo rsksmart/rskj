@@ -23,13 +23,9 @@ import co.rsk.core.Coin;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
-import org.springframework.util.Assert;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.Collections.*;
 import static org.ethereum.util.BIUtil.toBI;
@@ -46,7 +42,6 @@ public class TransactionExecutionSummary {
 
     private List<DataWord> deletedAccounts = emptyList();
     private List<InternalTransaction> internalTransactions = emptyList();
-    private Map<DataWord, DataWord> storageDiff = emptyMap();
 
     private byte[] result;
     private List<LogInfo> logs;
@@ -117,10 +112,6 @@ public class TransactionExecutionSummary {
         return internalTransactions;
     }
 
-    public Map<DataWord, DataWord> getStorageDiff() {
-        return storageDiff;
-    }
-
     public BigInteger getGasRefund() {
         return gasRefund;
     }
@@ -146,7 +137,7 @@ public class TransactionExecutionSummary {
         private final TransactionExecutionSummary summary;
 
         Builder(Transaction transaction) {
-            Assert.notNull(transaction, "Cannot build TransactionExecutionSummary for null transaction.");
+            Objects.requireNonNull(transaction, "Cannot build TransactionExecutionSummary for null transaction.");
 
             summary = new TransactionExecutionSummary();
             summary.tx = transaction;
@@ -180,11 +171,6 @@ public class TransactionExecutionSummary {
             for (DataWord account : deletedAccounts) {
                 summary.deletedAccounts.add(account);
             }
-            return this;
-        }
-
-        public Builder storageDiff(Map<DataWord, DataWord> storageDiff) {
-            summary.storageDiff = unmodifiableMap(storageDiff);
             return this;
         }
 

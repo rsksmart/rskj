@@ -19,31 +19,25 @@
 
 package org.ethereum.facade;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import org.ethereum.core.*;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.util.ByteUtil;
 
 import javax.annotation.Nonnull;
-import java.math.BigInteger;
 
 public class EthereumImpl implements Ethereum {
 
     private final ChannelManager channelManager;
     private final TransactionPool transactionPool;
-    private final RskSystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final Blockchain blockchain;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
 
     public EthereumImpl(
-            RskSystemProperties config,
             ChannelManager channelManager,
             TransactionPool transactionPool,
             CompositeEthereumListener compositeEthereumListener,
@@ -51,7 +45,6 @@ public class EthereumImpl implements Ethereum {
         this.channelManager = channelManager;
         this.transactionPool = transactionPool;
 
-        this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.blockchain = blockchain;
 
@@ -76,23 +69,6 @@ public class EthereumImpl implements Ethereum {
     @Override
     public void removeListener(EthereumListener listener) {
         compositeEthereumListener.removeListener(listener);
-    }
-
-    @Override
-    public Transaction createTransaction(BigInteger nonce,
-                                         BigInteger gasPrice,
-                                         BigInteger gas,
-                                         byte[] receiveAddress,
-                                         BigInteger value, byte[] data) {
-
-        byte[] nonceBytes = ByteUtil.bigIntegerToBytes(nonce);
-        byte[] gasPriceBytes = ByteUtil.bigIntegerToBytes(gasPrice);
-        byte[] gasBytes = ByteUtil.bigIntegerToBytes(gas);
-        byte[] valueBytes = ByteUtil.bigIntegerToBytes(value);
-        byte chainId = config.getBlockchainConfig().getCommonConstants().getChainId();
-
-        return new Transaction(nonceBytes, gasPriceBytes, gasBytes,
-                receiveAddress, valueBytes, data, chainId);
     }
 
     @Override

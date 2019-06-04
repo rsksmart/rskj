@@ -46,12 +46,6 @@ public class BitSet {
         this.bytes[offset] |= 1 << bitoffset;
     }
 
-    public void setAll() {
-        for (int k = 0; k < bytes.length; k++) {
-            bytes[k] = (byte) 0xff;
-        }
-    }
-
     public boolean get(int position) {
         if (position < 0 || position >= this.size) {
             throw new IndexOutOfBoundsException(String.format("Index: %s, Size: %s", position, this.size));
@@ -65,5 +59,9 @@ public class BitSet {
 
     public int size() {
         return this.size;
+    }
+
+    protected byte[] getBytes() {
+        return this.bytes;
     }
 }

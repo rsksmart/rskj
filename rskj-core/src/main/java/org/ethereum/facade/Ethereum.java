@@ -25,8 +25,6 @@ import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
 
-import java.math.BigInteger;
-
 /**
  * @author Roman Mandeleil
  * @since 27.07.2014
@@ -38,29 +36,6 @@ public interface Ethereum {
     void removeListener(EthereumListener listener);
 
     ImportResult addNewMinedBlock(Block block);
-
-    /**
-     * Factory for general transaction
-     *
-     *
-     * @param nonce - account nonce, based on number of transaction submited by
-     *                this account
-     * @param gasPrice - gas price bid by miner , the user ask can be based on
-     *                   lastr submited block
-     * @param gas - the quantity of gas requested for the transaction
-     * @param receiveAddress - the target address of the transaction
-     * @param value - the ether value of the transaction
-     * @param data - can be init procedure for creational transaction,
-     *               also msg data for invoke transaction for only value
-     *               transactions this one is empty.
-     * @return newly created transaction
-     */
-    Transaction createTransaction(BigInteger nonce,
-                                 BigInteger gasPrice,
-                                 BigInteger gas,
-                                 byte[] receiveAddress,
-                                 BigInteger value, byte[] data);
-
 
     /**
      * @param transaction submit transaction to the net, return option to wait for net

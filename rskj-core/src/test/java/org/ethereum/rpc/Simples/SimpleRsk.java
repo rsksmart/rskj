@@ -19,17 +19,11 @@
 package org.ethereum.rpc.Simples;
 
 import co.rsk.core.Rsk;
-import co.rsk.net.NodeBlockProcessor;
 
 /**
  * Created by ajlopez on 12/07/2017.
  */
 public class SimpleRsk extends SimpleEthereum implements Rsk {
-    @Override
-    public boolean isPlayingBlocks() {
-        return false;
-    }
-
     @Override
     public boolean hasBetterBlockToSync() {
         return false;

@@ -1,10 +1,11 @@
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 
 import java.math.BigInteger;
 
@@ -16,10 +17,12 @@ import static co.rsk.mine.MinerServerImpl.compressCoinbase;
 public class BlockMiner {
     private static long nextNonceToUse = 0L;
 
-    private final TestSystemProperties config;
+    private final BlockFactory blockFactory;
+    private final ActivationConfig activationConfig;
 
-    public BlockMiner(TestSystemProperties config) {
-        this.config = config;
+    public BlockMiner(ActivationConfig activationConfig) {
+        this.activationConfig = activationConfig;
+        this.blockFactory = new BlockFactory(activationConfig);
     }
 
     public Block mineBlock(Block block) {
@@ -33,14 +36,13 @@ public class BlockMiner {
 
         findNonce(bitcoinMergedMiningBlock, targetBI);
 
-        // We need to clone to allow modifications
-        Block newBlock = new Block(block.getEncoded()).cloneBlock();
+        Block newBlock = blockFactory.cloneBlockForModification(block);
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 
         bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningBlock.getTransactions().get(0);
         byte[] merkleProof = MinerUtils.buildMerkleProof(
-                config.getBlockchainConfig(),
+                activationConfig,
                 pb -> pb.buildFromBlock(bitcoinMergedMiningBlock),
                 newBlock.getNumber()
         );

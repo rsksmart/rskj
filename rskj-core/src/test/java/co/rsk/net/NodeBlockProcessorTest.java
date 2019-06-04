@@ -115,7 +115,7 @@ public class NodeBlockProcessorTest {
 
         final Blockchain blockchain = BlockChainBuilder.ofSize(15);
         final TestSystemProperties config = new TestSystemProperties();
-        int uncleGenerationLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        int uncleGenerationLimit = config.getNetworkConstants().getUncleGenerationLimit();
         final long blockNumberThatCanBeIgnored = blockchain.getBestBlock().getNumber() - 1 - uncleGenerationLimit;
 
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
@@ -306,8 +306,7 @@ public class NodeBlockProcessorTest {
         Assert.assertTrue(processor.hasBetterBlockToSync());
         Assert.assertTrue(processor.hasBetterBlockToSync());
 
-        blockchain.setBestBlock(block);
-        blockchain.setTotalDifficulty(new BlockDifficulty(BigInteger.valueOf(30)));
+        blockchain.setStatus(block, new BlockDifficulty(BigInteger.valueOf(30)));
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
         Assert.assertFalse(processor.hasBetterBlockToSync());

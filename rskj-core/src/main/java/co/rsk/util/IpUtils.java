@@ -1,6 +1,5 @@
 package co.rsk.util;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +22,7 @@ public class IpUtils {
 
 
     public static InetSocketAddress parseAddress(String address) {
-        if(address == null || ("".equals(address.trim()) || "".equals(address)) ) {
+        if(address == null || "".equals(address.trim()) ) {
             return null;
         }
         
@@ -33,9 +32,8 @@ public class IpUtils {
         }
 
         matcher = ipv4Pattern.matcher(address);
-        long matches = address.chars().filter(ch -> ch == ':').count();
 
-        if(matches == 1 && matcher.matches()) {
+        if (matcher.matches() && matcher.groupCount() == 2) {
             return parseMatch(matcher);
         }
 
@@ -45,12 +43,10 @@ public class IpUtils {
 
     public static List<InetSocketAddress> parseAddresses(List<String> addresses) {
         List<InetSocketAddress> result = new ArrayList<>();
-        if(CollectionUtils.isNotEmpty(addresses)) {
-            for(String a : addresses) {
-                InetSocketAddress res = parseAddress(a);
-                if (res != null) {
-                    result.add(res);
-                }
+        for(String a : addresses) {
+            InetSocketAddress res = parseAddress(a);
+            if (res != null) {
+                result.add(res);
             }
         }
         return result;

@@ -18,15 +18,16 @@
 
 package co.rsk.jsontestsuite;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
-import org.ethereum.config.net.MainNetConfig;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.jsontestsuite.DifficultyTestCase;
 import org.ethereum.jsontestsuite.DifficultyTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
-import org.json.simple.parser.ParseException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,12 +43,12 @@ import static org.junit.Assert.assertEquals;
 public class LocalBasicTest {
 
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private TestSystemProperties config = new TestSystemProperties();
+    private final Constants networkConstants = Constants.mainnet();
+    private final ActivationConfig activationConfig = ActivationConfigsForTest.allBut();
 
     @Test
-    public void runDifficultyTest() throws IOException, ParseException {
-        config.setGenesisInfo("frontier.json");
-        config.setBlockchainConfig(new MainNetConfig());
+    public void runDifficultyTest() throws IOException {
+        BlockFactory blockFactory = new BlockFactory(activationConfig);
 
         String json = getJSON("difficulty");
 
@@ -57,9 +58,9 @@ public class LocalBasicTest {
 
             logger.info("Running {}\n", testCase.getName());
 
-            BlockHeader current = testCase.getCurrent();
-            BlockHeader parent = testCase.getParent();
-            BlockDifficulty calc = new DifficultyCalculator(config).calcDifficulty(current, parent);
+            BlockHeader current = testCase.getCurrent(blockFactory);
+            BlockHeader parent = testCase.getParent(blockFactory);
+            BlockDifficulty calc = new DifficultyCalculator(activationConfig, networkConstants).calcDifficulty(current, parent);
             int c = calc.compareTo(parent.getDifficulty());
             if (c>0)
                 logger.info(" Difficulty increase test\n");

@@ -65,7 +65,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
                 times,
                 getABIEncoder(),
                 getInitializerFor(0),
-                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getZeroValueValueTxBuilderFromFedMember(),
                 Helper.getRandomHeightProvider(10),
                 stats
         );
@@ -77,7 +77,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
                 times,
                 getABIEncoder(),
                 getInitializerFor(bridgeConstants.getGenesisFederation().getNumberOfSignaturesRequired()-1),
-                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getZeroValueValueTxBuilderFromFedMember(),
                 Helper.getRandomHeightProvider(10),
                 stats
         );

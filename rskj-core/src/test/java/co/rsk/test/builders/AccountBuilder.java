@@ -20,10 +20,10 @@ package co.rsk.test.builders;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
-import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -35,7 +35,7 @@ public class AccountBuilder {
     private String name;
     private Coin balance;
     private byte[] code;
-    private BlockChainImpl blockChain;
+    private Blockchain blockChain;
 
     public AccountBuilder() {
     }
@@ -44,7 +44,7 @@ public class AccountBuilder {
         this(world.getBlockChain());
     }
 
-    public AccountBuilder(BlockChainImpl blockChain) {
+    public AccountBuilder(Blockchain blockChain) {
         this.blockChain = blockChain;
     }
 
@@ -80,10 +80,15 @@ public class AccountBuilder {
             if (this.balance != null)
                 track.addBalance(account.getAddress(), this.balance);
 
-            if (this.code != null)
+            if (this.code != null) {
                 track.saveCode(account.getAddress(), this.code);
-
+                track.getCode(account.getAddress());
+            }
             track.commit();
+            track.save();
+
+            // Check that code is there...
+            repository.getCode(account.getAddress());
 
             best.setStateRoot(repository.getRoot());
             best.flushRLP();

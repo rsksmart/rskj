@@ -20,19 +20,20 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import co.rsk.helpers.PerformanceTestConstants;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -55,16 +56,17 @@ import static org.junit.Assert.assertEquals;
  */
 public class VMPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
-    private final BlockchainConfig blockchainConfig = new RegTestGenesisConfig();
+    private final ActivationConfig.ForBlock activations = cr -> true;
     private ProgramInvokeMockImpl invoke;
     private Program program;
     ThreadMXBean thread;
     VM vm;
-
+    // To measure garbage collection time, we must use 100 million in maxLoops
     final static int million = 1000*1000;
-    final static int maxLoops = 1*million;
+    final static int maxLoops = 10*million;
     final static int maxGroups = 1;
     final static boolean useProfiler = false;
 
@@ -73,14 +75,12 @@ public class VMPerformanceTest {
         VMPerformanceTest vmpt = new VMPerformanceTest();
         vmpt.setup();
         vmpt.testVMPerformance1();
-        vmpt.tearDown();
     }
 
     public static void runWithLogging(ResultLogger resultLogger) {
         VMPerformanceTest vmpt = new VMPerformanceTest();
         vmpt.setup();
         vmpt.testVMPerformance1(resultLogger);
-        vmpt.tearDown();
     }
 
     @Before
@@ -88,11 +88,6 @@ public class VMPerformanceTest {
         invoke = new ProgramInvokeMockImpl();
         long million=1000000;
         invoke.setGasLimit(1000*million);
-    }
-
-    @After
-    public void tearDown() {
-        invoke.getRepository().close();
     }
 
     public void waitForProfiler() {
@@ -105,60 +100,7 @@ public class VMPerformanceTest {
         }
         System.out.println("go!");
     }
-    /**************************************************************************************************************************
-     * Sample results of testVMPerformance1():
-     PUSH/POP    : full:      25 ref:      25 (% ref):     0 gas:    500 time/gas:      5 fullReal:      27 mem[Kb]:          0
-     I2O1(OR)    : full:      81 ref:      81 (% ref):     0 gas:   1000 time/gas:      8 fullReal:     105 mem[Kb]:        992
-     I2O1(OR)    : full:      71 ref:      71 (% ref):     0 gas:   1000 time/gas:      7 fullReal:      71 mem[Kb]:        651
-     ADD         : full:      82 ref:      11 (% ref):    15 gas:   1100 time/gas:      7 fullReal:      84 mem[Kb]:        651
-     ADD         : full:      31 ref:     -40 (% ref):   -56 gas:   1100 time/gas:      2 fullReal:      31 mem[Kb]:        651
-     MUL         : full:      71 ref:       0 (% ref):     0 gas:   1300 time/gas:      5 fullReal:      74 mem[Kb]:       9576
-     MUL         : full:      65 ref:      -6 (% ref):    -8 gas:   1300 time/gas:      5 fullReal:      65 mem[Kb]:      59738
-     SUB         : full:      60 ref:     -11 (% ref):   -15 gas:   1100 time/gas:      5 fullReal:      61 mem[Kb]:     282089
-     SUB         : full:      51 ref:     -20 (% ref):   -28 gas:   1100 time/gas:      4 fullReal:      52 mem[Kb]:     268191
-     DIV         : full:      60 ref:     -11 (% ref):   -15 gas:   1300 time/gas:      4 fullReal:      61 mem[Kb]:     314099
-     DIV         : full:      60 ref:     -11 (% ref):   -15 gas:   1300 time/gas:      4 fullReal:      60 mem[Kb]:     306181
-     SDIV        : full:      59 ref:     -12 (% ref):   -16 gas:   1300 time/gas:      4 fullReal:      61 mem[Kb]:     301976
-     SDIV        : full:      67 ref:      -4 (% ref):    -5 gas:   1300 time/gas:      5 fullReal:      67 mem[Kb]:     306826
-     MOD         : full:      60 ref:     -11 (% ref):   -15 gas:   1300 time/gas:      4 fullReal:      61 mem[Kb]:     282044
-     MOD         : full:      51 ref:     -20 (% ref):   -28 gas:   1300 time/gas:      3 fullReal:      50 mem[Kb]:     272231
-     SMOD        : full:      60 ref:     -11 (% ref):   -15 gas:   1300 time/gas:      4 fullReal:      63 mem[Kb]:     303955
-     SMOD        : full:      59 ref:     -12 (% ref):   -16 gas:   1300 time/gas:      4 fullReal:      59 mem[Kb]:     294067
-     EXP         : full:     157 ref:      86 (% ref):   121 gas:   2800 time/gas:      5 fullReal:     159 mem[Kb]:     296861
-     EXP         : full:     143 ref:      72 (% ref):   101 gas:   2800 time/gas:      5 fullReal:     143 mem[Kb]:     374146
-     SIGNEXTEND  : full:      32 ref:     -39 (% ref):   -54 gas:   1300 time/gas:      2 fullReal:      31 mem[Kb]:          0
-     SIGNEXTEND  : full:      31 ref:     -40 (% ref):   -56 gas:   1300 time/gas:      2 fullReal:      30 mem[Kb]:          0
-     LT          : full:      35 ref:     -36 (% ref):   -50 gas:   1100 time/gas:      3 fullReal:      35 mem[Kb]:          0
-     LT          : full:      31 ref:     -40 (% ref):   -56 gas:   1100 time/gas:      2 fullReal:      32 mem[Kb]:          0
-     GT          : full:      43 ref:     -28 (% ref):   -39 gas:   1100 time/gas:      3 fullReal:      44 mem[Kb]:     121177
-     GT          : full:      39 ref:     -32 (% ref):   -45 gas:   1100 time/gas:      3 fullReal:      38 mem[Kb]:     121177
-     SLT         : full:      43 ref:     -28 (% ref):   -39 gas:   1100 time/gas:      3 fullReal:      43 mem[Kb]:     121177
-     SLT         : full:      42 ref:     -29 (% ref):   -40 gas:   1100 time/gas:      3 fullReal:      43 mem[Kb]:     121177
-     SGT         : full:      45 ref:     -26 (% ref):   -36 gas:   1100 time/gas:      4 fullReal:      44 mem[Kb]:     121177
-     SGT         : full:      42 ref:     -29 (% ref):   -40 gas:   1100 time/gas:      3 fullReal:      42 mem[Kb]:     123175
-     EQ          : full:      35 ref:     -36 (% ref):   -50 gas:   1100 time/gas:      3 fullReal:      35 mem[Kb]:       1998
-     EQ          : full:      34 ref:     -37 (% ref):   -52 gas:   1100 time/gas:      3 fullReal:      34 mem[Kb]:          0
-     AND         : full:      35 ref:     -36 (% ref):   -50 gas:   1100 time/gas:      3 fullReal:      36 mem[Kb]:          0
-     AND         : full:      32 ref:     -39 (% ref):   -54 gas:   1100 time/gas:      2 fullReal:      32 mem[Kb]:          0
-     OR          : full:      35 ref:     -36 (% ref):   -50 gas:   1100 time/gas:      3 fullReal:      35 mem[Kb]:          0
-     OR          : full:      31 ref:     -40 (% ref):   -56 gas:   1100 time/gas:      2 fullReal:      31 mem[Kb]:          0
-     XOR         : full:      31 ref:     -40 (% ref):   -56 gas:   1100 time/gas:      2 fullReal:      32 mem[Kb]:          0
-     XOR         : full:      29 ref:     -42 (% ref):   -59 gas:   1100 time/gas:      2 fullReal:      29 mem[Kb]:          0
-     BYTE        : full:      34 ref:     -37 (% ref):   -52 gas:   1100 time/gas:      3 fullReal:      34 mem[Kb]:          0
-     BYTE        : full:      34 ref:     -37 (% ref):   -52 gas:   1100 time/gas:      3 fullReal:      33 mem[Kb]:          0
-     I3O1(ADDMOD): full:      39 ref:      39 (% ref):     0 gas:   1300 time/gas:      3 fullReal:      38 mem[Kb]:          0
-     I3O1(ADDMOD): full:      39 ref:      39 (% ref):     0 gas:   1300 time/gas:      3 fullReal:      38 mem[Kb]:          0
-     ADDMOD      : full:      79 ref:      40 (% ref):   102 gas:   1900 time/gas:      4 fullReal:      79 mem[Kb]:     428783
-     ADDMOD      : full:      70 ref:      31 (% ref):    79 gas:   1900 time/gas:      3 fullReal:      71 mem[Kb]:     427745
-     MULMOD      : full:      81 ref:      42 (% ref):   107 gas:   1900 time/gas:      4 fullReal:      81 mem[Kb]:     106577
-     MULMOD      : full:      84 ref:      45 (% ref):   115 gas:   1900 time/gas:      4 fullReal:      84 mem[Kb]:     127826
-     I1O1(ISZERO): full:      15 ref:      15 (% ref):     0 gas:    500 time/gas:      3 fullReal:      14 mem[Kb]:          0
-     I1O1(ISZERO): full:      12 ref:      12 (% ref):     0 gas:    500 time/gas:      2 fullReal:      12 mem[Kb]:          0
-     ISZERO      : full:      21 ref:       9 (% ref):    75 gas:    800 time/gas:      2 fullReal:      20 mem[Kb]:       1818
-     ISZERO      : full:      20 ref:       8 (% ref):    66 gas:    800 time/gas:      2 fullReal:      19 mem[Kb]:          0
-     NOT         : full:      23 ref:      11 (% ref):    91 gas:    800 time/gas:      2 fullReal:      24 mem[Kb]:          0
-     NOT         : full:      23 ref:      11 (% ref):    91 gas:    800 time/gas:      2 fullReal:      23 mem[Kb]:          0
-    */
+
     static Boolean shortArg = false;
 
     @Ignore
@@ -168,6 +110,9 @@ public class VMPerformanceTest {
     }
 
     private void testVMPerformance1(ResultLogger resultLogger) {
+        maxLLSize = 1000*1000*10;
+        createLarseSetOfMemoryObjects();
+
         thread = ManagementFactory.getThreadMXBean();
         if (!thread.isThreadCpuTimeSupported()) return;
 
@@ -177,7 +122,6 @@ public class VMPerformanceTest {
         if (useProfiler)
             waitForProfiler();
 
-        System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());
         System.out.println("Configuration: shortArg =  " + shortArg.toString());
 
         // Program
@@ -185,7 +129,13 @@ public class VMPerformanceTest {
         //measureOpcode(OpCode.NOT, false, 0); // For reference, to see general overhead
         //measureOpcode(OpCode.NOT, false,0); // Re-measure to see if JIT does something
 
-        /* Standard */
+        measure11Opcodes(resultLogger);
+        measure21Opcodes(resultLogger);
+        measure31Opcodes(resultLogger);
+        thread.setThreadCpuTimeEnabled(old);
+    }
+
+    void measure21Opcodes(ResultLogger resultLogger) {
         OpCode[] simpleOpcodes = new OpCode[]{
                 OpCode.ADD, OpCode.MUL, OpCode.SUB,
                 OpCode.DIV, OpCode.SDIV, OpCode.MOD,
@@ -199,28 +149,27 @@ public class VMPerformanceTest {
         //the reference must be measured for a longer time since its faster and has more jitter
         long refTime21 = measureOpcode(OpCode.OR, true, 0, null);
         //measureOpcode(OpCode.ADD, false, refTime21);
-        if (true) {
-            for (int i = 0; i < simpleOpcodes.length; i++) {
-                measureOpcode(simpleOpcodes[i], false, refTime21, resultLogger);
-            }
-            long refTime31 = measureOpcode(OpCode.ADDMOD, true, 0, null);
-            measureOpcode(OpCode.ADDMOD, false, refTime31, resultLogger);
-            measureOpcode(OpCode.MULMOD, false, refTime31, resultLogger);
-
-            long refTime11 = measureOpcode(OpCode.ISZERO, true, 0, null);
-            measureOpcode(OpCode.ISZERO, false, refTime11, resultLogger);
-            measureOpcode(OpCode.NOT, false, refTime11, resultLogger);
+        for (int i = 0; i < simpleOpcodes.length; i++) {
+            measureOpcode(simpleOpcodes[i], false, refTime21, resultLogger);
         }
-        thread.setThreadCpuTimeEnabled(old);
     }
 
+    void measure31Opcodes(ResultLogger resultLogger) {
+        long refTime31 = measureOpcode(OpCode.ADDMOD, true, 0, null);
+        measureOpcode(OpCode.ADDMOD, false, refTime31, resultLogger);
+        measureOpcode(OpCode.MULMOD, false, refTime31, resultLogger);
+    }
 
+    void measure11Opcodes(ResultLogger resultLogger) {
+        long refTime11 = measureOpcode(OpCode.ISZERO, true, 0, null);
+        measureOpcode(OpCode.ISZERO, false, refTime11, resultLogger);
+        measureOpcode(OpCode.NOT, false, refTime11, resultLogger);
+    }
 
     public long measureOpcode(OpCode opcode, Boolean reference, long refTime, ResultLogger resultLogger) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int iCount = 0;
-        DataWord maxValue = new DataWord();
-        maxValue.bnot();
+        DataWord maxValue = DataWord.ZERO;
         // PUSH
         for (int inp = 0; inp < opcode.require(); inp++) {
             if (shortArg) {
@@ -231,7 +180,7 @@ public class VMPerformanceTest {
                 try {
                     baos.write(maxValue.getData());
                     // decrement maxValue so that each value pushed is a little different
-                    maxValue.sub(DataWord.ONE);
+                    maxValue = maxValue.sub(DataWord.ONE);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -283,26 +232,34 @@ public class VMPerformanceTest {
 
     public class PerfRes {
         public long deltaUsedMemory;
-        public long deltaRealTime;
+        public long deltaRealTimeMillis;
+        public long deltaGCTimeMillis;
         public long wallClockTimeMillis; // in milliseconds
-        public long deltaTime; // in nanoseconds.
-        public long gas;
 
+        // Delta time is de difference in thread time
+        public long deltaTime_nS; // in nanoseconds.
+        public long gas;
     }
 
     public interface ResultLogger {
         void log(String name, PerfRes result);
     }
 
-    public long measureProgram(String opcode, byte[] code, int insCount, int divisor, long refTime, int cloneCount, ResultLogger resultLogger) {
+    byte[] getClonedCode(byte[] code,int cloneCount) {
         // Repeat program 100 times to reduce the overhead of clearing the stack
         // the program must not loop.
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (int i = 0; i < cloneCount; i++)
             baos.write(code, 0, code.length);
         byte[] newCode = baos.toByteArray();
+        return newCode;
+    }
 
-        program = new Program(vmConfig, precompiledContracts, blockchainConfig, newCode, invoke, null);
+    public long measureProgram(String opcode, byte[] code, int insCount, int divisor, long refTime, int cloneCount, ResultLogger resultLogger) {
+
+        byte[] newCode = getClonedCode(code,cloneCount);
+
+        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, newCode, invoke, null);
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -317,68 +274,89 @@ public class VMPerformanceTest {
             long startRealTime = System.currentTimeMillis();
             long startTime = thread.getCurrentThreadCpuTime(); // in nanoseconds.
             long startGas = program.getResult().getGasUsed();
+            long startGCTime = getGarbageCollectorTimeMillis();
 
-
-            long xUsedMemory;
             // Al parecer el gc puede interrumpir en cualquier momento y hacer estragos
             // Mejor que repetir y tomar el promedio es ejecutar muchas veces y quedarse con
             // el menor tiempo logrado
+
             for (int loops = 0; loops < myLoops; loops++) {
-            /*for (int i=0;i<insCount;i++) {
-                vm.step(program);
-            }*/
                 vm.steps(program, insCount);
 
-                //xUsedMemory = (rt.totalMemory() - rt.freeMemory());
                 // trick: Now force the program to restart, clear stack
                 if (loops == 0) {
+                    //  endGas is the gas used BOTH for the reference code
+                    // (push/pops) and the cod itself.
                     long endGas = program.getResult().getGasUsed();
-                    pr.gas = endGas - startGas;
+
+                    // Store the gas per inner loop, not vm.steps()
+                    pr.gas = (endGas - startGas) / cloneCount;
                 }
                 program.restart();
 
             }
 
-
             long endTime = thread.getCurrentThreadCpuTime();
             long endRealTime = System.currentTimeMillis();
-            pr.deltaTime = (endTime - startTime) / maxLoops / divisor ; // nano
+            long endGCTime = getGarbageCollectorTimeMillis();
+
+            // Delta times are divided by the number of repetitions
+            pr.deltaTime_nS = (endTime - startTime) / maxLoops / divisor ; // nano
             pr.wallClockTimeMillis = (endRealTime - startRealTime);
-            pr.deltaRealTime = (endRealTime - startRealTime) * 1000 *1000 / maxLoops / divisor; // de milli a nano
+            pr.deltaRealTimeMillis = (endRealTime - startRealTime) * 1000 *1000 / maxLoops / divisor; // de milli a nano
+            pr.deltaGCTimeMillis = (endGCTime- startGCTime)*1000*1000/ maxLoops / divisor; // nanos
+
             long endUsedMemory = (rt.totalMemory() - rt.freeMemory());
 
-
             pr.deltaUsedMemory = endUsedMemory - startUsedMemory;
-            if ((best == null) || (pr.deltaTime < best.deltaTime)) {
+            if ((best == null) || (pr.deltaTime_nS < best.deltaTime_nS)) {
                 best = pr;
-                if (best.deltaTime == 0)
+                if (best.deltaTime_nS == 0)
                     System.out.println("bad time");
                 pr = new PerfRes();
             }
         }
         long percent;
         if (refTime != 0)
-            percent = (best.deltaTime - refTime) * 100 / refTime;
+            percent = (best.deltaTime_nS - refTime) * 100 / refTime;
         else
             percent = 0;
 
+        int blockGasLimit = 7 * 1000 * 1000;
+        long loopsPerBlock = blockGasLimit / best.gas;
+        int spaces =4;
+        double memToBlkMem = 1.0*loopsPerBlock/maxLoops/1000;
+        long blockTime =loopsPerBlock*best.deltaRealTimeMillis /1000/1000;
+
+        //  the gas is the gas used BOTH for the reference code (push/ pops)
+        // and the instruction being evaluated itself.
+        // which is the common case in normal code. As all opcodes push less
+        // stack elements that they consume, every opcode will have at least an
+        // associated PUSH.
+
+        String nsPerGasUnit = String.format("%.02f", best.deltaTime_nS *1.0/ best.gas);
         System.out.println(
                 padRight(opcode, 12) + ":" +
-                        " wctime[msec]: "+padLeft(Long.toString(best.wallClockTimeMillis), 7) +
-                        " full: " + padLeft(Long.toString(best.deltaTime), 7) +
-                        " ref: " + padLeft(Long.toString(best.deltaTime - refTime), 7) +
-                        " (% ref): " + padLeft(Long.toString(percent), 5) +
-                        " gas: " + padLeft(Long.toString(best.gas), 6) +
-                        " time/gas: " + padLeft(Long.toString(best.deltaTime * 100 / best.gas), 6) +
-                        " fullReal: " + padLeft(Long.toString(best.deltaRealTime), 7) +
-                        " mem[Kb]: " + padLeft(Long.toString(best.deltaUsedMemory / 1000), 10));
+                        " wcT[ms]: "+padLeft(Long.toString(best.wallClockTimeMillis), spaces) +
+                        "| full[ns]: " + padLeft(Long.toString(best.deltaTime_nS), spaces) +
+                        "| ref[ns]: " + padLeft(Long.toString(best.deltaTime_nS - refTime), spaces) +
+                        "| (%ref): " + padLeft(Long.toString(percent), 5) +
+                        "| gas: " + padLeft(Long.toString(best.gas), 5) +
+                        "| blkTime[ms]: "+padLeft(Long.toString(blockTime), spaces) +
+                        "| T/gas[ns]: " + padLeft(nsPerGasUnit, spaces) +
+                        "| real[ns]: " + padLeft(Long.toString(best.deltaRealTimeMillis), spaces) +
+                        "| gcT[ns]: " + padLeft(Long.toString(best.deltaGCTimeMillis), spaces) +
+                        "| memPerBlk[Kb]: " + padLeft(Long.toString(Math.round(best.deltaUsedMemory*memToBlkMem)), spaces+1));
 
+        long memPerBlockMegabytes = Math.round(best.deltaUsedMemory*memToBlkMem/1000);
+        Assert.assertTrue(blockTime<PerformanceTestConstants.maxBlockProcessingTimeMillis);
+        Assert.assertTrue(memPerBlockMegabytes <PerformanceTestConstants.maxMegabytesConsumedPerBlock);
 
         if (resultLogger != null) {
             resultLogger.log(opcode, best);
         }
 
-        return best.deltaTime;
+        return best.deltaTime_nS;
     }
 
     long getGarbageCollectorTimeMillis()
@@ -424,7 +402,7 @@ public class VMPerformanceTest {
         if (startTime != 0) {
             long endTime = thread.getCurrentThreadCpuTime();
             deltaTime = (endTime - startTime); // nano
-            //System.out.println("Time elapsed [us]: " + Long.toString(deltaTime)+" [s]:"+ Long.toString(deltaTime/1000/1000));
+            //System.out.println("Time elapsed [us]: " + Long.toString(deltaTime_nS)+" [s]:"+ Long.toString(deltaTime_nS/1000/1000));
             System.out.println("Time elapsed [ms]: " + Long.toString(deltaTime/1000)+" [s]:"+ Long.toString(deltaTime/1000/1000));
         }
 
@@ -509,7 +487,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(vmConfig, precompiledContracts, blockchainConfig, code, invoke, null);
+        program =new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null);
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -592,10 +570,6 @@ public class VMPerformanceTest {
         createLarseSetOfMemoryObjects();
         System.out.println("done.");
 
-        // now measure with and without Data Word Pool
-        Program.setUseDataWordPool(true);
-        testRunTime(code, s_expected);
-        Program.setUseDataWordPool(false);
         testRunTime(code, s_expected);
     }
     /****************** RESULTS 30/12/2016 ******************************************
@@ -624,10 +598,9 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     public void testRunTime(byte[] code, String s_expected) {
-        program = new Program(vmConfig, precompiledContracts, blockchainConfig, code, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null);
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
-        System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());
         startMeasure();
         vm.steps(program, Long.MAX_VALUE);
         endMeasure();

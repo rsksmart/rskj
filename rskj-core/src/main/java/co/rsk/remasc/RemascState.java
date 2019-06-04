@@ -23,9 +23,6 @@ import co.rsk.core.Coin;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.List;
-import java.util.SortedMap;
-
 /**
  * DTO to send the contract state.
  * Not production code, just used for debugging.
@@ -34,14 +31,12 @@ import java.util.SortedMap;
 public class RemascState {
     private final Coin rewardBalance;
     private final Coin burnedBalance;
-    private final SortedMap<Long, List<Sibling>> siblings;
 
     private final Boolean brokenSelectionRule;
 
-    public RemascState(Coin rewardBalance, Coin burnedBalance, SortedMap<Long, List<Sibling>> siblings, Boolean brokenSelectionRule) {
+    public RemascState(Coin rewardBalance, Coin burnedBalance, Boolean brokenSelectionRule) {
         this.rewardBalance = rewardBalance;
         this.burnedBalance = burnedBalance;
-        this.siblings = siblings;
         this.brokenSelectionRule = brokenSelectionRule;
     }
 
@@ -53,10 +48,6 @@ public class RemascState {
         return burnedBalance;
     }
 
-    public SortedMap<Long, List<Sibling>> getSiblings() {
-        return siblings;
-    }
-
     public Boolean getBrokenSelectionRule() {
         return brokenSelectionRule;
     }
@@ -64,7 +55,6 @@ public class RemascState {
     public byte[] getEncoded() {
         byte[] rlpRewardBalance = RLP.encodeCoin(this.rewardBalance);
         byte[] rlpBurnedBalance = RLP.encodeCoin(this.burnedBalance);
-        byte[] rlpSiblings = RemascStorageProvider.getSiblingsBytes(this.siblings);
         byte[] rlpBrokenSelectionRule = new byte[1];
 
         if (brokenSelectionRule) {
@@ -73,7 +63,8 @@ public class RemascState {
             rlpBrokenSelectionRule[0] = 0;
         }
 
-        return RLP.encodeList(rlpRewardBalance, rlpBurnedBalance, rlpSiblings, rlpBrokenSelectionRule);
+        // we add an empty list because Remasc state expects to have an empty siblings list after 0.5.0 activation
+        return RLP.encodeList(rlpRewardBalance, rlpBurnedBalance, RLP.encodedEmptyList(), rlpBrokenSelectionRule);
     }
 
     public static RemascState create(byte[] data) {
@@ -81,9 +72,7 @@ public class RemascState {
 
         Coin rlpRewardBalance = RLP.parseCoin(rlpList.get(0).getRLPData());
         Coin rlpBurnedBalance = RLP.parseCoin(rlpList.get(1).getRLPData());
-
-        SortedMap<Long, List<Sibling>> rlpSiblings = RemascStorageProvider.getSiblingsFromBytes(rlpList.get(2).getRLPData());
-
+        // index 2 is ignored because it's a leftover from when we stored the Remasc siblings
         byte[] rlpBrokenSelectionRuleBytes = rlpList.get(3).getRLPData();
 
         Boolean rlpBrokenSelectionRule;
@@ -94,7 +83,7 @@ public class RemascState {
             rlpBrokenSelectionRule = Boolean.FALSE;
         }
 
-        return new RemascState(rlpRewardBalance, rlpBurnedBalance, rlpSiblings, rlpBrokenSelectionRule);
+        return new RemascState(rlpRewardBalance, rlpBurnedBalance, rlpBrokenSelectionRule);
     }
 
     @Override
@@ -102,7 +91,6 @@ public class RemascState {
         return "RemascState{" +
                 "rewardBalance=" + rewardBalance +
                 ", burnedBalance=" + burnedBalance +
-                ", siblings=" + siblings +
                 ", brokenSelectionRule=" + brokenSelectionRule +
                 '}';
     }

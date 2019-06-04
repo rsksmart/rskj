@@ -74,10 +74,15 @@ public class GitHubJSONTestSuite {
 
     protected static void runGitHubJsonVMTest(String json) throws ParseException {
         Set<String> excluded = new HashSet<>();
-        runGitHubJsonVMTest(json, excluded);
+
+
+        runGitHubJsonVMTest(json, excluded,null);
+    }
+    public static void runGitHubJsonVMTest(String json, Set<String> excluded) throws ParseException {
+        runGitHubJsonVMTest(json, excluded, null);
     }
 
-    public static void runGitHubJsonVMTest(String json, Set<String> excluded) throws ParseException {
+        public static void runGitHubJsonVMTest(String json, Set<String> excluded, Set<String> included) throws ParseException {
         Assume.assumeFalse("Online test is not available", json.equals(""));
 
         JSONParser parser = new JSONParser();
@@ -86,12 +91,15 @@ public class GitHubJSONTestSuite {
         TestSuite testSuite = new TestSuite(testSuiteObj);
         Iterator<TestCase> testIterator = testSuite.iterator();
 
+        if (logger.isDebugEnabled()) {
         for (TestCase testCase : testSuite.getAllTests()) {
-
             String prefix = "    ";
-            if (excluded.contains(testCase.getName())) prefix = "[X] ";
+            if (excluded.contains(testCase.getName())) prefix = "[-] ";
+            if (included!=null)
+                if (included.contains(testCase.getName())) prefix = "[+] ";
 
-            logger.info(prefix + testCase.getName());
+            logger.debug(prefix + testCase.getName());
+        }
         }
 
 
@@ -99,6 +107,8 @@ public class GitHubJSONTestSuite {
 
             TestCase testCase = testIterator.next();
             if (excluded.contains(testCase.getName()))
+                continue;
+            if ((included!=null) && (!included.contains(testCase.getName())))
                 continue;
 
             TestRunner runner = new TestRunner();
@@ -245,9 +255,14 @@ public class GitHubJSONTestSuite {
         }
 
         Set<String> testNames = stateTestSuite.getTestCases().keySet();
+        int ignores = 0;
         for (String testName : testNames){
 
-            if (excluded.contains(testName)) continue;
+            if (excluded.contains(testName)) {
+                ignores++;
+                continue;
+            }
+
             String output = String.format("*  running: %s  *", testName);
             String line = output.replaceAll(".", "*");
 
@@ -256,8 +271,11 @@ public class GitHubJSONTestSuite {
             logger.info(line);
 
             List<String> result = StateTestRunner.run(testCases.get(testName));
-            if (!result.isEmpty())
+
+
+            if (!result.isEmpty()) {
                 summary.put(testName, false);
+            }
             else
                 summary.put(testName, true);
         }
@@ -273,9 +291,10 @@ public class GitHubJSONTestSuite {
                     replace(' ', '.').
                     replace("^", " ");
             logger.info(sumTest);
+
         }
 
-        logger.info(" - Total: Pass: {}, Failed: {} - ", pass, fails);
+        logger.info(" - Total: Pass: {}, Failed: {} - Ignore: {} -", pass, fails,ignores);
 
         Assert.assertTrue(fails == 0);
     }

@@ -108,7 +108,7 @@ public abstract class PeerDiscoveryMessage {
 
         ECKey outKey = null;
         try {
-            outKey = ECKey.signatureToKey(msgHash, ECKey.ECDSASignature.fromComponents(r, s, v).toBase64());
+            outKey = ECKey.signatureToKey(msgHash, ECKey.ECDSASignature.fromComponents(r, s, v));
         } catch (SignatureException e) {
             logger.error("Error generating key from message", e);
         }

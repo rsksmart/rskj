@@ -22,8 +22,10 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
+import co.rsk.peg.FederationMember;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -32,9 +34,18 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Ignore
 public class ActiveFederationTest extends BridgePerformanceTestCase {
+    public static List<FederationMember> getNRandomFederationMembers(int n) {
+        List<FederationMember> result = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            result.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
+        }
+        return result;
+    }
+
     private Federation federation;
 
     @Test
@@ -65,7 +76,7 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
     @Test
     public void getFederatorPublicKey() throws IOException {
         ExecutionStats stats = new ExecutionStats("getFederatorPublicKey");
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, federation.getPublicKeys().size()-1)});
+        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, federation.getBtcPublicKeys().size()-1)});
         executeTestCaseSection(abiEncoder, "getFederatorPublicKey", true,50, stats);
         executeTestCaseSection(abiEncoder, "getFederatorPublicKey", false,500, stats);
         BridgePerformanceTest.addStats(stats);
@@ -100,12 +111,10 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             if (!genesis) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
-                List<BtcECKey> federatorKeys = new ArrayList<>();
-                for (int i = 0; i < numFederators; i++) {
-                    federatorKeys.add(new BtcECKey());
-                }
+                List<FederationMember> members = getNRandomFederationMembers(numFederators);
+
                 federation = new Federation(
-                        federatorKeys,
+                        members,
                         Instant.ofEpochMilli(new Random().nextLong()),
                         Helper.randomInRange(1, 10),
                         networkParameters
@@ -116,6 +125,4 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
             }
         };
     }
-
-
 }

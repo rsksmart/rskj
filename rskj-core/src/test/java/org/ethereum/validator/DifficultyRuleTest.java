@@ -18,10 +18,12 @@
 
 package org.ethereum.validator;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.RskAddress;
 import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
 import org.junit.Ignore;
@@ -35,7 +37,9 @@ import static org.junit.Assert.assertTrue;
  * @since 02.23.2016
  */
 public class DifficultyRuleTest {
-    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(new TestSystemProperties()));
+    private final ActivationConfig activationConfig = ActivationConfigsForTest.all();
+    private final BlockFactory blockFactory = new BlockFactory(activationConfig);
+    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(activationConfig, Constants.regtest()));
 
     @Ignore
     @Test // pass rule
@@ -52,10 +56,10 @@ public class DifficultyRuleTest {
         assertFalse(rule.validate(header, parent));
     }
 
-    private static BlockHeader getHeader(long difficultyValue) {
-        byte[] difficulty = new DataWord(difficultyValue).getData();
+    private BlockHeader getHeader(long difficultyValue) {
+        byte[] difficulty = DataWord.valueOf(difficultyValue).getData();
 
-        BlockHeader header = new BlockHeader(null, null, TestUtils.randomAddress().getBytes(), null, difficulty, 0,
+        BlockHeader header = blockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(), null, difficulty, 0,
                 null, 0,
                 0, null, null, 0);
 

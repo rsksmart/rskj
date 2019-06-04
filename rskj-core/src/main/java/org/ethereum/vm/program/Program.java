@@ -22,22 +22,24 @@ package org.ethereum.vm.program;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.pcc.NativeContract;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.util.ListArrayUtil;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
-import org.ethereum.util.Utils;
 import org.ethereum.vm.*;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -51,12 +53,14 @@ import org.ethereum.vm.trace.ProgramTraceListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Optional;
 
-import static java.lang.StrictMath.min;
 import static java.lang.String.format;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -87,7 +91,7 @@ public class Program {
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
 
-    private final BlockchainConfig blockchainConfig;
+    private final ActivationConfig.ForBlock activations;
     private final Transaction transaction;
 
     private final ProgramInvoke invoke;
@@ -108,95 +112,34 @@ public class Program {
     private final byte[] ops;
     private int pc;
     private byte lastOp;
-    private byte previouslyExecutedOp;
     private boolean stopped;
     private byte exeVersion;    // currently limited to 0..127
     private byte scriptVersion; // currently limited to 0..127
     private int startAddr;
 
     private BitSet jumpdestSet;
-    /**********************************************************************************************************
-     * About DataWord Pool:
-     *---------------------------------------------------------------------------------------------------------
-     * Preliminaries:
-     * (source: http://programmers.stackexchange.com/questions/149563/should-we-avoid-object-creation-in-java)
-     *
-     * There is a misconception that creating many small short lived objects causes the JVM to pause
-     * for long periods of time, this is now false as well. Current GC algorithms are actually optimized
-     * for creating many many small objects that are short lived, that is basically the 99% heuristic
-     * for Java objects in every program. Object Pooling will actually make the JVM preform worse in most
-     * cases.
-     * The modern GC algorithms don't have this problem because they don't deallocate on a schedule, they
-     * deallocate when free memory is needed in a certain generation.
-     *
-     * SDL analysis:
-     *
-     * THIS IS NOT THE CASE for an application that creates millions of objects per second (as the VM can do).
-     *
-     * Here are the results of runs of the VMPerformaceTest.testFibonacciLongTime() that show a mixed result:
-     *----------------------------------------------------------------
-     * CASE 1: HIGH MEMORY USE / useDataWordPool =  false
-     * Creating 10000000 linked  objects..
-     * Program.useDataWordPool =  false
-     * Time elapsed [ms]: 28969 [s]:28
-     * RealTime elapsed [ms]: 39626 [s]:39
-     * GCTime elapsed [ms]: 10372 [s]:10
-     * Instructions executed: : 170400032
-     *----------------------------------------------------------------
-     * CASE 2: HIGH MEMORY USE / useDataWordPool =  true
-     * Creating 10000000 linked  objects..
-     * Program.useDataWordPool =  true
-     * Time elapsed [ms]: 35724 [s]:35
-     * RealTime elapsed [ms]: 35783 [s]:35
-     * GCTime elapsed [ms]: 0 [s]:0
-     * Instructions executed: : 170400032
-     *----------------------------------------------------------------
-     * CASE 3: VERY LOW MEMORY USE / useDataWordPool =  false
-     * Creating 0 linked  objects..
-     * Program.useDataWordPool =  false
-     * Time elapsed [ms]: 28516 [s]:28
-     * RealTime elapsed [ms]: 29287 [s]:29
-     * GCTime elapsed [ms]: 291 [s]:0
-     * Instructions executed: : 170400032
-     *----------------------------------------------------------------
-     * If we compare the cases where memory is full of objects (1 and 2), using the memory pool resulted
-     * in 35 seconds of processing (RealTime) while not using the pool resulted in 38 seconds (realTime).
-     * Using useDataWordPool makes the VM go 8% faster.
-     *
-     * In case 2 the time dedicated to GC was actually zero.
-     *
-     * In case 3, there was no use of memory (apart from the VM itself). In this case using the pool took takes also 35
-     * seconds (actual run not shown), but not using the pool takes only 29 seconds (RealTime). Therefore not using the
-     * pool makes the VM faster by 17%.
-     *
-     * However the speedup the DataWord pool provides depends in the application that is run (the real full-node).
-     * Garbage collection time depends on the number of live object pointers. In a test-case that number
-     * is low, therefore garbage collecting is fast. The full-node stores in memory a huge amount of interrelated
-     * objects (such as the Trie). That increases the GC time. To determine if dataWordPool should be activated by
-     * default or disabled by default , additional test cases involving a real full-node with a large worldstate must be
-     * performed. Until that moment, dataWordPool is enabled by setting useDataWordPool=true
-     *
-     *******************************************************************************************************************/
-    private final java.util.Stack<DataWord> dataWordPool;
-
-    private static Boolean useDataWordPool = true;
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
+    private final BlockFactory blockFactory;
 
-    boolean isLogEnabled;
-    boolean isGasLogEnabled;
+    private boolean isLogEnabled;
+    private boolean isGasLogEnabled;
+
+    private RskAddress rskOwnerAddress;
 
     public Program(
             VmConfig config,
             PrecompiledContracts precompiledContracts,
-            BlockchainConfig blockchainConfig,
+            BlockFactory blockFactory,
+            ActivationConfig.ForBlock activations,
             byte[] ops,
             ProgramInvoke programInvoke,
             Transaction transaction) {
         this.config = config;
         this.precompiledContracts = precompiledContracts;
-        this.blockchainConfig = blockchainConfig;
+        this.blockFactory = blockFactory;
+        this.activations = activations;
         this.transaction = transaction;
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
@@ -213,36 +156,19 @@ public class Program {
 
         this.ops = ListArrayUtil.nullToEmpty(ops);
 
+        this.trace = new ProgramTrace(config, programInvoke);
         this.memory = setupProgramListener(new Memory());
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
         this.storage = setupProgramListener(new Storage(programInvoke));
-        this.trace = new ProgramTrace(config, programInvoke);
-
-        if (useDataWordPool) {
-            this.dataWordPool = new java.util.Stack<>();
-            this.dataWordPool.ensureCapacity(1024); // faster?
-        } else {
-            this.dataWordPool = null;
-        }
 
         precompile();
         traceListener = new ProgramTraceListener(config);
     }
 
-    public static void setUseDataWordPool(Boolean value) {
-        useDataWordPool = value;
-    }
-
-    public static Boolean getUseDataWordPool() {
-        return useDataWordPool;
-    }
-
     public int getCallDeep() {
         return invoke.getCallDeep();
     }
-
-
 
     private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, RskAddress senderAddress, RskAddress receiveAddress,
                                               Coin value, byte[] data, String note) {
@@ -289,107 +215,21 @@ public class Program {
         this.lastOp = op;
     }
 
-    /**
-     * Should be set only after the OP is fully executed.
-     */
-    public void setPreviouslyExecutedOp(byte op) {
-        this.previouslyExecutedOp = op;
+    private void stackPushZero() {
+        stackPush(DataWord.ZERO);
     }
 
-    /**
-     * Returns the last fully executed OP.
-     */
-    public byte getPreviouslyExecutedOp() {
-        return this.previouslyExecutedOp;
+    private void stackPushOne() {
+        stackPush(DataWord.ONE);
     }
 
-    public DataWord getNewDataWordFast() {
-        if (dataWordPool==null) {
-            return new DataWord();
-        }
-        if (dataWordPool.empty()) {
-            return new DataWord();
-        } else {
-            return dataWordPool.pop();
-        }
-    }
-
-    public void stackPush(byte[] data) {
-        DataWord dw=getNewDataWordFast();
-        dw.assign(data);
-        stackPush(dw);
-    }
-
-    public void stackPushZero() {
-        DataWord dw=getNewDataWordFast();
-        dw.zero();
-        stackPush(dw);
-    }
-
-    public void stackPushOne() {
-        DataWord stackWord=getNewDataWordFast();
-        stackWord.assignData(DataWord.ONE.getData());
-        stackPush(stackWord);
-    }
-
-    public void stackClear(){
-        if (dataWordPool==null) {
-            stack.clear();
-            return;
-        }
-
-        while (!stack.isEmpty()) {
-            disposeWord(stack.pop());
-        }
-
-    }
-
-    public DataWord newDataWord(byte[] data) {
-        DataWord dw=getNewDataWordFast();
-        dw.assignData(data);
-        return dw;
-    }
-    public DataWord newDataWord(int  v) {
-        DataWord dw=getNewDataWordFast();
-        dw.assign(v);
-        return dw;
-    }
-
-    public DataWord newDataWord(long  v) {
-        DataWord dw=getNewDataWordFast();
-        dw.assign(v);
-        return dw;
-    }
-    public DataWord newDataWord(DataWord idw) {
-        DataWord dw=getNewDataWordFast();
-        dw.assignData(idw.getData());
-        return dw;
-    }
-
-    public DataWord newEmptyDataWord() {
-        DataWord dw=getNewDataWordFast();
-        dw.zero();
-        return dw;
+    private void stackClear(){
+        stack.clear();
     }
 
     public void stackPush(DataWord stackWord) {
         verifyStackOverflow(0, 1); //Sanity Check
         stack.push(stackWord);
-    }
-
-    public void disposeWord(DataWord dw) {
-        if (dataWordPool == null) {
-            return ;
-        }
-
-        if (dw == DataWord.ZERO || dw == DataWord.ONE) {
-            throw new IllegalArgumentException("Can't dispose a global DataWord");
-        }
-
-        // If there are enough cached values, just really dispose
-        if (dataWordPool.size() < 1024) {
-            dataWordPool.push(dw);
-        }
     }
 
     public Stack getStack() {
@@ -429,30 +269,14 @@ public class Program {
     }
 
 
-    public byte[] byteSweep(int n) {
-
+    public DataWord sweepGetDataWord(int n) {
         if (pc + n > ops.length) {
             stop();
+            // In this case partial data is copied. At least Ethereumj does this
+            // Asummes LSBs are zero. assignDataRange undestands this semantics.
         }
 
-        byte[] data = Arrays.copyOfRange(ops, pc, pc + n);
-        pc += n;
-        if (pc >= ops.length) {
-            stop();
-        }
-
-        return data;
-    }
-
-    public DataWord sweepGetDataWord(int n) {
-          if (pc + n > ops.length) {
-              stop();
-              // In this case partial data is copied. At least Ethereumj does this
-              // Asummes LSBs are zero. assignDataRange undestands this semantics.
-          }
-
-        DataWord dw = getNewDataWordFast();
-        dw.assignDataRange(ops, pc, n);
+        DataWord dw = DataWord.valueOf(ops, pc, n);
         pc += n;
         if (pc >= ops.length) {
             stop();
@@ -493,7 +317,7 @@ public class Program {
         memory.write(addrB.intValue(), value.getData(), value.getData().length, false);
     }
 
-    public void memorySaveLimited(int addr, byte[] data, int dataSize) {
+    private void memorySaveLimited(int addr, byte[] data, int dataSize) {
         memory.write(addr, data, dataSize, true);
     }
 
@@ -544,7 +368,7 @@ public class Program {
 
     public void suicide(DataWord obtainerAddress) {
 
-        RskAddress owner = new RskAddress(getOwnerAddress());
+        RskAddress owner = getOwnerRskAddress();
         Coin balance = getStorage().getBalance(owner);
 
         if (!balance.equals(Coin.ZERO)) {
@@ -568,7 +392,7 @@ public class Program {
 
     public void send(DataWord destAddress, Coin amount) {
 
-        RskAddress owner = new RskAddress(getOwnerAddress());
+        RskAddress owner = getOwnerRskAddress();
         RskAddress dest = new RskAddress(destAddress);
         Coin balance = getStorage().getBalance(owner);
 
@@ -599,7 +423,7 @@ public class Program {
             return;
         }
 
-        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        RskAddress senderAddress = getOwnerRskAddress();
         Coin endowment = new Coin(value.getData());
         if (isNotCovers(getStorage().getBalance(senderAddress), endowment)) {
             stackPushZero();
@@ -634,7 +458,7 @@ public class Program {
         if (!byTestingSuite()) {
             getStorage().increaseNonce(senderAddress);
         }
-
+        // Start tracking repository changes for the constructor of the contract
         Repository track = getStorage().startTracking();
 
         //In case of hashing collisions, check for any balance before createAccount()
@@ -645,6 +469,8 @@ public class Program {
         } else {
             track.createAccount(newAddress);
         }
+
+        track.setupContract(newAddress);
 
         // [4] TRANSFER THE BALANCE
         track.addBalance(senderAddress, endowment.negate());
@@ -657,14 +483,14 @@ public class Program {
         // [5] COOK THE INVOKE AND EXECUTE
         InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
-                this, new DataWord(newAddressBytes), getOwnerAddress(), value, gasLimit,
+                this, DataWord.valueOf(newAddressBytes), getOwnerAddress(), value, gasLimit,
                 newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         ProgramResult programResult = ProgramResult.empty();
         returnDataBuffer = null; // reset return buffer right before the call
         if (ListArrayUtil.isNotEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
-            Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
+            Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
         }
@@ -672,8 +498,8 @@ public class Program {
         if (programResult.getException() != null || programResult.isRevert()) {
             if (isLogEnabled) {
                 logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
-                      newAddress,
-                      programResult.getException());
+                        newAddress,
+                        programResult.getException());
             }
 
             if (internalTx == null) {
@@ -716,11 +542,12 @@ public class Program {
             }
 
             track.commit();
+
             getResult().addDeleteAccounts(programResult.getDeleteAccounts());
             getResult().addLogInfos(programResult.getLogInfoList());
 
             // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
-            stackPush(new DataWord(newAddressBytes));
+            stackPush(DataWord.valueOf(newAddressBytes));
         }
 
         // 5. REFUND THE REMAIN GAS
@@ -811,7 +638,7 @@ public class Program {
 
         // FETCH THE SAVED STORAGE
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
-        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        RskAddress senderAddress = getOwnerRskAddress();
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 
         if (isLogEnabled) {
@@ -832,6 +659,7 @@ public class Program {
 
         // FETCH THE CODE
         byte[] programCode = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
+        // programCode  can be null
 
         // Always first remove funds from sender
         track.addBalance(senderAddress, endowment.negate());
@@ -841,7 +669,7 @@ public class Program {
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
             getResult().addCallCreate(data, contextAddress.getBytes(),
-                        msg.getGas().longValueSafe(),
+                    msg.getGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
             return;
         }
@@ -871,7 +699,7 @@ public class Program {
         }
     }
 
-    public boolean executeCode(
+    private boolean executeCode(
             MessageCall msg,
             RskAddress contextAddress,
             Coin contextBalance,
@@ -879,20 +707,20 @@ public class Program {
             Repository track,
             byte[] programCode,
             RskAddress senderAddress,
-            byte[] data ) {
+            byte[] data) {
 
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult = null;
 
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
-                this, new DataWord(contextAddress.getBytes()),
+                this, DataWord.valueOf(contextAddress.getBytes()),
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(),
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
-        Program program = new Program(config, precompiledContracts, blockchainConfig, programCode, programInvoke, internalTx);
+        Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx);
         vm.play(program);
         childResult  = program.getResult();
 
@@ -904,8 +732,8 @@ public class Program {
         if (childResult.getException() != null || childResult.isRevert()) {
             if (isGasLogEnabled) {
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
-                    contextAddress,
-                    childResult .getException());
+                        contextAddress,
+                        childResult .getException());
             }
 
             internalTx.reject();
@@ -946,9 +774,7 @@ public class Program {
             // Therefore, the regundGas also fits in a long.
             refundGas(refundGas.longValue(), "remaining gas from the internal call");
             if (isGasLogEnabled) {
-                gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ",
-                        senderAddress,
-                        refundGas.toString());
+                gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundGas);
             }
         }
         return childCallSuccessful;
@@ -972,7 +798,7 @@ public class Program {
         stopped=false;
     }
 
-    public void clearUsedGas() {
+    private void clearUsedGas() {
         getResult().clearUsedGas();
     }
 
@@ -980,7 +806,7 @@ public class Program {
         spendGas(getRemainingGas(), "Spending all remaining");
     }
 
-    public void refundGas(long gasValue, String cause) {
+    private void refundGas(long gasValue, String cause) {
         if (isGasLogEnabled) {
             gasLogger.info("[{}] Refund for cause: [{}], gas: [{}]", invoke.hashCode(), cause, gasValue);
         }
@@ -1010,23 +836,33 @@ public class Program {
         storageSave(word1.getData(), word2.getData());
     }
 
-    public void storageSave(byte[] key, byte[] val) {
+    private void storageSave(byte[] key, byte[] val) {
         // DataWord constructor some times reference the passed byte[] instead
         // of making a copy.
-        DataWord keyWord = new DataWord(key);
-        DataWord valWord = new DataWord(val);
+        DataWord keyWord = DataWord.valueOf(key);
+        DataWord valWord = DataWord.valueOf(val);
 
-        // If DataWords will be reused, then we must clone them.
-        if (useDataWordPool) {
-            keyWord = keyWord.clone();
-            valWord = valWord.clone();
+        getStorage().addStorageRow(getOwnerRskAddress(), keyWord, valWord);
+    }
+
+    private RskAddress getOwnerRskAddress() {
+        if (rskOwnerAddress == null) {
+            rskOwnerAddress = new RskAddress(getOwnerAddress());
         }
 
-        getStorage().addStorageRow(new RskAddress(getOwnerAddress()), keyWord, valWord);
+        return rskOwnerAddress;
     }
 
     public byte[] getCode() {
-        return ops;
+        return Arrays.copyOf(ops, ops.length);
+    }
+
+    public int getCodeLengthAt(RskAddress addr) {
+        return invoke.getRepository().getCodeLength(addr);
+    }
+
+    public int getCodeLengthAt(DataWord address) {
+        return getCodeLengthAt(new RskAddress(address));
     }
 
     public byte[] getCodeAt(DataWord address) {
@@ -1051,29 +887,29 @@ public class Program {
     }
 
     public DataWord getBlockHash(long index) {
-       long bn = this.getNumber().longValue();
+        long bn = this.getNumber().longValue();
         if ((index <  bn) && (index >= Math.max(0, bn - 256))) {
-            return new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData())).clone();
+            return DataWord.valueOf(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData()));
         } else {
-            return DataWord.ZERO.clone();
+            return DataWord.ZERO;
         }
     }
 
     public DataWord getBalance(DataWord address) {
         Coin balance = getStorage().getBalance(new RskAddress(address));
-        return new DataWord(balance.getBytes());
+        return DataWord.valueOf(balance.getBytes());
     }
 
     public DataWord getOriginAddress() {
-        return invoke.getOriginAddress().clone();
+        return invoke.getOriginAddress();
     }
 
     public DataWord getCallerAddress() {
-        return invoke.getCallerAddress().clone();
+        return invoke.getCallerAddress();
     }
 
     public DataWord getGasPrice() {
-        return invoke.getMinGasPrice().clone();
+        return invoke.getMinGasPrice();
     }
 
     public long getRemainingGas() {
@@ -1081,11 +917,11 @@ public class Program {
     }
 
     public DataWord getCallValue() {
-            return invoke.getCallValue().clone();
+        return invoke.getCallValue();
     }
 
     public DataWord getDataSize() {
-        return invoke.getDataSize().clone();
+        return invoke.getDataSize();
     }
 
     public DataWord getDataValue(DataWord index) {
@@ -1097,35 +933,35 @@ public class Program {
     }
 
     public DataWord storageLoad(DataWord key) {
-        return getStorage().getStorageValue(new RskAddress(getOwnerAddress()), key);
+        return getStorage().getStorageValue(getOwnerRskAddress(), key);
     }
 
     public DataWord getPrevHash() {
-        return invoke.getPrevHash().clone();
+        return invoke.getPrevHash();
     }
 
     public DataWord getCoinbase() {
-        return invoke.getCoinbase().clone();
+        return invoke.getCoinbase();
     }
 
     public DataWord getTimestamp() {
-        return invoke.getTimestamp().clone();
+        return invoke.getTimestamp();
     }
 
     public DataWord getNumber() {
-        return invoke.getNumber().clone();
+        return invoke.getNumber();
     }
 
     public DataWord getTransactionIndex() {
-        return invoke.getTransactionIndex().clone();
+        return invoke.getTransactionIndex();
     }
 
     public DataWord getDifficulty() {
-        return invoke.getDifficulty().clone();
+        return invoke.getDifficulty();
     }
 
     public DataWord getGasLimit() {
-        return invoke.getGaslimit().clone();
+        return invoke.getGaslimit();
     }
 
     public boolean isStaticCall() {
@@ -1164,15 +1000,14 @@ public class Program {
                 stackData.insert(0, "\n");
             }
 
-            ContractDetails contractDetails = getStorage().
-                    getContractDetails(new RskAddress(getOwnerAddress()));
+            RskAddress ownerAddress = new RskAddress(getOwnerAddress());
             StringBuilder storageData = new StringBuilder();
-            if (contractDetails != null) {
-                List<DataWord> storageKeys = new ArrayList<>(contractDetails.getStorage().keySet());
-                Collections.sort(storageKeys);
-                for (DataWord key : storageKeys) {
+            if (getStorage().isContract(ownerAddress)) {
+                Iterator<DataWord> it = getStorage().getStorageKeys(ownerAddress);
+                while (it.hasNext()) {
+                    DataWord key = it.next();
                     storageData.append(" ").append(key).append(" -> ").
-                            append(contractDetails.getStorage().get(key)).append("\n");
+                            append(getStorage().getStorageValue(ownerAddress, key)).append('\n');
                 }
                 if (storageData.length() > 0) {
                     storageData.insert(0, "\n");
@@ -1273,25 +1108,19 @@ public class Program {
 
     public void saveOpTrace() {
         if (this.pc < ops.length) {
-            trace.addOp(ops[pc], pc, getCallDeep(), getRemainingGas(), traceListener.resetActions());
+            trace.addOp(ops[pc], pc, getCallDeep(), getRemainingGas(), this.memory, this.stack, this.storage);
         }
     }
 
-    public static int getScriptVersionInCode(byte[] ops){
-        if (ops.length >= 4) {
-            OpCode op = OpCode.code(ops[0]);
-            if ((op!=null) && op == OpCode.HEADER) {
-                return ops[2];
-            }
-        }
-        return 0;
+    public void saveOpGasCost(long gasCost) {
+        trace.saveGasCost(gasCost);
     }
 
     public ProgramTrace getTrace() {
         return trace;
     }
 
-    public int processAndSkipCodeHeader(int offset) {
+    private int processAndSkipCodeHeader(int offset) {
         int ret = offset;
         if (ops.length >= 4) {
             OpCode op = OpCode.code(ops[0]);
@@ -1324,7 +1153,7 @@ public class Program {
         computeJumpDests(i);
     }
 
-    public void computeJumpDests(int start) {
+    private void computeJumpDests(int start) {
         if (jumpdestSet == null) {
             jumpdestSet = new BitSet(ops.length);
         }
@@ -1346,78 +1175,8 @@ public class Program {
         }
     }
 
-    static String formatBinData(byte[] binData, int startPC) {
-        StringBuilder ret = new StringBuilder();
-        for (int i = 0; i < binData.length; i+= 16) {
-            ret.append(Utils.align("" + Integer.toHexString(startPC + (i)) + ":", ' ', 8, false));
-            ret.append(Hex.toHexString(binData, i, min(16, binData.length - i))).append('\n');
-        }
-        return ret.toString();
-    }
-
-    public static String stringifyMultiline(byte[] code) {
-        int index = 0;
-        StringBuilder sb = new StringBuilder();
-        BitSet mask = buildReachableBytecodesMask(code);
-        ByteArrayOutputStream binData = new ByteArrayOutputStream();
-        int binDataStartPC = -1;
-
-        while (index < code.length) {
-            final byte opCode = code[index];
-            OpCode op = OpCode.code(opCode);
-
-            if (!mask.get(index)) {
-                if (binDataStartPC == -1) {
-                    binDataStartPC = index;
-                }
-                binData.write(code[index]);
-                index ++;
-                if (index < code.length) {
-                    continue;
-                }
-            }
-
-            if (binDataStartPC != -1) {
-                sb.append(formatBinData(binData.toByteArray(), binDataStartPC));
-                binDataStartPC = -1;
-                binData = new ByteArrayOutputStream();
-                if (index == code.length) {
-                    continue;
-                }
-            }
-
-            sb.append(Utils.align("" + Integer.toHexString(index) + ":", ' ', 8, false));
-
-            if (op == null) {
-                sb.append("<UNKNOWN>: ").append(0xFF & opCode).append("\n");
-                index ++;
-                continue;
-            }
-
-            if (op.name().startsWith("PUSH")) {
-                sb.append(' ').append(op.name()).append(' ');
-
-                int nPush = op.val() - OpCode.PUSH1.val() + 1;
-                byte[] data = Arrays.copyOfRange(code, index + 1, index + nPush + 1);
-                BigInteger bi = new BigInteger(1, data);
-                sb.append("0x").append(bi.toString(16));
-                if (bi.bitLength() <= 32) {
-                    sb.append(" (").append(new BigInteger(1, data).toString()).append(") ");
-                }
-
-                index += nPush + 1;
-            } else {
-                sb.append(' ').append(op.name());
-                index++;
-            }
-            sb.append('\n');
-        }
-
-        return sb.toString();
-    }
-
     public DataWord getReturnDataBufferSize() {
-        return new DataWord(getReturnDataBufferSizeI());
+        return DataWord.valueOf(getReturnDataBufferSizeI());
     }
 
     private int getReturnDataBufferSizeI() {
@@ -1438,83 +1197,8 @@ public class Program {
         return Optional.of(copiedData);
     }
 
-    public BlockchainConfig getBlockchainConfig() {
-        return blockchainConfig;
-    }
-
-    static class ByteCodeIterator {
-        private byte[] code;
-        private int pc;
-
-        public ByteCodeIterator(byte[] code) {
-            this.code = code;
-        }
-
-        public void setPC(int pc) {
-            this.pc = pc;
-        }
-
-        public int getPC() {
-            return pc;
-        }
-
-        public OpCode getCurOpcode() {
-            return pc < code.length ? OpCode.code(code[pc]) : null;
-        }
-
-        public boolean isPush() {
-            return getCurOpcode() != null ? getCurOpcode().name().startsWith("PUSH") : false;
-        }
-
-        public byte[] getCurOpcodeArg() {
-            if (isPush()) {
-                int nPush = getCurOpcode().val() - OpCode.PUSH1.val() + 1;
-                return Arrays.copyOfRange(code, pc + 1, pc + nPush + 1);
-            } else {
-                return new byte[0];
-            }
-        }
-
-        public boolean next() {
-            pc += 1 + getCurOpcodeArg().length;
-            return pc < code.length;
-        }
-    }
-
-    static BitSet buildReachableBytecodesMask(byte[] code) {
-        NavigableSet<Integer> gotos = new TreeSet<>();
-        ByteCodeIterator it = new ByteCodeIterator(code);
-        BitSet ret = new BitSet(code.length);
-        int lastPush = 0;
-        int lastPushPC = 0;
-        do {
-            ret.set(it.getPC()); // reachable bytecode
-            if (it.isPush()) {
-                lastPush = new BigInteger(1, it.getCurOpcodeArg()).intValue();
-                lastPushPC = it.getPC();
-            }
-            if (it.getCurOpcode() == OpCode.JUMP || it.getCurOpcode() == OpCode.JUMPI) {
-                if (it.getPC() != lastPushPC + 1) {
-                    // some PC arithmetic we totally can't deal with
-                    // assuming all bytecodes are reachable as a fallback
-                    ret.setAll();
-                    return ret;
-                }
-                int jumpPC = lastPush;
-                if (!ret.get(jumpPC)) {
-                    // code was not explored yet
-                    gotos.add(jumpPC);
-                }
-            }
-            if (it.getCurOpcode() == OpCode.JUMP || it.getCurOpcode() == OpCode.RETURN ||
-                    it.getCurOpcode() == OpCode.STOP) {
-                if (gotos.isEmpty()) {
-                    break;
-                }
-                it.setPC(gotos.pollFirst());
-            }
-        } while(it.next());
-        return ret;
+    public ActivationConfig.ForBlock getActivations() {
+        return activations;
     }
 
     public void addListener(ProgramOutListener listener) {
@@ -1543,7 +1227,7 @@ public class Program {
 
         Repository track = getStorage().startTracking();
 
-        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        RskAddress senderAddress = getOwnerRskAddress();
         RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 
@@ -1561,6 +1245,11 @@ public class Program {
         // Charge for endowment - is not reversible by rollback
         track.transfer(senderAddress, contextAddress, new Coin(msg.getEndowment().getData()));
 
+        // we are assuming that transfer is already creating destination account even if the amount is zero
+        if (!track.isContract(codeAddress)) {
+            track.setupContract(codeAddress);
+        }
+
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
             this.getResult().addCallCreate(data,
@@ -1572,17 +1261,25 @@ public class Program {
             return;
         }
 
-        // Special initialization for Bridge and Remasc contracts
-        if (contract instanceof Bridge || contract instanceof RemascContract) {
+        // Special initialization for Bridge, Remasc and NativeContract contracts
+        if (contract instanceof Bridge || contract instanceof RemascContract || contract instanceof NativeContract) {
             // CREATE CALL INTERNAL TRANSACTION
             InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
 
             // Propagate the "local call" nature of the originating transaction down to the callee
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
 
-            Block executionBlock = new Block(getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(), EMPTY_BYTE_ARRAY,
-                getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
+            Block executionBlock = blockFactory.newBlock(
+                    blockFactory.newHeader(
+                            getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(),
+                            ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
+                            ByteUtils.clone(EMPTY_TRIE_HASH), EMPTY_BYTE_ARRAY, getDifficulty().getData(),
+                            getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
+                            EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
+                    ),
+                    Collections.emptyList(),
+                    Collections.emptyList()
+            );
 
             contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
         }
@@ -1599,7 +1296,7 @@ public class Program {
 
             byte[] out = contract.execute(data);
 
-            if (getBlockchainConfig().isRskip90()) {
+            if (getActivations().isActive(ConsensusRule.RSKIP90)) {
                 this.returnDataBuffer = out;
             }
 
@@ -1609,7 +1306,7 @@ public class Program {
         }
     }
 
-    public boolean byTestingSuite() {
+    private boolean byTestingSuite() {
         return invoke.byTestingSuite();
     }
 

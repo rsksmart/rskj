@@ -18,19 +18,17 @@
 
 package co.rsk.validators;
 
-import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Created by mario on 23/01/17.
  */
-public class BlockTimeStampValidationRule implements BlockParentDependantValidationRule, BlockValidationRule{
+public class BlockTimeStampValidationRule implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule, BlockValidationRule, BlockHeaderValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
-
 
     private int validPeriodLength;
 
@@ -40,12 +38,17 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
 
     @Override
     public boolean isValid(Block block) {
+        return isValid(block.getHeader());
+    }
+
+    @Override
+    public boolean isValid(BlockHeader header) {
         if (this.validPeriodLength == 0) {
             return true;
         }
 
-        final long currentTime = System.currentTimeMillis() / 1000;
-        final long blockTime = block.getTimestamp();
+        final long currentTime = System.currentTimeMillis() / 1000L;
+        final long blockTime = header.getTimestamp();
 
         boolean result = blockTime - currentTime <= this.validPeriodLength;
 
@@ -57,14 +60,14 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
     }
 
     @Override
-    public boolean isValid(Block block, Block parent) {
+    public boolean isValid(BlockHeader header, Block parent) {
         if (this.validPeriodLength == 0) {
             return true;
         }
 
-        boolean result = this.isValid(block);
+        boolean result = this.isValid(header);
 
-        final long blockTime = block.getTimestamp();
+        final long blockTime = header.getTimestamp();
         final long parentTime = parent.getTimestamp();
         result = result && (blockTime > parentTime);
 
@@ -73,5 +76,10 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
         }
 
         return result;
+    }
+
+    @Override
+    public boolean isValid(Block block, Block parent) {
+        return isValid(block.getHeader(), parent);
     }
 }

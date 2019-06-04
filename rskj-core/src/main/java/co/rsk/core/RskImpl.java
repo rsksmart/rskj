@@ -18,35 +18,24 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.NodeBlockProcessor;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.PeerServer;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
 public class RskImpl extends EthereumImpl implements Rsk {
 
-    private boolean isplaying;
     private final NodeBlockProcessor nodeBlockProcessor;
 
-    @Autowired
     public RskImpl(
             ChannelManager channelManager,
-            PeerServer peerServer,
             TransactionPool transactionPool,
-            RskSystemProperties config,
             CompositeEthereumListener compositeEthereumListener,
             NodeBlockProcessor nodeBlockProcessor,
-            ReversibleTransactionExecutor reversibleTransactionExecutor,
             Blockchain blockchain) {
         super(
-                config,
                 channelManager,
                 transactionPool,
                 compositeEthereumListener,
@@ -56,17 +45,8 @@ public class RskImpl extends EthereumImpl implements Rsk {
     }
 
     @Override
-    public boolean isPlayingBlocks() {
-        return isplaying;
-    }
-
-    @Override
     public boolean isBlockchainEmpty() {
         return this.nodeBlockProcessor.getBestBlockNumber() == 0;
-    }
-
-    public void setIsPlayingBlocks(boolean value) {
-        isplaying = value;
     }
 
     @Override

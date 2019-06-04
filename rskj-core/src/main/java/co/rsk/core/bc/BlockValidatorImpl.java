@@ -23,16 +23,12 @@ import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 
 /**
  * BlockValidator has methods to validate block content before its execution
  *
  * Created by ajlopez on 29/07/2016.
  */
-@Component
 public class BlockValidatorImpl implements BlockValidator {
 
     private BlockStore blockStore;
@@ -41,8 +37,7 @@ public class BlockValidatorImpl implements BlockValidator {
 
     private BlockValidationRule blockValidator;
 
-    @Autowired
-    public BlockValidatorImpl(BlockStore blockStore, BlockParentDependantValidationRule blockParentValidator, @Qualifier("blockValidationRule") BlockValidationRule blockValidator) {
+    public BlockValidatorImpl(BlockStore blockStore, BlockParentDependantValidationRule blockParentValidator, BlockValidationRule blockValidator) {
         this.blockStore = blockStore;
         this.blockParentValidator = blockParentValidator;
         this.blockValidator = blockValidator;

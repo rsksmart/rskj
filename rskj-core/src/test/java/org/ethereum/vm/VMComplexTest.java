@@ -23,8 +23,10 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.config.BlockchainConfig;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.program.Program;
@@ -36,7 +38,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -52,6 +53,7 @@ public class VMComplexTest {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
@@ -75,8 +77,8 @@ public class VMComplexTest {
 
         int expectedGas = 436;
 
-        DataWord key1 = new DataWord(999);
-        DataWord value1 = new DataWord(3);
+        DataWord key1 = DataWord.valueOf(999);
+        DataWord value1 = DataWord.valueOf(3);
 
         // Set contract into Database
         String callerAddr = "cd2a3d9f938e13cd947ec05abc7fe734df8dd826";
@@ -90,7 +92,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        //accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -125,7 +127,6 @@ public class VMComplexTest {
 
         // todo: assert caller balance after contract exec
 
-        repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
@@ -208,11 +209,10 @@ public class VMComplexTest {
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
 
 
-        DataWord value_1 = repository.getStorageValue(contractA_addr, new DataWord(00));
-        DataWord value_2 = repository.getStorageValue(contractA_addr, new DataWord(01));
+        DataWord value_1 = repository.getStorageValue(contractA_addr, DataWord.valueOf(00));
+        DataWord value_2 = repository.getStorageValue(contractA_addr, DataWord.valueOf(01));
 
 
-        repository.close();
         assertEquals(expectedVal_1, value_1.longValue());
         assertEquals(expectedVal_2, value_2.longValue());
 
@@ -293,14 +293,12 @@ public class VMComplexTest {
         System.out.println("============ Results ============");
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
 
-        DataWord value1 = program.memoryLoad(new DataWord(32));
-        DataWord value2 = program.memoryLoad(new DataWord(64));
-        DataWord value3 = program.memoryLoad(new DataWord(96));
-        DataWord value4 = program.memoryLoad(new DataWord(128));
-        DataWord value5 = program.memoryLoad(new DataWord(160));
-        DataWord value6 = program.memoryLoad(new DataWord(192));
-
-        repository.close();
+        DataWord value1 = program.memoryLoad(DataWord.valueOf(32));
+        DataWord value2 = program.memoryLoad(DataWord.valueOf(64));
+        DataWord value3 = program.memoryLoad(DataWord.valueOf(96));
+        DataWord value4 = program.memoryLoad(DataWord.valueOf(128));
+        DataWord value5 = program.memoryLoad(DataWord.valueOf(160));
+        DataWord value6 = program.memoryLoad(DataWord.valueOf(192));
 
         assertEquals(expectedVal_1, value1.longValue());
         assertEquals(expectedVal_2, value2.longValue());
@@ -371,7 +369,6 @@ public class VMComplexTest {
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         // TODO: check that the value pushed after exec is the new address
-        repository.close();
     }
 
     @Test // CALL contract with too much gas
@@ -445,12 +442,10 @@ public class VMComplexTest {
         System.out.println("============ Results ============");
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
 
-        DataWord memValue1 = program.memoryLoad(new DataWord(0));
-        DataWord memValue2 = program.memoryLoad(new DataWord(32));
+        DataWord memValue1 = program.memoryLoad(DataWord.valueOf(0));
+        DataWord memValue2 = program.memoryLoad(DataWord.valueOf(32));
 
-        DataWord storeValue1 = repository.getStorageValue(contractB_addr, new DataWord(00));
-
-        repository.close();
+        DataWord storeValue1 = repository.getStorageValue(contractB_addr, DataWord.valueOf(00));
 
         assertEquals("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", memValue1.toString());
         assertEquals("aaffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaa", memValue2.toString());
@@ -467,8 +462,8 @@ public class VMComplexTest {
 
         int expectedGas = 357;
 
-        DataWord key1 = new DataWord(999);
-        DataWord value1 = new DataWord(3);
+        DataWord key1 = DataWord.valueOf(999);
+        DataWord value1 = DataWord.valueOf(3);
 
         // Set contract into Database
         String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
@@ -481,7 +476,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        //accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -516,7 +511,6 @@ public class VMComplexTest {
 
         // todo: assert caller balance after contract exec
 
-        repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
@@ -527,8 +521,8 @@ public class VMComplexTest {
 
         int expectedGas = 354;
 
-        DataWord key1 = new DataWord(999);
-        DataWord value1 = new DataWord(3);
+        DataWord key1 = DataWord.valueOf(999);
+        DataWord value1 = DataWord.valueOf(3);
 
         // Set contract into Database
         String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
@@ -541,7 +535,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        //accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -576,7 +570,6 @@ public class VMComplexTest {
 
         // todo: assert caller balance after contract exec
 
-        repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
@@ -587,8 +580,8 @@ public class VMComplexTest {
 
         int expectedGas = 356;
 
-        DataWord key1 = new DataWord(9999);
-        DataWord value1 = new DataWord(3);
+        DataWord key1 = DataWord.valueOf(9999);
+        DataWord value1 = DataWord.valueOf(3);
 
         // Set contract into Database
         String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
@@ -601,7 +594,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        //accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -636,7 +629,6 @@ public class VMComplexTest {
 
         // todo: assert caller balance after contract exec
 
-        repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
@@ -647,8 +639,8 @@ public class VMComplexTest {
 
         int expectedGas = 313;
 
-        DataWord key1 = new DataWord(999);
-        DataWord value1 = new DataWord(3);
+        DataWord key1 = DataWord.valueOf(999);
+        DataWord value1 = DataWord.valueOf(3);
 
         // Set contract into Database
         String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
@@ -661,7 +653,7 @@ public class VMComplexTest {
 
         byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState();
-        accountState.setCodeHash(codeKey);
+        //accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractAddrB);
@@ -696,7 +688,6 @@ public class VMComplexTest {
 
         // todo: assert caller balance after contract exec
 
-        repository.close();
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
 
@@ -705,6 +696,6 @@ public class VMComplexTest {
     }
 
     private Program getProgram(byte[] code, ProgramInvoke pi) {
-        return new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), code, pi, null);
+        return new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, pi, null);
     }
 }

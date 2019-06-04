@@ -59,9 +59,9 @@ public class TransactionGateway {
         emitter.removeListener(listener);
     }
 
-    public List<Transaction> receiveTransactionsFrom(List<Transaction> txs, NodeID nodeID) {
+    public void receiveTransactionsFrom(List<Transaction> txs, NodeID nodeID) {
         txs.forEach(tx -> transactionNodeInformation.addTransactionToNode(tx.getHash(), nodeID));
-        return transactionPool.addTransactions(txs);
+        transactionPool.addTransactions(txs);
     }
 
     private class OnPendingTransactionsReceivedListener extends EthereumListenerAdapter {

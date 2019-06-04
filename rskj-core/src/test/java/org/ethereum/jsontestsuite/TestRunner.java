@@ -19,31 +19,34 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.db.RepositoryImpl;
-import co.rsk.db.TrieStorePoolOnMemory;
-import co.rsk.trie.TrieStoreImpl;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.StateRootHandler;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieConverter;
 import co.rsk.validators.DummyBlockValidator;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.core.Block;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.Repository;
-import org.ethereum.core.TransactionExecutor;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
-import org.ethereum.jsontestsuite.builder.BlockBuilder;
 import org.ethereum.jsontestsuite.builder.RepositoryBuilder;
+import org.ethereum.jsontestsuite.builder.TransactionBuilder;
+import org.ethereum.jsontestsuite.model.BlockHeaderTck;
 import org.ethereum.jsontestsuite.model.BlockTck;
+import org.ethereum.jsontestsuite.model.TransactionTck;
 import org.ethereum.jsontestsuite.validators.BlockHeaderValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
+import org.ethereum.jsontestsuite.validators.ValidationStats;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.util.ByteUtil;
@@ -58,7 +61,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -68,6 +70,7 @@ import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.shortHash;
 import static org.ethereum.json.Utils.parseData;
+import static org.ethereum.json.Utils.parseNumericData;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 import static org.mockito.Mockito.mock;
@@ -81,10 +84,27 @@ public class TestRunner {
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
-    private boolean setNewStateRoot;
     private boolean validateGasUsed = false; // until EIP150 test cases are ready.
+    private boolean validateBalances = true;
+    private boolean validateStateRoots =false;
+
+    public TestRunner setValidateGasUsed( boolean v) {
+        validateGasUsed= v;
+        return this;
+    }
+
+    public TestRunner setValidateStateRoots ( boolean v) {
+        validateStateRoots = v;
+        return this;
+    }
+
+    public TestRunner setValidateBalances(boolean v) {
+        validateBalances = v;
+        return this;
+    }
 
     public List<String> runTestSuite(TestSuite testSuite) {
 
@@ -106,10 +126,12 @@ public class TestRunner {
 
     public List<String> runTestCase(BlockTestCase testCase) {
         /* 1 */ // Create genesis + init pre state
-        Block genesis = BlockBuilder.build(testCase.getGenesisBlockHeader(), null, null);
+        ValidationStats vStats = new ValidationStats();
+
+        Block genesis = build(testCase.getGenesisBlockHeader(), null, null);
         Repository repository = RepositoryBuilder.build(testCase.getPre());
 
-        IndexedBlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
@@ -118,55 +140,50 @@ public class TestRunner {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
-
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, transactionPool, null, new DummyBlockValidator(), false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                config,
                 blockStore,
                 receiptStore,
-                programInvokeFactory,
-                block1,
+                blockFactory,
+                new ProgramInvokeFactoryImpl()
+        );
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
+
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        BlockChainImpl blockchain = new BlockChainImpl(
+                repository,
+                blockStore,
+                receiptStore,
+                transactionPool,
                 null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        )));
+                new DummyBlockValidator(),
+                false,
+                1,
+                new BlockExecutor(
+                        config.getActivationConfig(),
+                        repository,
+                        stateRootHandler,
+                        transactionExecutorFactory
+                ),
+                stateRootHandler
+        );
 
         blockchain.setNoValidation(true);
-
-        blockchain.setBestBlock(genesis);
-        blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
+        blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
         /* 2 */ // Create block traffic list
         List<Block> blockTraffic = new ArrayList<>();
 
         for (BlockTck blockTck : testCase.getBlocks()) {
-            Block block = BlockBuilder.build(blockTck.getBlockHeader(),
-                    blockTck.getTransactions(),
-                    blockTck.getUncleHeaders());
-
-            setNewStateRoot = !((blockTck.getTransactions() == null)
-                    && (blockTck.getUncleHeaders() == null)
-                    && (blockTck.getBlockHeader() == null));
+            Block block = build(blockTck.getBlockHeader(), blockTck.getTransactions(), blockTck.getUncleHeaders());
 
             Block tBlock = null;
             try {
                 byte[] rlp = parseData(blockTck.getRlp());
-                tBlock = new Block(rlp);
+                tBlock = blockFactory.decodeBlock(rlp);
 
                 ArrayList<String> outputSummary =
-                        BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader());
+                        BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader(),null);
 
                 if (!outputSummary.isEmpty()){
                     for (String output : outputSummary)
@@ -194,17 +211,16 @@ public class TestRunner {
         byte[] bestHash = Hex.decode(testCase.getLastblockhash());
         String finalRoot = Hex.toHexString(blockStore.getBlockByHash(bestHash).getStateRoot());
 
-        /*
-        if (!blockchain.byTest) // If this comes from ETH, it won't match
-        if (!finalRoot.equals(currRoot)){
-            String formattedString = String.format("Root hash doesn't match best: expected: %s current: %s",
-                    finalRoot, currRoot);
-            results.add(formattedString);
+        if (validateStateRoots) {
+            if (!finalRoot.equals(currRoot)) {
+                String formattedString = String.format("Root hash doesn't match best: expected: %s current: %s",
+                        finalRoot, currRoot);
+                results.add(formattedString);
+            }
         }
-        */
 
         Repository postRepository = RepositoryBuilder.build(testCase.getPostState());
-        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, false /*!blockchain.byTest*/);
+        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, validateStateRoots,validateBalances,null);
         results.addAll(repoResults);
 
         return results;
@@ -220,7 +236,7 @@ public class TestRunner {
 
 
         logger.info("--------- PRE ---------");
-        Repository repository = loadRepository(createRepositoryImpl(config).startTracking(), testCase.getPre());
+        Repository repository = loadRepository(createRepository().startTracking(), testCase.getPre());
 
         try {
 
@@ -246,10 +262,14 @@ public class TestRunner {
             byte[] gaslimit = env.getCurrentGasLimit();
 
             // Origin and caller need to exist in order to be able to execute
-            if (repository.getAccountState(new RskAddress(origin)) == null)
-                repository.createAccount(new RskAddress(origin));
-            if (repository.getAccountState(new RskAddress(caller)) == null)
-                repository.createAccount(new RskAddress(caller));
+            RskAddress originAddress = new RskAddress(origin);
+            if (repository.getAccountState(originAddress) == null) {
+                repository.createAccount(originAddress);
+            }
+            RskAddress callerAddress = new RskAddress(caller);
+            if (repository.getAccountState(callerAddress) == null) {
+                repository.createAccount(callerAddress);
+            }
 
             ProgramInvoke programInvoke = new ProgramInvokeImpl(address, origin, caller, balance,
                     gasPrice, gas, callValue, msgData, lastHash, coinbase,
@@ -258,7 +278,7 @@ public class TestRunner {
             /* 3. Create Program - exec.code */
             /* 4. run VM */
             VM vm = new VM(vmConfig, precompiledContracts);
-            Program program = new Program(vmConfig, precompiledContracts, mock(BlockchainConfig.class), exec.getCode(), programInvoke, null);
+            Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), exec.getCode(), programInvoke, null);
             boolean vmDidThrowAnEception = false;
             Exception e = null;
             ThreadMXBean thread;
@@ -282,21 +302,24 @@ public class TestRunner {
                 logger.info("Time elapsed [uS]: " + Long.toString(deltaTime));
             }
 
-            try {
-                saveProgramTraceFile(testCase.getName(), program.getTrace(), config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed());
-            } catch (IOException ioe) {
-                vmDidThrowAnEception = true;
-                e = ioe;
+            if (!program.getTrace().isEmpty()) {
+                try {
+                    saveProgramTraceFile(testCase.getName(), program.getTrace(), config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed());
+                } catch (IOException ioe) {
+                    vmDidThrowAnEception = true;
+                    e = ioe;
+                }
             }
 
+            // No items in POST means an exception is expected
             if (testCase.getPost().size() == 0) {
                 if (vmDidThrowAnEception != true) {
                     String output =
-                            "VM was expected to throw an exception";
+                            "VM was expected to throw an exception, but did not";
                     logger.info(output);
                     results.add(output);
                 } else
-                    logger.info("VM did throw an exception: " + e.toString());
+                    logger.info("VM did throw an EXPECTED exception: " + e.toString());
             } else {
                 if (vmDidThrowAnEception) {
                     String output =
@@ -318,9 +341,19 @@ public class TestRunner {
                     Coin expectedBalance = accountState.getBalance();
                     byte[] expectedCode = accountState.getCode();
 
+                    // The new semantic of getAccountState() is that it will return
+                    // null if the account does not exists. Previous semantic was
+                    // to return a new empty AccountState.
+                    // One example is ExtCodeSizeAddressInputTooBigRightMyAddress
+                    // the address 0x0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+                    // should not be an existent contract.
                     boolean accountExist = (null != repository.getAccountState(addr));
 
+                    // Therefore this check is useless now, if we're going to check
+                    // balance, nonce and storage.
+                    /*
                     if (!accountExist) {
+
                         String output =
                                 String.format("The expected account does not exist. key: [ %s ]",
                                         addr);
@@ -329,7 +362,9 @@ public class TestRunner {
 
                         continue;
                     }
-
+                    */
+                    // This "get" used to create an entry in the repository for the account.
+                    // It should not.
                     long actualNonce = repository.getNonce(addr).longValue();
                     Coin actualBalance = repository.getBalance(addr);
                     byte[] actualCode = repository.getCode(addr);
@@ -365,16 +400,15 @@ public class TestRunner {
                     Map<DataWord, DataWord> storage = accountState.getStorage();
 
                     for (DataWord storageKey : storage.keySet()) {
-                        byte[] expectedStValue = storage.get(storageKey).getData();
+                        DataWord expectedStValue = storage.get(storageKey);
 
-                        ContractDetails contractDetails =
-                                program.getStorage().getContractDetails(accountState.getAddress());
+                        RskAddress accountAddress = accountState.getAddress();
 
-                        if (contractDetails == null) {
+                        if (!program.getStorage().isContract(accountAddress)) {
                             String output =
                                     String.format("Storage raw doesn't exist: key [ %s ], expectedValue: [ %s ]",
                                             Hex.toHexString(storageKey.getData()),
-                                            Hex.toHexString(expectedStValue)
+                                            expectedStValue.toString()
                                     );
 
                             logger.info(output);
@@ -383,17 +417,21 @@ public class TestRunner {
                             continue;
                         }
 
-                        Map<DataWord, DataWord> testStorage = contractDetails.getStorage();
-                        DataWord actualValue = testStorage.get(new DataWord(storageKey.getData()));
+                        byte[] actualValue = program.getStorage().getStorageBytes(accountAddress, storageKey);
 
+                        // The actual value will be compressed (not leading zeros)
+                        // But the expected value is given in a DataWord.
+                        // Here we expand the actualValue: this may make subtle encoding errors
+                        // go undetected, but the whole TestRunner system is based on DataWords
+                        // and not byte arrays.
                         if (actualValue == null ||
-                                !Arrays.equals(expectedStValue, actualValue.getData())) {
+                                !(expectedStValue.equals(DataWord.valueOf(actualValue)))) {
 
                             String output =
                                     String.format("Storage value different: key [ %s ], expectedValue: [ %s ], actualValue: [ %s ]",
                                             Hex.toHexString(storageKey.getData()),
-                                            Hex.toHexString(expectedStValue),
-                                            actualValue == null ? "" : Hex.toHexString(actualValue.getNoLeadZeroesData()));
+                                            expectedStValue.toString(),
+                                            actualValue == null ? "" : Hex.toHexString(actualValue));
                             logger.info(output);
                             results.add(output);
                         }
@@ -619,8 +657,8 @@ public class TestRunner {
             AccountState accountState = pre.get(addr);
 
             track.addBalance(addr, accountState.getBalance());
-            ((RepositoryTrack)track).setNonce(addr, new BigInteger(1, accountState.getNonce()));
-
+            track.setNonce(addr, new BigInteger(1, accountState.getNonce()));
+            track.setupContract(addr);
             track.saveCode(addr, accountState.getCode());
 
             for (DataWord storageKey : accountState.getStorage().keySet()) {
@@ -635,7 +673,59 @@ public class TestRunner {
         return trace;
     }
 
-    public static RepositoryImpl createRepositoryImpl(RskSystemProperties config) {
-        return new RepositoryImpl(null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+    private static Repository createRepository() {
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+    }
+
+    public Block build(
+            BlockHeaderTck header,
+            List<TransactionTck> transactionsTck,
+            List<BlockHeaderTck> unclesTck) {
+
+        if (header == null) return null;
+
+        List<BlockHeader> uncles = new ArrayList<>();
+        if (unclesTck != null) for (BlockHeaderTck uncle : unclesTck)
+            uncles.add(buildHeader(blockFactory, uncle));
+
+        List<org.ethereum.core.Transaction> transactions = new ArrayList<>();
+        if (transactionsTck != null) for (TransactionTck tx : transactionsTck)
+            transactions.add(TransactionBuilder.build(tx));
+
+        BlockHeader blockHeader = buildHeader(blockFactory, header);
+        return blockFactory.newBlock(blockHeader, transactions, uncles);
+    }
+
+
+    private static long getPositiveLong(String a) {
+        if (a.startsWith("0x")) {
+            a = a.substring(2);
+        }
+
+        return Long.parseLong(a,16);
+    }
+
+    private static BlockHeader buildHeader(BlockFactory blockFactory, BlockHeaderTck headerTck) {
+        return blockFactory.newHeader(
+                parseData(headerTck.getParentHash()),
+                parseData(headerTck.getUncleHash()),
+                parseData(headerTck.getCoinbase()),
+                parseData(headerTck.getStateRoot()),
+                parseData(headerTck.getTransactionsTrie()),
+                parseData(headerTck.getReceiptTrie()),
+                parseData(headerTck.getBloom()),
+                parseNumericData(headerTck.getDifficulty()),
+                getPositiveLong(headerTck.getNumber()),
+                parseData(headerTck.getGasLimit()),
+                getPositiveLong(headerTck.getGasUsed()),
+                getPositiveLong(headerTck.getTimestamp()),
+                parseData(headerTck.getExtraData()),
+                Coin.ZERO,
+                null,
+                null,
+                null,
+                null,
+                0
+        );
     }
 }

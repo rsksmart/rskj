@@ -20,13 +20,15 @@
 package org.ethereum.listener;
 
 import co.rsk.panic.PanicProcessor;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
-import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,11 +107,6 @@ public class CompositeEthereumListener implements EthereumListener {
     }
 
     @Override
-    public void onVMTraceCreated(String transactionHash, ProgramTrace trace) {
-        scheduleListenerCallbacks(listener -> listener.onVMTraceCreated(transactionHash, trace));
-    }
-
-    @Override
     public void onNodeDiscovered(Node node) {
         scheduleListenerCallbacks(listener -> listener.onNodeDiscovered(node));
     }
@@ -117,11 +114,6 @@ public class CompositeEthereumListener implements EthereumListener {
     @Override
     public void onEthStatusUpdated(Channel channel, StatusMessage status) {
         scheduleListenerCallbacks(listener -> listener.onEthStatusUpdated(channel, status));
-    }
-
-    @Override
-    public void onTransactionExecuted(TransactionExecutionSummary summary) {
-        scheduleListenerCallbacks(listener -> listener.onTransactionExecuted(summary));
     }
 
     @Override

@@ -39,8 +39,8 @@ public class TxValidatorGasLimitValidatorTest {
 
         TxValidatorGasLimitValidator tvglv = new TxValidatorGasLimitValidator();
 
-        Assert.assertTrue(tvglv.validate(tx1, null, gl, null, Long.MAX_VALUE, false));
-        Assert.assertTrue(tvglv.validate(tx2, null, gl, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvglv.validate(tx1, null, gl, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assert.assertTrue(tvglv.validate(tx2, null, gl, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
@@ -55,6 +55,6 @@ public class TxValidatorGasLimitValidatorTest {
 
         TxValidatorGasLimitValidator tvglv = new TxValidatorGasLimitValidator();
 
-        Assert.assertFalse(tvglv.validate(tx1, null, gl, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvglv.validate(tx1, null, gl, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 }

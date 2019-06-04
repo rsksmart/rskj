@@ -7248,6 +7248,7 @@
                 }
             },
             "d2571607e241ecf590ed94b12d87c94babe36db6" : {
+                "forcedContract": true,
                 "balance" : "0x17",
                 "code" : "0x6000355415600957005b602035600035",
                 "nonce" : "0x00",
@@ -7566,6 +7567,7 @@
                 }
             },
             "d2571607e241ecf590ed94b12d87c94babe36db6" : {
+                "forcedContract": true,
                 "balance" : "0x17",
                 "code" : "0x",
                 "nonce" : "0x00",
@@ -7636,6 +7638,7 @@
                 }
             },
             "d2571607e241ecf590ed94b12d87c94babe36db6" : {
+                "forcedContract": true,
                 "balance" : "0x17",
                 "code" : "0x",
                 "nonce" : "0x00",
@@ -7706,6 +7709,7 @@
                 }
             },
             "d2571607e241ecf590ed94b12d87c94babe36db6" : {
+                "forcedContract": true,
                 "balance" : "0x17",
                 "code" : "0x",
                 "nonce" : "0x00",
@@ -7743,7 +7747,7 @@
     "createWithInvalidOpcode" : {
         "env" : {
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
-            "currentDifficulty" : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "currentDifficulty" : "0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
             "currentGasLimit" : "0x0f4240",
             "currentNumber" : "0x259518",
             "currentTimestamp" : "0x02",
@@ -8632,7 +8636,7 @@
     "testRandomTest" : {
         "env" : {
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
-            "currentDifficulty" : "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "currentDifficulty" : "0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
             "currentGasLimit" : "0x0f4240",
             "currentNumber" : "0x259518",
             "currentTimestamp" : "0x02",

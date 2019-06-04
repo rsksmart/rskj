@@ -21,6 +21,7 @@ package co.rsk.net.eth;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.GetBlockMessage;
@@ -30,12 +31,10 @@ import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.core.*;
-import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.handler.EthHandler;
 import org.ethereum.net.eth.message.EthMessage;
-import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
 import org.ethereum.sync.SyncState;
@@ -48,8 +47,6 @@ import org.bouncycastle.util.encoders.Hex;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Arrays;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 import static org.ethereum.net.eth.EthVersion.V62;
@@ -76,15 +73,17 @@ public class RskWireProtocol extends EthHandler {
     private final MessageHandler messageHandler;
     private final Blockchain blockchain;
     private final MessageRecorder messageRecorder;
+    private final Genesis genesis;
 
-    public RskWireProtocol(RskSystemProperties config, PeerScoringManager peerScoringManager, MessageHandler messageHandler, Blockchain blockchain, CompositeEthereumListener ethereumListener) {
+    public RskWireProtocol(RskSystemProperties config, PeerScoringManager peerScoringManager, MessageHandler messageHandler, Blockchain blockchain, CompositeEthereumListener ethereumListener, Genesis genesis, MessageRecorder messageRecorder) {
         super(blockchain, config, ethereumListener, V62);
         this.peerScoringManager = peerScoringManager;
         this.messageHandler = messageHandler;
         this.blockchain = blockchain;
         this.config = config;
         this.messageSender = new EthMessageSender(this);
-        this.messageRecorder = config.getMessageRecorder();
+        this.messageRecorder = messageRecorder;
+        this.genesis = genesis;
     }
 
     @Override
@@ -111,8 +110,6 @@ public class RskWireProtocol extends EthHandler {
             ctx.disconnect();
             return;
         }
-
-        Metrics.messageBytes(messageSender.getPeerNodeID(), msg.getEncoded().length);
 
         switch (msg.getCommand()) {
             case STATUS:
@@ -151,17 +148,14 @@ public class RskWireProtocol extends EthHandler {
      *************************/
 
     protected void processStatus(org.ethereum.net.eth.message.StatusMessage msg, ChannelHandlerContext ctx) throws InterruptedException {
-
         try {
-            Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
-            if (!Arrays.equals(msg.getGenesisHash(), genesis.getHash().getBytes())
-                    || msg.getProtocolVersion() != version.getCode()) {
+            byte protocolVersion = msg.getProtocolVersion();
+            byte versionCode = version.getCode();
+            if (protocolVersion != versionCode) {
                 loggerNet.info("Removing EthHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
-                if (msg.getProtocolVersion() != version.getCode()){
-                    loggerNet.info("Protocol version {} - message protocol version {}", version.getCode(), msg.getProtocolVersion());
-                } else {
-                    loggerNet.info("Config genesis hash {} - message genesis hash {}", genesis.getHash(), msg.getGenesisHash());
-                }
+                loggerNet.info("Protocol version {} - message protocol version {}",
+                        versionCode,
+                        protocolVersion);
                 ethState = EthState.STATUS_FAILED;
                 recordEvent(EventType.INCOMPATIBLE_PROTOCOL);
                 disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
@@ -169,11 +163,29 @@ public class RskWireProtocol extends EthHandler {
                 return;
             }
 
-            if (config.networkId() != msg.getNetworkId()) {
-                loggerNet.info("Different network received: config network ID {} - message network ID {}", config.networkId(), msg.getNetworkId());
+            int networkId = config.networkId();
+            int msgNetworkId = msg.getNetworkId();
+            if (msgNetworkId != networkId) {
+                loggerNet.info("Removing EthHandler for {} due to invalid network", ctx.channel().remoteAddress());
+                loggerNet.info("Different network received: config network ID {} - message network ID {}",
+                        networkId, msgNetworkId);
                 ethState = EthState.STATUS_FAILED;
                 recordEvent(EventType.INVALID_NETWORK);
                 disconnect(ReasonCode.NULL_IDENTITY);
+                ctx.pipeline().remove(this);
+                return;
+            }
+
+            Keccak256 genesisHash = genesis.getHash();
+            Keccak256 msgGenesisHash = new Keccak256(msg.getGenesisHash());
+            if (!msgGenesisHash.equals(genesisHash)) {
+                loggerNet.info("Removing EthHandler for {} due to unexpected genesis", ctx.channel().remoteAddress());
+                loggerNet.info("Config genesis hash {} - message genesis hash {}",
+                        genesisHash, msgGenesisHash);
+                ethState = EthState.STATUS_FAILED;
+                recordEvent(EventType.UNEXPECTED_GENESIS);
+                disconnect(ReasonCode.UNEXPECTED_GENESIS);
+                ctx.pipeline().remove(this);
                 return;
             }
 
@@ -230,7 +242,6 @@ public class RskWireProtocol extends EthHandler {
         BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
         // Original status
-        Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
         org.ethereum.net.eth.message.StatusMessage msg = new org.ethereum.net.eth.message.StatusMessage(protocolVersion, networkId,
                 ByteUtil.bigIntegerToBytes(totalDifficulty.asBigInteger()), bestBlock.getHash().getBytes(), genesis.getHash().getBytes());
         sendMessage(msg);
@@ -238,26 +249,10 @@ public class RskWireProtocol extends EthHandler {
         // RSK new protocol send status
         Status status = new Status(bestBlock.getNumber(), bestBlock.getHash().getBytes(), bestBlock.getParentHash().getBytes(), totalDifficulty);
         RskMessage rskmessage = new RskMessage(new StatusMessage(status));
-        loggerNet.trace("Sending status best block {} to {}", status.getBestBlockNumber(), this.messageSender.getPeerNodeID().toString());
+        loggerNet.trace("Sending status best block {} to {}", status.getBestBlockNumber(), this.messageSender.getPeerNodeID());
         sendMessage(rskmessage);
 
         ethState = EthState.STATUS_SENT;
-    }
-
-    @Override
-    public void sendTransaction(List<Transaction> txs) {
-        TransactionsMessage msg = new TransactionsMessage(txs);
-        sendMessage(msg);
-    }
-
-    @Override
-    public void sendNewBlock(Block newBlock) {
-
-    }
-
-    @Override
-    public void sendNewBlockHashes(Block block) {
-
     }
 
     /*************************
@@ -281,16 +276,6 @@ public class RskWireProtocol extends EthHandler {
     @Override
     public boolean hasStatusSucceeded() {
         return ethState == EthState.STATUS_SUCCEEDED;
-    }
-
-    @Override
-    public boolean isHashRetrievingDone() {
-        return syncState == SyncState.DONE_HASH_RETRIEVING;
-    }
-
-    @Override
-    public boolean isHashRetrieving() {
-        return syncState == SyncState.HASH_RETRIEVING;
     }
 
     @Override
@@ -332,17 +317,6 @@ public class RskWireProtocol extends EthHandler {
         disconnect(USELESS_PEER);
     }
 
-    /*************************
-     *       Logging         *
-     *************************/
-
-    @Override
-    public void logSyncStats() {
-        if(!logger.isInfoEnabled()) {
-            return;
-        }
-    }
-
     @Override
     public boolean isUsingNewProtocol() {
         return true;
@@ -353,5 +327,9 @@ public class RskWireProtocol extends EthHandler {
         STATUS_SENT,
         STATUS_SUCCEEDED,
         STATUS_FAILED
+    }
+
+    public interface Factory {
+        RskWireProtocol newInstance();
     }
 }

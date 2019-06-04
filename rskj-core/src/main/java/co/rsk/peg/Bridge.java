@@ -21,17 +21,17 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.BlockchainNetConfig;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -44,13 +44,14 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Precompiled contract that manages the 2 way peg between bitcoin and RSK.
@@ -112,6 +113,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_FEDERATION_THRESHOLD = BridgeMethods.GET_FEDERATION_THRESHOLD.getFunction();
     // Returns the public key of the federator at the specified index
     public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = BridgeMethods.GET_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Returns the public key of given type of the federator at the specified index
+    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
     // Returns the creation time of the federation
     public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME = BridgeMethods.GET_FEDERATION_CREATION_TIME.getFunction();
     // Returns the block number of the creation of the federation
@@ -125,6 +128,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_THRESHOLD = BridgeMethods.GET_RETIRING_FEDERATION_THRESHOLD.getFunction();
     // Returns the public key of the retiring federation's federator at the specified index
     public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Returns the public key of given type of the retiring federation's federator at the specified index
+    public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
     // Returns the creation time of the retiring federation
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_TIME = BridgeMethods.GET_RETIRING_FEDERATION_CREATION_TIME.getFunction();
     // Returns the block number of the creation of the retiring federation
@@ -134,6 +139,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function CREATE_FEDERATION = BridgeMethods.CREATE_FEDERATION.getFunction();
     // Adds the given key to the current pending federation
     public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY = BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Adds the given key to the current pending federation (multiple-key version)
+    public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY = BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY.getFunction();
     // Commits the currently pending federation
     public static final CallTransaction.Function COMMIT_FEDERATION = BridgeMethods.COMMIT_FEDERATION.getFunction();
     // Rolls back the currently pending federation
@@ -145,6 +152,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_PENDING_FEDERATION_SIZE = BridgeMethods.GET_PENDING_FEDERATION_SIZE.getFunction();
     // Returns the public key of the federator at the specified index for the current pending federation
     public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY = BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Returns the public key of given type the federator at the specified index for the current pending federation
+    public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
 
     // Returns the lock whitelist size
     public static final CallTransaction.Function GET_LOCK_WHITELIST_SIZE = BridgeMethods.GET_LOCK_WHITELIST_SIZE.getFunction();
@@ -173,17 +182,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final int LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
 
     // Log topics used by Bridge Contract
-    public static final DataWord RELEASE_BTC_TOPIC = new DataWord("release_btc_topic".getBytes(StandardCharsets.UTF_8));
-    public static final DataWord UPDATE_COLLECTIONS_TOPIC = new DataWord("update_collections_topic".getBytes(StandardCharsets.UTF_8));
-    public static final DataWord ADD_SIGNATURE_TOPIC = new DataWord("add_signature_topic".getBytes(StandardCharsets.UTF_8));
-    public static final DataWord COMMIT_FEDERATION_TOPIC = new DataWord("commit_federation_topic".getBytes(StandardCharsets.UTF_8));
+    public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
+    public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
+    public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
+    public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
 
-    private final RskSystemProperties config;
+    private final Constants constants;
     private final BridgeConstants bridgeConstants;
+    private final ActivationConfig activationConfig;
 
-    private BlockchainNetConfig blockchainNetConfig;
-    private BlockchainConfig blockchainConfig;
-
+    private ActivationConfig.ForBlock activations;
     private org.ethereum.core.Transaction rskTx;
     private org.ethereum.core.Block rskExecutionBlock;
     private Repository repository;
@@ -191,22 +199,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private BridgeSupport bridgeSupport;
 
-    public Bridge(RskSystemProperties config, RskAddress contractAddress) {
+    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig) {
         this.contractAddress = contractAddress;
-
-        this.config = config;
-        this.blockchainNetConfig = config.getBlockchainConfig();
-        this.bridgeConstants = blockchainNetConfig.getCommonConstants().getBridgeConstants();
+        this.constants = constants;
+        this.bridgeConstants = constants.getBridgeConstants();
+        this.activationConfig = activationConfig;
     }
 
     @Override
     public long getGasForData(byte[] data) {
-        if (!blockchainConfig.isRskip88() && BridgeUtils.isContractTx(rskTx)) {
+        if (!activations.isActive(ConsensusRule.RSKIP88) && BridgeUtils.isContractTx(rskTx)) {
             logger.warn("Call from contract before Orchid");
             throw new NullPointerException();
         }
 
-        if (BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber(), config.getBlockchainConfig())) {
+        if (BridgeUtils.isFreeBridgeTx(rskTx, constants, activations)) {
             return 0;
         }
 
@@ -255,7 +262,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             }
         }
 
-        if (!bridgeParsedData.bridgeMethod.isEnabled(this.blockchainConfig)) {
+        if (!bridgeParsedData.bridgeMethod.isEnabled(activations)) {
             logger.warn("'{}' is not enabled to run",bridgeParsedData.bridgeMethod.name());
             return null;
         }
@@ -271,11 +278,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public void init(Transaction rskTx, Block rskExecutionBlock, Repository repository, BlockStore rskBlockStore, ReceiptStore rskReceiptStore, List<LogInfo> logs) {
+        this.activations = activationConfig.forBlock(rskExecutionBlock.getNumber());
         this.rskTx = rskTx;
         this.rskExecutionBlock = rskExecutionBlock;
         this.repository = repository;
         this.logs = logs;
-        this.blockchainConfig = blockchainNetConfig.getConfigForBlock(rskExecutionBlock.getNumber());
     }
 
     @Override
@@ -293,7 +300,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             if (bridgeParsedData == null) {
                 String errorMessage = String.format("Invalid data given: %s.", Hex.toHexString(data));
                 logger.info(errorMessage);
-                if (blockchainConfig.isRskip88()) {
+                if (activations.isActive(ConsensusRule.RSKIP88)) {
                     throw new BridgeIllegalArgumentException(errorMessage);
                 }
 
@@ -302,7 +309,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             // If this is not a local call, then first check whether the function
             // allows for non-local calls
-            if (blockchainConfig.isRskip88() && !isLocalCall() && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
+            if (activations.isActive(ConsensusRule.RSKIP88) && !isLocalCall() && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
                 String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
                 logger.info(errorMessage);
                 throw new BridgeIllegalArgumentException(errorMessage);
@@ -318,7 +325,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             } catch (BridgeIllegalArgumentException ex) {
                 String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
                 logger.warn(errorMessage, ex);
-                if (blockchainConfig.isRskip88()) {
+                if (activations.isActive(ConsensusRule.RSKIP88)) {
                     throw new BridgeIllegalArgumentException(errorMessage);
                 }
 
@@ -337,8 +344,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private BridgeSupport setup() {
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(this.bridgeConstants, this.logs);
-        return new BridgeSupport(this.config, repository, eventLogger, contractAddress, rskExecutionBlock);
+        return new BridgeSupport(
+                bridgeConstants,
+                new BridgeStorageProvider(
+                        repository,
+                        contractAddress,
+                        bridgeConstants,
+                        BridgeStorageConfiguration.fromBlockchainConfig(activations)
+                ),
+                new BridgeEventLoggerImpl(bridgeConstants, logs),
+                repository, rskExecutionBlock, null, null
+        );
     }
 
     private void teardown() throws IOException {
@@ -609,6 +625,23 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFederatorPublicKey(index);
     }
 
+    public byte[] getFederatorPublicKeyOfType(Object[] args)
+    {
+        logger.trace("getFederatorPublicKeyOfType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.byValue((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getFederatorPublicKeyOfType", e);
+            throw new RuntimeException("Exception in getFederatorPublicKeyOfType", e);
+        }
+
+        return bridgeSupport.getFederatorPublicKeyOfType(index, keyType);
+    }
+
     public Long getFederationCreationTime(Object[] args)
     {
         logger.trace("getFederationCreationTime");
@@ -665,6 +698,30 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return publicKey;
     }
 
+    public byte[] getRetiringFederatorPublicKeyOfType(Object[] args)
+    {
+        logger.trace("getRetiringFederatorPublicKeyOfType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.byValue((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getRetiringFederatorPublicKeyOfType", e);
+            throw new RuntimeException("Exception in getRetiringFederatorPublicKeyOfType", e);
+        }
+
+        byte[] publicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
+
+        if (publicKey == null) {
+            // Empty array is returned when public key is not found or there's no retiring federation
+            return new byte[]{};
+        }
+
+        return publicKey;
+    }
+
     public Long getRetiringFederationCreationTime(Object[] args)
     {
         logger.trace("getRetiringFederationCreationTime");
@@ -710,6 +767,20 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.voteFederationChange(
                 rskTx,
                 new ABICallSpec("add", new byte[][]{ publicKeyBytes })
+        );
+    }
+
+    public Integer addFederatorPublicKeyMultikey(Object[] args)
+    {
+        logger.trace("addFederatorPublicKeyMultikey");
+
+        byte[] btcPublicKeyBytes = (byte[]) args[0];
+        byte[] rskPublicKeyBytes = (byte[]) args[1];
+        byte[] mstPublicKeyBytes = (byte[]) args[2];
+
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("add-multi", new byte[][]{ btcPublicKeyBytes, rskPublicKeyBytes, mstPublicKeyBytes })
         );
     }
 
@@ -768,6 +839,30 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         int index = ((BigInteger) args[0]).intValue();
         byte[] publicKey = bridgeSupport.getPendingFederatorPublicKey(index);
+
+        if (publicKey == null) {
+            // Empty array is returned when public key is not found
+            return new byte[]{};
+        }
+
+        return publicKey;
+    }
+
+    public byte[] getPendingFederatorPublicKeyOfType(Object[] args)
+    {
+        logger.trace("getPendingFederatorPublicKeyOfType");
+
+        int index = ((BigInteger) args[0]).intValue();
+
+        FederationMember.KeyType keyType;
+        try {
+            keyType = FederationMember.KeyType.byValue((String) args[1]);
+        } catch (Exception e) {
+            logger.warn("Exception in getPendingFederatorPublicKeyOfType", e);
+            throw new RuntimeException("Exception in getPendingFederatorPublicKeyOfType", e);
+        }
+
+        byte[] publicKey = bridgeSupport.getPendingFederatorPublicKeyOfType(index, keyType);
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found

@@ -18,9 +18,11 @@
 
 package co.rsk.rpc.modules.txpool;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 public interface TxPoolModule {
 
-    String content();
-    String inspect();
-    String status();
+    JsonNode content();
+    JsonNode inspect();
+    JsonNode status();
 }

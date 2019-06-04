@@ -21,61 +21,58 @@ package co.rsk.trie;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * Created by ajlopez on 08/01/2017.
  */
 public class TrieStoreImplTest {
+
+    private HashMapDB map;
+    private TrieStoreImpl store;
+
+    @Before
+    public void setUp() {
+        this.map = spy(new HashMapDB());
+        this.store = new TrieStoreImpl(map);
+    }
+
     @Test
     public void hasStore() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         Assert.assertTrue(trie.hasStore());
     }
 
     @Test
     public void hasNoStore() {
-        Trie trie = new TrieImpl(null, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(null).put("foo", "bar".getBytes());
 
         Assert.assertFalse(trie.hasStore());
     }
 
     @Test
     public void saveTrieNode() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         store.save(trie);
 
-        Assert.assertEquals(1, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
-
-        Assert.assertEquals(1, store.getSaveCount());
+        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verifyNoMoreInteractions(map);
     }
 
     @Test
     public void saveAndRetrieveTrieNodeWith32BytesKey() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false).put(Keccak256Helper.keccak256("foo".getBytes()), "bar".getBytes());
+        Trie trie = new Trie(store).put(Keccak256Helper.keccak256("foo".getBytes()), "bar".getBytes());
 
         store.save(trie);
 
-        Assert.assertEquals(1, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
-
-        Assert.assertEquals(1, store.getSaveCount());
+        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verifyNoMoreInteractions(map);
 
         Trie newTrie = store.retrieve(trie.getHash().getBytes());
 
@@ -86,21 +83,16 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveAndRetrieveTrieNodeWith33BytesValue() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
         byte[] key = Keccak256Helper.keccak256("foo".getBytes());
         byte[] value = new byte[33];
 
-        Trie trie = new TrieImpl(store, false).put(key, value);
+        Trie trie = new Trie(store).put(key, value);
 
         store.save(trie);
 
-        Assert.assertEquals(2, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
-
-        Assert.assertEquals(2, store.getSaveCount());
+        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verify(map, times(1)).put(trie.getValueHash().getBytes(), trie.getValue());
+        verifyNoMoreInteractions(map);
 
         Trie newTrie = store.retrieve(trie.getHash().getBytes());
 
@@ -112,120 +104,91 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveFullTrie() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         trie.save();
 
-        Assert.assertEquals(trie.trieSize(), map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
-
-        Assert.assertEquals(trie.trieSize(), store.getSaveCount());
+        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verifyNoMoreInteractions(map);
     }
 
     @Test
     public void saveFullTrieWithLongValue() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false).put("foo", TrieImplValueTest.makeValue(100));
+        Trie trie = new Trie(store).put("foo", TrieValueTest.makeValue(100));
 
         trie.save();
 
-        Assert.assertEquals(trie.trieSize() + 1, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
-
-        Assert.assertEquals(trie.trieSize() + 1, store.getSaveCount());
+        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
+        verify(map, times(1)).put(trie.getValueHash().getBytes(), trie.getValue());
+        verifyNoMoreInteractions(map);
     }
 
     @Test
     public void saveFullTrieWithTwoLongValues() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false)
-                .put("foo", TrieImplValueTest.makeValue(100))
-                .put("bar", TrieImplValueTest.makeValue(200));
+        Trie trie = new Trie(store)
+                .put("foo", TrieValueTest.makeValue(100))
+                .put("bar", TrieValueTest.makeValue(200));
 
         trie.save();
 
-        Assert.assertEquals(trie.trieSize() + 2, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
-
-        Assert.assertEquals(trie.trieSize() + 2, store.getSaveCount());
+        verify(map, times(trie.trieSize() + 2)).put(any(), any());
+        verifyNoMoreInteractions(map);
     }
 
     @Test
     public void saveFullTrieTwice() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         trie.save();
 
-        Assert.assertEquals(trie.trieSize(), store.getSaveCount());
+        verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
 
         trie.save();
 
-        Assert.assertEquals(trie.trieSize(), store.getSaveCount());
+        verifyNoMoreInteractions(map);
     }
 
     @Test
     public void saveFullTrieUpdateAndSaveAgainUsingBinaryTrie() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         trie.save();
 
-        Assert.assertEquals(trie.trieSize(), store.getSaveCount());
+        verify(map, times(trie.trieSize())).put(any(), any());
 
         trie = trie.put("foo", "bar2".getBytes());
 
         trie.save();
 
-        Assert.assertEquals(trie.trieSize() + 1, store.getSaveCount());
+        verify(map, times(trie.trieSize() + 1)).put(any(), any());
+        verifyNoMoreInteractions(map);
     }
 
     @Test
     public void saveFullTrieUpdateAndSaveAgain() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
+        Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
         trie.save();
 
-        Assert.assertEquals(trie.trieSize(), store.getSaveCount());
+        verify(map, times(trie.trieSize())).put(any(), any());
 
         trie = trie.put("foo", "bar2".getBytes());
 
         trie.save();
 
-        Assert.assertEquals(trie.trieSize() + 1, store.getSaveCount());
+        verify(map, times(trie.trieSize() + 1)).put(any(), any());
+        verifyNoMoreInteractions(map);
     }
 
     @Test
     public void retrieveUnknownHash() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
         Assert.assertNull(store.retrieve(new byte[] { 0x01, 0x02, 0x03, 0x04 }));
     }
 
     @Test
-    public void retrieveTrieByHash() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
-
-        Trie trie = new TrieImpl(store, false).put("bar", "foo".getBytes())
+    public void retrieveTrieByHashEmbedded() {
+        Trie trie = new Trie(store)
+                .put("bar", "foo".getBytes())
                 .put("foo", "bar".getBytes());
 
         trie.save();
@@ -233,37 +196,41 @@ public class TrieStoreImplTest {
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
-        Assert.assertEquals(1, store.getRetrieveCount());
+        verify(map, times(1)).get(any());
 
         Assert.assertEquals(size, trie2.trieSize());
 
-        Assert.assertEquals(size, store.getRetrieveCount());
+        verify(map, times(1)).get(any());
     }
 
     @Test
-    public void serializeDeserializeTrieStore() {
-        HashMapDB map = new HashMapDB();
-        TrieStoreImpl store = new TrieStoreImpl(map);
+    public void retrieveTrieByHashNotEmbedded() {
+        Trie trie = new Trie(store)
+                .put("baaaaaaaaaaaaaaaaaaaaar", "foooooooooooooooooooooo".getBytes())
+                .put("foooooooooooooooooooooo", "baaaaaaaaaaaaaaaaaaaaar".getBytes());
 
-        Trie trie = new TrieImpl(store, false)
-                .put("foo", "bar".getBytes())
-                .put("bar", "foo".getBytes());
+        trie.save();
+        int size = trie.trieSize();
 
-        byte[] root = trie.getHash().getBytes();
+        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+
+        verify(map, times(1)).get(any());
+
+        Assert.assertEquals(size, trie2.trieSize());
+
+        verify(map, times(size)).get(any());
+    }
+
+    @Test
+    public void retrieveTrieWithLongValuesByHash() {
+        Trie trie = new Trie(store)
+                .put("bar", TrieValueTest.makeValue(100))
+                .put("foo", TrieValueTest.makeValue(200));
 
         trie.save();
 
-        byte[] bytes = store.serialize();
+        store.retrieve(trie.getHash().getBytes());
 
-        TrieStoreImpl newStore = TrieStoreImpl.deserialize(bytes);
-
-        Assert.assertNotNull(newStore);
-
-        Trie result = newStore.retrieve(root);
-
-        Assert.assertEquals(trie.trieSize(), result.trieSize());
-
-        Assert.assertArrayEquals("bar".getBytes(), result.get("foo"));
-        Assert.assertArrayEquals("foo".getBytes(), result.get("bar"));
+        verify(map, times(1)).get(any());
     }
 }

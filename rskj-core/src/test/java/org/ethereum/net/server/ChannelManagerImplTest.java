@@ -33,9 +33,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Roman Mandeleil
@@ -78,14 +76,14 @@ public class ChannelManagerImplTest {
         String remoteId = "remoteId";
         NodeManager nodeManager = new NodeManager(null, config);
 
-        Channel peer = spy(new Channel(null, null, nodeManager, null, null, remoteId));
+        Channel peer = spy(new Channel(null, null, nodeManager, null, null, null, remoteId));
         peer.setInetSocketAddress(new InetSocketAddress("127.0.0.1",5554));
         peer.setNode(new NodeID(HashUtil.randomPeerId()).getID());
         when(peer.isProtocolsInitialized()).thenReturn(true);
         when(peer.isActive()).thenReturn(true);
         when(peer.isUsingNewProtocol()).thenReturn(true);
 
-        Channel otherPeer = new Channel(null, null, nodeManager, null, null, remoteId);
+        Channel otherPeer = new Channel(null, null, nodeManager, null, null, null, remoteId);
         otherPeer.setInetSocketAddress(new InetSocketAddress("127.0.0.1",5554));
 
         channelManager.add(peer);

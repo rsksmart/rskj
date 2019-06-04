@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.net.TransactionValidationResult;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
@@ -31,8 +32,19 @@ import java.math.BigInteger;
 public class TxValidatorAccountStateValidator implements TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
-        return isFreeTx || (state != null && !state.isDeleted());
-    }
+    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+        if (isFreeTx) {
+            return TransactionValidationResult.ok();
+        }
 
+        if (state == null) {
+            return TransactionValidationResult.withError("the sender account doesn't exist");
+        }
+
+        if (state.isDeleted()) {
+            return TransactionValidationResult.withError("the sender account is deleted");
+        }
+
+        return TransactionValidationResult.ok();
+    }
 }

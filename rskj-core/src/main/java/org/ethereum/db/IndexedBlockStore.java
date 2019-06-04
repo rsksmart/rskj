@@ -21,11 +21,15 @@ package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.BlockCache;
 import co.rsk.remasc.Sibling;
 import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.mapdb.DB;
@@ -33,20 +37,21 @@ import org.mapdb.DataIO;
 import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
-import static org.ethereum.crypto.HashUtil.shortHash;
-import static org.bouncycastle.util.Arrays.areEqual;
 
-public class IndexedBlockStore extends AbstractBlockstore {
+public class IndexedBlockStore implements BlockStore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final BlockCache blockCache;
     private final MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache;
@@ -54,11 +59,17 @@ public class IndexedBlockStore extends AbstractBlockstore {
     private final Map<Long, List<BlockInfo>> index;
     private final DB indexDB;
     private final KeyValueDataSource blocks;
+    private final BlockFactory blockFactory;
 
-    public IndexedBlockStore(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB) {
+    public IndexedBlockStore(
+            BlockFactory blockFactory,
+            Map<Long, List<BlockInfo>> index,
+            KeyValueDataSource blocks,
+            DB indexDB) {
         this.index = index;
         this.blocks = blocks;
         this.indexDB  = indexDB;
+        this.blockFactory = blockFactory;
         //TODO(lsebrie): move these maps creation outside blockstore,
         // remascCache should be an external component and not be inside blockstore
         this.blockCache = new BlockCache(5000);
@@ -113,29 +124,84 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized byte[] getBlockHashByNumber(long blockNumber){
-        List<BlockInfo> infos = this.index.get(blockNumber);
-        if (infos != null) {
-            Optional<BlockInfo> info =  infos.stream().filter(BlockInfo::isMainChain).findAny();
-            if (info.isPresent()) {
-                return info.get().getHash().getBytes();
+    public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
+        Block branchBlock = getBlockByHash(branchBlockHash);
+        if (branchBlock.getNumber() < blockNumber) {
+            throw new IllegalArgumentException("Requested block number > branch hash number: " + blockNumber + " < " + branchBlock.getNumber());
+        }
+        while(branchBlock.getNumber() > blockNumber) {
+            branchBlock = getBlockByHash(branchBlock.getParentHash().getBytes());
+        }
+        return branchBlock.getHash().getBytes();
+    }
+
+    @Override
+    public Block getBlockByHashAndDepth(byte[] hash, long depth) {
+        Block block = this.getBlockByHash(hash);
+
+        for (long i = 0; i < depth; i++) {
+            block = this.getBlockByHash(block.getParentHash().getBytes());
+        }
+
+        return block;
+    }
+
+    @Override
+    // This method is an optimized way to traverse a branch in search for a block at a given depth. Starting at a given
+    // block (by hash) it tries to find the first block that is part of the best chain, when it finds one we now that
+    // we can jump to the block that is at the remaining depth. If not block is found then it continues traversing the
+    // branch from parent to parent. The search is limited by the maximum depth received as parameter.
+    // This method either needs to traverse the parent chain or if a block in the parent chain is part of the best chain
+    // then it can skip the traversal by going directly to the block at the remaining depth.
+    public Block getBlockAtDepthStartingAt(long depth, byte[] hash) {
+        Block start = this.getBlockByHash(hash);
+
+        if (start != null && depth == 0) {
+            return start;
+        }
+
+        if (start == null || start.getNumber() <= depth) {
+            return null;
+        }
+
+        Block block = start;
+
+        for (long i = 0; i < depth; i++) {
+            if (isBlockInMainChain(block.getNumber(), block.getHash())) {
+                return getChainBlockByNumber(start.getNumber() - depth);
             }
 
+            block = this.getBlockByHash(block.getParentHash().getBytes());
         }
-        return getChainBlockByNumber(blockNumber).getHash().getBytes();
+
+        return block;
+    }
+
+    public boolean isBlockInMainChain(long blockNumber, Keccak256 blockHash){
+        List<BlockInfo> blockInfos = index.get(blockNumber);
+        if (blockInfos == null) {
+            return false;
+        }
+
+        for (BlockInfo blockInfo : blockInfos) {
+            if (blockInfo.isMainChain() && blockHash.equals(blockInfo.getHash())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
     public synchronized void flush() {
-        long t1 = System.nanoTime();
-
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        
+        //long t1 = System.nanoTime();
         if (indexDB != null) {
             indexDB.commit();
         }
-
-        long t2 = System.nanoTime();
-
-        logger.info("Flush block store in: {} ms", ((float)(t2 - t1) / 1_000_000));
+        //long t2 = System.nanoTime(); logger.info("Flush block store in: {} ms", ((float)(t2 - t1) / 1_000_000));
+        profiler.stop(metric);
     }
 
     @Override
@@ -181,7 +247,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
 
         for (BlockInfo blockInfo : blockInfos) {
-            byte[] hash = ByteUtils.clone(blockInfo.getHash().getBytes());
+            byte[] hash = blockInfo.getHash().copy().getBytes();
             BlockDifficulty totalDifficulty = blockInfo.getCummDifficulty();
             boolean isInBlockChain = blockInfo.isMainChain();
 
@@ -235,9 +301,10 @@ public class IndexedBlockStore extends AbstractBlockstore {
             return null;
         }
 
-        return new Block(blockRlp);
+        return blockFactory.decodeBlock(blockRlp);
     }
 
+    @Override
     public synchronized Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
         return this.remascCache.computeIfAbsent(hash, key -> getSiblingsFromBlock(getBlock(key.getBytes())));
     }
@@ -262,7 +329,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
 
         for (BlockInfo blockInfo : blockInfos) {
-            if (areEqual(blockInfo.getHash().getBytes(), hash)) {
+            if (Arrays.equals(blockInfo.getHash().getBytes(), hash)) {
                 return blockInfo.getCummDifficulty();
             }
         }
@@ -288,21 +355,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         return hashes;
     }
 
-    @Override
-    public synchronized List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty) {
-
-        List<Block> blocks = getListBlocksEndWith(hash, qty);
-        List<BlockHeader> headers = new ArrayList<>(blocks.size());
-
-        for (Block b : blocks) {
-            headers.add(b.getHeader());
-        }
-
-        return headers;
-    }
-
-    @Override
-    public synchronized List<Block> getListBlocksEndWith(byte[] hash, long qty) {
+    private synchronized List<Block> getListBlocksEndWith(byte[] hash, long qty) {
         Block block = getBlockByHash(hash);
 
         if (block == null) {
@@ -484,34 +537,13 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
     };
 
-    public synchronized void printChain() {
-        Long number = getMaxNumber();
-
-        for (long i = 0; i < number; ++i){
-            List<BlockInfo> levelInfos = index.get(i);
-
-            if (levelInfos != null) {
-                System.out.print(i);
-                for (BlockInfo blockInfo : levelInfos){
-                    if (blockInfo.isMainChain()) {
-                        System.out.print(" [" + shortHash(blockInfo.getHash().getBytes()) + "] ");
-                    } else {
-                        System.out.print(" " + shortHash(blockInfo.getHash().getBytes()) + " ");
-                    }
-                }
-                System.out.println();
-            }
-
-        }
-    }
-
     private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, byte[] hash){
         if (blocks == null) {
             return null;
         }
 
         for (BlockInfo blockInfo : blocks) {
-            if (areEqual(hash, blockInfo.getHash().getBytes())) {
+            if (Arrays.equals(hash, blockInfo.getHash().getBytes())) {
                 return blockInfo;
             }
         }
@@ -534,7 +566,10 @@ public class IndexedBlockStore extends AbstractBlockstore {
             byte[] hash = blockInfo.getHash().getBytes();
             Block block = getBlockByHash(hash);
 
-            result.add(block);
+            // TODO(mc) investigate and fix this, probably a cache invalidation problem
+            if (block != null) {
+                result.add(block);
+            }
         }
 
         return result;

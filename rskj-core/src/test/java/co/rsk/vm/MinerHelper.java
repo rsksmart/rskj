@@ -20,15 +20,16 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
-import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.vm.PrecompiledContracts;
+import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ public class MinerHelper {
     private final Blockchain blockchain;
     private final Repository repository;
     private final GasLimitCalculator gasLimitCalculator;
+    private final BlockFactory blockFactory;
 
     private byte[] latestStateRootHash;
     private long totalGasUsed;
@@ -54,7 +56,8 @@ public class MinerHelper {
     public MinerHelper(Repository repository , Blockchain blockchain) {
         this.repository = repository;
         this.blockchain = blockchain;
-        this.gasLimitCalculator = new GasLimitCalculator(config);
+        this.gasLimitCalculator = new GasLimitCalculator(config.getNetworkConstants());
+        this.blockFactory = new BlockFactory(config.getActivationConfig());
     }
 
     public void processBlock( Block block, Block parent) {
@@ -86,28 +89,15 @@ public class MinerHelper {
         int txindex = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
-
-            TransactionExecutor executor = new TransactionExecutor(
-                    tx,
-                    txindex++,
-                    block.getCoinbase(),
-                    track,
+            TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                    config,
                     null,
                     null,
-
-                    null,
-                    block,
-                    new EthereumListenerAdapter(),
-                    totalGasUsed,
-                    config.getVmConfig(),
-                    config.getBlockchainConfig(),
-                    config.playVM(),
-                    config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed());
+                    blockFactory,
+                    null
+            );
+            TransactionExecutor executor = transactionExecutorFactory
+                    .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 
             executor.init();
             executor.execute();
@@ -138,7 +128,8 @@ public class MinerHelper {
     public void completeBlock(Block newBlock, Block parent) {
         processBlock(newBlock, parent);
 
-        newBlock.getHeader().setReceiptsRoot(BlockChainImpl.calcReceiptsTrie(txReceipts));
+        boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, newBlock.getNumber());
+        newBlock.getHeader().setReceiptsRoot(BlockHashesHelper.calculateReceiptsTrieRoot(txReceipts, isRskip126Enabled));
         newBlock.getHeader().setStateRoot(latestStateRootHash);
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
@@ -147,12 +138,12 @@ public class MinerHelper {
 
         newBlock.getHeader().setLogsBloom(logBloom.getData());
 
-        BigInteger minGasLimit = BigInteger.valueOf(config.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        BigInteger minGasLimit = BigInteger.valueOf(config.getNetworkConstants().getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit, false);
 
-        newBlock.getHeader().setGasLimit(gasLimit.toByteArray());
+        Whitebox.setInternalState(newBlock.getHeader(), "gasLimit", gasLimit.toByteArray());
         newBlock.getHeader().setPaidFees(totalPaidFees);
     }
 }

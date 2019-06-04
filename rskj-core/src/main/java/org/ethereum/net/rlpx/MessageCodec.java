@@ -23,19 +23,20 @@ import com.google.common.io.ByteStreams;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.eth.EthVersion;
+import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.message.Message;
-import org.ethereum.net.message.MessageFactory;
 import org.ethereum.net.p2p.P2pMessageCodes;
+import org.ethereum.net.p2p.P2pMessageFactory;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.LRUMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.*;
@@ -59,8 +60,8 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
     private Channel channel;
     private MessageCodesResolver messageCodesResolver;
 
-    private MessageFactory p2pMessageFactory;
-    private MessageFactory ethMessageFactory;
+    private P2pMessageFactory p2pMessageFactory;
+    private Eth62MessageFactory ethMessageFactory;
     private EthVersion ethVersion;
 
     private final EthereumListener ethereumListener;
@@ -96,7 +97,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
                 }
             } else {
                 if (frame.totalFrameSize >= 0) {
-                    loggerNet.warn("Non-initial chunked frame shouldn't contain totalFrameSize field (context-id: " + frame.contextId + ", totalFrameSize: " + frame.totalFrameSize + "). Discarding this frame and all previous.");
+                    loggerNet.warn("Non-initial chunked frame shouldn't contain totalFrameSize field (context-id: {}, totalFrameSize: {}). Discarding this frame and all previous.", frame.contextId, frame.totalFrameSize);
                     incompleteFrames.remove(frame.contextId);
                     return;
                 }
@@ -106,11 +107,11 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
             int curSize = frameParts.getRight().addAndGet(frame.size);
 
             if (loggerWire.isDebugEnabled()) {
-                loggerWire.debug("Recv: Chunked (" + curSize + " of " + frameParts.getLeft().get(0).totalFrameSize + ") [size: " + frame.getSize() + "]");
+                loggerWire.debug("Recv: Chunked ({} of {}) [size: {}]", curSize, frameParts.getLeft().get(0).totalFrameSize, frame.getSize());
             }
 
             if (curSize > frameParts.getLeft().get(0).totalFrameSize) {
-                loggerNet.warn("The total frame chunks size (" + curSize + ") is greater than expected (" + frameParts.getLeft().get(0).totalFrameSize + "). Discarding the frame.");
+                loggerNet.warn("The total frame chunks size ({}) is greater than expected ({}). Discarding the frame.", curSize, frameParts.getLeft().get(0).totalFrameSize);
                 incompleteFrames.remove(frame.contextId);
                 return;
             }
@@ -185,7 +186,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
             // frame has been split
             int contextId = contextIdCounter.getAndIncrement();
             ret.get(0).totalFrameSize = bytes.length;
-            loggerWire.debug("Message (size " + bytes.length + ") split to " + ret.size() + " frames. Context-id: " + contextId);
+            loggerWire.debug("Message (size {}) split to {} frames. Context-id: {}", bytes.length ,ret.size(), contextId);
             for (Frame frame : ret) {
                 frame.contextId = contextId;
             }
@@ -245,11 +246,11 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
         this.messageCodesResolver = new MessageCodesResolver(caps);
     }
 
-    public void setP2pMessageFactory(MessageFactory p2pMessageFactory) {
+    public void setP2pMessageFactory(P2pMessageFactory p2pMessageFactory) {
         this.p2pMessageFactory = p2pMessageFactory;
     }
 
-    public void setEthMessageFactory(MessageFactory ethMessageFactory) {
+    public void setEthMessageFactory(Eth62MessageFactory ethMessageFactory) {
         this.ethMessageFactory = ethMessageFactory;
     }
 

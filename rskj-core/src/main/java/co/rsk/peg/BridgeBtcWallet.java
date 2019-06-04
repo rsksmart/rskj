@@ -52,6 +52,6 @@ public class BridgeBtcWallet extends Wallet {
         if (!destinationFederation.isPresent()) {
             return null;
         }
-        return RedeemData.of(destinationFederation.get().getPublicKeys(), destinationFederation.get().getRedeemScript());
+        return RedeemData.of(destinationFederation.get().getBtcPublicKeys(), destinationFederation.get().getRedeemScript());
     }
 }

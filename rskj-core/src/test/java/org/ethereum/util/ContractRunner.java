@@ -1,21 +1,15 @@
 package org.ethereum.util;
 
-import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.*;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
@@ -26,7 +20,7 @@ import java.math.BigInteger;
  */
 public class ContractRunner {
     private final Repository repository;
-    private final BlockChainImpl blockchain;
+    private final Blockchain blockchain;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
 
@@ -41,7 +35,7 @@ public class ContractRunner {
     }
 
     private ContractRunner(Repository repository,
-                           BlockChainImpl blockchain,
+                           Blockchain blockchain,
                            BlockStore blockStore,
                            ReceiptStore receiptStore) {
         this.blockchain = blockchain;
@@ -50,10 +44,10 @@ public class ContractRunner {
         this.receiptStore = receiptStore;
 
         // we build a new block with high gas limit because Genesis' is too low
-        Block block = new BlockBuilder(blockchain, new BlockGenerator())
+        Block block = new BlockBuilder(blockchain)
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .build();
-        blockchain.setBestBlock(block);
+        blockchain.setStatus(block, block.getCumulativeDifficulty());
         // create a test sender account with a large balance for running any contract
         this.sender = new AccountBuilder(blockchain)
                 .name("sender")
@@ -61,14 +55,14 @@ public class ContractRunner {
                 .build();
     }
 
-    public ContractDetails addContract(String runtimeBytecode) {
+    public RskAddress addContract(String runtimeBytecode) {
         Account contractAccount = new AccountBuilder(blockchain)
                         .name(runtimeBytecode)
                         .balance(Coin.valueOf(10))
                         .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                         .build();
 
-        return repository.getContractDetails(contractAccount.getAddress());
+        return contractAccount.getAddress();
     }
 
     public ProgramResult createContract(byte[] bytecode) {
@@ -111,26 +105,15 @@ public class ContractRunner {
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = repository.startTracking();
         RskSystemProperties config = new TestSystemProperties();
-        TransactionExecutor executor = new TransactionExecutor(
-                transaction,
-                0,
-                RskAddress.nullAddress(),
-                repository,
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                config,
                 blockStore,
                 receiptStore,
-                new ProgramInvokeFactoryImpl(),
-                blockchain.getBestBlock(),
-                new EthereumListenerAdapter(),
-                0,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed());
+                new BlockFactory(config.getActivationConfig()),
+                new ProgramInvokeFactoryImpl()
+        );
+        TransactionExecutor executor = transactionExecutorFactory
+                .newInstance(transaction, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
         executor.init();
         executor.execute();
         executor.go();

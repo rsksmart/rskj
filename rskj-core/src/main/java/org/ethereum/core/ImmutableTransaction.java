@@ -13,11 +13,6 @@ public class ImmutableTransaction extends Transaction {
         throw new ImmutableTransactionException(String.format("trying to sign tx=%s", this.getHash()));
     }
 
-    @Override
-    public void setGasLimit(byte[] gasLimit) {
-        throw new ImmutableTransactionException(String.format("trying to set gas limit tx=%s", this.getHash()));
-    }
-
     public static class ImmutableTransactionException extends RuntimeException {
         public ImmutableTransactionException(String message) {
             super("Immutable transaction: " + message);

@@ -24,12 +24,9 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
 import org.ethereum.util.Utils;
 
 import javax.annotation.Nullable;
@@ -91,7 +88,7 @@ public class BlockHeader {
      * With the exception of the genesis block, this must be 32 bytes or fewer */
     private byte[] extraData;
 
-    /* The 81-byte bitcoin block header for merged mining */
+    /* The 80-byte bitcoin block header for merged mining */
     private byte[] bitcoinMergedMiningHeader;
     /* The bitcoin merkle proof of coinbase tx for merged mining */
     private byte[] bitcoinMergedMiningMerkleProof;
@@ -106,109 +103,36 @@ public class BlockHeader {
     /* Indicates if this block header cannot be changed */
     private volatile boolean sealed;
 
-    public BlockHeader(byte[] encoded, boolean sealed) {
-        this(RLP.decodeList(encoded), sealed);
-    }
+    /* Indicates if the block was mined according to RSKIP-92 rules */
+    private boolean useRskip92Encoding;
 
-    public BlockHeader(RLPList rlpHeader, boolean sealed) {
-        // TODO fix old tests that have other sizes
-        if (rlpHeader.size() != 19 && rlpHeader.size() != 16) {
-            throw new IllegalArgumentException(String.format(
-                    "A block header must have 16 elements or 19 including merged-mining fields but it had %d",
-                    rlpHeader.size()
-            ));
-        }
-
-        this.parentHash = rlpHeader.get(0).getRLPData();
-        this.unclesHash = rlpHeader.get(1).getRLPData();
-        this.coinbase = RLP.parseRskAddress(rlpHeader.get(2).getRLPData());
-        this.stateRoot = rlpHeader.get(3).getRLPData();
-        if (this.stateRoot == null) {
-            this.stateRoot = EMPTY_TRIE_HASH;
-        }
-
-        this.txTrieRoot = rlpHeader.get(4).getRLPData();
-        if (this.txTrieRoot == null) {
-            this.txTrieRoot = EMPTY_TRIE_HASH;
-        }
-
-        this.receiptTrieRoot = rlpHeader.get(5).getRLPData();
-        if (this.receiptTrieRoot == null) {
-            this.receiptTrieRoot = EMPTY_TRIE_HASH;
-        }
-
-        this.logsBloom = rlpHeader.get(6).getRLPData();
-        this.difficulty = RLP.parseBlockDifficulty(rlpHeader.get(7).getRLPData());
-
-        byte[] nrBytes = rlpHeader.get(8).getRLPData();
-        byte[] glBytes = rlpHeader.get(9).getRLPData();
-        byte[] guBytes = rlpHeader.get(10).getRLPData();
-        byte[] tsBytes = rlpHeader.get(11).getRLPData();
-
-        this.number = parseBigInteger(nrBytes).longValueExact();
-
-        this.gasLimit = glBytes;
-        this.gasUsed = parseBigInteger(guBytes).longValueExact();
-        this.timestamp = parseBigInteger(tsBytes).longValueExact();
-
-        this.extraData = rlpHeader.get(12).getRLPData();
-
-        this.paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
-        this.minimumGasPrice = RLP.parseSignedCoinNonNullZero(rlpHeader.get(14).getRLPData());
-
-        int r = 15;
-
-        if ((rlpHeader.size() == 19) || (rlpHeader.size() == 16)) {
-            byte[] ucBytes = rlpHeader.get(r++).getRLPData();
-            this.uncleCount = parseBigInteger(ucBytes).intValueExact();
-        }
-
-        if (rlpHeader.size() > r) {
-            this.bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
-            this.bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPRawData();
-            this.bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
-
-        }
-
-        this.sealed = sealed;
-    }
-
-    public BlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
-                       byte[] logsBloom, byte[] difficulty, long number,
-                       byte[] gasLimit, long gasUsed, long timestamp,
-                       byte[] extraData,
-                       byte[] minimumGasPrice,
-                       int uncleCount) {
-        this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit, gasUsed, timestamp, extraData,
-                null, null, null, minimumGasPrice, uncleCount);
-    }
-
-    public BlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
-                       byte[] logsBloom, byte[] difficulty, long number,
-                       byte[] gasLimit, long gasUsed, long timestamp,
-                       byte[] extraData,
-                       byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+    public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
+                       byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
+                       long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
+                       Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction,
-                       byte[] minimumGasPrice,
-                       int uncleCount) {
+                       Coin minimumGasPrice, int uncleCount, boolean sealed, boolean useRskip92Encoding) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
-        this.coinbase = new RskAddress(coinbase);
+        this.coinbase = coinbase;
+        this.stateRoot = stateRoot;
+        this.txTrieRoot = txTrieRoot;
+        this.receiptTrieRoot = receiptTrieRoot;
         this.logsBloom = logsBloom;
-        this.difficulty = RLP.parseBlockDifficulty(difficulty);
+        this.difficulty = difficulty;
         this.number = number;
         this.gasLimit = gasLimit;
         this.gasUsed = gasUsed;
         this.timestamp = timestamp;
         this.extraData = extraData;
-        this.stateRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
-        this.minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPrice);
-        this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
+        this.minimumGasPrice = minimumGasPrice;
         this.uncleCount = uncleCount;
-        this.paidFees = Coin.ZERO;
+        this.paidFees = paidFees;
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
+        this.sealed = sealed;
+        this.useRskip92Encoding = useRskip92Encoding;
     }
 
     @VisibleForTesting
@@ -218,10 +142,6 @@ public class BlockHeader {
 
     public void seal() {
         this.sealed = true;
-    }
-
-    public BlockHeader cloneHeader() {
-        return new BlockHeader((RLPList) RLP.decode2(this.getEncoded()).get(0), false);
     }
 
     public boolean isGenesis() {
@@ -238,15 +158,6 @@ public class BlockHeader {
 
     public byte[] getUnclesHash() {
         return unclesHash;
-    }
-
-    public void setUnclesHash(byte[] unclesHash) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter uncles hash");
-        }
-
-        this.unclesHash = unclesHash;
     }
 
     public RskAddress getCoinbase() {
@@ -320,39 +231,12 @@ public class BlockHeader {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter timestamp");
-        }
-
-        this.timestamp = timestamp;
-    }
-
     public long getNumber() {
         return number;
     }
 
-    public void setNumber(long number) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter number");
-        }
-
-        this.number = number;
-    }
-
     public byte[] getGasLimit() {
         return gasLimit;
-    }
-
-    public void setGasLimit(byte[] gasLimit) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter gas limit");
-        }
-
-        this.gasLimit = gasLimit;
     }
 
     public long getGasUsed() {
@@ -394,30 +278,14 @@ public class BlockHeader {
         this.logsBloom = logsBloom;
     }
 
-    public void setExtraData(byte[] extraData) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter extra data");
-        }
-
-        this.extraData = extraData;
-    }
-
     public Keccak256 getHash() {
-        return new Keccak256(HashUtil.keccak256(getEncoded(
-                true,
-                !SystemProperties.DONOTUSE_blockchainConfig.getConfigForBlock(getNumber()).isRskip92()
-        )));
+        return new Keccak256(HashUtil.keccak256(getEncoded(true, !useRskip92Encoding)));
     }
 
     public byte[] getEncoded() {
         // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
         // calculating RSKIP92 block hashes
         return this.getEncoded(true, true);
-    }
-
-    public byte[] getEncodedWithoutNonceMergedMiningFields() {
-        return this.getEncoded(false, false);
     }
 
     @Nullable
@@ -521,10 +389,6 @@ public class BlockHeader {
         return RLP.encodeList(unclesEncoded);
     }
 
-    public byte[] getPowBoundary() {
-        return BigIntegers.asUnsignedByteArray(32, BigInteger.ONE.shiftLeft(256).divide(getDifficulty().asBigInteger()));
-    }
-
     public String toString() {
         return toStringWithSuffix("\n");
     }
@@ -552,16 +416,6 @@ public class BlockHeader {
         return toStringWithSuffix("");
     }
 
-    // TODO added to comply with SerializableObject
-
-    public Keccak256 getRawHash() {
-        return getHash();
-    }
-    // TODO added to comply with SerializableObject
-
-    public byte[] getEncodedRaw() {
-        return getEncoded();
-    }
     public byte[] getBitcoinMergedMiningHeader() {
         return bitcoinMergedMiningHeader;
     }

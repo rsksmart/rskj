@@ -75,7 +75,8 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              DataWord lastHash, DataWord coinbase, DataWord timestamp, DataWord number, DataWord transactionIndex, DataWord
                                      difficulty,
                              DataWord gaslimit, Repository repository, int callDeep, BlockStore blockStore,
-                             boolean isStaticCall, boolean byTestingSuite) {
+                             boolean isStaticCall,
+                             boolean byTestingSuite) {
 
         // Transaction env
         this.address = address;
@@ -124,23 +125,23 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              Repository repository, BlockStore blockStore) {
 
         // Transaction env
-        this.address = new DataWord(address);
-        this.origin = new DataWord(origin);
-        this.caller = new DataWord(caller);
-        this.balance = new DataWord(balance);
-        this.gasPrice = new DataWord(gasPrice);
-        this.gas = Program.limitToMaxLong(new DataWord(gas));
-        this.callValue = new DataWord(callValue);
+        this.address = DataWord.valueOf(address);
+        this.origin = DataWord.valueOf(origin);
+        this.caller = DataWord.valueOf(caller);
+        this.balance = DataWord.valueOf(balance);
+        this.gasPrice = DataWord.valueOf(gasPrice);
+        this.gas = Program.limitToMaxLong(DataWord.valueOf(gas));
+        this.callValue = DataWord.valueOf(callValue);
         this.msgData = msgData;
 
         // last Block env
-        this.prevHash = new DataWord(lastHash);
-        this.coinbase = new DataWord(coinbase);
-        this.timestamp = new DataWord(timestamp);
-        this.number = new DataWord(number);
-        this.transactionIndex = new DataWord(transactionIndex);
-        this.difficulty = new DataWord(difficulty);
-        this.gaslimit = new DataWord(gaslimit);
+        this.prevHash = DataWord.valueOf(lastHash);
+        this.coinbase = DataWord.valueOf(coinbase);
+        this.timestamp = DataWord.valueOf(timestamp);
+        this.number = DataWord.valueOf(number);
+        this.transactionIndex = DataWord.valueOf(transactionIndex);
+        this.difficulty = DataWord.valueOf(difficulty);
+        this.gaslimit = DataWord.valueOf(gaslimit);
 
         this.repository = repository;
         this.blockStore = blockStore;
@@ -198,7 +199,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
         if (msgData == null || index >= msgData.length
                 || tempIndex.compareTo(maxMsgData) == 1) {
-            return new DataWord();
+            return DataWord.ZERO;
         }
         if (index + size > msgData.length) {
             size = msgData.length - index;
@@ -206,7 +207,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
         byte[] data = new byte[32];
         System.arraycopy(msgData, index, data, 0, size);
-        return new DataWord(data);
+        return DataWord.valueOf(data);
     }
 
     /*  CALLDATASIZE */
@@ -216,7 +217,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
             return DataWord.ZERO;
         }
         int size = msgData.length;
-        return new DataWord(size);
+        return DataWord.valueOf(size);
     }
 
     /*  CALLDATACOPY */

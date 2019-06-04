@@ -18,19 +18,7 @@
 
 package co.rsk.trie;
 
-import co.rsk.panic.PanicProcessor;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * TrieStoreImpl store and retrieve Trie node by hash
@@ -42,17 +30,9 @@ import java.util.List;
  * Created by ajlopez on 08/01/2017.
  */
 public class TrieStoreImpl implements TrieStore {
-    private static final Logger logger = LoggerFactory.getLogger("triestore");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private static final String PANIC_TOPIC = "triestore";
-    private static final String ERROR_CREATING_STORE = "Error creating trie store";
 
     // a key value data source to use
     private KeyValueDataSource store;
-
-    // internal variables, count of saves and retrieves
-    private int saveCount = 0;
-    private int retrieveCount = 0;
 
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
@@ -64,17 +44,26 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public void save(Trie trie) {
-        this.saveCount++;
         this.store.put(trie.getHash().getBytes(), trie.toMessage());
 
         if (trie.hasLongValue()) {
-            this.saveCount++;
-            this.store.put(trie.getValueHash(), trie.getValue());
+            // Note that there is no distinction in keys between node data and value data. This could bring problems in
+            // the future when trying to garbage-collect the data. We could split the key spaces bit a single
+            // overwritten MSB of the hash. Also note that when storing a node that has long value it could be the case
+            // that the save the value here, but the value is already present in the database because other node shares
+            // the value. This is suboptimal, we could check existence here but maybe the database already has
+            // provisions to reduce the load in these cases where a key/value is set equal to the previous value.
+            // In particular our levelDB driver has not method to test for the existence of a key without retrieving the
+            // value also, so manually checking pre-existence here seems it will add overhead on the average case,
+            // instead of reducing it.
+            this.store.put(trie.getValueHash().getBytes(), trie.getValue());
         }
     }
 
     @Override
-    public int getSaveCount() { return this.saveCount; }
+    public void flush(){
+        this.store.flush();
+    }
 
     /**
      * retrieve retrieves a Trie instance from store, using hash a key
@@ -85,106 +74,13 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public Trie retrieve(byte[] hash) {
-        this.retrieveCount++;
-
         byte[] message = this.store.get(hash);
 
-        return TrieImpl.fromMessage(message, this);
+        return Trie.fromMessage(message, this);
     }
 
+    @Override
     public byte[] retrieveValue(byte[] hash) {
         return this.store.get(hash);
-    }
-
-    public byte[] storeValue(byte[] key, byte[] value) {
-        return this.store.put(key, value);
-    }
-
-    @Override
-    public int getRetrieveCount() { return this.retrieveCount; }
-
-    @Override
-    public byte[] serialize() {
-        List<byte[]> keys = new ArrayList<>();
-        List<byte[]> values = new ArrayList<>();
-
-        int lkeys = 0;
-        int lvalues = 0;
-
-        for (byte[] key : this.store.keys()) {
-            byte[] value = this.store.get(key);
-
-            if (value == null || value.length == 0) {
-                continue;
-            }
-
-            keys.add(key);
-            values.add(value);
-
-            lkeys += key.length;
-            lvalues += value.length;
-        }
-
-        int nkeys = keys.size();
-
-        ByteBuffer buffer = ByteBuffer.allocate(Short.BYTES + Integer.BYTES + lkeys + lvalues + Integer.BYTES * nkeys * 2);
-
-        buffer.putShort((short)0);
-        buffer.putInt(nkeys);
-
-        for (int k = 0; k < nkeys; k++) {
-            byte[] key = keys.get(k);
-            byte[] value = values.get(k);
-
-            buffer.putInt(key.length);
-            buffer.put(key);
-
-            buffer.putInt(value.length);
-            buffer.put(value);
-        }
-
-        return buffer.array();
-    }
-
-    public KeyValueDataSource getDataSource() {
-        return this.store;
-    }
-
-    public static TrieStoreImpl deserialize(byte[] bytes) {
-        return deserialize(bytes, 0, bytes.length, new HashMapDB());
-    }
-
-    public static TrieStoreImpl deserialize(byte[] bytes, int offset, int length, KeyValueDataSource ds) {
-        ByteArrayInputStream bstream = new ByteArrayInputStream(bytes, offset, length);
-        DataInputStream dstream = new DataInputStream(bstream);
-
-        try {
-            dstream.readShort(); // version
-
-            int nkeys = dstream.readInt();
-
-            for (int k = 0; k < nkeys; k++) {
-                int lkey = dstream.readInt();
-                byte[] key = new byte[lkey];
-                if (dstream.read(key) != lkey) {
-                    throw new EOFException();
-                }
-
-                int lvalue = dstream.readInt();
-                byte[] value = new byte[lvalue];
-                if (dstream.read(value) != lvalue) {
-                    throw new EOFException();
-                }
-
-                ds.put(key, value);
-            }
-
-            return new TrieStoreImpl(ds);
-        }
-        catch (IOException ex) {
-            logger.error(ERROR_CREATING_STORE, ex);
-            panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_STORE +": " + ex.getMessage());
-            throw new TrieSerializationException(ERROR_CREATING_STORE, ex);
-        }
     }
 }

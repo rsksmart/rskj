@@ -19,33 +19,34 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.crypto.Keccak256;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 public class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private final byte chainId = config.getNetworkConstants().getChainId();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {
-        if (config.getBlockchainConfig().getCommonConstants().getChainId() != 0)
+        if (chainId != 0)
             return;
 
         // cat --> 79b08ad8787060333663d19704909ee7b1903e58
@@ -75,7 +76,7 @@ public class TransactionTest {
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature().toBase64());
+        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature());
 
         System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
         System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
@@ -89,32 +90,24 @@ public class TransactionTest {
         System.out.println(tx.toString());
     }
 
-    @Test  /* achieve public key of the sender when signature manually set */
-    public void test3() throws Exception {
-        if (config.getBlockchainConfig().getCommonConstants().getChainId() != 0)
-            return;
-
-        // cat --> 79b08ad8787060333663d19704909ee7b1903e58
-        // cow --> cd2a3d9f938e13cd947ec05abc7fe734df8dd826
-
+    @Test  /* achieve public key of the sender */
+    public void testSenderShouldChangeWhenReSigningTx() throws Exception {
         BigInteger value = new BigInteger("1000000000000000000000");
 
-        byte[] privKey = HashUtil.keccak256("cat".getBytes());
-        ECKey ecKey = ECKey.fromPrivate(privKey);
+        byte[] privateKey = HashUtil.keccak256("cat".getBytes());
+        ECKey ecKey = ECKey.fromPrivate(privateKey);
 
-        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
+        byte[] senderPrivateKey = HashUtil.keccak256("cow".getBytes());
 
         byte[] gasPrice = Hex.decode("09184e72a000");
         byte[] gas = Hex.decode("4255");
 
-        // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
+        // Tn(nonce); Tp(pgas); Tg(gaslimit); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
         Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
                 value.toByteArray(),
                 null);
 
-        Keccak256 hash = tx.getRawHash();
-        ECKey.ECDSASignature signature = ECKey.fromPrivate(senderPrivKey).sign(hash.getBytes());
-        tx.setSignature(signature);
+        tx.sign(senderPrivateKey);
 
         System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
         System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
@@ -122,17 +115,18 @@ public class TransactionTest {
 
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
-        // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature().toBase64());
+        // Retrieve sender from transaction
+        RskAddress sender = tx.getSender();
 
-        System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
-        System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
+        // Re-sign transaction with a different sender's key
+        byte[] newSenderPrivateKey = HashUtil.keccak256("bat".getBytes());
+        tx.sign(newSenderPrivateKey);
 
-        System.out.println("Signature public key\t: " + Hex.toHexString(key.getPubKey()));
-        System.out.println("Sender is\t\t: " + Hex.toHexString(key.getAddress()));
+        // Retrieve new sender from transaction
+        RskAddress newSender = tx.getSender();
 
-        assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826",
-                Hex.toHexString(key.getAddress()));
+        // Verify sender changed
+        assertNotEquals(sender, newSender);
 
         System.out.println(tx.toString());
     }
@@ -221,8 +215,16 @@ public class TransactionTest {
                 "    } " +
                 "}";
 
+        // The transaction calls the method set() (signature 0x60fe47b1)
+        // passing the argument 0x400 (1024 in decimal)
+        // So the contract storage cell at address 0x00 should contain 0x400.
+
         StateTestSuite stateTestSuite = new StateTestSuite(json.replaceAll("'", "\""));
 
+        // Executes only the test1.
+        // Overrides the execution of the transaction to first execute a "get"
+        // and then proceed with the "set" specified in JSON.
+        // Why? I don't know. Maybe just to test if the returned value is the correct one.
         List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")) {
             @Override
             protected ProgramResult executeTransaction(Transaction tx) {
@@ -232,34 +234,24 @@ public class TransactionTest {
                 {
                     Repository track = repository.startTracking();
 
-                    Transaction txConst = CallTransaction.createCallTransaction(config, 0, 0, 100000000000000L,
+                    Transaction txConst = CallTransaction.createCallTransaction(
+                            0, 0, 100000000000000L,
                             new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
-                            CallTransaction.Function.fromSignature("get"));
+                            CallTransaction.Function.fromSignature("get"), chainId);
                     txConst.sign(new byte[32]);
 
                     Block bestBlock = block;
 
-                    TransactionExecutor executor = new TransactionExecutor(
-                            txConst,
-                            0,
-                            bestBlock.getCoinbase(),
-                            track,
+                    TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                            config,
                             new BlockStoreDummy(),
                             null,
-                            invokeFactory,
-                            bestBlock,
-                            new EthereumListenerAdapter(),
-                            0,
-                            config.getVmConfig(),
-                            config.getBlockchainConfig(),
-                            config.playVM(),
-                            config.isRemascEnabled(),
-                            config.vmTrace(),
-                            new PrecompiledContracts(config),
-                            config.databaseDir(),
-                            config.vmTraceDir(),
-                            config.vmTraceCompressed())
-                        .setLocalCall(true);
+                            blockFactory,
+                            invokeFactory
+                    );
+                    TransactionExecutor executor = transactionExecutorFactory
+                            .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
+                            .setLocalCall(true);
 
                     executor.init();
                     executor.execute();
@@ -274,7 +266,7 @@ public class TransactionTest {
                 // now executing the JSON test transaction
                 return super.executeTransaction(tx);
             }
-        }.runImpl();
+        }.setstateTestUSeREMASC(true).runImpl();
         if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
     }
 
@@ -301,37 +293,52 @@ public class TransactionTest {
     }
 
     @Test
+    public void testTransaction() {
+        Transaction tx = new Transaction(9L, 20000000000L, 21000L,
+                "3535353535353535353535353535353535353535", 1000000000000000000L, new byte[0], (byte) 1);
+
+        byte[] encoded = tx.getEncodedRaw();
+        byte[] hash = tx.getRawHash().getBytes();
+        String strenc = Hex.toHexString(encoded);
+        Assert.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
+        String strhash = Hex.toHexString(hash);
+        Assert.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
+        System.out.println(strenc);
+        System.out.println(strhash);
+    }
+
+    @Test
     public void isContractCreationWhenReceiveAddressIsNull() {
-        Transaction tx = Transaction.create(config, null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction(null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsEmptyString() {
-        Transaction tx = Transaction.create(config, "", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction("", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test(expected = RuntimeException.class)
     public void isContractCreationWhenReceiveAddressIs00() {
-        Transaction.create(config, "00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        new Transaction("00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
-        Transaction tx = Transaction.create(config, "0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction("0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsCowAddress() {
-        Transaction tx = Transaction.create(config, "cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
-        Transaction tx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
         Assert.assertFalse(tx.isContractCreation());
     }
 

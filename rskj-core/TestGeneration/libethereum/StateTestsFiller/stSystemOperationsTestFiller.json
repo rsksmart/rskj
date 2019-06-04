@@ -86,7 +86,7 @@
     "createWithInvalidOpcode": {
         "env" : {
             "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
-            "currentDifficulty" : "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            "currentDifficulty" : "0x1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
             "currentGasLimit" : "1000000",
             "currentNumber" : "2463000",
             "currentTimestamp" : "2",

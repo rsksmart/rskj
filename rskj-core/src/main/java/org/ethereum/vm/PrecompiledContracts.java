@@ -19,13 +19,16 @@ package org.ethereum.vm;
  */
 
 
+import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.pcc.blockheader.BlockHeaderContract;
+import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
-import co.rsk.peg.SamplePrecompiledContract;
 import co.rsk.remasc.RemascContract;
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -49,26 +52,40 @@ import static org.ethereum.util.ByteUtil.*;
  */
 public class PrecompiledContracts {
 
-    public static final String ECRECOVER_ADDR = "0000000000000000000000000000000000000001";
-    public static final String SHA256_ADDR = "0000000000000000000000000000000000000002";
-    public static final String RIPEMPD160_ADDR = "0000000000000000000000000000000000000003";
+    public static final String ECRECOVER_ADDR_STR = "0000000000000000000000000000000000000001";
+    public static final String SHA256_ADDR_STR = "0000000000000000000000000000000000000002";
+    public static final String RIPEMPD160_ADDR_STR = "0000000000000000000000000000000000000003";
     public static final String IDENTITY_ADDR_STR = "0000000000000000000000000000000000000004";
-    public static final String BIG_INT_MODEXP_ADDR = "0000000000000000000000000000000000000005";
-    public static final String SAMPLE_ADDR_STR = "0000000000000000000000000000000001000005";
+    public static final String BIG_INT_MODEXP_ADDR_STR = "0000000000000000000000000000000000000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
+    public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
+    public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
 
-    public static final RskAddress BRIDGE_ADDR = new RskAddress(BRIDGE_ADDR_STR);
-    public static final RskAddress IDENTITY_ADDR = new RskAddress(IDENTITY_ADDR_STR);
-    public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_STR);
-    public static final RskAddress SAMPLE_ADDR = new RskAddress(SAMPLE_ADDR_STR);
+    public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
+    public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
+    public static final DataWord RIPEMPD160_ADDR_DW = DataWord.valueFromHex(RIPEMPD160_ADDR_STR);
+    public static final DataWord IDENTITY_ADDR_DW = DataWord.valueFromHex(IDENTITY_ADDR_STR);
+    public static final DataWord BIG_INT_MODEXP_ADDR_DW = DataWord.valueFromHex(BIG_INT_MODEXP_ADDR_STR);
+    public static final DataWord BRIDGE_ADDR_DW = DataWord.valueFromHex(BRIDGE_ADDR_STR);
+    public static final DataWord REMASC_ADDR_DW = DataWord.valueFromHex(REMASC_ADDR_STR);
+    public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueFromHex(BLOCK_HEADER_ADDR_STR);
+    public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
 
-    private static final String RSK_NATIVECONTRACT_REQUIREDPREFIX = "000000000000000000000000";
+    public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
+    public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
+    public static final RskAddress RIPEMPD160_ADDR = new RskAddress(RIPEMPD160_ADDR_DW);
+    public static final RskAddress IDENTITY_ADDR = new RskAddress(IDENTITY_ADDR_DW);
+    public static final RskAddress BIG_INT_MODEXP_ADDR = new RskAddress(BIG_INT_MODEXP_ADDR_DW);
+    public static final RskAddress BRIDGE_ADDR = new RskAddress(BRIDGE_ADDR_DW);
+    public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_DW);
+    public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
+    public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
+
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
     private static Ripempd160 ripempd160 = new Ripempd160();
     private static Identity identity = new Identity();
-    private static SamplePrecompiledContract sample = new SamplePrecompiledContract(SAMPLE_ADDR);
     private static BigIntegerModexp bigIntegerModexp = new BigIntegerModexp();
 
     private final RskSystemProperties config;
@@ -77,35 +94,40 @@ public class PrecompiledContracts {
         this.config = config;
     }
 
-    public PrecompiledContract getContractForAddress(BlockchainConfig blockchainConfig, DataWord address) {
+
+    public PrecompiledContract getContractForAddress(ActivationConfig.ForBlock activations, DataWord address) {
 
         if (address == null) {
             return identity;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + ECRECOVER_ADDR)) {
+        if (address.equals(ECRECOVER_ADDR_DW)) {
             return ecRecover;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + SHA256_ADDR)) {
+        if (address.equals(SHA256_ADDR_DW)) {
             return sha256;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + RIPEMPD160_ADDR)) {
+        if (address.equals(RIPEMPD160_ADDR_DW)) {
             return ripempd160;
         }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + IDENTITY_ADDR_STR)) {
+        if (address.equals(IDENTITY_ADDR_DW)) {
             return identity;
         }
-        // RSKIP-93 removes this contract completely
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + SAMPLE_ADDR_STR) && !blockchainConfig.isRskip93()) {
-            return sample;
+        if (address.equals(BRIDGE_ADDR_DW)) {
+            return new Bridge(BRIDGE_ADDR, config.getNetworkConstants(), config.getActivationConfig());
         }
-        if (address.isHex(BRIDGE_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR_STR)) {
-            return new Bridge(config, BRIDGE_ADDR);
-        }
-        if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BIG_INT_MODEXP_ADDR)) {
+        if (address.equals(BIG_INT_MODEXP_ADDR_DW)) {
             return bigIntegerModexp;
         }
-        if (address.isHex(REMASC_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR_STR)) {
-            return new RemascContract(config, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName()), REMASC_ADDR);
+        if (address.equals(REMASC_ADDR_DW)) {
+            RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
+            return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig());
+        }
+        if (activations.isActive(ConsensusRule.RSKIP119) && address.equals(BLOCK_HEADER_ADDR_DW)) {
+            return new BlockHeaderContract(config.getActivationConfig(), BLOCK_HEADER_ADDR);
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP106) && address.equals(HD_WALLET_UTILS_ADDR_DW)) {
+            return new HDWalletUtils(config.getActivationConfig(), HD_WALLET_UTILS_ADDR);
         }
 
         return null;
@@ -194,7 +216,7 @@ public class PrecompiledContracts {
                 result = HashUtil.ripemd160(data);
             }
 
-            return new DataWord(result).getData();
+            return DataWord.valueOf(result).getData();
         }
     }
 
@@ -227,8 +249,8 @@ public class PrecompiledContracts {
                 if (isValid(r, s, v)) {
                     ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[31]);
 
-                    ECKey key = ECKey.signatureToKey(h, signature.toBase64());
-                    out = new DataWord(key.getAddress());
+                    ECKey key = ECKey.signatureToKey(h, signature);
+                    out = DataWord.valueOf(key.getAddress());
                 }
             } catch (Exception any) {
             }
@@ -365,7 +387,7 @@ public class PrecompiledContracts {
 
         private int parseLen(byte[] data, int idx) {
             byte[] bytes = parseBytes(data, 32 * idx, 32);
-            return new DataWord(bytes).intValueSafe();
+            return DataWord.valueOf(bytes).intValueSafe();
         }
 
         private BigInteger parseArg(byte[] data, int offset, int len) {

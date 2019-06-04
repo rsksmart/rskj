@@ -83,7 +83,7 @@ public class TransactionResultDTO {
             from = TypeConverter.toJsonHex(new byte[20]);
         } else {
             ECKey.ECDSASignature signature = tx.getSignature();
-            v = String.format("0x%02X", signature.v);
+            v = String.format("0x%02x", signature.v);
             r = TypeConverter.toJsonHex(signature.r);
             s = TypeConverter.toJsonHex(signature.s);
         }

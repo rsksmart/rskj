@@ -20,12 +20,8 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
-import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,26 +30,34 @@ import java.util.List;
  * Created by ajlopez on 01/08/2016.
  */
 public class BlockResult {
-    public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new InterruptedExecutionBlockResult();
+    public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new BlockResult(
+            Collections.emptyList(),
+            Collections.emptyList(),
+            0,
+            Coin.ZERO,
+            null
+    );
 
     private final List<Transaction> executedTransactions;
     private final List<TransactionReceipt> transactionReceipts;
-    private final byte[] stateRoot;
-    private final byte[] receiptsRoot;
     private final long gasUsed;
     private final Coin paidFees;
-    private final byte[] logsBloom;
 
-    public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts,
-                       byte[] stateRoot, long gasUsed, Coin paidFees) {
+    // It is for optimizing switching between states. Instead of using the "stateRoot" field,
+    // which requires regenerating the trie, using the finalState field does not.
+    private final Trie finalState;
+
+    public BlockResult(
+            List<Transaction> executedTransactions,
+            List<TransactionReceipt> transactionReceipts,
+            long gasUsed,
+            Coin paidFees,
+            Trie finalState) {
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
-        this.stateRoot = stateRoot;
         this.gasUsed = gasUsed;
         this.paidFees = paidFees;
-
-        this.receiptsRoot = calculateReceiptsTrie(transactionReceipts);
-        this.logsBloom = calculateLogsBloom(transactionReceipts);
+        this.finalState = finalState;
     }
 
     public List<Transaction> getExecutedTransactions() { return executedTransactions; }
@@ -61,16 +65,6 @@ public class BlockResult {
     public List<TransactionReceipt> getTransactionReceipts() {
         return this.transactionReceipts;
     }
-
-    public byte[] getStateRoot() {
-        return this.stateRoot;
-    }
-
-    public byte[] getReceiptsRoot() {
-        return this.receiptsRoot;
-    }
-
-    public byte[] getLogsBloom() { return this.logsBloom; }
 
     public long getGasUsed() {
         return this.gasUsed;
@@ -80,35 +74,8 @@ public class BlockResult {
         return this.paidFees;
     }
 
-    // from original BlockchainImpl
-    private static byte[] calculateReceiptsTrie(List<TransactionReceipt> receipts) {
-        //TODO Fix Trie hash for receipts - doesnt match cpp
-        Trie receiptsTrie = new TrieImpl();
-
-        if (receipts.isEmpty()) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
-        }
-
-        return receiptsTrie.getHash().getBytes();
+    public Trie getFinalState() {
+        return this.finalState;
     }
 
-    private static byte[] calculateLogsBloom(List<TransactionReceipt> receipts) {
-        Bloom logBloom = new Bloom();
-
-        for (TransactionReceipt receipt : receipts) {
-            logBloom.or(receipt.getBloomFilter());
-        }
-
-        return logBloom.getData();
-    }
-
-    private static class InterruptedExecutionBlockResult extends BlockResult {
-        public InterruptedExecutionBlockResult() {
-            super(Collections.emptyList(), Collections.emptyList(), null, 0, Coin.ZERO);
-        }
-    }
 }

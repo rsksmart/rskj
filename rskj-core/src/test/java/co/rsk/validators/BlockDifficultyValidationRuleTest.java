@@ -18,16 +18,17 @@
 
 package co.rsk.validators;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.RskAddress;
 import org.ethereum.TestUtils;
-import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -38,16 +39,19 @@ import java.math.BigInteger;
  */
 public class BlockDifficultyValidationRuleTest {
 
-    private static TestSystemProperties config;
+    private BlockFactory blockFactory;
+    private ActivationConfig activationConfig;
+    private Constants networkConstants;
 
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        config = new TestSystemProperties();
-        config.setBlockchainConfig(new RegTestGenesisConfig());
+    @Before
+    public void setUp() {
+        activationConfig = ActivationConfigsForTest.all();
+        networkConstants = Constants.regtest();
+        blockFactory = new BlockFactory(activationConfig);
     }
 
     private BlockHeader getEmptyHeader(BlockDifficulty difficulty, long blockTimestamp, int uCount) {
-        BlockHeader header = new BlockHeader(null, null,
+        BlockHeader header = blockFactory.newHeader(null, null,
                 TestUtils.randomAddress().getBytes(), null, difficulty.getBytes(), 0,
                 null, 0,
                 blockTimestamp, null, null, uCount);
@@ -56,7 +60,7 @@ public class BlockDifficultyValidationRuleTest {
 
     @Test
     public void testDifficulty() {
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
         BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator);
 
         Block block = Mockito.mock(Block.class);

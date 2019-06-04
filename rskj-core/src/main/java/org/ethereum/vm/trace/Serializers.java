@@ -86,12 +86,12 @@ public final class Serializers {
         mapper.writeValue(out, value);
     }
 
-    private static VisibilityChecker<?> fieldsOnlyVisibilityChecker(ObjectMapper mapper) {
-        return mapper.getSerializationConfig().getDefaultVisibilityChecker()
-                .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
-                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
-                .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE);
-    }
+        private static VisibilityChecker<?> fieldsOnlyVisibilityChecker(ObjectMapper mapper) {
+            return mapper.getSerializationConfig().getDefaultVisibilityChecker()
+                    .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+                    .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                    .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE);
+        }
 
     public static ObjectMapper createMapper(boolean pretty) {
         ObjectMapper mapper = new ObjectMapper();

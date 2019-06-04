@@ -39,9 +39,6 @@ public class SimpleRskTransaction extends Transaction {
     }
 
     @Override
-    public Keccak256 getHash() { return hash; }
-
-    @Override
     public Coin getValue() {
         return Coin.valueOf(10000000);
     }

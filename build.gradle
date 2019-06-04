@@ -1,4 +1,6 @@
-wrapper.gradleVersion = '4.1.0'
+plugins {
+    id "org.sonarqube" version "2.7.1"
+}
 
 subprojects {
     def config = new ConfigSlurper().parse(new File("$projectDir/src/main/resources/version.properties").toURI().toURL())

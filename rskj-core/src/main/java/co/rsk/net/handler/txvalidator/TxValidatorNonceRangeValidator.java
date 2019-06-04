@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import co.rsk.net.TransactionValidationResult;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
@@ -32,10 +33,19 @@ import java.math.BigInteger;
 public class TxValidatorNonceRangeValidator implements  TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BigInteger nonce = tx.getNonceAsInteger();
         BigInteger stateNonce = state == null ? BigInteger.ZERO : state.getNonce();
         BigInteger maxNumberOfTxsPerAddress = BigInteger.valueOf(4);
-        return stateNonce.compareTo(nonce) <= 0 && stateNonce.add(maxNumberOfTxsPerAddress).compareTo(nonce) >= 0;
+
+        if (stateNonce.compareTo(nonce) > 0) {
+            return TransactionValidationResult.withError("transaction nonce too low");
+        }
+        if (stateNonce.add(maxNumberOfTxsPerAddress).compareTo(nonce) < 0) {
+            return TransactionValidationResult.withError("transaction nonce too high");
+        }
+
+        return TransactionValidationResult.ok();
     }
+
 }

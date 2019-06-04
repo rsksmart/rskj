@@ -19,19 +19,22 @@
 package co.rsk.test;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockStore;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.util.HashMap;
@@ -47,6 +50,7 @@ public class World {
     private Map<String, Block> blocks = new HashMap<>();
     private Map<String, Account> accounts = new HashMap<>();
     private Map<String, Transaction> transactions = new HashMap<>();
+    private StateRootHandler stateRootHandler;
 
     public World() {
         this(new BlockChainBuilder().build());
@@ -80,6 +84,7 @@ public class World {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
         this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
+        this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
@@ -87,30 +92,26 @@ public class World {
     public BlockExecutor getBlockExecutor() {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         final TestSystemProperties config = new TestSystemProperties();
-        if (this.blockExecutor == null)
-            this.blockExecutor = new BlockExecutor(this.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                    tx1,
-                    txindex1,
-                    block1.getCoinbase(),
-                    track1,
-                    this.getBlockChain().getBlockStore(),
-                    null,
-                    programInvokeFactory,
-                    block1,
-                    null,
-                    totalGasUsed1,
-                    config.getVmConfig(),
-                    config.getBlockchainConfig(),
-                    config.playVM(),
-                    config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed()
-            ));
+        if (this.blockExecutor == null) {
+            this.blockExecutor = new BlockExecutor(
+                    config.getActivationConfig(),
+                    this.getRepository(),
+                    new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                    new TransactionExecutorFactory(
+                            config,
+                            this.getBlockChain().getBlockStore(),
+                            null,
+                            new BlockFactory(config.getActivationConfig()),
+                            programInvokeFactory
+                    )
+            );
+        }
 
         return this.blockExecutor;
+    }
+
+    public StateRootHandler getStateRootHandler() {
+        return this.stateRootHandler;
     }
 
     public BlockChainImpl getBlockChain() { return this.blockChain; }

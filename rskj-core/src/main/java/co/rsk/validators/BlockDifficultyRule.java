@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * @author Mikhail Kalinin
  * @since 02.09.2015
  */
-public class BlockDifficultyRule implements BlockParentDependantValidationRule {
+public class BlockDifficultyRule implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
@@ -43,12 +43,11 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule {
     }
 
     @Override
-    public boolean isValid(Block block, Block parent) {
-        if(block == null || parent == null) {
+    public boolean isValid(BlockHeader header, Block parent) {
+        if (header == null || parent == null) {
             logger.warn("BlockDifficultyRule - block or parent are null");
             return false;
         }
-        BlockHeader header = block.getHeader();
         BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent.getHeader());
         BlockDifficulty difficulty = header.getDifficulty();
 
@@ -57,5 +56,10 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean isValid(Block block, Block parent) {
+        return isValid(block.getHeader(), parent);
     }
 }
