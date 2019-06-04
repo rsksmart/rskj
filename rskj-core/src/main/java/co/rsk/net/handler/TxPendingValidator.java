@@ -18,10 +18,11 @@
 
 package co.rsk.net.handler;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +43,12 @@ public class TxPendingValidator {
 
     private final List<TxValidatorStep> validatorSteps = new LinkedList<>();
 
-    private final RskSystemProperties config;
+    private final Constants constants;
+    private final ActivationConfig activationConfig;
 
-    public TxPendingValidator(RskSystemProperties config) {
-        this.config = config;
+    public TxPendingValidator(Constants constants, ActivationConfig activationConfig) {
+        this.constants = constants;
+        this.activationConfig = activationConfig;
 
         validatorSteps.add(new TxNotNullValidator());
         validatorSteps.add(new TxValidatorNotRemascTxValidator());
@@ -54,14 +57,14 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorNonceRangeValidator());
         validatorSteps.add(new TxValidatorAccountBalanceValidator());
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
-        validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(config));
+        validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig));
     }
 
     public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
-        long basicTxCost = tx.transactionCost(executionBlock, config.getBlockchainConfig());
+        long basicTxCost = tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber));
 
         if (state == null && basicTxCost != 0) {
             logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender());

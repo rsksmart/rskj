@@ -20,14 +20,18 @@ package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.StateRootHandler;
 import co.rsk.test.World;
+import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
-import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -55,7 +59,7 @@ public class BlockBuilder {
         this(blockChain, new BlockGenerator());
     }
 
-    public BlockBuilder(Blockchain blockChain, BlockGenerator blockGenerator) {
+    private BlockBuilder(Blockchain blockChain, BlockGenerator blockGenerator) {
         this.blockChain = blockChain;
         this.blockGenerator = blockGenerator;
         // sane defaults
@@ -100,30 +104,20 @@ public class BlockBuilder {
         Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
         if (blockChain != null) {
-            final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
-            BlockExecutor executor = new BlockExecutor(blockChain.getRepository(), (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                    tx1,
-                    txindex1,
-                    block1.getCoinbase(),
-                    track1,
-                    blockChain.getBlockStore(),
-                    null,
-                    programInvokeFactory,
-                    block1,
-                    null,
-                    totalGasUsed1,
-                    config.getVmConfig(),
-                    config.getBlockchainConfig(),
-                    config.playVM(),
-                    config.isRemascEnabled(),
-                    config.vmTrace(),
-                    new PrecompiledContracts(config),
-                    config.databaseDir(),
-                    config.vmTraceDir(),
-                    config.vmTraceCompressed()
-            ));
-            executor.executeAndFill(block, parent);
+            BlockExecutor executor = new BlockExecutor(
+                    config.getActivationConfig(),
+                    blockChain.getRepository(),
+                    new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                    new TransactionExecutorFactory(
+                            config,
+                            blockChain.getBlockStore(),
+                            null,
+                            new BlockFactory(config.getActivationConfig()),
+                            new ProgramInvokeFactoryImpl()
+                    )
+            );
+            executor.executeAndFill(block, parent.getHeader());
         }
 
         return block;

@@ -36,7 +36,7 @@ public class TxBuilderTest {
     @Test
     public void createBasicTransaction() {
         SimpleEthereum rsk = new SimpleEthereum();
-        TxBuilder builder = new TxBuilder(config, rsk, null, (Repository) rsk.repository);
+        TxBuilder builder = new TxBuilder(config.getNetworkConstants(), rsk, null, (Repository) rsk.repository);
 
         BigInteger gasPrice = BigInteger.ONE;
         BigInteger gasLimit = BigInteger.valueOf(21000);
@@ -53,7 +53,7 @@ public class TxBuilderTest {
     public void createAndBroadcastTransaction() {
         SimpleEthereum rsk = new SimpleEthereum();
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
-        TxBuilder builder = new TxBuilder(config, rsk, blockProcessor, (Repository) rsk.repository);
+        TxBuilder builder = new TxBuilder(config.getNetworkConstants(), rsk, blockProcessor, (Repository) rsk.repository);
 
         BigInteger nonce = BigInteger.TEN;
 

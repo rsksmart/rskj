@@ -19,15 +19,13 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
-import org.ethereum.listener.TestCompositeEthereumListener;
-import org.ethereum.util.RskTestFactory;
+import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.util.RskTestContext;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,18 +40,30 @@ import static org.ethereum.util.TransactionFactoryHelper.*;
  * Created by ajlopez on 08/08/2016.
  */
 public class TransactionPoolImplTest {
-    private static final TestSystemProperties config = new TestSystemProperties();
-
-    private TransactionPoolImpl transactionPool;
     private Blockchain blockChain;
+    private TransactionPoolImpl transactionPool;
+    private Repository repository;
 
     @Before
     public void setUp() {
-        RskTestFactory factory = new RskTestFactory();
-        blockChain = factory.getBlockchain();
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
-        blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
-        transactionPool = new TransactionPoolImpl(config, factory.getRepository(), null, null, new ProgramInvokeFactoryImpl(), new TestCompositeEthereumListener(), 10, 100);
+        RskTestContext rskTestContext = new RskTestContext(new String[]{"--regtest"}) {
+            @Override
+            protected Genesis buildGenesis() {
+                return GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
+            }
+        };
+        blockChain = rskTestContext.getBlockchain();
+        repository = rskTestContext.getRepository();
+        transactionPool = new TransactionPoolImpl(
+                rskTestContext.getRskSystemProperties(),
+                repository,
+                rskTestContext.getBlockStore(),
+                rskTestContext.getBlockFactory(),
+                rskTestContext.getCompositeEthereumListener(),
+                rskTestContext.getTransactionExecutorFactory(),
+                10,
+                100
+        );
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
     }
@@ -584,7 +594,7 @@ public class TransactionPoolImplTest {
 
         Transaction tx = createSampleTransaction(1, 2, 3000, 0);
 
-        blockChain.getRepository().increaseNonce(tx.getSender());
+        repository.increaseNonce(tx.getSender());
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
@@ -684,8 +694,6 @@ public class TransactionPoolImplTest {
     }
 
     private void createTestAccounts(int naccounts, Coin balance) {
-        Repository repository = blockChain.getRepository();
-
         Repository track = repository.startTracking();
 
         for (int k = 1; k <= naccounts; k++) {

@@ -23,6 +23,8 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
+import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -38,6 +40,7 @@ import co.rsk.scoring.InvalidInetAddressException;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
@@ -97,12 +100,15 @@ public class Web3Impl implements Web3 {
     private final FilterManager filterManager;
     private final BuildInfo buildInfo;
 
+    private final BlocksBloomStore blocksBloomStore;
+
     private final PersonalModule personalModule;
     private final EthModule ethModule;
     private final EvmModule evmModule;
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
     private final DebugModule debugModule;
+    private StateRootHandler stateRootHandler;
 
     protected Web3Impl(
             Ethereum eth,
@@ -126,7 +132,9 @@ public class Web3Impl implements Web3 {
             BlockProcessor nodeBlockProcessor,
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities,
-            BuildInfo buildInfo) {
+            BuildInfo buildInfo,
+            BlocksBloomStore blocksBloomStore,
+            StateRootHandler stateRootHandler) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -148,11 +156,13 @@ public class Web3Impl implements Web3 {
         this.hashRateCalculator = hashRateCalculator;
         this.configCapabilities = configCapabilities;
         this.config = config;
-        filterManager = new FilterManager(eth);
+        this.filterManager = new FilterManager(eth);
         this.buildInfo = buildInfo;
+        this.blocksBloomStore = blocksBloomStore;
+        this.stateRootHandler = stateRootHandler;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
-        personalModule.init(this.config);
+        personalModule.init();
     }
 
     @Override
@@ -203,7 +213,7 @@ public class Web3Impl implements Web3 {
     public String net_version() {
         String s = null;
         try {
-            byte netVersion = config.getBlockchainConfig().getCommonConstants().getChainId();
+            byte netVersion = config.getNetworkConstants().getChainId();
             return s = Byte.toString(netVersion);
         }
         finally {
@@ -386,8 +396,14 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getBalance(String address) throws Exception {
+        AccountInformationProvider accountInformationProvider = getAccountInformationProvider("latest");
+
+        if (accountInformationProvider == null) {
+            throw new NullPointerException();
+        }
+
         RskAddress addr = new RskAddress(address);
-        BigInteger balance = this.repository.getBalance(addr).asBigInteger();
+        BigInteger balance = accountInformationProvider.getBalance(addr).asBigInteger();
 
         return toJsonHex(balance);
     }
@@ -405,7 +421,7 @@ public class Web3Impl implements Web3 {
             }
 
             DataWord storageValue = accountInformationProvider.
-                    getStorageValue(addr, new DataWord(stringHexToByteArray(storageIdx)));
+                    getStorageValue(addr, DataWord.valueOf(stringHexToByteArray(storageIdx)));
             if (storageValue != null) {
                 return s = TypeConverter.toJsonHex(storageValue.getData());
             } else {
@@ -537,6 +553,12 @@ public class Web3Impl implements Web3 {
 
             if(accountInformationProvider != null) {
                 byte[] code = accountInformationProvider.getCode(addr);
+
+                // Code can be null, if there is no account.
+                if (code == null) {
+                    code = new byte[0];
+                }
+
                 s = TypeConverter.toJsonHex(code);
             }
 
@@ -788,7 +810,8 @@ public class Web3Impl implements Web3 {
             Block uncle = blockchain.getBlockByHash(uncleHeader.getHash().getBytes());
 
             if (uncle == null) {
-                uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList());
+                boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, uncleHeader.getNumber());
+                uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList(), isRskip126Enabled, true);
             }
 
             return s = getBlockResult(uncle, false);
@@ -841,7 +864,7 @@ public class Web3Impl implements Web3 {
         String str = null;
 
         try {
-            Filter filter = LogFilter.fromFilterRequest(fr, blockchain);
+            Filter filter = LogFilter.fromFilterRequest(fr, blockchain, blocksBloomStore);
             int id = filterManager.registerFilter(filter);
 
             return str = toJsonHex(id);
@@ -1024,7 +1047,7 @@ public class Web3Impl implements Web3 {
         } else {
             Block block = getByJsonBlockId(id);
             if (block != null) {
-                return this.repository.getSnapshotTo(block.getStateRoot());
+                return this.repository.getSnapshotTo(stateRootHandler.translate(block.getHeader()).getBytes());
             } else {
                 return null;
             }

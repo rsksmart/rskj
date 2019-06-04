@@ -180,4 +180,8 @@ public class PendingState implements AccountInformationProvider {
     private interface PostExecutionAction<T> {
         T execute(Repository executedRepository);
     }
+
+    public interface TransactionExecutorFactory {
+        TransactionExecutor newInstance(Repository repository, Transaction tx);
+    }
 }

@@ -25,6 +25,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -35,7 +37,7 @@ import java.util.*;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalVMTest {
-
+    private Logger logger = LoggerFactory.getLogger("VM-Test");
     @Test
     public void runSingle() throws ParseException {
         String json = getJSON("vmEnvironmentalInfoTest");
@@ -45,9 +47,12 @@ public class LocalVMTest {
     @Test
     public void testArithmetic() throws ParseException {
         Set<String> excluded = new HashSet<>();
+        Set<String> included = null;
+        //included  =new HashSet<>();
+        //included.add("expXY");
         // TODO: these are excluded due to bad wrapping behavior in ADDMOD/DataWord.add
         String json = getJSON("vmArithmeticTest");
-        GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
+        GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded,included);
     }
 
     @Test // testing full suite
@@ -171,8 +176,10 @@ public class LocalVMTest {
         }
     }
 
-    private static String getJSON(String name) {
-        String json = JSONReader.loadJSONFromResource("json/VMTests/" + name + ".json", LocalVMTest.class.getClassLoader());
+    private String getJSON(String name) {
+        String fullName = "json/VMTests/" + name + ".json";
+        logger.info("Reading resource "+fullName);
+        String json = JSONReader.loadJSONFromResource(fullName, LocalVMTest.class.getClassLoader());
         return json;
     }
 }

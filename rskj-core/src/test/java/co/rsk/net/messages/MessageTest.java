@@ -24,6 +24,7 @@ import co.rsk.net.Status;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
@@ -39,6 +40,8 @@ import java.util.Random;
  * Created by ajlopez on 5/11/2016.
  */
 public class MessageTest {
+    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+
     @Test
     public void encodeDecodeGetBlockMessage() {
         Block block = new BlockGenerator().getBlock(1);
@@ -46,7 +49,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -64,7 +67,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -83,7 +86,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -96,7 +99,7 @@ public class MessageTest {
 
         message = new GetBlockHeadersMessage(0, block.getHash().getBytes(), 10, 5, true);
         encoded = message.getEncoded();
-        result = Message.create(encoded);
+        result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -117,7 +120,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -139,7 +142,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -159,7 +162,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -178,7 +181,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -200,7 +203,7 @@ public class MessageTest {
 
         Assert.assertNotNull(encoded);
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -212,28 +215,6 @@ public class MessageTest {
         Assert.assertEquals(block.getNumber(), newmessage.getBlock().getNumber());
         Assert.assertEquals(block.getHash(), newmessage.getBlock().getHash());
         Assert.assertArrayEquals(block.getEncoded(), newmessage.getBlock().getEncoded());
-    }
-
-    @Test
-    public void encodeDecodeBlockHeaderMessage() {
-        BlockHeader header = new BlockGenerator().getBlock(1).getHeader();
-        BlockHeadersMessage message = new BlockHeadersMessage(header);
-
-        byte[] encoded = message.getEncoded();
-
-        Message result = Message.create(encoded);
-
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_MESSAGE, result.getMessageType());
-
-        BlockHeadersMessage newmessage = (BlockHeadersMessage) result;
-
-        Assert.assertEquals(newmessage.getBlockHeaders().size(), 1);
-        BlockHeader newheader = newmessage.getBlockHeaders().get(0);
-        Assert.assertEquals(header.getNumber(), newheader.getNumber());
-        Assert.assertEquals(header.getHash(), newheader.getHash());
-        Assert.assertArrayEquals(header.getEncoded(), newheader.getEncoded());
     }
 
     @Test
@@ -249,7 +230,7 @@ public class MessageTest {
 
         Assert.assertNotNull(encoded);
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -281,7 +262,7 @@ public class MessageTest {
 
         NewBlockHashesMessage message = new NewBlockHashesMessage(identifiers);
         byte[] encoded = message.getEncoded();
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -307,7 +288,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -334,7 +315,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -354,7 +335,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -377,7 +358,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -396,7 +377,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -424,7 +405,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -452,7 +433,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -471,7 +452,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -489,7 +470,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
@@ -523,7 +504,7 @@ public class MessageTest {
 
         byte[] encoded = message.getEncoded();
 
-        Message result = Message.create(encoded);
+        Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());

@@ -28,13 +28,13 @@ import java.util.List;
 
 public class LogsValidator {
 
-    public static List<String> valid(List<LogInfo> origLogs, List<LogInfo> postLogs) {
+    public static List<String> valid(List<LogInfo> origLogs, List<LogInfo> postLogs,ValidationStats vStats) {
 
         List<String> results = new ArrayList<>();
 
         int i = 0;
         for (LogInfo postLog : postLogs) {
-
+            if (vStats!=null) vStats.logChecks++;
             if (origLogs == null || origLogs.size() - 1 < i){
                 String formattedString = String.format("Log: %s: was expected but doesn't exist: address: %s",
                         i, Hex.toHexString(postLog.getAddress()));
@@ -47,7 +47,7 @@ public class LogsValidator {
 
             String postAddress = Hex.toHexString(postLog.getAddress());
             String realAddress = Hex.toHexString(realLog.getAddress());
-
+            if (vStats!=null) vStats.logChecks++;
             if (!postAddress.equals(realAddress)) {
 
                 String formattedString = String.format("Log: %s: has unexpected address, expected address: %s found address: %s",
@@ -57,7 +57,7 @@ public class LogsValidator {
 
             String postData = Hex.toHexString(postLog.getData());
             String realData = Hex.toHexString(realLog.getData());
-
+            if (vStats!=null) vStats.logChecks++;
             if (!postData.equals(realData)) {
 
                 String formattedString = String.format("Log: %s: has unexpected data, expected data: %s found data: %s",
@@ -67,7 +67,7 @@ public class LogsValidator {
 
             String postBloom = Hex.toHexString(postLog.getBloom().getData());
             String realBloom = Hex.toHexString(realLog.getBloom().getData());
-
+            if (vStats!=null) vStats.logChecks++;
             if (!postData.equals(realData)) {
 
                 String formattedString = String.format("Log: %s: has unexpected bloom, expected bloom: %s found bloom: %s",
@@ -82,7 +82,7 @@ public class LogsValidator {
             for (DataWord postTopic : postTopics) {
 
                 DataWord realTopic = realTopics.get(j);
-
+                if (vStats!=null) vStats.logChecks++;
                 if (!postTopic.equals(realTopic)) {
 
                     String formattedString = String.format("Log: %s: has unexpected topic: %s, expected topic: %s found topic: %s",

@@ -19,7 +19,6 @@
 package co.rsk.config;
 
 import co.rsk.core.RskAddress;
-import co.rsk.db.PruneConfiguration;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
@@ -135,8 +134,12 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getBoolean("miner.server.enabled");
     }
 
+    public boolean isMinerServerFixedClock() {
+        return configFromFiles.getBoolean("miner.server.isFixedClock");
+    }
+
     public long minerMinGasPrice() {
-        return getLong("miner.minGasPrice", 0);
+        return configFromFiles.getLong("miner.minGasPrice");
     }
 
     public double minerGasUnitInDollars() {
@@ -149,18 +152,6 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean simulateTxs() {
         return getBoolean("simulateTxs.enabled", false);
-    }
-
-    public boolean simulateTxsEx() {
-        return getBoolean("simulateTxsEx.enabled", false);
-    }
-
-    public Long simulateTxsExFounding() {
-        return getLong("simulateTxsEx.foundingAmount", 10000000000L);
-    }
-
-    public String simulateTxsExAccountSeed() {
-        return getString("simulateTxsEx.accountSeed", "this is a seed");
     }
 
     public boolean waitForSync() {
@@ -213,13 +204,8 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-    public void disableRemasc() {
-        this.remascEnabled = false;
-    }
-
-    //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-    public void enableRemasc() {
-        this.remascEnabled = true;
+    public void setRemascEnabled(boolean remascEnabled) {
+        this.remascEnabled = remascEnabled;
     }
 
     public long peerDiscoveryMessageTimeOut() {
@@ -317,29 +303,6 @@ public class RskSystemProperties extends SystemProperties {
 
     public VmConfig getVmConfig() {
         return new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle());
-    }
-
-    // New prune service properties
-    public boolean isPruneEnabled() {
-        return configFromFiles.getBoolean("prune.enabled");
-    }
-
-    public int getPruneNoBlocksToCopy() {
-        return configFromFiles.getInt("prune.blocks.toCopy");
-    }
-
-    public int getPruneNoBlocksToWait() {
-        return configFromFiles.getInt("prune.blocks.toWait");
-    }
-
-    public int getPruneNoBlocksToAvoidForks() {
-        return configFromFiles.getInt("prune.blocks.toAvoidForks");
-    }
-
-    public PruneConfiguration getPruneConfiguration() {
-        return new PruneConfiguration(this.getPruneNoBlocksToCopy(),
-                                      this.getPruneNoBlocksToAvoidForks(),
-                                      this.getPruneNoBlocksToWait());
     }
 
     public long peerDiscoveryCleanPeriod() {

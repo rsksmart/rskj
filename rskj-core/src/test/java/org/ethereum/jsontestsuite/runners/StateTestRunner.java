@@ -20,13 +20,13 @@
 package org.ethereum.jsontestsuite.runners;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionExecutor;
+import co.rsk.db.StateRootHandler;
+import co.rsk.trie.TrieConverter;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
@@ -34,29 +34,36 @@ import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.jsontestsuite.Env;
 import org.ethereum.jsontestsuite.StateTestCase;
 import org.ethereum.jsontestsuite.TestProgramInvokeFactory;
-import org.ethereum.jsontestsuite.builder.*;
+import org.ethereum.jsontestsuite.builder.EnvBuilder;
+import org.ethereum.jsontestsuite.builder.LogBuilder;
+import org.ethereum.jsontestsuite.builder.RepositoryBuilder;
+import org.ethereum.jsontestsuite.builder.TransactionBuilder;
 import org.ethereum.jsontestsuite.validators.LogsValidator;
 import org.ethereum.jsontestsuite.validators.OutputValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
-import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.jsontestsuite.validators.ValidationStats;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.util.ByteUtil.byteArrayToLong;
+
 public class StateTestRunner {
+    private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     public static List<String> run(StateTestCase stateTestCase2) {
         return new StateTestRunner(stateTestCase2).runImpl();
@@ -69,35 +76,31 @@ public class StateTestRunner {
     protected Env env;
     protected ProgramInvokeFactory invokeFactory;
     protected Block block;
+    protected ValidationStats vStats;
 
     public StateTestRunner(StateTestCase stateTestCase) {
         this.stateTestCase = stateTestCase;
+        setstateTestUSeREMASC(false);
+    }
+
+    public StateTestRunner setstateTestUSeREMASC(boolean v) {
+        config.setRemascEnabled(v);
+        return this;
     }
 
     protected ProgramResult executeTransaction(Transaction tx) {
         Repository track = repository.startTracking();
 
-        TransactionExecutor executor = new TransactionExecutor(
-                transaction,
-                0,
-                new RskAddress(env.getCurrentCoinbase()),
-                track,
+        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
+                config,
                 new BlockStoreDummy(),
                 null,
-                invokeFactory,
-                blockchain.getBestBlock(),
-                new EthereumListenerAdapter(),
-                0,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
+                blockFactory,
+                invokeFactory
         );
+        TransactionExecutor executor = transactionExecutorFactory
+                .newInstance(transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
+
         try{
             executor.init();
             executor.execute();
@@ -113,42 +116,44 @@ public class StateTestRunner {
     }
 
     public List<String> runImpl() {
-
+        vStats = new ValidationStats();
         logger.info("");
         repository = RepositoryBuilder.build(stateTestCase.getPre());
         logger.info("loaded repository");
 
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
-        BlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
+        BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, false, 1, new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        blockchain = new BlockChainImpl(
+                repository,
                 blockStore,
                 null,
-                programInvokeFactory,
-                block1,
                 null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        )));
+                null,
+                null,
+                false,
+                1,
+                new BlockExecutor(
+                        config.getActivationConfig(),
+                        repository,
+                        stateRootHandler,
+                        new TransactionExecutorFactory(
+                                config,
+                                blockStore,
+                                null,
+                                blockFactory,
+                                new ProgramInvokeFactoryImpl()
+                        )
+                ),
+                stateRootHandler
+        );
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);
 
-        block = BlockBuilder.build(env);
+        block = build(env);
         block.setStateRoot(repository.getRoot());
         block.flushRLP();
 
@@ -163,14 +168,16 @@ public class StateTestRunner {
         List<LogInfo> origLogs = programResult.getLogInfoList();
         List<LogInfo> postLogs = LogBuilder.build(stateTestCase.getLogs());
 
-        List<String> logsResult = LogsValidator.valid(origLogs, postLogs);
+        List<String> logsResult = LogsValidator.valid(origLogs, postLogs,vStats);
 
         Repository postRepository = RepositoryBuilder.build(stateTestCase.getPost());
-        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, false /*!blockchain.byTest*/);
+
+        // Balances cannot be validated because has consumption for CALLs differ.
+        List<String> repoResults = RepositoryValidator.valid(repository, postRepository,  false ,false,vStats);
 
         logger.info("--------- POST Validation---------");
         List<String> outputResults =
-                OutputValidator.valid(Hex.toHexString(programResult.getHReturn()), stateTestCase.getOut());
+                OutputValidator.valid(Hex.toHexString(programResult.getHReturn()), stateTestCase.getOut(),vStats);
 
         List<String> results = new ArrayList<>();
         results.addAll(repoResults);
@@ -181,7 +188,33 @@ public class StateTestRunner {
             logger.error(result);
         }
 
+        if ((vStats.storageChecks==0) && (vStats.logChecks==0) &&
+                (vStats.balancetChecks==0) && (vStats.outputChecks==0) &&
+                (vStats.blockChecks==0)) {
+            // This generally mean that the test didn't check anything
+            // AccountChecks are considered not indicative of the result of the test
+            logger.info("IRRELEVANT\n");
+        }
         logger.info("\n\n");
         return results;
+    }
+
+    public static final byte[] ZERO32_BYTE_ARRAY = new byte[32];
+    public Block build(Env env) {
+        return blockFactory.newBlock(
+                blockFactory.newHeader(
+                        // Don't use the empty parent hash because it's used to log and
+                        // when log entries are printed with empty parent hash it throws
+                        // an exception.
+                        ZERO32_BYTE_ARRAY , ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentCoinbase(),
+                        EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
+                        ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentDifficulty(), byteArrayToLong(env.getCurrentNumber()),
+                        env.getCurrentGasLimit(), 0L, byteArrayToLong(env.getCurrentTimestamp()),
+                        new byte[32], Coin.ZERO, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, null, 0
+                ),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                false
+        );
     }
 }

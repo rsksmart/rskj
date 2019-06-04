@@ -11,8 +11,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
 
 public class DataSourceWithCacheTest {
@@ -166,7 +166,7 @@ public class DataSourceWithCacheTest {
         dataSourceWithCache.flush();
 
         ArgumentCaptor<Set<ByteArrayWrapper>> keysToDeleteArgument = ArgumentCaptor.forClass((Class)Set.class);
-        verify(baseDataSource, times(1)).updateBatch(any(Map.class), keysToDeleteArgument.capture());
+        verify(baseDataSource, times(1)).updateBatch(anyMap(), keysToDeleteArgument.capture());
         assertThat(keysToDeleteArgument.getValue(), is(empty()));
     }
 
@@ -178,7 +178,7 @@ public class DataSourceWithCacheTest {
         dataSourceWithCache.flush();
 
         ArgumentCaptor<Set<ByteArrayWrapper>> keysToDeleteArgument = ArgumentCaptor.forClass((Class)Set.class);
-        verify(baseDataSource, times(1)).updateBatch(any(Map.class), keysToDeleteArgument.capture());
+        verify(baseDataSource, times(1)).updateBatch(anyMap(), keysToDeleteArgument.capture());
         Set<ByteArrayWrapper> keysToDelete = keysToDeleteArgument.getValue();
         assertThat(keysToDelete, hasSize(1));
         assertThat(keysToDelete, hasItem(ByteUtil.wrap(randomKey)));

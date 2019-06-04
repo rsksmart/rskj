@@ -18,7 +18,6 @@
 
 package co.rsk.net.messages;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 
@@ -58,14 +57,12 @@ public class TransactionsMessage extends Message {
     }
 
     public String getMessageContentInfo() {
-        int size = CollectionUtils.size(this.transactions);
-        StringBuilder sb = new StringBuilder(size).append(" Received.");
-
-        if(size > 0) {
-            sb.append(": ");
-            this.getTransactions().forEach(tx -> sb.append(tx.getHash().toHexString()).append(", "));
+        if (this.transactions == null) {
+            return "";
         }
 
+        StringBuilder sb = new StringBuilder().append(transactions.size()).append(" Received: ");
+        this.transactions.forEach(tx -> sb.append(tx.getHash().toHexString()).append(", "));
         return sb.toString();
     }
 }

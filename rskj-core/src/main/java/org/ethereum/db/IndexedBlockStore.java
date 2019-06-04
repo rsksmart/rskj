@@ -21,11 +21,15 @@ package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.BlockCache;
 import co.rsk.remasc.Sibling;
 import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.mapdb.DB;
@@ -47,6 +51,7 @@ import static co.rsk.core.BlockDifficulty.ZERO;
 public class IndexedBlockStore implements BlockStore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final BlockCache blockCache;
     private final MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache;
@@ -54,11 +59,17 @@ public class IndexedBlockStore implements BlockStore {
     private final Map<Long, List<BlockInfo>> index;
     private final DB indexDB;
     private final KeyValueDataSource blocks;
+    private final BlockFactory blockFactory;
 
-    public IndexedBlockStore(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB) {
+    public IndexedBlockStore(
+            BlockFactory blockFactory,
+            Map<Long, List<BlockInfo>> index,
+            KeyValueDataSource blocks,
+            DB indexDB) {
         this.index = index;
         this.blocks = blocks;
         this.indexDB  = indexDB;
+        this.blockFactory = blockFactory;
         //TODO(lsebrie): move these maps creation outside blockstore,
         // remascCache should be an external component and not be inside blockstore
         this.blockCache = new BlockCache(5000);
@@ -136,16 +147,61 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized void flush() {
-        long t1 = System.nanoTime();
+    // This method is an optimized way to traverse a branch in search for a block at a given depth. Starting at a given
+    // block (by hash) it tries to find the first block that is part of the best chain, when it finds one we now that
+    // we can jump to the block that is at the remaining depth. If not block is found then it continues traversing the
+    // branch from parent to parent. The search is limited by the maximum depth received as parameter.
+    // This method either needs to traverse the parent chain or if a block in the parent chain is part of the best chain
+    // then it can skip the traversal by going directly to the block at the remaining depth.
+    public Block getBlockAtDepthStartingAt(long depth, byte[] hash) {
+        Block start = this.getBlockByHash(hash);
 
+        if (start != null && depth == 0) {
+            return start;
+        }
+
+        if (start == null || start.getNumber() <= depth) {
+            return null;
+        }
+
+        Block block = start;
+
+        for (long i = 0; i < depth; i++) {
+            if (isBlockInMainChain(block.getNumber(), block.getHash())) {
+                return getChainBlockByNumber(start.getNumber() - depth);
+            }
+
+            block = this.getBlockByHash(block.getParentHash().getBytes());
+        }
+
+        return block;
+    }
+
+    public boolean isBlockInMainChain(long blockNumber, Keccak256 blockHash){
+        List<BlockInfo> blockInfos = index.get(blockNumber);
+        if (blockInfos == null) {
+            return false;
+        }
+
+        for (BlockInfo blockInfo : blockInfos) {
+            if (blockInfo.isMainChain() && blockHash.equals(blockInfo.getHash())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public synchronized void flush() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        
+        //long t1 = System.nanoTime();
         if (indexDB != null) {
             indexDB.commit();
         }
-
-        long t2 = System.nanoTime();
-
-        logger.info("Flush block store in: {} ms", ((float)(t2 - t1) / 1_000_000));
+        //long t2 = System.nanoTime(); logger.info("Flush block store in: {} ms", ((float)(t2 - t1) / 1_000_000));
+        profiler.stop(metric);
     }
 
     @Override
@@ -245,7 +301,7 @@ public class IndexedBlockStore implements BlockStore {
             return null;
         }
 
-        return new Block(blockRlp);
+        return blockFactory.decodeBlock(blockRlp);
     }
 
     @Override

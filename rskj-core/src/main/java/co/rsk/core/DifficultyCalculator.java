@@ -18,22 +18,91 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
+import java.math.BigInteger;
+
+import static org.ethereum.util.BIUtil.max;
+
 public class DifficultyCalculator {
-    private final RskSystemProperties config;
+    private final ActivationConfig activationConfig;
+    private final Constants constants;
 
-    @Autowired
-    public DifficultyCalculator(RskSystemProperties config) {
-        this.config = config;
+    public DifficultyCalculator(ActivationConfig activationConfig, Constants constants) {
+        this.activationConfig = activationConfig;
+        this.constants = constants;
     }
 
     public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
-        return config.getBlockchainConfig().getConfigForBlock(header.getNumber()).
-                calcDifficulty(header, parentHeader);
+        boolean difficultyDropEnabled = activationConfig.isActive(ConsensusRule.DIFFICULTY_DROP_ENABLED, header.getNumber());
+        boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, header.getNumber());
+        if (difficultyDropEnabled || !rskip97Active) {
+            // If more than 10 minutes, reset to minimum difficulty to allow private mining
+            if (header.getTimestamp() >= parentHeader.getTimestamp() + 600) {
+                return constants.getMinimumDifficulty();
+            }
+        }
+
+        return getBlockDifficulty(header, parentHeader, constants);
+    }
+
+    private static BlockDifficulty getBlockDifficulty(
+            BlockHeader curBlockHeader,
+            BlockHeader parent,
+            Constants constants) {
+        BlockDifficulty pd = parent.getDifficulty();
+        long parentBlockTS = parent.getTimestamp();
+        int uncleCount = curBlockHeader.getUncleCount();
+        long curBlockTS = curBlockHeader.getTimestamp();
+        int duration = constants.getDurationLimit();
+        BigInteger difDivisor = constants.getDifficultyBoundDivisor();
+        BlockDifficulty minDif = constants.getMinimumDifficulty();
+        return calcDifficultyWithTimeStamps(curBlockTS, parentBlockTS, pd, uncleCount, duration, difDivisor, minDif);
+    }
+
+    private static BlockDifficulty calcDifficultyWithTimeStamps(
+            long curBlockTS,
+            long parentBlockTS,
+            BlockDifficulty pd,
+            int uncleCount,
+            int duration,
+            BigInteger difDivisor,
+            BlockDifficulty minDif) {
+        long delta = curBlockTS - parentBlockTS;
+        if (delta < 0) {
+            return pd;
+        }
+
+        int calcDur = (1 + uncleCount) * duration;
+        int sign = 0;
+        if (calcDur > delta) {
+            sign = 1;
+        } else if (calcDur < delta) {
+            sign = -1;
+        }
+
+        if (sign == 0) {
+            return pd;
+        }
+
+        BigInteger pdValue = pd.asBigInteger();
+        BigInteger quotient = pdValue.divide(difDivisor);
+
+        BigInteger fromParent;
+        if (sign == 1) {
+            fromParent = pdValue.add(quotient);
+        } else {
+            fromParent = pdValue.subtract(quotient);
+        }
+
+        // If parent difficulty is zero (maybe a genesis block),
+        // then the first child difficulty MUST
+        // be greater or equal getMinimumDifficulty(). That's why the max() is applied in both the add and the sub
+        // cases.
+        // Note that we have to apply max() first in case fromParent ended up being negative.
+        return new BlockDifficulty(max(minDif.asBigInteger(), fromParent));
     }
 }

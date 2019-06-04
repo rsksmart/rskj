@@ -31,13 +31,13 @@ public class SecureTrieHashTest {
 
     @Test
     public void removeOrNeverInsertShouldBringSameHashWithSecureTrie() {
-        Trie trie1 = new Trie(true)
+        Trie trie1 = new Trie()
                 .put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
                 .put("roosevelt", "the only thing we have to fear is... fear itself ".getBytes())
                 .put("roosevilt", "42".getBytes())
                 .delete("roosevelt");
 
-        Trie trie2 = new Trie(true)
+        Trie trie2 = new Trie()
                 .put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
                 .put("roosevilt", "42".getBytes());
 

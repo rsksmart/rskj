@@ -19,7 +19,6 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
@@ -39,7 +38,6 @@ import java.util.Arrays;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.subarray;
 import static org.apache.commons.lang3.StringUtils.stripEnd;
-import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.longToBytesNoLeadZeroes;
 
 /**
@@ -54,8 +52,8 @@ public class CallTransaction {
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
 
-    public static Transaction createRawTransaction(RskSystemProperties config, long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
-                                                   long value, byte[] data) {
+    public static Transaction createRawTransaction(long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
+                                                   long value, byte[] data, byte chainId) {
         return new Transaction(
                 longToBytesNoLeadZeroes(nonce),
                 longToBytesNoLeadZeroes(gasPrice),
@@ -63,16 +61,16 @@ public class CallTransaction {
                 toAddress.equals(RskAddress.nullAddress()) ? null : toAddress.getBytes(),
                 longToBytesNoLeadZeroes(value),
                 data,
-                config.getBlockchainConfig().getCommonConstants().getChainId());
+                chainId);
     }
 
 
 
-    public static Transaction createCallTransaction(RskSystemProperties config, long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
-                                                    long value, Function callFunc, Object... funcArgs) {
+    public static Transaction createCallTransaction(long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
+                                                    long value, Function callFunc, byte chainId, Object... funcArgs) {
 
         byte[] callData = callFunc.encode(funcArgs);
-        return createRawTransaction(config, nonce, gasPrice, gasLimit, toAddress, value, callData);
+        return createRawTransaction(nonce, gasPrice, gasLimit, toAddress, value, callData, chainId);
     }
 
     /**

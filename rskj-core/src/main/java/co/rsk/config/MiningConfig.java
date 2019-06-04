@@ -31,8 +31,9 @@ public class MiningConfig {
     private final int uncleListLimit;
     private final int uncleGenerationLimit;
     private final GasLimitConfig gasLimit;
+    private final boolean isFixedClock;
 
-    public MiningConfig(RskAddress coinbaseAddress, double minFeesNotifyInDollars, double minerGasUnitInDollars, long minGasPriceTarget, int uncleListLimit, int uncleGenerationLimit, GasLimitConfig gasLimit) {
+    public MiningConfig(RskAddress coinbaseAddress, double minFeesNotifyInDollars, double minerGasUnitInDollars, long minGasPriceTarget, int uncleListLimit, int uncleGenerationLimit, GasLimitConfig gasLimit, boolean isFixedClock) {
         this.coinbaseAddress = coinbaseAddress;
         this.minFeesNotifyInDollars = minFeesNotifyInDollars;
         this.minerGasUnitInDollars = minerGasUnitInDollars;
@@ -40,6 +41,7 @@ public class MiningConfig {
         this.uncleListLimit = uncleListLimit;
         this.uncleGenerationLimit = uncleGenerationLimit;
         this.gasLimit = gasLimit;
+        this.isFixedClock = isFixedClock;
     }
 
     public RskAddress getCoinbaseAddress() {
@@ -68,5 +70,9 @@ public class MiningConfig {
 
     public GasLimitConfig getGasLimit() {
         return gasLimit;
+    }
+
+    public boolean isFixedClock() {
+        return isFixedClock;
     }
 }

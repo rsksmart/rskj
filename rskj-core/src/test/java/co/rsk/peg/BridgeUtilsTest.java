@@ -27,19 +27,19 @@ import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
-import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
-import org.ethereum.util.RskTestFactory;
+import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -53,24 +53,22 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class BridgeUtilsTest {
-
-    private static final Logger logger = LoggerFactory.getLogger("test");
-
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger AMOUNT = new BigInteger("1");
     private static final BigInteger NONCE = new BigInteger("0");
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
-    private TestSystemProperties config;
+    private Constants constants;
+    private ActivationConfig activationConfig;
 
     @Before
     public void setupConfig(){
-        config = new TestSystemProperties();
+        constants = Constants.regtest();
+        activationConfig = spy(ActivationConfigsForTest.all());
     }
 
     @Test
@@ -96,7 +94,7 @@ public class BridgeUtilsTest {
         tx2.addOutput(Coin.COIN, federationAddress);
         TransactionInput txIn = new TransactionInput(params, tx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
-        signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), bridgeConstants.getFederatorPrivateKeys(), txIn, tx2, bridgeConstants);
+        signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx2, bridgeConstants);
         assertFalse(BridgeUtils.isLockTx(tx2, federation, btcContext, bridgeConstants));
 
         // Tx sending 1 btc to the federation, is a lock tx
@@ -123,7 +121,7 @@ public class BridgeUtilsTest {
                 BtcECKey.fromPrivate(Hex.decode("fa02")),
         });
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation1 = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), 0L, parameters);
+        Federation federation1 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys), Instant.ofEpochMilli(1000L), 0L, parameters);
 
         List<BtcECKey> federation2Keys = Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPrivate(Hex.decode("fb01")),
@@ -131,7 +129,7 @@ public class BridgeUtilsTest {
                 BtcECKey.fromPrivate(Hex.decode("fb03")),
         });
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, parameters);
+        Federation federation2 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys), Instant.ofEpochMilli(2000L), 0L, parameters);
 
         Address address1 = federation1.getAddress();
         Address address2 = federation2.getAddress();
@@ -241,14 +239,14 @@ public class BridgeUtilsTest {
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation activeFederation = new Federation(activeFederationKeys, Instant.ofEpochMilli(2000L), 2L, parameters);
+        Federation activeFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys), Instant.ofEpochMilli(2000L), 2L, parameters);
 
         List<BtcECKey> retiringFederationKeys = Stream.of(
                 BtcECKey.fromPrivate(Hex.decode("fb01")),
                 BtcECKey.fromPrivate(Hex.decode("fb02")),
                 BtcECKey.fromPrivate(Hex.decode("fb03"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation retiringFederation = new Federation(retiringFederationKeys, Instant.ofEpochMilli(1000L), 1L, parameters);
+        Federation retiringFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys), Instant.ofEpochMilli(1000L), 1L, parameters);
 
         Address activeFederationAddress = activeFederation.getAddress();
 
@@ -280,7 +278,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void getAddressFromEthTransaction() {
-        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, constants.getChainId());
         byte[] privKey = generatePrivKey();
         tx.sign(privKey);
 
@@ -292,7 +290,7 @@ public class BridgeUtilsTest {
 
     @Test(expected = Exception.class)
     public void getAddressFromEthNotSignTransaction() {
-        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(config, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, constants.getChainId());
         BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
     }
 
@@ -323,7 +321,7 @@ public class BridgeUtilsTest {
 
     private Script signWithOneKey(Federation federation, List<BtcECKey> privateKeys, Script inputScript, Sha256Hash sighash, int federatorIndex, BridgeRegTestConstants bridgeConstants) {
         BtcECKey federatorPrivKey = privateKeys.get(federatorIndex);
-        BtcECKey federatorPublicKey = federation.getPublicKeys().get(federatorIndex);
+        BtcECKey federatorPublicKey = federation.getBtcPublicKeys().get(federatorIndex);
 
         BtcECKey.ECDSASignature sig = federatorPrivKey.sign(sighash);
         TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
@@ -335,40 +333,35 @@ public class BridgeUtilsTest {
 
     @Test
     public void isFreeBridgeTxTrue() {
-        config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
-        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        activationConfig = ActivationConfigsForTest.bridgeUnitTest();
+        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxOtherContract() {
-        config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
-        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        activationConfig = ActivationConfigsForTest.bridgeUnitTest();
+        isFreeBridgeTx(false, PrecompiledContracts.IDENTITY_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxFreeTxDisabled() {
-        config.setBlockchainConfig(new RegTestGenesisConfig() {
-            @Override
-            public boolean areBridgeTxsFree() {
-                return false;
-            }
-        });
-        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        activationConfig = ActivationConfigsForTest.only(ConsensusRule.ARE_BRIDGE_TXS_PAID);
+        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
     }
 
     @Test
     public void isFreeBridgeTxNonFederatorKey() {
-        config.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+        activationConfig = ActivationConfigsForTest.bridgeUnitTest();
         isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, new BtcECKey().getPrivKeyBytes());
     }
 
     @Test
     public void getFederationNoSpendWallet() {
         NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Federation federation = new Federation(Arrays.asList(new BtcECKey[]{
+        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        }), Instant.ofEpochMilli(5005L), 0L, regTestParameters);
+        })), Instant.ofEpochMilli(5005L), 0L, regTestParameters);
         Context mockedBtcContext = mock(Context.class);
         when(mockedBtcContext.getParams()).thenReturn(regTestParameters);
 
@@ -380,10 +373,10 @@ public class BridgeUtilsTest {
     @Test
     public void getFederationSpendWallet() throws UTXOProviderException {
         NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Federation federation = new Federation(Arrays.asList(new BtcECKey[]{
+        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        }), Instant.ofEpochMilli(5005L), 0L, regTestParameters);
+        })), Instant.ofEpochMilli(5005L), 0L, regTestParameters);
         Context mockedBtcContext = mock(Context.class);
         when(mockedBtcContext.getParams()).thenReturn(regTestParameters);
 
@@ -407,7 +400,7 @@ public class BridgeUtilsTest {
         NetworkParameters params = RegTestParams.get();
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         Federation federation = bridgeConstants.getGenesisFederation();
-        List<BtcECKey> federationPrivateKeys = bridgeConstants.getFederatorPrivateKeys();
+        List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
 
         BtcTransaction releaseTx1 = new BtcTransaction(params);
@@ -437,14 +430,20 @@ public class BridgeUtilsTest {
                 .map(BtcECKey::fromPrivate)
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .collect(Collectors.toList());
-        Federation federation1 = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), 0L, params);
+        Federation federation1 = new Federation(
+                FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+                Instant.ofEpochMilli(1000L), 0L, params
+        );
 
         List<BtcECKey> federation2Keys = Stream.of("fb01", "fb02", "fb03")
                 .map(Hex::decode)
                 .map(BtcECKey::fromPrivate)
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .collect(Collectors.toList());
-        Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, params);
+        Federation federation2 = new Federation(
+                FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
+                Instant.ofEpochMilli(2000L), 0L, params
+        );
 
         Address federation2Address = federation2.getAddress();
 
@@ -481,19 +480,23 @@ public class BridgeUtilsTest {
 
 
     private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, byte[] privKeyBytes) {
-        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
-                config, 0,
+                0,
                 1,
                 1,
                 destinationAddress,
                 0,
-                Bridge.UPDATE_COLLECTIONS);
+                Bridge.UPDATE_COLLECTIONS, constants.getChainId());
         rskTx.sign(privKeyBytes);
 
-        Block rskExecutionBlock = new BlockGenerator().createChildBlock(RskTestFactory.getGenesisInstance(config));
+        Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance());
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
-        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber(), config.getBlockchainConfig()));
+        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
+    }
+
+    private Genesis getGenesisInstance() {
+        return GenesisLoader.loadGenesis("frontier.json", constants.getInitialNonce(), false, true, true);
     }
 }

@@ -21,10 +21,10 @@ package org.ethereum.vm.program;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
-import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
-import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
@@ -32,7 +32,6 @@ import org.ethereum.vm.program.listener.ProgramListenerAware;
 
 import java.math.BigInteger;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 /*
@@ -57,8 +56,18 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public MutableTrie getMutableTrie() {
+        return repository.getMutableTrie();
+    }
+
+    @Override
     public AccountState createAccount(RskAddress addr) {
         return repository.createAccount(addr);
+    }
+
+    @Override
+    public void setupContract(RskAddress addr) {
+        repository.setupContract(addr);
     }
 
     @Override
@@ -90,13 +99,13 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public BigInteger getNonce(RskAddress addr) {
-        return repository.getNonce(addr);
+    public void setNonce(RskAddress addr, BigInteger nonce) {
+        repository.setNonce(addr, nonce);
     }
 
     @Override
-    public ContractDetails getContractDetails(RskAddress addr) {
-        return repository.getContractDetails(addr);
+    public BigInteger getNonce(RskAddress addr) {
+        return repository.getNonce(addr);
     }
 
     @Override
@@ -107,6 +116,11 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public byte[] getCode(RskAddress addr) {
         return repository.getCode(addr);
+    }
+
+    @Override
+    public int getCodeLength(RskAddress addr) {
+        return repository.getCodeLength(addr);
     }
 
     @Override
@@ -170,11 +184,6 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void dumpState(Block block, long gasUsed, int txNumber, byte[] txHash) {
-        repository.dumpState(block, gasUsed, txNumber, txHash);
-    }
-
-    @Override
     public Repository startTracking() {
         return repository.startTracking();
     }
@@ -189,10 +198,14 @@ public class Storage implements Repository, ProgramListenerAware {
         throw new UnsupportedOperationException();
     }
 
-
     @Override
     public void commit() {
         repository.commit();
+    }
+
+    @Override
+    public void save() {
+        repository.save();
     }
 
     @Override
@@ -206,22 +219,8 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void updateBatch(Map<RskAddress, AccountState> accountStates, Map<RskAddress, ContractDetails> contractDetails) {
-        for (RskAddress addr : contractDetails.keySet()) {
-            if (!canListenTrace(addr)) {
-                return;
-            }
-
-            ContractDetails details = contractDetails.get(addr);
-            if (details.isDeleted()) {
-                traceListener.onStorageClear();
-            } else if (details.isDirty()) {
-                for (Map.Entry<DataWord, DataWord> entry : details.getStorage().entrySet()) {
-                    traceListener.onStoragePut(entry.getKey(), entry.getValue());
-                }
-            }
-        }
-        repository.updateBatch(accountStates, contractDetails);
+    public void syncTo(Trie root) {
+        repository.syncTo(root);
     }
 
     @Override
@@ -230,17 +229,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void loadAccount(RskAddress addr, Map<RskAddress, AccountState> cacheAccounts, Map<RskAddress, ContractDetails> cacheDetails) {
-        repository.loadAccount(addr, cacheAccounts, cacheDetails);
-    }
-
-    @Override
     public Repository getSnapshotTo(byte[] root) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void updateContractDetails(RskAddress addr, ContractDetails contractDetails) {
         throw new UnsupportedOperationException();
     }
 
@@ -248,6 +237,4 @@ public class Storage implements Repository, ProgramListenerAware {
     public void updateAccountState(RskAddress addr, AccountState accountState) {
         throw new UnsupportedOperationException();
     }
-
-
 }

@@ -60,4 +60,8 @@ public class BitSet {
     public int size() {
         return this.size;
     }
+
+    protected byte[] getBytes() {
+        return this.bytes;
+    }
 }

@@ -26,7 +26,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 
@@ -40,7 +39,7 @@ public class CompilerTest {
     public void simpleTest() throws IOException {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");
-        if(StringUtils.isEmpty(solc))
+        if (solc == null || solc.isEmpty())
             solc = "/usr/bin/solc";
 
         Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);

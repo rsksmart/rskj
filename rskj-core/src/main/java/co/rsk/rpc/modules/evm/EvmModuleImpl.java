@@ -28,12 +28,9 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import static org.ethereum.rpc.TypeConverter.*;
 
-@Component
 public class EvmModuleImpl implements EvmModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
@@ -44,7 +41,6 @@ public class EvmModuleImpl implements EvmModule {
     private final Blockchain blockchain;
     private final SnapshotManager snapshotManager;
 
-    @Autowired
     public EvmModuleImpl(
             MinerServer minerServer,
             MinerClient minerClient,

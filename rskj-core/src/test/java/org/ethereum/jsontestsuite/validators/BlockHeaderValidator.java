@@ -29,10 +29,10 @@ import static org.ethereum.util.ByteUtil.toHexString;
 public class BlockHeaderValidator {
 
 
-    public static ArrayList<String> valid(BlockHeader orig, BlockHeader valid) {
+    public static ArrayList<String> valid(BlockHeader orig, BlockHeader valid,ValidationStats vStats) {
 
         ArrayList<String> outputSummary = new ArrayList<>();
-
+        if (vStats!=null) vStats.blockChecks++;
         if (!orig.getParentHash().equals(valid.getParentHash())) {
 
             String output =
@@ -43,7 +43,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (!toHexString(orig.getUnclesHash())
                 .equals(toHexString(valid.getUnclesHash()))) {
 
@@ -55,7 +55,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (!orig.getCoinbase().equals(valid.getCoinbase())) {
 
             String output =
@@ -66,7 +66,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (!toHexString(orig.getStateRoot())
                 .equals(toHexString(valid.getStateRoot()))) {
 
@@ -78,7 +78,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (!toHexString(orig.getTxTrieRoot())
                 .equals(toHexString(valid.getTxTrieRoot()))) {
 
@@ -90,7 +90,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (!toHexString(orig.getReceiptsRoot())
                 .equals(toHexString(valid.getReceiptsRoot()))) {
 
@@ -102,7 +102,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (!toHexString(orig.getLogsBloom())
                 .equals(toHexString(valid.getLogsBloom()))) {
 
@@ -114,7 +114,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (!orig.getDifficulty().equals(valid.getDifficulty())) {
 
             String output =
@@ -125,7 +125,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (orig.getTimestamp() != valid.getTimestamp()) {
 
             String output =
@@ -136,7 +136,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (orig.getNumber() != valid.getNumber()) {
 
             String output =
@@ -147,7 +147,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (!new BigInteger(1, orig.getGasLimit()).equals(new BigInteger(1, valid.getGasLimit()))) {
 
             String output =
@@ -158,7 +158,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (orig.getGasUsed() != valid.getGasUsed()) {
 
             String output =
@@ -169,7 +169,7 @@ public class BlockHeaderValidator {
 
             outputSummary.add(output);
         }
-
+        if (vStats!=null) vStats.blockChecks++;
         if (!toHexString(orig.getExtraData())
                 .equals(toHexString(valid.getExtraData()))) {
 

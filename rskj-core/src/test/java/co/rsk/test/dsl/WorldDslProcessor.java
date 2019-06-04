@@ -21,19 +21,23 @@ package co.rsk.test.dsl;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.StateRootHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
-import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 /**
@@ -183,16 +187,24 @@ public class WorldDslProcessor {
             Block block = world.getBlockByName(name);
             BlockExecutor executor = world.getBlockExecutor();
 
+            // This execution is JUST to fill the receipts/stateRoot values
+            // of the block, since the block will not contain the correct values for
+            // these fields. The block will be executed AGAIN in tryToConnect().
+            // Note that the repoisitory state will have changed after this execution.
+            // The state is automatically reverted in tryToConnect to the state prior
+            // execution.
+
             if (block.getParentHash().equals(blockChain.getBestBlock().getHash())) {
-                executor.executeAndFill(block, blockChain.getBestBlock());
+                executor.executeAndFill(block, blockChain.getBestBlock().getHeader());
             }
             else {
-                executor.executeAndFill(block, world.getBlockByHash(block.getParentHash()));
+                executor.executeAndFill(block, world.getBlockByHash(block.getParentHash()).getHeader());
             }
 
             block.seal();
 
             latestImportResult = blockChain.tryToConnect(block);
+            blockChain.getRepository().syncToRoot(block.getStateRoot());
         }
     }
 
@@ -233,29 +245,19 @@ public class WorldDslProcessor {
             Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
-            BlockExecutor executor = new BlockExecutor(world.getRepository(),
-                    (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                                                               tx1,
-                                                               txindex1,
-                                                               block1.getCoinbase(),
-                                                               track1,
-                    world.getBlockChain().getBlockStore(),
-                    null,
-                    programInvokeFactory,
-                                                               block1,
-                    null,
-                                                               totalGasUsed1,
-                                                               config.getVmConfig(),
-                                                               config.getBlockchainConfig(),
-                                                               config.playVM(),
-                                                               config.isRemascEnabled(),
-                                                               config.vmTrace(),
-                                                               new PrecompiledContracts(config),
-                                                               config.databaseDir(),
-                                                               config.vmTraceDir(),
-                                                               config.vmTraceCompressed()
-                                                       ));
-            executor.executeAndFill(block, parent);
+            BlockExecutor executor = new BlockExecutor(
+                    config.getActivationConfig(),
+                    world.getRepository(),
+                    new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                    new TransactionExecutorFactory(
+                            config,
+                            world.getBlockChain().getBlockStore(),
+                            null,
+                            new BlockFactory(config.getActivationConfig()),
+                            programInvokeFactory
+                    )
+            );
+            executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);
             parent = block;
             k++;

@@ -19,14 +19,16 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.ByteArrayWrapper;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,6 +46,7 @@ import static org.fusesource.leveldbjni.JniDBFactory.factory;
 public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final String databaseDir;
@@ -68,6 +71,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     @Override
     public void init() {
         resetDbLock.writeLock().lock();
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_INIT);
         try {
             logger.debug("~> LevelDbDataSource.init(): {}", name);
 
@@ -87,6 +91,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             options.verifyChecksums(true);
 
             try {
+
                 logger.debug("Opening database");
                 Path dbPath = getPathForName(name, databaseDir);
 
@@ -101,8 +106,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 panicProcessor.panic("leveldb", ioe.getMessage());
                 throw new RuntimeException("Can't initialize database");
             }
-            logger.debug("<~ LevelDbDataSource.init(): " + name);
+            logger.debug("<~ LevelDbDataSource.init(): {}", name);
         } finally {
+            profiler.stop(metric);
             resetDbLock.writeLock().unlock();
         }
     }
@@ -125,17 +131,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
-    public static void destroyDB(File fileLocation) {
-        logger.debug("Destroying existing database: " + fileLocation);
-        Options options = new Options();
-        try {
-            factory.destroy(fileLocation, options);
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-            panicProcessor.panic("leveldb", e.getMessage());
-        }
-    }
-
     @Override
     public String getName() {
         return name;
@@ -144,6 +139,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     @Override
     public byte[] get(byte[] key) {
         Objects.requireNonNull(key);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -174,6 +170,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             }
         } finally {
             resetDbLock.readLock().unlock();
+            profiler.stop(metric);
         }
     }
 
@@ -182,6 +179,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
 
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -196,11 +194,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
             return value;
         } finally {
             resetDbLock.readLock().unlock();
+            profiler.stop(metric);
         }
     }
 
     @Override
     public void delete(byte[] key) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -214,11 +214,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
         } finally {
             resetDbLock.readLock().unlock();
+            profiler.stop(metric);
         }
     }
 
     @Override
     public Set<byte[]> keys() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
@@ -242,11 +244,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
             }
         } finally {
             resetDbLock.readLock().unlock();
+            profiler.stop(metric);
         }
     }
 
     private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) throws IOException {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         if (rows.containsKey(null) || rows.containsValue(null)) {
+            profiler.stop(metric);
             throw new IllegalArgumentException("Cannot update null values");
         }
         // Note that this is not atomic.
@@ -258,7 +263,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 batch.delete(deleteKey.getData());
             }
             db.write(batch);
+            profiler.stop(metric);
         }
+
     }
 
     @Override
@@ -302,6 +309,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public void close() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_CLOSE);
         resetDbLock.writeLock().lock();
         try {
             if (!isAlive()) {
@@ -319,6 +327,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             }
         } finally {
             resetDbLock.writeLock().unlock();
+            profiler.stop(metric);
         }
     }
 

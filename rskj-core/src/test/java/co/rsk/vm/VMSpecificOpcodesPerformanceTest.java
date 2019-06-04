@@ -9,8 +9,10 @@ import co.rsk.helpers.Stopwatch;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Account;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -23,7 +25,6 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +38,7 @@ public class VMSpecificOpcodesPerformanceTest {
     private VM vm;
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
@@ -180,7 +182,7 @@ public class VMSpecificOpcodesPerformanceTest {
     }
 
     private Program getProgram(byte[] code, Transaction transaction) {
-        return new Program(vmConfig, precompiledContracts, getBlockchainConfig(), code, invoke, transaction);
+        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(), code, invoke, transaction);
     }
 
     private byte[] compile(String code) {
@@ -197,12 +199,12 @@ public class VMSpecificOpcodesPerformanceTest {
         return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(number * 1000 + 1000)).build();
     }
 
-    private BlockchainConfig getBlockchainConfig() {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip91()).thenReturn(true);
-        when(blockchainConfig.isRskip90()).thenReturn(true);
-        when(blockchainConfig.isRskip89()).thenReturn(true);
-        return blockchainConfig;
+    private ActivationConfig.ForBlock getBlockchainConfig() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP91)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP90)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP89)).thenReturn(true);
+        return activations;
     }
 
     private VM getSubject() {

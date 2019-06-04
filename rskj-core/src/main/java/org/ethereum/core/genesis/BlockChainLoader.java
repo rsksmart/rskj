@@ -24,35 +24,27 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.RepositoryImpl;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ContractDetails;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TrieStorePoolOnMemory;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * Created by mario on 13/01/17.
  */
-@Component
 public class BlockChainLoader {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
@@ -64,19 +56,21 @@ public class BlockChainLoader {
     private final TransactionPool transactionPool;
     private final EthereumListener listener;
     private final BlockValidator blockValidator;
+    private final BlockExecutor blockExecutor;
     private final Genesis genesis;
+    private final StateRootHandler stateRootHandler;
 
-    @Autowired
     public BlockChainLoader(
             RskSystemProperties config,
-            org.ethereum.core.Repository repository,
-            org.ethereum.db.BlockStore blockStore,
+            Repository repository,
+            BlockStore blockStore,
             ReceiptStore receiptStore,
             TransactionPool transactionPool,
             EthereumListener listener,
             BlockValidator blockValidator,
-            Genesis genesis) {
-
+            BlockExecutor blockExecutor,
+            Genesis genesis,
+            StateRootHandler stateRootHandler) {
         this.config = config;
         this.blockStore = blockStore;
         this.repository = repository;
@@ -84,11 +78,12 @@ public class BlockChainLoader {
         this.transactionPool = transactionPool;
         this.listener = listener;
         this.blockValidator = blockValidator;
+        this.blockExecutor = blockExecutor;
         this.genesis = genesis;
+        this.stateRootHandler = stateRootHandler;
     }
 
     public BlockChainImpl loadBlockchain() {
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
@@ -98,44 +93,20 @@ public class BlockChainLoader {
                 blockValidator,
                 config.isFlushEnabled(),
                 config.flushNumberOfBlocks(),
-                new BlockExecutor(
-                    repository,
-                        (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                            tx1,
-                            txindex1,
-                            block1.getCoinbase(),
-                            track1,
-                            blockStore,
-                            receiptStore,
-                            programInvokeFactory,
-                            block1,
-                            listener,
-                            totalGasUsed1,
-                            config.getVmConfig(),
-                            config.getBlockchainConfig(),
-                            config.playVM(),
-                            config.isRemascEnabled(),
-                            config.vmTrace(),
-                            new PrecompiledContracts(config),
-                            config.databaseDir(),
-                            config.vmTraceDir(),
-                            config.vmTraceCompressed()
-                        )
-                )
+                blockExecutor,
+                stateRootHandler
         );
 
         Block bestBlock = blockStore.getBestBlock();
         if (bestBlock == null) {
             logger.info("DB is empty - adding Genesis");
 
-            loadRepository(repository);
-            updateGenesis(repository);
-
+            loadRepository(this.repository);
+            updateGenesis(this.repository);
             blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
             blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
             listener.onBlock(genesis, new ArrayList<>() );
-            repository.dumpState(genesis, 0, 0, null);
 
             logger.info("Genesis block loaded");
         } else {
@@ -143,62 +114,56 @@ public class BlockChainLoader {
             blockchain.setStatus(bestBlock, totalDifficulty);
 
             // we need to do this because when bestBlock == null we touch the genesis' state root
-            Repository repo = new RepositoryImpl(new Trie(true), null, new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
-            loadRepository(repo);
-            updateGenesis(repo);
+            Repository genesisRepo = new MutableRepository(new MutableTrieImpl(new Trie()));
+            loadRepository(genesisRepo);
+            updateGenesis(genesisRepo);
 
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     blockchain.getBestBlock().getNumber(),
-                    blockchain.getTotalDifficulty().toString(),
+                    blockchain.getTotalDifficulty(),
                     Hex.toHexString(blockchain.getBestBlock().getStateRoot()));
         }
 
         String rootHash = config.rootHashStart();
         if (StringUtils.isNotBlank(rootHash)) {
-
             // update world state by dummy hash
             byte[] rootHashArray = Hex.decode(rootHash);
             logger.info("Loading root hash from property file: [{}]", rootHash);
             this.repository.syncToRoot(rootHashArray);
-
-        } else {
-
-            // Update world state to latest loaded block from db
-            // if state is not generated from empty premine list
-            // todo this is just a workaround, move EMPTY_TRIE_HASH logic to Trie implementation
-            if (!Arrays.equals(blockchain.getBestBlock().getStateRoot(), EMPTY_TRIE_HASH)) {
-                this.repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
-            }
         }
+
         return blockchain;
     }
 
     private void updateGenesis(Repository repository) {
-        genesis.setStateRoot(repository.getRoot());
+        genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), repository.getMutableTrie().getTrie()).getBytes());
         genesis.flushRLP();
+        stateRootHandler.register(genesis.getHeader(), repository.getMutableTrie().getTrie());
     }
 
     private void loadRepository(Repository repository) {
         // first we need to create the accounts, which creates also the associated ContractDetails
         for (RskAddress accounts : genesis.getAccounts().keySet()) {
-                repository.createAccount(accounts);
-            }
+            repository.createAccount(accounts);
+        }
 
         // second we create contracts whom only have code modifying the preexisting ContractDetails instance
         for (Map.Entry<RskAddress, byte[]> codeEntry : genesis.getCodes().entrySet()) {
             RskAddress contractAddress = codeEntry.getKey();
-            ContractDetails contractDetails = repository.getContractDetails(contractAddress);
-            contractDetails.setCode(codeEntry.getValue());
+            repository.setupContract(contractAddress);
+            repository.saveCode(contractAddress, codeEntry.getValue());
             Map<DataWord, byte[]> contractStorage = genesis.getStorages().get(contractAddress);
             for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
-                contractDetails.putBytes(storageEntry.getKey(), storageEntry.getValue());
+                repository.addStorageBytes(contractAddress, storageEntry.getKey(), storageEntry.getValue());
             }
-            repository.updateContractDetails(contractAddress, contractDetails);
         }
 
         // given the accounts had the proper storage root set from the genesis construction we update the account state
         for (Map.Entry<RskAddress, AccountState> accountEntry : genesis.getAccounts().entrySet()) {
             repository.updateAccountState(accountEntry.getKey(), accountEntry.getValue());
         }
+
+        repository.commit();
+        repository.save();
     }
 }

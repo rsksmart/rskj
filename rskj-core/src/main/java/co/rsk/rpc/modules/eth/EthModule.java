@@ -19,11 +19,16 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeState;
+import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -35,8 +40,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Map;
@@ -44,36 +47,40 @@ import java.util.Map;
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
 // TODO add all RPC methods
-@Component
 public class EthModule
     implements EthModuleSolidity, EthModuleWallet, EthModuleTransaction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
-    private final RskSystemProperties config;
     private final Blockchain blockchain;
     private final ReversibleTransactionExecutor reversibleTransactionExecutor;
     private final ExecutionBlockRetriever executionBlockRetriever;
+    private final StateRootHandler stateRootHandler;
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
     private final EthModuleTransaction ethModuleTransaction;
+    private final BridgeConstants bridgeConstants;
+    private final ActivationConfig activationConfig;
 
-    @Autowired
     public EthModule(
-            RskSystemProperties config,
+            BridgeConstants bridgeConstants,
+            ActivationConfig activationConfig,
             Blockchain blockchain,
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
+            StateRootHandler stateRootHandler,
             EthModuleSolidity ethModuleSolidity,
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction) {
-        this.config = config;
         this.blockchain = blockchain;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
+        this.stateRootHandler = stateRootHandler;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
         this.ethModuleTransaction = ethModuleTransaction;
+        this.bridgeConstants = bridgeConstants;
+        this.activationConfig = activationConfig;
     }
 
     @Override
@@ -82,19 +89,22 @@ public class EthModule
     }
 
     public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
-        Block block = blockchain.getBestBlock();
-        Repository repository = blockchain.getRepository().getSnapshotTo(block.getStateRoot()).startTracking();
+        Block bestBlock = blockchain.getBestBlock();
+        Keccak256 stateRootHash = stateRootHandler.translate(bestBlock.getHeader());
+        Repository repository = blockchain.getRepository().getSnapshotTo(stateRootHash.getBytes()).startTracking();
 
         BridgeSupport bridgeSupport = new BridgeSupport(
-                config,
-                repository,
-                null,
-                PrecompiledContracts.BRIDGE_ADDR,
-                block);
+                bridgeConstants,
+                new BridgeStorageConfiguration(
+                        activationConfig.isActive(ConsensusRule.RSKIP87, bestBlock.getNumber()),
+                        activationConfig.isActive(ConsensusRule.RSKIP123, bestBlock.getNumber())
+                ),
+                null, repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR
+        );
 
         byte[] result = bridgeSupport.getStateForDebugging();
 
-        BridgeState state = BridgeState.create(config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), result);
+        BridgeState state = BridgeState.create(bridgeConstants, result);
 
         return state.stateToMap();
     }

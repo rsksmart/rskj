@@ -61,7 +61,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 numCases,
                 abiEncoder,
                 storageInitializer,
-                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getZeroValueValueTxBuilderFromFedMember(),
                 Helper.getRandomHeightProvider(10), stats
         );
     }
@@ -120,7 +120,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 numCases,
                 abiEncoder,
                 storageInitializer,
-                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getZeroValueValueTxBuilderFromFedMember(),
                 Helper.getRandomHeightProvider(10),
                 stats
         );
@@ -187,7 +187,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 numCases,
                 abiEncoder,
                 storageInitializer,
-                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getZeroValueValueTxBuilderFromFedMember(),
                 heightProvider,
                 stats
         );

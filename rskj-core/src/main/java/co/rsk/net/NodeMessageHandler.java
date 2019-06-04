@@ -27,6 +27,7 @@ import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
@@ -34,9 +35,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,7 +44,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-@Component
 public class NodeMessageHandler implements MessageHandler, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
@@ -70,7 +67,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private volatile boolean stopped;
 
-    @Autowired
     public NodeMessageHandler(RskSystemProperties config,
                               @Nonnull final BlockProcessor blockProcessor,
                               final SyncProcessor syncProcessor,
@@ -416,7 +412,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         List<Transaction> txs = new LinkedList();
 
         for (Transaction tx : messageTxs) {
-            if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
+            if (!tx.acceptTransactionSignature(config.getNetworkConstants().getChainId())) {
                 recordEvent(sender, EventType.INVALID_TRANSACTION);
             } else {
                 txs.add(tx);

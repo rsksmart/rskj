@@ -19,11 +19,16 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.debug.DebugModule;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public interface Web3DebugModule {
 
     default String debug_wireProtocolQueueSize() {
         return getDebugModule().wireProtocolQueueSize();
+    }
+
+    default JsonNode debug_traceTransaction(String transactionHash) throws Exception {
+        return getDebugModule().traceTransaction(transactionHash);
     }
 
     DebugModule getDebugModule();

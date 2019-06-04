@@ -5,9 +5,7 @@ import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.net.server.ChannelManager;
 
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class RskMockFactory {
 

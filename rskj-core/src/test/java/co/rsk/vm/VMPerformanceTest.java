@@ -22,8 +22,8 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.helpers.PerformanceTestConstants;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainConfig;
-import org.ethereum.config.blockchain.regtest.RegTestGenesisConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.PrecompiledContracts;
@@ -56,9 +56,10 @@ import static org.junit.Assert.assertEquals;
  */
 public class VMPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
-    private final BlockchainConfig blockchainConfig = new RegTestGenesisConfig();
+    private final ActivationConfig.ForBlock activations = cr -> true;
     private ProgramInvokeMockImpl invoke;
     private Program program;
     ThreadMXBean thread;
@@ -101,8 +102,6 @@ public class VMPerformanceTest {
     }
 
     static Boolean shortArg = false;
-    static boolean tesUsingDataWordPool = false;
-
 
     @Ignore
     @Test
@@ -111,12 +110,8 @@ public class VMPerformanceTest {
     }
 
     private void testVMPerformance1(ResultLogger resultLogger) {
-
-        if (!tesUsingDataWordPool) {
-            maxLLSize = 1000*1000*10;
-            Program.setUseDataWordPool(false);
-            createLarseSetOfMemoryObjects();
-        }
+        maxLLSize = 1000*1000*10;
+        createLarseSetOfMemoryObjects();
 
         thread = ManagementFactory.getThreadMXBean();
         if (!thread.isThreadCpuTimeSupported()) return;
@@ -127,7 +122,6 @@ public class VMPerformanceTest {
         if (useProfiler)
             waitForProfiler();
 
-        System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());
         System.out.println("Configuration: shortArg =  " + shortArg.toString());
 
         // Program
@@ -172,14 +166,10 @@ public class VMPerformanceTest {
         measureOpcode(OpCode.NOT, false, refTime11, resultLogger);
     }
 
-
-
-
     public long measureOpcode(OpCode opcode, Boolean reference, long refTime, ResultLogger resultLogger) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int iCount = 0;
-        DataWord maxValue = new DataWord();
-        maxValue.bnot();
+        DataWord maxValue = DataWord.ZERO;
         // PUSH
         for (int inp = 0; inp < opcode.require(); inp++) {
             if (shortArg) {
@@ -190,7 +180,7 @@ public class VMPerformanceTest {
                 try {
                     baos.write(maxValue.getData());
                     // decrement maxValue so that each value pushed is a little different
-                    maxValue.sub(DataWord.ONE);
+                    maxValue = maxValue.sub(DataWord.ONE);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -249,7 +239,6 @@ public class VMPerformanceTest {
         // Delta time is de difference in thread time
         public long deltaTime_nS; // in nanoseconds.
         public long gas;
-
     }
 
     public interface ResultLogger {
@@ -270,7 +259,7 @@ public class VMPerformanceTest {
 
         byte[] newCode = getClonedCode(code,cloneCount);
 
-        program = new Program(vmConfig, precompiledContracts, blockchainConfig, newCode, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, newCode, invoke, null);
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -290,6 +279,7 @@ public class VMPerformanceTest {
             // Al parecer el gc puede interrumpir en cualquier momento y hacer estragos
             // Mejor que repetir y tomar el promedio es ejecutar muchas veces y quedarse con
             // el menor tiempo logrado
+
             for (int loops = 0; loops < myLoops; loops++) {
                 vm.steps(program, insCount);
 
@@ -306,7 +296,6 @@ public class VMPerformanceTest {
 
             }
 
-
             long endTime = thread.getCurrentThreadCpuTime();
             long endRealTime = System.currentTimeMillis();
             long endGCTime = getGarbageCollectorTimeMillis();
@@ -318,7 +307,6 @@ public class VMPerformanceTest {
             pr.deltaGCTimeMillis = (endGCTime- startGCTime)*1000*1000/ maxLoops / divisor; // nanos
 
             long endUsedMemory = (rt.totalMemory() - rt.freeMemory());
-
 
             pr.deltaUsedMemory = endUsedMemory - startUsedMemory;
             if ((best == null) || (pr.deltaTime_nS < best.deltaTime_nS)) {
@@ -499,7 +487,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(vmConfig, precompiledContracts, blockchainConfig, code, invoke, null);
+        program =new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null);
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -582,10 +570,6 @@ public class VMPerformanceTest {
         createLarseSetOfMemoryObjects();
         System.out.println("done.");
 
-        // now measure with and without Data Word Pool
-        Program.setUseDataWordPool(true);
-        testRunTime(code, s_expected);
-        Program.setUseDataWordPool(false);
         testRunTime(code, s_expected);
     }
     /****************** RESULTS 30/12/2016 ******************************************
@@ -614,10 +598,9 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     public void testRunTime(byte[] code, String s_expected) {
-        program = new Program(vmConfig, precompiledContracts, blockchainConfig, code, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null);
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
-        System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());
         startMeasure();
         vm.steps(program, Long.MAX_VALUE);
         endMeasure();

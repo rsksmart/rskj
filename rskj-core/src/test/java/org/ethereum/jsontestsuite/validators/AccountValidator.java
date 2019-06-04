@@ -35,34 +35,46 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class AccountValidator {
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
-    public static List<String> valid(RskAddress addr, Repository currentRepository, Repository expectedRepository) {
+    public static List<String> valid(RskAddress addr, Repository currentRepository, Repository expectedRepository,boolean validateBalance,ValidationStats vStats) {
         AccountState currentState = currentRepository.getAccountState(addr);
         AccountState expectedState = expectedRepository.getAccountState(addr);
 
         List<String> results = new ArrayList<>();
-
-        if (currentState == null || !currentRepository.isContract(addr)) {
+        if (vStats!=null) vStats.accountChecks++;
+        if (currentState == null) {
             String formattedString = String.format("Account: %s: expected but doesn't exist",
                     addr);
             results.add(formattedString);
             return results;
         }
 
-        if (expectedState == null || !expectedRepository.isContract(addr)) {
+        if (vStats!=null) vStats.accountChecks++;
+        if (expectedState == null) {
             String formattedString = String.format("Account: %s: unexpected account in the repository",
                     addr);
             results.add(formattedString);
             return results;
         }
 
-
-        Coin expectedBalance = expectedState.getBalance();
-        if (!currentState.getBalance().equals(expectedBalance)) {
-            String formattedString = String.format("Account: %s: has unexpected balance, expected balance: %s found balance: %s",
-                    addr, expectedBalance.toString(), currentState.getBalance().toString());
+        if (currentRepository.isContract(addr) != expectedRepository.isContract(addr)) {
+            String formattedString = String.format("Account: %s: unexpected account state", addr);
             results.add(formattedString);
+            return results;
+        }
+        if (validateBalance) {
+            if (vStats!=null) vStats.balancetChecks++;
+            Coin expectedBalance = expectedState.getBalance();
+            if (!currentState.getBalance().equals(expectedBalance)) {
+                String formattedString = String.format("Account: %s: has unexpected balance, expected balance: %s found balance: %s",
+                                                       addr,
+                                                       expectedBalance.toString(),
+                                                       currentState.getBalance().toString()
+                );
+                results.add(formattedString);
+            }
         }
 
+        if (vStats!=null) vStats.accountChecks++;
         BigInteger expectedNonce = expectedState.getNonce();
         if (currentState.getNonce().compareTo(expectedNonce) != 0) {
             String formattedString = String.format("Account: %s: has unexpected nonce, expected nonce: %s found nonce: %s",
@@ -70,9 +82,8 @@ public class AccountValidator {
             results.add(formattedString);
         }
 
-        byte[] code = Arrays.equals(currentState.getCodeHash(), EMPTY_DATA_HASH) ?
-                new byte[0] : currentRepository.getCode(addr);
-        if (!Arrays.equals(expectedRepository.getCode(addr), code)) {
+        if (vStats!=null) vStats.accountChecks++;
+        if (!Arrays.equals(expectedRepository.getCode(addr), currentRepository.getCode(addr))) {
             String formattedString = String.format("Account: %s: has unexpected code, expected code: %s found code: %s",
                     addr, Hex.toHexString(expectedRepository.getCode(addr)), Hex.toHexString(currentRepository.getCode(addr)));
             results.add(formattedString);
@@ -89,6 +100,7 @@ public class AccountValidator {
 
             DataWord currentValue = currentRepository.getStorageValue(addr, key);
             DataWord expectedValue = expectedRepository.getStorageValue(addr, key);
+            if (vStats!=null) vStats.storageChecks++;
             if (expectedValue == null) {
 
                 String formattedString = String.format("Account: %s: has unexpected storage data: %s = %s",
@@ -99,7 +111,7 @@ public class AccountValidator {
                 results.add(formattedString);
                 continue;
             }
-
+            if (vStats!=null) vStats.storageChecks++;
             if (!expectedValue.equals(currentValue)) {
 
                 String formattedString = String.format("Account: %s: has unexpected value, for key: %s , expectedValue: %s real value: %s",
@@ -115,9 +127,9 @@ public class AccountValidator {
 
         while (expectedKeys.hasNext()) {
             DataWord key = expectedKeys.next();
-
+            if (vStats!=null) vStats.storageChecks++;
             if (!checked.contains(key)) {
-                String formattedString = String.format("Account: %s: doesn't exist expected storage key: %s",
+                String formattedString = String.format("Account: %s: doesn't exist. Expected storage key: %s",
                         addr, key.toString());
                 results.add(formattedString);
             }

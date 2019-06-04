@@ -19,7 +19,7 @@
 package co.rsk.mine;
 
 public interface MinerClient {
-    void mine();
+    void start();
 
     // Mines a PoW block
     boolean mineBlock();

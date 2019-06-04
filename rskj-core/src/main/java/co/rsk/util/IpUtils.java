@@ -1,6 +1,5 @@
 package co.rsk.util;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,12 +43,10 @@ public class IpUtils {
 
     public static List<InetSocketAddress> parseAddresses(List<String> addresses) {
         List<InetSocketAddress> result = new ArrayList<>();
-        if(CollectionUtils.isNotEmpty(addresses)) {
-            for(String a : addresses) {
-                InetSocketAddress res = parseAddress(a);
-                if (res != null) {
-                    result.add(res);
-                }
+        for(String a : addresses) {
+            InetSocketAddress res = parseAddress(a);
+            if (res != null) {
+                result.add(res);
             }
         }
         return result;

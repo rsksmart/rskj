@@ -57,8 +57,7 @@ public class EVMDissasembler {
             // Asummes LSBs are zero. assignDataRange undestands this semantics.
         }
 
-        DataWord dw = new DataWord();
-        dw.assignDataRange(ops, pc, n);
+        DataWord dw = DataWord.valueOf(ops, pc, n);
         pc += n;
         if (pc >= ops.length) stop();
 

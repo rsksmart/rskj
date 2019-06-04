@@ -29,6 +29,7 @@ import java.util.Map;
  */
 public class AccountTck {
 
+    boolean forcedContract;
     String balance;
     String code;
     String nonce;
@@ -38,6 +39,14 @@ public class AccountTck {
     String privateKey;
 
     public AccountTck() {
+    }
+
+    public boolean isForcedContract() {
+        return forcedContract;
+    }
+
+    public void setForcedContract(boolean forcedContract) {
+        this.forcedContract = forcedContract;
     }
 
     public String getPrivateKey() {

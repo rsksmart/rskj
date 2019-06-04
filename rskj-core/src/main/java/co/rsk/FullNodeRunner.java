@@ -19,12 +19,9 @@ package co.rsk;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
-import co.rsk.db.PruneConfiguration;
-import co.rsk.db.PruneService;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.mine.TxBuilder;
-import co.rsk.mine.TxBuilderEx;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.TransactionGateway;
@@ -40,15 +37,11 @@ import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
 
-@Component
 public class FullNodeRunner implements NodeRunner {
     private static Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
@@ -73,9 +66,6 @@ public class FullNodeRunner implements NodeRunner {
     private final TransactionGateway transactionGateway;
     private final BuildInfo buildInfo;
 
-    private final PruneService pruneService;
-
-    @Autowired
     public FullNodeRunner(
             Rsk rsk,
             UDPServer udpServer,
@@ -115,9 +105,6 @@ public class FullNodeRunner implements NodeRunner {
         this.peerClientFactory = peerClientFactory;
         this.transactionGateway = transactionGateway;
         this.buildInfo = buildInfo;
-
-        PruneConfiguration pruneConfiguration = rskSystemProperties.getPruneConfiguration();
-        this.pruneService = new PruneService(pruneConfiguration, rskSystemProperties, blockchain, PrecompiledContracts.REMASC_ADDR);
     }
 
     @Override
@@ -153,10 +140,6 @@ public class FullNodeRunner implements NodeRunner {
             enableSimulateTxs();
         }
 
-        if (rskSystemProperties.simulateTxsEx()) {
-            enableSimulateTxsEx();
-        }
-
         startWeb3(rskSystemProperties);
 
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {
@@ -175,12 +158,8 @@ public class FullNodeRunner implements NodeRunner {
             minerServer.start();
 
             if (rskSystemProperties.isMinerClientEnabled()) {
-                minerClient.mine();
+                minerClient.start();
             }
-        }
-
-        if (rskSystemProperties.isPruneEnabled()) {
-            pruneService.start();
         }
 
         logger.info("done");
@@ -210,11 +189,7 @@ public class FullNodeRunner implements NodeRunner {
     }
 
     private void enableSimulateTxs() {
-        new TxBuilder(rskSystemProperties, rsk, nodeBlockProcessor, repository).simulateTxs();
-    }
-
-    private void enableSimulateTxsEx() {
-        new TxBuilderEx(rskSystemProperties, rsk, repository, nodeBlockProcessor, transactionPool).simulateTxs();
+        new TxBuilder(rskSystemProperties.getNetworkConstants(), rsk, nodeBlockProcessor, repository).simulateTxs();
     }
 
     private void waitRskSyncDone() throws InterruptedException {
@@ -231,10 +206,6 @@ public class FullNodeRunner implements NodeRunner {
     @Override
     public void stop() {
         logger.info("Shutting down RSK node");
-
-        if (rskSystemProperties.isPruneEnabled()) {
-            pruneService.stop();
-        }
 
         syncPool.stop();
 

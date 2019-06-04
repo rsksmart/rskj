@@ -175,7 +175,7 @@ public class BlockchainTest {
         Assert.assertEquals(chain2.size() + 1, newblock.getNumber());
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void checkItDoesntAddAnInvalidBlock() {
         Blockchain blockchain = createBlockchain();
 
@@ -186,9 +186,7 @@ public class BlockchainTest {
 
         Block block2 = blockGenerator.createChildBlock(blockchain.getBestBlock());
         Block block2b = blockGenerator.createBlock(10, 5);
-        Block block3 = Block.fromValidData(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList());
-        ImportResult importResult2 = blockchain.tryToConnect(block3);
-        Assert.assertFalse(importResult2.isSuccessful());
+        new Block(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList(), true, true);
     }
 
 

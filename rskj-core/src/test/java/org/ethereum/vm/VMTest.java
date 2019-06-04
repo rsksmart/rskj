@@ -28,8 +28,10 @@ import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.vm.BitSet;
 import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Account;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
@@ -64,6 +66,7 @@ public class VMTest {
     private VM vm;
 
     private final TestSystemProperties config = new TestSystemProperties();
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
 
@@ -187,7 +190,7 @@ public class VMTest {
         assertEquals(DataWord.ONE, program.stackPop());
         assertFalse(program.getStack().isEmpty());
         assertEquals(1, program.getStack().size());
-        assertEquals(new DataWord(42), program.getStack().pop());
+        assertEquals(DataWord.valueOf(42), program.getStack().pop());
     }
 
     @Test  // PUSH1 OP
@@ -1241,7 +1244,7 @@ public class VMTest {
         byte operation = (byte) (OpCode.SWAP1.val() + n - 1);
 
         String programCode = "";
-        String top = new DataWord(0x10 + n).toString();
+        String top = DataWord.valueOf(0x10 + n).toString();
         for (int i = n; i > -1; --i) {
             programCode += "60" + oneByteToHexString((byte) (0x10 + i));
 
@@ -1697,7 +1700,7 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        DataWord key = new DataWord(Hex.decode(s_expected_key));
+        DataWord key = DataWord.valueOf(Hex.decode(s_expected_key));
         DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()), key);
 
         assertEquals(s_expected_val, Hex.toHexString(val.getData()).toUpperCase());
@@ -1718,7 +1721,7 @@ public class VMTest {
         vm.step(program);
 
         Repository repository = program.getStorage();
-        DataWord key = new DataWord(Hex.decode(s_expected_key));
+        DataWord key = DataWord.valueOf(Hex.decode(s_expected_key));
         DataWord val = repository.getStorageValue(new RskAddress(invoke.getOwnerAddress()), key);
 
         assertEquals(s_expected_val, Hex.toHexString(val.getData()).toUpperCase());
@@ -1927,7 +1930,7 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        DataWord key = new DataWord(Hex.decode(s_expected_key));
+        DataWord key = DataWord.valueOf(Hex.decode(s_expected_key));
         DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()), key);
 
         assertTrue(program.isStopped());
@@ -1950,7 +1953,7 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        DataWord key = new DataWord(Hex.decode(s_expected_key));
+        DataWord key = DataWord.valueOf(Hex.decode(s_expected_key));
         DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()), key);
 
         assertTrue(program.isStopped());
@@ -3041,15 +3044,15 @@ public class VMTest {
         return getProgram(code, null);
     }
 
-    private BlockchainConfig getBlockchainConfig(boolean preFixStaticCall) {
-        BlockchainConfig blockchainConfig = mock(BlockchainConfig.class);
-        when(blockchainConfig.isRskip91()).thenReturn(true);
+    private ActivationConfig.ForBlock getBlockchainConfig(boolean preFixStaticCall) {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP91)).thenReturn(true);
 
-        when(blockchainConfig.isRskip103()).thenReturn(!preFixStaticCall);
+        when(activations.isActive(ConsensusRule.RSKIP103)).thenReturn(!preFixStaticCall);
 
-        when(blockchainConfig.isRskip90()).thenReturn(true);
-        when(blockchainConfig.isRskip89()).thenReturn(true);
-        return blockchainConfig;
+        when(activations.isActive(ConsensusRule.RSKIP90)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP89)).thenReturn(true);
+        return activations;
     }
 
     private Program getProgram(byte[] code, Transaction transaction) {
@@ -3057,7 +3060,7 @@ public class VMTest {
     }
 
     private Program getProgram(byte[] code, Transaction transaction, boolean preFixStaticCall) {
-        return new Program(vmConfig, precompiledContracts, getBlockchainConfig(preFixStaticCall), code, invoke, transaction);
+        return new Program(vmConfig, precompiledContracts, blockFactory, getBlockchainConfig(preFixStaticCall), code, invoke, transaction);
     }
 
     private byte[] compile(String code) {

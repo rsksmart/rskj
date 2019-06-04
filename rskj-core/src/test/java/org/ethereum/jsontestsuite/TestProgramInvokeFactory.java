@@ -52,7 +52,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
     @Override
     public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
-                                             DataWord inValue, long  inGas,
+                                             DataWord inValue, long inGas,
                                              Coin balanceInt, byte[] dataIn,
                                              Repository repository, BlockStore blockStore,
                                              boolean isStaticCall, boolean byTestingSuite) {

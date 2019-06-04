@@ -19,10 +19,10 @@
 package co.rsk.vm;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.test.World;
+import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
@@ -30,7 +30,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -65,8 +65,7 @@ public class BlockchainVMTest {
         NewBlockChainInfo binfo = createNewBlockchain();
         Blockchain blockchain = binfo.blockchain;
         BlockGenerator blockGenerator = new BlockGenerator();
-        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), null, binfo.repository.getRoot());
-        List<Transaction> txs = new ArrayList<>();
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), Collections.emptyList(), binfo.repository.getRoot());
         Coin transferAmount = Coin.valueOf(100L);
         // Add a single transaction paying to a new address
         byte[] dstAddress = randomAddress();
@@ -79,10 +78,10 @@ public class BlockchainVMTest {
                 dstAddress ,
                 transferAmount.getBytes(),
                 null,
-                new TestSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
+                Constants.REGTEST_CHAIN_ID);
 
         t.sign(binfo.faucetKey.getPrivKeyBytes());
-        txs.add(t);
+        List<Transaction> txs = Collections.singletonList(t);
 
         Block block2 = blockGenerator.createChildBlock(block1, txs, binfo.repository.getRoot());
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
@@ -93,6 +92,7 @@ public class BlockchainVMTest {
         mh.completeBlock(block2, block1);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block2));
+        blockchain.getRepository().syncToRoot(block2.getStateRoot());
 
         Assert.assertEquals(blockchain.getBestBlock(), block2);
         Assert.assertEquals(2, block2.getNumber());

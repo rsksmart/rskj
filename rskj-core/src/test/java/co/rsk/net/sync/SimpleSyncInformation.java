@@ -8,7 +8,6 @@ import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
-import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -17,7 +16,12 @@ public class SimpleSyncInformation implements SyncInformation {
     private boolean hasGoodReputation = true;
 
     @Override
-    public boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader) {
+    public boolean blockHeaderIsValid(BlockHeader header, BlockHeader parentHeader) {
+        return false;
+    }
+
+    @Override
+    public boolean blockIsValid(Block block) {
         return false;
     }
 
@@ -57,7 +61,7 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
-    public boolean blockHeaderIsValid(@Nonnull BlockHeader header) {
+    public boolean blockHeaderIsValid(BlockHeader header) {
         return false;
     }
 

@@ -17,7 +17,7 @@
  */
 package co.rsk.peg;
 
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * This enum holds the basic information of the Bridge contract methods: the ABI, the cost and the implementation.
@@ -39,6 +41,18 @@ public enum BridgeMethods {
             ),
             13000L,
             (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKey,
+            activations -> !activations.isActive(RSKIP123),
+            false
+    ),
+    ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY(
+            CallTransaction.Function.fromSignature(
+                    "addFederatorPublicKeyMultikey",
+                    new String[]{"bytes", "bytes", "bytes"},
+                    new String[]{"int256"}
+            ),
+            13000L,
+            (BridgeMethodExecutorTyped) Bridge::addFederatorPublicKeyMultikey,
+            activations -> activations.isActive(RSKIP123),
             false
     ),
     ADD_LOCK_WHITELIST_ADDRESS(
@@ -49,7 +63,7 @@ public enum BridgeMethods {
             ),
             25000L,
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
-            blockChainConfig -> !blockChainConfig.isRskip87(),
+            activations -> !activations.isActive(RSKIP87),
             false
     ),
     ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS(
@@ -60,7 +74,7 @@ public enum BridgeMethods {
             ),
             25000L, // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
             (BridgeMethodExecutorTyped) Bridge::addOneOffLockWhitelistAddress,
-            blockChainConfig -> blockChainConfig.isRskip87(),
+            activations -> activations.isActive(RSKIP87),
             false
     ),
     ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS(
@@ -71,7 +85,7 @@ public enum BridgeMethods {
             ),
             25000L, // using same gas estimation as ADD_LOCK_WHITELIST_ADDRESS
             (BridgeMethodExecutorTyped) Bridge::addUnlimitedLockWhitelistAddress,
-            blockChainConfig -> blockChainConfig.isRskip87(),
+            activations -> activations.isActive(RSKIP87),
             false
     ),
     ADD_SIGNATURE(
@@ -122,7 +136,7 @@ public enum BridgeMethods {
             ),
             20000L,
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight,
-            blockchainConfig -> blockchainConfig.isRskip89(),
+            activations -> activations.isActive(RSKIP89),
             true
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR(
@@ -133,7 +147,7 @@ public enum BridgeMethods {
             ),
             76000L,
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockLocator,
-            blockchainConfig -> !blockchainConfig.isRskip89(),
+            activations -> !activations.isActive(RSKIP89),
             true
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH(
@@ -144,7 +158,7 @@ public enum BridgeMethods {
             ),
             20000L,
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth,
-            blockchainConfig -> blockchainConfig.isRskip89(),
+            activations -> activations.isActive(RSKIP89),
             true
     ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
@@ -215,6 +229,18 @@ public enum BridgeMethods {
             ),
             10000L,
             (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKey,
+            activations -> !activations.isActive(RSKIP123),
+            true
+    ),
+    GET_FEDERATOR_PUBLIC_KEY_OF_TYPE(
+            CallTransaction.Function.fromSignature(
+                    "getFederatorPublicKeyOfType",
+                    new String[]{"int256", "string"},
+                    new String[]{"bytes"}
+            ),
+            10000L,
+            (BridgeMethodExecutorTyped) Bridge::getFederatorPublicKeyOfType,
+            activations -> activations.isActive(RSKIP123),
             true
     ),
     GET_FEE_PER_KB(
@@ -245,7 +271,7 @@ public enum BridgeMethods {
             ),
             16000L,
             (BridgeMethodExecutorTyped) Bridge::getLockWhitelistEntryByAddress,
-            blockchainConfig -> blockchainConfig.isRskip87(),
+            activations -> activations.isActive(RSKIP87),
             true
     ),
     GET_LOCK_WHITELIST_SIZE(
@@ -296,6 +322,18 @@ public enum BridgeMethods {
             ),
             3000L,
             (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKey,
+            activations -> !activations.isActive(RSKIP123),
+            true
+    ),
+    GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
+            CallTransaction.Function.fromSignature(
+                    "getPendingFederatorPublicKeyOfType",
+                    new String[]{"int256", "string"},
+                    new String[]{"bytes"}
+            ),
+            3000L,
+            (BridgeMethodExecutorTyped) Bridge::getPendingFederatorPublicKeyOfType,
+            activations -> activations.isActive(RSKIP123),
             true
     ),
     GET_RETIRING_FEDERATION_ADDRESS(
@@ -356,6 +394,18 @@ public enum BridgeMethods {
             ),
             3000L,
             (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKey,
+            activations -> !activations.isActive(RSKIP123),
+            true
+    ),
+    GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE(
+            CallTransaction.Function.fromSignature(
+                    "getRetiringFederatorPublicKeyOfType",
+                    new String[]{"int256", "string"},
+                    new String[]{"bytes"}
+            ),
+            3000L,
+            (BridgeMethodExecutorTyped) Bridge::getRetiringFederatorPublicKeyOfType,
+            activations -> activations.isActive(RSKIP123),
             true
     ),
     GET_STATE_FOR_BTC_RELEASE_CLIENT(
@@ -476,15 +526,15 @@ public enum BridgeMethods {
                         ));
     private final CallTransaction.Function function;
     private final long cost;
-    private final Function<BlockchainConfig, Boolean> isEnabledFunction;
+    private final Function<ActivationConfig.ForBlock, Boolean> isEnabledFunction;
     private final BridgeMethodExecutor executor;
     private final boolean onlyAllowsLocalCalls;
 
     BridgeMethods(CallTransaction.Function function, long cost, BridgeMethodExecutor executor, boolean onlyAllowsLocalCalls) {
-        this(function, cost, executor, blockchainConfig -> Boolean.TRUE, onlyAllowsLocalCalls);
+        this(function, cost, executor, activations -> Boolean.TRUE, onlyAllowsLocalCalls);
     }
 
-    BridgeMethods(CallTransaction.Function function, long cost, BridgeMethodExecutor executor, Function<BlockchainConfig, Boolean> isEnabled, boolean onlyAllowsLocalCalls) {
+    BridgeMethods(CallTransaction.Function function, long cost, BridgeMethodExecutor executor, Function<ActivationConfig.ForBlock, Boolean> isEnabled, boolean onlyAllowsLocalCalls) {
         this.function = function;
         this.cost = cost;
         this.executor = executor;
@@ -499,8 +549,8 @@ public enum BridgeMethods {
     public CallTransaction.Function getFunction() {
         return function;
     }
-    public Boolean isEnabled(BlockchainConfig blockchainConfig) {
-        return this.isEnabledFunction.apply(blockchainConfig);
+    public Boolean isEnabled(ActivationConfig.ForBlock activations) {
+        return this.isEnabledFunction.apply(activations);
     }
 
     public long getCost() {

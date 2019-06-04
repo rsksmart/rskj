@@ -25,15 +25,14 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockUnclesValidationRule;
-import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RskTestFactory;
@@ -61,41 +60,52 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     private final DifficultyCalculator difficultyCalculator;
     private Blockchain blockchain;
     private Repository repository;
+    private StateRootHandler stateRootHandler;
     private BlockStore blockStore;
     private TransactionPool transactionPool;
+    private BlockFactory blockFactory;
+    private BlockExecutor blockExecutor;
 
     public MinerServerTest(TestSystemProperties config) {
         super(config);
-        this.difficultyCalculator = new DifficultyCalculator(config);
+        this.difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
     }
 
     @Before
     public void setUp() {
-        RskTestFactory factory = new RskTestFactory(config);
+        RskTestFactory factory = new RskTestFactory(config) {
+            @Override
+            protected Repository buildRepository() {
+                return Mockito.spy(super.buildRepository());
+            }
+        };
         blockchain = factory.getBlockchain();
         repository = factory.getRepository();
+        stateRootHandler = factory.getStateRootHandler();
         blockStore = factory.getBlockStore();
         transactionPool = factory.getTransactionPool();
+        blockFactory = factory.getBlockFactory();
+        blockExecutor = factory.getBlockExecutor();
     }
 
     @Test
     public void buildBlockToMineCheckThatLastTransactionIsForREMASC() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Repository repository = Mockito.mock(Repository.class);
-        Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
-        Mockito.when(repository.getRoot()).thenReturn(this.repository.getRoot());
-        Mockito.when(repository.startTracking()).thenReturn(repository);
-
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
         byte[] s1 = new byte[32];
         s1[0] = 0;
         Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
         Mockito.when(tx1.getEncoded()).thenReturn(new byte[32]);
 
-        Mockito.when(repository.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
-        Mockito.when(repository.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
-        Mockito.when(repository.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
-        Mockito.when(repository.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
+        Repository track = Mockito.mock(Repository.class);
+        Mockito.doReturn(repository.getRoot()).when(track).getRoot();
+        Mockito.doReturn(repository.getMutableTrie()).when(track).getMutableTrie();
+        Mockito.when(track.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
+        Mockito.when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
+        Mockito.when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
+        Mockito.when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
+        Mockito.doReturn(track).when(repository).getSnapshotTo(Mockito.any());
+        Mockito.doReturn(track).when(repository).startTracking();
+        Mockito.doReturn(track).when(track).startTracking();
 
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));
 
@@ -107,23 +117,26 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServerImpl minerServer = new MinerServerImpl(
                 config,
-                ethereumImpl,
+                Mockito.mock(EthereumImpl.class),
                 this.blockchain,
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         localTransactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -153,18 +166,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -218,18 +234,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -268,18 +287,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -321,18 +343,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -381,18 +406,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -433,18 +461,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -490,18 +521,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -529,18 +563,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -568,18 +605,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -611,18 +651,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
+                        stateRootHandler,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         unclesValidationRule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        blockExecutor
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -680,33 +723,5 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 throw new RuntimeException(e); // Cannot happen.
             }
         }
-    }
-
-    private MinerServerImpl getMinerServerWithMocks() {
-        return new MinerServerImpl(
-                config,
-                Mockito.mock(Ethereum.class),
-                blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                getBuilderWithMocks(),
-                new MinerClock(true, Clock.systemUTC()),
-                ConfigUtils.getDefaultMiningConfig()
-        );
-    }
-
-    private BlockToMineBuilder getBuilderWithMocks() {
-        return new BlockToMineBuilder(
-                ConfigUtils.getDefaultMiningConfig(),
-                Mockito.mock(Repository.class),
-                blockStore,
-                Mockito.mock(TransactionPool.class),
-                difficultyCalculator,
-                new GasLimitCalculator(config),
-                Mockito.mock(BlockValidationRule.class),
-                config,
-                Mockito.mock(ReceiptStore.class),
-                Mockito.mock(MinerClock.class)
-        );
     }
 }

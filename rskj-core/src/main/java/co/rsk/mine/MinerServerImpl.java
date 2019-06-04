@@ -34,15 +34,13 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
-import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
@@ -59,7 +57,6 @@ import java.util.function.Function;
  * @author Oscar Guindzberg
  */
 
-@Component("MinerServer")
 public class MinerServerImpl implements MinerServer {
     private static final long DELAY_BETWEEN_BUILD_BLOCKS_MS = TimeUnit.MINUTES.toMillis(1);
 
@@ -72,8 +69,9 @@ public class MinerServerImpl implements MinerServer {
     private final Blockchain blockchain;
     private final ProofOfWorkRule powRule;
     private final BlockToMineBuilder builder;
-    private final BlockchainNetConfig blockchainConfig;
+    private final ActivationConfig activationConfig;
     private final MinerClock clock;
+    private final BlockFactory blockFactory;
 
     private Timer refreshWorkTimer;
     private NewBlockListener blockListener;
@@ -100,7 +98,6 @@ public class MinerServerImpl implements MinerServer {
 
     private final BlockProcessor nodeBlockProcessor;
 
-    @Autowired
     public MinerServerImpl(
             RskSystemProperties config,
             Ethereum ethereum,
@@ -109,6 +106,7 @@ public class MinerServerImpl implements MinerServer {
             ProofOfWorkRule powRule,
             BlockToMineBuilder builder,
             MinerClock clock,
+            BlockFactory blockFactory,
             MiningConfig miningConfig) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
@@ -116,7 +114,8 @@ public class MinerServerImpl implements MinerServer {
         this.powRule = powRule;
         this.builder = builder;
         this.clock = clock;
-        this.blockchainConfig = config.getBlockchainConfig();
+        this.blockFactory = blockFactory;
+        this.activationConfig = config.getActivationConfig();
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
 
@@ -253,8 +252,7 @@ public class MinerServerImpl implements MinerServer {
                 return new SubmitBlockResult("ERROR", message);
             }
 
-            // clone the block
-            newBlock = workingBlock.cloneBlock();
+            newBlock = blockFactory.cloneBlockForModification(workingBlock);
 
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
@@ -263,7 +261,7 @@ public class MinerServerImpl implements MinerServer {
 
         newBlock.setBitcoinMergedMiningHeader(blockWithHeaderOnly.cloneAsHeader().bitcoinSerialize());
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), lastTag));
-        newBlock.setBitcoinMergedMiningMerkleProof(MinerUtils.buildMerkleProof(blockchainConfig, proofBuilderFunction, newBlock.getNumber()));
+        newBlock.setBitcoinMergedMiningMerkleProof(MinerUtils.buildMerkleProof(activationConfig, proofBuilderFunction, newBlock.getNumber()));
         newBlock.seal();
 
         if (!isValid(newBlock)) {

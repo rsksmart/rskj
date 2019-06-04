@@ -7,12 +7,16 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
+import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.StateRootHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.config.blockchain.FallbackMainNetConfig;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
+import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.util.RskTestFactory;
@@ -23,11 +27,11 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Clock;
+
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by SerAdmin on 1/3/2018.
@@ -42,17 +46,31 @@ public class MainNetMinerTest {
     private BlockStore blockStore;
     private NodeBlockProcessor blockProcessor;
     private Repository repository;
+    private StateRootHandler stateRootHandler;
+    private BlockFactory blockFactory;
+    private BlockExecutor blockExecutor;
 
     @Before
     public void setup() {
-        RskTestFactory factory = new RskTestFactory();
-        config = new TestSystemProperties();
-        config.setBlockchainConfig(new FallbackMainNetConfig());
+        config = spy(new TestSystemProperties());
+        when(config.getNetworkConstants()).thenReturn(Constants.mainnet());
+        when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.all());
+        RskTestFactory factory = new RskTestFactory(config) {
+            @Override
+            public Genesis buildGenesis() {
+                Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
+                genesis.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
+                return genesis;
+            }
+        };
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
         blockStore = factory.getBlockStore();
-        blockProcessor = factory.getBlockProcessor();
+        blockProcessor = factory.getNodeBlockProcessor();
         repository = factory.getRepository();
+        stateRootHandler = factory.getStateRootHandler();
+        blockFactory = factory.getBlockFactory();
+        blockExecutor = factory.getBlockExecutor();
     }
 
     /*
@@ -79,6 +97,7 @@ public class MainNetMinerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 blockToMineBuilder(),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -100,18 +119,6 @@ public class MainNetMinerTest {
         }
     }
 
-    //throws IOException, FileNotFoundException
-    public static void saveToFile(byte[] array, File f) {
-        try {
-            FileOutputStream fos = new FileOutputStream(f);
-            fos.write(array);
-            fos.close();
-        } catch (IOException e) {
-            System.out.println("Something is wrong when writing to file "+f.getName()+". Aborting");
-            System.exit(-1);
-        }
-    }
-
     /*
      * This test is much more likely to fail than the
      * submitBitcoinBlockProofOfWorkNotGoodEnough test. Even then
@@ -124,12 +131,9 @@ public class MainNetMinerTest {
         // medium minimum difficulty (this is not the mainnet nor the regnet)
         ////////////////////////////////////////////////////////////////////
         /* We need a low, but not too low, target */
-        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(blockchain);
-        gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
-        blockchain.setStatus(gen, gen.getCumulativeDifficulty());
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
@@ -140,6 +144,7 @@ public class MainNetMinerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 blockToMineBuilder(),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -189,19 +194,21 @@ public class MainNetMinerTest {
 
     private BlockToMineBuilder blockToMineBuilder() {
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         return new BlockToMineBuilder(
+                config.getActivationConfig(),
                 ConfigUtils.getDefaultMiningConfig(),
                 repository,
+                stateRootHandler,
                 blockStore,
                 transactionPool,
-                new DifficultyCalculator(config),
-                new GasLimitCalculator(config),
+                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
+                new GasLimitCalculator(config.getNetworkConstants()),
                 unclesValidationRule,
-                config,
-                null,
-                clock
+                clock,
+                blockFactory,
+                blockExecutor
         );
     }
 }

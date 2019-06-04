@@ -148,7 +148,7 @@ public class AddressesTopicsFilter {
 
     private boolean matchTopic(DataWord logTopic, Topic[] orTopics) {
         for (Topic orTopic : orTopics) {
-            if (new DataWord(orTopic.getBytes()).equals(logTopic)) {
+            if (DataWord.valueOf(orTopic.getBytes()).equals(logTopic)) {
                 return true;
             }
         }

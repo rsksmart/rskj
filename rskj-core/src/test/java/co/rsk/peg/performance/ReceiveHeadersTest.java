@@ -23,7 +23,7 @@ import co.rsk.bitcoinj.core.BtcBlockChain;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.config.TestSystemProperties;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBlockStore;
@@ -46,7 +46,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         final int maxBtcBlocks = 2000;
 
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBlockStore(new TestSystemProperties(), repository, PrecompiledContracts.BRIDGE_ADDR);
+            BtcBlockStore btcBlockStore = new RepositoryBlockStore(BridgeRegTestConstants.getInstance(), repository, PrecompiledContracts.BRIDGE_ADDR);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
@@ -72,7 +72,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         };
 
         ExecutionStats stats = new ExecutionStats("receiveHeaders");
-        executeAndAverage("receiveHeaders", 200, abiEncoder, storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("receiveHeaders", 200, abiEncoder, storageInitializer, Helper.getZeroValueValueTxBuilderFromFedMember(), Helper.getRandomHeightProvider(10), stats);
 
         BridgePerformanceTest.addStats(stats);
     }

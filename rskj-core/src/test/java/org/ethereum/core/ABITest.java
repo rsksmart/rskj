@@ -19,14 +19,14 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * @author Anton Nashatyrev
@@ -34,14 +34,13 @@ import org.bouncycastle.util.encoders.Hex;
 public class ABITest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
-    private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void testTransactionCreate() {
         // demo only
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson1);
-        Transaction ctx = CallTransaction.createCallTransaction(config, 1, 1_000_000_000,
-                1_000_000_000, new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function, "1234567890abcdef1234567890abcdef12345678");
+        Transaction ctx = CallTransaction.createCallTransaction(1, 1_000_000_000,
+                1_000_000_000, new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function, Constants.REGTEST_CHAIN_ID, "1234567890abcdef1234567890abcdef12345678");
         ctx.sign(Keccak256Helper.keccak256("974f963ee4571e86e5f9bc3b493e453db9c15e5bd19829a4ef9a790de0da0015".getBytes()));
     }
 
@@ -91,8 +90,8 @@ public class ABITest {
         logger.info("\n{}", funcJson2);
 
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson2);
-        Transaction ctx = CallTransaction.createCallTransaction(config, 1, 1_000_000_000, 1_000_000_000,
-                new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function);
+        Transaction ctx = CallTransaction.createCallTransaction(1, 1_000_000_000, 1_000_000_000,
+                new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function, Constants.REGTEST_CHAIN_ID);
         ctx.sign(Keccak256Helper.keccak256("974f963ee4571e86e5f9bc3b493e453db9c15e5bd19829a4ef9a790de0da0015".getBytes()));
 
         Assert.assertEquals("91888f2e", Hex.toHexString(ctx.getData()));

@@ -19,45 +19,30 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.db.StateRootHandler;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * Encapsulates the logic to execute a transaction in an
  * isolated environment (e.g. no persistent state changes).
  */
-@Component
 public class ReversibleTransactionExecutor {
 
-    private final RskSystemProperties config;
-    private final Repository track;
-    private final BlockStore blockStore;
-    private final ReceiptStore receiptStore;
-    private final ProgramInvokeFactory programInvokeFactory;
+    private final Repository repository;
+    private final StateRootHandler stateRootHandler;
+    private final TransactionExecutorFactory transactionExecutorFactory;
 
-    @Autowired
     public ReversibleTransactionExecutor(
-            RskSystemProperties config,
-            Repository track,
-            BlockStore blockStore,
-            ReceiptStore receiptStore,
-            ProgramInvokeFactory programInvokeFactory) {
-        this.config = config;
-        this.track = track;
-        this.blockStore = blockStore;
-        this.receiptStore = receiptStore;
-        this.programInvokeFactory = programInvokeFactory;
+            Repository repository,
+            StateRootHandler stateRootHandler,
+            TransactionExecutorFactory transactionExecutorFactory) {
+        this.repository = repository;
+        this.stateRootHandler = stateRootHandler;
+        this.transactionExecutorFactory = transactionExecutorFactory;
     }
 
     public ProgramResult executeTransaction(
@@ -69,9 +54,10 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             RskAddress fromAddress) {
-        Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
+        byte[] stateRoot = stateRootHandler.translate(executionBlock.getHeader()).getBytes();
+        Repository snapshot = repository.getSnapshotTo(stateRoot).startTracking();
 
-        byte[] nonce = repository.getNonce(fromAddress).toByteArray();
+        byte[] nonce = snapshot.getNonce(fromAddress).toByteArray();
         UnsignedTransaction tx = new UnsignedTransaction(
                 nonce,
                 gasPrice,
@@ -82,12 +68,9 @@ public class ReversibleTransactionExecutor {
                 fromAddress
         );
 
-        TransactionExecutor executor = new TransactionExecutor(
-                tx, 0, coinbase, repository, blockStore, receiptStore,
-                programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0, config.getVmConfig(),
-                config.getBlockchainConfig(), config.playVM(), config.isRemascEnabled(), config.vmTrace(), new PrecompiledContracts(config),
-                config.databaseDir(), config.vmTraceDir(), config.vmTraceCompressed()
-        ).setLocalCall(true);
+        TransactionExecutor executor = transactionExecutorFactory
+                .newInstance(tx, 0, coinbase, snapshot, executionBlock, 0)
+                .setLocalCall(true);
 
         executor.init();
         executor.execute();

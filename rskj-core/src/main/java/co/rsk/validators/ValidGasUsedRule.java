@@ -29,14 +29,18 @@ import java.math.BigInteger;
 /**
  * Created by martin.medina on 07/02/17.
  */
-public class ValidGasUsedRule implements BlockValidationRule {
+public class ValidGasUsedRule implements BlockValidationRule, BlockHeaderValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     @Override
     public boolean isValid(Block block) {
-        BlockHeader header = block.getHeader();
+        return isValid(block.getHeader());
+    }
+
+    @Override
+    public boolean isValid(BlockHeader header) {
         long gasUsed = header.getGasUsed();
         long gasLimit = new BigInteger(1, header.getGasLimit()).longValue();
 

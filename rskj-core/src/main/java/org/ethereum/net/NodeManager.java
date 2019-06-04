@@ -20,13 +20,10 @@
 package org.ethereum.net;
 
 import co.rsk.net.discovery.PeerExplorer;
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.net.rlpx.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +38,6 @@ import java.util.stream.Collectors;
  * <p>
  * Created by Anton Nashatyrev on 16.07.2015.
  */
-@Component
 public class NodeManager {
     private static final Logger logger = LoggerFactory.getLogger("discover");
 
@@ -57,7 +53,6 @@ public class NodeManager {
 
     private boolean discoveryEnabled;
 
-    @Autowired
     public NodeManager(PeerExplorer peerExplorer, SystemProperties config) {
         this.peerExplorer = peerExplorer;
         this.discoveryEnabled = config.isPeerDiscoveryEnabled();
@@ -90,8 +85,8 @@ public class NodeManager {
         List<NodeHandler> handlers = new ArrayList<>();
 
         List<Node> foundNodes = this.peerExplorer.getNodes();
-        if (this.discoveryEnabled && CollectionUtils.isNotEmpty(foundNodes)) {
-            logger.debug("{} Nodes retrieved from the PE.", CollectionUtils.size(foundNodes));
+        if (this.discoveryEnabled && !foundNodes.isEmpty()) {
+            logger.debug("{} Nodes retrieved from the PE.", foundNodes.size());
             foundNodes.stream().filter(n -> !nodeHandlerMap.containsKey(n.getHexId())).forEach(this::createNodeHandler);
         }
 

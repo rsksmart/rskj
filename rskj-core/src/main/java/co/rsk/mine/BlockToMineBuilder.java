@@ -19,100 +19,79 @@
 package co.rsk.mine;
 
 import co.rsk.config.MiningConfig;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.FamilyUtils;
+import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
-import org.apache.commons.collections4.CollectionUtils;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.util.*;
+
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * This component helps build a new block to mine.
  * It can also be used to generate a new block from the pending state, which is useful
  * in places like Web3 with the 'pending' parameter.
  */
-@Component
 public class BlockToMineBuilder {
     private static final Logger logger = LoggerFactory.getLogger("blocktominebuilder");
 
+    private final ActivationConfig activationConfig;
     private final MiningConfig miningConfig;
     private final Repository repository;
+    private final StateRootHandler stateRootHandler;
     private final BlockStore blockStore;
     private final TransactionPool transactionPool;
     private final DifficultyCalculator difficultyCalculator;
     private final GasLimitCalculator gasLimitCalculator;
     private final BlockValidationRule validationRules;
     private final MinerClock clock;
+    private final BlockFactory blockFactory;
+    private final BlockExecutor executor;
 
     private final MinimumGasPriceCalculator minimumGasPriceCalculator;
     private final MinerUtils minerUtils;
-    private final BlockExecutor executor;
 
-    private final Coin minerMinGasPriceTarget;
-
-    @Autowired
     public BlockToMineBuilder(
+            ActivationConfig activationConfig,
             MiningConfig miningConfig,
             Repository repository,
+            StateRootHandler stateRootHandler,
             BlockStore blockStore,
             TransactionPool transactionPool,
             DifficultyCalculator difficultyCalculator,
             GasLimitCalculator gasLimitCalculator,
-            @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
-            RskSystemProperties config,
-            ReceiptStore receiptStore,
-            MinerClock clock) {
+            BlockValidationRule validationRules,
+            MinerClock clock,
+            BlockFactory blockFactory,
+            BlockExecutor blockExecutor) {
+        this.activationConfig = Objects.requireNonNull(activationConfig);
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
+        this.stateRootHandler = Objects.requireNonNull(stateRootHandler);
         this.blockStore = Objects.requireNonNull(blockStore);
         this.transactionPool = Objects.requireNonNull(transactionPool);
         this.difficultyCalculator = Objects.requireNonNull(difficultyCalculator);
         this.gasLimitCalculator = Objects.requireNonNull(gasLimitCalculator);
         this.validationRules = Objects.requireNonNull(validationRules);
         this.clock = Objects.requireNonNull(clock);
-        this.minimumGasPriceCalculator = new MinimumGasPriceCalculator();
+        this.blockFactory = blockFactory;
+        this.executor = blockExecutor;
+        this.minimumGasPriceCalculator = new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget()));
         this.minerUtils = new MinerUtils();
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        this.executor = new BlockExecutor(repository, (tx1, txindex1, coinbase, track1, block1, totalGasUsed1) -> new TransactionExecutor(
-                tx1,
-                txindex1,
-                block1.getCoinbase(),
-                track1,
-                blockStore,
-                receiptStore,
-                programInvokeFactory,
-                block1,
-                null,
-                totalGasUsed1,
-                config.getVmConfig(),
-                config.getBlockchainConfig(),
-                config.playVM(),
-                config.isRemascEnabled(),
-                config.vmTrace(),
-                new PrecompiledContracts(config),
-                config.databaseDir(),
-                config.vmTraceDir(),
-                config.vmTraceCompressed()
-        ));
-
-        this.minerMinGasPriceTarget = Coin.valueOf(miningConfig.getMinGasPriceTarget());
     }
 
     /**
@@ -134,17 +113,14 @@ public class BlockToMineBuilder {
             uncles = uncles.subList(0, miningConfig.getUncleListLimit());
         }
 
-        Coin minimumGasPrice = minimumGasPriceCalculator.calculate(
-                newBlockParent.getMinimumGasPrice(),
-                minerMinGasPriceTarget
-        );
+        Coin minimumGasPrice = minimumGasPriceCalculator.calculate(newBlockParent.getMinimumGasPrice());
 
         final List<Transaction> txsToRemove = new ArrayList<>();
         final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
         final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice, extraData);
 
         removePendingTransactions(txsToRemove);
-        executor.executeAndFill(newBlock, newBlockParent);
+        executor.executeAndFill(newBlock, newBlockParent.getHeader());
         return newBlock;
     }
 
@@ -158,7 +134,7 @@ public class BlockToMineBuilder {
 
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
 
-        Repository originalRepo = repository.getSnapshotTo(parent.getStateRoot());
+        Repository originalRepo = repository.getSnapshotTo(stateRootHandler.translate(parent.getHeader()).getBytes());
 
         return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }
@@ -174,8 +150,8 @@ public class BlockToMineBuilder {
             Coin minimumGasPrice,
             byte[] extraData) {
         final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice, extraData);
-        final Block newBlock = new Block(newHeader, txs, uncles);
-        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, null);
+        final Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, false);
+        return validationRules.isValid(newBlock) ? newBlock : blockFactory.newBlock(newHeader, txs, Collections.emptyList(), false);
     }
 
     private BlockHeader createHeader(
@@ -197,25 +173,31 @@ public class BlockToMineBuilder {
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
                                                                         gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
-        final BlockHeader newHeader = new BlockHeader(
+        long blockNumber = newBlockParent.getNumber() + 1;
+        final BlockHeader newHeader = blockFactory.newHeader(
                 newBlockParent.getHash().getBytes(),
                 unclesListHash,
                 miningConfig.getCoinbaseAddress().getBytes(),
+                EMPTY_TRIE_HASH,
+                BlockHashesHelper.getTxTrieRoot(
+                        txs, activationConfig.isActive(ConsensusRule.RSKIP126, blockNumber)
+                ),
+                EMPTY_TRIE_HASH,
                 new Bloom().getData(),
                 new byte[]{1},
-                newBlockParent.getNumber() + 1,
+                blockNumber,
                 gasLimit.toByteArray(),
                 0,
                 timestampSeconds,
                 extraData,
+                Coin.ZERO,
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
                 minimumGasPrice.getBytes(),
-                CollectionUtils.size(uncles)
+                uncles.size()
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
         return newHeader;
     }
 }

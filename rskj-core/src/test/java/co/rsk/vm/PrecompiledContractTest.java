@@ -19,12 +19,19 @@
 package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.peg.Bridge;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import co.rsk.pcc.bto.HDWalletUtils;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class PrecompiledContractTest {
 
@@ -33,7 +40,7 @@ public class PrecompiledContractTest {
 
     @Test
     public void getBridgeContract() {
-        DataWord bridgeAddress = new DataWord(PrecompiledContracts.BRIDGE_ADDR.getBytes());
+        DataWord bridgeAddress = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
         PrecompiledContract bridge = precompiledContracts.getContractForAddress(null, bridgeAddress);
 
         Assert.assertNotNull(bridge);
@@ -42,12 +49,58 @@ public class PrecompiledContractTest {
 
     @Test
     public void getBridgeContractTwice() {
-        DataWord bridgeAddress = new DataWord(PrecompiledContracts.BRIDGE_ADDR.getBytes());
+        DataWord bridgeAddress = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
         PrecompiledContract bridge1 = precompiledContracts.getContractForAddress(null, bridgeAddress);
         PrecompiledContract bridge2 = precompiledContracts.getContractForAddress(null, bridgeAddress);
 
         Assert.assertNotNull(bridge1);
         Assert.assertNotNull(bridge2);
         Assert.assertNotSame(bridge1, bridge2);
+    }
+
+    @Test
+    public void getBlockHeaderContractBeforeRskip119() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(false);
+        DataWord blockHeaderContractAddress = DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
+        PrecompiledContract blockHeaderContract = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
+
+        Assert.assertNull(blockHeaderContract);
+    }
+
+    @Test
+    public void getBlockHeaderContractAfterRskip119() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(true);
+        DataWord blockHeaderContractAddress = DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
+        PrecompiledContract blockHeaderContract1 = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
+        PrecompiledContract blockHeaderContract2 = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
+
+        Assert.assertNotNull(blockHeaderContract1);
+        Assert.assertNotNull(blockHeaderContract2);
+        Assert.assertEquals(BlockHeaderContract.class, blockHeaderContract1.getClass());
+        Assert.assertEquals(BlockHeaderContract.class, blockHeaderContract2.getClass());
+        Assert.assertNotSame(blockHeaderContract1, blockHeaderContract2);
+    }
+
+    @Test
+    public void getBtoUtilsBeforeRskip106() {
+        DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
+        PrecompiledContract btoUtils = precompiledContracts.getContractForAddress(cr -> false, btoUtilsAddress);
+
+        Assert.assertNull(btoUtils);
+    }
+
+    @Test
+    public void getBtoUtilsAfterRskip106() {
+        DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
+        PrecompiledContract btoUtils1 = precompiledContracts.getContractForAddress(cr -> true, btoUtilsAddress);
+        PrecompiledContract btoUtils2 = precompiledContracts.getContractForAddress(cr -> true, btoUtilsAddress);
+
+        Assert.assertNotNull(btoUtils1);
+        Assert.assertNotNull(btoUtils2);
+        Assert.assertEquals(HDWalletUtils.class, btoUtils1.getClass());
+        Assert.assertEquals(HDWalletUtils.class, btoUtils2.getClass());
+        Assert.assertNotSame(btoUtils1, btoUtils2);
     }
 }

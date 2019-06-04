@@ -34,7 +34,7 @@ import java.math.BigInteger;
  * @author Mikhail Kalinin
  * @since 02.09.2015
  */
-public class BlockParentGasLimitRule implements BlockParentDependantValidationRule {
+public class BlockParentGasLimitRule implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
@@ -46,13 +46,12 @@ public class BlockParentGasLimitRule implements BlockParentDependantValidationRu
 
 
     @Override
-    public boolean isValid(Block block, Block parent) {
-        if(block == null || parent == null) {
+    public boolean isValid(BlockHeader header, Block parent) {
+        if (header == null || parent == null) {
             logger.warn("BlockParentGasLimitRule - block or parent are null");
             return false;
         }
 
-        BlockHeader header = block.getHeader();
         BigInteger headerGasLimit = new BigInteger(1, header.getGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
 
@@ -62,5 +61,10 @@ public class BlockParentGasLimitRule implements BlockParentDependantValidationRu
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean isValid(Block block, Block parent) {
+        return isValid(block.getHeader(), parent);
     }
 }

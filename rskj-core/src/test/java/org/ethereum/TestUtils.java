@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.vm.DataWord;
@@ -33,10 +34,7 @@ import org.mapdb.Serializer;
 
 import java.io.File;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
@@ -46,14 +44,34 @@ public final class TestUtils {
     private TestUtils() {
     }
 
+    // Fix the Random object to make tests more deterministic. Each new Random object
+    // created gets a seed xores with system nanoTime.
+    // Alse it reduces the time to get the random in performance tests
+    static Random aRandom;
+
+    static public Random getRandom() {
+        if (aRandom==null)
+            aRandom = new Random();
+        return aRandom;
+    }
+
     public static byte[] randomBytes(int length) {
         byte[] result = new byte[length];
-        new Random().nextBytes(result);
+        getRandom().nextBytes(result);
         return result;
     }
 
+    public static BigInteger randomBigInteger(int maxSizeBytes) {
+        return new BigInteger(maxSizeBytes*8,getRandom());
+    }
+
+    public static Coin randomCoin(int decimalZeros,int maxValue) {
+        return new Coin(BigInteger.TEN.pow(decimalZeros).multiply(
+                BigInteger.valueOf(getRandom().nextInt(maxValue))));
+    }
+
     public static DataWord randomDataWord() {
-        return new DataWord(randomBytes(32));
+        return DataWord.valueOf(randomBytes(32));
     }
 
     public static RskAddress randomAddress() {
@@ -89,7 +107,7 @@ public final class TestUtils {
         return db;
     }
 
-    public static List<Block> getRandomChain(byte[] startParentHash, long startNumber, long length){
+    public static List<Block> getRandomChain(BlockFactory blockFactory, byte[] startParentHash, long startNumber, long length){
 
         List<Block> result = new ArrayList<>();
 
@@ -102,8 +120,17 @@ public final class TestUtils {
             byte[] difficutly = new BigInteger(8, new Random()).toByteArray();
             byte[] newHash = HashUtil.randomHash();
 
-            Block block = new Block(lastHash, newHash,  RskAddress.nullAddress().getBytes(), null, difficutly, lastIndex, new byte[] {0}, 0, 0, null, null,
-                    null, null, EMPTY_TRIE_HASH, HashUtil.randomHash(), null, null, null, Coin.ZERO);
+            Block block = blockFactory.newBlock(
+                    blockFactory.newHeader(
+                            lastHash, newHash, RskAddress.nullAddress().getBytes(),
+                            HashUtil.randomHash(), EMPTY_TRIE_HASH, null,
+                            null, difficutly, lastIndex,
+                            new byte[] {0}, 0, 0, null, Coin.ZERO,
+                            null, null, null, null, 0
+                    ),
+                    Collections.emptyList(),
+                    Collections.emptyList()
+            );
 
             ++lastIndex;
             lastHash = block.getHash().getBytes();
@@ -123,5 +150,11 @@ public final class TestUtils {
 
     public static String padZeroesLeft(String s, int n) {
         return StringUtils.leftPad(s, n, '0');
+    }
+
+    public static byte[] concat(byte[] first, byte[] second) {
+        byte[] result = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, result, first.length, second.length);
+        return result;
     }
 }

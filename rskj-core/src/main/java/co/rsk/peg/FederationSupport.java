@@ -20,7 +20,6 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.config.BridgeConstants;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.Block;
 
 import javax.annotation.Nullable;
@@ -34,13 +33,11 @@ public class FederationSupport {
 
     private final BridgeStorageProvider provider;
     private final BridgeConstants bridgeConstants;
-    private final BlockchainNetConfig blockchainNetConfig;
     private final Block executionBlock;
 
-    public FederationSupport(BridgeStorageProvider provider, BlockchainNetConfig netConfig, Block executionBlock) {
+    public FederationSupport(BridgeConstants bridgeConstants, BridgeStorageProvider provider, Block executionBlock) {
         this.provider = provider;
-        this.blockchainNetConfig = netConfig;
-        this.bridgeConstants = netConfig.getCommonConstants().getBridgeConstants();
+        this.bridgeConstants = bridgeConstants;
         this.executionBlock = executionBlock;
     }
 
@@ -49,22 +46,49 @@ public class FederationSupport {
      * @return the federation size
      */
     public int getFederationSize() {
-        return getActiveFederation().getPublicKeys().size();
+        return getActiveFederation().getBtcPublicKeys().size();
     }
 
     /**
-     * Returns the public key of the federation's federator at the given index
+     * Returns the BTC public key of the federation's federator at the given index
      * @param index the federator's index (zero-based)
      * @return the federator's public key
      */
-    public byte[] getFederatorPublicKey(int index) {
-        List<BtcECKey> publicKeys = getActiveFederation().getPublicKeys();
+    public byte[] getFederatorBtcPublicKey(int index) {
+        List<BtcECKey> publicKeys = getActiveFederation().getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
             throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", publicKeys.size() - 1));
         }
 
         return publicKeys.get(index).getPubKey();
+    }
+
+    /**
+     * Returns the public key of given type of the federation's federator at the given index
+     * @param index the federator's index (zero-based)
+     * @param keyType the key type
+     * @return the federator's public key
+     */
+    public byte[] getFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
+        return getMemberPublicKeyOfType(getActiveFederation().getMembers(), index, keyType, "Federator");
+    }
+
+    /**
+     * Returns the compressed public key of given type of the member list at the given index
+     * Throws a custom index out of bounds exception when appropiate
+     * @param members the list of federation members
+     * @param index the federator's index (zero-based)
+     * @param keyType the key type
+     * @param errorPrefix the index out of bounds error prefix
+     * @return the federation member's public key
+     */
+    public byte[] getMemberPublicKeyOfType(List<FederationMember> members, int index, FederationMember.KeyType keyType, String errorPrefix) {
+        if (index < 0 || index >= members.size()) {
+            throw new IndexOutOfBoundsException(String.format("%s index must be between 0 and %d", errorPrefix, members.size() - 1));
+        }
+
+        return members.get(index).getPublicKey(keyType).getPubKey(true);
     }
 
     /**
@@ -81,7 +105,7 @@ public class FederationSupport {
                 return provider.getOldFederation();
             case GENESIS:
             default:
-                return blockchainNetConfig.getGenesisFederation();
+                return bridgeConstants.getGenesisFederation();
         }
     }
 

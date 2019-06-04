@@ -25,8 +25,6 @@ import org.ethereum.vm.LogInfo;
 
 import java.util.*;
 
-import static org.apache.commons.collections4.CollectionUtils.isEmpty;
-import static org.apache.commons.collections4.CollectionUtils.size;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -123,9 +121,7 @@ public class ProgramResult {
     }
 
     public void addDeleteAccounts(Set<DataWord> accounts) {
-        if (!isEmpty(accounts)) {
-            getDeleteAccounts().addAll(accounts);
-        }
+        getDeleteAccounts().addAll(accounts);
     }
 
     public void clearFieldsOnException() {
@@ -154,9 +150,7 @@ public class ProgramResult {
     }
 
     public void addLogInfos(List<LogInfo> logInfos) {
-        if (!isEmpty(logInfos)) {
-            getLogInfoList().addAll(logInfos);
-        }
+        getLogInfoList().addAll(logInfos);
     }
 
     public List<CallCreate> getCallCreateList() {
@@ -179,7 +173,8 @@ public class ProgramResult {
 
     public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                                       byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
-        InternalTransaction transaction = new InternalTransaction(parentHash, deep, size(internalTransactions), nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note);
+        InternalTransaction transaction = new InternalTransaction(parentHash, deep, getInternalTransactions().size(),
+                                        nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note);
         getInternalTransactions().add(transaction);
         return transaction;
     }

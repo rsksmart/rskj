@@ -18,7 +18,6 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockStore;
@@ -44,9 +43,7 @@ public class BlockUtilsTest {
     public void blockInSomeBlockChain() {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
 
-        Block genesis = new BlockGenerator().getGenesisBlock();
-        genesis.setStateRoot(blockChain.getRepository().getRoot());
-        genesis.flushRLP();
+        Block genesis = blockChain.getBestBlock();
 
         Block block1 = new BlockBuilder().parent(genesis).build();
         Block block1b = new BlockBuilder().parent(genesis).build();
@@ -54,7 +51,6 @@ public class BlockUtilsTest {
         Block block3 = new BlockBuilder().parent(block2).build();
         blockChain.getBlockStore().saveBlock(block3, new BlockDifficulty(BigInteger.ONE), false);
 
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         blockChain.tryToConnect(block1);
         blockChain.tryToConnect(block1b);
 
@@ -70,9 +66,7 @@ public class BlockUtilsTest {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
         BlockStore store = new BlockStore();
 
-        Block genesis = new BlockGenerator().getGenesisBlock();
-        genesis.setStateRoot(blockChain.getRepository().getRoot());
-        genesis.flushRLP();
+        Block genesis = blockChain.getBestBlock();
 
         Block block1 = new BlockBuilder().difficulty(2l).parent(genesis).build();
         Block block1b = new BlockBuilder().difficulty(1l).parent(genesis).build();
@@ -81,7 +75,6 @@ public class BlockUtilsTest {
 
         store.saveBlock(block3);
 
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
         Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
 
@@ -117,16 +110,11 @@ public class BlockUtilsTest {
 
     @Test
     public void unknowAncestorsHashesUsingUncles() {
-        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Genesis genesis = blockGenerator.getGenesisBlock();
-        BlockChainImpl blockChain = blockChainBuilder.setGenesis(genesis).build();
+        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        Genesis genesis = (Genesis) blockChain.getBestBlock();
         BlockStore store = new BlockStore();
 
-        genesis.setStateRoot(blockChain.getRepository().getRoot());
-        genesis.flushRLP();
-
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, blockGenerator);
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain);
         Block block1 = blockBuilder.parent(genesis).build();
         Block block1b = blockBuilder.parent(genesis).build();
         Block block2 = blockBuilder.parent(block1).build();

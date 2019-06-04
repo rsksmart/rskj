@@ -19,13 +19,15 @@
 
 package org.ethereum.listener;
 
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
-import org.ethereum.vm.trace.ProgramTrace;
 
 import java.util.List;
 
@@ -78,12 +80,6 @@ public class EthereumListenerAdapter implements EthereumListener {
 
     }
 
-
-    @Override
-    public void onVMTraceCreated(String transactionHash, ProgramTrace trace) {
-
-    }
-
     @Override
     public void onNodeDiscovered(Node node) {
 
@@ -91,11 +87,6 @@ public class EthereumListenerAdapter implements EthereumListener {
 
     @Override
     public void onEthStatusUpdated(Channel channel, StatusMessage statusMessage) {
-
-    }
-
-    @Override
-    public void onTransactionExecuted(TransactionExecutionSummary summary) {
 
     }
 

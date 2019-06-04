@@ -19,17 +19,19 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.ECDSASignature;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
@@ -38,6 +40,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.vm.GasCost;
+import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,6 +64,7 @@ public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
     private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
+    private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
     /**
@@ -154,22 +158,22 @@ public class Transaction {
                 chainId);
     }
 
-    public Transaction(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
-        this(config, to, amount, nonce, gasPrice, gasLimit, (byte[]) null);
+    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId) {
+        this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId);
     }
 
-    public Transaction(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data) {
-        this(config, to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data));
+    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data, byte chainId) {
+        this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId);
     }
 
-    public Transaction(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData) {
+    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData, byte chainId) {
         this(BigIntegers.asUnsignedByteArray(nonce),
                 gasPrice.toByteArray(),
                 BigIntegers.asUnsignedByteArray(gasLimit),
                 to != null ? Hex.decode(to) : null,
                 BigIntegers.asUnsignedByteArray(amount),
                 decodedData,
-                config.getBlockchainConfig().getCommonConstants().getChainId());
+                chainId);
     }
 
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
@@ -210,9 +214,9 @@ public class Transaction {
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:
     // "return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION)
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
-    public long transactionCost(Block block, BlockchainNetConfig netConfig) {
+    public long transactionCost(Constants constants, ActivationConfig.ForBlock activations) {
         // Federators txs to the bridge are free during system setup
-        if (BridgeUtils.isFreeBridgeTx(this, block.getNumber(), netConfig)) {
+        if (BridgeUtils.isFreeBridgeTx(this, constants, activations)) {
             return 0;
         }
 
@@ -364,9 +368,12 @@ public class Transaction {
      */
 
     public ECKey getKey() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         byte[] raw = getRawHash().getBytes();
         //We clear the 4th bit, the compress bit, in case a signature is using compress in true
-        return ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, raw, true);
+        ECKey key = ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, raw, true);
+        profiler.stop(metric);
+        return key;
     }
 
     public synchronized RskAddress getSender() {
@@ -374,6 +381,8 @@ public class Transaction {
             return sender;
         }
 
+
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         try {
             ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature());
             sender = new RskAddress(key.getAddress());
@@ -381,6 +390,9 @@ public class Transaction {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("transaction", e.getMessage());
             sender = RskAddress.nullAddress();
+        }
+        finally {
+            profiler.stop(metric);
         }
 
         return sender;
@@ -508,5 +520,27 @@ public class Transaction {
 
     public void setLocalCallTransaction(boolean isLocalCall) {
         this.isLocalCall = isLocalCall;
+    }
+
+    public boolean isRemascTransaction(int txPosition, int txsSize) {
+        return isLastTx(txPosition, txsSize) && checkRemascAddress() && checkRemascTxZeroValues();
+    }
+
+    private boolean isLastTx(int txPosition, int txsSize) {
+        return txPosition == (txsSize - 1);
+    }
+
+    private boolean checkRemascAddress() {
+        return PrecompiledContracts.REMASC_ADDR.equals(getReceiveAddress());
+    }
+
+    private boolean checkRemascTxZeroValues() {
+        if (null != getData() || null != getSignature()) {
+            return false;
+        }
+
+        return Coin.ZERO.equals(getValue()) &&
+                BigInteger.ZERO.equals(new BigInteger(1, getGasLimit())) &&
+                Coin.ZERO.equals(getGasPrice());
     }
 }

@@ -26,8 +26,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.TypeConverter;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -36,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-@Component
 public class TxPoolModuleImpl implements TxPoolModule {
 
     public static final String PENDING = "pending";
@@ -44,7 +41,6 @@ public class TxPoolModuleImpl implements TxPoolModule {
     private final JsonNodeFactory jsonNodeFactory;
     private final TransactionPool transactionPool;
 
-    @Autowired
     public TxPoolModuleImpl(TransactionPool transactionPool) {
         this.transactionPool = transactionPool;
         jsonNodeFactory = JsonNodeFactory.instance;

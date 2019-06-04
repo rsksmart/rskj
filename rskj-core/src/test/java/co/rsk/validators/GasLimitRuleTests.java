@@ -18,14 +18,12 @@
 
 package co.rsk.validators;
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.RskAddress;
-import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -35,34 +33,33 @@ import static org.junit.Assert.assertTrue;
  * @since 02.23.2016
  */
 public class GasLimitRuleTests {
-    private final TestSystemProperties config = new TestSystemProperties();
     private GasLimitRule rule = new GasLimitRule(3000000);
+
+    private BlockHeader blockHeader;
+    private Block block;
+
+    @Before
+    public void setUp() {
+        blockHeader = Mockito.mock(BlockHeader.class);
+        block = Mockito.mock(Block.class);
+        Mockito.when(block.getHeader()).thenReturn(blockHeader);
+    }
 
     @Test // pass rule
     public void gasLimitGreaterThanMinimumGasLimit() {
-        Block block = getBlock(config.getBlockchainConfig().getCommonConstants().getMinGasLimit() + 1);
+        Mockito.when(blockHeader.getGasLimit()).thenReturn(DataWord.valueOf(3000000 + 1).getData());
         assertTrue(rule.isValid(block));
     }
 
     @Test // pass rule
     public void gasLimitEqualMinimumGasLimit() {
-        Block block = getBlock(config.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        Mockito.when(blockHeader.getGasLimit()).thenReturn(DataWord.valueOf(3000000).getData());
         assertTrue(rule.isValid(block));
     }
 
     @Test // no pass rule
     public void gasLimitLessThanMinimumGasLimit() {
-        Block block = getBlock(config.getBlockchainConfig().getCommonConstants().getMinGasLimit() - 1);
+        Mockito.when(blockHeader.getGasLimit()).thenReturn(DataWord.valueOf(3000000 - 1).getData());
         assertFalse(rule.isValid(block));
-    }
-
-    private static Block getBlock(long gasLimitValue) {
-        byte[] gasLimit = new DataWord(gasLimitValue).getData();
-
-        BlockHeader header = new BlockHeader(null, null, TestUtils.randomAddress().getBytes(),
-                null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
-                0, null, null, 0);
-
-        return new Block(header);
     }
 }

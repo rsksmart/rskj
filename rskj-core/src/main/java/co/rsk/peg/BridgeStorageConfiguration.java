@@ -17,20 +17,35 @@
  */
 package co.rsk.peg;
 
-import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP123;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP87;
 
 public class BridgeStorageConfiguration {
     private final boolean isUnlimitedWhitelistEnabled;
+    private final boolean isMultikeyFederation;
 
-    public BridgeStorageConfiguration(boolean isUnlimitedWhitelistEnabled) {
+    public BridgeStorageConfiguration(
+            boolean isUnlimitedWhitelistEnabled,
+            boolean isMultikeyFederation
+    ) {
         this.isUnlimitedWhitelistEnabled = isUnlimitedWhitelistEnabled;
+        this.isMultikeyFederation = isMultikeyFederation;
     }
 
-    public boolean getUnlimitedWhitelistEnabled() {
+    public boolean isUnlimitedWhitelistEnabled() {
         return isUnlimitedWhitelistEnabled;
     }
 
-    public static BridgeStorageConfiguration fromBlockchainConfig(BlockchainConfig config) {
-        return new BridgeStorageConfiguration(config.isRskip87());
+    public boolean isMultikeyFederation() {
+        return isMultikeyFederation;
+    }
+
+    public static BridgeStorageConfiguration fromBlockchainConfig(ActivationConfig.ForBlock activations) {
+        return new BridgeStorageConfiguration(
+                activations.isActive(RSKIP87),
+                activations.isActive(RSKIP123)
+        );
     }
 }

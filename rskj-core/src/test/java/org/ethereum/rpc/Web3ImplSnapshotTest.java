@@ -35,6 +35,7 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.util.RskTestFactory;
@@ -53,11 +54,13 @@ public class Web3ImplSnapshotTest {
     private static final TestSystemProperties config = new TestSystemProperties();
     private RskTestFactory factory;
     private Blockchain blockchain;
+    private BlockFactory blockFactory;
 
     @Before
     public void setUp() {
-        factory = new RskTestFactory();
+        factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
+        blockFactory = factory.getBlockFactory();
     }
 
     @Test
@@ -154,7 +157,7 @@ public class Web3ImplSnapshotTest {
         EvmModule evmModule = new EvmModuleImpl(minerServer, minerClient, minerClock, blockchain, factory.getTransactionPool());
         PersonalModule pm = new PersonalModuleWalletDisabled();
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule dm = new DebugModuleImpl(Web3Mocks.getMockMessageHandler());
+        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
 
         ethereum.repository = factory.getRepository();
         ethereum.blockchain = blockchain;
@@ -181,7 +184,9 @@ public class Web3ImplSnapshotTest {
                 null,
                 null,
                 null,
-                null
+                null,
+                null,
+                factory.getStateRootHandler()
         );
     }
 
@@ -192,26 +197,29 @@ public class Web3ImplSnapshotTest {
 
     private MinerServer getMinerServerForTest(SimpleEthereum ethereum, MinerClock clock) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
         return new MinerServerImpl(
                 config,
                 ethereum,
                 blockchain,
-                factory.getBlockProcessor(),
+                factory.getNodeBlockProcessor(),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
+                        config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
                         factory.getRepository(),
+                        factory.getStateRootHandler(),
                         factory.getBlockStore(),
                         factory.getTransactionPool(),
                         difficultyCalculator,
-                        new GasLimitCalculator(config),
+                        new GasLimitCalculator(config.getNetworkConstants()),
                         rule,
-                        config,
-                        null,
-                        clock
+                        clock,
+                        blockFactory,
+                        factory.getBlockExecutor()
                 ),
                 clock,
+                blockFactory,
                 ConfigUtils.getDefaultMiningConfig()
         );
     }
