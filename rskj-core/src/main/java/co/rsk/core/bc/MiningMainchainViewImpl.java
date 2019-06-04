@@ -26,7 +26,7 @@ import javax.annotation.concurrent.GuardedBy;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MiningMainchainViewImpl extends MiningMainchainView {
+public class MiningMainchainViewImpl implements MiningMainchainView {
     private final Object internalBlockStoreReadWriteLock = new Object();
 
     private final int height;

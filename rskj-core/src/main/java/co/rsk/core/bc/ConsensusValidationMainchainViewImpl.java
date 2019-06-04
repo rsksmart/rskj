@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ConsensusValidationMainchainViewImpl extends ConsensusValidationMainchainView {
+public class ConsensusValidationMainchainViewImpl implements ConsensusValidationMainchainView {
 
     private static final Logger logger = LoggerFactory.getLogger("consensusmainchainview");
 

@@ -187,7 +187,7 @@ public class BlockFactory {
         int r = 15;
 
         int uncleCount = 0;
-        if ((rlpHeader.size() == 19) || (rlpHeader.size() == 16)) {
+        if (rlpHeader.size() == RLP_HEADER_SIZE || rlpHeader.size() == RLP_HEADER_SIZE_WITH_MERGED_MINING) {
             byte[] ucBytes = rlpHeader.get(r++).getRLPData();
             uncleCount = parseBigInteger(ucBytes).intValueExact();
         }

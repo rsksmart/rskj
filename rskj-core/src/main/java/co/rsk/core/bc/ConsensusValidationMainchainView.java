@@ -24,9 +24,9 @@ import org.ethereum.core.BlockHeader;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ConsensusValidationMainchainView implements MainchainView {
+public interface ConsensusValidationMainchainView {
 
-    public abstract List<BlockHeader> get(Keccak256 startingHashToGetMainchainFrom, int height);
+    List<BlockHeader> get(Keccak256 startingHashToGetMainchainFrom, int height);
 
-    public abstract void setPendingHeaders(Map<Keccak256, BlockHeader> pendingHeadersByHash);
+    void setPendingHeaders(Map<Keccak256, BlockHeader> pendingHeadersByHash);
 }
