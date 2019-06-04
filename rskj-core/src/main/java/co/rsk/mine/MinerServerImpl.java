@@ -50,6 +50,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * The MinerServer provides support to components that perform the actual mining.
@@ -412,7 +413,8 @@ public class MinerServerImpl implements MinerServer {
 
         logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
 
-        final Block newBlock = builder.build(mainchainBlocks, extraData);
+        List<BlockHeader> mainchainHeaders = mainchainBlocks.stream().map(Block::getHeader).collect(Collectors.toList());
+        final Block newBlock = builder.build(mainchainHeaders, extraData);
         clock.clearIncreaseTime();
 
         synchronized (lock) {
