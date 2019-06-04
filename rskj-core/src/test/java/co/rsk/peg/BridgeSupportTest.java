@@ -166,11 +166,11 @@ public class BridgeSupportTest {
         bridgeSupport.getBtcBlockchainBestChainHeight();
 
         InputStream checkpointsStream = bridgeSupport.getCheckPoints();
-        CheckpointManager manager = new CheckpointManager(btcParams, checkpointsStream);
-        long time = bridgeSupport.getActiveFederation().getCreationTime().toEpochMilli();
+        CheckpointManager manager = new CheckpointManager(bridgeConstants.getBtcParams(), checkpointsStream);
+        long time = bridgeSupport.getActiveFederation().getCreationTime().toEpochMilli() - 604800L; // The magic number is a substraction CheckpointManager does when getting the checkpoints.
         StoredBlock checkpoint = manager.getCheckpointBefore(time);
 
-        Assert.assertEquals(checkpoint.getHeight(), getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead().getHeight());
+        Assert.assertEquals(checkpoint.getHeight(), bridgeSupport.getBtcBlockchainBestChainHeight());
     }
 
     @Test
