@@ -7,6 +7,9 @@ import co.rsk.bitcoinj.core.VerificationException;
 import static co.rsk.bitcoinj.core.Utils.reverseBytes;
 
 public class MerkleTreeUtils {
+    // coinbase to check is part of a valid 64 byte tx
+    private static long COINBASE_CHECKED = Utils.readUint32(new byte[]{(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF}, 0);
+
     private MerkleTreeUtils() {}
 
     /**
@@ -29,15 +32,13 @@ public class MerkleTreeUtils {
         );
     }
 
-    // coinbase to check is part of a valid 64 byte tx
-    private static long COINBASE_CHECKED = Utils.readUint32(new byte[]{(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF}, 0);
 
     /**
      * Checks supplied bytes DO NOT represent a valid bitcoin transaction.
      * Fixes attack described on https://bitslog.wordpress.com/2018/06/09/leaf-node-weakness-in-bitcoin-merkle-tree-design/
      * @throws VerificationException if bytes DO represent a valid bitcoin transaction.
      */
-    private static void checkNotAValid64ByteTransaction(byte[] left, byte[] right) throws VerificationException {
+    private static void checkNotAValid64ByteTransaction(byte[] left, byte[] right) {
         byte[] leftAndRight = new byte[left.length + right.length];
         System.arraycopy(left, 0, leftAndRight, 0, 32);
         System.arraycopy(right, 0, leftAndRight, 32, 32);
@@ -100,7 +101,6 @@ public class MerkleTreeUtils {
 
         // check output 0 script length
         byte output0ScriptLength = leftAndRight[_offset];
-        _offset += 1;
         if (output0ScriptLength < 0 || output0ScriptLength > 4) {
             // Script length should be 0 to 4 to create a valid 64 byte tx
             return;
@@ -112,15 +112,6 @@ public class MerkleTreeUtils {
             return;
         }
 
-        // Skip output 0 script.
-        // Commented out _offset increment because _offset is never read again
-        //_offset += output0ScriptLength;
-
-        // Skip lock time
-        // Commented out _offset increment because _offset is never read again
-        //_offset += 4;
-
-        // If code reaches here, it means "left + right" represent a a valid btc transaction
         throw new VerificationException("Supplied nodes form a valid btc transaction");
     }
 }

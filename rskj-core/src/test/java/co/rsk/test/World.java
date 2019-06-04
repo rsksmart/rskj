@@ -31,13 +31,12 @@ import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBlockStore;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.util.HashMap;
@@ -54,7 +53,7 @@ public class World {
     private Map<String, Account> accounts = new HashMap<>();
     private Map<String, Transaction> transactions = new HashMap<>();
     private StateRootHandler stateRootHandler;
-    private BtcBlockStoreWithCache btcBlockStore;
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     public World() {
         this(new BlockChainBuilder().build());
     }
@@ -87,7 +86,8 @@ public class World {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
         this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
         this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
-        this.btcBlockStore = new RepositoryBlockStore(config.getNetworkConstants().getBridgeConstants(), getRepository().startTracking(), PrecompiledContracts.BRIDGE_ADDR);
+
+        this.btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
@@ -104,7 +104,7 @@ public class World {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,
-                            btcBlockStore),
+                            btcBlockStoreFactory),
                     new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
                     config.getActivationConfig()
             );
@@ -149,7 +149,7 @@ public class World {
         return this.blockChain.getRepository();
     }
 
-    public BtcBlockStoreWithCache getBtcBlockStore() {
-        return this.btcBlockStore;
+    public BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
+        return this.btcBlockStoreFactory;
     }
 }

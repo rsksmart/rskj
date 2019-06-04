@@ -18,6 +18,7 @@
 
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.crypto.Keccak256;
@@ -87,7 +88,7 @@ public class EthModule
         return ethModuleWallet.accounts();
     }
 
-    public Map<String, Object> bridgeState() throws IOException {
+    public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
         Block bestBlock = blockchain.getBestBlock();
         Keccak256 stateRootHash = stateRootHandler.translate(bestBlock.getHeader());
         Repository repository = blockchain.getRepository().getSnapshotTo(stateRootHash.getBytes()).startTracking();

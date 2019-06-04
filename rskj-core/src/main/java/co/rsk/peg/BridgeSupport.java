@@ -38,6 +38,7 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
@@ -127,9 +128,10 @@ public class BridgeSupport {
                 ),
                 eventLogger, repository, rskExecutionBlock, null, null
         );
-        this.btcBlockStore =  new RepositoryBlockStore(
-                bridgeConstants,
+        this.btcBlockStore =  new RepositoryBtcBlockStoreWithCache(
+                bridgeConstants.getBtcParams(),
                 this.rskRepository,
+                new MaxSizeHashMap<>(RepositoryBtcBlockStoreWithCache.MAX_SIZE_MAP_STORED_BLOCKS, true),
                 PrecompiledContracts.BRIDGE_ADDR
         );
     }
@@ -168,7 +170,7 @@ public class BridgeSupport {
         this.eventLogger = eventLogger;
         this.btcContext = btcContext;
         this.federationSupport = federationSupport;
-        this.btcBlockStore = btcBlockStore;
+        this.btcBlockStore =  btcBlockStore;
         this.btcBlockChain = btcBlockChain;
     }
 
@@ -220,7 +222,7 @@ public class BridgeSupport {
             } catch (Exception e) {
                 // If we tray to add an orphan header bitcoinj throws an exception
                 // This catches that case and any other exception that may be thrown
-                logger.warn("Exception adding btc header", e);
+                logger.warn("Exception adding btc header {}", headers[i].getHash(), e);
             }
         }
     }
@@ -294,12 +296,12 @@ public class BridgeSupport {
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
         // Check the tx was not already processed
         if (provider.getBtcTxHashesAlreadyProcessed().keySet().contains(btcTxHash)) {
-            logger.warn("Supplied tx was already processed");
+            logger.warn("Supplied Btc Tx {} was already processed", btcTxHash);
             return;
         }
 
         if (height < 0) {
-            String panicMessage = String.format("Height is %d but should be greater than 0", height);
+            String panicMessage = String.format("Btc Tx %s Supplied Height is %d but should be greater than 0", btcTxHash, height);
             logger.warn(panicMessage);
             panicProcessor.panic("btclock", panicMessage);
             return;
@@ -310,7 +312,8 @@ public class BridgeSupport {
         int confirmations = btcBestChainHeight - height + 1;
         if (confirmations < bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()) {
             logger.warn(
-                    "At least {} confirmations are required, but there are only {} confirmations",
+                    "Btc Tx {} at least {} confirmations are required, but there are only {} confirmations",
+                    btcTxHash,
                     bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
                     confirmations
             );
@@ -327,25 +330,26 @@ public class BridgeSupport {
             List<Sha256Hash> hashesInPmt = new ArrayList<>();
             merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
             if (!hashesInPmt.contains(btcTxHash)) {
-                logger.warn("Supplied tx is not in the supplied partial merkle tree");
+                logger.warn("Supplied Btc Tx {} is not in the supplied partial merkle tree", btcTxHash);
                 return;
             }
         } catch (VerificationException e) {
-            throw new BridgeIllegalArgumentException("PartialMerkleTree could not be parsed " + Hex.toHexString(pmtSerialized), e);
+            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed {}", Hex.toHexString(pmtSerialized)), e);
         }
 
         if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
-            logger.warn("Tx {} has no inputs ", btcTxHash);
+            logger.warn("Btc Tx {} has no inputs ", btcTxHash);
             // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
             throw new VerificationException.EmptyInputsOrOutputs();
         }
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         // BTC blockstore is available since we've already queried the best chain height
-        BtcBlock blockHeader = btcBlockStore.getStoredBlockAtHeight(height).getHeader();
+        BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
         if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
             String panicMessage = String.format(
-                    "Supplied merkle root %s does not match block's merkle root %s",
+                    "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
+                    btcTxHash.toString(),
                     merkleRoot,
                     blockHeader.getMerkleRoot()
             );
@@ -989,7 +993,7 @@ public class BridgeSupport {
      * Returns the insternal state of the bridge
      * @return a BridgeState serialized in RLP
      */
-    public byte[] getStateForDebugging() throws IOException {
+    public byte[] getStateForDebugging() throws IOException, BlockStoreException {
         BridgeState stateForDebugging = new BridgeState(getBtcBlockchainBestChainHeight(), provider);
 
         return stateForDebugging.getEncoded();
@@ -998,7 +1002,7 @@ public class BridgeSupport {
     /**
      * Returns the bitcoin blockchain best chain height know by the bridge contract
      */
-    public int getBtcBlockchainBestChainHeight() throws IOException {
+    public int getBtcBlockchainBestChainHeight() throws IOException, BlockStoreException {
         return getBtcBlockchainChainHead().getHeight();
     }
 
@@ -1016,7 +1020,7 @@ public class BridgeSupport {
      * @return a List of bitcoin block hashes
      */
     @Deprecated
-    public List<Sha256Hash> getBtcBlockchainBlockLocator() throws IOException {
+    public List<Sha256Hash> getBtcBlockchainBlockLocator() throws IOException, BlockStoreException {
         StoredBlock  initialBtcStoredBlock = this.getLowestBlock();
         final int maxHashesToInform = 100;
         List<Sha256Hash> blockLocator = new ArrayList<>();
@@ -1100,9 +1104,9 @@ public class BridgeSupport {
 
             return BASIC_COST + blockDepth*STEP_COST;
         } catch (IOException | BlockStoreException e) {
-            logger.warn("getBtcTransactionConfirmations: there was a problem " +
+            logger.warn("getBtcTransactionConfirmationsGetCost btcBlockHash:{} there was a problem " +
                     "gathering the block depth while calculating the gas cost. " +
-                    "Defaulting to basic cost.", e);
+                    "Defaulting to basic cost.", btcBlockHash, e);
             return BASIC_COST;
         }
     }
@@ -1133,15 +1137,15 @@ public class BridgeSupport {
         }
 
         try {
-            RepositoryBlockStore.BtcBlockInfo blockInfo = btcBlockStore.getBlockInfoFromCache(btcBlockHash);
+            StoredBlock storedBlock = btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight());
             // Make sure it belongs to the best chain
-            if (!blockInfo.isMainChain()){
+            if (storedBlock == null || !storedBlock.equals(block)){
                 return BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE;
             }
         } catch (BlockStoreException e) {
             logger.warn(String.format(
-                    "Illegal state trying to get block with hash %s",
-                    btcBlockHash.toString()
+                    "Illegal state trying to get block with hash {}",
+                    btcBlockHash
             ), e);
             return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
         }
@@ -1930,7 +1934,7 @@ public class BridgeSupport {
      * @param disableBlockDelayBI block since current BTC best chain height to disable lock whitelist
      * @return 1 if it was successful, -1 if a delay was already set, -2 if disableBlockDelay contains an invalid value
      */
-    public Integer setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI) throws IOException {
+    public Integer setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI) throws IOException, BlockStoreException {
         if (!isLockWhitelistChangeAuthorized(tx)) {
             return LOCK_WHITELIST_GENERIC_ERROR_CODE;
         }
@@ -1947,16 +1951,12 @@ public class BridgeSupport {
         return 1;
     }
 
-    private StoredBlock getBtcBlockchainChainHead() throws IOException {
+    private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {
         // Gather the current btc chain's head
         // IMPORTANT: we assume that getting the chain head from the btc blockstore
         // is enough since we're not manipulating the blockchain here, just querying it.
-        try {
-            this.ensureBtcBlockStore();
-            return btcBlockStore.getChainHead();
-        } catch (BlockStoreException e) {
-            throw new IOException(e);
-        }
+        this.ensureBtcBlockStore();
+        return btcBlockStore.getChainHead();
     }
 
     /**

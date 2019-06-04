@@ -23,9 +23,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
-import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeStorageConfiguration;
-import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.*;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
@@ -48,11 +46,13 @@ import java.util.stream.Collectors;
 public abstract class BridgePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     protected static NetworkParameters networkParameters;
     protected static BridgeConstants bridgeConstants;
+    protected static BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
     @BeforeClass
     public static void setupB() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
+        btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
     }
 
     protected static class Helper extends PrecompiledContractPerformanceTestCase.Helper {
@@ -203,7 +203,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
                 List<LogInfo> logs = new ArrayList<>();
 
-                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, btcBlockStoreFactory);
                 Blockchain blockchain = BlockChainBuilder.ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);
                 bridge.init(

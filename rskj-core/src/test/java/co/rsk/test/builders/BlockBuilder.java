@@ -47,7 +47,7 @@ public class BlockBuilder {
     private List<BlockHeader> uncles;
     private BigInteger minGasPrice;
     private byte[] gasLimit;
-    private BtcBlockStoreWithCache btcBlockStore;
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
     public BlockBuilder() {
         this.blockGenerator = new BlockGenerator();
@@ -55,7 +55,7 @@ public class BlockBuilder {
 
     public BlockBuilder(World world) {
         this(world.getBlockChain(), new BlockGenerator());
-        this.btcBlockStore = world.getBtcBlockStore();
+        this.btcBlockStoreFactory = world.getBtcBlockStoreFactory();
     }
 
     public BlockBuilder(Blockchain blockChain) {
@@ -116,7 +116,7 @@ public class BlockBuilder {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl(),
-                            btcBlockStore),
+                            btcBlockStoreFactory),
                     new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
                     config.getActivationConfig()
             );

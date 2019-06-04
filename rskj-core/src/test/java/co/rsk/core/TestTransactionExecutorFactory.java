@@ -36,7 +36,7 @@ public class TestTransactionExecutorFactory extends TransactionExecutorFactory {
             ReceiptStore receiptStore,
             BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory,
-            BtcBlockStoreWithCache btcBlockStore) {
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
         super(
                 config,
                 blockStore,
@@ -44,7 +44,7 @@ public class TestTransactionExecutorFactory extends TransactionExecutorFactory {
                 blockFactory,
                 programInvokeFactory,
                 new DisabledProgramTraceProcessor(),
-                new PrecompiledContracts(config, btcBlockStore));
+                new PrecompiledContracts(config, btcBlockStoreFactory));
     }
 
     public static class DisabledProgramTraceProcessor implements ProgramTraceProcessor {

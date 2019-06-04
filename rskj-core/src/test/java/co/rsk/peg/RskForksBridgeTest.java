@@ -358,7 +358,7 @@ public class RskForksBridgeTest {
                 null,
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
-                world.getBtcBlockStore());
+                world.getBtcBlockStoreFactory());
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository, blockChain.getBestBlock(), 0)
                 .setLocalCall(true);

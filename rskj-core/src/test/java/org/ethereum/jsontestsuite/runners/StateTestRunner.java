@@ -27,7 +27,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBlockStore;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
@@ -48,7 +48,6 @@ import org.ethereum.jsontestsuite.validators.RepositoryValidator;
 import org.ethereum.jsontestsuite.validators.ValidationStats;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -82,7 +81,7 @@ public class StateTestRunner {
     protected ProgramInvokeFactory invokeFactory;
     protected Block block;
     protected ValidationStats vStats;
-    protected BtcBlockStoreWithCache btcBlockStore;
+    protected BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
     public StateTestRunner(StateTestCase stateTestCase) {
         this.stateTestCase = stateTestCase;
@@ -130,7 +129,7 @@ public class StateTestRunner {
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
-        btcBlockStore = new RepositoryBlockStore(config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), PrecompiledContracts.BRIDGE_ADDR);
+        btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
 
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         blockchain = new BlockChainImpl(
@@ -150,7 +149,7 @@ public class StateTestRunner {
                                 null,
                                 blockFactory,
                                 new ProgramInvokeFactoryImpl(),
-                                null),
+                                btcBlockStoreFactory),
                         stateRootHandler,
                         config.getActivationConfig()
                 ),

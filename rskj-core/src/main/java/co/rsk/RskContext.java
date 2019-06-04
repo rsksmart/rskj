@@ -18,6 +18,7 @@
 
 package co.rsk;
 
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.cli.CliArgs;
 import co.rsk.config.*;
 import co.rsk.core.*;
@@ -45,7 +46,7 @@ import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBlockStore;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -207,7 +208,7 @@ public class RskContext implements NodeBootstrapper {
     private SolidityCompiler solidityCompiler;
     private BlocksBloomStore blocksBloomStore;
     private BlockExecutorFactory blockExecutorFactory;
-    private BtcBlockStoreWithCache btcBlockStore;
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     private PrecompiledContracts precompiledContracts;
 
     public RskContext(String[] args) {
@@ -311,30 +312,20 @@ public class RskContext implements NodeBootstrapper {
 
     public PrecompiledContracts getPrecompiledContracts() {
         if (precompiledContracts == null) {
-            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBtcBlockStore());
+            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBtcBlockStoreFactory());
         }
 
         return precompiledContracts;
     }
 
 
-    public BtcBlockStoreWithCache getBtcBlockStore() {
-        if (btcBlockStore == null) {
-            btcBlockStore = buildBtcBlockstoreWithCache();
+    public BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
+        if (btcBlockStoreFactory == null) {
+            NetworkParameters btcParams = getRskSystemProperties().getNetworkConstants().getBridgeConstants().getBtcParams();
+            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcParams);
         }
 
-        return btcBlockStore;
-    }
-
-    private BtcBlockStoreWithCache buildBtcBlockstoreWithCache() {
-        BridgeConstants bridgeConstants =  getRskSystemProperties().getNetworkConstants().getBridgeConstants();
-        BtcBlockStoreWithCache btcBlockStore = new RepositoryBlockStore(
-                bridgeConstants,
-                getRepository().startTracking(),
-                PrecompiledContracts.BRIDGE_ADDR
-        );
-        //TODO Checkpoints are loaded on BrigeSupport, we should load them here
-        return btcBlockStore;
+        return btcBlockStoreFactory;
     }
 
     public org.ethereum.db.BlockStore getBlockStore() {

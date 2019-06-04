@@ -530,27 +530,6 @@ public enum BridgeMethods {
             false
     );
 
-    private interface CostProvider {
-        long getCost(Bridge bridge, ActivationConfig.ForBlock activations, Object[] args);
-    }
-
-    private interface BridgeCostProvider {
-        long getCost(Bridge bridge, Object[] args);
-    }
-
-    private static CostProvider fixedCost(long cost) {
-        return (Bridge bridge, ActivationConfig.ForBlock activations, Object[] args) -> cost;
-    }
-
-    private static CostProvider fromMethod(BridgeCostProvider bridgeCostProvider) {
-        return (Bridge bridge, ActivationConfig.ForBlock activations, Object[] args) -> bridgeCostProvider.getCost(bridge, args);
-    }
-
-    private static final Map<ByteArrayWrapper, BridgeMethods> SIGNATURES = Stream.of(BridgeMethods.values())
-                        .collect(Collectors.toMap(
-                            m -> new ByteArrayWrapper(m.getFunction().encodeSignature()),
-                            Function.identity()
-                        ));
     private final CallTransaction.Function function;
     private final CostProvider costProvider;
     private final Function<ActivationConfig.ForBlock, Boolean> isEnabledFunction;
@@ -614,4 +593,27 @@ public enum BridgeMethods {
 
         void executeVoid(Bridge self, Object[] args) throws Exception;
     }
+
+    private interface CostProvider {
+        long getCost(Bridge bridge, ActivationConfig.ForBlock activations, Object[] args);
+    }
+
+    private interface BridgeCostProvider {
+        long getCost(Bridge bridge, Object[] args);
+    }
+
+    private static CostProvider fixedCost(long cost) {
+        return (Bridge bridge, ActivationConfig.ForBlock activations, Object[] args) -> cost;
+    }
+
+    private static CostProvider fromMethod(BridgeCostProvider bridgeCostProvider) {
+        return (Bridge bridge, ActivationConfig.ForBlock activations, Object[] args) -> bridgeCostProvider.getCost(bridge, args);
+    }
+
+    private static final Map<ByteArrayWrapper, BridgeMethods> SIGNATURES = Stream.of(BridgeMethods.values())
+            .collect(Collectors.toMap(
+                    m -> new ByteArrayWrapper(m.getFunction().encodeSignature()),
+                    Function.identity()
+            ));
+
 }

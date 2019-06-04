@@ -3,16 +3,10 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.BridgeSupport;
-import co.rsk.peg.RepositoryBlockStore;
+import co.rsk.peg.*;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import org.ethereum.config.Constants;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -37,20 +31,21 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     private List<Sha256Hash> merkleBranchHashes;
     private int expectedConfirmations;
 
+
     @BeforeClass
-    public static void setupA() throws Exception {
+    public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.all();
     }
 
 
-    private class DiskAccessRepositoryBlockStore extends RepositoryBlockStore {
+    private class DiskAccessRepositoryBlockStore extends RepositoryBtcBlockStoreWithCache {
         public DiskAccessRepositoryBlockStore(Repository repository, RskAddress contractAddress) {
-            super(bridgeConstants, repository, contractAddress);
+            super(bridgeConstants.getBtcParams(), repository, null, contractAddress);
         }
 
         @Override
-        public synchronized StoredBlock getFromCache(Sha256Hash hash) throws BlockStoreException {
+        public synchronized StoredBlock getFromCache(Sha256Hash hash) {
             return this.get(hash);
         }
     }
@@ -251,7 +246,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
     private BridgeStorageProviderInitializer generateBlockChainInitializer(int minBtcBlocks, int maxBtcBlocks, int numberOfConfirmations, int minNumberOfTransactions, int maxNumberOfTransactions) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBlockStore(bridgeConstants, repository, PrecompiledContracts.BRIDGE_ADDR);
+            BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {

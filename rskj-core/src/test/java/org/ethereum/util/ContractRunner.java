@@ -1,10 +1,12 @@
 package org.ethereum.util;
 
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TestTransactionExecutorFactory;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
@@ -113,7 +115,7 @@ public class ContractRunner {
                 receiptStore,
                 new BlockFactory(config.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
-                null);
+                new RepositoryBtcBlockStoreWithCache.Factory(BridgeRegTestConstants.getInstance().getBtcParams()));
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(transaction, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
         executor.init();

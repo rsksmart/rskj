@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
+import org.ethereum.core.Repository;
 
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
@@ -29,13 +30,11 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
  */
 public interface BtcBlockStoreWithCache extends BtcBlockStore {
 
-    int getMinIndexedBlockHeight();
+    StoredBlock getFromCache(Sha256Hash branchBlockHash);
 
-    StoredBlock getFromCache(Sha256Hash branchBlockHash) throws BlockStoreException;
+    StoredBlock getStoredBlockAtMainChainHeight(int height) throws BlockStoreException;
 
-    RepositoryBlockStore.BtcBlockInfo getBlockInfoFromCache(Sha256Hash branchBlockHash) throws BlockStoreException;
-
-    StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException;
-
-
+    interface Factory {
+        BtcBlockStoreWithCache newInstance(Repository track);
+    }
 }

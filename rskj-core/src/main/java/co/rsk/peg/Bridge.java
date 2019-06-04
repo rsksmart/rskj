@@ -203,14 +203,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private List<LogInfo> logs;
 
     private BridgeSupport bridgeSupport;
-    private BtcBlockStoreWithCache btcBlockStore;
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
-    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig, BtcBlockStoreWithCache btcBlockStore) {
+    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig, BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
         this.contractAddress = contractAddress;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
         this.activationConfig = activationConfig;
-        this.btcBlockStore = btcBlockStore;
+        this.btcBlockStoreFactory = btcBlockStoreFactory;
     }
 
     @Override
@@ -359,7 +359,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                         BridgeStorageConfiguration.fromBlockchainConfig(activations)
                 ),
                 new BridgeEventLoggerImpl(bridgeConstants, logs),
-                repository, rskExecutionBlock, btcBlockStore, null
+                repository,
+                rskExecutionBlock,
+                btcBlockStoreFactory.newInstance(repository),
+                null
         );
     }
 
@@ -999,7 +1002,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.removeLockWhitelistAddress(rskTx, addressBase58);
     }
 
-    public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException {
+    public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException, BlockStoreException {
         logger.trace("setLockWhitelistDisableBlockDelay");
         BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
         return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);
