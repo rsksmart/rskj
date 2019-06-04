@@ -104,7 +104,7 @@ public class BlockToMineBuilderTest {
 
     @Test
     public void BuildBlockHasEmptyUnclesWhenCreateAnInvalidBlock() {
-        Block parent = buildBlockWithSibling();
+        BlockHeader parent = buildBlockHeaderWithSibling();
 
         when(validationRules.isValid(any())).thenReturn(false);
 
@@ -115,7 +115,7 @@ public class BlockToMineBuilderTest {
 
     @Test
     public void BuildBlockHasUnclesWhenCreateAnInvalidBlock() {
-        Block parent = buildBlockWithSibling();
+        BlockHeader parent = buildBlockHeaderWithSibling();
 
         when(validationRules.isValid(any())).thenReturn(true);
 
@@ -124,19 +124,18 @@ public class BlockToMineBuilderTest {
         assertThat(nextBLock.getUncleList(), hasSize(1));
     }
 
-    private Block buildBlockWithSibling() {
-        Block block = mock(Block.class);
+    private BlockHeader buildBlockHeaderWithSibling() {
+        BlockHeader blockHeader = mock(BlockHeader.class);
         long blockNumber = 42L;
-        when(block.getNumber()).thenReturn(blockNumber);
+        when(blockHeader.getNumber()).thenReturn(blockNumber);
         Keccak256 blockHash = TestUtils.randomHash();
-        when(block.getHash()).thenReturn(blockHash);
-        when(block.getHeader()).thenReturn(mock(BlockHeader.class));
-        when(block.getMinimumGasPrice()).thenReturn(mock(Coin.class));
-        when(block.getGasLimit()).thenReturn(new byte[0]);
+        when(blockHeader.getHash()).thenReturn(blockHash);
+        when(blockHeader.getMinimumGasPrice()).thenReturn(mock(Coin.class));
+        when(blockHeader.getGasLimit()).thenReturn(new byte[0]);
 
         mockBlockFamily(blockNumber, blockHash, createBlockHeader());
 
-        return block;
+        return blockHeader;
     }
 
     private void mockBlockFamily(long blockNumber, Keccak256 blockHash, BlockHeader relative) {

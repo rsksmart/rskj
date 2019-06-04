@@ -22,12 +22,14 @@ import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.util.Utils;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Encapsulates the logic to retrieve or create an execution block
@@ -66,7 +68,8 @@ public class ExecutionBlockRetriever {
             Block bestBlock = miningMainchainView.getBestBlock();
             if (cachedBlock == null || !bestBlock.isParentOf(cachedBlock)) {
                 List<Block> mainchainBlocks = miningMainchainView.get();
-                cachedBlock = builder.build(mainchainBlocks, null);
+                List<BlockHeader> mainchainHeaders = mainchainBlocks.stream().map(Block::getHeader).collect(Collectors.toList());
+                cachedBlock = builder.build(mainchainHeaders, null);
             }
 
             return cachedBlock;
