@@ -25,7 +25,6 @@ import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.logfilter.BlocksBloomStore;
-import co.rsk.core.bc.MainchainView;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;

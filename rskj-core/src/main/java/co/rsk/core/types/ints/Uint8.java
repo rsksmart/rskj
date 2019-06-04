@@ -35,12 +35,12 @@ public final class Uint8 {
     }
 
     public byte asByte() {
-        return this.encode()[0];
+        return (byte) intValue;
     }
 
     public byte[] encode() {
         byte[] bytes = new byte[BYTES];
-        bytes[0] = (byte) intValue;
+        bytes[0] = asByte();
         return bytes;
     }
 

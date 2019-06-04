@@ -22,13 +22,13 @@ import org.ethereum.core.Block;
 
 import java.util.List;
 
-public abstract class MiningMainchainView implements MainchainView {
+public interface MiningMainchainView {
 
-    public abstract void addBestBlock(Block bestBlock);
+    void addBestBlock(Block bestBlock);
 
-    public abstract List<Block> get();
+    List<Block> get();
 
-    public abstract Block getBestBlock();
+    Block getBestBlock();
 
-    public abstract Block getBlockByNumber(long number);
+    Block getBlockByNumber(long number);
 }
