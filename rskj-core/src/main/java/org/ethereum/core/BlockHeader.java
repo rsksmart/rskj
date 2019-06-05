@@ -484,7 +484,8 @@ public class BlockHeader {
                     0,
                     hashForMergedMining,
                     HASH_FOR_MERGED_MINING_PREFIX_LENGTH,
-                    FORK_DETECTION_DATA_LENGTH);
+                    FORK_DETECTION_DATA_LENGTH
+            );
         }
 
         return hashForMergedMining;
@@ -500,11 +501,15 @@ public class BlockHeader {
 
     public byte[] getMiningForkDetectionData() {
         if(includeForkDetectionData) {
-            if (hasMiningFields()) {
+            if (hasMiningFields() && miningForkDetectionData.length == 0) {
                 byte[] encodedBlock = getEncoded(false, false);
                 byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
 
-                byte[] hashForMergedMiningPrefix = Arrays.copyOfRange(hashForMergedMining, 0, HASH_FOR_MERGED_MINING_PREFIX_LENGTH);
+                byte[] hashForMergedMiningPrefix = Arrays.copyOfRange(
+                        hashForMergedMining,
+                        0,
+                        HASH_FOR_MERGED_MINING_PREFIX_LENGTH
+                );
                 byte[] coinbaseTransaction = getBitcoinMergedMiningCoinbaseTransaction();
 
                 List<Byte> hashForMergedMiningPrefixAsList = Arrays.asList(ArrayUtils.toObject(hashForMergedMiningPrefix));
@@ -512,14 +517,17 @@ public class BlockHeader {
 
                 int position = Collections.lastIndexOfSubList(coinbaseAsList, hashForMergedMiningPrefixAsList);
                 if (position == -1) {
-                    return new byte[12];
+                    throw new IllegalStateException(
+                            String.format("Mining fork detection data could not be found. Header: %s", getShortHash())
+                    );
                 }
 
                 int from = position + HASH_FOR_MERGED_MINING_PREFIX_LENGTH;
-                return Arrays.copyOfRange(coinbaseTransaction, from, from + FORK_DETECTION_DATA_LENGTH);
-            } else {
-                return miningForkDetectionData;
+                int to = from + FORK_DETECTION_DATA_LENGTH;
+                miningForkDetectionData = Arrays.copyOfRange(coinbaseTransaction, from, to);
             }
+
+            return miningForkDetectionData;
         }
 
         return new byte[0];
