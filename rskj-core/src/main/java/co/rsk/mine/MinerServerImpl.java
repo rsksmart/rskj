@@ -391,7 +391,7 @@ public class MinerServerImpl implements MinerServer {
      */
     @Override
     public void buildBlockToMine(@Nonnull Block blockToMineOnTopOf, boolean createCompetitiveBlock) {
-        mainchainView.addBest(blockToMineOnTopOf);
+        mainchainView.addBest(blockToMineOnTopOf.getHeader());
         buildBlockToMine(createCompetitiveBlock);
     }
 
@@ -403,21 +403,21 @@ public class MinerServerImpl implements MinerServer {
      */
     @Override
     public void buildBlockToMine(boolean createCompetitiveBlock) {
-        Block newBlockParent = mainchainView.getBestBlock();
+        BlockHeader newBlockParentHeader = mainchainView.get().get(0);
         // See BlockChainImpl.calclBloom() if blocks has txs
         if (createCompetitiveBlock) {
             // Just for testing, mine on top of best block's parent
-            newBlockParent = mainchainView.getBlockByNumber(newBlockParent.getNumber() - 1);
+            newBlockParentHeader = mainchainView.get().get(1);
         }
 
-        logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
+        logger.info("Starting block to mine from parent {} {}", newBlockParentHeader.getNumber(), newBlockParentHeader.getHash());
 
         List<BlockHeader> mainchainHeaders = mainchainView.get();
         final Block newBlock = builder.build(mainchainHeaders, extraData);
         clock.clearIncreaseTime();
 
         synchronized (lock) {
-            Keccak256 parentHash = newBlockParent.getHash();
+            Keccak256 parentHash = newBlockParentHeader.getHash();
             boolean notify = this.getNotify(newBlock, parentHash);
 
             if (notify) {
@@ -434,7 +434,7 @@ public class MinerServerImpl implements MinerServer {
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
-        logger.debug("Built block {}. Parent {}", newBlock.getShortHashForMergedMining(), newBlockParent.getShortHashForMergedMining());
+        logger.debug("Built block {}. Parent {}", newBlock.getShortHashForMergedMining(), newBlockParentHeader.getShortHashForMergedMining());
         for (BlockHeader uncleHeader : newBlock.getUncleList()) {
             logger.debug("With uncle {}", uncleHeader.getShortHashForMergedMining());
         }
@@ -484,7 +484,7 @@ public class MinerServerImpl implements MinerServer {
                     "There is a new best block: {}, number: {}",
                     newBestBlock.getShortHashForMergedMining(),
                     newBestBlock.getNumber());
-            mainchainView.addBest(newBestBlock);
+            mainchainView.addBest(newBestBlock.getHeader());
             buildBlockToMine(false);
 
             logger.trace("End onBestBlock");

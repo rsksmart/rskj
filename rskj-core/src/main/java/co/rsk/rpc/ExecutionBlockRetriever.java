@@ -23,6 +23,7 @@ import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.util.Utils;
 
@@ -40,6 +41,7 @@ public class ExecutionBlockRetriever {
     private static final String PENDING_ID = "pending";
 
     private final MiningMainchainView miningMainchainView;
+    private final Blockchain blockchain;
     private final MinerServer minerServer;
     private final BlockToMineBuilder builder;
 
@@ -47,16 +49,18 @@ public class ExecutionBlockRetriever {
     private Block cachedBlock;
 
     public ExecutionBlockRetriever(MiningMainchainView miningMainchainView,
+                                   Blockchain blockchain,
                                    MinerServer minerServer,
                                    BlockToMineBuilder builder) {
         this.miningMainchainView = miningMainchainView;
+        this.blockchain = blockchain;
         this.minerServer = minerServer;
         this.builder = builder;
     }
 
     public Block getExecutionBlock(String bnOrId) {
         if (LATEST_ID.equals(bnOrId)) {
-            return miningMainchainView.getBestBlock();
+            return blockchain.getBestBlock();
         }
 
         if (PENDING_ID.equals(bnOrId)) {
@@ -65,7 +69,7 @@ public class ExecutionBlockRetriever {
                 return latestBlock.get();
             }
 
-            Block bestBlock = miningMainchainView.getBestBlock();
+            Block bestBlock = blockchain.getBestBlock();
             if (cachedBlock == null || !bestBlock.isParentOf(cachedBlock)) {
                 List<BlockHeader> mainchainHeaders = miningMainchainView.get();
                 cachedBlock = builder.build(mainchainHeaders, null);
@@ -84,7 +88,7 @@ public class ExecutionBlockRetriever {
         }
 
         if (executionBlockNumber.isPresent()) {
-            Block executionBlock = miningMainchainView.getBlockByNumber(executionBlockNumber.get());
+            Block executionBlock = blockchain.getBlockByNumber(executionBlockNumber.get());
             if (executionBlock == null) {
                 throw new JsonRpcInvalidParamException(String.format("Invalid block number %d", executionBlockNumber.get()));
             }

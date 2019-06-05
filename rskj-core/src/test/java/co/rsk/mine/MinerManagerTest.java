@@ -110,7 +110,7 @@ public class MinerManagerTest {
 
             // miningMainchainView new best block update is done by a listener on miner server.
             // This test does not have that listener so add the new best block manually.
-            miningMainchainView.addBest(blockchain.getBestBlock());
+            miningMainchainView.addBest(blockchain.getBestBlock().getHeader());
 
             minerServer.buildBlockToMine( false);
             refreshWork.run();
@@ -248,7 +248,7 @@ public class MinerManagerTest {
         manager.mineBlock(minerClient, minerServer);
         // miningMainchainView new best block update is done by a listener on miner server.
         // This test does not have that listener so add the new best block manually.
-        miningMainchainView.addBest(blockchain.getBestBlock());
+        miningMainchainView.addBest(blockchain.getBestBlock().getHeader());
         manager.mineBlock(minerClient, minerServer);
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
 

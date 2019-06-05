@@ -1260,7 +1260,7 @@ public class Web3ImplTest {
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
-                null, new ExecutionBlockRetriever(mainchainView, null, null),
+                null, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
@@ -1329,9 +1329,7 @@ public class Web3ImplTest {
             ConfigCapabilities configCapabilities,
             ReceiptStore receiptStore,
             StateRootHandler stateRootHandler) {
-        MiningMainchainView blockchainMock = mock(MiningMainchainView.class);
-        Block bestBlock = blockchain.getBestBlock();
-        when(blockchainMock.getBestBlock()).thenReturn(bestBlock);
+        MiningMainchainView miningMainchainViewMock = mock(MiningMainchainView.class);
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
@@ -1340,7 +1338,7 @@ public class Web3ImplTest {
         when(executor.executeTransaction(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(res);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain, executor,
-                new ExecutionBlockRetriever(blockchainMock, null, null), stateRootHandler,
+                new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), stateRootHandler,
                 new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool)
         );
@@ -1389,7 +1387,7 @@ public class Web3ImplTest {
         Ethereum eth = mock(Ethereum.class);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), null,
-                null, new ExecutionBlockRetriever(null, null, null), null,
+                null, new ExecutionBlockRetriever(null, null, null, null), null,
                 new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null, null
         );
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
@@ -1451,7 +1449,7 @@ public class Web3ImplTest {
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
-                null, new ExecutionBlockRetriever(null, null, null),
+                null, new ExecutionBlockRetriever(null, null, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null);
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
