@@ -2,8 +2,10 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.ConfigUtils;
+import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
@@ -196,9 +198,10 @@ public class MainNetMinerTest {
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
+        MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         return new BlockToMineBuilder(
                 config.getActivationConfig(),
-                ConfigUtils.getDefaultMiningConfig(),
+                miningConfig,
                 repository,
                 stateRootHandler,
                 blockStore,
@@ -208,7 +211,9 @@ public class MainNetMinerTest {
                 unclesValidationRule,
                 clock,
                 blockFactory,
-                blockExecutor
+                blockExecutor,
+                new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
+                new MinerUtils()
         );
     }
 }

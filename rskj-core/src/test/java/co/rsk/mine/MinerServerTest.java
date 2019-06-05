@@ -65,6 +65,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     private TransactionPool transactionPool;
     private BlockFactory blockFactory;
     private BlockExecutor blockExecutor;
+    private MinimumGasPriceCalculator minimumGasPriceCalculator;
+    private MinerUtils minerUtils;
 
     public MinerServerTest(TestSystemProperties config) {
         super(config);
@@ -86,6 +88,8 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         transactionPool = factory.getTransactionPool();
         blockFactory = factory.getBlockFactory();
         blockExecutor = factory.getBlockExecutor();
+        minimumGasPriceCalculator = new MinimumGasPriceCalculator(Coin.ZERO);
+        minerUtils = new MinerUtils();
     }
 
     @Test
@@ -133,7 +137,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
                 ),
                 clock,
                 blockFactory,
@@ -177,7 +183,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
                 ),
                 clock,
                 blockFactory,
@@ -245,7 +253,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
                 ),
                 clock,
                 blockFactory,
@@ -298,7 +308,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
                 ),
                 clock,
                 blockFactory,
@@ -354,7 +366,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
                 ),
                 clock,
                 blockFactory,
@@ -417,7 +431,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
                 ),
                 clock,
                 blockFactory,
@@ -472,7 +488,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
+
                 ),
                 clock,
                 blockFactory,
@@ -532,7 +551,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
                 ),
                 clock,
                 blockFactory,
@@ -574,7 +595,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
                 ),
                 clock,
                 blockFactory,
@@ -616,7 +639,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
                 ),
                 clock,
                 blockFactory,
@@ -662,7 +687,9 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                         unclesValidationRule,
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
                 ),
                 clock,
                 blockFactory,
