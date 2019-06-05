@@ -145,7 +145,7 @@ public class TransactionModuleTest {
             // The goal of this test is transaction testing and not block mining testing
             // Hence, there is no setup for listeners and best blocks must be added manually
             // to mainchain view object that is used by miner server to build new blocks.
-            mainchainView.addBest(blockchain.getBestBlock());
+            mainchainView.addBest(blockchain.getBestBlock().getHeader());
             Transaction txInBlock = getTransactionFromBlockWhichWasSend(blockchain, tx);
             repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
             Assert.assertEquals(i, blockchain.getBestBlock().getNumber());
@@ -340,7 +340,7 @@ public class TransactionModuleTest {
 
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
-                reversibleTransactionExecutor1, new ExecutionBlockRetriever(mainchainView, null, null),
+                reversibleTransactionExecutor1, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
                 repositoryLocator, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);

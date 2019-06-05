@@ -19,7 +19,6 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 
@@ -52,11 +51,6 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         fillInternalStore(blockchain.getBestBlock().getHeader());
     }
 
-    @Override
-    public void addBest(Block bestBlock) {
-        addBest(bestBlock.getHeader());
-    }
-
     public void addBest(BlockHeader bestHeader) {
         synchronized (internalBlockStoreReadWriteLock) {
             addHeaderToMaps(bestHeader);
@@ -71,16 +65,6 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         synchronized (internalBlockStoreReadWriteLock) {
             return Collections.unmodifiableList(mainchain);
         }
-    }
-
-    @Override
-    public Block getBestBlock() {
-        return blockchain.getBestBlock();
-    }
-
-    @Override
-    public Block getBlockByNumber(long number) {
-        return blockchain.getBlockByNumber(number);
     }
 
     private void fillInternalStore(BlockHeader bestHeader) {

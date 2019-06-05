@@ -18,11 +18,13 @@
 
 package co.rsk.rpc;
 
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -39,17 +40,19 @@ import static org.mockito.Mockito.*;
 
 public class ExecutionBlockRetrieverTest {
 
-    private MiningMainchainView blockchain;
+    private MiningMainchainView miningMainchainView;
+    private Blockchain blockchain;
     private MinerServer minerServer;
     private BlockToMineBuilder builder;
     private ExecutionBlockRetriever retriever;
 
     @Before
     public void setUp() {
-        blockchain = mock(MiningMainchainView.class);
+        blockchain = mock(BlockChainImpl.class);
+        miningMainchainView = mock(MiningMainchainView.class);
         minerServer = mock(MinerServer.class);
         builder = mock(BlockToMineBuilder.class);
-        retriever = new ExecutionBlockRetriever(blockchain, minerServer, builder);
+        retriever = new ExecutionBlockRetriever(miningMainchainView, blockchain, minerServer, builder);
     }
 
     @Test
@@ -105,7 +108,7 @@ public class ExecutionBlockRetrieverTest {
         when(blockchain.getBestBlock())
                 .thenReturn(bestBlock);
 
-        when(blockchain.get())
+        when(miningMainchainView.get())
                 .thenReturn(new ArrayList<>(Collections.singleton(bestHeader)));
 
         Block builtBlock = mock(Block.class);
@@ -131,7 +134,7 @@ public class ExecutionBlockRetrieverTest {
         List<BlockHeader> mainchainHeaders = new ArrayList<>();
         mainchainHeaders.add(bestBlock.getHeader());
         mainchainHeaders.add(bestBlock.getHeader());
-        when(blockchain.get())
+        when(miningMainchainView.get())
                 .thenReturn(mainchainHeaders);
 
         Block builtBlock = mock(Block.class);
@@ -163,7 +166,7 @@ public class ExecutionBlockRetrieverTest {
                 .thenReturn(bestBlock1)
                 .thenReturn(bestBlock2);
 
-        when(blockchain.get())
+        when(miningMainchainView.get())
                 .thenReturn(new ArrayList<>(Collections.singleton(bestHeader1)))
                 .thenReturn(new ArrayList<>(Collections.singleton(bestHeader2)));
 

@@ -1355,6 +1355,7 @@ public class RskContext implements NodeBootstrapper {
         if (executionBlockRetriever == null) {
             executionBlockRetriever = new ExecutionBlockRetriever(
                     getMiningMainchainView(),
+                    getBlockchain(),
                     getMinerServer(),
                     getBlockToMineBuilder()
             );

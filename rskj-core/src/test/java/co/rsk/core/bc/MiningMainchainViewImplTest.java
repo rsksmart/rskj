@@ -109,7 +109,7 @@ public class MiningMainchainViewImplTest {
                 3);
 
         Block newBestBlockD = createBlock(3, realBlockchain.getBestBlock().getHash());
-        testBlockchain.addBest(newBestBlockD);
+        testBlockchain.addBest(newBestBlockD.getHeader());
 
         List<BlockHeader> result = testBlockchain.get();
 
@@ -132,7 +132,7 @@ public class MiningMainchainViewImplTest {
                 448);
 
         Block newBestBlockD = createBlock(3, realBlockchain.getBestBlock().getHash());
-        testBlockchain.addBest(newBestBlockD);
+        testBlockchain.addBest(newBestBlockD.getHeader());
 
         List<BlockHeader> result = testBlockchain.get();
 
@@ -154,7 +154,7 @@ public class MiningMainchainViewImplTest {
                 448);
 
         Block newBestBlockB = createBlock(1, realBlockchain.getBlockByNumber(0L).getHash());
-        testBlockchain.addBest(newBestBlockB);
+        testBlockchain.addBest(newBestBlockB.getHeader());
 
         List<BlockHeader> result = testBlockchain.get();
 
@@ -180,7 +180,7 @@ public class MiningMainchainViewImplTest {
         when(realBlockchain.getBlockByNumber(1L)).thenReturn(newBlockB);
 
         Block newBestBlockC = createBlock(2, newBlockB.getHash());
-        testBlockchain.addBest(newBestBlockC);
+        testBlockchain.addBest(newBestBlockC.getHeader());
 
         List<BlockHeader> result = testBlockchain.get();
 

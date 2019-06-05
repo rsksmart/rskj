@@ -949,7 +949,7 @@ public class Web3ImplLogsTest {
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockChain,
-                null, new ExecutionBlockRetriever(mainchainView, null, null),
+                null, new ExecutionBlockRetriever(mainchainView, blockChain, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
