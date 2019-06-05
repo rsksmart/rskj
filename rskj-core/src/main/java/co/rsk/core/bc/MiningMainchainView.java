@@ -19,14 +19,15 @@
 package co.rsk.core.bc;
 
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 
 import java.util.List;
 
 public interface MiningMainchainView {
 
-    void addBestBlock(Block bestBlock);
+    void addBest(Block bestBlock);
 
-    List<Block> get();
+    List<BlockHeader> get();
 
     Block getBestBlock();
 

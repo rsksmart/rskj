@@ -391,7 +391,7 @@ public class MinerServerImpl implements MinerServer {
      */
     @Override
     public void buildBlockToMine(@Nonnull Block blockToMineOnTopOf, boolean createCompetitiveBlock) {
-        mainchainView.addBestBlock(blockToMineOnTopOf);
+        mainchainView.addBest(blockToMineOnTopOf);
         buildBlockToMine(createCompetitiveBlock);
     }
 
@@ -403,17 +403,16 @@ public class MinerServerImpl implements MinerServer {
      */
     @Override
     public void buildBlockToMine(boolean createCompetitiveBlock) {
-        List<Block> mainchainBlocks = mainchainView.get();
         Block newBlockParent = mainchainView.getBestBlock();
         // See BlockChainImpl.calclBloom() if blocks has txs
         if (createCompetitiveBlock) {
             // Just for testing, mine on top of best block's parent
-            newBlockParent = mainchainBlocks.get(1);
+            newBlockParent = mainchainView.getBlockByNumber(newBlockParent.getNumber() - 1);
         }
 
         logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
 
-        List<BlockHeader> mainchainHeaders = mainchainBlocks.stream().map(Block::getHeader).collect(Collectors.toList());
+        List<BlockHeader> mainchainHeaders = mainchainView.get();
         final Block newBlock = builder.build(mainchainHeaders, extraData);
         clock.clearIncreaseTime();
 
@@ -485,7 +484,7 @@ public class MinerServerImpl implements MinerServer {
                     "There is a new best block: {}, number: {}",
                     newBestBlock.getShortHashForMergedMining(),
                     newBestBlock.getNumber());
-            mainchainView.addBestBlock(newBestBlock);
+            mainchainView.addBest(newBestBlock);
             buildBlockToMine(false);
 
             logger.trace("End onBestBlock");

@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -34,13 +35,13 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
     private Blockchain blockchain;
 
     @GuardedBy("internalBlockStoreReadWriteLock")
-    private Map<Keccak256, Block> blocksByHash;
+    private Map<Keccak256, BlockHeader> blocksByHash;
 
     @GuardedBy("internalBlockStoreReadWriteLock")
-    private Map<Long, List<Block>> blocksByNumber;
+    private Map<Long, List<BlockHeader>> blocksByNumber;
 
     @GuardedBy("internalBlockStoreReadWriteLock")
-    private List<Block> mainchain;
+    private List<BlockHeader> mainchain;
 
     public MiningMainchainViewImpl(Blockchain blockchain,
                                    int height) {
@@ -48,29 +49,32 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         this.blockchain = blockchain;
         this.blocksByHash = new HashMap<>();
         this.blocksByNumber = new HashMap<>();
-        fillInternalsBlockStore(blockchain.getBestBlock());
+        fillInternalStore(blockchain.getBestBlock().getHeader());
     }
 
     @Override
-    public void addBestBlock(Block bestBlock) {
-        synchronized (internalBlockStoreReadWriteLock) {
-            blocksByHash.put(bestBlock.getHash(), bestBlock);
-            addToBlockByNumberMap(bestBlock);
+    public void addBest(Block bestBlock) {
+        addBest(bestBlock.getHeader());
+    }
 
-            Block previousBest = mainchain.get(0);
-            if (previousBest.isParentOf(bestBlock)) {
-                mainchain.add(0, bestBlock);
+    public void addBest(BlockHeader bestHeader) {
+        synchronized (internalBlockStoreReadWriteLock) {
+            addHeaderToMaps(bestHeader);
+
+            BlockHeader previousBest = mainchain.get(0);
+            if (previousBest.isParentOf(bestHeader)) {
+                mainchain.add(0, bestHeader);
             } else {
                 // new block is not on the current chain, so we need to recalculate it to keep it consistent
-                fillInternalsBlockStore(bestBlock);
+                fillInternalStore(bestHeader);
             }
 
-            deleteEntriesOutOfBoundaries(bestBlock.getNumber());
+            deleteEntriesOutOfBoundaries(bestHeader.getNumber());
         }
     }
 
     @Override
-    public List<Block> get() {
+    public List<BlockHeader> get() {
         synchronized (internalBlockStoreReadWriteLock) {
             return Collections.unmodifiableList(mainchain);
         }
@@ -78,9 +82,7 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
 
     @Override
     public Block getBestBlock() {
-        synchronized (internalBlockStoreReadWriteLock) {
-            return mainchain.get(0);
-        }
+        return blockchain.getBestBlock();
     }
 
     @Override
@@ -88,32 +90,37 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         return blockchain.getBlockByNumber(number);
     }
 
-    private void fillInternalsBlockStore(Block bestBlock) {
-        List<Block> newBlockchain = new ArrayList<>(height);
-        Block currentBlock = bestBlock;
+    private void fillInternalStore(BlockHeader bestHeader) {
+        List<BlockHeader> newHeaderChain = new ArrayList<>(height);
+        BlockHeader currentHeader = bestHeader;
         for(int i = 0; i < height; i++) {
-            newBlockchain.add(currentBlock);
+            newHeaderChain.add(currentHeader);
 
-            if(!blocksByHash.containsKey(currentBlock.getHash())) {
-                blocksByHash.put(currentBlock.getHash(), currentBlock);
-                addToBlockByNumberMap(currentBlock);
+            if(!blocksByHash.containsKey(currentHeader.getHash())) {
+                addHeaderToMaps(currentHeader);
             }
 
-            if(currentBlock.isGenesis()) {
+            if(currentHeader.isGenesis()) {
                 break;
             }
-            currentBlock = blockchain.getBlockByHash(currentBlock.getParentHash().getBytes());
+
+            currentHeader = blockchain.getBlockByHash(currentHeader.getParentHash().getBytes()).getHeader();
         }
 
-        mainchain = newBlockchain;
+        mainchain = newHeaderChain;
     }
 
-    private void addToBlockByNumberMap(Block blockToAdd) {
-        long currentBlockNumber = blockToAdd.getNumber();
+    private void addHeaderToMaps(BlockHeader header) {
+        blocksByHash.put(header.getHash(), header);
+        addToBlockByNumberMap(header);
+    }
+
+    private void addToBlockByNumberMap(BlockHeader headerToAdd) {
+        long currentBlockNumber = headerToAdd.getNumber();
         if (blocksByNumber.containsKey(currentBlockNumber)) {
-            blocksByNumber.get(currentBlockNumber).add(blockToAdd);
+            blocksByNumber.get(currentBlockNumber).add(headerToAdd);
         } else {
-            blocksByNumber.put(blockToAdd.getNumber(), new ArrayList<>(Collections.singletonList(blockToAdd)));
+            blocksByNumber.put(headerToAdd.getNumber(), new ArrayList<>(Collections.singletonList(headerToAdd)));
         }
     }
 

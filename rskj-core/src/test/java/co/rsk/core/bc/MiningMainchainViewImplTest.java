@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.junit.Test;
 
@@ -42,7 +43,7 @@ public class MiningMainchainViewImplTest {
                 realBlockchain,
                 448);
 
-        List<Block> result = testBlockchain.get();
+        List<BlockHeader> result = testBlockchain.get();
 
         assertNotNull(result);
 
@@ -65,7 +66,7 @@ public class MiningMainchainViewImplTest {
                 createBlockchain(10),
                 11);
 
-        List<Block> result = testBlockchain.get();
+        List<BlockHeader> result = testBlockchain.get();
 
         assertNotNull(result);
         assertThat(result.size(), is(10));
@@ -77,7 +78,7 @@ public class MiningMainchainViewImplTest {
                 createBlockchain(4),
                 4);
 
-        List<Block> result = testBlockchain.get();
+        List<BlockHeader> result = testBlockchain.get();
 
         assertNotNull(result);
         assertThat(result.size(), is(4));
@@ -89,7 +90,7 @@ public class MiningMainchainViewImplTest {
                 createBlockchain(8),
                 6);
 
-        List<Block> result = testBlockchain.get();
+        List<BlockHeader> result = testBlockchain.get();
 
         assertNotNull(result);
         assertThat(result.size(), is(6));
@@ -108,14 +109,14 @@ public class MiningMainchainViewImplTest {
                 3);
 
         Block newBestBlockD = createBlock(3, realBlockchain.getBestBlock().getHash());
-        testBlockchain.addBestBlock(newBestBlockD);
+        testBlockchain.addBest(newBestBlockD);
 
-        List<Block> result = testBlockchain.get();
+        List<BlockHeader> result = testBlockchain.get();
 
         assertThat(result.size(), is(3));
-        Block bestBlock = result.get(0);
-        assertThat(bestBlock.getNumber(), is(3L));
-        assertThat(bestBlock.getHash(), is(newBestBlockD.getHash()));
+        BlockHeader bestHeader = result.get(0);
+        assertThat(bestHeader.getNumber(), is(3L));
+        assertThat(bestHeader.getHash(), is(newBestBlockD.getHash()));
     }
 
     /**
@@ -131,9 +132,9 @@ public class MiningMainchainViewImplTest {
                 448);
 
         Block newBestBlockD = createBlock(3, realBlockchain.getBestBlock().getHash());
-        testBlockchain.addBestBlock(newBestBlockD);
+        testBlockchain.addBest(newBestBlockD);
 
-        List<Block> result = testBlockchain.get();
+        List<BlockHeader> result = testBlockchain.get();
 
         assertThat(result.size(), is(4));
         assertThat(result.get(0).getNumber(), is(3L));
@@ -153,9 +154,9 @@ public class MiningMainchainViewImplTest {
                 448);
 
         Block newBestBlockB = createBlock(1, realBlockchain.getBlockByNumber(0L).getHash());
-        testBlockchain.addBestBlock(newBestBlockB);
+        testBlockchain.addBest(newBestBlockB);
 
-        List<Block> result = testBlockchain.get();
+        List<BlockHeader> result = testBlockchain.get();
 
         assertThat(result.size(), is(2));
         assertThat(result.get(0).getNumber(), is(1L));
@@ -179,9 +180,9 @@ public class MiningMainchainViewImplTest {
         when(realBlockchain.getBlockByNumber(1L)).thenReturn(newBlockB);
 
         Block newBestBlockC = createBlock(2, newBlockB.getHash());
-        testBlockchain.addBestBlock(newBestBlockC);
+        testBlockchain.addBest(newBestBlockC);
 
-        List<Block> result = testBlockchain.get();
+        List<BlockHeader> result = testBlockchain.get();
 
         assertThat(result.size(), is(3));
         assertThat(result.get(0).getNumber(), is(2L));
@@ -211,25 +212,58 @@ public class MiningMainchainViewImplTest {
     }
 
     private Block createGenesisBlock(){
+        BlockHeader header = createGenesisHeader();
+
         Block block = mock(Block.class);
-        when(block.isGenesis()).thenReturn(Boolean.TRUE);
-        when(block.getNumber()).thenReturn(Long.valueOf(0));
-        byte[] rawBlockHash = getRandomHash();
-        Keccak256 blockHash = new Keccak256(rawBlockHash);
-        when(block.getHash()).thenReturn(blockHash);
+
+        when(block.getHeader()).thenReturn(header);
+
+        when(block.getNumber()).thenReturn(0L);
+
+        Keccak256 headerHash = header.getHash();
+        when(block.getHash()).thenReturn(headerHash);
 
         return block;
     }
 
-    private Block createBlock(long number, Keccak256 parentHash){
-        Block block = mock(Block.class);
-        when(block.getNumber()).thenReturn(number);
+    private BlockHeader createGenesisHeader() {
+        BlockHeader header = mock(BlockHeader.class);
+
+        when(header.isGenesis()).thenReturn(Boolean.TRUE);
+        when(header.getNumber()).thenReturn(Long.valueOf(0));
         byte[] rawBlockHash = getRandomHash();
         Keccak256 blockHash = new Keccak256(rawBlockHash);
-        when(block.getHash()).thenReturn(blockHash);
+        when(header.getHash()).thenReturn(blockHash);
+
+        return header;
+    }
+
+    private Block createBlock(long number, Keccak256 parentHash) {
+        BlockHeader header = createHeader(number, parentHash);
+
+        Block block = mock(Block.class);
+
+        when(block.getHeader()).thenReturn(header);
+
+        when(block.getNumber()).thenReturn(number);
         when(block.getParentHash()).thenReturn(parentHash);
 
+        Keccak256 headerHash = header.getHash();
+        when(block.getHash()).thenReturn(headerHash);
+
         return block;
+    }
+
+    private BlockHeader createHeader(long number, Keccak256 parentHash){
+        BlockHeader header = mock(BlockHeader.class);
+
+        when(header.getNumber()).thenReturn(number);
+        byte[] rawBlockHash = getRandomHash();
+        Keccak256 blockHash = new Keccak256(rawBlockHash);
+        when(header.getHash()).thenReturn(blockHash);
+        when(header.getParentHash()).thenReturn(parentHash);
+
+        return header;
     }
 
     private byte[] getRandomHash() {

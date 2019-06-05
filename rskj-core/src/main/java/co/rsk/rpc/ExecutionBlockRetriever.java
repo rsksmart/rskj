@@ -67,8 +67,7 @@ public class ExecutionBlockRetriever {
 
             Block bestBlock = miningMainchainView.getBestBlock();
             if (cachedBlock == null || !bestBlock.isParentOf(cachedBlock)) {
-                List<Block> mainchainBlocks = miningMainchainView.get();
-                List<BlockHeader> mainchainHeaders = mainchainBlocks.stream().map(Block::getHeader).collect(Collectors.toList());
+                List<BlockHeader> mainchainHeaders = miningMainchainView.get();
                 cachedBlock = builder.build(mainchainHeaders, null);
             }
 
