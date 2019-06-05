@@ -18,6 +18,7 @@
 
 package co.rsk.blockchain.utils;
 
+import co.rsk.config.MiningConfig;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
@@ -219,7 +220,9 @@ public class BlockGenerator {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
-                new byte[]{},
+                parent.getNumber()+1 > MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION ?
+                        new byte[12] :
+                        new byte[0],
                 (minGasPrice != null) ? minGasPrice.toByteArray() : null,
                 uncles.size()
         );

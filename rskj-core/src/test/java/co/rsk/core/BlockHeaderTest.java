@@ -127,7 +127,7 @@ public class BlockHeaderTest {
     /**
      * This case is an error and should never happen in production
      */
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void getMiningForkDetectionDataNoDataCanBeFound() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true);
 
@@ -136,7 +136,7 @@ public class BlockHeaderTest {
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
 
-        assertThat(new byte[12], is(header.getMiningForkDetectionData()));
+        header.getMiningForkDetectionData();
     }
 
     @Test
