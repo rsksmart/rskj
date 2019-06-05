@@ -106,7 +106,7 @@ public class ExecutionBlockRetrieverTest {
                 .thenReturn(bestBlock);
 
         when(blockchain.get())
-                .thenReturn(new ArrayList<>(Collections.singleton(bestBlock)));
+                .thenReturn(new ArrayList<>(Collections.singleton(bestHeader)));
 
         Block builtBlock = mock(Block.class);
         when(builder.build(new ArrayList<>(Collections.singleton(bestHeader)), null))
@@ -128,13 +128,11 @@ public class ExecutionBlockRetrieverTest {
                 .thenReturn(bestBlock)
                 .thenReturn(bestBlock);
 
-        List<Block> mainchainBlocks = new ArrayList<>();
-        mainchainBlocks.add(bestBlock);
-        mainchainBlocks.add(bestBlock);
+        List<BlockHeader> mainchainHeaders = new ArrayList<>();
+        mainchainHeaders.add(bestBlock.getHeader());
+        mainchainHeaders.add(bestBlock.getHeader());
         when(blockchain.get())
-                .thenReturn(mainchainBlocks);
-
-        List<BlockHeader> mainchainHeaders = mainchainBlocks.stream().map(Block::getHeader).collect(Collectors.toList());
+                .thenReturn(mainchainHeaders);
 
         Block builtBlock = mock(Block.class);
         when(bestBlock.isParentOf(builtBlock))
@@ -166,8 +164,8 @@ public class ExecutionBlockRetrieverTest {
                 .thenReturn(bestBlock2);
 
         when(blockchain.get())
-                .thenReturn(new ArrayList<>(Collections.singleton(bestBlock1)))
-                .thenReturn(new ArrayList<>(Collections.singleton(bestBlock2)));
+                .thenReturn(new ArrayList<>(Collections.singleton(bestHeader1)))
+                .thenReturn(new ArrayList<>(Collections.singleton(bestHeader2)));
 
         Block builtBlock1 = mock(Block.class);
         when(bestBlock1.isParentOf(builtBlock1))
