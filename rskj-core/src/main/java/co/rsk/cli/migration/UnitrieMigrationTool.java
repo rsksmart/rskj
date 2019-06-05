@@ -418,7 +418,7 @@ public class UnitrieMigrationTool {
         }
 
         public byte[] getCode() {
-            return Arrays.copyOf(code, code.length);
+            return code != null? Arrays.copyOf(code, code.length): null;
         }
 
         public RskAddress getContractAddress() {
@@ -426,11 +426,11 @@ public class UnitrieMigrationTool {
         }
 
         public byte[] getExternal() {
-            return Arrays.copyOf(external, external.length);
+            return external != null? Arrays.copyOf(external, external.length): null;
         }
 
         public byte[] getRoot() {
-            return Arrays.copyOf(root, root.length);
+            return root != null? Arrays.copyOf(root, root.length): null;
         }
 
         public RLPList getKeys() {
