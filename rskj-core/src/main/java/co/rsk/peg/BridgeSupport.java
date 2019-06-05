@@ -1036,23 +1036,17 @@ public class BridgeSupport {
 
     public Sha256Hash getBtcBlockchainBlockHashAtDepth(int depth) throws BlockStoreException, IOException {
         Context.propagate(btcContext);
-        this.ensureBtcBlockChain();
+        this.ensureBtcBlockStore();
         
-        StoredBlock head = btcBlockChain.getChainHead();
-
+        StoredBlock head = btcBlockStore.getChainHead();
         int maxDepth = head.getHeight() - getLowestBlock().getHeight();
 
         if (depth < 0 || depth > maxDepth) {
             throw new IndexOutOfBoundsException(String.format("Depth must be between 0 and %d", maxDepth));
         }
 
-        int currentDepth = 0;
-        StoredBlock current = head;
-        while (currentDepth < depth) {
-            current = current.getPrev(btcBlockStore);
-            currentDepth++;
-        }
-        return current.getHeader().getHash();
+        StoredBlock blockAtDepth = btcBlockStore.getStoredBlockAtMainChainDepth(depth);
+        return blockAtDepth.getHeader().getHash();
     }
 
     public Long getBtcTransactionConfirmationsGetCost(Sha256Hash btcBlockHash) {
@@ -2003,7 +1997,7 @@ public class BridgeSupport {
     }
 
     // Make sure the local bitcoin blockstore is instantiated
-    public void ensureBtcBlockStore() throws IOException, BlockStoreException {
+    private void ensureBtcBlockStore() throws IOException, BlockStoreException {
         if(btcBlockStore == null) {
             btcBlockStore = btcBlockStoreFactory.newInstance(rskRepository);
             NetworkParameters btcParams = this.bridgeConstants.getBtcParams();

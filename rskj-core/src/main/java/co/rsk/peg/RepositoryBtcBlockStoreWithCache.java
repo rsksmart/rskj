@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Repository;
@@ -119,10 +120,17 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     @Override
-    public StoredBlock getStoredBlockAtMainChainHeight(int height) {
+    public StoredBlock getStoredBlockAtMainChainHeight(int height) throws BlockStoreException {
+        StoredBlock chainHead =  getChainHead();
+        int depth = chainHead.getHeight() - height;
+
+        return getStoredBlockAtMainChainDepth(depth);
+    }
+
+    @Override
+    public StoredBlock getStoredBlockAtMainChainDepth(int depth) throws BlockStoreException {
         StoredBlock chainHead =  getChainHead();
         Sha256Hash blockHash = chainHead.getHeader().getHash();
-        int depth = chainHead.getHeight() - height;
 
         for (int i = 0; i < depth && blockHash != null; i++) {
             //If its older than cache go to disk
@@ -143,9 +151,16 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         if(block == null) {
             block = get(blockHash);
         }
-        if (block != null && block.getHeight() != height) {
-            throw new IllegalStateException("Block height is " + block.getHeight() + " but should be " + height);
+        int expectedHeight = chainHead.getHeight() - depth;
+        if (block != null && block.getHeight() != expectedHeight) {
+            throw new BlockStoreException(String.format("Block %s at depth %d Height is %d but should be %d",
+                    block.getHeader().getHash(),
+                    depth,
+                    block.getHeight(),
+                    expectedHeight));
         }
+
+
         return block;
     }
 

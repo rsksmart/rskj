@@ -3978,10 +3978,14 @@ public class BridgeSupportTest {
         Repository track = repository.startTracking();
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
+        BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(track);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(RepositoryBtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
+
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtHeightZero);
-        BridgeSupport bridgeSupport = new BridgeSupport(BridgeRegTestConstants.getInstance(), provider, mock(BridgeEventLogger.class), track, null, btcBlockStoreFactory, null);
-        bridgeSupport.ensureBtcBlockStore();
-        StoredBlock chainHead = getBtcBlockStoreFromBridgeSupport(bridgeSupport).getChainHead();
+        BridgeSupport bridgeSupport = new BridgeSupport(BridgeRegTestConstants.getInstance(), provider, mock(BridgeEventLogger.class), track, null, mockFactory, null);
+
+        StoredBlock chainHead = btcBlockStore.getChainHead();
         Assert.assertEquals(0, chainHead.getHeight());
         Assert.assertEquals(btcParams.getGenesisBlock(), chainHead.getHeader());
 

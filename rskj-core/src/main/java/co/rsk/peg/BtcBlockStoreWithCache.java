@@ -34,6 +34,8 @@ public interface BtcBlockStoreWithCache extends BtcBlockStore {
 
     StoredBlock getStoredBlockAtMainChainHeight(int height) throws BlockStoreException;
 
+    StoredBlock getStoredBlockAtMainChainDepth(int depth) throws BlockStoreException;
+
     interface Factory {
         BtcBlockStoreWithCache newInstance(Repository track);
     }

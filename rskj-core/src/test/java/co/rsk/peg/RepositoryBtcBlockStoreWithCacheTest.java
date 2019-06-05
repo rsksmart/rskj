@@ -43,7 +43,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 public class RepositoryBtcBlockStoreWithCacheTest {
 
     @Test
-    public void setChainHeadTest() throws BlockStoreException {
+    public void setChainHead_Test() throws BlockStoreException {
         NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
         RepositoryBtcBlockStoreWithCache.Factory factory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
         Repository repository =  new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
@@ -70,7 +70,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
 
 
     @Test
-    public void PutTest() throws BlockStoreException {
+    public void put_Test() throws BlockStoreException {
         NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
         RepositoryBtcBlockStoreWithCache.Factory factory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
         Repository repository =  new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
@@ -91,7 +91,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     }
 
     @Test
-    public void cacheLivesAcrossInstancesTest() throws BlockStoreException {
+    public void cacheLivesAcrossInstances_Test() throws BlockStoreException {
         NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
         RepositoryBtcBlockStoreWithCache.Factory factory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
         Repository repository =  new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
@@ -125,6 +125,135 @@ public class RepositoryBtcBlockStoreWithCacheTest {
 
         assertEquals(firstStoredBlock, btcBlockStore2.getFromCache(firstBlockHash));
         assertEquals(secondStoredBlock, btcBlockStore2.getFromCache(secondBlockHash));
+    }
+
+
+    @Test
+    public void getStoredBlockAtMainChainDepth_Test() throws BlockStoreException {
+        NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
+        RepositoryBtcBlockStoreWithCache.Factory factory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
+        Repository repository =  new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        Repository track = repository.startTracking();
+        BtcBlockStoreWithCache btcBlockStore = factory.newInstance(track);
+
+        BtcBlock genesis = networkParameters.getGenesisBlock();
+
+        BtcBlock parent = genesis;
+        BtcBlock blockHeader1 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock1 = new StoredBlock(blockHeader1, new BigInteger("0"), 1);
+        btcBlockStore.put(storedBlock1);
+
+        parent = blockHeader1;
+        BtcBlock blockHeader2 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock2 = new StoredBlock(blockHeader2, new BigInteger("0"), 2);
+        btcBlockStore.put(storedBlock2);
+
+        parent = blockHeader2;
+        BtcBlock blockHeader3 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock3 = new StoredBlock(blockHeader3, new BigInteger("0"), 3);
+        btcBlockStore.put(storedBlock3);
+
+        parent = blockHeader3;
+        BtcBlock blockHeader4 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock4 = new StoredBlock(blockHeader4, new BigInteger("0"), 4);
+        btcBlockStore.put(storedBlock4);
+
+        btcBlockStore.setChainHead(storedBlock4);
+
+        assertEquals(storedBlock3, btcBlockStore.getStoredBlockAtMainChainDepth(1));
+        assertEquals(storedBlock2, btcBlockStore.getStoredBlockAtMainChainDepth(2));
+        assertEquals(storedBlock1, btcBlockStore.getStoredBlockAtMainChainDepth(3));
+        assertEquals(genesis, btcBlockStore.getStoredBlockAtMainChainDepth(4).getHeader());
+    }
+
+    @Test(expected = BlockStoreException.class)
+    public void getStoredBlockAtMainChainDepth_Error_Test() throws BlockStoreException {
+        NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
+        RepositoryBtcBlockStoreWithCache.Factory factory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
+        Repository repository =  new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        Repository track = repository.startTracking();
+        BtcBlockStoreWithCache btcBlockStore = factory.newInstance(track);
+
+        BtcBlock genesis = networkParameters.getGenesisBlock();
+
+        BtcBlock parent = genesis;
+        BtcBlock blockHeader1 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock1 = new StoredBlock(blockHeader1, new BigInteger("0"), 2);
+        btcBlockStore.put(storedBlock1);
+
+        parent = blockHeader1;
+        BtcBlock blockHeader2 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock2 = new StoredBlock(blockHeader2, new BigInteger("0"), 2);
+        btcBlockStore.put(storedBlock2);
+
+        btcBlockStore.setChainHead(storedBlock2);
+
+        btcBlockStore.getStoredBlockAtMainChainDepth(1);
+    }
+
+    @Test
+    public void getStoredBlockAtMainChainHeight_Test() throws BlockStoreException {
+        NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
+        RepositoryBtcBlockStoreWithCache.Factory factory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
+        Repository repository =  new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        Repository track = repository.startTracking();
+        BtcBlockStoreWithCache btcBlockStore = factory.newInstance(track);
+
+        BtcBlock genesis = networkParameters.getGenesisBlock();
+
+        BtcBlock parent = genesis;
+        BtcBlock blockHeader1 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock1 = new StoredBlock(blockHeader1, new BigInteger("0"), 1);
+        btcBlockStore.put(storedBlock1);
+
+        parent = blockHeader1;
+        BtcBlock blockHeader2 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock2 = new StoredBlock(blockHeader2, new BigInteger("0"), 2);
+        btcBlockStore.put(storedBlock2);
+
+        parent = blockHeader2;
+        BtcBlock blockHeader3 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock3 = new StoredBlock(blockHeader3, new BigInteger("0"), 3);
+        btcBlockStore.put(storedBlock3);
+
+        parent = blockHeader3;
+        BtcBlock blockHeader4 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock4 = new StoredBlock(blockHeader4, new BigInteger("0"), 4);
+        btcBlockStore.put(storedBlock4);
+
+        btcBlockStore.setChainHead(storedBlock4);
+
+        assertEquals(storedBlock4, btcBlockStore.getStoredBlockAtMainChainHeight(4));
+        assertEquals(storedBlock3, btcBlockStore.getStoredBlockAtMainChainHeight(3));
+        assertEquals(storedBlock2, btcBlockStore.getStoredBlockAtMainChainHeight(2));
+        assertEquals(storedBlock1, btcBlockStore.getStoredBlockAtMainChainHeight(1));
+        assertEquals(genesis, btcBlockStore.getStoredBlockAtMainChainHeight(0).getHeader());
+    }
+
+
+    @Test(expected = BlockStoreException.class)
+    public void getStoredBlockAtMainChainHeight_Error_Test() throws BlockStoreException {
+        NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
+        RepositoryBtcBlockStoreWithCache.Factory factory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
+        Repository repository =  new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        Repository track = repository.startTracking();
+        BtcBlockStoreWithCache btcBlockStore = factory.newInstance(track);
+
+        BtcBlock genesis = networkParameters.getGenesisBlock();
+
+        BtcBlock parent = genesis;
+        BtcBlock blockHeader1 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock1 = new StoredBlock(blockHeader1, new BigInteger("0"), 2);
+        btcBlockStore.put(storedBlock1);
+
+        parent = blockHeader1;
+        BtcBlock blockHeader2 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        StoredBlock storedBlock2 = new StoredBlock(blockHeader2, new BigInteger("0"), 2);
+        btcBlockStore.put(storedBlock2);
+
+        btcBlockStore.setChainHead(storedBlock2);
+
+        btcBlockStore.getStoredBlockAtMainChainHeight(1);
     }
 
     @Test
@@ -162,7 +291,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     }
 
     @Test
-    public void test() throws Exception {
+    public void checkDifferentInstancesWithSameRepoHaveSameContentTest() throws Exception {
 //        This Is how I produced RepositoryBlockStore_data.ser. I had a bitcoind in regtest with 613 blocks + genesis block
 //        NetworkParameters params = RegTestParams.get();
 //        Context context = new Context(params);
