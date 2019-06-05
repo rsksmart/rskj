@@ -532,4 +532,8 @@ public class BlockHeader {
 
         return new byte[0];
     }
+
+    public boolean isParentOf(BlockHeader header) {
+        return this.getHash().equals(header.getParentHash());
+    }
 }
