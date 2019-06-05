@@ -19,7 +19,9 @@
 package co.rsk.mine;
 
 import co.rsk.config.ConfigUtils;
+import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
@@ -269,6 +271,7 @@ public class MinerManagerTest {
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
+        MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         return new MinerServerImpl(
                 config,
                 ethereum,
@@ -277,7 +280,7 @@ public class MinerManagerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
+                        miningConfig,
                         repository,
                         stateRootHandler,
                         blockStore,
@@ -287,11 +290,13 @@ public class MinerManagerTest {
                         new BlockValidationRuleDummy(),
                         clock,
                         blockFactory,
-                        blockExecutor
+                        blockExecutor,
+                        new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
+                        new MinerUtils()
                 ),
                 clock,
                 blockFactory,
-                ConfigUtils.getDefaultMiningConfig()
+                miningConfig
         );
     }
 

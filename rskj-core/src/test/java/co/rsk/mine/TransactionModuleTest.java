@@ -19,6 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.config.ConfigUtils;
+import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
@@ -268,6 +269,7 @@ public class TransactionModuleTest {
                 new HashMap<>()
         );
         transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, receiptStore);
+        MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 eth,
@@ -276,7 +278,7 @@ public class TransactionModuleTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
+                        miningConfig,
                         repository,
                         stateRootHandler,
                         blockStore,
@@ -291,11 +293,13 @@ public class TransactionModuleTest {
                                 repository,
                                 stateRootHandler,
                                 transactionExecutorFactory
-                        )
+                        ),
+                        new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
+                        new MinerUtils()
                 ),
                 minerClock,
                 blockFactory,
-                ConfigUtils.getDefaultMiningConfig()
+                miningConfig
         );
 
         wallet = WalletFactory.createWallet();
