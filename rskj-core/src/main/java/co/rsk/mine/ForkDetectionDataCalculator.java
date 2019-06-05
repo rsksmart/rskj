@@ -41,6 +41,13 @@ public class ForkDetectionDataCalculator {
     // + 1 because genesis block can't be used since it does not contain a valid BTC header
     private static final int MIN_MAINCHAIN_SIZE = CPV_SIZE * CPV_JUMP_FACTOR + 1;
 
+    private NetworkParameters params;
+
+    public ForkDetectionDataCalculator(){
+        this.params = RegTestParams.get();
+        new Context(params);
+    }
+
     public byte[] calculate(List<Block> mainchainBlocks) {
         if (mainchainBlocks.size() < MIN_MAINCHAIN_SIZE) {
             return new byte[0];
@@ -74,14 +81,10 @@ public class ForkDetectionDataCalculator {
     }
 
     private byte[] buildCommitToParentsVector(List<BlockHeader> mainchainBlocks) {
-        NetworkParameters params = RegTestParams.get();
-        new Context(params);
-
         long bestBlockHeight = mainchainBlocks.get(0).getNumber();
-        long blockBeingMinedHeight = bestBlockHeight + 1;
-        long cpvStartHeight = ((blockBeingMinedHeight - 1) / CPV_JUMP_FACTOR) * CPV_JUMP_FACTOR;
+        long cpvStartHeight = (bestBlockHeight / CPV_JUMP_FACTOR) * CPV_JUMP_FACTOR;
 
-        byte[] commitToParentsVector = new byte[7];
+        byte[] commitToParentsVector = new byte[CPV_SIZE];
         for(int i = 0; i < CPV_SIZE; i++){
             long currentCpvElement = bestBlockHeight - cpvStartHeight + i * CPV_JUMP_FACTOR;
             BlockHeader blockHeader = mainchainBlocks.get((int)currentCpvElement);
