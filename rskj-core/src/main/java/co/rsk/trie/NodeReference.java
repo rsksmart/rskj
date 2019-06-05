@@ -27,13 +27,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class NodeReference {
-    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 40;
+
 
     private final TrieStore store;
 
     private Trie lazyNode;
     private Keccak256 lazyHash;
-    private byte[] lazySerialized;
 
     public NodeReference(TrieStore store, @Nullable Trie node, @Nullable Keccak256 hash) {
         this.store = store;
@@ -55,7 +54,11 @@ public class NodeReference {
      */
     public void save() {
         if (lazyNode != null) {
-            lazyNode.save();
+            if (!isEmbeddable()) {
+                lazyNode.save();
+            } else if (lazyNode.hasLongValue()) {
+                store.saveValue(lazyNode);
+            }
         }
     }
 
@@ -106,27 +109,23 @@ public class NodeReference {
 
     @SuppressWarnings("squid:S2384") // private method knows it can avoid copying the byte[] field
     private byte[] getSerialized() {
-        if (lazySerialized == null) {
-            // only called when lazyNode != null
-            lazySerialized = lazyNode.toMessage();
-        }
-
-        return lazySerialized;
+        return lazyNode.toMessage();
     }
 
     public boolean isEmbeddable() {
         // if the node is embeddable then this reference must have a reference in memory
-        if (lazyNode == null || !lazyNode.isTerminal()) {
+        if (lazyNode == null) {
             return false;
         }
+        return lazyNode.isEmbeddable();
 
-        return getSerialized().length <= MAX_EMBEDDED_NODE_SIZE_IN_BYTES;
     }
 
+    // This method should only be called from save()
     public int serializedLength() {
         if (!isEmpty()) {
             if (isEmbeddable()) {
-                return getSerialized().length + 1;
+                return lazyNode.getMessageLength() + 1;
             }
 
             return Keccak256Helper.DEFAULT_SIZE_BYTES;
@@ -151,6 +150,9 @@ public class NodeReference {
 
     /**
      * @return the tree size in bytes as specified in RSKIP107 plus the actual serialized size
+     *
+     * This method will EXPAND internal encoding caches without removing them afterwards.
+     * Do not use.
      */
     public long referenceSize() {
         return getNode().map(trie -> trie.getTreeSize().value).orElse(0L) + serializedLength();

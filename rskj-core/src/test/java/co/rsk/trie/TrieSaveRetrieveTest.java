@@ -238,7 +238,8 @@ public class TrieSaveRetrieveTest {
         trie.save();
 
         Assert.assertNotEquals(0, trie.trieSize());
-        Assert.assertEquals(trie.trieSize(), map.keys().size());
+        int embeddableNodes = 3;
+        Assert.assertEquals(trie.trieSize() - embeddableNodes, map.keys().size());
     }
 
     @Test
@@ -253,7 +254,9 @@ public class TrieSaveRetrieveTest {
         trie.save();
 
         Assert.assertNotEquals(0, trie.trieSize());
-        Assert.assertEquals(trie.trieSize() + 2, map.keys().size());
+        int embeddableNodes = 3;
+        int longValues = 2;
+        Assert.assertEquals(trie.trieSize() - embeddableNodes + longValues, map.keys().size());
     }
 
     @Test

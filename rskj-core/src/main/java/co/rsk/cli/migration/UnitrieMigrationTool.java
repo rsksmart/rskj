@@ -457,6 +457,11 @@ public class UnitrieMigrationTool {
         }
 
         @Override
+        public void saveValue(Trie trie) {
+            throw new UnsupportedOperationException("It's not expected for current store to save values");
+        }
+
+        @Override
         public Trie retrieve(byte[] hash) {
             return triesCache.computeIfAbsent(new Keccak256(hash), key -> parent.retrieve(hash));
         }

@@ -58,6 +58,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class Trie {
     private static final int ARITY = 2;
+    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 44;
 
     private static final Logger logger = LoggerFactory.getLogger("newtrie");
     private static final Profiler profiler = ProfilerFactory.getInstance();
@@ -89,6 +90,9 @@ public class Trie {
     // it is saved to store
     private boolean saved;
 
+    // temporary storage of encoding. Removed after save()
+    private byte[] encoded;
+
     // valueLength enables lazy long value retrieval.
     // The length of the data is now stored. This allows EXTCODESIZE to
     // execute much faster without the need to actually retrieve the data.
@@ -111,6 +115,7 @@ public class Trie {
 
     // shared Path
     private final TrieKeySlice sharedPath;
+
 
     // default constructor, no secure
     public Trie() {
@@ -164,7 +169,6 @@ public class Trie {
         return trie;
     }
 
-    // this methods reads a short as dataInputStream + byteArrayInputStream
     private static Trie fromMessageOrchid(byte[] message, TrieStore store) {
         int current = 0;
         int arity = message[current];
@@ -503,6 +507,10 @@ public class Trie {
      * @return a byte array with the serialized info
      */
     public byte[] toMessage() {
+        if (encoded != null) {
+            return cloneArray(encoded);
+        }
+
         Uint24 lvalue = this.valueLength;
         boolean hasLongVal = this.hasLongValue();
 
@@ -563,7 +571,13 @@ public class Trie {
             buffer.put(this.getValue());
         }
 
-        return buffer.array();
+        encoded = buffer.array();
+
+        return cloneArray(encoded);
+    }
+
+    public int getMessageLength() {
+        return toMessage().length;
     }
 
     /**
@@ -640,6 +654,11 @@ public class Trie {
         this.store.flush();
     }
 
+    // This method should only be called DURING save(). It should not be called in other places
+    // because it will expand the node encoding in a memory cache that is ONLY removed after save()
+    public boolean isEmbeddable() {
+        return isTerminal() && getMessageLength() <= MAX_EMBEDDED_NODE_SIZE_IN_BYTES;
+    }
     /**
      * save saves the unsaved current trie and subnodes to their associated store
      *
@@ -659,6 +678,7 @@ public class Trie {
 
         this.store.save(this);
         this.saved = true;
+        this.encoded = null;
     }
 
     // key is the key with exactly collectKeyLen bytes.
@@ -1009,6 +1029,10 @@ public class Trie {
 
     /**
      * @return the tree size in bytes as specified in RSKIP107
+     *
+     * This method will EXPAND internal encoding caches without removing them afterwards.
+     * It shouldn't be called from outside. It's still public for NodeReference call
+     *
      */
     public VarInt getTreeSize() {
         if (treeSize == null) {
