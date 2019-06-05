@@ -46,8 +46,8 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
                                    int height) {
         this.height = height;
         this.blockchain = blockchain;
-        this.blocksByHash = new ConcurrentHashMap<>();
-        this.blocksByNumber = new ConcurrentHashMap<>();
+        this.blocksByHash = new HashMap<>();
+        this.blocksByNumber = new HashMap<>();
         fillInternalsBlockStore(blockchain.getBestBlock());
     }
 
@@ -78,12 +78,6 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
 
     @Override
     public Block getBlockByNumber(long number) {
-        synchronized (internalBlockStoreReadWriteLock) {
-            if (blocksByNumber.containsKey(number)) {
-                return blocksByHash.get(number);
-            }
-        }
-
         return blockchain.getBlockByNumber(number);
     }
 
