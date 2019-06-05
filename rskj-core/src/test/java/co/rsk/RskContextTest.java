@@ -19,6 +19,7 @@
 package co.rsk;
 
 import co.rsk.config.NodeCliFlags;
+import org.ethereum.util.RskTestContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -37,20 +38,20 @@ public class RskContextTest {
 
     @Test
     public void getNodeRunnerSmokeTest() {
-        RskContext rskContext = new RskContext(new String[0]);
+        RskTestContext rskContext = new RskTestContext(new String[0]);
         assertThat(rskContext.getNodeRunner(), notNullValue());
     }
 
     @Test
     public void getCliArgsSmokeTest() {
-        RskContext rskContext = new RskContext(new String[] { "--devnet" });
+        RskTestContext rskContext = new RskTestContext(new String[] { "--devnet" });
         assertThat(rskContext.getCliArgs(), notNullValue());
         assertThat(rskContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
     }
 
     @Test
     public void getBuildInfoSmokeTest() {
-        RskContext rskContext = new RskContext(new String[0]);
+        RskTestContext rskContext = new RskTestContext(new String[0]);
         mockBuildInfoResource(new ByteArrayInputStream("build.hash=c0ffee\nbuild.branch=HEAD".getBytes()));
         assertThat(rskContext.getBuildInfo(), notNullValue());
         assertThat(rskContext.getBuildInfo().getBuildHash(), is("c0ffee"));
@@ -58,7 +59,7 @@ public class RskContextTest {
 
     @Test
     public void getBuildInfoMissingPropertiesSmokeTest() {
-        RskContext rskContext = new RskContext(new String[0]);
+        RskTestContext rskContext = new RskTestContext(new String[0]);
         mockBuildInfoResource(null);
         assertThat(rskContext.getBuildInfo(), notNullValue());
         assertThat(rskContext.getBuildInfo().getBuildHash(), is("dev"));
