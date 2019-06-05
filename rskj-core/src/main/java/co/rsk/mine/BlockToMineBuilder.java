@@ -26,6 +26,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.db.StateRootHandler;
+import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -35,7 +36,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.ethereum.util.RLP;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -61,6 +62,7 @@ public class BlockToMineBuilder {
     private final MinerClock clock;
     private final BlockFactory blockFactory;
     private final BlockExecutor executor;
+    private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final MinimumGasPriceCalculator minimumGasPriceCalculator;
     private final MinerUtils minerUtils;
@@ -77,7 +79,9 @@ public class BlockToMineBuilder {
             BlockValidationRule validationRules,
             MinerClock clock,
             BlockFactory blockFactory,
-            BlockExecutor blockExecutor) {
+            BlockExecutor blockExecutor,
+            MinimumGasPriceCalculator minimumGasPriceCalculator,
+            MinerUtils minerUtils) {
         this.activationConfig = Objects.requireNonNull(activationConfig);
         this.miningConfig = Objects.requireNonNull(miningConfig);
         this.repository = Objects.requireNonNull(repository);
@@ -90,8 +94,8 @@ public class BlockToMineBuilder {
         this.clock = Objects.requireNonNull(clock);
         this.blockFactory = blockFactory;
         this.executor = blockExecutor;
-        this.minimumGasPriceCalculator = new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget()));
-        this.minerUtils = new MinerUtils();
+        this.minimumGasPriceCalculator = minimumGasPriceCalculator;
+        this.minerUtils = minerUtils;
     }
 
     /**
@@ -149,9 +153,20 @@ public class BlockToMineBuilder {
             List<Transaction> txs,
             Coin minimumGasPrice,
             byte[] extraData) {
-        final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice, extraData);
-        final Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, false);
-        return validationRules.isValid(newBlock) ? newBlock : blockFactory.newBlock(newHeader, txs, Collections.emptyList(), false);
+        BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice, extraData);
+        Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, false);
+
+        // TODO(nacho): The validation rules should accept a list of uncles and we should never build invalid blocks.
+        if (validationRules.isValid(newBlock)) {
+            return newBlock;
+        }
+
+        // Some validation rule failed (all validations run are related with uncles rules),
+        // log the panic, and create again the block without uncles to avoid fail abruptly.
+        panicProcessor.panic("buildBlock", "some validation failed trying to create a new block");
+
+        newHeader = createHeader(newBlockParent, Collections.emptyList(), txs, minimumGasPrice, extraData);
+        return blockFactory.newBlock(newHeader, txs, Collections.emptyList(), false);
     }
 
     private BlockHeader createHeader(

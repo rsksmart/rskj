@@ -20,7 +20,9 @@ package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigUtils;
+import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.*;
@@ -198,6 +200,7 @@ public class Web3ImplSnapshotTest {
     private MinerServer getMinerServerForTest(SimpleEthereum ethereum, MinerClock clock) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+        MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         return new MinerServerImpl(
                 config,
                 ethereum,
@@ -206,7 +209,7 @@ public class Web3ImplSnapshotTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
+                        miningConfig,
                         factory.getRepository(),
                         factory.getStateRootHandler(),
                         factory.getBlockStore(),
@@ -216,11 +219,13 @@ public class Web3ImplSnapshotTest {
                         rule,
                         clock,
                         blockFactory,
-                        factory.getBlockExecutor()
+                        factory.getBlockExecutor(),
+                        new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
+                        new MinerUtils()
                 ),
                 clock,
                 blockFactory,
-                ConfigUtils.getDefaultMiningConfig()
+                miningConfig
         );
     }
 
