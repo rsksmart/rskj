@@ -236,7 +236,7 @@ public class Block {
      * @return - true if this block is parent of param block
      */
     public boolean isParentOf(Block block) {
-        return this.getHash().equals(block.getParentHash());
+        return this.header.isParentOf(block.getHeader());
     }
 
     public boolean isGenesis() {

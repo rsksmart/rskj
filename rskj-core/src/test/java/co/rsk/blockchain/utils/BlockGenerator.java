@@ -24,6 +24,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleRskTransaction;
@@ -91,7 +92,7 @@ public class BlockGenerator {
 
         long   timestamp         = 0; // predictable timeStamp
 
-        byte[] parentHash  = EMPTY_BYTE_ARRAY;
+        byte[] parentHash  = Keccak256.ZERO_HASH.getBytes();
         byte[] extraData   = EMPTY_BYTE_ARRAY;
 
         long   gasLimit         = initialGasLimit;
