@@ -26,6 +26,7 @@ public class ExecutionStats {
     public Mean realExecutionTimes;
     public Mean slotsWritten;
     public Mean slotsCleared;
+    public Mean getGasForData;
 
     public static long nanosecondsPerGasUnit = 0;
 
@@ -35,6 +36,7 @@ public class ExecutionStats {
         this.realExecutionTimes = new Mean();
         this.slotsWritten = new Mean();
         this.slotsCleared = new Mean();
+        this.getGasForData = new Mean();
     }
 
     public Optional<Long> getEstimatedGas() {
@@ -47,13 +49,14 @@ public class ExecutionStats {
 
     public String getPrintable() {
         return String.format(
-                "%-45s\tgas: %s\t\tcpu(us): %d\t\treal(us): %d\t\twrt(slots): %d\t\tclr(slots): %d",
+                "%-45s\tgas: %s\tcpu(us): %d\treal(us): %d\twrt(slots): %d\tclr(slots): %d\tgetGasForData: %d",
                 name,
                 getEstimatedGas().map(Object::toString).orElse("N/A"),
                 executionTimes.getMean() / 1000,
                 realExecutionTimes.getMean() / 1000,
                 slotsWritten.getMean(),
-                slotsCleared.getMean()
+                slotsCleared.getMean(),
+                getGasForData.getMean()
         );
     }
 }

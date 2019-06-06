@@ -65,11 +65,10 @@ public abstract class PrecompiledContractPerformanceTestCase {
     }
 
     protected class ExecutionTracker {
-        private static final long MILLION = 1_000_000;
-
         private final ThreadMXBean thread;
         private long startTime, endTime;
         private long startRealTime, endRealTime;
+        private long gasForData;
         private RepositoryTrackWithBenchmarking.Statistics repositoryStatistics;
 
         public ExecutionTracker(ThreadMXBean thread) {
@@ -79,12 +78,12 @@ public abstract class PrecompiledContractPerformanceTestCase {
         public void startTimer() {
             // Everything is expressed in nanoseconds
             startTime = thread.getCurrentThreadCpuTime();
-            startRealTime = System.currentTimeMillis() * MILLION;
+            startRealTime = System.nanoTime();
         }
 
         public void endTimer() {
             endTime = thread.getCurrentThreadCpuTime();
-            endRealTime = System.currentTimeMillis() * MILLION;
+            endRealTime = System.nanoTime();
         }
 
         public void setRepositoryStatistics(RepositoryTrackWithBenchmarking.Statistics statistics) {
@@ -101,6 +100,14 @@ public abstract class PrecompiledContractPerformanceTestCase {
 
         public long getRealExecutionTime() {
             return endRealTime - startRealTime;
+        }
+
+        public long getGasForData() {
+            return gasForData;
+        }
+
+        public void setGasForData(long newGasForData) {
+            this.gasForData = newGasForData;
         }
     }
 
@@ -247,6 +254,8 @@ public abstract class PrecompiledContractPerformanceTestCase {
                 heightProvider.getHeight(executionIndex)
         );
 
+        long getGasResult = environment.getContract().getGasForData(abiEncoder.encode(executionIndex));
+        executionInfo.setGasForData(getGasResult);
         executionInfo.startTimer();
         byte[] executionResult = environment.getContract().execute(abiEncoder.encode(executionIndex));
         executionInfo.endTimer();
@@ -281,6 +290,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
             stats.realExecutionTimes.add(tracker.getRealExecutionTime());
             stats.slotsWritten.add(tracker.getRepositoryStatistics().getSlotsWritten());
             stats.slotsCleared.add(tracker.getRepositoryStatistics().getSlotsCleared());
+            stats.getGasForData.add(tracker.getGasForData());
         }
 
         return stats;

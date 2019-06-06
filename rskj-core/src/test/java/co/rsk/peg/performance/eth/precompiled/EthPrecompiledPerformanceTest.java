@@ -16,8 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg.performance;
+package co.rsk.peg.performance.eth.precompiled;
 
+import co.rsk.peg.performance.PrecompiledContractPerformanceTest;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -25,7 +26,11 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
         IdentityPerformanceTestCase.class,
+        Sha256PerformanceTestCase.class,
+        Ripempd160PerformanceTestCase.class,
+        ECRecoverPerformanceTestCase.class,
+        BigIntegerModexpPerformanceTestCase.class
 })
 @Ignore
-public class IdentityPerformanceTest extends PrecompiledContractPerformanceTest {
+public class EthPrecompiledPerformanceTest extends PrecompiledContractPerformanceTest {
 }

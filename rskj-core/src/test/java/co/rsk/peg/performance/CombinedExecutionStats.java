@@ -43,14 +43,15 @@ public class CombinedExecutionStats extends ExecutionStats {
         this.realExecutionTimes.addFrom(stats.realExecutionTimes);
         this.slotsWritten.addFrom(stats.slotsWritten);
         this.slotsCleared.addFrom(stats.executionTimes);
+        this.getGasForData.addFrom(stats.getGasForData);
     }
 
     public String getPrintable() {
         StringBuilder result = new StringBuilder();
 
-        result.append(String.format("%s\n", super.getPrintable()));
+        result.append(String.format("Combined\t%s\n", super.getPrintable()));
         statsList.stream().forEach(stats ->
-                result.append(String.format("\t\t%s\n", stats.getPrintable()))
+                result.append(String.format("\t%s\n", stats.getPrintable()))
         );
 
         // Get rid of the last return of carriage

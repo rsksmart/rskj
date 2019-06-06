@@ -16,35 +16,43 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg.performance;
+package co.rsk.peg.performance.eth.precompiled;
 
-import org.ethereum.core.Transaction;
+        import co.rsk.peg.performance.CombinedExecutionStats;
+import co.rsk.peg.performance.ExecutionStats;
+import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
-
 @Ignore
-public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
+public class Ripempd160PerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     @Test
-    public void identity() throws IOException {
-        ExecutionStats stats = new ExecutionStats("identity");
-
+    public void Ripempd160() {
+        CombinedExecutionStats stats = new CombinedExecutionStats("Ripempd160");
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) ->
-                EnvironmentBuilder.Environment.withContract(new PrecompiledContracts.Identity());
+                EnvironmentBuilder.Environment.withContract(new PrecompiledContracts.Ripempd160());
 
-        doIdentity(environmentBuilder, stats, 2000);
+        stats.add(doRipempd160(environmentBuilder, 100, new byte[]{}));
 
-        IdentityPerformanceTest.addStats(stats);
+        stats.add(doRipempd160(environmentBuilder, 100, new byte[20]));
+
+        stats.add(doRipempd160(environmentBuilder, 100, new byte[200]));
+
+        stats.add(doRipempd160(environmentBuilder, 100, new byte[200000]));
+
+        EthPrecompiledPerformanceTest.addStats(stats);
     }
 
-    private void doIdentity(EnvironmentBuilder environmentBuilder, ExecutionStats stats, int numCases) throws IOException {
-        ABIEncoder abiEncoder = (int executionIndex) -> new byte[]{};
+    private ExecutionStats doRipempd160(EnvironmentBuilder environmentBuilder, int numCases, byte[] params) {
+        ABIEncoder abiEncoder = (int executionIndex) -> params;
+
+        String testName = String.format("Ripempd160 %d", params.length);
+        ExecutionStats stats = new ExecutionStats(testName);
 
         executeAndAverage(
-                "identity",
+                testName,
                 numCases,
                 environmentBuilder,
                 abiEncoder,
@@ -53,5 +61,6 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
                 stats,
                 null
         );
+        return stats;
     }
 }

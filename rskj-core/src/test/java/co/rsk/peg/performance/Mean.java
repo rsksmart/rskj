@@ -43,7 +43,7 @@ public class Mean {
     }
 
     public long getMean() {
-        return total / samples;
+        return samples == 0 ? 0 : total / samples;
     }
 
     public long getMin() {
