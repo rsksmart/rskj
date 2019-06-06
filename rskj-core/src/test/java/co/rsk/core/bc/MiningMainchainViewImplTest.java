@@ -22,6 +22,7 @@ import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
+import org.ethereum.db.BlockStore;
 import org.junit.Test;
 
 import java.util.List;
@@ -38,24 +39,24 @@ public class MiningMainchainViewImplTest {
 
     @Test
     public void creationIsCorrect() {
-        Blockchain realBlockchain = createBlockchain(3);
+        BlockStore blockStore = createBlockStore(3);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                realBlockchain,
+                blockStore,
                 448);
 
         List<BlockHeader> result = testBlockchain.get();
 
         assertNotNull(result);
 
-        Block bestBlock = realBlockchain.getBestBlock();
+        Block bestBlock = blockStore.getBestBlock();
         assertThat(result.get(0).getNumber(), is(2L));
         assertThat(result.get(0).getHash(), is(bestBlock.getHash()));
 
-        Block bestBlockParent = realBlockchain.getBlockByHash(bestBlock.getParentHash().getBytes());
+        Block bestBlockParent = blockStore.getBlockByHash(bestBlock.getParentHash().getBytes());
         assertThat(result.get(1).getNumber(), is(1L));
         assertThat(result.get(1).getHash(), is(bestBlockParent.getHash()));
 
-        Block genesisBlock = realBlockchain.getBlockByHash(bestBlockParent.getParentHash().getBytes());
+        Block genesisBlock = blockStore.getBlockByHash(bestBlockParent.getParentHash().getBytes());
         assertThat(result.get(2).getNumber(), is(0L));
         assertThat(result.get(2).getHash(), is(genesisBlock.getHash()));
     }
@@ -63,7 +64,7 @@ public class MiningMainchainViewImplTest {
     @Test
     public void createWithLessBlocksThanMaxHeight() {
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                createBlockchain(10),
+                createBlockStore(10),
                 11);
 
         List<BlockHeader> result = testBlockchain.get();
@@ -75,7 +76,7 @@ public class MiningMainchainViewImplTest {
     @Test
     public void createWithBlocksEqualToMaxHeight() {
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                createBlockchain(4),
+                createBlockStore(4),
                 4);
 
         List<BlockHeader> result = testBlockchain.get();
@@ -87,7 +88,7 @@ public class MiningMainchainViewImplTest {
     @Test
     public void createWithMoreBlocksThanMaxHeight() {
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                createBlockchain(8),
+                createBlockStore(8),
                 6);
 
         List<BlockHeader> result = testBlockchain.get();
@@ -103,12 +104,12 @@ public class MiningMainchainViewImplTest {
      */
     @Test
     public void addBlockToTheTipOfTheBlockchainGettingOverMaxHeight() {
-        Blockchain realBlockchain = createBlockchain(3);
+        BlockStore blockStore = createBlockStore(3);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                realBlockchain,
+                blockStore,
                 3);
 
-        Block newBestBlockD = createBlock(3, realBlockchain.getBestBlock().getHash());
+        Block newBestBlockD = createBlock(3, blockStore.getBestBlock().getHash());
         testBlockchain.addBest(newBestBlockD.getHeader());
 
         List<BlockHeader> result = testBlockchain.get();
@@ -126,12 +127,12 @@ public class MiningMainchainViewImplTest {
      */
     @Test
     public void addBlockToTheTipOfTheBlockchain() {
-        Blockchain realBlockchain = createBlockchain(3);
+        BlockStore blockStore = createBlockStore(3);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                realBlockchain,
+                blockStore,
                 448);
 
-        Block newBestBlockD = createBlock(3, realBlockchain.getBestBlock().getHash());
+        Block newBestBlockD = createBlock(3, blockStore.getBestBlock().getHash());
         testBlockchain.addBest(newBestBlockD.getHeader());
 
         List<BlockHeader> result = testBlockchain.get();
@@ -148,12 +149,12 @@ public class MiningMainchainViewImplTest {
      */
     @Test
     public void addNewBestBlockAtLowerHeight() {
-        Blockchain realBlockchain = createBlockchain(3);
+        BlockStore blockStore = createBlockStore(3);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                realBlockchain,
+                blockStore,
                 448);
 
-        Block newBestBlockB = createBlock(1, realBlockchain.getBlockByNumber(0L).getHash());
+        Block newBestBlockB = createBlock(1, blockStore.getChainBlockByNumber(0L).getHash());
         testBlockchain.addBest(newBestBlockB.getHeader());
 
         List<BlockHeader> result = testBlockchain.get();
@@ -170,14 +171,14 @@ public class MiningMainchainViewImplTest {
      */
     @Test
     public void addNewBestBlockAndItsBranchToTheTipOfTheBlockchain() {
-        Blockchain realBlockchain = createBlockchain(3);
+        BlockStore blockStore = createBlockStore(3);
         MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                realBlockchain,
+                blockStore,
                 448);
 
-        Block newBlockB = createBlock(1, realBlockchain.getBlockByNumber(0L).getHash());
-        when(realBlockchain.getBlockByHash(newBlockB.getHash().getBytes())).thenReturn(newBlockB);
-        when(realBlockchain.getBlockByNumber(1L)).thenReturn(newBlockB);
+        Block newBlockB = createBlock(1, blockStore.getChainBlockByNumber(0L).getHash());
+        when(blockStore.getBlockByHash(newBlockB.getHash().getBytes())).thenReturn(newBlockB);
+        when(blockStore.getChainBlockByNumber(1L)).thenReturn(newBlockB);
 
         Block newBestBlockC = createBlock(2, newBlockB.getHash());
         testBlockchain.addBest(newBestBlockC.getHeader());
@@ -189,26 +190,26 @@ public class MiningMainchainViewImplTest {
         assertThat(result.get(0).getHash(), is(newBestBlockC.getHash()));
     }
 
-    private Blockchain createBlockchain(int height) {
-        Blockchain blockchain = mock(Blockchain.class);
+    private BlockStore createBlockStore(int height) {
+        BlockStore blockStore = mock(BlockStore.class);
 
         Block previousBlock = createGenesisBlock();
-        when(blockchain.getBlockByHash(previousBlock.getHash().getBytes())).thenReturn(previousBlock);
-        when(blockchain.getBlockByNumber(0L)).thenReturn(previousBlock);
+        when(blockStore.getBlockByHash(previousBlock.getHash().getBytes())).thenReturn(previousBlock);
+        when(blockStore.getChainBlockByNumber(0L)).thenReturn(previousBlock);
 
         for(long i = 1; i < height; i++) {
             Block block = createBlock(i, previousBlock.getHash());
-            when(blockchain.getBlockByHash(block.getHash().getBytes())).thenReturn(block);
-            when(blockchain.getBlockByNumber(block.getNumber())).thenReturn(block);
+            when(blockStore.getBlockByHash(block.getHash().getBytes())).thenReturn(block);
+            when(blockStore.getChainBlockByNumber(block.getNumber())).thenReturn(block);
 
             if(i == height - 1) {
-                when(blockchain.getBestBlock()).thenReturn(block);
+                when(blockStore.getBestBlock()).thenReturn(block);
             }
 
             previousBlock = block;
         }
 
-        return blockchain;
+        return blockStore;
     }
 
     private Block createGenesisBlock(){

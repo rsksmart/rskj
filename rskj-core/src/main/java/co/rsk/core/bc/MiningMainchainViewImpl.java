@@ -20,18 +20,17 @@ package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
+import org.ethereum.db.BlockStore;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class MiningMainchainViewImpl implements MiningMainchainView {
     private final Object internalBlockStoreReadWriteLock = new Object();
 
     private final int height;
 
-    private Blockchain blockchain;
+    private BlockStore blockStore;
 
     @GuardedBy("internalBlockStoreReadWriteLock")
     private Map<Keccak256, BlockHeader> blocksByHash;
@@ -42,13 +41,13 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
     @GuardedBy("internalBlockStoreReadWriteLock")
     private List<BlockHeader> mainchain;
 
-    public MiningMainchainViewImpl(Blockchain blockchain,
+    public MiningMainchainViewImpl(BlockStore blockStore,
                                    int height) {
         this.height = height;
-        this.blockchain = blockchain;
+        this.blockStore = blockStore;
         this.blocksByHash = new HashMap<>();
         this.blocksByNumber = new HashMap<>();
-        fillInternalStore(blockchain.getBestBlock().getHeader());
+        fillInternalStore(blockStore.getBestBlock().getHeader());
     }
 
     public void addBest(BlockHeader bestHeader) {
@@ -88,7 +87,7 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
                 break;
             }
 
-            currentHeader = blockchain.getBlockByHash(currentHeader.getParentHash().getBytes()).getHeader();
+            currentHeader = blockStore.getBlockByHash(currentHeader.getParentHash().getBytes()).getHeader();
         }
 
         mainchain = newHeaderChain;

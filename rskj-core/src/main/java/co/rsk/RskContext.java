@@ -237,7 +237,11 @@ public class RskContext implements NodeBootstrapper {
     public MiningMainchainView getMiningMainchainView() {
         if (miningMainchainView == null) {
             miningMainchainView = new MiningMainchainViewImpl(
-                    getBlockchain(),
+                    // One would expect getBlockStore to be used here. However, when the BlockStore is created,
+                    // it does not have any blocks, resulting in a NullPointerException when trying to initially
+                    // fill the mainchain view. Hence why we wait for the blockchain to perform its required
+                    // initialization tasks and then we ask for the store
+                    getBlockchain().getBlockStore(),
                     MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION
             );
         }
