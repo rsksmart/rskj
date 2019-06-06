@@ -507,77 +507,19 @@ public class Trie {
      * @return a byte array with the serialized info
      */
     public byte[] toMessage() {
-        if (encoded != null) {
-            return cloneArray(encoded);
+        if (encoded == null) {
+            internalToMessage();
         }
-
-        Uint24 lvalue = this.valueLength;
-        boolean hasLongVal = this.hasLongValue();
-
-        SharedPathSerializer sharedPathSerializer = new SharedPathSerializer(this.sharedPath);
-        VarInt treeSize = getTreeSize();
-
-        ByteBuffer buffer = ByteBuffer.allocate(
-                1 + // flags
-                sharedPathSerializer.serializedLength() +
-                this.left.serializedLength() +
-                this.right.serializedLength() +
-                (this.isTerminal() ? 0 : treeSize.getSizeInBytes()) +
-                (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue())
-        );
-
-        // current serialization version: 01
-        byte flags = 0b01000000;
-        if (hasLongVal) {
-            flags = (byte) (flags | 0b00100000);
-        }
-
-        if (sharedPathSerializer.isPresent()) {
-            flags = (byte) (flags | 0b00010000);
-        }
-
-        if (!this.left.isEmpty()) {
-            flags = (byte) (flags | 0b00001000);
-        }
-
-        if (!this.right.isEmpty()) {
-            flags = (byte) (flags | 0b00000100);
-        }
-
-        if (this.left.isEmbeddable()) {
-            flags = (byte) (flags | 0b00000010);
-        }
-
-        if (this.right.isEmbeddable()) {
-            flags = (byte) (flags | 0b00000001);
-        }
-
-        buffer.put(flags);
-
-        sharedPathSerializer.serializeInto(buffer);
-
-        this.left.serializeInto(buffer);
-
-        this.right.serializeInto(buffer);
-
-        if (!this.isTerminal()) {
-            buffer.put(treeSize.encode());
-        }
-
-        if (hasLongVal) {
-            buffer.put(this.getValueHash().getBytes());
-            buffer.put(lvalue.encode());
-        } else if (lvalue.compareTo(Uint24.ZERO) > 0) {
-            buffer.put(this.getValue());
-        }
-
-        encoded = buffer.array();
 
         return cloneArray(encoded);
     }
 
     public int getMessageLength() {
-        return toMessage().length;
+        if (encoded == null) {
+            internalToMessage();
+        }
+
+        return encoded.length;
     }
 
     /**
@@ -765,6 +707,70 @@ public class Trie {
         }
 
         return node.find(key.slice(commonPathLength + 1, key.length()));
+    }
+
+    private void internalToMessage() {
+        Uint24 lvalue = this.valueLength;
+        boolean hasLongVal = this.hasLongValue();
+
+        SharedPathSerializer sharedPathSerializer = new SharedPathSerializer(this.sharedPath);
+        VarInt treeSize = getTreeSize();
+
+        ByteBuffer buffer = ByteBuffer.allocate(
+                1 + // flags
+                        sharedPathSerializer.serializedLength() +
+                        this.left.serializedLength() +
+                        this.right.serializedLength() +
+                        (this.isTerminal() ? 0 : treeSize.getSizeInBytes()) +
+                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue())
+        );
+
+        // current serialization version: 01
+        byte flags = 0b01000000;
+        if (hasLongVal) {
+            flags = (byte) (flags | 0b00100000);
+        }
+
+        if (sharedPathSerializer.isPresent()) {
+            flags = (byte) (flags | 0b00010000);
+        }
+
+        if (!this.left.isEmpty()) {
+            flags = (byte) (flags | 0b00001000);
+        }
+
+        if (!this.right.isEmpty()) {
+            flags = (byte) (flags | 0b00000100);
+        }
+
+        if (this.left.isEmbeddable()) {
+            flags = (byte) (flags | 0b00000010);
+        }
+
+        if (this.right.isEmbeddable()) {
+            flags = (byte) (flags | 0b00000001);
+        }
+
+        buffer.put(flags);
+
+        sharedPathSerializer.serializeInto(buffer);
+
+        this.left.serializeInto(buffer);
+
+        this.right.serializeInto(buffer);
+
+        if (!this.isTerminal()) {
+            buffer.put(treeSize.encode());
+        }
+
+        if (hasLongVal) {
+            buffer.put(this.getValueHash().getBytes());
+            buffer.put(lvalue.encode());
+        } else if (lvalue.compareTo(Uint24.ZERO) > 0) {
+            buffer.put(this.getValue());
+        }
+
+        encoded = buffer.array();
     }
 
     private Trie retrieveNode(byte implicitByte) {
