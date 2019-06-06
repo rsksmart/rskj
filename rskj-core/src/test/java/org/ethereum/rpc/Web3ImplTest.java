@@ -1244,7 +1244,7 @@ public class Web3ImplTest {
     private Web3Impl createWeb3(SimpleEthereum eth, PeerServer peerServer) {
         wallet = WalletFactory.createWallet();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
-        MiningMainchainView mainchainView = new MiningMainchainViewImpl(blockchain, 449);
+        MiningMainchainView mainchainView = new MiningMainchainViewImpl(blockchain.getBlockStore(), 449);
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(

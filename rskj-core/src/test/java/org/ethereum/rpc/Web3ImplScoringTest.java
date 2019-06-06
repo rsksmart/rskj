@@ -354,7 +354,7 @@ public class Web3ImplScoringTest {
 
         World world = new World();
         rsk.blockchain = world.getBlockChain();
-        MiningMainchainView miningMainchainView = new MiningMainchainViewImpl(world.getBlockChain(), 2);
+        MiningMainchainView miningMainchainView = new MiningMainchainViewImpl(rsk.blockchain.getBlockStore(), 2);
 
         Wallet wallet = WalletFactory.createWallet();
         TestSystemProperties config = new TestSystemProperties();

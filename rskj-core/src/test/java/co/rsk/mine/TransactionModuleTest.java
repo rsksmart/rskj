@@ -130,7 +130,7 @@ public class TransactionModuleTest {
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
-        MiningMainchainView mainchainView = new MiningMainchainViewImpl(blockchain, 1);
+        MiningMainchainView mainchainView = new MiningMainchainViewImpl(blockchain.getBlockStore(), 1);
 
         Repository repository = blockchain.getRepository();
 
@@ -266,7 +266,7 @@ public class TransactionModuleTest {
                                        BlockStore blockStore,
                                        boolean mineInstant) {
         return createEnvironment(blockchain,
-                new MiningMainchainViewImpl(blockchain, 1),
+                new MiningMainchainViewImpl(blockStore, 1),
                 receiptStore,
                 repository,
                 transactionPool,
