@@ -70,12 +70,12 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersSingleBlock() throws IOException {
+    public void receiveHeadersSingleBlock() {
         BridgePerformanceTest.addStats(doReceiveHeaders("receiveHeaders-singleBlock", 2000, 1, 0));
     }
 
     @Test
-    public void receiveHeadersInterpolation() throws IOException {
+    public void receiveHeadersInterpolation() {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-interpolation");
 
         stats.add(doReceiveHeaders("receiveHeaders-interpolation",1000, 1, 0));
@@ -85,7 +85,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersIncremental() throws IOException {
+    public void receiveHeadersIncremental() {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-incremental");
 
         for (int i = 1; i <= 500; i++) {
@@ -96,7 +96,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersWithForking() throws IOException {
+    public void receiveHeadersWithForking() {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-withForking");
 
         for (int numHeaders = 1; numHeaders < 10; numHeaders++) {

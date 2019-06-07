@@ -1205,13 +1205,11 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
 
-        boolean thrown = false;
         try {
             bridge.isBtcTxHashAlreadyProcessed(new Object[]{"notahash"});
+            Assert.fail();
         } catch (RuntimeException e) {
-            thrown = true;
         }
-        Assert.assertTrue(thrown);
         verify(bridgeSupportMock, never()).isBtcTxHashAlreadyProcessed(any());
     }
 
@@ -1243,13 +1241,11 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
 
-        boolean thrown = false;
         try {
             bridge.getBtcTxHashProcessedHeight(new Object[]{"notahash"});
+            Assert.fail();
         } catch (RuntimeException e) {
-            thrown = true;
         }
-        Assert.assertTrue(thrown);
         verify(bridgeSupportMock, never()).getBtcTxHashProcessedHeight(any());
     }
 
@@ -2367,14 +2363,12 @@ public class BridgeTest {
 
         byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
 
-        boolean failed = false;
         try {
             bridge.execute(data);
+            Assert.fail();
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("Sender is not part of the active"));
-            failed = true;
         }
-        Assert.assertTrue(failed);
         verify(bridgeSupportMock, never()).receiveHeaders(any(BtcBlock[].class));
     }
 
