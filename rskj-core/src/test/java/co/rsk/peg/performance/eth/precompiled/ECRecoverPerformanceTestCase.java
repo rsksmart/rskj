@@ -27,6 +27,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Optional;
+
 
 @Ignore
 public class ECRecoverPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
@@ -43,6 +45,16 @@ public class ECRecoverPerformanceTestCase extends PrecompiledContractPerformance
         stats.add(doECRecover(environmentBuilder, 100, message, new ECKey().sign(message.getBytes())));
 
         EthPrecompiledPerformanceTest.addStats(stats);
+    }
+
+    private void warmUp(EnvironmentBuilder environmentBuilder) {
+        // Get rid of outliers by executing some cases beforehand
+        setQuietMode(true);
+        System.out.print("Doing an initial pass... ");
+        Keccak256 message = new Keccak256("AA1122334455339988990011223344556677889900112233445566778899aabb");
+        doECRecover(environmentBuilder, 100, message, new ECKey().sign(message.getBytes()));
+        System.out.print("Done!\n");
+        setQuietMode(false);
     }
 
     private ExecutionStats doECRecover(EnvironmentBuilder environmentBuilder, int numCases, Keccak256 message, ECKey.ECDSASignature signature)  {
@@ -70,7 +82,8 @@ public class ECRecoverPerformanceTestCase extends PrecompiledContractPerformance
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                null
+                null,
+                Optional.of(0.0)
         );
         return stats;
     }

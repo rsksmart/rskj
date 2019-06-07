@@ -37,6 +37,7 @@ import org.junit.BeforeClass;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
+import java.util.Optional;
 import java.util.Random;
 
 import static org.mockito.Mockito.mock;
@@ -69,6 +70,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
         private long startTime, endTime;
         private long startRealTime, endRealTime;
         private long gasForData;
+        private long dataCost;
         private RepositoryTrackWithBenchmarking.Statistics repositoryStatistics;
 
         public ExecutionTracker(ThreadMXBean thread) {
@@ -109,16 +111,24 @@ public abstract class PrecompiledContractPerformanceTestCase {
         public void setGasForData(long newGasForData) {
             this.gasForData = newGasForData;
         }
+
+        public void setDataCost(long newDataCost) {
+            this.dataCost = newDataCost;
+        }
+
+        public long getDataCost() {
+            return dataCost;
+        }
     }
 
     @BeforeClass
-    public static void setupA() throws Exception {
+    public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.genesis();
     }
 
     @AfterClass
-    public static void printStatsIfNotInSuite() throws Exception {
+    public static void printStatsIfNotInSuite() {
         if (!PrecompiledContractPerformanceTest.isRunning()) {
             PrecompiledContractPerformanceTest.printStats();
         }
@@ -243,7 +253,8 @@ public abstract class PrecompiledContractPerformanceTestCase {
             TxBuilder txBuilder,
             HeightProvider heightProvider,
             int executionIndex,
-            ResultCallback resultCallback) {
+            ResultCallback resultCallback,
+            Optional<Double> dataCostPerByte) {
 
         ExecutionTracker executionInfo = new ExecutionTracker(thread);
 
@@ -254,10 +265,17 @@ public abstract class PrecompiledContractPerformanceTestCase {
                 heightProvider.getHeight(executionIndex)
         );
 
-        long getGasResult = environment.getContract().getGasForData(abiEncoder.encode(executionIndex));
+        byte[] data = abiEncoder.encode(executionIndex);
+        long dataCost = 0;
+        double dataCostPerByteValue = dataCostPerByte.orElse(2.0); //Default in most cases is 2
+        if(dataCostPerByteValue != 0) {
+            dataCost = data == null ? 0 : Math.round(data.length * dataCostPerByteValue);
+        }
+        executionInfo.setDataCost(dataCost);
+        long getGasResult = environment.getContract().getGasForData(data);
         executionInfo.setGasForData(getGasResult);
         executionInfo.startTimer();
-        byte[] executionResult = environment.getContract().execute(abiEncoder.encode(executionIndex));
+        byte[] executionResult = environment.getContract().execute(data);
         executionInfo.endTimer();
 
         environment.finalise();
@@ -279,18 +297,20 @@ public abstract class PrecompiledContractPerformanceTestCase {
             TxBuilder txBuilder,
             HeightProvider heightProvider,
             ExecutionStats stats,
-            ResultCallback resultCallback) {
+            ResultCallback resultCallback,
+            Optional<Double> dataCostPerByte) {
 
         for (int i = 0; i < times; i++) {
             printLine(String.format("%s %d/%d", name, i + 1, times));
 
-            ExecutionTracker tracker = execute(environmentBuilder, abiEncoder, txBuilder, heightProvider, i, resultCallback);
+            ExecutionTracker tracker = execute(environmentBuilder, abiEncoder, txBuilder, heightProvider, i, resultCallback, dataCostPerByte);
 
             stats.executionTimes.add(tracker.getExecutionTime());
             stats.realExecutionTimes.add(tracker.getRealExecutionTime());
             stats.slotsWritten.add(tracker.getRepositoryStatistics().getSlotsWritten());
             stats.slotsCleared.add(tracker.getRepositoryStatistics().getSlotsCleared());
             stats.getGasForData.add(tracker.getGasForData());
+            stats.dataCost.add(tracker.getDataCost());
         }
 
         return stats;

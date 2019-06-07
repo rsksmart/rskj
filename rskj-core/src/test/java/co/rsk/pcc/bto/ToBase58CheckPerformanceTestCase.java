@@ -28,6 +28,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Optional;
 import java.util.Random;
 
 @Ignore
@@ -83,8 +84,8 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
                     String address = (String) decodedResult[0];
                     Assert.assertTrue(MIN_ADDRESS_LENGTH <= address.length());
                     Assert.assertTrue(MAX_ADDRESS_LENGTH >= address.length());
-                }
-        );
+                },
+                Optional.empty());
 
         return stats;
     }

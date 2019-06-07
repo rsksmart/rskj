@@ -27,7 +27,6 @@ import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.BenchmarkedRepository;
 import co.rsk.mine.MinerUtils;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
@@ -45,6 +44,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.LinkedList;
+import java.util.Optional;
 
 @Ignore
 public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
@@ -88,7 +88,8 @@ public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerforman
                     Assert.assertEquals(byte[].class, decodedResult[0].getClass());
                     byte[] address = (byte[]) decodedResult[0];
                     Assert.assertTrue(0== address.length || 20 == address.length);
-                }
+                },
+                Optional.empty()
         );
     }
 

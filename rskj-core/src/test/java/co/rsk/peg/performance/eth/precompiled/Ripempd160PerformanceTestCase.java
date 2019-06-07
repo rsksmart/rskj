@@ -18,7 +18,7 @@
 
 package co.rsk.peg.performance.eth.precompiled;
 
-        import co.rsk.peg.performance.CombinedExecutionStats;
+import co.rsk.peg.performance.CombinedExecutionStats;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.crypto.ECKey;
@@ -26,13 +26,17 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Optional;
+
 @Ignore
 public class Ripempd160PerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     @Test
     public void Ripempd160() {
-        CombinedExecutionStats stats = new CombinedExecutionStats("Ripempd160");
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) ->
                 EnvironmentBuilder.Environment.withContract(new PrecompiledContracts.Ripempd160());
+        warmUp(environmentBuilder);
+
+        CombinedExecutionStats stats = new CombinedExecutionStats("Ripempd160");
 
         stats.add(doRipempd160(environmentBuilder, 100, new byte[]{}));
 
@@ -43,6 +47,15 @@ public class Ripempd160PerformanceTestCase extends PrecompiledContractPerformanc
         stats.add(doRipempd160(environmentBuilder, 100, new byte[200000]));
 
         EthPrecompiledPerformanceTest.addStats(stats);
+    }
+
+    private void warmUp(EnvironmentBuilder environmentBuilder) {
+        // Get rid of outliers by executing some cases beforehand
+        setQuietMode(true);
+        System.out.print("Doing an initial pass... ");
+        doRipempd160(environmentBuilder, 100, new byte[]{});
+        System.out.print("Done!\n");
+        setQuietMode(false);
     }
 
     private ExecutionStats doRipempd160(EnvironmentBuilder environmentBuilder, int numCases, byte[] params) {
@@ -59,7 +72,8 @@ public class Ripempd160PerformanceTestCase extends PrecompiledContractPerformanc
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                null
+                null,
+                Optional.of(3.75)
         );
         return stats;
     }

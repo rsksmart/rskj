@@ -19,23 +19,26 @@
 
 package co.rsk.peg.performance.eth.precompiled;
 
-        import co.rsk.peg.performance.CombinedExecutionStats;
-        import co.rsk.peg.performance.ExecutionStats;
-        import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
-        import org.ethereum.crypto.ECKey;
-        import org.ethereum.vm.PrecompiledContracts;
-        import org.junit.Ignore;
-        import org.junit.Test;
+import co.rsk.peg.performance.CombinedExecutionStats;
+import co.rsk.peg.performance.ExecutionStats;
+import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Ignore;
+import org.junit.Test;
 
-        import java.io.IOException;
+import java.io.IOException;
+import java.util.Optional;
 
 @Ignore
 public class Sha256PerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     @Test
     public void Sha256() throws IOException {
-        CombinedExecutionStats stats = new CombinedExecutionStats("Sha256");
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) ->
                 EnvironmentBuilder.Environment.withContract(new PrecompiledContracts.Sha256());
+        warmUp(environmentBuilder);
+
+        CombinedExecutionStats stats = new CombinedExecutionStats("Sha256");
 
         stats.add(doSha256(environmentBuilder, 100, new byte[]{}));
 
@@ -46,6 +49,15 @@ public class Sha256PerformanceTestCase extends PrecompiledContractPerformanceTes
         stats.add(doSha256(environmentBuilder, 100, new byte[200000]));
 
         EthPrecompiledPerformanceTest.addStats(stats);
+    }
+
+    private void warmUp(EnvironmentBuilder environmentBuilder) throws IOException {
+        // Get rid of outliers by executing some cases beforehand
+        setQuietMode(true);
+        System.out.print("Doing an initial pass... ");
+        doSha256(environmentBuilder, 100, new byte[]{});
+        System.out.print("Done!\n");
+        setQuietMode(false);
     }
 
     private ExecutionStats doSha256(EnvironmentBuilder environmentBuilder, int numCases, byte[] params) throws IOException {
@@ -62,7 +74,8 @@ public class Sha256PerformanceTestCase extends PrecompiledContractPerformanceTes
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                null
+                null,
+                Optional.of(0.375)
         );
         return stats;
     }

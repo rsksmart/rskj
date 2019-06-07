@@ -28,14 +28,16 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.Optional;
 
 @Ignore
 public class BigIntegerModexpPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     @Test
     public void BigIntegerModexp() {
-        CombinedExecutionStats stats = new CombinedExecutionStats("BigIntegerModexp");
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) ->
                 EnvironmentBuilder.Environment.withContract(new PrecompiledContracts.BigIntegerModexp());
+        warmUp(environmentBuilder);
+        CombinedExecutionStats stats = new CombinedExecutionStats("BigIntegerModexp");
 
         stats.add(doBigIntegerModexp(environmentBuilder, 100, 1,1,1));
         stats.add(doBigIntegerModexp(environmentBuilder, 100, 100, 8, 2));
@@ -44,6 +46,15 @@ public class BigIntegerModexpPerformanceTestCase extends PrecompiledContractPerf
 
 
         EthPrecompiledPerformanceTest.addStats(stats);
+    }
+
+    private void warmUp(EnvironmentBuilder environmentBuilder) {
+        // Get rid of outliers by executing some cases beforehand
+        setQuietMode(true);
+        System.out.print("Doing an initial pass... ");
+        doBigIntegerModexp(environmentBuilder, 100, 1,1,1);
+        System.out.print("Done!\n");
+        setQuietMode(false);
     }
 
     private ExecutionStats doBigIntegerModexp(EnvironmentBuilder environmentBuilder, int numCases, int baseLen, int expLen, int modLen) {
@@ -67,7 +78,8 @@ public class BigIntegerModexpPerformanceTestCase extends PrecompiledContractPerf
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                null
+                null,
+                Optional.of(0.0)
         );
         return stats;
     }

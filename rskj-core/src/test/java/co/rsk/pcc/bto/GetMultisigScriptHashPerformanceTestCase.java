@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -121,7 +122,8 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
                     Assert.assertEquals(byte[].class, decodedResult[0].getClass());
                     String hexHash = Hex.toHexString((byte[]) decodedResult[0]);
                     Assert.assertEquals(expectedHashHex, hexHash);
-                }
+                },
+                Optional.empty()
         );
 
         return stats;

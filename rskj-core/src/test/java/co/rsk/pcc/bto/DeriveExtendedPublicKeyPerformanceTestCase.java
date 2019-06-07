@@ -33,6 +33,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -108,8 +109,8 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
                     Assert.assertEquals(String.class, decodedResult[0].getClass());
                     String address = (String) decodedResult[0];
                     Assert.assertTrue(address.startsWith("xpub"));
-                }
-        );
+                },
+                Optional.empty());
 
         return stats;
     }

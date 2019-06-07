@@ -26,13 +26,17 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Optional;
+
 @Ignore
 public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     @Test
     public void identity() {
-        CombinedExecutionStats stats = new CombinedExecutionStats("identity");
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) ->
                 EnvironmentBuilder.Environment.withContract(new PrecompiledContracts.Identity());
+        warmUp(environmentBuilder);
+
+        CombinedExecutionStats stats = new CombinedExecutionStats("identity");
 
         stats.add(doIdentity(environmentBuilder, 100, new byte[]{}));
 
@@ -43,6 +47,15 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
         stats.add(doIdentity(environmentBuilder, 100, new byte[200000]));
 
         EthPrecompiledPerformanceTest.addStats(stats);
+    }
+
+    private void warmUp(EnvironmentBuilder environmentBuilder) {
+        // Get rid of outliers by executing some cases beforehand
+        setQuietMode(true);
+        System.out.print("Doing an initial pass... ");
+        doIdentity(environmentBuilder, 100, new byte[]{});
+        System.out.print("Done!\n");
+        setQuietMode(false);
     }
 
     private ExecutionStats doIdentity(EnvironmentBuilder environmentBuilder, int numCases, byte[] params) {
@@ -59,7 +72,8 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                null
+                null,
+                Optional.of(0.09375)
         );
         return stats;
     }

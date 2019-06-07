@@ -32,6 +32,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
+import java.util.Optional;
 import java.util.Random;
 
 @Ignore
@@ -86,8 +87,8 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
                     Assert.assertEquals(byte[].class, decodedResult[0].getClass());
                     String hexPublicKey = Hex.toHexString((byte[]) decodedResult[0]);
                     Assert.assertEquals(expectedHexPublicKey, hexPublicKey);
-                }
-        );
+                },
+                Optional.empty());
 
         return stats;
     }

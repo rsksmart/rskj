@@ -222,6 +222,6 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             };
         };
 
-        return super.executeAndAverage(name, times, environmentBuilder, abiEncoder, txBuilder, heightProvider, stats, resultCallback);
+        return super.executeAndAverage(name, times, environmentBuilder, abiEncoder, txBuilder, heightProvider, stats, resultCallback, Optional.empty());
     }
 }
