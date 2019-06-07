@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieConverter;
 import co.rsk.validators.*;
@@ -71,10 +72,10 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockTxsValidationRule(Repository repository) {
-        this.blockTxsValidationRule = new BlockTxsValidationRule(
+        this.blockTxsValidationRule = new BlockTxsValidationRule(new RepositoryLocator(
                 repository,
                 new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>())
-        );
+        ));
         return this;
     }
 

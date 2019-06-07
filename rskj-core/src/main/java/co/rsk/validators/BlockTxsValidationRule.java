@@ -20,7 +20,6 @@ package co.rsk.validators;
 
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -49,8 +48,8 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
 
     private final RepositoryLocator repositoryLocator;
 
-    public BlockTxsValidationRule(Repository repository, StateRootHandler stateRootHandler) {
-        this.repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
+    public BlockTxsValidationRule(RepositoryLocator repositoryLocator) {
+        this.repositoryLocator = repositoryLocator;
     }
 
     @Override

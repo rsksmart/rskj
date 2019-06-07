@@ -76,6 +76,7 @@ public interface Blockchain {
 
     BlockStore getBlockStore();
 
+    @Deprecated
     Repository getRepository();
 
     List<BlockInformation> getBlocksInformationByNumber(long number);

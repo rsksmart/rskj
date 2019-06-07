@@ -26,7 +26,6 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
@@ -70,8 +69,7 @@ public class BlockToMineBuilder {
     public BlockToMineBuilder(
             ActivationConfig activationConfig,
             MiningConfig miningConfig,
-            Repository repository,
-            StateRootHandler stateRootHandler,
+            RepositoryLocator repositoryLocator,
             BlockStore blockStore,
             TransactionPool transactionPool,
             DifficultyCalculator difficultyCalculator,
@@ -84,7 +82,7 @@ public class BlockToMineBuilder {
             MinerUtils minerUtils) {
         this.activationConfig = Objects.requireNonNull(activationConfig);
         this.miningConfig = Objects.requireNonNull(miningConfig);
-        this.repositoryLocator = Objects.requireNonNull(new RepositoryLocator(repository, stateRootHandler));
+        this.repositoryLocator = Objects.requireNonNull(repositoryLocator);
         this.blockStore = Objects.requireNonNull(blockStore);
         this.transactionPool = Objects.requireNonNull(transactionPool);
         this.difficultyCalculator = Objects.requireNonNull(difficultyCalculator);

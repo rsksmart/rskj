@@ -161,7 +161,6 @@ public class Web3ImplSnapshotTest {
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
 
-        ethereum.repository = factory.getRepository();
         ethereum.blockchain = blockchain;
 
         return new Web3Impl(
@@ -180,15 +179,14 @@ public class Web3ImplSnapshotTest {
                 null,
                 dm,
                 Web3Mocks.getMockChannelManager(),
-                ethereum.repository,
+                factory.getRepositoryLocator(),
                 null,
                 null,
                 null,
                 null,
                 null,
                 null,
-                null,
-                factory.getStateRootHandler()
+                null
         );
     }
 
@@ -210,8 +208,7 @@ public class Web3ImplSnapshotTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         miningConfig,
-                        factory.getRepository(),
-                        factory.getStateRootHandler(),
+                        factory.getRepositoryLocator(),
                         factory.getBlockStore(),
                         factory.getTransactionPool(),
                         difficultyCalculator,

@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.encoders.Hex;
@@ -137,7 +138,7 @@ public class StateTestRunner {
                 1,
                 new BlockExecutor(
                         config.getActivationConfig(),
-                        repository,
+                        new RepositoryLocator(repository, stateRootHandler),
                         stateRootHandler,
                         new TransactionExecutorFactory(
                                 config,

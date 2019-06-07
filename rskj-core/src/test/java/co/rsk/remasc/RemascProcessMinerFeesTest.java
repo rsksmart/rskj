@@ -28,6 +28,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -965,7 +966,7 @@ public class RemascProcessMinerFeesTest {
     private BlockExecutor buildBlockExecutor(Blockchain blockchain) {
         return new BlockExecutor(
                 config.getActivationConfig(),
-                blockchain.getRepository(),
+                new RepositoryLocator(blockchain.getRepository(), stateRootHandler),
                 stateRootHandler,
                 new TransactionExecutorFactory(
                         config,

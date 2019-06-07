@@ -61,10 +61,10 @@ public class BlockExecutor {
 
     public BlockExecutor(
             ActivationConfig activationConfig,
-            Repository repository,
+            RepositoryLocator repositoryLocator,
             StateRootHandler stateRootHandler,
             TransactionExecutorFactory transactionExecutorFactory) {
-        this.repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
+        this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.stateRootHandler = stateRootHandler;
         this.activationConfig = activationConfig;

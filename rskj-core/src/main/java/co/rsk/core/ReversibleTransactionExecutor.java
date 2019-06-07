@@ -20,7 +20,6 @@
 package co.rsk.core;
 
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -32,14 +31,13 @@ import org.ethereum.vm.program.ProgramResult;
  * isolated environment (e.g. no persistent state changes).
  */
 public class ReversibleTransactionExecutor {
-    private final TransactionExecutorFactory transactionExecutorFactory;
     private final RepositoryLocator repositoryLocator;
+    private final TransactionExecutorFactory transactionExecutorFactory;
 
     public ReversibleTransactionExecutor(
-            Repository repository,
-            StateRootHandler stateRootHandler,
+            RepositoryLocator repositoryLocator,
             TransactionExecutorFactory transactionExecutorFactory) {
-        this.repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
+        this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
     }
 

@@ -27,7 +27,6 @@ import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.listener.TestCompositeEthereumListener;
 
 import javax.annotation.Nonnull;
-import java.math.BigInteger;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -35,7 +34,6 @@ import java.math.BigInteger;
 public class SimpleEthereum implements Ethereum {
 
     public Transaction tx;
-    public Repository repository;
     public Blockchain blockchain;
     private EthereumListener listener;
 
@@ -70,10 +68,6 @@ public class SimpleEthereum implements Ethereum {
     @Override
     public void submitTransaction(Transaction transaction) {
         tx = transaction;
-    }
-
-    public Repository getRepository() {
-        return repository;
     }
 
     @Override

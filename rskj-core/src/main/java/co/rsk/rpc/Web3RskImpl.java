@@ -20,7 +20,7 @@ package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.*;
@@ -77,7 +77,7 @@ public class Web3RskImpl extends Web3Impl {
             MnrModule mnrModule,
             DebugModule debugModule,
             ChannelManager channelManager,
-            Repository repository,
+            RepositoryLocator repositoryLocator,
             PeerScoringManager peerScoringManager,
             NetworkStateExporter networkStateExporter,
             BlockStore blockStore,
@@ -87,12 +87,11 @@ public class Web3RskImpl extends Web3Impl {
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
-            BlocksBloomStore blocksBloomStore,
-            StateRootHandler stateRootHandler) {
+            BlocksBloomStore blocksBloomStore) {
         super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
               personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule,
-              channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor,
-              hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, stateRootHandler);
+              channelManager, repositoryLocator, peerScoringManager, peerServer, nodeBlockProcessor,
+              hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore);
 
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;

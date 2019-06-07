@@ -27,6 +27,7 @@ import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.BlockHeaderElement;
@@ -147,6 +148,7 @@ public class RskContext implements NodeBootstrapper {
     private ReceiptStore receiptStore;
     private ProgramInvokeFactory programInvokeFactory;
     private TransactionPool transactionPool;
+    private RepositoryLocator repositoryLocator;
     private StateRootHandler stateRootHandler;
     private TrieConverter trieConverter;
     private EvmModule evmModule;
@@ -258,6 +260,14 @@ public class RskContext implements NodeBootstrapper {
         return transactionPool;
     }
 
+    public RepositoryLocator getRepositoryLocator() {
+        if (repositoryLocator == null) {
+            repositoryLocator = new RepositoryLocator(getRepository(), getStateRootHandler());
+        }
+
+        return repositoryLocator;
+    }
+
     public StateRootHandler getStateRootHandler() {
         if (stateRootHandler == null) {
             stateRootHandler = buildStateRootHandler();
@@ -294,7 +304,7 @@ public class RskContext implements NodeBootstrapper {
         if (blockExecutor == null) {
             blockExecutor = new BlockExecutor(
                     getRskSystemProperties().getActivationConfig(),
-                    getRepository(),
+                    getRepositoryLocator(),
                     getStateRootHandler(),
                     getTransactionExecutorFactory()
             );
@@ -328,8 +338,7 @@ public class RskContext implements NodeBootstrapper {
     public ReversibleTransactionExecutor getReversibleTransactionExecutor() {
         if (reversibleTransactionExecutor == null) {
             reversibleTransactionExecutor = new ReversibleTransactionExecutor(
-                    getRepository(),
-                    getStateRootHandler(),
+                    getRepositoryLocator(),
                     getTransactionExecutorFactory()
             );
         }
@@ -417,7 +426,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockchain(),
                     getReversibleTransactionExecutor(),
                     getExecutionBlockRetriever(),
-                    getStateRootHandler(),
+                    getRepositoryLocator(),
                     getEthModuleSolidity(),
                     getEthModuleWallet(),
                     getEthModuleTransaction()
@@ -647,7 +656,7 @@ public class RskContext implements NodeBootstrapper {
                 getMnrModule(),
                 getDebugModule(),
                 getChannelManager(),
-                getRepository(),
+                getRepositoryLocator(),
                 getPeerScoringManager(),
                 getNetworkStateExporter(),
                 getBlockStore(),
@@ -657,8 +666,7 @@ public class RskContext implements NodeBootstrapper {
                 getHashRateCalculator(),
                 getConfigCapabilities(),
                 getBuildInfo(),
-                getBlocksBloomStore(),
-                getStateRootHandler()
+                getBlocksBloomStore()
         );
     }
 
@@ -959,7 +967,7 @@ public class RskContext implements NodeBootstrapper {
             Constants commonConstants = getRskSystemProperties().getNetworkConstants();
             blockParentDependantValidationRule = new BlockParentCompositeRule(
                     new BlockTxsFieldsValidationRule(),
-                    new BlockTxsValidationRule(getRepository(), getStateRootHandler()),
+                    new BlockTxsValidationRule(getRepositoryLocator()),
                     new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
                     new BlockDifficultyRule(getDifficultyCalculator()),
@@ -995,8 +1003,7 @@ public class RskContext implements NodeBootstrapper {
             blockToMineBuilder = new BlockToMineBuilder(
                     getRskSystemProperties().getActivationConfig(),
                     getMiningConfig(),
-                    getRepository(),
-                    getStateRootHandler(),
+                    getRepositoryLocator(),
                     getBlockStore(),
                     getTransactionPool(),
                     getDifficultyCalculator(),

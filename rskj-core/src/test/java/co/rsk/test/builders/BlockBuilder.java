@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.test.World;
 import co.rsk.trie.TrieConverter;
@@ -105,10 +106,11 @@ public class BlockBuilder {
 
         if (blockChain != null) {
             final TestSystemProperties config = new TestSystemProperties();
+            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
-                    blockChain.getRepository(),
-                    new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                    new RepositoryLocator(blockChain.getRepository(), stateRootHandler),
+                    stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
                             blockChain.getBlockStore(),

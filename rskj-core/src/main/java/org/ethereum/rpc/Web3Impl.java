@@ -24,7 +24,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
@@ -125,15 +124,14 @@ public class Web3Impl implements Web3 {
             MnrModule mnrModule,
             DebugModule debugModule,
             ChannelManager channelManager,
-            Repository repository,
+            RepositoryLocator repositoryLocator,
             PeerScoringManager peerScoringManager,
             PeerServer peerServer,
             BlockProcessor nodeBlockProcessor,
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
-            BlocksBloomStore blocksBloomStore,
-            StateRootHandler stateRootHandler) {
+            BlocksBloomStore blocksBloomStore) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -148,7 +146,7 @@ public class Web3Impl implements Web3 {
         this.mnrModule = mnrModule;
         this.debugModule = debugModule;
         this.channelManager = channelManager;
-        this.repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
+        this.repositoryLocator = repositoryLocator;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
         this.nodeBlockProcessor = nodeBlockProcessor;

@@ -25,6 +25,7 @@ import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
@@ -268,6 +269,7 @@ public class TransactionModuleTest {
                 new HashMapDB(),
                 new HashMap<>()
         );
+        RepositoryLocator repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
         transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, receiptStore);
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         MinerServer minerServer = new MinerServerImpl(
@@ -279,8 +281,7 @@ public class TransactionModuleTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         miningConfig,
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
@@ -290,7 +291,7 @@ public class TransactionModuleTest {
                         blockFactory,
                         new BlockExecutor(
                                 config.getActivationConfig(),
-                                repository,
+                                repositoryLocator,
                                 stateRootHandler,
                                 transactionExecutorFactory
                         ),
@@ -308,8 +309,7 @@ public class TransactionModuleTest {
         EthModuleTransaction transactionModule;
 
         ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(
-                repository,
-                stateRootHandler,
+                repositoryLocator,
                 transactionExecutorFactory
         );
 
@@ -322,7 +322,7 @@ public class TransactionModuleTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
                 reversibleTransactionExecutor1, new ExecutionBlockRetriever(blockchain, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule
+                repositoryLocator, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
@@ -342,7 +342,7 @@ public class TransactionModuleTest {
                 null,
                 debugModule,
                 channelManager,
-                Web3Mocks.getMockRepository(),
+                repositoryLocator,
                 null,
                 null,
                 blockStore,
@@ -351,7 +351,6 @@ public class TransactionModuleTest {
                 null,
                 null,
                 configCapabilities,
-                null,
                 null,
                 null
         );

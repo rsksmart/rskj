@@ -26,12 +26,15 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.rpc.Simples.SimpleEthereum;
@@ -52,8 +55,7 @@ public class MinerManagerTest {
     private static final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockchain;
     private TransactionPool transactionPool;
-    private Repository repository;
-    private StateRootHandler stateRootHandler;
+    private RepositoryLocator repositoryLocator;
     private BlockStore blockStore;
     private BlockFactory blockFactory;
     private BlockExecutor blockExecutor;
@@ -63,8 +65,7 @@ public class MinerManagerTest {
         RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
         transactionPool = factory.getTransactionPool();
-        repository = factory.getRepository();
-        stateRootHandler = factory.getStateRootHandler();
+        repositoryLocator = factory.getRepositoryLocator();
         blockStore = factory.getBlockStore();
         blockFactory = factory.getBlockFactory();
         blockExecutor = factory.getBlockExecutor();
@@ -267,7 +268,6 @@ public class MinerManagerTest {
 
     private MinerServerImpl getMinerServer() {
         SimpleEthereum ethereum = new SimpleEthereum();
-        ethereum.repository = repository;
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
@@ -281,8 +281,7 @@ public class MinerManagerTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         miningConfig,
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
