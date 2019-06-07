@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.cli.migration;
+package co.rsk.db.migration;
 
 import co.rsk.RskContext;
 import co.rsk.core.RskAddress;
@@ -50,12 +50,12 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 /**
  * This is a one-time tool and should be removed after SecondFork (TBD) fork activation
  */
-public class UnitrieMigrationTool {
+public class OrchidToUnitrieMigrator {
 
-    private static final Logger logger = LoggerFactory.getLogger(UnitrieMigrationTool.class);
-
+    private static final Logger logger = LoggerFactory.getLogger(OrchidToUnitrieMigrator.class);
     private final KeyValueDataSource orchidContractDetailsDataStore;
     private final KeyValueDataSource orchidContractsStorage;
+    private final MissingOrchidStorageKeysProvider missingOrchidStorageKeysProvider;
     private final TrieStore orchidContractsTrieStore;
     private final TrieStore orchidAccountsTrieStore;
     private final String databaseDir;
@@ -67,11 +67,12 @@ public class UnitrieMigrationTool {
     private final Repository unitrieRepository;
     private final StateRootHandler stateRootHandler;
 
-    public UnitrieMigrationTool(Block blockToMigrate,
-                                String databaseDir,
-                                Repository unitrieRepository,
-                                StateRootHandler stateRootHandler,
-                                TrieConverter trieConverter) {
+    public OrchidToUnitrieMigrator(Block blockToMigrate,
+                                   String databaseDir,
+                                   Repository unitrieRepository,
+                                   StateRootHandler stateRootHandler,
+                                   TrieConverter trieConverter,
+                                   MissingOrchidStorageKeysProvider missingOrchidStorageKeysProvider) {
         this.databaseDir = databaseDir;
         this.blockToMigrate = blockToMigrate;
         this.unitrieRepository = unitrieRepository;
@@ -80,6 +81,7 @@ public class UnitrieMigrationTool {
 
         this.orchidContractDetailsDataStore = RskContext.makeDataSource("details", databaseDir);
         this.orchidContractsStorage = RskContext.makeDataSource("contracts-storage", databaseDir);
+        this.missingOrchidStorageKeysProvider = missingOrchidStorageKeysProvider;
         this.orchidContractsTrieStore = new CachedTrieStore(new TrieStoreImpl(orchidContractsStorage));
         this.orchidAccountsTrieStore = new CachedTrieStore(new TrieStoreImpl(RskContext.makeDataSource("state", databaseDir)));
         this.keccak256Cache = new HashMap<>();
@@ -126,12 +128,16 @@ public class UnitrieMigrationTool {
             System.exit(1);
         }
 
-        UnitrieMigrationTool unitrieMigrationTool = new UnitrieMigrationTool(
+        OrchidToUnitrieMigrator unitrieMigrationTool = new OrchidToUnitrieMigrator(
                 blockToMigrate,
                 databaseDir,
                 ctx.getRepository(),
                 ctx.getStateRootHandler(),
-                ctx.getTrieConverter()
+                ctx.getTrieConverter(),
+                new MissingOrchidStorageKeysProvider(
+                        databaseDir,
+                        ctx.getRskSystemProperties().getDatabaseMissingStorageKeysUrl()
+                )
         );
 
         unitrieMigrationTool.migrate();
@@ -257,7 +263,7 @@ public class UnitrieMigrationTool {
                 Trie.IterationElement iterationElement = inOrderIterator.next();
                 if (iterationElement.getNode().getValue() != null) {
                     Keccak256 storageKeyHash = new Keccak256(iterationElement.getNodeKey().encode());
-                    DataWord storageKey = keccak256Cache.get(storageKeyHash);
+                    DataWord storageKey = keccak256Cache.computeIfAbsent(storageKeyHash, missingOrchidStorageKeysProvider::getKeccak256PreImage);
                     if (storageKey == null) {
                         missingStorageKeys.add(storageKeyHash);
                         continue;
@@ -418,7 +424,7 @@ public class UnitrieMigrationTool {
         }
 
         public byte[] getCode() {
-            return Arrays.copyOf(code, code.length);
+            return code != null? Arrays.copyOf(code, code.length): null;
         }
 
         public RskAddress getContractAddress() {
@@ -426,11 +432,11 @@ public class UnitrieMigrationTool {
         }
 
         public byte[] getExternal() {
-            return Arrays.copyOf(external, external.length);
+            return external != null? Arrays.copyOf(external, external.length): null;
         }
 
         public byte[] getRoot() {
-            return Arrays.copyOf(root, root.length);
+            return root != null? Arrays.copyOf(root, root.length): null;
         }
 
         public RLPList getKeys() {

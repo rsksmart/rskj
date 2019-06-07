@@ -18,10 +18,19 @@
 
 package co.rsk.config;
 
+import com.typesafe.config.ConfigFactory;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 3/16/2016.
@@ -49,5 +58,29 @@ public class RskSystemPropertiesTest {
         Assert.assertEquals(2, commands.size());
         Assert.assertTrue(commands.contains("TRANSACTIONS"));
         Assert.assertTrue(commands.contains("RSK_MESSAGE:BLOCK_MESSAGE"));
+    }
+
+    @Test
+    public void getDatabaseMissingStorageKeysUrl() throws MalformedURLException {
+        Map<String, String> requiredConfig = new HashMap<>();
+        String expectedValue = "http://www.rsk.co";
+        requiredConfig.put("database.unitrie-migration.missing-keys-url", expectedValue);
+
+        ConfigLoader configLoader = mock(ConfigLoader.class);
+        when(configLoader.getConfig()).thenReturn(ConfigFactory.parseMap(requiredConfig));
+        RskSystemProperties config = new RskSystemProperties(configLoader);
+        Assert.assertThat(config.getDatabaseMissingStorageKeysUrl(), is(new URL(expectedValue)));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getDatabaseMissingStorageKeysInvalidUrl() {
+        Map<String, String> requiredConfig = new HashMap<>();
+        String expectedValue = "invalid url";
+        requiredConfig.put("database.unitrie-migration.missing-keys-url", expectedValue);
+
+        ConfigLoader configLoader = mock(ConfigLoader.class);
+        when(configLoader.getConfig()).thenReturn(ConfigFactory.parseMap(requiredConfig));
+        RskSystemProperties config = new RskSystemProperties(configLoader);
+        config.getDatabaseMissingStorageKeysUrl();
     }
 }
