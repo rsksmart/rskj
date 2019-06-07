@@ -36,7 +36,7 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
     private Map<Keccak256, BlockHeader> blocksByHash;
 
     @GuardedBy("internalBlockStoreReadWriteLock")
-    private Map<Long, List<BlockHeader>> blocksByNumber;
+    private Map<Long, List<Keccak256>> blockHashesByNumber;
 
     @GuardedBy("internalBlockStoreReadWriteLock")
     private List<BlockHeader> mainchain;
@@ -46,7 +46,7 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         this.height = height;
         this.blockStore = blockStore;
         this.blocksByHash = new HashMap<>();
-        this.blocksByNumber = new HashMap<>();
+        this.blockHashesByNumber = new HashMap<>();
         fillInternalStore(blockStore.getBestBlock().getHeader());
     }
 
@@ -95,23 +95,23 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
 
     private void addHeaderToMaps(BlockHeader header) {
         blocksByHash.put(header.getHash(), header);
-        addToBlockByNumberMap(header);
+        addToBlockHashesByNumberMap(header);
     }
 
-    private void addToBlockByNumberMap(BlockHeader headerToAdd) {
-        long currentBlockNumber = headerToAdd.getNumber();
-        if (blocksByNumber.containsKey(currentBlockNumber)) {
-            blocksByNumber.get(currentBlockNumber).add(headerToAdd);
+    private void addToBlockHashesByNumberMap(BlockHeader headerToAdd) {
+        long blockNumber = headerToAdd.getNumber();
+        if (blockHashesByNumber.containsKey(blockNumber)) {
+            blockHashesByNumber.get(blockNumber).add(headerToAdd.getHash());
         } else {
-            blocksByNumber.put(headerToAdd.getNumber(), new ArrayList<>(Collections.singletonList(headerToAdd)));
+            blockHashesByNumber.put(headerToAdd.getNumber(), new ArrayList<>(Collections.singletonList(headerToAdd.getHash())));
         }
     }
 
     private void deleteEntriesOutOfBoundaries(long bestBlockNumber) {
         long blocksHeightToDelete = bestBlockNumber - height;
-        if(blocksHeightToDelete >= 0 && blocksByNumber.containsKey(blocksHeightToDelete)) {
-            blocksByNumber.get(blocksHeightToDelete).forEach(blockToDelete -> blocksByHash.remove(blockToDelete.getHash()));
-            blocksByNumber.remove(blocksHeightToDelete);
+        if(blocksHeightToDelete >= 0 && blockHashesByNumber.containsKey(blocksHeightToDelete)) {
+            blockHashesByNumber.get(blocksHeightToDelete).forEach(blockHashToDelete -> blocksByHash.remove(blockHashToDelete));
+            blockHashesByNumber.remove(blocksHeightToDelete);
         }
     }
 }
