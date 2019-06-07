@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
@@ -29,8 +30,8 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
 
 /**
  * This is a stateless class with methods to execute blocks with its transactions.
@@ -52,7 +54,7 @@ public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
-    private final Repository repository;
+    private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final StateRootHandler stateRootHandler;
     private final ActivationConfig activationConfig;
@@ -62,7 +64,7 @@ public class BlockExecutor {
             Repository repository,
             StateRootHandler stateRootHandler,
             TransactionExecutorFactory transactionExecutorFactory) {
-        this.repository = repository;
+        this.repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.stateRootHandler = stateRootHandler;
         this.activationConfig = activationConfig;
@@ -256,9 +258,8 @@ public class BlockExecutor {
         // to conect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
-        byte[] lastStateRootHash = stateRootHandler.translate(parent).getBytes();
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
-        Repository initialRepository = repository.getSnapshotTo(lastStateRootHash);
+        Repository initialRepository = repositoryLocator.snapshotAt(parent);
 
         Repository track = initialRepository.startTracking();
 
