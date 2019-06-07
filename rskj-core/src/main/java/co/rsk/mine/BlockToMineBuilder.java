@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.FamilyUtils;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
@@ -36,6 +37,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.math.BigInteger;
 import java.util.*;
 
@@ -51,8 +53,7 @@ public class BlockToMineBuilder {
 
     private final ActivationConfig activationConfig;
     private final MiningConfig miningConfig;
-    private final Repository repository;
-    private final StateRootHandler stateRootHandler;
+    private final RepositoryLocator repositoryLocator;
     private final BlockStore blockStore;
     private final TransactionPool transactionPool;
     private final DifficultyCalculator difficultyCalculator;
@@ -83,8 +84,7 @@ public class BlockToMineBuilder {
             MinerUtils minerUtils) {
         this.activationConfig = Objects.requireNonNull(activationConfig);
         this.miningConfig = Objects.requireNonNull(miningConfig);
-        this.repository = Objects.requireNonNull(repository);
-        this.stateRootHandler = Objects.requireNonNull(stateRootHandler);
+        this.repositoryLocator = Objects.requireNonNull(new RepositoryLocator(repository, stateRootHandler));
         this.blockStore = Objects.requireNonNull(blockStore);
         this.transactionPool = Objects.requireNonNull(transactionPool);
         this.difficultyCalculator = Objects.requireNonNull(difficultyCalculator);
@@ -137,7 +137,7 @@ public class BlockToMineBuilder {
 
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
 
-        Repository originalRepo = repository.getSnapshotTo(stateRootHandler.translate(parent.getHeader()).getBytes());
+        Repository originalRepo = repositoryLocator.snapshotAt(parent.getHeader());
 
         return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }
