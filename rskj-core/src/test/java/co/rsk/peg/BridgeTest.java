@@ -46,6 +46,7 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -71,6 +72,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -280,7 +282,8 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<>());
+        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<>())
+                .cloneAsHeader();
         co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
         headers[0] = block;
 
@@ -405,7 +408,7 @@ public class BridgeTest {
         co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[numBlocks];
 
         for (int i = 0; i < numBlocks; i++) {
-            co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<>());
+            co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<>()).cloneAsHeader();
             headers[i] = block;
         }
 
@@ -1202,13 +1205,11 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
 
-        boolean thrown = false;
         try {
             bridge.isBtcTxHashAlreadyProcessed(new Object[]{"notahash"});
+            Assert.fail();
         } catch (RuntimeException e) {
-            thrown = true;
         }
-        Assert.assertTrue(thrown);
         verify(bridgeSupportMock, never()).isBtcTxHashAlreadyProcessed(any());
     }
 
@@ -1240,13 +1241,11 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
 
-        boolean thrown = false;
         try {
             bridge.getBtcTxHashProcessedHeight(new Object[]{"notahash"});
+            Assert.fail();
         } catch (RuntimeException e) {
-            thrown = true;
         }
-        Assert.assertTrue(thrown);
         verify(bridgeSupportMock, never()).getBtcTxHashProcessedHeight(any());
     }
 
@@ -2296,6 +2295,134 @@ public class BridgeTest {
         ).stream().forEach(m -> {
             Assert.assertFalse(m.onlyAllowsLocalCalls());
         });
+    }
+
+    @Test
+    public void receiveHeadersGasCost_beforeDynamicCost() throws Exception {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP124), anyLong());
+
+        Transaction txMock = mock(Transaction.class);
+        when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
+        for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
+            byte[][] headers = new byte[numberOfHeaders][];
+            for (int i = 0; i < numberOfHeaders; i++) headers[i] = Hex.decode("00112233445566778899");
+
+            byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+
+            Assert.assertEquals(22000L + 2 * data.length, bridge.getGasForData(data));
+        }
+    }
+
+    @Test
+    public void receiveHeadersGasCost_afterDynamicCost() throws Exception {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP124), anyLong());
+
+        Transaction txMock = mock(Transaction.class);
+        when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
+        final long BASE_COST = 66_000L;
+        for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
+            byte[][] headers = new byte[numberOfHeaders][];
+            for (int i = 0; i < numberOfHeaders; i++) headers[i] = Hex.decode("00112233445566778899");
+
+            byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+
+            long cost = BASE_COST + 2 * data.length;
+            if (numberOfHeaders > 1) {
+                cost += 1650L * (numberOfHeaders - 1);
+            }
+            Assert.assertEquals(cost, bridge.getGasForData(data));
+        }
+    }
+
+    @Test
+    public void receiveHeadersAccess_beforePublic_noAccessIfNotFromFederationMember() throws Exception {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP124), anyLong());
+
+        RskAddress sender = new RskAddress("2acc95758f8b5f583470ba265eb685a8f45fc9d5");
+        Transaction txMock = mock(Transaction.class);
+        when(txMock.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
+        when(txMock.getSender()).thenReturn(sender);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
+
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
+        byte[][] headers = new byte[][] { Hex.decode(
+                "0000002006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910ff698ee112158f5573a90b7403cfba074addd61c547b3639c6afdcf52588eb8e2a1ef825cffff7f2000000000"
+        ) };
+
+        byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+
+        try {
+            bridge.execute(data);
+            Assert.fail();
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("Sender is not part of the active"));
+        }
+        verify(bridgeSupportMock, never()).receiveHeaders(any(BtcBlock[].class));
+    }
+
+    @Test
+    public void receiveHeadersAccess_beforePublic_accessIfFromFederationMember() throws Exception {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP124), anyLong());
+
+        RskAddress sender = new RskAddress(ECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))).getAddress());
+        Transaction txMock = mock(Transaction.class);
+        when(txMock.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
+        when(txMock.getSender()).thenReturn(sender);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
+
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
+        byte[][] headers = new byte[][] { Hex.decode(
+                "0000002006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910ff698ee112158f5573a90b7403cfba074addd61c547b3639c6afdcf52588eb8e2a1ef825cffff7f2000000000"
+        ) };
+
+        byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+
+        Assert.assertNull(bridge.execute(data));
+        verify(bridgeSupportMock, times(1)).receiveHeaders(any(BtcBlock[].class));
+    }
+
+    @Test
+    public void receiveHeadersAccess_afterPublic_accessFromAnyone() throws Exception {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP124), anyLong());
+
+        Transaction txMock = mock(Transaction.class);
+        when(txMock.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
+        when(txMock.getSender()).thenReturn(new RskAddress(new ECKey().getAddress()));
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getRetiringFederation()).thenReturn(null);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFederation());
+
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig));
+        PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+
+        byte[][] headers = new byte[][] { Hex.decode(
+                "0000002006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910ff698ee112158f5573a90b7403cfba074addd61c547b3639c6afdcf52588eb8e2a1ef825cffff7f2000000000"
+        ) };
+
+        byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+
+        Assert.assertNull(bridge.execute(data));
+        verify(bridgeSupportMock, times(1)).receiveHeaders(any(BtcBlock[].class));
     }
 
     private static Repository createRepository() {
