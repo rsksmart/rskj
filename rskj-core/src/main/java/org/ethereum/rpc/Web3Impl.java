@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
@@ -74,8 +75,6 @@ import static org.ethereum.rpc.TypeConverter.*;
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
-    public org.ethereum.core.Repository repository;
-
     public Ethereum eth;
 
     private final String baseClientVersion = "RskJ";
@@ -85,6 +84,7 @@ public class Web3Impl implements Web3 {
     private final MinerClient minerClient;
     protected MinerServer minerServer;
     private final ChannelManager channelManager;
+    private final RepositoryLocator repositoryLocator;
     private final PeerScoringManager peerScoringManager;
     private final PeerServer peerServer;
 
@@ -108,7 +108,6 @@ public class Web3Impl implements Web3 {
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
     private final DebugModule debugModule;
-    private StateRootHandler stateRootHandler;
 
     protected Web3Impl(
             Ethereum eth,
@@ -140,7 +139,6 @@ public class Web3Impl implements Web3 {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.evmModule = evmModule;
-        this.repository = repository;
         this.transactionPool = transactionPool;
         this.minerClient = minerClient;
         this.minerServer = minerServer;
@@ -150,6 +148,7 @@ public class Web3Impl implements Web3 {
         this.mnrModule = mnrModule;
         this.debugModule = debugModule;
         this.channelManager = channelManager;
+        this.repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
         this.nodeBlockProcessor = nodeBlockProcessor;
@@ -159,7 +158,6 @@ public class Web3Impl implements Web3 {
         this.filterManager = new FilterManager(eth);
         this.buildInfo = buildInfo;
         this.blocksBloomStore = blocksBloomStore;
-        this.stateRootHandler = stateRootHandler;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
         personalModule.init();
@@ -1047,7 +1045,7 @@ public class Web3Impl implements Web3 {
         } else {
             Block block = getByJsonBlockId(id);
             if (block != null) {
-                return this.repository.getSnapshotTo(stateRootHandler.translate(block.getHeader()).getBytes());
+                return repositoryLocator.snapshotAt(block.getHeader());
             } else {
                 return null;
             }
