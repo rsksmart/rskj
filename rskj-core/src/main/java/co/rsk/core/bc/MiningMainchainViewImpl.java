@@ -24,6 +24,8 @@ import org.ethereum.db.BlockStore;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MiningMainchainViewImpl implements MiningMainchainView {
     private final Object internalBlockStoreReadWriteLock = new Object();
@@ -47,19 +49,23 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         this.blockStore = blockStore;
         this.blocksByHash = new HashMap<>();
         this.blockHashesByNumber = new HashMap<>();
-        fillInternalStore(blockStore.getBestBlock().getHeader());
+
+        BlockHeader currentBest = blockStore.getBestBlock().getHeader();
+        this.mainchain = Arrays.asList(currentBest);
+        fillMissingHeaders();
     }
 
     public void addBest(BlockHeader bestHeader) {
         synchronized (internalBlockStoreReadWriteLock) {
             addHeaderToMaps(bestHeader);
 
-            BlockHeader previousBest = mainchain.get(0);
-            if (previousBest.isParentOf(bestHeader)) {
-                mainchain.add(0, bestHeader);
+            // try to avoid recalculating the whole chain if the new header's parent already exists in the chain
+            int parentIndex = findParentIndex(bestHeader);
+            if (parentIndex >= 0) {
+                addBestAndRebuildFromParent(bestHeader, parentIndex);
             } else {
-                // new block is not on the current chain, so we need to recalculate it to keep it consistent
-                fillInternalStore(bestHeader);
+                mainchain = Arrays.asList(bestHeader);
+                fillMissingHeaders();
             }
 
             deleteEntriesOutOfBoundaries(bestHeader.getNumber());
@@ -73,24 +79,84 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         }
     }
 
-    private void fillInternalStore(BlockHeader bestHeader) {
-        List<BlockHeader> newHeaderChain = new ArrayList<>(height);
-        BlockHeader currentHeader = bestHeader;
-        for(int i = 0; i < height; i++) {
-            newHeaderChain.add(currentHeader);
+    /**
+     * Given a new best header and the index of its parent rebuild the mainchain using the index as the pivot point
+     * by discarding all headers subsequent to the it, setting the new header as the tip and refilling with as many
+     * are needed to complete the desired height
+     *
+     * @param bestHeader The best header to be on top of the chain
+     * @param parentIndex List index of the best header's parent
+     */
+    private void addBestAndRebuildFromParent(BlockHeader bestHeader, int parentIndex) {
+        List<BlockHeader> staleHeaders = mainchain.stream()
+                .limit(parentIndex)
+                .collect(Collectors.toList());
 
-            if(!blocksByHash.containsKey(currentHeader.getHash())) {
-                addHeaderToMaps(currentHeader);
+        List<BlockHeader> commonAncestorChain = mainchain.stream()
+                .skip(staleHeaders.size())
+                .collect(Collectors.toList());
+
+        List<BlockHeader> newMainchain = Stream.concat(
+                Arrays.asList(bestHeader).stream(),
+                commonAncestorChain.stream())
+                .collect(Collectors.toList());
+
+        mainchain = newMainchain;
+
+        fillMissingHeaders();
+        deleteHeaders(staleHeaders);
+    }
+
+    /**
+     * Fill the mainchain's tail with as many headers as it's needed to satisfy the desired height
+     */
+    private void fillMissingHeaders() {
+        int currentSize = mainchain.size();
+
+        if (currentSize == 0 || currentSize >= height) {
+            return;
+        }
+
+        BlockHeader lastHeader = mainchain.get(currentSize - 1);
+
+        List<BlockHeader> missingHeaders = retrieveAncestorsForHeader(lastHeader, height - currentSize);
+
+        for (BlockHeader header : missingHeaders) {
+            if(!blocksByHash.containsKey(header.getHash())) {
+                addHeaderToMaps(header);
             }
+        }
 
+        mainchain = Stream.concat(mainchain.stream(), missingHeaders.stream())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Given a start block header and a chain length, retrieve a List of said length consisting of
+     * the start header's ancestors
+     *
+     * The returned list DOES NOT include the start header
+     *
+     * @param header The block header to look the ancestors for
+     * @param chainLength The max length of the returned ancestor chain
+     */
+    private List<BlockHeader> retrieveAncestorsForHeader(BlockHeader header, int chainLength) {
+        List<BlockHeader> missingHeaders = new ArrayList<>(chainLength);
+
+        BlockHeader currentHeader = header;
+        for(int i = 0; i < chainLength; i++) {
+
+            // genesis has no parent
             if(currentHeader.isGenesis()) {
                 break;
             }
 
             currentHeader = blockStore.getBlockByHash(currentHeader.getParentHash().getBytes()).getHeader();
+
+            missingHeaders.add(currentHeader);
         }
 
-        mainchain = newHeaderChain;
+        return missingHeaders;
     }
 
     private void addHeaderToMaps(BlockHeader header) {
@@ -107,11 +173,46 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         }
     }
 
+    private void deleteHeaders(List<BlockHeader> headers) {
+        for (BlockHeader header : headers) {
+            deleteHeaderFromMaps(header);
+        }
+    }
+
+    private void deleteHeaderFromMaps(BlockHeader header) {
+        blocksByHash.remove(header.getHash());
+        deleteFromBlockHashesByNumberMap(header);
+    }
+
+    private void deleteFromBlockHashesByNumberMap(BlockHeader headerToRemove) {
+        long blockNumber = headerToRemove.getNumber();
+
+        if (blockHashesByNumber.containsKey(blockNumber)) {
+            List<Keccak256> headers = blockHashesByNumber.get(blockNumber);
+
+            headers.remove(headerToRemove.getHash());
+
+            if (headers.isEmpty()) {
+                blockHashesByNumber.remove(blockNumber);
+            }
+        }
+    }
+
     private void deleteEntriesOutOfBoundaries(long bestBlockNumber) {
         long blocksHeightToDelete = bestBlockNumber - height;
         if(blocksHeightToDelete >= 0 && blockHashesByNumber.containsKey(blocksHeightToDelete)) {
             blockHashesByNumber.get(blocksHeightToDelete).forEach(blockHashToDelete -> blocksByHash.remove(blockHashToDelete));
             blockHashesByNumber.remove(blocksHeightToDelete);
         }
+    }
+
+    private int findParentIndex(BlockHeader header) {
+        for (int i = 0; i < mainchain.size(); i++) {
+            BlockHeader chainHeader = mainchain.get(i);
+            if (chainHeader.isParentOf(header)) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
