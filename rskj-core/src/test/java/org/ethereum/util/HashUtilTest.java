@@ -19,6 +19,7 @@
 
 package org.ethereum.util;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.crypto.HashUtil;
 
 import org.junit.Test;
@@ -102,5 +103,70 @@ public class HashUtilTest {
         String expected2 = "80b85ebf641abccdd26e327c5782353137a0a0af";
         String result2 = Hex.toHexString(HashUtil.ripemd160("test2".getBytes()));
         assertEquals(expected2, result2);
+    }
+
+    @Test
+    public void testCalcSaltAddr_BasicTest() {
+        runTestCalSaltAddr("0x0000000000000000000000000000000000000000",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                "00",
+                "4D1A2e2bB4F88F0250f26Ffff098B0b30B26BF38");
+    }
+
+    @Test
+    public void testCalcSaltAddr_DifferentAddress() {
+        runTestCalSaltAddr("0xdeadbeef00000000000000000000000000000000",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                "00",
+                "B928f69Bb1D91Cd65274e3c79d8986362984fDA3");
+    }
+
+    @Test
+    public void testCalcSaltAddr_DifferentSalt() {
+        runTestCalSaltAddr("0xdeadbeef00000000000000000000000000000000",
+                "000000000000000000000000feed000000000000000000000000000000000000",
+                "00",
+                "D04116cDd17beBE565EB2422F2497E06cC1C9833");
+    }
+
+    @Test
+    public void testCalcSaltAddr_DifferentInitCode() {
+        runTestCalSaltAddr("0x0000000000000000000000000000000000000000",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                "deadbeef",
+                "70f2b2914A2a4b783FaEFb75f459A580616Fcb5e");
+    }
+
+    @Test
+    public void testCalcSaltAddr_CombinedPreviousTests() {
+        runTestCalSaltAddr("0x00000000000000000000000000000000deadbeef",
+                "00000000000000000000000000000000000000000000000000000000cafebabe",
+                "deadbeef",
+                "60f3f640a8508fC6a86d45DF051962668E1e8AC7");
+    }
+
+    @Test
+    public void testCalcSaltAddr_LongerInitCode() {
+        runTestCalSaltAddr("0x00000000000000000000000000000000deadbeef",
+                "00000000000000000000000000000000000000000000000000000000cafebabe",
+                "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+                "1d8bfDC5D46DC4f61D6b6115972536eBE6A8854C");
+    }
+
+    @Test
+    public void testCalcSaltAddr_EmptyInitCode() {
+        runTestCalSaltAddr("0x0000000000000000000000000000000000000000",
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                "",
+                "E33C0C7F7df4809055C3ebA6c09CFe4BaF1BD9e0");
+    }
+
+    private void runTestCalSaltAddr(String address, String saltString, String code, String expected){
+        RskAddress r = new RskAddress(address);
+        byte[] salt = Hex.decode(saltString);
+        byte[] init_code = Hex.decode(code);
+
+        String result = Hex.toHexString(HashUtil.calcSaltAddr(r,init_code,salt));
+        assertEquals(expected.toUpperCase(), result.toUpperCase());
     }
 }

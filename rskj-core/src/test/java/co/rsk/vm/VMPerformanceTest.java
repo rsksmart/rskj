@@ -43,6 +43,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -260,7 +261,7 @@ public class VMPerformanceTest {
 
         byte[] newCode = getClonedCode(code,cloneCount);
 
-        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, newCode, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, newCode, invoke, null, new HashSet<>());
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -488,7 +489,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null);
+        program =new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null, new HashSet<>());
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -599,7 +600,7 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     public void testRunTime(byte[] code, String s_expected) {
-        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null);
+        program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke, null, new HashSet<>());
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
         startMeasure();

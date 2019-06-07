@@ -29,6 +29,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.HashSet;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -41,7 +43,7 @@ public class ProgramMemoryTest {
     @Before
     public void createProgram() {
         TestSystemProperties config = new TestSystemProperties();
-        program = new Program(config.getVmConfig(), new PrecompiledContracts(config), new BlockFactory(config.getActivationConfig()), mock(ActivationConfig.ForBlock.class), ByteUtil.EMPTY_BYTE_ARRAY, pi, null);
+        program = new Program(config.getVmConfig(), new PrecompiledContracts(config), new BlockFactory(config.getActivationConfig()), mock(ActivationConfig.ForBlock.class), ByteUtil.EMPTY_BYTE_ARRAY, pi, null, new HashSet<>());
     }
 
     @Test

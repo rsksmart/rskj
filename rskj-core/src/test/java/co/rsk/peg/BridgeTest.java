@@ -2179,7 +2179,7 @@ public class BridgeTest {
 
         try {
             // Run the program on the VM
-            Program program = new Program(config.getVmConfig(), precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, tx);
+            Program program = new Program(config.getVmConfig(), precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, tx, new HashSet<>());
             for (int i = 0; i < numOps; i++) {
                 vm.step(program);
             }
@@ -2220,7 +2220,7 @@ public class BridgeTest {
         when(tx.getHash()).thenReturn(new Keccak256("001122334455667788990011223344556677889900112233445566778899aabb"));
 
         // Run the program on the VM
-        Program program = new Program(config.getVmConfig(), precompiledContracts, blockFactory, activationConfig.forBlock(0), code, invoke, tx);
+        Program program = new Program(config.getVmConfig(), precompiledContracts, blockFactory, activationConfig.forBlock(0), code, invoke, tx, new HashSet<>());
         try {
             for (int i = 0; i < numOps; i++) {
                 vm.step(program);

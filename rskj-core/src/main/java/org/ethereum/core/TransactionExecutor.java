@@ -41,8 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.ArrayUtils.getLength;
@@ -93,14 +92,15 @@ public class TransactionExecutor {
     private BigInteger mEndGas = BigInteger.ZERO;
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
+    private final Set<DataWord> deletedAccounts;
 
     private boolean localCall = false;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory, Block executionBlock,long gasUsedInTheBlock, VmConfig vmConfig,
-            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts) {
+            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
+            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts) {
         this.constants = constants;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
         this.tx = tx;
@@ -118,6 +118,7 @@ public class TransactionExecutor {
         this.precompiledContracts = precompiledContracts;
         this.playVm = playVm;
         this.enableRemasc = remascEnabled;
+        this.deletedAccounts = new HashSet<>(deletedAccounts);
     }
 
     /**
@@ -302,7 +303,7 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
-                this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx);
+                this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts);
             }
         }
 
@@ -325,7 +326,7 @@ public class TransactionExecutor {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
-            this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx);
+            this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
@@ -363,6 +364,8 @@ public class TransactionExecutor {
         }
 
         logger.trace("Go transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+
+        //Set the deleted accounts in the block in the remote case there is a CREATE2 creating a deleted account
 
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.VM_EXECUTE);
         try {

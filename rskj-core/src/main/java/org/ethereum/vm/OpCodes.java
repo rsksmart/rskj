@@ -616,6 +616,11 @@ public class OpCodes {
     static final byte OP_DELEGATECALL =(byte)0xf4 ;
 
     /**
+     * (0xf5) Skinny CREATE2, same as CREATE but with deterministic address
+     */
+    public static final byte OP_CREATE2 =(byte)0xf5;
+
+    /**
      *  opcode that can be used to call another contract (or itself) while disallowing any
      *  modifications to the state during the call (and its subcalls, if present).
      *  Any opcode that attempts to perform such a modification (see below for details)

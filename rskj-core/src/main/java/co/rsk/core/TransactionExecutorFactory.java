@@ -23,8 +23,12 @@ import co.rsk.config.VmConfig;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class TransactionExecutorFactory {
     private final RskSystemProperties config;
@@ -55,7 +59,7 @@ public class TransactionExecutorFactory {
             Repository track,
             Block block,
             long totalGasUsed) {
-        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false);
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, new HashSet<>());
     }
 
     public TransactionExecutor newInstance(
@@ -65,7 +69,8 @@ public class TransactionExecutorFactory {
             Repository track,
             Block block,
             long totalGasUsed,
-            boolean vmTrace) {
+            boolean vmTrace,
+            Set<DataWord> deletedAccounts) {
         // Tracing configuration is scattered across different files (VM, ProgramTrace, etc.) and
         // TransactionExecutor#extractTrace doesn't work when called independently.
         // It would be great to decouple from VmConfig#vmTrace, but sadly that's a major refactor we can't do now.
@@ -95,7 +100,8 @@ public class TransactionExecutorFactory {
                 vmConfig,
                 config.playVM(),
                 config.isRemascEnabled(),
-                precompiledContracts
+                precompiledContracts,
+                deletedAccounts
         );
     }
 }

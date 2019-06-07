@@ -306,7 +306,7 @@ public class ECKey {
     public byte[] getAddress() {
         if (pubKeyHash == null) {
             byte[] pubBytes = this.pub.getEncoded(false);
-            pubKeyHash = HashUtil.sha3omit12(Arrays.copyOfRange(pubBytes, 1, pubBytes.length));
+            pubKeyHash = HashUtil.keccak256Omit12(Arrays.copyOfRange(pubBytes, 1, pubBytes.length));
         }
         return pubKeyHash;
     }
