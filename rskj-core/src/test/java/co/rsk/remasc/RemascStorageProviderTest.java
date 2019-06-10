@@ -27,6 +27,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -421,10 +422,11 @@ public class RemascStorageProviderTest {
 
         blocks.addAll(createSimpleBlocks(blocks.get(blocks.size()-1),10, coinbase));
 
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
-                blockchain.getRepository(),
-                new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                new RepositoryLocator(blockchain.getRepository(), stateRootHandler),
+                stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
                         blockchain.getBlockStore(),

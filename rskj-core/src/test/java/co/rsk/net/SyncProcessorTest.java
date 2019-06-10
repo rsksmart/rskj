@@ -4,6 +4,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
@@ -775,10 +776,11 @@ public class SyncProcessorTest {
 
         Block block = new BlockGenerator().createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
 
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
-                blockchain.getRepository(),
-                new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                new RepositoryLocator(blockchain.getRepository(), stateRootHandler),
+                stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
                         blockchain.getBlockStore(),

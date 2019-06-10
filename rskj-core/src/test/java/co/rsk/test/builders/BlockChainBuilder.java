@@ -24,6 +24,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
@@ -175,7 +176,7 @@ public class BlockChainBuilder {
         );
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
-                repository,
+                new RepositoryLocator(repository, stateRootHandler),
                 stateRootHandler,
                 transactionExecutorFactory
         );

@@ -24,6 +24,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
@@ -663,10 +664,11 @@ public class BlockExecutorTest {
     }
 
     private static BlockExecutor buildBlockExecutor(Repository repository) {
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         return new BlockExecutor(
                 config.getActivationConfig(),
-                repository,
-                new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                new RepositoryLocator(repository, stateRootHandler),
+                stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
                         null,

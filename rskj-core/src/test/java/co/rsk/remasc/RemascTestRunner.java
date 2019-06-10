@@ -26,6 +26,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.TestUtils;
@@ -126,7 +127,7 @@ class RemascTestRunner {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         BlockExecutor blockExecutor = new BlockExecutor(
                 builder.getConfig().getActivationConfig(),
-                blockchain.getRepository(),
+                new RepositoryLocator(blockchain.getRepository(), builder.getStateRootHandler()),
                 builder.getStateRootHandler(),
                 new TransactionExecutorFactory(
                         builder.getConfig(),

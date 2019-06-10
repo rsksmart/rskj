@@ -10,7 +10,7 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
@@ -47,8 +47,7 @@ public class MainNetMinerTest {
     private TransactionPool transactionPool;
     private BlockStore blockStore;
     private NodeBlockProcessor blockProcessor;
-    private Repository repository;
-    private StateRootHandler stateRootHandler;
+    private RepositoryLocator repositoryLocator;
     private BlockFactory blockFactory;
     private BlockExecutor blockExecutor;
 
@@ -69,8 +68,7 @@ public class MainNetMinerTest {
         transactionPool = factory.getTransactionPool();
         blockStore = factory.getBlockStore();
         blockProcessor = factory.getNodeBlockProcessor();
-        repository = factory.getRepository();
-        stateRootHandler = factory.getStateRootHandler();
+        repositoryLocator = factory.getRepositoryLocator();
         blockFactory = factory.getBlockFactory();
         blockExecutor = factory.getBlockExecutor();
     }
@@ -202,8 +200,7 @@ public class MainNetMinerTest {
         return new BlockToMineBuilder(
                 config.getActivationConfig(),
                 miningConfig,
-                repository,
-                stateRootHandler,
+                repositoryLocator,
                 blockStore,
                 transactionPool,
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),

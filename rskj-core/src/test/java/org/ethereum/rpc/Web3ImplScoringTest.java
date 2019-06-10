@@ -35,11 +35,11 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.scoring.*;
 import co.rsk.test.World;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.rpc.Simples.SimpleRsk;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -377,9 +377,8 @@ public class Web3ImplScoringTest {
                 null,
                 dm,
                 Web3Mocks.getMockChannelManager(),
-                rsk.getRepository(),
-                peerScoringManager,
                 null,
+                peerScoringManager,
                 null,
                 null,
                 null,

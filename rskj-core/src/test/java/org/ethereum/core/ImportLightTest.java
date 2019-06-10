@@ -26,6 +26,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
@@ -82,7 +83,7 @@ public class ImportLightTest {
                 1,
                 new BlockExecutor(
                         config.getActivationConfig(),
-                        repository,
+                        new RepositoryLocator(repository, stateRootHandler),
                         stateRootHandler,
                         transactionExecutorFactory
                 ),

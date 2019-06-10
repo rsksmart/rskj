@@ -19,11 +19,11 @@
 package co.rsk.rpc;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
-import org.ethereum.core.Repository;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
@@ -42,11 +42,11 @@ public class Web3ImplRpcTest {
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModule pm = new PersonalModuleWalletDisabled();
-        Repository repository = Web3Mocks.getMockRepository();
+        RepositoryLocator repositoryLocator = Web3Mocks.getMockRepositoryLocator();
         Web3Impl web3 = new Web3RskImpl(eth, blockchain, transactionPool,
                             new TestSystemProperties(), null, null, pm,
                             null, null, null, null,
-                            null, null, repository, null, null,
+                            null, null, repositoryLocator, null,
                             null, null, null, null, null,
                             null, null, null, null
         );

@@ -180,7 +180,10 @@ public interface Repository extends AccountInformationProvider {
 
     byte[] getRoot();
 
-    // This creates a new repository. Does not modify the parent
+    /**
+     * @deprecated a repository responsibility isn't getting snapshots to other repositories
+     * @see co.rsk.db.RepositoryLocator
+     */
     Repository getSnapshotTo(byte[] root);
 
     void updateAccountState(RskAddress addr, AccountState accountState);

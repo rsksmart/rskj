@@ -26,6 +26,7 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.TestUtils;
@@ -62,7 +63,7 @@ public class BlockToMineBuilderTest {
     public void setUp() {
         validationRules = mock(BlockValidationRule.class);
 
-        Repository repository = mock(Repository.class);
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
         StateRootHandler stateRootHandler = mock(StateRootHandler.class);
         MiningConfig miningConfig = mock(MiningConfig.class);
         DifficultyCalculator difficultyCalculator = mock(DifficultyCalculator.class);
@@ -72,8 +73,7 @@ public class BlockToMineBuilderTest {
         blockBuilder = new BlockToMineBuilder(
                 mock(ActivationConfig.class),
                 miningConfig,
-                repository,
-                stateRootHandler,
+                repositoryLocator,
                 mock(BlockStore.class),
                 mock(TransactionPool.class),
                 difficultyCalculator,
@@ -92,7 +92,7 @@ public class BlockToMineBuilderTest {
 
         when(minerUtils.getAllTransactions(any())).thenReturn(new ArrayList<>());
         when(minerUtils.filterTransactions(any(), any(), any(), any(), any())).thenReturn(new ArrayList<>());
-        when(repository.getSnapshotTo(any())).thenReturn(snapshot);
+        when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
         when(mininumGasPriceCalculator.calculate(any())).thenReturn(mock(Coin.class));
         when(stateRootHandler.translate(any())).thenReturn(TestUtils.randomHash());
         when(miningConfig.getGasLimit()).thenReturn(gasLimitConfig);

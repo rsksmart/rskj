@@ -27,7 +27,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -60,7 +60,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     private final DifficultyCalculator difficultyCalculator;
     private Blockchain blockchain;
     private Repository repository;
-    private StateRootHandler stateRootHandler;
+    private RepositoryLocator repositoryLocator;
     private BlockStore blockStore;
     private TransactionPool transactionPool;
     private BlockFactory blockFactory;
@@ -83,7 +83,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         };
         blockchain = factory.getBlockchain();
         repository = factory.getRepository();
-        stateRootHandler = factory.getStateRootHandler();
+        repositoryLocator = factory.getRepositoryLocator();
         blockStore = factory.getBlockStore();
         transactionPool = factory.getTransactionPool();
         blockFactory = factory.getBlockFactory();
@@ -128,8 +128,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         localTransactionPool,
                         difficultyCalculator,
@@ -174,8 +173,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -244,8 +242,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -299,8 +296,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -357,8 +353,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -422,8 +417,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -479,8 +473,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -542,8 +535,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -586,8 +578,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -630,8 +621,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,
@@ -678,8 +668,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 new BlockToMineBuilder(
                         config.getActivationConfig(),
                         ConfigUtils.getDefaultMiningConfig(),
-                        repository,
-                        stateRootHandler,
+                        repositoryLocator,
                         blockStore,
                         transactionPool,
                         difficultyCalculator,

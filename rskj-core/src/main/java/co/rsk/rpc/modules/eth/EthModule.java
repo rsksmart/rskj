@@ -21,8 +21,7 @@ package co.rsk.rpc.modules.eth;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.crypto.Keccak256;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeSupport;
@@ -55,7 +54,7 @@ public class EthModule
     private final Blockchain blockchain;
     private final ReversibleTransactionExecutor reversibleTransactionExecutor;
     private final ExecutionBlockRetriever executionBlockRetriever;
-    private final StateRootHandler stateRootHandler;
+    private final RepositoryLocator repositoryLocator;
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
     private final EthModuleTransaction ethModuleTransaction;
@@ -68,14 +67,14 @@ public class EthModule
             Blockchain blockchain,
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
-            StateRootHandler stateRootHandler,
+            RepositoryLocator repositoryLocator,
             EthModuleSolidity ethModuleSolidity,
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction) {
         this.blockchain = blockchain;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
-        this.stateRootHandler = stateRootHandler;
+        this.repositoryLocator = repositoryLocator;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
         this.ethModuleTransaction = ethModuleTransaction;
@@ -90,8 +89,7 @@ public class EthModule
 
     public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
         Block bestBlock = blockchain.getBestBlock();
-        Keccak256 stateRootHash = stateRootHandler.translate(bestBlock.getHeader());
-        Repository repository = blockchain.getRepository().getSnapshotTo(stateRootHash.getBytes()).startTracking();
+        Repository repository = repositoryLocator.snapshotAt(bestBlock.getHeader()).startTracking();
 
         BridgeSupport bridgeSupport = new BridgeSupport(
                 bridgeConstants,

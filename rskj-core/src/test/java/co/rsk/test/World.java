@@ -24,6 +24,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockStore;
@@ -95,8 +96,8 @@ public class World {
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
                     config.getActivationConfig(),
-                    this.getRepository(),
-                    new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>()),
+                    new RepositoryLocator(this.getRepository(), stateRootHandler),
+                    stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
                             this.getBlockChain().getBlockStore(),

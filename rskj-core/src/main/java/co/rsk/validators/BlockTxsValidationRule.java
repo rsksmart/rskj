@@ -19,8 +19,7 @@
 package co.rsk.validators;
 
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -47,12 +46,10 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final Repository repository;
-    private final StateRootHandler stateRootHandler;
+    private final RepositoryLocator repositoryLocator;
 
-    public BlockTxsValidationRule(Repository repository, StateRootHandler stateRootHandler) {
-        this.repository = repository;
-        this.stateRootHandler = stateRootHandler;
+    public BlockTxsValidationRule(RepositoryLocator repositoryLocator) {
+        this.repositoryLocator = repositoryLocator;
     }
 
     @Override
@@ -68,8 +65,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             return true;
         }
 
-        Keccak256 parentStateRoot = stateRootHandler.translate(parent.getHeader());
-        Repository parentRepo = repository.getSnapshotTo(parentStateRoot.getBytes());
+        Repository parentRepo = repositoryLocator.snapshotAt(parent.getHeader());
 
         Map<RskAddress, BigInteger> curNonce = new HashMap<>();
 

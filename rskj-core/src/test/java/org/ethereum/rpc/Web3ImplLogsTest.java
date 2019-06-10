@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
@@ -87,6 +88,7 @@ public class Web3ImplLogsTest {
     private final static String GET_VALUE_METHOD_SIGNATURE = "20965255";
     private final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockChain;
+    private RepositoryLocator repositoryLocator;
     private TransactionPool transactionPool;
     private Rsk eth;
     private ReceiptStore receiptStore;
@@ -99,6 +101,7 @@ public class Web3ImplLogsTest {
     public void setUp() {
         RskTestFactory factory = new RskTestFactory();
         blockChain = factory.getBlockchain();
+        repositoryLocator = factory.getRepositoryLocator();
         transactionPool = factory.getTransactionPool();
         eth = factory.getRsk();
         receiptStore = factory.getReceiptStore();
@@ -962,7 +965,7 @@ public class Web3ImplLogsTest {
                 null,
                 debugModule,
                 Web3Mocks.getMockChannelManager(),
-                blockChain.getRepository(),
+                repositoryLocator,
                 null,
                 null,
                 blockChain.getBlockStore(),
@@ -972,8 +975,7 @@ public class Web3ImplLogsTest {
                 null,
                 new SimpleConfigCapabilities(),
                 null,
-                new BlocksBloomStore(2, 0),
-                null
+                new BlocksBloomStore(2, 0)
         );
     }
 
