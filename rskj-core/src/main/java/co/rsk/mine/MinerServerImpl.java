@@ -29,9 +29,9 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.util.DifficultyUtils;
+import co.rsk.util.ListArrayUtil;
 import co.rsk.validators.ProofOfWorkRule;
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -293,8 +293,8 @@ public class MinerServerImpl implements MinerServer {
     }
 
     public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized, boolean lastOccurrence) {
-        List<Byte> coinBaseTransactionSerializedAsList = java.util.Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionSerialized));
-        List<Byte> tagAsList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+        List<Byte> coinBaseTransactionSerializedAsList = ListArrayUtil.asByteList(bitcoinMergedMiningCoinbaseTransactionSerialized);
+        List<Byte> tagAsList = ListArrayUtil.asByteList(RskMiningConstants.RSK_TAG);
 
         int rskTagPosition;
         if (lastOccurrence) {

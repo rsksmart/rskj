@@ -25,8 +25,8 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.DifficultyUtils;
+import co.rsk.util.ListArrayUtil;
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Pack;
 import org.ethereum.config.Constants;
@@ -169,8 +169,8 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         byte[] expectedCoinbaseMessageBytes = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, header.getHashForMergedMining());
 
 
-        List<Byte> bitcoinMergedMiningCoinbaseTransactionTailAsList = Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionTail));
-        List<Byte> expectedCoinbaseMessageBytesAsList = Arrays.asList(ArrayUtils.toObject(expectedCoinbaseMessageBytes));
+        List<Byte> bitcoinMergedMiningCoinbaseTransactionTailAsList = ListArrayUtil.asByteList(bitcoinMergedMiningCoinbaseTransactionTail);
+        List<Byte> expectedCoinbaseMessageBytesAsList = ListArrayUtil.asByteList(expectedCoinbaseMessageBytes);
 
         int rskTagPosition = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, expectedCoinbaseMessageBytesAsList);
         if (rskTagPosition == -1) {
@@ -188,7 +188,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        List<Byte> rskTagAsList = Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+        List<Byte> rskTagAsList = ListArrayUtil.asByteList(RskMiningConstants.RSK_TAG);
         int lastTag = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, rskTagAsList);
         if (rskTagPosition !=lastTag) {
             logger.warn("The valid RSK tag is not the last RSK tag. Tail: {}.", Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));

@@ -19,22 +19,20 @@
 
 package org.ethereum.core;
 
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
+import static co.rsk.util.ListArrayUtil.nullToEmpty;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**

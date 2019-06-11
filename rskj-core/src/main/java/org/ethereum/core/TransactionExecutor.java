@@ -44,8 +44,8 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.lang3.ArrayUtils.getLength;
-import static org.apache.commons.lang3.ArrayUtils.isEmpty;
+import static co.rsk.util.ListArrayUtil.getLength;
+import static co.rsk.util.ListArrayUtil.isEmpty;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
