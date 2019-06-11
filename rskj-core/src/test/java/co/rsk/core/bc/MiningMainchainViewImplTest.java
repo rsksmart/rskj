@@ -288,6 +288,39 @@ public class MiningMainchainViewImplTest {
         assertThat(result.get(0).getHash(), is(newBestBlock.getHash()));
     }
 
+    /**
+     * This is a corner case to avoid errors due to block having a null parent
+     *
+     * Note that it shouldn't be possible for a block of this kind to reach the MiningMainchainViewImpl
+     */
+    @Test
+    public void addNewBestBlockWithMissingParent() {
+        BlockStore blockStore = createBlockStore(10);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
+                blockStore,
+                4);
+
+        Block newBestBlock = createBlock(13, new Keccak256(getRandomHash()));
+        when(blockStore.getBlockByHash(newBestBlock.getHash().getBytes())).thenReturn(newBestBlock);
+        when(blockStore.getChainBlockByNumber(13L)).thenReturn(newBestBlock);
+
+        List<BlockHeader> result = testBlockchain.get();
+        assertThat(result.get(0).getNumber(), is(9L));
+        assertThat(result.get(1).getNumber(), is(8L));
+        assertThat(result.get(2).getNumber(), is(7L));
+        assertThat(result.get(3).getNumber(), is(6L));
+
+        testBlockchain.addBest(newBestBlock.getHeader());
+
+        result = testBlockchain.get();
+
+        assertThat(result.size(), is(1));
+
+        assertThat(result.get(0).getNumber(), is(13L));
+
+        assertThat(result.get(0).getHash(), is(newBestBlock.getHash()));
+    }
+
     private BlockStore createBlockStore(int height) {
         BlockStore blockStore = mock(BlockStore.class);
 

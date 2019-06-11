@@ -19,8 +19,11 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.*;
@@ -28,6 +31,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MiningMainchainViewImpl implements MiningMainchainView {
+    private static final Logger logger = LoggerFactory.getLogger("miningmainchainview");
+
     private final Object internalBlockStoreReadWriteLock = new Object();
 
     private final int height;
@@ -151,7 +156,12 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
                 break;
             }
 
-            currentHeader = blockStore.getBlockByHash(currentHeader.getParentHash().getBytes()).getHeader();
+            Block nextBlock = blockStore.getBlockByHash(currentHeader.getParentHash().getBytes());
+            if (nextBlock == null) {
+                logger.error("Missing parent for block %s, number %d", currentHeader.getShortHash(), currentHeader.getNumber());
+                break;
+            }
+            currentHeader = nextBlock.getHeader();
 
             missingHeaders.add(currentHeader);
         }
