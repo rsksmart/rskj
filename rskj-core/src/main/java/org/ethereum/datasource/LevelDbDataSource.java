@@ -28,6 +28,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xerial.snappy.Snappy;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -148,6 +149,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
             try {
                 byte[] ret = db.get(key);
+
+                if (ret != null) {
+                    ret = Snappy.uncompress(ret);
+                }
+
                 if (logger.isTraceEnabled()) {
                     logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
                 }
@@ -156,17 +162,24 @@ public class LevelDbDataSource implements KeyValueDataSource {
             } catch (DBException e) {
                 logger.error("Exception. Retrying again...", e);
                 try {
-                    byte[] ret = db.get(key);
+                    byte[] ret = Snappy.uncompress(db.get(key));
                     if (logger.isTraceEnabled()) {
                         logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
                     }
-
                     return ret;
+                } catch (IOException ex) {
+                    logger.error("Snappy problem. ", ex);
+                    panicProcessor.panic("leveldb", String.format("Exception. Snappy problem. Not retrying. %s", ex.getMessage()));
+                    throw new RuntimeException(ex);
                 } catch (DBException e2) {
                     logger.error("Exception. Not retrying.", e2);
                     panicProcessor.panic("leveldb", String.format("Exception. Not retrying. %s", e2.getMessage()));
-                    throw e2;
+                    throw new RuntimeException(e2);
                 }
+            } catch (IOException ex2) {
+                logger.error("Snappy problem. ", ex2);
+                panicProcessor.panic("leveldb", String.format("Exception. Snappy problem. Not retrying. %s", ex2.getMessage()));
+                throw new RuntimeException(ex2);
             }
         } finally {
             resetDbLock.readLock().unlock();
@@ -186,7 +199,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 logger.trace("~> LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
             }
 
-            db.put(key, value);
+            try {
+                db.put(key, Snappy.compress(value));
+            } catch (IOException e) {
+                logger.error("Unexpected", e);
+                panicProcessor.panic("Snappy", String.format("Unexpected %s", e.getMessage()));
+                throw new RuntimeException(e);
+            }
+
             if (logger.isTraceEnabled()) {
                 logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
             }
@@ -257,7 +277,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         // Note that this is not atomic.
         try (WriteBatch batch = db.createWriteBatch()) {
             for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
-                batch.put(entry.getKey().getData(), entry.getValue());
+                batch.put(entry.getKey().getData(), Snappy.compress(entry.getValue()));
             }
             for (ByteArrayWrapper deleteKey : deleteKeys) {
                 batch.delete(deleteKey.getData());

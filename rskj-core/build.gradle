@@ -84,6 +84,7 @@ dependencies {
     compile "org.mapdb:mapdb:2.0-beta13"
     compile "co.rsk.bitcoinj:bitcoinj-thin:${bitcoinjVersion}"
     compile 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.1'
+    compile group: 'org.xerial.snappy', name: 'snappy-java', version: '1.1.7.3'
 
     runtime "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
     runtime "ch.qos.logback:logback-classic:${logbackVersion}"
