@@ -192,7 +192,7 @@ public class MutableRepository implements Repository {
             setupContract(addr);
         }
 
-        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key.getData());
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
 
         // Special case: if the value is an empty vector, we pass "null" which commands the trie to remove the item.
         // Note that if the call comes from addStorageRow(), this method will already have replaced 0 by null, so the
@@ -207,7 +207,7 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
-        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key.getData());
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
         byte[] value = mutableTrie.get(triekey);
         if (value == null) {
             return null;
@@ -218,55 +218,14 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key) {
-        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key.getData());
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
         return mutableTrie.get(triekey);
     }
 
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         // -1 b/c the first bit is implicit in the storage node
-        final int storageKeyOffset = (TrieKeyMapper.storagePrefix().length + TrieKeyMapper.SECURE_KEY_SIZE) * Byte.SIZE - 1;
-        byte[] accountStorageKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        Trie storageTrie = mutableTrie.getTrie().find(accountStorageKey);
-
-        if (storageTrie != null) {
-            Iterator<Trie.IterationElement> storageIterator = storageTrie.getPreOrderIterator();
-            storageIterator.next(); // skip storage root
-            return new Iterator<DataWord>() {
-                private DataWord currentStorageKey;
-
-                @Override
-                public boolean hasNext() {
-                    if (currentStorageKey != null) {
-                        return true;
-                    }
-                    while (storageIterator.hasNext()) {
-                        Trie.IterationElement iterationElement = storageIterator.next();
-                        if (iterationElement.getNode().getValue() != null) {
-                            TrieKeySlice nodeKey = iterationElement.getNodeKey();
-                            byte[] storageExpandedKeySuffix = nodeKey.slice(storageKeyOffset, nodeKey.length()).encode();
-                            currentStorageKey = DataWord.valueOf(storageExpandedKeySuffix);
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-
-                @Override
-                public DataWord next() {
-                    if (currentStorageKey == null) {
-                        if (!hasNext()) {
-                            throw new NoSuchElementException();
-                        }
-                    }
-
-                    DataWord next = currentStorageKey;
-                    currentStorageKey = null;
-                    return next;
-                }
-            };
-        }
-        return Collections.emptyIterator();
+        return mutableTrie.getStorageKeys(addr);
     }
 
     @Override

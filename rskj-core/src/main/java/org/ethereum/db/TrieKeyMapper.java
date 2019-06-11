@@ -22,6 +22,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
 
 import java.util.Arrays;
 
@@ -59,14 +60,15 @@ public class TrieKeyMapper {
         return ByteUtil.merge(getAccountKey(addr), STORAGE_PREFIX);
     }
 
-    public byte[] getAccountStorageKey(RskAddress addr, byte[] subkey) {
+    public byte[] getAccountStorageKey(RskAddress addr, DataWord subkeyDW) {
         // TODO(SDL) should we hash the full subkey or the stripped one?
+        byte[] subkey = subkeyDW.getData();
         byte[] secureKeyPrefix = secureKeyPrefix(subkey);
         byte[] storageKey = ByteUtil.merge(secureKeyPrefix, ByteUtil.stripLeadingZeroes(subkey));
         return ByteUtil.merge(getAccountStoragePrefixKey(addr), storageKey);
     }
 
-    private byte[] secureKeyPrefix(byte[] key) {
+    public byte[] secureKeyPrefix(byte[] key) {
         return Arrays.copyOfRange(Keccak256Helper.keccak256(key), 0, SECURE_KEY_SIZE);
     }
 
