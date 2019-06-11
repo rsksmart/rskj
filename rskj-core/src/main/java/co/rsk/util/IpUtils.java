@@ -17,7 +17,7 @@ public class IpUtils {
     private static final Logger logger = LoggerFactory.getLogger(IpUtils.class);
 
     private static final String IPV6_INPUT_FORMAT = "^\\[(.*)\\]:([0-9]{1,})";
-    private static final String IPV4_INPUT_FORMAT = "^(.*):([0-9]{1,})";
+    private static final String IPV4_INPUT_FORMAT = "^([^:]*):([0-9]{1,})";
     private static final Pattern ipv6Pattern = Pattern.compile(IPV6_INPUT_FORMAT);
     private static final Pattern ipv4Pattern = Pattern.compile(IPV4_INPUT_FORMAT);
 
@@ -33,7 +33,7 @@ public class IpUtils {
         }
 
         matcher = ipv4Pattern.matcher(address);
-        if(StringUtils.countMatches(address, ":") == 1 && matcher.matches()) {
+        if (matcher.matches() && matcher.groupCount() == 2) {
             return parseMatch(matcher);
         }
 

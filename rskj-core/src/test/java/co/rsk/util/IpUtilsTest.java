@@ -17,6 +17,7 @@ public class IpUtilsTest {
     private static final String IPV6_INVALID = "2001:db8:85a3:8d3:1319:8a2e:370:7348";
     private static final String IPV4_WITH_PORT = "172.217.28.228:80";
     private static final String IPV4_NO_PORT = "172.217.28.228";
+    private static final String HOSTNAME_WITH_PORT = "localhost:456";
 
     @Test
     public void parseIPv6() {
@@ -46,6 +47,12 @@ public class IpUtilsTest {
     public void parseIPv4NoPort() {
         InetSocketAddress result = IpUtils.parseAddress(IPV4_NO_PORT);
         Assert.assertNull(result);
+    }
+
+    @Test
+    public void parseHostnameWithPort() {
+        InetSocketAddress result = IpUtils.parseAddress(HOSTNAME_WITH_PORT);
+        Assert.assertNotNull(result);
     }
 
     @Test
