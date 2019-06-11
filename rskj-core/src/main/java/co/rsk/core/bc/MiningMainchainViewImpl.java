@@ -56,8 +56,7 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         this.blockHashesByNumber = new HashMap<>();
 
         BlockHeader currentBest = blockStore.getBestBlock().getHeader();
-        this.mainchain = Arrays.asList(currentBest);
-        fillMissingHeaders();
+        buildMainchainFromList(Arrays.asList(currentBest));
     }
 
     public void addBest(BlockHeader bestHeader) {
@@ -69,8 +68,7 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
             if (parentIndex >= 0) {
                 addBestAndRebuildFromParent(bestHeader, parentIndex);
             } else {
-                mainchain = Arrays.asList(bestHeader);
-                fillMissingHeaders();
+                buildMainchainFromList(Arrays.asList(bestHeader));
             }
 
             deleteEntriesOutOfBoundaries(bestHeader.getNumber());
@@ -106,25 +104,26 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
                 commonAncestorChain.stream())
                 .collect(Collectors.toList());
 
-        mainchain = newMainchain;
-
-        fillMissingHeaders();
+        buildMainchainFromList(newMainchain);
         deleteHeaders(staleHeaders);
     }
 
     /**
-     * Fill the mainchain's tail with as many headers as it's needed to satisfy the desired height
+     * Given a source list, take it as the new mainchain and refill it with as many block headers are needed to reach
+     * the desired depth/height
+     *
+     * @param sourceList
      */
-    private void fillMissingHeaders() {
-        int currentSize = mainchain.size();
+    private void buildMainchainFromList(List<BlockHeader> sourceList) {
+        int sourceSize = sourceList.size();
 
-        if (currentSize == 0 || currentSize >= height) {
+        if (sourceSize == 0 || height <= sourceSize) {
             return;
         }
 
-        BlockHeader lastHeader = mainchain.get(currentSize - 1);
+        BlockHeader lastHeader = sourceList.get(sourceSize - 1);
 
-        List<BlockHeader> missingHeaders = retrieveAncestorsForHeader(lastHeader, height - currentSize);
+        List<BlockHeader> missingHeaders = retrieveAncestorsForHeader(lastHeader, height - sourceSize);
 
         for (BlockHeader header : missingHeaders) {
             if(!blocksByHash.containsKey(header.getHash())) {
@@ -132,7 +131,7 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
             }
         }
 
-        mainchain = Stream.concat(mainchain.stream(), missingHeaders.stream())
+        mainchain = Stream.concat(sourceList.stream(), missingHeaders.stream())
                 .collect(Collectors.toList());
     }
 
