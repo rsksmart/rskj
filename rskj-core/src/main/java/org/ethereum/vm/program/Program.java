@@ -586,7 +586,7 @@ public class Program {
                 newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         returnDataBuffer = null; // reset return buffer right before the call
-        if (isNotEmpty(programCode)) {
+        if (!isEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
             Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
             vm.play(program);
@@ -769,7 +769,7 @@ public class Program {
 
         boolean callResult;
 
-        if (isNotEmpty(programCode)) {
+        if (!isEmpty(programCode)) {
             callResult = executeCode(msg, contextAddress, contextBalance, internalTx, track, programCode, senderAddress, data);
         }
         else {
