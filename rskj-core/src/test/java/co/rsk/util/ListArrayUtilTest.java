@@ -21,7 +21,36 @@ package co.rsk.util;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.List;
+
 public class ListArrayUtilTest {
+
+    @Test
+    public void testAsByteList() {
+        byte[] array = new byte[]{'a','b','c','d'};
+
+        List<Byte> result = ListArrayUtil.asByteList(array);
+
+        for(int i = 0; i < array.length; i++) {
+            Assert.assertEquals(array[i], result.get(i).byteValue());
+        }
+    }
+
+    @Test
+    public void testNullIsEmpty() {
+        Assert.assertTrue(ListArrayUtil.isEmpty(null));
+    }
+
+    @Test
+    public void testEmptyIsEmpty() {
+        Assert.assertTrue(ListArrayUtil.isEmpty(new byte[]{}));
+    }
+
+    @Test
+    public void testNotEmptyIsEmpty() {
+        Assert.assertFalse(ListArrayUtil.isEmpty(new byte[]{'a'}));
+    }
+
     @Test
     public void testNullToEmpty() {
         Assert.assertNotNull(ListArrayUtil.nullToEmpty(null));

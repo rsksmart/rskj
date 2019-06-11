@@ -35,6 +35,9 @@ public class ListArrayUtil {
 
     /**
      * Converts primitive byte[] to List<Byte>
+     *
+     * @param primitiveByteArray The primitive array to convert, cannot be null.
+     * @return The input byte array as a List<Byte>, never null but can be empty.
      */
     public static List<Byte> asByteList(byte[] primitiveByteArray) {
         Byte[] arrayObj = convertTo(primitiveByteArray);
@@ -54,13 +57,6 @@ public class ListArrayUtil {
      */
     public static boolean isEmpty(@Nullable byte[] array) {
         return array == null || array.length == 0;
-    }
-
-    /**
-     * @return true if the array is not empty and not null
-     */
-    public static boolean isNotEmpty(@Nullable byte[] array) {
-        return !isEmpty(array);
     }
 
     /**
