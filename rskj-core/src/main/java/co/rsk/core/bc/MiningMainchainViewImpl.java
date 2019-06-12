@@ -64,9 +64,9 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
             addHeaderToMaps(bestHeader);
 
             // try to avoid recalculating the whole chain if the new header's parent already exists in the chain
-            int parentIndex = findParentIndex(bestHeader);
-            if (parentIndex >= 0) {
-                addBestAndRebuildFromParent(bestHeader, parentIndex);
+            OptionalInt parentIndex = findParentIndex(bestHeader);
+            if (parentIndex.isPresent()) {
+                addBestAndRebuildFromParent(bestHeader, parentIndex.getAsInt());
             } else {
                 buildMainchainFromList(Arrays.asList(bestHeader));
             }
@@ -215,13 +215,13 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         }
     }
 
-    private int findParentIndex(BlockHeader header) {
+    private OptionalInt findParentIndex(BlockHeader header) {
         for (int i = 0; i < mainchain.size(); i++) {
             BlockHeader chainHeader = mainchain.get(i);
             if (chainHeader.isParentOf(header)) {
-                return i;
+                return OptionalInt.of(i);
             }
         }
-        return -1;
+        return OptionalInt.empty();
     }
 }
