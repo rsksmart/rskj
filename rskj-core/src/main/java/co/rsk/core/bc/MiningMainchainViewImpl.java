@@ -91,12 +91,10 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
      * @param parentIndex List index of the best header's parent
      */
     private void addBestAndRebuildFromParent(BlockHeader bestHeader, int parentIndex) {
-        List<BlockHeader> staleHeaders = mainchain.stream()
-                .limit(parentIndex)
-                .collect(Collectors.toList());
+        int toSkip = parentIndex + 1;
 
         List<BlockHeader> commonAncestorChain = mainchain.stream()
-                .skip(staleHeaders.size())
+                .skip(toSkip)
                 .collect(Collectors.toList());
 
         List<BlockHeader> newMainchain = Stream.concat(
@@ -105,7 +103,6 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
                 .collect(Collectors.toList());
 
         buildMainchainFromList(newMainchain);
-        deleteHeaders(staleHeaders);
     }
 
     /**
@@ -179,31 +176,6 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
             blockHashesByNumber.get(blockNumber).add(headerToAdd.getHash());
         } else {
             blockHashesByNumber.put(headerToAdd.getNumber(), new ArrayList<>(Collections.singletonList(headerToAdd.getHash())));
-        }
-    }
-
-    private void deleteHeaders(List<BlockHeader> headers) {
-        for (BlockHeader header : headers) {
-            deleteHeaderFromMaps(header);
-        }
-    }
-
-    private void deleteHeaderFromMaps(BlockHeader header) {
-        blocksByHash.remove(header.getHash());
-        deleteFromBlockHashesByNumberMap(header);
-    }
-
-    private void deleteFromBlockHashesByNumberMap(BlockHeader headerToRemove) {
-        long blockNumber = headerToRemove.getNumber();
-
-        if (blockHashesByNumber.containsKey(blockNumber)) {
-            List<Keccak256> headers = blockHashesByNumber.get(blockNumber);
-
-            headers.remove(headerToRemove.getHash());
-
-            if (headers.isEmpty()) {
-                blockHashesByNumber.remove(blockNumber);
-            }
         }
     }
 
