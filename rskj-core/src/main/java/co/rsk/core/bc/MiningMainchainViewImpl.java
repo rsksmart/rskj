@@ -114,7 +114,7 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
     private void buildMainchainFromList(List<BlockHeader> sourceList) {
         int sourceSize = sourceList.size();
 
-        if (sourceSize == 0 || height <= sourceSize) {
+        if (sourceSize == 0 || height < sourceSize) {
             return;
         }
 

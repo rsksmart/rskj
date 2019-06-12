@@ -96,6 +96,40 @@ public class MiningMainchainViewImplTest {
         assertThat(result.size(), is(6));
     }
 
+    @Test
+    public void createWithOnlyGenesisAndHeightOne() {
+        BlockStore blockStore = createBlockStore(1);
+        Block genesis = blockStore.getChainBlockByNumber(0L);
+        when(blockStore.getBestBlock()).thenReturn(genesis);
+
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
+                blockStore,
+                1);
+
+        List<BlockHeader> result = testBlockchain.get();
+
+        assertNotNull(result);
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0).isGenesis(), is(true));
+    }
+
+    @Test
+    public void createWithOnlyGenesisAndHeightGreaterThanOne() {
+        BlockStore blockStore = createBlockStore(1);
+        Block genesis = blockStore.getChainBlockByNumber(0L);
+        when(blockStore.getBestBlock()).thenReturn(genesis);
+
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
+                blockStore,
+                10);
+
+        List<BlockHeader> result = testBlockchain.get();
+
+        assertNotNull(result);
+        assertThat(result.size(), is(1));
+        assertThat(result.get(0).isGenesis(), is(true));
+    }
+
     /**
      * Blockchain has blocks A (genesis) -> B -> C (best block)
      * A new block D has been added to the real blockchain triggering an add on the abstract blockchain
