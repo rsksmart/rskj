@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
@@ -31,6 +32,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
@@ -51,6 +53,9 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by adrian.eidelman on 3/16/2016.
@@ -97,31 +102,31 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
         byte[] s1 = new byte[32];
         s1[0] = 0;
-        Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
-        Mockito.when(tx1.getEncoded()).thenReturn(new byte[32]);
+        when(tx1.getHash()).thenReturn(new Keccak256(s1));
+        when(tx1.getEncoded()).thenReturn(new byte[32]);
 
-        Repository track = Mockito.mock(Repository.class);
+        Repository track = mock(Repository.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
         Mockito.doReturn(repository.getMutableTrie()).when(track).getMutableTrie();
-        Mockito.when(track.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
-        Mockito.when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
-        Mockito.when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
-        Mockito.when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
-        Mockito.doReturn(track).when(repository).getSnapshotTo(Mockito.any());
+        when(track.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
+        when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
+        when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
+        when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
+        Mockito.doReturn(track).when(repository).getSnapshotTo(any());
         Mockito.doReturn(track).when(repository).startTracking();
         Mockito.doReturn(track).when(track).startTracking();
 
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));
 
-        TransactionPool localTransactionPool = Mockito.mock(TransactionPool.class);
-        Mockito.when(localTransactionPool.getPendingTransactions()).thenReturn(txs);
+        TransactionPool localTransactionPool = mock(TransactionPool.class);
+        when(localTransactionPool.getPendingTransactions()).thenReturn(txs);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServerImpl minerServer = new MinerServerImpl(
                 config,
-                Mockito.mock(EthereumImpl.class),
+                mock(EthereumImpl.class),
                 this.blockchain,
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
@@ -158,11 +163,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void submitBitcoinBlockTwoTags() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
+        when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -219,7 +224,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         Assert.assertEquals("ERROR", result.getStatus());
 
-        Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+        Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -227,11 +232,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void submitBitcoinBlock() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
+        when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -273,7 +278,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
             Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -281,11 +286,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void submitBitcoinBlockPartialMerkleWhenBlockIsEmpty() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
+        when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -330,7 +335,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
             Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -338,11 +343,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void submitBitcoinBlockPartialMerkleWhenBlockHasTransactions() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
+        when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -373,10 +378,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             minerServer.start();
             MinerWork work = minerServer.getWork();
 
-            BtcTransaction otherTx = Mockito.mock(BtcTransaction.class);
+            BtcTransaction otherTx = mock(BtcTransaction.class);
             Sha256Hash otherTxHash = Sha256Hash.wrap("aaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccdddd");
-            Mockito.when(otherTx.getHash()).thenReturn(otherTxHash);
-            Mockito.when(otherTx.getHashAsString()).thenReturn(otherTxHash.toString());
+            when(otherTx.getHash()).thenReturn(otherTxHash);
+            when(otherTx.getHashAsString()).thenReturn(otherTxHash.toString());
 
             BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work, Collections.singletonList(otherTx));
 
@@ -394,7 +399,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
             Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -402,11 +407,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void submitBitcoinBlockTransactionsWhenBlockIsEmpty() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
+        when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -450,7 +455,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
             Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -458,11 +463,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void submitBitcoinBlockTransactionsWhenBlockHasTransactions() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
+        when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -494,10 +499,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             minerServer.start();
             MinerWork work = minerServer.getWork();
 
-            BtcTransaction otherTx = Mockito.mock(BtcTransaction.class);
+            BtcTransaction otherTx = mock(BtcTransaction.class);
             Sha256Hash otherTxHash = Sha256Hash.wrap("aaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccdddd");
-            Mockito.when(otherTx.getHash()).thenReturn(otherTxHash);
-            Mockito.when(otherTx.getHashAsString()).thenReturn(otherTxHash.toString());
+            when(otherTx.getHash()).thenReturn(otherTxHash);
+            when(otherTx.getHashAsString()).thenReturn(otherTxHash.toString());
 
             BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work, Collections.singletonList(otherTx));
 
@@ -513,7 +518,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
             Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
-            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(any());
         } finally {
             minerServer.stop();
         }
@@ -521,10 +526,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void workWithNoTransactionsZeroFees() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -564,10 +569,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void initialWorkTurnsNotifyFlagOn() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -607,10 +612,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void secondWorkWithNoChangesTurnsNotifyFlagOff() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -653,11 +658,52 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void secondBuildBlockToMineTurnsNotifyFlagOff() {
-        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+    public void gasUnitInDollarsIsInitializedOkAtConstructor() {
+        Block block1 = mock(Block.class);
+        when(block1.getFeesPaidToMiner()).thenReturn(new Coin(BigInteger.valueOf(10)));
+        when(block1.getHashForMergedMining()).thenReturn(TestUtils.randomHash().getBytes());
+        when(block1.getHash()).thenReturn(TestUtils.randomHash());
+        when(block1.getDifficulty()).thenReturn(BlockDifficulty.ZERO);
 
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
-        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        Block block2 = mock(Block.class);
+        when(block2.getFeesPaidToMiner()).thenReturn(new Coin(BigInteger.valueOf(24)));
+        when(block2.getHashForMergedMining()).thenReturn(TestUtils.randomHash().getBytes());
+        when(block2.getHash()).thenReturn(TestUtils.randomHash());
+        when(block2.getDifficulty()).thenReturn(BlockDifficulty.ZERO);
+
+        BlockToMineBuilder builder = mock(BlockToMineBuilder.class);
+        when(builder.build(any(), any())).thenReturn(block1).thenReturn(block2);
+
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
+        MinerServer minerServer = new MinerServerImpl(
+                config,
+                mock(EthereumImpl.class),
+                this.blockchain,
+                null,
+                mock(ProofOfWorkRule.class),
+                builder,
+                clock,
+                mock(BlockFactory.class),
+                ConfigUtils.getDefaultMiningConfig()
+        );
+        try {
+            minerServer.start();
+            minerServer.getWork();
+            minerServer.buildBlockToMine(blockchain.getBestBlock(),false);
+            MinerWork work = minerServer.getWork();
+
+            assertTrue(work.getNotify());
+        } finally {
+            minerServer.stop();
+        }
+    }
+
+    @Test
+    public void secondBuildBlockToMineTurnsNotifyFlagOff() {
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
+
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(
                 config,
