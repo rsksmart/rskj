@@ -673,12 +673,14 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(block1.getHashForMergedMining()).thenReturn(TestUtils.randomHash().getBytes());
         when(block1.getHash()).thenReturn(TestUtils.randomHash());
         when(block1.getDifficulty()).thenReturn(BlockDifficulty.ZERO);
+        when(block1.getParentHashJsonString()).thenReturn(TestUtils.randomHash().toJsonString());
 
         Block block2 = mock(Block.class);
         when(block2.getFeesPaidToMiner()).thenReturn(new Coin(BigInteger.valueOf(24)));
         when(block2.getHashForMergedMining()).thenReturn(TestUtils.randomHash().getBytes());
         when(block2.getHash()).thenReturn(TestUtils.randomHash());
         when(block2.getDifficulty()).thenReturn(BlockDifficulty.ZERO);
+        when(block2.getParentHashJsonString()).thenReturn(TestUtils.randomHash().toJsonString());
 
         BlockToMineBuilder builder = mock(BlockToMineBuilder.class);
         BlockResult blockResult = mock(BlockResult.class);

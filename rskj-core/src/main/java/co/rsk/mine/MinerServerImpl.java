@@ -156,8 +156,10 @@ public class MinerServerImpl implements MinerServer {
         synchronized (lock) {
             started = false;
             ethereum.removeListener(blockListener);
-            refreshWorkTimer.cancel();
-            refreshWorkTimer = null;
+            if (refreshWorkTimer != null) {
+                refreshWorkTimer.cancel();
+                refreshWorkTimer = null;
+            }
         }
     }
 
