@@ -20,13 +20,10 @@ package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.message.DiscoveryMessageType;
 import co.rsk.net.discovery.message.PeerDiscoveryMessage;
+import java.net.InetSocketAddress;
 import org.ethereum.net.rlpx.Node;
 
-import java.net.InetSocketAddress;
-
-/**
- * Created by mario on 17/02/17.
- */
+/** Created by mario on 17/02/17. */
 public class PeerDiscoveryRequest {
     private final String messageId;
     private final PeerDiscoveryMessage message;
@@ -36,7 +33,14 @@ public class PeerDiscoveryRequest {
     private final int attemptNumber;
     private final Node relatedNode;
 
-    public PeerDiscoveryRequest(String messageId, PeerDiscoveryMessage message, InetSocketAddress address, DiscoveryMessageType expectedResponse, Long expirationPeriod, int attemptNumber, Node relatedNode) {
+    public PeerDiscoveryRequest(
+            String messageId,
+            PeerDiscoveryMessage message,
+            InetSocketAddress address,
+            DiscoveryMessageType expectedResponse,
+            Long expirationPeriod,
+            int attemptNumber,
+            Node relatedNode) {
         this.messageId = messageId;
         this.message = message;
         this.address = address;
@@ -67,7 +71,9 @@ public class PeerDiscoveryRequest {
     }
 
     public boolean validateMessageResponse(InetSocketAddress responseAddress, PeerDiscoveryMessage message) {
-        return this.expectedResponse == message.getMessageType() && !this.hasExpired() && getAddress().equals(responseAddress);
+        return this.expectedResponse == message.getMessageType()
+                && !this.hasExpired()
+                && getAddress().equals(responseAddress);
     }
 
     public boolean hasExpired() {

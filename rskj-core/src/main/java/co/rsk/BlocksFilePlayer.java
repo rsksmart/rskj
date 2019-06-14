@@ -19,17 +19,16 @@
 package co.rsk;
 
 import co.rsk.net.BlockProcessResult;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.Stream;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
 
 public class BlocksFilePlayer {
     private final Blockchain targetBlockchain;

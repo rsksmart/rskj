@@ -26,17 +26,13 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.util.ByteUtil;
 
 /**
- * This implements the "getMinGasPrice" method
- * that belongs to the BlockHeaderContract native contract.
+ * This implements the "getMinGasPrice" method that belongs to the BlockHeaderContract native contract.
  *
  * @author Diego Masini
  */
 public class GetMinimumGasPrice extends BlockHeaderContractMethod {
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "getMinGasPrice",
-            new String[]{"int256"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature("getMinGasPrice", new String[] {"int256"}, new String[] {"bytes"});
 
     public GetMinimumGasPrice(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);

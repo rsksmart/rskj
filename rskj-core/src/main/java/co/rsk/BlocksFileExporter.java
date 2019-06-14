@@ -18,14 +18,13 @@
 
 package co.rsk;
 
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Block;
-import org.ethereum.db.BlockStore;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Block;
+import org.ethereum.db.BlockStore;
 
 public class BlocksFileExporter {
     private final BlockStore sourceBlockStore;
@@ -41,7 +40,7 @@ public class BlocksFileExporter {
 
     private void exportBlocks() throws IOException {
         try (FileWriter fileWriter = new FileWriter(filename);
-             BufferedWriter writer = new BufferedWriter(fileWriter)) {
+                BufferedWriter writer = new BufferedWriter(fileWriter)) {
             for (Block block = nextBlock(); block != null; block = nextBlock()) {
                 writer.write(String.valueOf(block.getNumber()));
                 writer.write(",");

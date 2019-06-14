@@ -23,9 +23,6 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.ethereum.vm.LogInfo;
-
-import java.util.List;
 
 /**
  * Responsible for logging events triggered by BridgeContract.

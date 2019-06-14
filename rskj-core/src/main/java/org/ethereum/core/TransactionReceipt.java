@@ -1,4 +1,4 @@
-    /*
+/*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
@@ -19,6 +19,13 @@
 
 package org.ethereum.core;
 
+import static co.rsk.util.ListArrayUtil.nullToEmpty;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.RLP;
@@ -27,26 +34,17 @@ import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static co.rsk.util.ListArrayUtil.nullToEmpty;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-
 /**
- * The transaction receipt is a tuple of three items
- * comprising the transaction, together with the post-transaction state,
- * and the cumulative gas used in the block containing the transaction receipt
- * as of immediately after the transaction has happened,
+ * The transaction receipt is a tuple of three items comprising the transaction, together with the post-transaction
+ * state, and the cumulative gas used in the block containing the transaction receipt as of immediately after the
+ * transaction has happened,
  */
 public class TransactionReceipt {
 
     private Transaction transaction;
 
     protected static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
-    protected static final byte[] SUCCESS_STATUS = new byte[]{0x01};
+    protected static final byte[] SUCCESS_STATUS = new byte[] {0x01};
 
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
@@ -59,8 +57,7 @@ public class TransactionReceipt {
     /* Tx Receipt in encoded form */
     private byte[] rlpEncoded;
 
-    public TransactionReceipt() {
-    }
+    public TransactionReceipt() {}
 
     public TransactionReceipt(byte[] rlp) {
 
@@ -78,7 +75,7 @@ public class TransactionReceipt {
         bloomFilter = new Bloom(bloomRLP.getRLPData());
         gasUsed = gasUsedRLP.getRLPData() == null ? EMPTY_BYTE_ARRAY : gasUsedRLP.getRLPData();
 
-        if (receipt.size() > 5 ) {
+        if (receipt.size() > 5) {
             byte[] transactionStatus = nullToEmpty(receipt.get(5).getRLPData());
             this.status = transactionStatus;
         }
@@ -91,9 +88,13 @@ public class TransactionReceipt {
         rlpEncoded = rlp;
     }
 
-
-    public TransactionReceipt(byte[] postTxState, byte[] cumulativeGas, byte[] gasUsed,
-                              Bloom bloomFilter, List<LogInfo> logInfoList, byte[] status) {
+    public TransactionReceipt(
+            byte[] postTxState,
+            byte[] cumulativeGas,
+            byte[] gasUsed,
+            Bloom bloomFilter,
+            List<LogInfo> logInfoList,
+            byte[] status) {
         this.postTxState = postTxState;
         this.cumulativeGas = cumulativeGas;
         this.gasUsed = gasUsed;
@@ -120,7 +121,6 @@ public class TransactionReceipt {
     public long getCumulativeGasLong() {
         return new BigInteger(1, cumulativeGas).longValue();
     }
-
 
     public Bloom getBloomFilter() {
         return bloomFilter;
@@ -163,9 +163,9 @@ public class TransactionReceipt {
     }
 
     public void setStatus(byte[] status) {
-        if (Arrays.equals(status, FAILED_STATUS)){
+        if (Arrays.equals(status, FAILED_STATUS)) {
             this.status = FAILED_STATUS;
-        } else if (Arrays.equals(status, SUCCESS_STATUS)){
+        } else if (Arrays.equals(status, SUCCESS_STATUS)) {
             this.status = SUCCESS_STATUS;
         }
     }
@@ -175,7 +175,7 @@ public class TransactionReceipt {
     }
 
     public void setTxStatus(boolean success) {
-        this.postTxState = success ? new byte[]{1} : new byte[0];
+        this.postTxState = success ? new byte[] {1} : new byte[0];
         rlpEncoded = null;
     }
 
@@ -211,7 +211,7 @@ public class TransactionReceipt {
         if (logInfoList == null) {
             return;
         }
-        
+
         this.rlpEncoded = null;
         this.logInfoList = logInfoList;
 
@@ -233,13 +233,18 @@ public class TransactionReceipt {
 
         // todo: fix that
 
-        return "TransactionReceipt[" +
-                "\n  , " + (hasTxStatus() ? ("txStatus=" + (isSuccessful()? "OK" : "FAILED"))
-                        : ("postTxState=" + Hex.toHexString(postTxState))) +
-                "\n  , cumulativeGas=" + Hex.toHexString(cumulativeGas) +
-                "\n  , bloom=" + bloomFilter.toString() +
-                "\n  , logs=" + logInfoList +
-                ']';
+        return "TransactionReceipt["
+                + "\n  , "
+                + (hasTxStatus()
+                        ? ("txStatus=" + (isSuccessful() ? "OK" : "FAILED"))
+                        : ("postTxState=" + Hex.toHexString(postTxState)))
+                + "\n  , cumulativeGas="
+                + Hex.toHexString(cumulativeGas)
+                + "\n  , bloom="
+                + bloomFilter.toString()
+                + "\n  , logs="
+                + logInfoList
+                + ']';
     }
 
     public byte[] getStatus() {

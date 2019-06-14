@@ -2,7 +2,6 @@ package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.VarInt;
-
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -20,22 +19,22 @@ public class PartialMerkleTreeFormatUtils {
         return new VarInt(
                 pmtSerialized,
                 Math.addExact(
-                    BLOCK_TRANSACTION_COUNT_LENGTH + hashesCount.getOriginalSizeInBytes(),
-                    Math.multiplyExact(Math.toIntExact(hashesCount.value), Sha256Hash.LENGTH)
-                )
-        );
+                        BLOCK_TRANSACTION_COUNT_LENGTH + hashesCount.getOriginalSizeInBytes(),
+                        Math.multiplyExact(Math.toIntExact(hashesCount.value), Sha256Hash.LENGTH)));
     }
 
     public static boolean hasExpectedSize(byte[] pmtSerialized) {
         try {
             VarInt hashesCount = getHashesCount(pmtSerialized);
             VarInt flagBitsCount = getFlagBitsCount(pmtSerialized);
-            int declaredSize = Math.addExact(Math.addExact(BLOCK_TRANSACTION_COUNT_LENGTH
-                    + hashesCount.getOriginalSizeInBytes()
-                    + flagBitsCount.getOriginalSizeInBytes(),
-                    Math.toIntExact(flagBitsCount.value)),
-                    Math.multiplyExact(Math.toIntExact(hashesCount.value), Sha256Hash.LENGTH)
-            );
+            int declaredSize =
+                    Math.addExact(
+                            Math.addExact(
+                                    BLOCK_TRANSACTION_COUNT_LENGTH
+                                            + hashesCount.getOriginalSizeInBytes()
+                                            + flagBitsCount.getOriginalSizeInBytes(),
+                                    Math.toIntExact(flagBitsCount.value)),
+                            Math.multiplyExact(Math.toIntExact(hashesCount.value), Sha256Hash.LENGTH));
             return pmtSerialized.length == declaredSize;
         } catch (RuntimeException e) {
             return false;
@@ -45,8 +44,7 @@ public class PartialMerkleTreeFormatUtils {
     public static Stream<Sha256Hash> streamIntermediateHashes(byte[] pmtSerialized) {
         VarInt hashesCount = PartialMerkleTreeFormatUtils.getHashesCount(pmtSerialized);
         int offset = BLOCK_TRANSACTION_COUNT_LENGTH + hashesCount.getOriginalSizeInBytes();
-        return IntStream.range(0, (int) hashesCount.value)
-                .mapToObj(index -> getHash(pmtSerialized, offset, index));
+        return IntStream.range(0, (int) hashesCount.value).mapToObj(index -> getHash(pmtSerialized, offset, index));
     }
 
     private static Sha256Hash getHash(byte[] pmtSerialized, int offset, int index) {

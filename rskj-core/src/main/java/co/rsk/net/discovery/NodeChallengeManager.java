@@ -20,14 +20,11 @@ package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.message.PingPeerMessage;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.net.rlpx.Node;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.ethereum.net.rlpx.Node;
 
-/**
- * Created by mario on 22/02/17.
- */
+/** Created by mario on 22/02/17. */
 public class NodeChallengeManager {
     private Map<String, NodeChallenge> activeChallenges = new ConcurrentHashMap<>();
 

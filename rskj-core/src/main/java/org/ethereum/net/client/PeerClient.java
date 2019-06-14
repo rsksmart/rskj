@@ -26,16 +26,14 @@ import io.netty.channel.DefaultMessageSizeEstimator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.server.EthereumChannelInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
-
 
 /**
  * This class creates the connection to an remote address using the Netty framework
@@ -50,19 +48,26 @@ public class PeerClient {
     private final EthereumListener ethereumListener;
     private final EthereumChannelInitializerFactory ethereumChannelInitializerFactory;
 
-    public PeerClient(SystemProperties config, EthereumListener ethereumListener, EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
+    public PeerClient(
+            SystemProperties config,
+            EthereumListener ethereumListener,
+            EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
         this.config = config;
         this.ethereumListener = ethereumListener;
         this.ethereumChannelInitializerFactory = ethereumChannelInitializerFactory;
     }
 
-    private static EventLoopGroup workerGroup = new NioEventLoopGroup(0, new ThreadFactory() {
-        AtomicInteger cnt = new AtomicInteger(0);
-        @Override
-        public Thread newThread(Runnable r) {
-            return new Thread(r, "EthJClientWorker-" + cnt.getAndIncrement());
-        }
-    });
+    private static EventLoopGroup workerGroup =
+            new NioEventLoopGroup(
+                    0,
+                    new ThreadFactory() {
+                        AtomicInteger cnt = new AtomicInteger(0);
+
+                        @Override
+                        public Thread newThread(Runnable r) {
+                            return new Thread(r, "EthJClientWorker-" + cnt.getAndIncrement());
+                        }
+                    });
 
     public ChannelFuture connectAsync(String host, int port, String remoteId) {
         ethereumListener.trace("Connecting to: " + host + ":" + port);
@@ -83,5 +88,4 @@ public class PeerClient {
         // Start the client.
         return b.connect();
     }
-
 }

@@ -19,19 +19,14 @@
 
 package org.ethereum.net.p2p;
 
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.client.Capability;
 import org.ethereum.util.RLP;
 
-import org.bouncycastle.util.encoders.Hex;
-
-import java.net.InetAddress;
-
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * This class models a peer in the network
- */
+/** This class models a peer in the network */
 public class Peer {
 
     private final InetAddress address;
@@ -77,9 +72,7 @@ public class Peer {
 
     @Override
     public String toString() {
-        return "[ip=" + getAddress().getHostAddress() +
-                " port=" + getPort()
-                + " peerId=" + getPeerId() + "]";
+        return "[ip=" + getAddress().getHostAddress() + " port=" + getPort() + " peerId=" + getPeerId() + "]";
     }
 
     @Override
@@ -93,8 +86,7 @@ public class Peer {
         }
 
         Peer peerData = (Peer) obj;
-        return peerData.peerId.equals(this.peerId)
-                || this.getAddress().equals(peerData.getAddress());
+        return peerData.peerId.equals(this.peerId) || this.getAddress().equals(peerData.getAddress());
     }
 
     @Override

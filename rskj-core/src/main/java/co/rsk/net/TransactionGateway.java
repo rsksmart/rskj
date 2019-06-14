@@ -19,16 +19,15 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.net.server.ChannelManager;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 
 /**
  * Centralizes receiving and relaying transactions, so we can only distribute information to nodes that don't already
@@ -43,9 +42,7 @@ public class TransactionGateway {
     private final OnPendingTransactionsReceivedListener listener = new OnPendingTransactionsReceivedListener();
 
     public TransactionGateway(
-            ChannelManager channelManager,
-            TransactionPool transactionPool,
-            CompositeEthereumListener emitter) {
+            ChannelManager channelManager, TransactionPool transactionPool, CompositeEthereumListener emitter) {
         this.channelManager = Objects.requireNonNull(channelManager);
         this.transactionPool = Objects.requireNonNull(transactionPool);
         this.emitter = Objects.requireNonNull(emitter);
@@ -77,4 +74,3 @@ public class TransactionGateway {
         }
     }
 }
-

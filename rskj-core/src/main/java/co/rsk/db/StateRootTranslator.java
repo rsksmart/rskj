@@ -18,9 +18,8 @@
 package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
-import org.ethereum.datasource.KeyValueDataSource;
-
 import java.util.Map;
+import org.ethereum.datasource.KeyValueDataSource;
 
 public class StateRootTranslator {
 

@@ -18,21 +18,25 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.InsufficientMoneyException;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.UTXOProviderException;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 /**
- * Given a set of UTXOs, a ReleaseTransactionBuilder
- * knows how to build a release transaction
- * of a certain amount to a certain address,
- * and how to signal the used UTXOs so they
- * can be invalidated.
+ * Given a set of UTXOs, a ReleaseTransactionBuilder knows how to build a release transaction of a certain amount to a
+ * certain address, and how to signal the used UTXOs so they can be invalidated.
  *
  * @author Ariel Mendelzon
  */
@@ -86,23 +90,26 @@ public class ReleaseTransactionBuilder {
     }
 
     public Optional<BuildResult> buildAmountTo(Address to, Coin amount) {
-        return buildWithConfiguration((SendRequest sr) -> {
-            sr.tx.addOutput(amount, to);
-            sr.changeAddress = changeAddress;
-        }, String.format("sending %s to %s", amount, to));
+        return buildWithConfiguration(
+                (SendRequest sr) -> {
+                    sr.tx.addOutput(amount, to);
+                    sr.changeAddress = changeAddress;
+                },
+                String.format("sending %s to %s", amount, to));
     }
 
     public Optional<BuildResult> buildEmptyWalletTo(Address to) {
-        return buildWithConfiguration((SendRequest sr) -> {
-            sr.tx.addOutput(Coin.ZERO, to);
-            sr.changeAddress = to;
-            sr.emptyWallet = true;
-        }, String.format("emptying wallet to %s", to));
+        return buildWithConfiguration(
+                (SendRequest sr) -> {
+                    sr.tx.addOutput(Coin.ZERO, to);
+                    sr.changeAddress = to;
+                    sr.emptyWallet = true;
+                },
+                String.format("emptying wallet to %s", to));
     }
 
     private Optional<BuildResult> buildWithConfiguration(
-            SendRequestConfigurator sendRequestConfigurator,
-            String operationDescription) {
+            SendRequestConfigurator sendRequestConfigurator, String operationDescription) {
 
         // Build a tx and send request and configure it
         BtcTransaction btcTx = new BtcTransaction(params);
@@ -120,26 +127,33 @@ public class ReleaseTransactionBuilder {
                 transactionInput.disconnect();
             }
 
-            List<UTXO> selectedUTXOs = wallet
-                .getUTXOProvider().getOpenTransactionOutputs(wallet.getWatchedAddresses()).stream()
-                .filter(utxo ->
-                    btcTx.getInputs().stream().anyMatch(input ->
-                        input.getOutpoint().getHash().equals(utxo.getHash()) &&
-                        input.getOutpoint().getIndex() == utxo.getIndex()
-                    )
-                )
-                .collect(Collectors.toList());
+            List<UTXO> selectedUTXOs =
+                    wallet.getUTXOProvider().getOpenTransactionOutputs(wallet.getWatchedAddresses()).stream()
+                            .filter(
+                                    utxo ->
+                                            btcTx.getInputs().stream()
+                                                    .anyMatch(
+                                                            input ->
+                                                                    input.getOutpoint().getHash().equals(utxo.getHash())
+                                                                            && input.getOutpoint().getIndex()
+                                                                                    == utxo.getIndex()))
+                            .collect(Collectors.toList());
 
             return Optional.of(new BuildResult(btcTx, selectedUTXOs));
         } catch (InsufficientMoneyException e) {
             logger.warn(String.format("Not enough BTC in the wallet to complete %s", operationDescription), e);
             // Comment out panic logging for now
-            // panicProcessor.panic("nomoney", "Not enough confirmed BTC in the federation wallet to complete " + rskTxHash + " " + btcTx);
+            // panicProcessor.panic("nomoney", "Not enough confirmed BTC in the federation wallet to complete " +
+            // rskTxHash + " " + btcTx);
             return Optional.empty();
         } catch (Wallet.CouldNotAdjustDownwards e) {
-            logger.warn(String.format("A user output could not be adjusted downwards to pay tx fees %s", operationDescription), e);
+            logger.warn(
+                    String.format(
+                            "A user output could not be adjusted downwards to pay tx fees %s", operationDescription),
+                    e);
             // Comment out panic logging for now
-            // panicProcessor.panic("couldnotadjustdownwards", "A user output could not be adjusted downwards to pay tx fees " + rskTxHash + " " + btcTx);
+            // panicProcessor.panic("couldnotadjustdownwards", "A user output could not be adjusted downwards to pay tx
+            // fees " + rskTxHash + " " + btcTx);
             return Optional.empty();
         } catch (Wallet.ExceededMaxTransactionSize e) {
             logger.warn(String.format("Tx size too big %s", operationDescription), e);
@@ -154,10 +168,11 @@ public class ReleaseTransactionBuilder {
         }
     }
 
-    private final SendRequestConfigurator defaultSettingsConfigurator = (SendRequest sr) -> {
-        sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
-        sr.feePerKb = getFeePerKb();
-        sr.shuffleOutputs = false;
-        sr.recipientsPayFees = true;
-    };
+    private final SendRequestConfigurator defaultSettingsConfigurator =
+            (SendRequest sr) -> {
+                sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+                sr.feePerKb = getFeePerKb();
+                sr.shuffleOutputs = false;
+                sr.recipientsPayFees = true;
+            };
 }

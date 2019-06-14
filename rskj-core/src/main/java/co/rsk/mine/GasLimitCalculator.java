@@ -18,14 +18,10 @@
 
 package co.rsk.mine;
 
+import java.math.BigInteger;
 import org.ethereum.config.Constants;
 
-import java.math.BigInteger;
-
-/**
- * Created by Ruben on 23/05/2016.
- * This class calculates next block gas limit
- */
+/** Created by Ruben on 23/05/2016. This class calculates next block gas limit */
 public class GasLimitCalculator {
 
     private final Constants constants;
@@ -38,7 +34,12 @@ public class GasLimitCalculator {
     // is above 2/3 of the block gas limit, and decrease otherwise, by small amounts
     // The idea is to increase the gas limit when there are more transactions on the network while reduce it when
     // there are no or almost no transaction on it
-    public BigInteger calculateBlockGasLimit(BigInteger parentGasLimit, BigInteger parentGasUsed, BigInteger minGasLimit, BigInteger targetGasLimit, boolean forceTarget) {
+    public BigInteger calculateBlockGasLimit(
+            BigInteger parentGasLimit,
+            BigInteger parentGasUsed,
+            BigInteger minGasLimit,
+            BigInteger targetGasLimit,
+            boolean forceTarget) {
 
         BigInteger newGasLimit = parentGasLimit;
 
@@ -46,8 +47,7 @@ public class GasLimitCalculator {
         // current Eth implementation substracts parentGasLimit / 1024 - 1
         // parent - deltaMax or parent + deltaMax are the limits
         // that should be accepted by consensus rules
-        BigInteger deltaMax = parentGasLimit
-                .divide(BigInteger.valueOf(constants.getGasLimitBoundDivisor()));
+        BigInteger deltaMax = parentGasLimit.divide(BigInteger.valueOf(constants.getGasLimitBoundDivisor()));
 
         // TODO: we should assert this before reaching this point
         if (targetGasLimit.compareTo(minGasLimit) < 0) {
@@ -81,22 +81,22 @@ public class GasLimitCalculator {
         newGasLimit = newGasLimit.add(contrib);
 
         // Gas limit can never be lesser than a certain threshold
-       if (newGasLimit.compareTo(minGasLimit) < 0) {
-           newGasLimit = minGasLimit;
-       }
+        if (newGasLimit.compareTo(minGasLimit) < 0) {
+            newGasLimit = minGasLimit;
+        }
 
-       if (newGasLimit.compareTo(targetGasLimit) > 0) {
-           newGasLimit = targetGasLimit;
-       }
+        if (newGasLimit.compareTo(targetGasLimit) > 0) {
+            newGasLimit = targetGasLimit;
+        }
 
-       // I've never done enough calculations, but neither of these two should ever happen
-       if (newGasLimit.compareTo(parentGasLimit.subtract(deltaMax)) < 0) {
-           newGasLimit = parentGasLimit;
-       }
+        // I've never done enough calculations, but neither of these two should ever happen
+        if (newGasLimit.compareTo(parentGasLimit.subtract(deltaMax)) < 0) {
+            newGasLimit = parentGasLimit;
+        }
 
-       if (newGasLimit.compareTo(parentGasLimit.add(deltaMax)) > 0) {
-           newGasLimit = parentGasLimit;
-       }
+        if (newGasLimit.compareTo(parentGasLimit.add(deltaMax)) > 0) {
+            newGasLimit = parentGasLimit;
+        }
 
         return newGasLimit;
     }

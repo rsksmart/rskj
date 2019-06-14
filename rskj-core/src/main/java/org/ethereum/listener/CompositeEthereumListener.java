@@ -20,6 +20,9 @@
 package org.ethereum.listener;
 
 import co.rsk.panic.PanicProcessor;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
@@ -31,10 +34,6 @@ import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 
 /**
  * @author Roman Mandeleil
@@ -52,6 +51,7 @@ public class CompositeEthereumListener implements EthereumListener {
     public void addListener(EthereumListener listener) {
         listeners.add(listener);
     }
+
     public void removeListener(EthereumListener listener) {
         listeners.remove(listener);
     }
@@ -137,7 +137,8 @@ public class CompositeEthereumListener implements EthereumListener {
                 callback.accept(listener);
             } catch (Throwable e) {
                 logger.error("Listener callback failed with exception", e);
-                panicProcessor.panic("thread", String.format("Listener callback failed with exception %s", e.getMessage()));
+                panicProcessor.panic(
+                        "thread", String.format("Listener callback failed with exception %s", e.getMessage()));
             }
         }
     }

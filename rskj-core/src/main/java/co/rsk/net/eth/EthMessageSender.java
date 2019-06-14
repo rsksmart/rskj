@@ -21,15 +21,14 @@ package co.rsk.net.eth;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
-import org.ethereum.net.eth.handler.Eth;
-
-import javax.annotation.Nonnull;
 import java.net.InetAddress;
+import javax.annotation.Nonnull;
+import org.ethereum.net.eth.handler.Eth;
 
 /**
  * EthMessageSender implements the MessageChannel interface.
- * <p>
- * Created by ajlopez on 5/16/2016.
+ *
+ * <p>Created by ajlopez on 5/16/2016.
  */
 public class EthMessageSender implements MessageChannel {
     private final Eth eth;
@@ -44,7 +43,6 @@ public class EthMessageSender implements MessageChannel {
     public EthMessageSender(@Nonnull final Eth eth) {
         this.eth = eth;
     }
-
 
     /**
      * sendMessage sends a message to this node.
@@ -71,15 +69,17 @@ public class EthMessageSender implements MessageChannel {
     }
 
     @Override
-    public InetAddress getAddress() { return this.address; }
+    public InetAddress getAddress() {
+        return this.address;
+    }
 
     @Override
-    public void setAddress(InetAddress address) { this.address = address; }
+    public void setAddress(InetAddress address) {
+        this.address = address;
+    }
 
     @Override
     public String toString() {
-        return "EthMessageSender{" +
-                "nodeID=" + nodeID +
-                '}';
+        return "EthMessageSender{" + "nodeID=" + nodeID + '}';
     }
 }

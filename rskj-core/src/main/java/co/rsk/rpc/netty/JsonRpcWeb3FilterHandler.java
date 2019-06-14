@@ -5,19 +5,26 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.rpc.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 18/10/2017.
- */
-
+/** Created by ajlopez on 18/10/2017. */
 @ChannelHandler.Sharable
 public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final Logger logger = LoggerFactory.getLogger("jsonrpc");
@@ -91,8 +98,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
             } else if (referer != null && !this.originValidator.isValidReferer(referer)) {
                 logger.debug("Invalid referer");
                 response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
-            }
-            else {
+            } else {
                 ctx.fireChannelRead(request);
                 return;
             }
@@ -115,7 +121,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
 
     private boolean isAcceptedAddress(final InetAddress address) {
         // Check if the address is a valid special local or loop back
-        if (address.isLoopbackAddress() ) {
+        if (address.isLoopbackAddress()) {
             return true;
         }
         // Check if the address is defined on any interface
@@ -125,5 +131,4 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
             return false;
         }
     }
-
 }

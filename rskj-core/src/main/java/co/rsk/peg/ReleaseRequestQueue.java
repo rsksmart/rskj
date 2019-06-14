@@ -20,15 +20,13 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
 
 /**
- * Representation of a queue of btc release
- * requests waiting to be processed by the bridge.
+ * Representation of a queue of btc release requests waiting to be processed by the bridge.
  *
  * @author Ariel Mendelzon
  */
@@ -58,8 +56,7 @@ public class ReleaseRequestQueue {
 
             Entry otherEntry = (Entry) o;
 
-            return otherEntry.getDestination().equals(getDestination()) &&
-                    otherEntry.getAmount().equals(getAmount());
+            return otherEntry.getDestination().equals(getDestination()) && otherEntry.getAmount().equals(getAmount());
         }
 
         @Override
@@ -87,11 +84,9 @@ public class ReleaseRequestQueue {
     }
 
     /**
-     * This methods iterates the requests in the queue
-     * and calls the processor for each. If the
-     * processor returns true, then the item is removed
-     * (i.e., processing was successful). Otherwise it is
-     * sent to the back of the queue for future processing.
+     * This methods iterates the requests in the queue and calls the processor for each. If the processor returns true,
+     * then the item is removed (i.e., processing was successful). Otherwise it is sent to the back of the queue for
+     * future processing.
      */
     public void process(int maxIterations, Processor processor) {
         ListIterator<Entry> iterator = entries.listIterator();

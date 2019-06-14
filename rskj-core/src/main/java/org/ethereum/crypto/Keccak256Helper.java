@@ -19,11 +19,9 @@
 
 package org.ethereum.crypto;
 
-import org.bouncycastle.crypto.digests.KeccakDigest;
+import java.math.BigInteger;
 import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
 
 public class Keccak256Helper {
 
@@ -113,7 +111,6 @@ public class Keccak256Helper {
         return hash;
     }
 
-
     private static byte[] doKeccak256(byte[] message, KeccakDigest digest, boolean bouncyencoder) {
         byte[] hash = new byte[digest.getDigestSize()];
 
@@ -134,7 +131,6 @@ public class Keccak256Helper {
     }
 
     public enum Size {
-
         S224(224),
         S256(256),
         S384(384),
@@ -150,5 +146,4 @@ public class Keccak256Helper {
             return this.bits;
         }
     }
-
 }

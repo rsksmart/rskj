@@ -16,19 +16,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package co.rsk;
 
+import java.nio.charset.StandardCharsets;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.nio.charset.StandardCharsets;
-
-/**
- * Created by ajlopez on 3/9/2016.
- * Don't modify
- */
+/** Created by ajlopez on 3/9/2016. Don't modify */
 public class GenNodeKeyId {
     public static void main(String[] args) {
         String generator = "";

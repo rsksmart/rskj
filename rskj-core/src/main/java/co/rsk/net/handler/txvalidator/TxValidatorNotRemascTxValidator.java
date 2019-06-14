@@ -21,20 +21,25 @@ package co.rsk.net.handler.txvalidator;
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.remasc.RemascTransaction;
+import java.math.BigInteger;
+import javax.annotation.Nullable;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
-
-import javax.annotation.Nullable;
-import java.math.BigInteger;
 
 /**
  * Checks that a transaction is not a Remasc type transaction. Helps to simplify some code.
  *
- * Transaction must not be null
+ * <p>Transaction must not be null
  */
 public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(
+            Transaction tx,
+            @Nullable AccountState state,
+            BigInteger gasLimit,
+            Coin minimumGasPrice,
+            long bestBlockNumber,
+            boolean isFreeTx) {
         if (!(tx instanceof RemascTransaction)) {
             return TransactionValidationResult.ok();
         }

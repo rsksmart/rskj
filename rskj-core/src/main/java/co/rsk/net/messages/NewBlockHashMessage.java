@@ -2,9 +2,7 @@ package co.rsk.net.messages;
 
 import org.ethereum.util.RLP;
 
-/**
- * Wrapper around an RSK NewBlockHash message.
- */
+/** Wrapper around an RSK NewBlockHash message. */
 public class NewBlockHashMessage extends Message {
     private byte[] hash;
 

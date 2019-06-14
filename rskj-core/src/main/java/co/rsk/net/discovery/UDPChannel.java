@@ -23,10 +23,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
+import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.InetSocketAddress;
 
 public class UDPChannel extends SimpleChannelInboundHandler<DiscoveryEvent> {
     static final Logger logger = LoggerFactory.getLogger(UDPChannel.class);
@@ -71,5 +70,4 @@ public class UDPChannel extends SimpleChannelInboundHandler<DiscoveryEvent> {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         peerExplorer.start();
     }
-
 }

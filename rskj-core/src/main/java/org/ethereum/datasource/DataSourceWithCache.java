@@ -19,12 +19,15 @@
 package org.ethereum.datasource;
 
 import co.rsk.util.MaxSizeHashMap;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.util.ByteUtil;
 
 public class DataSourceWithCache implements KeyValueDataSource {
     private final KeyValueDataSource base;
@@ -50,7 +53,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
 
         byte[] value = base.get(key);
-        //null value, as expected, is allowed here to be stored in committedCache
+        // null value, as expected, is allowed here to be stored in committedCache
         committedCache.put(wrappedKey, value);
         return value;
     }
@@ -97,24 +100,21 @@ public class DataSourceWithCache implements KeyValueDataSource {
     @Override
     public Set<byte[]> keys() {
         Stream<ByteArrayWrapper> baseKeys = base.keys().stream().map(ByteArrayWrapper::new);
-        Stream<ByteArrayWrapper> committedKeys = committedCache.entrySet().stream()
-                .filter(e -> e.getValue() != null)
-                .map(Map.Entry::getKey);
-        Stream<ByteArrayWrapper> uncommittedKeys = uncommittedCache.entrySet().stream()
-                .filter(e -> e.getValue() != null)
-                .map(Map.Entry::getKey);
-        Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream()
-                .filter(e -> e.getValue() == null)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
-        Set<ByteArrayWrapper> knownKeys = Stream.concat(Stream.concat(baseKeys, committedKeys), uncommittedKeys)
-                .collect(Collectors.toSet());
+        Stream<ByteArrayWrapper> committedKeys =
+                committedCache.entrySet().stream().filter(e -> e.getValue() != null).map(Map.Entry::getKey);
+        Stream<ByteArrayWrapper> uncommittedKeys =
+                uncommittedCache.entrySet().stream().filter(e -> e.getValue() != null).map(Map.Entry::getKey);
+        Set<ByteArrayWrapper> uncommittedKeysToRemove =
+                uncommittedCache.entrySet().stream()
+                        .filter(e -> e.getValue() == null)
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toSet());
+        Set<ByteArrayWrapper> knownKeys =
+                Stream.concat(Stream.concat(baseKeys, committedKeys), uncommittedKeys).collect(Collectors.toSet());
         knownKeys.removeAll(uncommittedKeysToRemove);
 
         // note that toSet doesn't work with byte[], so we have to do this extra step
-        return knownKeys.stream()
-                .map(ByteArrayWrapper::getData)
-                .collect(Collectors.toSet());
+        return knownKeys.stream().map(ByteArrayWrapper::getData).collect(Collectors.toSet());
     }
 
     @Override
@@ -132,8 +132,15 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public synchronized void flush() {
-        Map<ByteArrayWrapper, byte[]> uncommittedBatch = uncommittedCache.entrySet().stream().filter(e -> e.getValue() != null).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
+        Map<ByteArrayWrapper, byte[]> uncommittedBatch =
+                uncommittedCache.entrySet().stream()
+                        .filter(e -> e.getValue() != null)
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Set<ByteArrayWrapper> uncommittedKeysToRemove =
+                uncommittedCache.entrySet().stream()
+                        .filter(e -> e.getValue() == null)
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toSet());
         base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
         committedCache.putAll(uncommittedCache);
         uncommittedCache.clear();

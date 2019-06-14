@@ -19,20 +19,22 @@
 package co.rsk.peg;
 
 import co.rsk.core.RskAddress;
+import java.util.Arrays;
+import java.util.List;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 
-import java.util.Arrays;
-import java.util.List;
-
 /**
- * Authorizes an operation based
- * on an RSK address.
+ * Authorizes an operation based on an RSK address.
  *
  * @author Ariel Mendelzon
  */
 public class AddressBasedAuthorizer {
-    public enum MinimumRequiredCalculation { ONE, MAJORITY, ALL };
+    public enum MinimumRequiredCalculation {
+        ONE,
+        MAJORITY,
+        ALL
+    };
 
     private List<ECKey> authorizedKeys;
     private MinimumRequiredCalculation requiredCalculation;

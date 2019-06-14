@@ -17,10 +17,7 @@
  */
 package co.rsk.jsonrpc;
 
-/**
- * This is the base class for JSON-RPC results.
- * Inheritors should add properties specific to the result type.
- */
+/** This is the base class for JSON-RPC results. Inheritors should add properties specific to the result type. */
 public abstract class JsonRpcResult implements JsonRpcResultOrError {
     @Override
     public JsonRpcIdentifiableMessage responseFor(int messageId) {

@@ -19,9 +19,7 @@ package co.rsk.jsonrpc;
 
 import java.util.Objects;
 
-/**
- * The standard JSON-RPC error object for responses.
- */
+/** The standard JSON-RPC error object for responses. */
 public class JsonRpcError implements JsonRpcResultOrError {
     private final int code;
     private final String message;

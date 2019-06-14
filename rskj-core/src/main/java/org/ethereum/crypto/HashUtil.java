@@ -19,22 +19,21 @@
 
 package org.ethereum.crypto;
 
-import co.rsk.core.RskAddress;
-import org.ethereum.crypto.cryptohash.Keccak256;
-import org.ethereum.util.RLP;
-import org.ethereum.util.Utils;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.RIPEMD160Digest;
-import org.bouncycastle.util.encoders.Hex;
+import static java.util.Arrays.copyOfRange;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
-import javax.annotation.Nonnull;
+import co.rsk.core.RskAddress;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-
-import static java.util.Arrays.copyOfRange;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import javax.annotation.Nonnull;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.cryptohash.Keccak256;
+import org.ethereum.util.RLP;
+import org.ethereum.util.Utils;
 
 public class HashUtil {
     public static final byte[] EMPTY_TRIE_HASH = keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
@@ -45,7 +44,7 @@ public class HashUtil {
         try {
             sha256digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);  // Can't happen.
+            throw new RuntimeException(e); // Can't happen.
         }
     }
 
@@ -58,13 +57,14 @@ public class HashUtil {
     }
 
     public static byte[] keccak256(byte[] input) {
-        Keccak256 digest =  new Keccak256();
+        Keccak256 digest = new Keccak256();
         digest.update(input);
         return digest.digest();
     }
 
     /**
      * hashing chunk of the data
+     *
      * @param input - data for hash
      * @param start - start of hashing chunk
      * @param length - length of hashing chunk
@@ -73,7 +73,6 @@ public class HashUtil {
     public static byte[] keccak256(byte[] input, int start, int length) {
         return Keccak256Helper.keccak256(input, start, length);
     }
-
 
     /**
      * @param data - message to hash
@@ -90,10 +89,9 @@ public class HashUtil {
         throw new NullPointerException("Can't hash a NULL value");
     }
 
-
     /**
-     * Calculates RIGTMOST160(KECCAK256(input)). This is used in address calculations.
-     * *
+     * Calculates RIGTMOST160(KECCAK256(input)). This is used in address calculations. *
+     *
      * @param input - data
      * @return - 20 right bytes of the hash sha3 of the data
      */
@@ -118,8 +116,8 @@ public class HashUtil {
     }
 
     /**
-     * The way to calculate new address inside ethereum for {@link org.ethereum.vm.OpCode#CREATE2}
-     * keccak256(0xff ++ msg.sender ++ salt ++ keccak256(init_code)))[12:]
+     * The way to calculate new address inside ethereum for {@link org.ethereum.vm.OpCode#CREATE2} keccak256(0xff ++
+     * msg.sender ++ salt ++ keccak256(init_code)))[12:]
      *
      * @param senderAddress - creating address
      * @param initCode - contract init code
@@ -146,7 +144,6 @@ public class HashUtil {
 
     /**
      * @see #doubleDigest(byte[], int, int)
-     *
      * @param input -
      * @return -
      */
@@ -155,8 +152,8 @@ public class HashUtil {
     }
 
     /**
-     * Calculates the SHA-256 hash of the given byte range, and then hashes the resulting hash again. This is
-     * standard procedure in Bitcoin. The resulting hash is in big endian form.
+     * Calculates the SHA-256 hash of the given byte range, and then hashes the resulting hash again. This is standard
+     * procedure in Bitcoin. The resulting hash is in big endian form.
      *
      * @param input -
      * @param offset -
@@ -172,9 +169,7 @@ public class HashUtil {
         }
     }
 
-    /**
-     * @return generates random peer id for the HelloMessage
-     */
+    /** @return generates random peer id for the HelloMessage */
     public static byte[] randomPeerId() {
 
         byte[] peerIdBytes = new BigInteger(512, Utils.getRandom()).toByteArray();
@@ -189,10 +184,8 @@ public class HashUtil {
         return Hex.decode(peerId);
     }
 
-    /**
-     * @return - generate random 32 byte hash
-     */
-    public static byte[] randomHash(){
+    /** @return - generate random 32 byte hash */
+    public static byte[] randomHash() {
 
         byte[] randomHash = new byte[32];
         SecureRandom random = new SecureRandom();
@@ -201,7 +194,7 @@ public class HashUtil {
     }
 
     @Nonnull
-    public static String shortHash(@Nonnull final byte[] hash){
+    public static String shortHash(@Nonnull final byte[] hash) {
         return Hex.toHexString(hash).substring(0, Math.min(hash.length, 6));
     }
 }

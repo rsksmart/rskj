@@ -35,7 +35,7 @@ public class BuildInfo {
         return buildHash;
     }
 
-    public void printInfo(Logger logger){
+    public void printInfo(Logger logger) {
         logger.info("git.hash: [{}]", buildHash);
         logger.info("build.branch: {}", buildBranch);
     }

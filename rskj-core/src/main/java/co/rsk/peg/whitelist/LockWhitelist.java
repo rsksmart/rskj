@@ -21,22 +21,25 @@ package co.rsk.peg.whitelist;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
 import com.google.common.primitives.UnsignedBytes;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * Represents a lock whitelist
- * for btc lock transactions.
- * It's basically a list of btc addresses
- * with operations to manipulate and query it.
+ * Represents a lock whitelist for btc lock transactions. It's basically a list of btc addresses with operations to
+ * manipulate and query it.
  *
  * @author Ariel Mendelzon
  */
 public class LockWhitelist {
 
-    private static final Comparator<Address> LEXICOGRAPHICAL_COMPARATOR
-        = Comparator.comparing(Address::getHash160, UnsignedBytes.lexicographicalComparator());
+    private static final Comparator<Address> LEXICOGRAPHICAL_COMPARATOR =
+            Comparator.comparing(Address::getHash160, UnsignedBytes.lexicographicalComparator());
 
     private SortedMap<Address, LockWhitelistEntry> whitelistedAddresses;
     private int disableBlockHeight;
@@ -112,7 +115,9 @@ public class LockWhitelist {
     }
 
     /**
-     * Marks the whitelisted address as consumed. This will reduce the number of usages, and if it gets down to zero remaining usages it will remove the address
+     * Marks the whitelisted address as consumed. This will reduce the number of usages, and if it gets down to zero
+     * remaining usages it will remove the address
+     *
      * @param address
      */
     public void consume(Address address) {

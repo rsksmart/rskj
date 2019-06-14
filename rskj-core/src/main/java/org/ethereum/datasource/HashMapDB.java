@@ -19,14 +19,15 @@
 
 package org.ethereum.datasource;
 
-import org.ethereum.db.ByteArrayWrapper;
-import org.iq80.leveldb.DBException;
+import static org.ethereum.util.ByteUtil.wrap;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
-import static org.ethereum.util.ByteUtil.wrap;
+import org.ethereum.db.ByteArrayWrapper;
+import org.iq80.leveldb.DBException;
 
 public class HashMapDB implements KeyValueDataSource {
 
@@ -38,13 +39,11 @@ public class HashMapDB implements KeyValueDataSource {
         storage.remove(wrap(arg0));
     }
 
-
     @Override
     public byte[] get(byte[] arg0) throws DBException {
         Objects.requireNonNull(arg0);
         return storage.get(wrap(arg0));
     }
-
 
     @Override
     public byte[] put(byte[] key, byte[] value) throws DBException {
@@ -70,9 +69,7 @@ public class HashMapDB implements KeyValueDataSource {
 
     @Override
     public synchronized Set<byte[]> keys() {
-        return storage.keySet().stream()
-                .map(ByteArrayWrapper::getData)
-                .collect(Collectors.toSet());
+        return storage.keySet().stream().map(ByteArrayWrapper::getData).collect(Collectors.toSet());
     }
 
     @Override
@@ -85,7 +82,7 @@ public class HashMapDB implements KeyValueDataSource {
             ByteArrayWrapper wrappedKey = entry.getKey();
             byte[] key = wrappedKey.getData();
             byte[] value = entry.getValue();
-            put(key , value);
+            put(key, value);
         }
 
         for (ByteArrayWrapper keyToRemove : keysToRemove) {
@@ -106,7 +103,7 @@ public class HashMapDB implements KeyValueDataSource {
     }
 
     @Override
-    public void flush(){
+    public void flush() {
         // HashMapDB has no flush: everything is kept in memory.
     }
 }

@@ -19,10 +19,9 @@
 
 package org.ethereum.core;
 
-import org.ethereum.util.ByteUtil;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 /**
  * See http://www.herongyang.com/Java/Bit-String-Set-Bit-to-Byte-Array.html.
@@ -30,7 +29,6 @@ import java.util.Arrays;
  * @author Roman Mandeleil
  * @since 20.11.2014
  */
-
 public class Bloom {
     public static final int BLOOM_BYTES = 256;
 
@@ -40,8 +38,7 @@ public class Bloom {
 
     private byte[] data = new byte[BLOOM_BYTES];
 
-    public Bloom() {
-    }
+    public Bloom() {}
 
     public Bloom(byte[] data) {
         this.data = data;
@@ -101,7 +98,6 @@ public class Bloom {
         Bloom bloom = (Bloom) o;
 
         return Arrays.equals(data, bloom.data);
-
     }
 
     @Override

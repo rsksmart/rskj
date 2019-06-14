@@ -21,6 +21,12 @@ package co.rsk.remasc;
 import co.rsk.config.RemascConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -38,17 +44,10 @@ import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * The Remasc contract which manages the distribution of miner fees.
- * This class just extends PrecompiledContract, checks no wrong data was supplied and delegates to
- * Remasc the actual fee distribution logic
+ * The Remasc contract which manages the distribution of miner fees. This class just extends PrecompiledContract, checks
+ * no wrong data was supplied and delegates to Remasc the actual fee distribution logic
+ *
  * @author Oscar Guindzberg
  */
 public class RemascContract extends PrecompiledContracts.PrecompiledContract {
@@ -56,8 +55,10 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
     private static final Logger logger = LoggerFactory.getLogger(RemascContract.class);
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private static final CallTransaction.Function PROCESS_MINERS_FEES = CallTransaction.Function.fromSignature("processMinersFees", new String[]{}, new String[]{});
-    public static final CallTransaction.Function GET_STATE_FOR_DEBUGGING = CallTransaction.Function.fromSignature("getStateForDebugging", new String[]{}, new String[]{"bytes"});
+    private static final CallTransaction.Function PROCESS_MINERS_FEES =
+            CallTransaction.Function.fromSignature("processMinersFees", new String[] {}, new String[] {});
+    public static final CallTransaction.Function GET_STATE_FOR_DEBUGGING =
+            CallTransaction.Function.fromSignature("getStateForDebugging", new String[] {}, new String[] {"bytes"});
 
     public static final DataWord MINING_FEE_TOPIC = DataWord.fromString("mining_fee_topic");
     public static final String REMASC_CONFIG = "remasc.json";
@@ -69,7 +70,11 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
     private final Map<ByteArrayWrapper, CallTransaction.Function> functions;
     private Remasc remasc;
 
-    public RemascContract(RskAddress contractAddress, RemascConfig remascConfig, Constants constants, ActivationConfig activationConfig) {
+    public RemascContract(
+            RskAddress contractAddress,
+            RemascConfig remascConfig,
+            Constants constants,
+            ActivationConfig activationConfig) {
         this.constants = constants;
         this.activationConfig = activationConfig;
         this.remascConfig = remascConfig;
@@ -86,8 +91,24 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
     }
 
     @Override
-    public void init(Transaction executionTx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
-        this.remasc = new Remasc(constants, activationConfig, repository, blockStore, remascConfig, executionTx, contractAddress, executionBlock, logs);
+    public void init(
+            Transaction executionTx,
+            Block executionBlock,
+            Repository repository,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            List<LogInfo> logs) {
+        this.remasc =
+                new Remasc(
+                        constants,
+                        activationConfig,
+                        repository,
+                        blockStore,
+                        remascConfig,
+                        executionTx,
+                        contractAddress,
+                        executionBlock,
+                        logs);
     }
 
     @Override
@@ -98,11 +119,12 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
             Object result = this.invoke(m);
             remasc.save();
             return this.encodeResult(function, result);
-        } catch(RemascInvalidInvocationException ex) {
-            // Remasc contract was invoked with invalid parameters / out of place, throw OutOfGasException to avoid funds being transferred
+        } catch (RemascInvalidInvocationException ex) {
+            // Remasc contract was invoked with invalid parameters / out of place, throw OutOfGasException to avoid
+            // funds being transferred
             logger.warn(ex.getMessage(), ex);
             throw new Program.OutOfGasException(ex.getMessage());
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("remascExecute", ex.getMessage());
 
@@ -137,7 +159,9 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
             function = functions.get(new ByteArrayWrapper(functionSignature));
 
             if (function == null) {
-                logger.warn("Invalid function: signature does not match an existing function {}.", Hex.toHexString(functionSignature));
+                logger.warn(
+                        "Invalid function: signature does not match an existing function {}.",
+                        Hex.toHexString(functionSignature));
                 throw new RemascInvalidInvocationException("Invalid function signature");
             }
         }

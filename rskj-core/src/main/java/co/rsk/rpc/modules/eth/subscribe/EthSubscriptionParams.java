@@ -18,12 +18,9 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.util.Objects;
 
-/**
- * The subscription params DTO for JSON serialization purposes.
- */
+/** The subscription params DTO for JSON serialization purposes. */
 public class EthSubscriptionParams {
     private final SubscriptionId subscription;
     private final BlockHeaderNotification result;

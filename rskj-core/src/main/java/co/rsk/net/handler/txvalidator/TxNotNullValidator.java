@@ -20,26 +20,30 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
+import java.math.BigInteger;
+import javax.annotation.Nullable;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
-
-import javax.annotation.Nullable;
-import java.math.BigInteger;
 
 /**
  * Simple check that a tx is not null.
  *
- * Looks a little overhead, but simplifies a little bit the code in other places
+ * <p>Looks a little overhead, but simplifies a little bit the code in other places
  */
-public class TxNotNullValidator implements  TxValidatorStep {
+public class TxNotNullValidator implements TxValidatorStep {
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(
+            Transaction tx,
+            @Nullable AccountState state,
+            BigInteger gasLimit,
+            Coin minimumGasPrice,
+            long bestBlockNumber,
+            boolean isFreeTx) {
         if (tx != null) {
             return TransactionValidationResult.ok();
         }
 
         return TransactionValidationResult.withError("transaction is null");
     }
-
 }

@@ -22,14 +22,16 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
 
 /**
- * Represents a lock whitelist
- * entry for a LockWhiteList.
+ * Represents a lock whitelist entry for a LockWhiteList.
  *
  * @author Jose Dahlquist
  */
 public interface LockWhitelistEntry {
     Address address();
+
     boolean canLock(Coin value);
+
     boolean isConsumed();
+
     void consume();
 }

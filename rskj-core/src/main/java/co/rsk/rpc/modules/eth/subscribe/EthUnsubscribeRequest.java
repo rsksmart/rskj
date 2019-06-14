@@ -54,8 +54,7 @@ public class EthUnsubscribeRequest extends RskJsonRpcRequest {
     private static RskJsonRpcMethod verifyMethod(RskJsonRpcMethod method) {
         if (method != RskJsonRpcMethod.ETH_UNSUBSCRIBE) {
             throw new IllegalArgumentException(
-                    "Wrong method mapped to eth_unsubscribe. Check JSON mapping configuration in JsonRpcRequest."
-            );
+                    "Wrong method mapped to eth_unsubscribe. Check JSON mapping configuration in JsonRpcRequest.");
         }
 
         return method;

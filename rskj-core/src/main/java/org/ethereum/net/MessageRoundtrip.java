@@ -22,10 +22,8 @@ package org.ethereum.net;
 import org.ethereum.net.message.Message;
 
 /**
- * Utility wraps around a message to keep track of the number of times it has
- * been offered This class also contains the last time a message was offered and
- * is updated when an answer has been received to it can be removed from the
- * queue.
+ * Utility wraps around a message to keep track of the number of times it has been offered This class also contains the
+ * last time a message was offered and is updated when an answer has been received to it can be removed from the queue.
  *
  * @author Roman Mandeleil
  */

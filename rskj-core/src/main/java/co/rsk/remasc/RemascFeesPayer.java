@@ -20,13 +20,12 @@ package co.rsk.remasc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import java.util.Arrays;
+import java.util.List;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Knows how to transfer funds between accounts and how to log that transaction.

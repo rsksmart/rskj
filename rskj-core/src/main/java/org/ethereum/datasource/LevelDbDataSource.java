@@ -19,16 +19,13 @@
 
 package org.ethereum.datasource;
 
+import static java.lang.System.getProperty;
+import static org.fusesource.leveldbjni.JniDBFactory.factory;
+
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.db.ByteArrayWrapper;
-import org.iq80.leveldb.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,9 +36,16 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import static java.lang.System.getProperty;
-import static org.fusesource.leveldbjni.JniDBFactory.factory;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.db.ByteArrayWrapper;
+import org.iq80.leveldb.CompressionType;
+import org.iq80.leveldb.DB;
+import org.iq80.leveldb.DBException;
+import org.iq80.leveldb.DBIterator;
+import org.iq80.leveldb.Options;
+import org.iq80.leveldb.WriteBatch;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LevelDbDataSource implements KeyValueDataSource {
 
@@ -143,13 +147,17 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name,  Hex.toHexString(key));
+                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name, Hex.toHexString(key));
             }
 
             try {
                 byte[] ret = db.get(key);
                 if (logger.isTraceEnabled()) {
-                    logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
+                    logger.trace(
+                            "<~ LevelDbDataSource.get(): {}, key: {}, return length: {}",
+                            name,
+                            Hex.toHexString(key),
+                            (ret == null ? "null" : ret.length));
                 }
 
                 return ret;
@@ -158,7 +166,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 try {
                     byte[] ret = db.get(key);
                     if (logger.isTraceEnabled()) {
-                        logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
+                        logger.trace(
+                                "<~ LevelDbDataSource.get(): {}, key: {}, return length: {}",
+                                name,
+                                Hex.toHexString(key),
+                                (ret == null ? "null" : ret.length));
                     }
 
                     return ret;
@@ -183,12 +195,20 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
+                logger.trace(
+                        "~> LevelDbDataSource.put(): {}, key: {}, return length: {}",
+                        name,
+                        Hex.toHexString(key),
+                        value.length);
             }
 
             db.put(key, value);
             if (logger.isTraceEnabled()) {
-                logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
+                logger.trace(
+                        "<~ LevelDbDataSource.put(): {}, key: {}, return length: {}",
+                        name,
+                        Hex.toHexString(key),
+                        value.length);
             }
 
             return value;
@@ -248,7 +268,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
-    private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) throws IOException {
+    private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys)
+            throws IOException {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         if (rows.containsKey(null) || rows.containsValue(null)) {
             profiler.stop(metric);
@@ -265,7 +286,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
             db.write(batch);
             profiler.stop(metric);
         }
-
     }
 
     @Override
@@ -332,7 +352,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public void flush(){
+    public void flush() {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
 }

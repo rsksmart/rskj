@@ -22,9 +22,7 @@ package co.rsk.logfilter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Created by ajlopez on 05/02/2019.
- */
+/** Created by ajlopez on 05/02/2019. */
 public class BlocksBloomStore {
     private final int noBlocks;
     private final int noConfirmations;
@@ -59,5 +57,7 @@ public class BlocksBloomStore {
         return this.noBlocks;
     }
 
-    public int getNoConfirmations() { return this.noConfirmations; }
+    public int getNoConfirmations() {
+        return this.noConfirmations;
+    }
 }

@@ -28,9 +28,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-
-import javax.annotation.Nullable;
 import java.net.InetAddress;
+import javax.annotation.Nullable;
 
 public class Web3WebSocketServer {
 
@@ -43,10 +42,7 @@ public class Web3WebSocketServer {
     private @Nullable ChannelFuture webSocketChannel;
 
     public Web3WebSocketServer(
-            InetAddress host,
-            int port,
-            RskJsonRpcHandler jsonRpcHandler,
-            JsonRpcWeb3ServerHandler web3ServerHandler) {
+            InetAddress host, int port, RskJsonRpcHandler jsonRpcHandler, JsonRpcWeb3ServerHandler web3ServerHandler) {
         this.host = host;
         this.port = port;
         this.jsonRpcHandler = jsonRpcHandler;
@@ -58,19 +54,20 @@ public class Web3WebSocketServer {
     public void start() throws InterruptedException {
         ServerBootstrap b = new ServerBootstrap();
         b.group(bossGroup, workerGroup)
-            .channel(NioServerSocketChannel.class)
-            .childHandler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                protected void initChannel(SocketChannel ch) throws Exception {
-                    ChannelPipeline p = ch.pipeline();
-                    p.addLast(new HttpServerCodec());
-                    p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
-                    p.addLast(new WebSocketServerProtocolHandler("/websocket"));
-                    p.addLast(jsonRpcHandler);
-                    p.addLast(web3ServerHandler);
-                    p.addLast(new Web3ResultWebSocketResponseHandler());
-                }
-            });
+                .channel(NioServerSocketChannel.class)
+                .childHandler(
+                        new ChannelInitializer<SocketChannel>() {
+                            @Override
+                            protected void initChannel(SocketChannel ch) throws Exception {
+                                ChannelPipeline p = ch.pipeline();
+                                p.addLast(new HttpServerCodec());
+                                p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
+                                p.addLast(new WebSocketServerProtocolHandler("/websocket"));
+                                p.addLast(jsonRpcHandler);
+                                p.addLast(web3ServerHandler);
+                                p.addLast(new Web3ResultWebSocketResponseHandler());
+                            }
+                        });
         webSocketChannel = b.bind(host, port);
         webSocketChannel.sync();
     }

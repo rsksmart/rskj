@@ -19,18 +19,21 @@
 
 package org.ethereum.net.message;
 
-import org.ethereum.config.SystemProperties;
-import org.ethereum.net.client.Capability;
-import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.p2p.*;
-
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.ethereum.config.SystemProperties;
+import org.ethereum.net.client.Capability;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.p2p.DisconnectMessage;
+import org.ethereum.net.p2p.GetPeersMessage;
+import org.ethereum.net.p2p.HelloMessage;
+import org.ethereum.net.p2p.PingMessage;
+import org.ethereum.net.p2p.PongMessage;
 
 /**
- * This class contains static values of messages on the network. These message
- * will always be the same and therefore don't need to be created each time.
+ * This class contains static values of messages on the network. These message will always be the same and therefore
+ * don't need to be created each time.
  *
  * @author Roman Mandeleil
  * @since 13.04.14
@@ -53,14 +56,14 @@ public class StaticMessages {
     public HelloMessage createHelloMessage(String peerId) {
         return createHelloMessage(peerId, config.getPeerPort());
     }
+
     public HelloMessage createHelloMessage(String peerId, int listenPort) {
 
         String helloAnnouncement = buildHelloAnnouncement();
         byte p2pVersion = (byte) config.defaultP2PVersion();
         List<Capability> capabilities = configCapabilities.getConfigCapabilities();
 
-        return new HelloMessage(p2pVersion, helloAnnouncement,
-                capabilities, listenPort, peerId);
+        return new HelloMessage(p2pVersion, helloAnnouncement, capabilities, listenPort, peerId);
     }
 
     private String buildHelloAnnouncement() {
@@ -80,7 +83,11 @@ public class StaticMessages {
         }
         String phrase = config.helloPhrase();
 
-        return String.format("Ethereum(J)/v%s/%s/%s/Java/%s", numberVersion, system,
-                config.projectVersionModifier().equalsIgnoreCase("release") ? "Release" : "Dev", phrase);
+        return String.format(
+                "Ethereum(J)/v%s/%s/%s/Java/%s",
+                numberVersion,
+                system,
+                config.projectVersionModifier().equalsIgnoreCase("release") ? "Release" : "Dev",
+                phrase);
     }
 }

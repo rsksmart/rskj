@@ -18,6 +18,9 @@
 
 package co.rsk.rpc.modules.eth;
 
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionRevertedExecutionError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
+
 import co.rsk.core.Wallet;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -27,9 +30,6 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
-
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionRevertedExecutionError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
 
 public class EthModuleTransactionInstant extends EthModuleTransactionBase {
 
@@ -71,8 +71,8 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
     }
 
     /**
-     * When insta-mining we can query the transaction status and return an error response immediately like Ganache.
-     * This does not apply during regular operation because queued transactions are not immediately executed.
+     * When insta-mining we can query the transaction status and return an error response immediately like Ganache. This
+     * does not apply during regular operation because queued transactions are not immediately executed.
      */
     private String getReturnMessage(String txHash) {
         TransactionInfo transactionInfo = blockchain.getTransactionInfo(TypeConverter.stringHexToByteArray(txHash));

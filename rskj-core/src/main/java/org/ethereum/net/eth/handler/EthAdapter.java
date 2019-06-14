@@ -19,18 +19,17 @@
 
 package org.ethereum.net.eth.handler;
 
+import static org.ethereum.net.eth.EthVersion.UPPER;
+import static org.ethereum.net.eth.EthVersion.fromCode;
+
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.sync.SyncStatistics;
 
-import static org.ethereum.net.eth.EthVersion.*;
-
 /**
  * It's quite annoying to always check {@code if (eth != null)} before accessing it. <br>
- *
- * This adapter helps to avoid such checks. It provides meaningful answers to Eth client
- * assuming that Eth hasn't been initialized yet. <br>
- *
+ * This adapter helps to avoid such checks. It provides meaningful answers to Eth client assuming that Eth hasn't been
+ * initialized yet. <br>
  * Check {@link org.ethereum.net.server.Channel} for example.
  *
  * @author Mikhail Kalinin
@@ -51,8 +50,7 @@ public class EthAdapter implements Eth {
     }
 
     @Override
-    public void onShutdown() {
-    }
+    public void onShutdown() {}
 
     @Override
     public boolean isIdle() {
@@ -65,12 +63,10 @@ public class EthAdapter implements Eth {
     }
 
     @Override
-    public void disableTransactions() {
-    }
+    public void disableTransactions() {}
 
     @Override
-    public void enableTransactions() {
-    }
+    public void enableTransactions() {}
 
     @Override
     public EthVersion getVersion() {
@@ -78,20 +74,16 @@ public class EthAdapter implements Eth {
     }
 
     @Override
-    public void onSyncDone(boolean done) {
-    }
+    public void onSyncDone(boolean done) {}
 
     @Override
-    public void sendStatus() {
-    }
+    public void sendStatus() {}
 
     @Override
-    public void dropConnection() {
-    }
+    public void dropConnection() {}
 
     @Override
-    public void sendMessage(EthMessage message) {
-    }
+    public void sendMessage(EthMessage message) {}
 
     @Override
     public boolean isUsingNewProtocol() {

@@ -19,10 +19,7 @@
 
 package org.ethereum.net;
 
-import org.ethereum.net.eth.message.StatusMessage;
-import org.ethereum.net.message.ReasonCode;
-import org.ethereum.util.ByteUtil;
-import org.mapdb.Serializer;
+import static java.lang.Math.min;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -31,41 +28,52 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static java.lang.Math.min;
+import org.ethereum.net.eth.message.StatusMessage;
+import org.ethereum.net.message.ReasonCode;
+import org.ethereum.util.ByteUtil;
+import org.mapdb.Serializer;
 
 /**
- * Handles all possible statistics related to a Node
- * The primary aim of this is collecting info about a Node
- * for maintaining its reputation.
+ * Handles all possible statistics related to a Node The primary aim of this is collecting info about a Node for
+ * maintaining its reputation.
  *
- * Created by Anton Nashatyrev on 16.07.2015.
+ * <p>Created by Anton Nashatyrev on 16.07.2015.
  */
 public class NodeStatistics {
     public static final int REPUTATION_PREDEFINED = 1000500;
 
     public class StatHandler {
         AtomicInteger count = new AtomicInteger(0);
-        public void add() {count.incrementAndGet(); }
-        public int get() {return count.get();}
-        public String toString() {return count.toString();}
+
+        public void add() {
+            count.incrementAndGet();
+        }
+
+        public int get() {
+            return count.get();
+        }
+
+        public String toString() {
+            return count.toString();
+        }
     }
 
-    static class Persistent  implements Serializable {
+    static class Persistent implements Serializable {
         private static final long serialVersionUID = -1246930309060559921L;
-        static final Serializer<Persistent> MapDBSerializer = new Serializer<Persistent>() {
-            @Override
-            public void serialize(DataOutput out, Persistent value) throws IOException {
-                out.writeInt(value.reputation);
-            }
+        static final Serializer<Persistent> MapDBSerializer =
+                new Serializer<Persistent>() {
+                    @Override
+                    public void serialize(DataOutput out, Persistent value) throws IOException {
+                        out.writeInt(value.reputation);
+                    }
 
-            @Override
-            public Persistent deserialize(DataInput in, int available) throws IOException {
-                Persistent persistent = new Persistent();
-                persistent.reputation = in.readInt();
-                return persistent;
-            }
-        };
+                    @Override
+                    public Persistent deserialize(DataInput in, int available) throws IOException {
+                        Persistent persistent = new Persistent();
+                        persistent.reputation = in.readInt();
+                        return persistent;
+                    }
+                };
         int reputation;
     }
 
@@ -106,10 +114,10 @@ public class NodeStatistics {
     private StatusMessage ethLastInboundStatusMsg = null;
     private BigInteger ethTotalDifficulty = BigInteger.ZERO;
 
-
     int getSessionReputation() {
         return getSessionFairReputation() + (isPredefined ? REPUTATION_PREDEFINED : 0);
     }
+
     int getSessionFairReputation() {
         int discoverReput = 0;
 
@@ -156,7 +164,6 @@ public class NodeStatistics {
         disconnected = true;
     }
 
-
     public void ethHandshake(StatusMessage ethInboundStatus) {
         this.ethLastInboundStatusMsg = ethInboundStatus;
         this.ethTotalDifficulty = ethInboundStatus.getTotalDifficultyAsBigInt();
@@ -199,18 +206,53 @@ public class NodeStatistics {
 
     @Override
     public String toString() {
-        return "NodeStat[reput: " + getReputation() + "(" + savedReputation + "), discover: " +
-                discoverInPong + "/" + discoverOutPing + " " +
-                discoverOutPong + "/" + discoverInPing + " " +
-                discoverInNeighbours + "/" + discoverOutFind + " " +
-                discoverOutNeighbours + "/" + discoverInFind + " " +
-                ", rlpx: " + rlpxHandshake + "/" + rlpxAuthMessagesSent + "/" + rlpxConnectionAttempts + " " +
-                rlpxInMessages + "/" + rlpxOutMessages +
-                ", eth: " + ethHandshake + "/" + ethInbound + "/" + ethOutbound + " " +
-                (ethLastInboundStatusMsg != null ? ByteUtil.toHexString(ethLastInboundStatusMsg.getTotalDifficulty()) : "-") + " " +
-                (disconnected ? "X " : "") +
-                (rlpxLastLocalDisconnectReason != null ? ("<=" + rlpxLastLocalDisconnectReason) : " ") +
-                (rlpxLastRemoteDisconnectReason != null ? ("=>" + rlpxLastRemoteDisconnectReason) : " ")  +
-                "[" + clientId + "]";
+        return "NodeStat[reput: "
+                + getReputation()
+                + "("
+                + savedReputation
+                + "), discover: "
+                + discoverInPong
+                + "/"
+                + discoverOutPing
+                + " "
+                + discoverOutPong
+                + "/"
+                + discoverInPing
+                + " "
+                + discoverInNeighbours
+                + "/"
+                + discoverOutFind
+                + " "
+                + discoverOutNeighbours
+                + "/"
+                + discoverInFind
+                + " "
+                + ", rlpx: "
+                + rlpxHandshake
+                + "/"
+                + rlpxAuthMessagesSent
+                + "/"
+                + rlpxConnectionAttempts
+                + " "
+                + rlpxInMessages
+                + "/"
+                + rlpxOutMessages
+                + ", eth: "
+                + ethHandshake
+                + "/"
+                + ethInbound
+                + "/"
+                + ethOutbound
+                + " "
+                + (ethLastInboundStatusMsg != null
+                        ? ByteUtil.toHexString(ethLastInboundStatusMsg.getTotalDifficulty())
+                        : "-")
+                + " "
+                + (disconnected ? "X " : "")
+                + (rlpxLastLocalDisconnectReason != null ? ("<=" + rlpxLastLocalDisconnectReason) : " ")
+                + (rlpxLastRemoteDisconnectReason != null ? ("=>" + rlpxLastRemoteDisconnectReason) : " ")
+                + "["
+                + clientId
+                + "]";
     }
 }

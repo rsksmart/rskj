@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.trace;
 
+import co.rsk.panic.PanicProcessor;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,16 +28,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
-import co.rsk.panic.PanicProcessor;
-import org.ethereum.vm.DataWord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class Serializers {
 
@@ -46,7 +45,8 @@ public final class Serializers {
     public static class DataWordSerializer extends JsonSerializer<DataWord> {
 
         @Override
-        public void serialize(DataWord gas, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(DataWord gas, JsonGenerator jgen, SerializerProvider provider)
+                throws IOException, JsonProcessingException {
             jgen.writeString(gas.value().toString());
         }
     }
@@ -54,7 +54,8 @@ public final class Serializers {
     public static class ByteArraySerializer extends JsonSerializer<byte[]> {
 
         @Override
-        public void serialize(byte[] memory, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(byte[] memory, JsonGenerator jgen, SerializerProvider provider)
+                throws IOException, JsonProcessingException {
             jgen.writeString(Hex.toHexString(memory));
         }
     }
@@ -62,11 +63,11 @@ public final class Serializers {
     public static class OpCodeSerializer extends JsonSerializer<Byte> {
 
         @Override
-        public void serialize(Byte op, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
+        public void serialize(Byte op, JsonGenerator jgen, SerializerProvider provider)
+                throws IOException, JsonProcessingException {
             jgen.writeString(org.ethereum.vm.OpCode.code(op).name());
         }
     }
-
 
     public static String serializeFieldsOnly(Object value, boolean pretty) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -86,12 +87,13 @@ public final class Serializers {
         mapper.writeValue(out, value);
     }
 
-        private static VisibilityChecker<?> fieldsOnlyVisibilityChecker(ObjectMapper mapper) {
-            return mapper.getSerializationConfig().getDefaultVisibilityChecker()
-                    .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
-                    .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
-                    .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE);
-        }
+    private static VisibilityChecker<?> fieldsOnlyVisibilityChecker(ObjectMapper mapper) {
+        return mapper.getSerializationConfig()
+                .getDefaultVisibilityChecker()
+                .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE);
+    }
 
     public static ObjectMapper createMapper(boolean pretty) {
         ObjectMapper mapper = new ObjectMapper();

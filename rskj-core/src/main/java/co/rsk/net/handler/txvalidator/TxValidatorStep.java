@@ -20,18 +20,19 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
+import java.math.BigInteger;
+import javax.annotation.Nullable;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
-
-/**
- * When checking if a transaction is valid before relaying, each check
- * should be added here or as a TxFilter
- */
+/** When checking if a transaction is valid before relaying, each check should be added here or as a TxFilter */
 public interface TxValidatorStep {
 
-    TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx);
-
+    TransactionValidationResult validate(
+            Transaction tx,
+            @Nullable AccountState state,
+            BigInteger gasLimit,
+            Coin minimumGasPrice,
+            long bestBlockNumber,
+            boolean isFreeTx);
 }

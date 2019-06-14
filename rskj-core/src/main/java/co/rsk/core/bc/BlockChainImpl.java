@@ -26,7 +26,16 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.*;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import javax.annotation.Nonnull;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.EventDispatchThread;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -35,43 +44,35 @@ import org.ethereum.listener.EthereumListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import java.util.List;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-/**
- * Created by ajlopez on 29/07/2016.
- */
+/** Created by ajlopez on 29/07/2016. */
 
 /**
  * Original comment:
  *
- * The Ethereum blockchain is in many ways similar to the Bitcoin blockchain,
- * although it does have some differences.
- * <p>
- * The main difference between Ethereum and Bitcoin with regard to the blockchain architecture
- * is that, unlike Bitcoin, Ethereum blocks contain a copy of both the transaction list
- * and the most recent state. Aside from that, two other values, the block number and
- * the difficulty, are also stored in the block.
- * </p>
- * The block validation algorithm in Ethereum is as follows:
- * <ol>
- * <li>Check if the previous block referenced exists and is valid.</li>
- * <li>Check that the timestamp of the block is greater than that of the referenced previous block and less than 15 minutes into the future</li>
- * <li>Check that the block number, difficulty, transaction root, uncle root and gas limit (various low-level Ethereum-specific concepts) are valid.</li>
- * <li>Check that the proof of work on the block is valid.</li>
- * <li>Let S[0] be the STATE_ROOT of the previous block.</li>
- * <li>Let TX be the block's transaction list, with n transactions.
- * For all in in 0...n-1, set S[i+1] = APPLY(S[i],TX[i]).
- * If any applications returns an error, or if the total gas consumed in the block
- * up until this point exceeds the GASLIMIT, return an error.</li>
- * <li>Let S_FINAL be S[n], but adding the block reward paid to the miner.</li>
- * <li>Check if S_FINAL is the same as the STATE_ROOT. If it is, the block is valid; otherwise, it is not valid.</li>
- * </ol>
- * See <a href="https://github.com/ethereum/wiki/wiki/White-Paper#blockchain-and-mining">Ethereum Whitepaper</a>
+ * <p>The Ethereum blockchain is in many ways similar to the Bitcoin blockchain, although it does have some differences.
  *
+ * <p>The main difference between Ethereum and Bitcoin with regard to the blockchain architecture is that, unlike
+ * Bitcoin, Ethereum blocks contain a copy of both the transaction list and the most recent state. Aside from that, two
+ * other values, the block number and the difficulty, are also stored in the block. The block validation algorithm in
+ * Ethereum is as follows:
+ *
+ * <ol>
+ *   <li>Check if the previous block referenced exists and is valid.
+ *   <li>Check that the timestamp of the block is greater than that of the referenced previous block and less than 15
+ *       minutes into the future
+ *   <li>Check that the block number, difficulty, transaction root, uncle root and gas limit (various low-level
+ *       Ethereum-specific concepts) are valid.
+ *   <li>Check that the proof of work on the block is valid.
+ *   <li>Let S[0] be the STATE_ROOT of the previous block.
+ *   <li>Let TX be the block's transaction list, with n transactions. For all in in 0...n-1, set S[i+1] =
+ *       APPLY(S[i],TX[i]). If any applications returns an error, or if the total gas consumed in the block up until
+ *       this point exceeds the GASLIMIT, return an error.
+ *   <li>Let S_FINAL be S[n], but adding the block reward paid to the miner.
+ *   <li>Check if S_FINAL is the same as the STATE_ROOT. If it is, the block is valid; otherwise, it is not valid.
+ * </ol>
+ *
+ * See <a href="https://github.com/ethereum/wiki/wiki/White-Paper#blockchain-and-mining">Ethereum Whitepaper</a>
  */
-
 public class BlockChainImpl implements Blockchain {
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
@@ -96,16 +97,17 @@ public class BlockChainImpl implements Blockchain {
     private final BlockExecutor blockExecutor;
     private boolean noValidation;
 
-    public BlockChainImpl(Repository repository,
-                          BlockStore blockStore,
-                          ReceiptStore receiptStore,
-                          TransactionPool transactionPool,
-                          EthereumListener listener,
-                          BlockValidator blockValidator,
-                          boolean flushEnabled,
-                          int flushNumberOfBlocks,
-                          BlockExecutor blockExecutor,
-                          StateRootHandler stateRootHandler) {
+    public BlockChainImpl(
+            Repository repository,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            TransactionPool transactionPool,
+            EthereumListener listener,
+            BlockValidator blockValidator,
+            boolean flushEnabled,
+            int flushNumberOfBlocks,
+            BlockExecutor blockExecutor,
+            StateRootHandler stateRootHandler) {
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
@@ -124,7 +126,9 @@ public class BlockChainImpl implements Blockchain {
     }
 
     @Override
-    public BlockStore getBlockStore() { return blockStore; }
+    public BlockStore getBlockStore() {
+        return blockStore;
+    }
 
     @VisibleForTesting
     public void setBlockValidator(BlockValidator validator) {
@@ -139,12 +143,10 @@ public class BlockChainImpl implements Blockchain {
     /**
      * Try to add a block to a blockchain
      *
-     * @param block        A block to try to add
-     * @return IMPORTED_BEST if the block is the new best block
-     *      IMPORTED_NOT_BEST if it was added to alternative chain
-     *      NO_PARENT  the block parent is unknown yet
-     *      INVALID_BLOCK   the block has invalida data/state
-     *      EXISTS  the block was already processed
+     * @param block A block to try to add
+     * @return IMPORTED_BEST if the block is the new best block IMPORTED_NOT_BEST if it was added to alternative chain
+     *     NO_PARENT the block parent is unknown yet INVALID_BLOCK the block has invalida data/state EXISTS the block
+     *     was already processed
      */
     @Override
     public ImportResult tryToConnect(Block block) {
@@ -156,29 +158,32 @@ public class BlockChainImpl implements Blockchain {
             }
 
             if (!block.isSealed()) {
-                panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
+                panicProcessor.panic(
+                        "unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
                 block.seal();
             }
 
             try {
-                logger.trace("Try connect block hash: {}, number: {}",
-                             block.getShortHash(),
-                             block.getNumber());
+                logger.trace("Try connect block hash: {}, number: {}", block.getShortHash(), block.getNumber());
 
                 synchronized (connectLock) {
                     logger.trace("Start try connect");
                     long saveTime = System.nanoTime();
                     ImportResult result = internalTryToConnect(block);
                     long totalTime = System.nanoTime() - saveTime;
-                    logger.info("block: num: [{}] hash: [{}], processed after: [{}]nano, result {}", block.getNumber(), block.getShortHash(), totalTime, result);
+                    logger.info(
+                            "block: num: [{}] hash: [{}], processed after: [{}]nano, result {}",
+                            block.getNumber(),
+                            block.getShortHash(),
+                            totalTime,
+                            result);
                     return result;
                 }
             } catch (Throwable t) {
                 logger.error("Unexpected error: ", t);
                 return ImportResult.INVALID_BLOCK;
             }
-        }
-        finally {
+        } finally {
             this.lock.readLock().unlock();
         }
     }
@@ -186,11 +191,9 @@ public class BlockChainImpl implements Blockchain {
     private ImportResult internalTryToConnect(Block block) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BEFORE_BLOCK_EXEC);
 
-        if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
-                !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
-            logger.debug("Block already exist in chain hash: {}, number: {}",
-                         block.getShortHash(),
-                         block.getNumber());
+        if (blockStore.getBlockByHash(block.getHash().getBytes()) != null
+                && !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
+            logger.debug("Block already exist in chain hash: {}, number: {}", block.getShortHash(), block.getNumber());
             profiler.stop(metric);
             return ImportResult.EXIST;
         }
@@ -265,7 +268,11 @@ public class BlockChainImpl implements Blockchain {
             // to the parent's repository.
 
             long totalTime = System.nanoTime() - saveTime;
-            logger.trace("block: num: [{}] hash: [{}], executed after: [{}]nano", block.getNumber(), block.getShortHash(), totalTime);
+            logger.trace(
+                    "block: num: [{}] hash: [{}], executed after: [{}]nano",
+                    block.getNumber(),
+                    block.getShortHash(),
+                    totalTime);
 
             // the block is valid at this point
             stateRootHandler.register(block.getHeader(), result.getFinalState());
@@ -278,11 +285,16 @@ public class BlockChainImpl implements Blockchain {
         logger.trace("TD: updated to {}", totalDifficulty);
 
         // It is the new best block
-        if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, status.getTotalDifficulty(),block, bestBlock)) {
+        if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, status.getTotalDifficulty(), block, bestBlock)) {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
-                logger.trace("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
-                        bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
-                        status.getTotalDifficulty(), totalDifficulty);
+                logger.trace(
+                        "Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
+                        bestBlock.getShortHash(),
+                        block.getShortHash(),
+                        bestBlock.getNumber(),
+                        block.getNumber(),
+                        status.getTotalDifficulty(),
+                        totalDifficulty);
                 BlockFork fork = new BlockFork();
                 fork.calculate(bestBlock, block, blockStore);
                 blockStore.reBranch(block);
@@ -314,9 +326,14 @@ public class BlockChainImpl implements Blockchain {
         // It is not the new best block
         else {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
-                logger.trace("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
-                        bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
-                        status.getTotalDifficulty(), totalDifficulty);
+                logger.trace(
+                        "No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
+                        bestBlock.getShortHash(),
+                        block.getShortHash(),
+                        bestBlock.getNumber(),
+                        block.getNumber(),
+                        status.getTotalDifficulty(),
+                        totalDifficulty);
             }
 
             logger.trace("Start extendAlternativeBlockChain");
@@ -346,8 +363,8 @@ public class BlockChainImpl implements Blockchain {
     /**
      * Change the blockchain status, to a new best block with difficulty
      *
-     * @param block        The new best block
-     * @param totalDifficulty   The total difficulty of the new blockchain
+     * @param block The new best block
+     * @param totalDifficulty The total difficulty of the new blockchain
      */
     @Override
     public void setStatus(Block block, BlockDifficulty totalDifficulty) {
@@ -382,8 +399,8 @@ public class BlockChainImpl implements Blockchain {
     }
 
     /**
-     * blockIsInIndex returns true if a given block is indexed in the blockchain (it might not be the in the
-     * canonical branch).
+     * blockIsInIndex returns true if a given block is indexed in the blockchain (it might not be the in the canonical
+     * branch).
      *
      * @param block the block to check for.
      * @return true if there is a block in the blockchain with that hash.
@@ -404,14 +421,15 @@ public class BlockChainImpl implements Blockchain {
             for (Block block : blocks) {
                 blockStore.removeBlock(block);
             }
-        }
-        finally {
+        } finally {
             this.lock.writeLock().unlock();
         }
     }
 
     @Override
-    public Block getBlockByNumber(long number) { return blockStore.getChainBlockByNumber(number); }
+    public Block getBlockByNumber(long number) {
+        return blockStore.getChainBlockByNumber(number);
+    }
 
     @Override
     public Block getBestBlock() {
@@ -425,7 +443,7 @@ public class BlockChainImpl implements Blockchain {
     /**
      * Returns transaction info by hash
      *
-     * @param hash      the hash of the transaction
+     * @param hash the hash of the transaction
      * @return transaction info, null if the transaction does not exist
      */
     @Override
@@ -447,7 +465,8 @@ public class BlockChainImpl implements Blockchain {
         return status.getTotalDifficulty();
     }
 
-    @Override @VisibleForTesting
+    @Override
+    @VisibleForTesting
     public byte[] getBestBlockHash() {
         return getBestBlock().getHash().getBytes();
     }
@@ -462,8 +481,8 @@ public class BlockChainImpl implements Blockchain {
 
     private void storeBlock(Block block, BlockDifficulty totalDifficulty, boolean inBlockChain) {
         blockStore.saveBlock(block, totalDifficulty, inBlockChain);
-        logger.trace("Block saved: number: {}, hash: {}, TD: {}",
-                block.getNumber(), block.getShortHash(), totalDifficulty);
+        logger.trace(
+                "Block saved: number: {}, hash: {}, TD: {}", block.getNumber(), block.getShortHash(), totalDifficulty);
     }
 
     private void saveReceipts(Block block, BlockResult result) {
@@ -490,14 +509,14 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private void onBestBlock(Block block, BlockResult result) {
-        if (result != null && listener != null){
+        if (result != null && listener != null) {
             listener.onBestBlock(block, result.getTransactionReceipts());
         }
     }
 
     private boolean isValid(Block block) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_VALIDATION);
-        boolean validation =  blockValidator.isValid(block);
+        boolean validation = blockValidator.isValid(block);
         profiler.stop(metric);
         return validation;
     }
@@ -507,7 +526,7 @@ public class BlockChainImpl implements Blockchain {
     private int nFlush = 0;
 
     private void flushData() {
-        if (flushEnabled && nFlush == 0)  {
+        if (flushEnabled && nFlush == 0) {
             long saveTime = System.nanoTime();
             repository.flush();
             long totalTime = System.nanoTime() - saveTime;

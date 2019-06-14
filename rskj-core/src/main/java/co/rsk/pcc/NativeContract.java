@@ -20,6 +20,9 @@ package co.rsk.pcc;
 
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
@@ -31,10 +34,6 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * This class contains common behavior for a RSK native contract.
@@ -71,18 +70,18 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
     }
 
     @Override
-    public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+    public void init(
+            Transaction tx,
+            Block executionBlock,
+            Repository repository,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            List<LogInfo> logs) {
         super.init(tx, executionBlock, repository, blockStore, receiptStore, logs);
 
-        executionEnvironment = new ExecutionEnvironment(
-                activationConfig,
-                tx,
-                executionBlock,
-                repository,
-                blockStore,
-                receiptStore,
-                logs
-        );
+        executionEnvironment =
+                new ExecutionEnvironment(
+                        activationConfig, tx, executionBlock, repository, blockStore, receiptStore, logs);
     }
 
     @Override
@@ -106,8 +105,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
 
     @Override
     public byte[] execute(byte[] data) {
-        try
-        {
+        try {
             // Preliminary validation: we need an execution environment
             if (executionEnvironment == null) {
                 throw new RuntimeException("Execution environment is null");
@@ -133,7 +131,8 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
             // allows for non-local calls
 
             if (!executionEnvironment.isLocalCall() && method.onlyAllowsLocalCalls()) {
-                String errorMessage = String.format("Non-local-call to %s. Returning without execution.", method.getName());
+                String errorMessage =
+                        String.format("Non-local-call to %s. Returning without execution.", method.getName());
                 logger.info(errorMessage);
                 throw new NativeContractIllegalArgumentException(errorMessage);
             }
@@ -183,18 +182,15 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
 
         if (data == null || data.length == 0) {
             if (getDefaultMethod().isPresent()) {
-                return Optional.of(this.getDefaultMethod().get().new WithArguments(new Object[]{}, data));
+                return Optional.of(this.getDefaultMethod().get().new WithArguments(new Object[] {}, data));
             }
             return Optional.empty();
         } else {
             byte[] encodedSignature = Arrays.copyOfRange(data, 0, 4);
-            Optional<NativeMethod> maybeMethod = getMethods().stream()
-                    .filter(m ->
-                            Arrays.equals(
-                                    encodedSignature,
-                                    m.getFunction().encodeSignature()
-                            )
-                    ).findFirst();
+            Optional<NativeMethod> maybeMethod =
+                    getMethods().stream()
+                            .filter(m -> Arrays.equals(encodedSignature, m.getFunction().encodeSignature()))
+                            .findFirst();
 
             if (!maybeMethod.isPresent()) {
                 logger.warn("Invalid function signature {}.", Hex.toHexString(encodedSignature));
@@ -212,7 +208,11 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
                 Object[] arguments = method.getFunction().decode(data);
                 return Optional.of(method.new WithArguments(arguments, data));
             } catch (Exception e) {
-                logger.warn(String.format("Invalid arguments %s for function %s.", Hex.toHexString(data), Hex.toHexString(encodedSignature)), e);
+                logger.warn(
+                        String.format(
+                                "Invalid arguments %s for function %s.",
+                                Hex.toHexString(data), Hex.toHexString(encodedSignature)),
+                        e);
                 return Optional.empty();
             }
         }

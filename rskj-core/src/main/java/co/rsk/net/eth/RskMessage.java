@@ -23,9 +23,7 @@ import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.util.RLP;
 
-/**
- * Created by ajlopez on 5/14/2016.
- */
+/** Created by ajlopez on 5/14/2016. */
 public class RskMessage extends EthMessage {
     private Message message;
 
@@ -63,11 +61,8 @@ public class RskMessage extends EthMessage {
         this.encoded = RLP.encodeList(msg);
     }
 
-
     @Override
     public String toString() {
-        return "[" + this.getCommand().name() +
-                " message=" + this.message +
-                "]";
+        return "[" + this.getCommand().name() + " message=" + this.message + "]";
     }
 }

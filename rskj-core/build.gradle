@@ -10,6 +10,7 @@ buildscript {
 
 plugins {
     id 'application'
+    id 'checkstyle'
 }
 
 apply plugin: 'witness'
@@ -261,6 +262,16 @@ artifacts {
     }
     archives fatJar
     archives distTar
+}
+
+checkstyle {
+    toolVersion '8.21'
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.enabled true
+    }
 }
 
 def gitCurrentBranch() {

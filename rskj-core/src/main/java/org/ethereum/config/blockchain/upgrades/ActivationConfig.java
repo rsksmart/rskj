@@ -21,8 +21,11 @@ package org.ethereum.config.blockchain.upgrades;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException.WrongType;
 import com.typesafe.config.ConfigValue;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ActivationConfig {
@@ -35,10 +38,10 @@ public class ActivationConfig {
         if (activationHeights.size() != ConsensusRule.values().length) {
             List<ConsensusRule> missing = new ArrayList<>(Arrays.asList(ConsensusRule.values()));
             missing.removeAll(activationHeights.keySet());
-            throw new IllegalArgumentException(String.format(
-                    "The configuration must contain all consensus rule values but is missing [%s]",
-                    missing.stream().map(ConsensusRule::getConfigKey).collect(Collectors.joining(", "))
-            ));
+            throw new IllegalArgumentException(
+                    String.format(
+                            "The configuration must contain all consensus rule values but is missing [%s]",
+                            missing.stream().map(ConsensusRule::getConfigKey).collect(Collectors.joining(", "))));
         }
 
         this.activationHeights = activationHeights;
@@ -79,17 +82,15 @@ public class ActivationConfig {
     }
 
     private static long parseActivationHeight(
-            Map<NetworkUpgrade, Long> networkUpgrades,
-            Config consensusRulesConfig,
-            ConsensusRule consensusRule) {
+            Map<NetworkUpgrade, Long> networkUpgrades, Config consensusRulesConfig, ConsensusRule consensusRule) {
         try {
             return consensusRulesConfig.getLong(consensusRule.getConfigKey());
         } catch (WrongType ex) {
-            NetworkUpgrade networkUpgrade = NetworkUpgrade.named(consensusRulesConfig.getString(consensusRule.getConfigKey()));
+            NetworkUpgrade networkUpgrade =
+                    NetworkUpgrade.named(consensusRulesConfig.getString(consensusRule.getConfigKey()));
             if (!networkUpgrades.containsKey(networkUpgrade)) {
                 throw new IllegalArgumentException(
-                        String.format("Unknown activation height for network upgrade %s", networkUpgrade.getName())
-                );
+                        String.format("Unknown activation height for network upgrade %s", networkUpgrade.getName()));
             }
 
             return networkUpgrades.get(networkUpgrade);

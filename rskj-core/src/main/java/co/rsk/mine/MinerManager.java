@@ -19,9 +19,7 @@
 package co.rsk.mine;
 
 
-/**
- * Created by ajlopez on 15/04/2017.
- */
+/** Created by ajlopez on 15/04/2017. */
 public class MinerManager {
     public void mineBlock(MinerClient minerClient, MinerServer minerServer) {
         minerServer.buildBlockToMine(false);

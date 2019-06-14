@@ -20,16 +20,13 @@ package co.rsk.validators;
 
 import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
-/**
- * Created by mario on 26/12/16.
- */
+/** Created by mario on 26/12/16. */
 public class TxsMinGasPriceRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
@@ -37,7 +34,7 @@ public class TxsMinGasPriceRule implements BlockValidationRule {
     @Override
     public boolean isValid(Block block) {
         List<Transaction> txs = block.getTransactionsList();
-        if(block.getMinimumGasPrice() == null) {
+        if (block.getMinimumGasPrice() == null) {
             logger.warn("Could not retrieve block min gas priceß");
             return false;
         }

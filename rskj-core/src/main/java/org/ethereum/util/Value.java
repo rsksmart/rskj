@@ -19,17 +19,14 @@
 
 package org.ethereum.util;
 
-import org.ethereum.crypto.HashUtil;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.HashUtil;
 
-/**
- * Class to encapsulate an object and provide utilities for conversion
- */
+/** Class to encapsulate an object and provide utilities for conversion */
 public class Value {
 
     private Object value;
@@ -45,10 +42,9 @@ public class Value {
         return null;
     }
 
-    public Value() {
-    }
+    public Value() {}
 
-    public void init(byte[] rlp){
+    public void init(byte[] rlp) {
         this.rlp = rlp;
     }
 
@@ -117,14 +113,13 @@ public class Value {
         return ByteUtil.EMPTY_BYTE_ARRAY;
     }
 
-    public String getHex(){
+    public String getHex() {
         return Hex.toHexString(this.encode());
     }
 
-    public byte[] getData(){
+    public byte[] getData() {
         return this.encode();
     }
-
 
     public int[] asSlice() {
         return (int[]) value;
@@ -156,7 +151,7 @@ public class Value {
         return rlp;
     }
 
-    public byte[] hash(){
+    public byte[] hash() {
         if (keccak256 == null) {
             keccak256 = HashUtil.keccak256(encode());
         }
@@ -218,8 +213,7 @@ public class Value {
 
         for (byte aData : data) {
 
-            if ((aData >= 48 && aData <= 57)
-                    || (aData >= 97 && aData <= 102)) {
+            if ((aData >= 48 && aData <= 57) || (aData >= 97 && aData <= 102)) {
                 ++hexChars;
             }
         }
@@ -331,5 +325,4 @@ public class Value {
         }
         return "Unexpected type";
     }
-
 }

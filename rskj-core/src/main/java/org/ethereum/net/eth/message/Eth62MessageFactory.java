@@ -19,13 +19,13 @@
 
 package org.ethereum.net.eth.message;
 
+import static org.ethereum.net.eth.EthVersion.V62;
+
 import co.rsk.net.eth.RskMessage;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.net.message.Message;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-
-import static org.ethereum.net.eth.EthVersion.V62;
 
 /**
  * @author Mikhail Kalinin

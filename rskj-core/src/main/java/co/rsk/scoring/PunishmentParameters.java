@@ -1,10 +1,9 @@
 package co.rsk.scoring;
 
 /**
- * PunishmentParameters has the punishment parameters
- * (initial duration, incremental percentage, maximum duration)
- * <p>
- * Created by ajlopez on 12/07/2017.
+ * PunishmentParameters has the punishment parameters (initial duration, incremental percentage, maximum duration)
+ *
+ * <p>Created by ajlopez on 12/07/2017.
  */
 public class PunishmentParameters {
     private final long duration;
@@ -22,20 +21,25 @@ public class PunishmentParameters {
      *
      * @return duration in milliseconds
      */
-    public long getDuration() { return this.duration; }
+    public long getDuration() {
+        return this.duration;
+    }
 
     /**
      * Returns the incremental percentage
      *
      * @return the percentage of increment to be applied to each new punishment
      */
-    public int getIncrementRate() { return this.incrementRate; }
+    public int getIncrementRate() {
+        return this.incrementRate;
+    }
 
     /**
      * Returns the maximum duration to be applied
      *
-     * @return the maximum duration in milliseconds
-     * (0 = no maximum)
+     * @return the maximum duration in milliseconds (0 = no maximum)
      */
-    public long getMaximumDuration() { return this.maximumDuration; }
+    public long getMaximumDuration() {
+        return this.maximumDuration;
+    }
 }

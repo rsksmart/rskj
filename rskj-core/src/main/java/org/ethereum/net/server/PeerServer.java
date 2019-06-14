@@ -20,13 +20,11 @@
 package org.ethereum.net.server;
 
 /**
- * This class establishes a listener for incoming connections.
- * See <a href="http://netty.io">http://netty.io</a>.
+ * This class establishes a listener for incoming connections. See <a href="http://netty.io">http://netty.io</a>.
  *
  * @author Roman Mandeleil
  * @since 01.11.2014
  */
-
 public interface PeerServer {
 
     void start();

@@ -20,10 +20,7 @@ package co.rsk.mine;
 
 import co.rsk.core.Coin;
 
-/**
- * This is the implementation of RSKIP-09
- * Created by mario on 22/12/16.
- */
+/** This is the implementation of RSKIP-09 Created by mario on 22/12/16. */
 public class MinimumGasPriceCalculator {
 
     private final Coin targetMGP;

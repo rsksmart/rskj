@@ -18,6 +18,7 @@
 
 package co.rsk.pcc;
 
+import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -26,11 +27,9 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.LogInfo;
 
-import java.util.List;
-
 /**
- * Represents the execution environment of a particular native contract's method execution.
- * Things as block-dependent configuration, execution block and repository are kept here.
+ * Represents the execution environment of a particular native contract's method execution. Things as block-dependent
+ * configuration, execution block and repository are kept here.
  *
  * @author Ariel Mendelzon
  */

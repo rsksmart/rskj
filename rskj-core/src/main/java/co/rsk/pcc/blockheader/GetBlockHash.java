@@ -24,18 +24,14 @@ import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 
 /**
- * This implements the "getBlockHash" method
- * that belongs to the BlockHeaderContract native contract.
+ * This implements the "getBlockHash" method that belongs to the BlockHeaderContract native contract.
  *
  * @author Diego Masini
  */
 public class GetBlockHash extends BlockHeaderContractMethod {
 
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "getBlockHash",
-            new String[]{"int256"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature("getBlockHash", new String[] {"int256"}, new String[] {"bytes"});
 
     public GetBlockHash(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);

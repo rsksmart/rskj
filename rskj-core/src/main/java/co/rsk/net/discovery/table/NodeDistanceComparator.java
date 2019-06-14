@@ -19,13 +19,10 @@
 package co.rsk.net.discovery.table;
 
 import co.rsk.net.NodeID;
+import java.util.Comparator;
 import org.ethereum.net.rlpx.Node;
 
-import java.util.Comparator;
-
-/**
- * Created by mario on 22/02/17.
- */
+/** Created by mario on 22/02/17. */
 public class NodeDistanceComparator implements Comparator<Node> {
     private NodeID targetNodeId;
     private transient DistanceCalculator calculator;

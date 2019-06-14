@@ -19,15 +19,15 @@
 package co.rsk.net.discovery.table;
 
 import co.rsk.net.NodeID;
-import org.ethereum.net.rlpx.Node;
-
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.ethereum.net.rlpx.Node;
 
-/**
- * Created by mario on 21/02/17.
- */
+/** Created by mario on 21/02/17. */
 public class NodeDistanceTable {
     private Map<Integer, Bucket> buckets = new ConcurrentHashMap<>();
     private final Node localNode;
@@ -67,8 +67,7 @@ public class NodeDistanceTable {
         Set<Node> ret = new HashSet<>();
 
         for (Bucket bucket : this.buckets.values()) {
-            ret.addAll(bucket.getEntries().stream()
-                    .map(BucketEntry::getNode).collect(Collectors.toList()));
+            ret.addAll(bucket.getEntries().stream().map(BucketEntry::getNode).collect(Collectors.toList()));
         }
 
         return ret;
@@ -78,5 +77,4 @@ public class NodeDistanceTable {
         Bucket bucket = getNodeBucket(node);
         bucket.updateEntry(node);
     }
-
 }

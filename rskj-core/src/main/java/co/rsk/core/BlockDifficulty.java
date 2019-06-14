@@ -18,21 +18,17 @@
 
 package co.rsk.core;
 
-import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.math.BigInteger;
+import javax.annotation.Nonnull;
 
-/**
- * A block's difficulty, stored internally as a {@link java.math.BigInteger}.
- */
+/** A block's difficulty, stored internally as a {@link java.math.BigInteger}. */
 public class BlockDifficulty implements Comparable<BlockDifficulty>, Serializable {
     public static final BlockDifficulty ZERO = new BlockDifficulty(BigInteger.ZERO);
 
     private final BigInteger value;
 
-    /**
-     * @param value the difficulty value, which should be positive.
-     */
+    /** @param value the difficulty value, which should be positive. */
     public BlockDifficulty(BigInteger value) {
         if (value.signum() < 0) {
             throw new RuntimeException("A block difficulty must be positive or zero");
@@ -68,9 +64,7 @@ public class BlockDifficulty implements Comparable<BlockDifficulty>, Serializabl
         return value.hashCode();
     }
 
-    /**
-     * @return a DEBUG representation of the difficulty, mainly used for logging.
-     */
+    /** @return a DEBUG representation of the difficulty, mainly used for logging. */
     @Override
     public String toString() {
         return value.toString();

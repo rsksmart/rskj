@@ -21,20 +21,17 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.crypto.HashUtil;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.ethereum.crypto.HashUtil;
 
 /**
- * Immutable representation of an RSK Pending Federation.
- * A pending federation is one that is being actively
- * voted by the current federation to potentially become
- * the new active federation.
+ * Immutable representation of an RSK Pending Federation. A pending federation is one that is being actively voted by
+ * the current federation to potentially become the new active federation.
  *
  * @author Ariel Mendelzon
  */
@@ -47,7 +44,11 @@ public final class PendingFederation {
         // Sorting members ensures same order for members
         // Immutability provides protection against unwanted modification, thus making the Pending Federation instance
         // effectively immutable
-        this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
+        this.members =
+                Collections.unmodifiableList(
+                        members.stream()
+                                .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
+                                .collect(Collectors.toList()));
     }
 
     public List<FederationMember> getMembers() {
@@ -66,6 +67,7 @@ public final class PendingFederation {
 
     /**
      * Creates a new PendingFederation with the additional specified member
+     *
      * @param member the new federation member
      * @return a new PendingFederation with the added member
      */
@@ -77,6 +79,7 @@ public final class PendingFederation {
 
     /**
      * Builds a Federation from this PendingFederation
+     *
      * @param creationTime the creation time for the new Federation
      * @param btcParams the bitcoin parameters for the new Federation
      * @return a Federation
@@ -86,17 +89,13 @@ public final class PendingFederation {
             throw new IllegalStateException("PendingFederation is incomplete");
         }
 
-        return new Federation(
-                members,
-                creationTime,
-                blockNumber,
-                btcParams
-        );
+        return new Federation(members, creationTime, blockNumber, btcParams);
     }
 
     @Override
     public String toString() {
-        return String.format("%d signatures pending federation (%s)", members.size(), isComplete() ? "complete" : "incomplete");
+        return String.format(
+                "%d signatures pending federation (%s)", members.size(), isComplete() ? "complete" : "incomplete");
     }
 
     @Override

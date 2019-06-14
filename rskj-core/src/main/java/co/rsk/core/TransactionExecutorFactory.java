@@ -20,15 +20,18 @@ package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
-import org.ethereum.core.*;
+import java.util.HashSet;
+import java.util.Set;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-
-import java.util.HashSet;
-import java.util.Set;
 
 public class TransactionExecutorFactory {
     private final RskSystemProperties config;
@@ -54,12 +57,7 @@ public class TransactionExecutorFactory {
     }
 
     public TransactionExecutor newInstance(
-            Transaction tx,
-            int txindex,
-            RskAddress coinbase,
-            Repository track,
-            Block block,
-            long totalGasUsed) {
+            Transaction tx, int txindex, RskAddress coinbase, Repository track, Block block, long totalGasUsed) {
         return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, new HashSet<>());
     }
 
@@ -77,12 +75,8 @@ public class TransactionExecutorFactory {
         // It would be great to decouple from VmConfig#vmTrace, but sadly that's a major refactor we can't do now.
         VmConfig vmConfig = config.getVmConfig();
         if (vmTrace) {
-            vmConfig = new VmConfig(
-                    true,
-                    vmConfig.vmTraceInitStorageLimit(),
-                    vmConfig.dumpBlock(),
-                    vmConfig.dumpStyle()
-            );
+            vmConfig =
+                    new VmConfig(true, vmConfig.vmTraceInitStorageLimit(), vmConfig.dumpBlock(), vmConfig.dumpStyle());
         }
 
         return new TransactionExecutor(
@@ -102,7 +96,6 @@ public class TransactionExecutorFactory {
                 config.playVM(),
                 config.isRemascEnabled(),
                 precompiledContracts,
-                deletedAccounts
-        );
+                deletedAccounts);
     }
 }

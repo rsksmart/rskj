@@ -26,7 +26,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.netty.channel.ChannelHandlerContext;
-
 import java.util.Objects;
 
 public class EthSubscribeRequest extends RskJsonRpcRequest {
@@ -56,8 +55,7 @@ public class EthSubscribeRequest extends RskJsonRpcRequest {
     private static RskJsonRpcMethod verifyMethod(RskJsonRpcMethod method) {
         if (method != RskJsonRpcMethod.ETH_SUBSCRIBE) {
             throw new IllegalArgumentException(
-                    "Wrong method mapped to eth_subscribe. Check JSON mapping configuration in JsonRpcRequest."
-            );
+                    "Wrong method mapped to eth_subscribe. Check JSON mapping configuration in JsonRpcRequest.");
         }
 
         return method;

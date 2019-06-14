@@ -22,7 +22,6 @@ package org.ethereum.core;
 import java.math.BigInteger;
 
 public enum Denomination {
-
     WEI(newBigInt(0)),
     SATOSHI(newBigInt(10)),
     SZABO(newBigInt(12)),
@@ -49,21 +48,18 @@ public enum Denomination {
 
     public static String toFriendlyString(BigInteger value) {
         if (value.compareTo(SBTC.value()) == 1 || value.compareTo(SBTC.value()) == 0) {
-            return Float.toString(value.divide(SBTC.value()).floatValue()) +  " SBTC";
-        }
-        else if(value.compareTo(FINNEY.value()) == 1 || value.compareTo(FINNEY.value()) == 0) {
-            return Float.toString(value.divide(FINNEY.value()).floatValue()) +  " FINNEY";
-        }
-        else if(value.compareTo(SZABO.value()) == 1 || value.compareTo(SZABO.value()) == 0) {
-            return Float.toString(value.divide(SZABO.value()).floatValue()) +  " SZABO";
-        }
-        else {
-            return Float.toString(value.divide(WEI.value()).floatValue()) +  " WEI";
+            return Float.toString(value.divide(SBTC.value()).floatValue()) + " SBTC";
+        } else if (value.compareTo(FINNEY.value()) == 1 || value.compareTo(FINNEY.value()) == 0) {
+            return Float.toString(value.divide(FINNEY.value()).floatValue()) + " FINNEY";
+        } else if (value.compareTo(SZABO.value()) == 1 || value.compareTo(SZABO.value()) == 0) {
+            return Float.toString(value.divide(SZABO.value()).floatValue()) + " SZABO";
+        } else {
+            return Float.toString(value.divide(WEI.value()).floatValue()) + " WEI";
         }
     }
 
     public static BigInteger weisToSatoshis(BigInteger weis) {
-        return weis.divide(SATOSHI.value()) ;
+        return weis.divide(SATOSHI.value());
     }
 
     public static BigInteger satoshisToWeis(BigInteger satoshis) {
@@ -73,5 +69,4 @@ public enum Denomination {
     public static BigInteger satoshisToWeis(long satoshis) {
         return BigInteger.valueOf(satoshis).multiply(SATOSHI.value());
     }
-
 }

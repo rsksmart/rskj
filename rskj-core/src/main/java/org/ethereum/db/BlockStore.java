@@ -21,10 +21,9 @@ package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.db.RemascCache;
-import org.ethereum.core.Block;
-
-import javax.annotation.Nonnull;
 import java.util.List;
+import javax.annotation.Nonnull;
+import org.ethereum.core.Block;
 
 /**
  * @author Roman Mandeleil
@@ -33,9 +32,8 @@ import java.util.List;
 public interface BlockStore extends RemascCache {
 
     /**
-     * Gets the block hash by its index.
-     * When more than one block with the specified index exists (forks)
-     * the select the block which is ancestor of the branchBlockHash
+     * Gets the block hash by its index. When more than one block with the specified index exists (forks) the select the
+     * block which is ancestor of the branchBlockHash
      */
     byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash);
 

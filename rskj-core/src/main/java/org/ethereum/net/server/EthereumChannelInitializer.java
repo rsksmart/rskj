@@ -28,6 +28,8 @@ import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.SocketChannelConfig;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import java.net.InetAddress;
+import java.util.concurrent.TimeUnit;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
@@ -40,9 +42,6 @@ import org.ethereum.net.rlpx.HandshakeHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.InetAddress;
-import java.util.concurrent.TimeUnit;
 
 public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChannel> {
 
@@ -105,10 +104,22 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
             MessageQueue messageQueue = new MessageQueue();
             P2pHandler p2pHandler = new P2pHandler(ethereumListener, messageQueue, config.getPeerP2PPingInterval());
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
-            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
-            Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId);
+            HandshakeHandler handshakeHandler =
+                    new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
+            Channel channel =
+                    new Channel(
+                            messageQueue,
+                            messageCodec,
+                            nodeManager,
+                            rskWireProtocolFactory,
+                            eth62MessageFactory,
+                            staticMessages,
+                            remoteId);
 
-            ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
+            ch.pipeline()
+                    .addLast(
+                            "readTimeoutHandler",
+                            new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
             ch.pipeline().addLast("handshakeHandler", handshakeHandler);
 
             handshakeHandler.setRemoteId(remoteId, channel);

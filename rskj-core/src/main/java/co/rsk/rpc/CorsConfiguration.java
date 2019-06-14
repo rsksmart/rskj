@@ -21,9 +21,7 @@ package co.rsk.rpc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Created by ajlopez on 20/04/2017.
- */
+/** Created by ajlopez on 20/04/2017. */
 public class CorsConfiguration {
     private static final Logger logger = LoggerFactory.getLogger("cors");
     private final String header;

@@ -20,28 +20,27 @@
 package org.ethereum.db;
 
 import co.rsk.crypto.Keccak256;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.*;
-
-/**
- * Created by Ruben on 6/1/2016.
- * Class used to store transaction receipts
- */
-
+/** Created by Ruben on 6/1/2016. Class used to store transaction receipts */
 public class ReceiptStoreImpl implements ReceiptStore {
     private KeyValueDataSource receiptsDS;
 
-    public ReceiptStoreImpl(KeyValueDataSource receiptsDS){
+    public ReceiptStoreImpl(KeyValueDataSource receiptsDS) {
         this.receiptsDS = receiptsDS;
     }
 
     @Override
-    public void add(byte[] blockHash, int transactionIndex, TransactionReceipt receipt){
+    public void add(byte[] blockHash, int transactionIndex, TransactionReceipt receipt) {
         byte[] txHash = receipt.getTransaction().getHash().getBytes();
 
         TransactionInfo newTxInfo = new TransactionInfo(receipt, blockHash, transactionIndex);
@@ -62,7 +61,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo get(byte[] transactionHash){
+    public TransactionInfo get(byte[] transactionHash) {
         List<TransactionInfo> txs = getAll(transactionHash);
 
         if (txs.isEmpty()) {

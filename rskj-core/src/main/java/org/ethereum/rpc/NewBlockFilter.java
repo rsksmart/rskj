@@ -18,14 +18,11 @@
 
 package org.ethereum.rpc;
 
-import org.ethereum.core.Block;
-
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
-/**
- * Created by ajlopez on 17/01/2018.
- */
+import org.ethereum.core.Block;
 
+/** Created by ajlopez on 17/01/2018. */
 public class NewBlockFilter extends Filter {
     class NewBlockFilterEvent extends FilterEvent {
         public final Block b;
@@ -45,4 +42,3 @@ public class NewBlockFilter extends Filter {
         add(new NewBlockFilterEvent(b));
     }
 }
-

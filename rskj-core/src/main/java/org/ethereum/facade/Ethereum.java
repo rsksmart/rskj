@@ -38,17 +38,16 @@ public interface Ethereum {
     ImportResult addNewMinedBlock(Block block);
 
     /**
-     * @param transaction submit transaction to the net, return option to wait for net
-     *                    return this transaction as approved
+     * @param transaction submit transaction to the net, return option to wait for net return this transaction as
+     *     approved
      */
     void submitTransaction(Transaction transaction);
 
     /**
-     * Calculates a 'reasonable' Gas price based on statistics of the latest transaction's Gas prices
-     * Normally the price returned should be sufficient to execute a transaction since ~25% of the latest
-     * transactions were executed at this or lower price.
-     * If the transaction is wanted to be executed promptly with higher chances the returned price might
-     * be increased at some ratio (e.g. * 1.2)
+     * Calculates a 'reasonable' Gas price based on statistics of the latest transaction's Gas prices Normally the price
+     * returned should be sufficient to execute a transaction since ~25% of the latest transactions were executed at
+     * this or lower price. If the transaction is wanted to be executed promptly with higher chances the returned price
+     * might be increased at some ratio (e.g. * 1.2)
      */
     Coin getGasPrice();
 }

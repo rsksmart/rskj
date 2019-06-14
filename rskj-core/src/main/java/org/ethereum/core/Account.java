@@ -22,9 +22,7 @@ package org.ethereum.core;
 import co.rsk.core.RskAddress;
 import org.ethereum.crypto.ECKey;
 
-/**
- * Representation of an actual account or contract.
- */
+/** Representation of an actual account or contract. */
 public class Account {
 
     private final ECKey ecKey;

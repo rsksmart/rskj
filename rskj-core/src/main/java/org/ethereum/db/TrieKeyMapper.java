@@ -20,15 +20,15 @@ package org.ethereum.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
+import java.util.Arrays;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
-import java.util.Arrays;
-
 public class TrieKeyMapper {
     public static final int SECURE_KEY_SIZE = 10;
-    public static final int REMASC_ACCOUNT_KEY_SIZE = SECURE_KEY_SIZE + RemascTransaction.REMASC_ADDRESS.getBytes().length;
+    public static final int REMASC_ACCOUNT_KEY_SIZE =
+            SECURE_KEY_SIZE + RemascTransaction.REMASC_ADDRESS.getBytes().length;
     public static final int ACCOUNT_KEY_SIZE = RskAddress.LENGTH_IN_BYTES;
     public static final int SECURE_ACCOUNT_KEY_SIZE = SECURE_KEY_SIZE + ACCOUNT_KEY_SIZE;
     private static final byte[] DOMAIN_PREFIX = new byte[] {0x00};

@@ -22,16 +22,12 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.config.SystemProperties;
 
-/**
- * Options that the node can receive via command line arguments.
- * E.g. -datadir /path/to/datadir
- */
+/** Options that the node can receive via command line arguments. E.g. -datadir /path/to/datadir */
 public enum NodeCliOptions implements OptionalizableCliArg {
     RPC_CORS("rpccors", true) {
         @Override
         public Config withConfig(Config config, String configValue) {
-            return config
-                    .withValue(SystemProperties.PROPERTY_RPC_HTTP_ENABLED, ConfigValueFactory.fromAnyRef(true))
+            return config.withValue(SystemProperties.PROPERTY_RPC_HTTP_ENABLED, ConfigValueFactory.fromAnyRef(true))
                     .withValue(SystemProperties.PROPERTY_RPC_CORS, ConfigValueFactory.fromAnyRef(configValue));
         }
     },
@@ -61,8 +57,6 @@ public enum NodeCliOptions implements OptionalizableCliArg {
         return optionName;
     }
 
-    /**
-     * @return a new, augmented config with settings for this flag.
-     */
-    abstract public Config withConfig(Config config, String configValue);
+    /** @return a new, augmented config with settings for this flag. */
+    public abstract Config withConfig(Config config, String configValue);
 }

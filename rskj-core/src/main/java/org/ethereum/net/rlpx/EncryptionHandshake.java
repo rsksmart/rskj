@@ -19,26 +19,23 @@
 
 package org.ethereum.net.rlpx;
 
+import static org.ethereum.crypto.Keccak256Helper.keccak256;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import javax.annotation.Nullable;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.digests.KeccakDigest;
+import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.crypto.ECIESCoder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.digests.KeccakDigest;
-import org.bouncycastle.math.ec.ECPoint;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
-
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
-
-/**
- * Created by devrandom on 2015-04-08.
- */
+/** Created by devrandom on 2015-04-08. */
 public class EncryptionHandshake {
     public static final int NONCE_SIZE = 32;
     public static final int MAC_SIZE = 256;
@@ -60,7 +57,12 @@ public class EncryptionHandshake {
         isInitiator = true;
     }
 
-    EncryptionHandshake(ECPoint remotePublicKey, ECKey ephemeralKey, byte[] initiatorNonce, byte[] responderNonce, boolean isInitiator) {
+    EncryptionHandshake(
+            ECPoint remotePublicKey,
+            ECKey ephemeralKey,
+            byte[] initiatorNonce,
+            byte[] responderNonce,
+            boolean isInitiator) {
         this.remotePublicKey = remotePublicKey;
         this.ephemeralKey = ephemeralKey;
         this.initiatorNonce = initiatorNonce;
@@ -152,8 +154,9 @@ public class EncryptionHandshake {
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         byte[] signed = xor(token, initiatorNonce);
 
-        ECKey ephemeral = ECKey.recoverFromSignature(recIdFromSignatureV(initiate.signature.v),
-                initiate.signature, signed, false);
+        ECKey ephemeral =
+                ECKey.recoverFromSignature(
+                        recIdFromSignatureV(initiate.signature.v), initiate.signature, signed, false);
         if (ephemeral == null) {
             throw new RuntimeException("failed to recover signatue from message");
         }
@@ -260,9 +263,11 @@ public class EncryptionHandshake {
     }
 
     void agreeSecret(byte[] initiatePacket, byte[] responsePacket) {
-        BigInteger secretScalar = remoteEphemeralKey.multiply(ephemeralKey.getPrivKey()).normalize().getXCoord().toBigInteger();
+        BigInteger secretScalar =
+                remoteEphemeralKey.multiply(ephemeralKey.getPrivKey()).normalize().getXCoord().toBigInteger();
         byte[] agreedSecret = ByteUtil.bigIntegerToBytes(secretScalar, SECRET_SIZE);
-        byte[] sharedSecret = Keccak256Helper.keccak256(agreedSecret, Keccak256Helper.keccak256(responderNonce, initiatorNonce));
+        byte[] sharedSecret =
+                Keccak256Helper.keccak256(agreedSecret, Keccak256Helper.keccak256(responderNonce, initiatorNonce));
         byte[] aesSecret = Keccak256Helper.keccak256(agreedSecret, sharedSecret);
         secrets = new Secrets();
         secrets.aes = aesSecret;
@@ -308,8 +313,9 @@ public class EncryptionHandshake {
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         byte[] signed = xor(token, initiatorNonce);
 
-        ECKey ephemeral = ECKey.recoverFromSignature(recIdFromSignatureV(initiate.signature.v),
-                initiate.signature, signed, false);
+        ECKey ephemeral =
+                ECKey.recoverFromSignature(
+                        recIdFromSignatureV(initiate.signature.v), initiate.signature, signed, false);
         if (ephemeral == null) {
             throw new RuntimeException("failed to recover signatue from message");
         }
@@ -322,9 +328,8 @@ public class EncryptionHandshake {
     }
 
     /**
-     * Pads messages with junk data,
-     * pad data length is random value satisfying 100 < len < 300.
-     * It's necessary to make messages described by EIP-8 distinguishable from pre-EIP-8 msgs
+     * Pads messages with junk data, pad data length is random value satisfying 100 < len < 300. It's necessary to make
+     * messages described by EIP-8 distinguishable from pre-EIP-8 msgs
      *
      * @param msg message to pad
      * @return padded message
@@ -343,7 +348,7 @@ public class EncryptionHandshake {
             // compressed
             v -= 4;
         }
-        return (byte)(v - 27);
+        return (byte) (v - 27);
     }
 
     public Secrets getSecrets() {

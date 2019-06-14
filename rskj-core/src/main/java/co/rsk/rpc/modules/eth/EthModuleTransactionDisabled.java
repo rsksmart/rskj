@@ -23,9 +23,7 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 
-/**
- * This module disables sendTransaction because it needs a local wallet, but sendRawTransaction should still work.
- */
+/** This module disables sendTransaction because it needs a local wallet, but sendRawTransaction should still work. */
 public class EthModuleTransactionDisabled extends EthModuleTransactionBase {
 
     public EthModuleTransactionDisabled(Constants constants, TransactionPool transactionPool) {

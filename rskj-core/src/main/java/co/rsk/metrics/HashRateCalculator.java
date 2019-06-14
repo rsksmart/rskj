@@ -20,14 +20,13 @@ package co.rsk.metrics;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.RskCustomCache;
-import org.ethereum.core.Block;
-import org.ethereum.db.BlockStore;
-
 import java.math.BigInteger;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Predicate;
+import org.ethereum.core.Block;
+import org.ethereum.db.BlockStore;
 
 public abstract class HashRateCalculator {
 
@@ -57,12 +56,18 @@ public abstract class HashRateCalculator {
         if (hasBestBlock()) {
             Instant upto = Clock.systemUTC().instant();
             Instant from = upto.minus(period);
-            return this.hashRate(getHeaderElement(blockStore.getBestBlock().getHash()), countCondition, b -> checkBlockTimeRange(b, from, upto));
+            return this.hashRate(
+                    getHeaderElement(blockStore.getBestBlock().getHash()),
+                    countCondition,
+                    b -> checkBlockTimeRange(b, from, upto));
         }
         return BigInteger.ZERO;
     }
 
-    private BigInteger hashRate(BlockHeaderElement elem, Predicate<BlockHeaderElement> countCondition, Predicate<BlockHeaderElement> cutCondition) {
+    private BigInteger hashRate(
+            BlockHeaderElement elem,
+            Predicate<BlockHeaderElement> countCondition,
+            Predicate<BlockHeaderElement> cutCondition) {
         BigInteger hashRate = BigInteger.ZERO;
         BlockHeaderElement element = elem;
 
@@ -94,7 +99,10 @@ public abstract class HashRateCalculator {
             if (element == null) {
                 Block block = this.blockStore.getBlockByHash(hash.getBytes());
                 if (block != null) {
-                    element = new BlockHeaderElement(block.getHeader(), this.blockStore.getBlockByHash(hash.getBytes()).getCumulativeDifficulty());
+                    element =
+                            new BlockHeaderElement(
+                                    block.getHeader(),
+                                    this.blockStore.getBlockByHash(hash.getBytes()).getCumulativeDifficulty());
                     this.headerCache.put(hash, element);
                 }
             }

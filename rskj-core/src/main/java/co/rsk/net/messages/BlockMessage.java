@@ -21,9 +21,7 @@ package co.rsk.net.messages;
 import org.ethereum.core.Block;
 import org.ethereum.util.RLP;
 
-/**
- * Created by ajlopez on 5/10/2016.
- */
+/** Created by ajlopez on 5/10/2016. */
 public class BlockMessage extends Message {
     private Block block;
 

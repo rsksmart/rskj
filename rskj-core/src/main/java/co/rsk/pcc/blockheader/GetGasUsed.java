@@ -20,23 +20,18 @@
 package co.rsk.pcc.blockheader;
 
 import co.rsk.pcc.ExecutionEnvironment;
+import java.math.BigInteger;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 
-import java.math.BigInteger;
-
 /**
- * This implements the "getGasUsed" method
- * that belongs to the BlockHeaderContract native contract.
+ * This implements the "getGasUsed" method that belongs to the BlockHeaderContract native contract.
  *
  * @author Diego Masini
  */
 public class GetGasUsed extends BlockHeaderContractMethod {
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "getGasUsed",
-            new String[]{"int256"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature("getGasUsed", new String[] {"int256"}, new String[] {"bytes"});
 
     public GetGasUsed(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);

@@ -19,13 +19,12 @@
 package co.rsk;
 
 import co.rsk.net.BlockProcessResult;
+import java.util.Arrays;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.db.BlockStore;
-
-import java.util.Arrays;
 
 public class BlockstoreBlockPlayer {
     private final String sourceDir;

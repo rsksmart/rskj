@@ -21,30 +21,23 @@ package co.rsk.validators;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 /**
- * Validate the uncles in a block.
- * It validates that the uncle root hash correspond with the uncle list
- * It calculates the already used uncles in the block ancestors
- * It calculates the ancestors of the block
- * It validates that the uncle list is not too large
- * It validates that each uncle
- * - is not an ancestor
- * - is not a used uncle
- * - has a common ancestor with the block
+ * Validate the uncles in a block. It validates that the uncle root hash correspond with the uncle list It calculates
+ * the already used uncles in the block ancestors It calculates the ancestors of the block It validates that the uncle
+ * list is not too large It validates that each uncle - is not an ancestor - is not a used uncle - has a common ancestor
+ * with the block
  *
  * @return true if the uncles in block are valid, false if not
  */
-
 public class BlockUnclesValidationRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
@@ -59,8 +52,10 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     private final BlockUnclesHashValidationRule blockValidationRule;
 
     public BlockUnclesValidationRule(
-            BlockStore blockStore, int uncleListLimit,
-            int uncleGenerationLimit, BlockHeaderValidationRule validations,
+            BlockStore blockStore,
+            int uncleListLimit,
+            int uncleGenerationLimit,
+            BlockHeaderValidationRule validations,
             BlockHeaderParentDependantValidationRule parentValidations) {
         this.blockStore = blockStore;
         this.uncleListLimit = uncleListLimit;
@@ -78,7 +73,10 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         }
 
         List<BlockHeader> uncles = block.getUncleList();
-        if (!uncles.isEmpty() && !validateUncleList(block.getNumber(), uncles,
+        if (!uncles.isEmpty()
+                && !validateUncleList(
+                        block.getNumber(),
+                        uncles,
                         FamilyUtils.getAncestors(blockStore, block, uncleGenerationLimit),
                         FamilyUtils.getUsedUncles(blockStore, block, uncleGenerationLimit))) {
             logger.warn("Uncles list validation failed");
@@ -89,20 +87,17 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     }
 
     /**
-     * Validate an uncle list.
-     * It validates that the uncle list is not too large
-     * It validates that each uncle
-     * - is not an ancestor
-     * - is not a used uncle
-     * - has a common ancestor with the block
+     * Validate an uncle list. It validates that the uncle list is not too large It validates that each uncle - is not
+     * an ancestor - is not a used uncle - has a common ancestor with the block
      *
      * @param blockNumber the number of the block containing the uncles
-     * @param uncles      the uncle list to validate
-     * @param ancestors   the list of direct ancestors of the block containing the uncles
-     * @param used        used uncles
+     * @param uncles the uncle list to validate
+     * @param ancestors the list of direct ancestors of the block containing the uncles
+     * @param used used uncles
      * @return true if the uncles in the list are valid, false if not
      */
-    public boolean validateUncleList(long blockNumber, List<BlockHeader> uncles, Set<Keccak256> ancestors, Set<Keccak256> used) {
+    public boolean validateUncleList(
+            long blockNumber, List<BlockHeader> uncles, Set<Keccak256> ancestors, Set<Keccak256> used) {
         if (uncles.size() > uncleListLimit) {
             logger.error("Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
             panicProcessor.panic(INVALIDUNCLE, "Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
@@ -125,7 +120,8 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
             }
             hashes.add(uncleHash);
 
-            if(!validateUnclesAncestors(ancestors, uncleHash) || !validateIfUncleWasNeverUsed(used, uncleHash)
+            if (!validateUnclesAncestors(ancestors, uncleHash)
+                    || !validateIfUncleWasNeverUsed(used, uncleHash)
                     || !validateUncleParent(ancestors, uncle)) {
                 return false;
             }

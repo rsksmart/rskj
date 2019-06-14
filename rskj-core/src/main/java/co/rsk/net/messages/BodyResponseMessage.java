@@ -1,14 +1,11 @@
 package co.rsk.net.messages;
 
+import java.util.List;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 
-import java.util.List;
-
-/**
- * Created by ajlopez on 25/08/2017.
- */
+/** Created by ajlopez on 25/08/2017. */
 public class BodyResponseMessage extends MessageWithId {
     private long id;
     private List<Transaction> transactions;
@@ -21,11 +18,17 @@ public class BodyResponseMessage extends MessageWithId {
     }
 
     @Override
-    public long getId() { return this.id; }
+    public long getId() {
+        return this.id;
+    }
 
-    public List<Transaction> getTransactions() { return this.transactions; }
+    public List<Transaction> getTransactions() {
+        return this.transactions;
+    }
 
-    public List<BlockHeader> getUncles() { return this.uncles; }
+    public List<BlockHeader> getUncles() {
+        return this.uncles;
+    }
 
     @Override
     protected byte[] getEncodedMessageWithoutId() {
@@ -44,5 +47,7 @@ public class BodyResponseMessage extends MessageWithId {
     }
 
     @Override
-    public MessageType getMessageType() { return MessageType.BODY_RESPONSE_MESSAGE; }
+    public MessageType getMessageType() {
+        return MessageType.BODY_RESPONSE_MESSAGE;
+    }
 }

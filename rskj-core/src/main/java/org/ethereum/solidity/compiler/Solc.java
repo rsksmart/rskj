@@ -19,14 +19,11 @@
 
 package org.ethereum.solidity.compiler;
 
-import org.ethereum.config.SystemProperties;
-
 import java.io.File;
 import java.io.IOException;
+import org.ethereum.config.SystemProperties;
 
-/**
- * Created by Anton Nashatyrev on 03.03.2016.
- */
+/** Created by Anton Nashatyrev on 03.03.2016. */
 public class Solc {
 
     private File solc = null;
@@ -43,20 +40,17 @@ public class Solc {
         if (config != null && config.customSolcPath() != null) {
             solc = new File(config.customSolcPath());
             if (!solc.canExecute()) {
-                throw new RuntimeException(String.format(
-                        "Solidity compiler from config solc.path: %s is not a valid executable",
-                        config.customSolcPath()
-                ));
+                throw new RuntimeException(
+                        String.format(
+                                "Solidity compiler from config solc.path: %s is not a valid executable",
+                                config.customSolcPath()));
             }
         } else {
             throw new RuntimeException("No Solc version provided. Check if 'solc.path' config is set.");
         }
     }
 
-
-
     public File getExecutable() {
         return solc;
     }
-
 }

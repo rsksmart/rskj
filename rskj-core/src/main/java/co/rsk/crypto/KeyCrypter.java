@@ -16,8 +16,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-
 /*
  * Copyright 2013 Jim Burton.
  *
@@ -36,17 +34,17 @@
 
 package co.rsk.crypto;
 
+import java.io.Serializable;
 import org.bouncycastle.crypto.params.KeyParameter;
 
-import java.io.Serializable;
-
 /**
- * <p>A KeyCrypter can be used to encrypt and decrypt a message. The sequence of events to encrypt and then decrypt
- * a message are as follows:</p>
+ * A KeyCrypter can be used to encrypt and decrypt a message. The sequence of events to encrypt and then decrypt a
+ * message are as follows:
  *
- * <p>(1) Encrypt the message using encrypt(), providing the message bytes and the KeyParameter from. This returns
- * an EncryptedData which contains the encryptedPrivateKey bytes and an initialisation vector.</p>
- * <p>(2) To decrypt an EncryptedData call decrypt() with the same from.</p>
+ * <p>(1) Encrypt the message using encrypt(), providing the message bytes and the KeyParameter from. This returns an
+ * EncryptedData which contains the encryptedPrivateKey bytes and an initialisation vector.
+ *
+ * <p>(2) To decrypt an EncryptedData call decrypt() with the same from.
  */
 public interface KeyCrypter extends Serializable {
 

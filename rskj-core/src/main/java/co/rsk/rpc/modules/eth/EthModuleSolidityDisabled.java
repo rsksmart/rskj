@@ -18,12 +18,11 @@
 
 package co.rsk.rpc.modules.eth;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class EthModuleSolidityDisabled implements EthModuleSolidity {
 

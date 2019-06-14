@@ -19,11 +19,9 @@
 
 package org.ethereum.vm.program.listener;
 
-import org.ethereum.vm.DataWord;
-
 import java.util.ArrayList;
 import java.util.List;
-
+import org.ethereum.vm.DataWord;
 
 public class CompositeProgramListener implements ProgramListener {
 

@@ -19,9 +19,7 @@ package co.rsk.jsonrpc;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-/**
- * A simple true/false JSON-RPC result.
- */
+/** A simple true/false JSON-RPC result. */
 public class JsonRpcBooleanResult extends JsonRpcResult {
     private final boolean result;
 

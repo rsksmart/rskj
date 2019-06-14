@@ -22,8 +22,7 @@ package org.ethereum.validator;
 import org.ethereum.core.BlockHeader;
 
 /**
- * Parent class for {@link BlockHeader} validators
- * which run depends on the header of another block
+ * Parent class for {@link BlockHeader} validators which run depends on the header of another block
  *
  * @author Mikhail Kalinin
  * @since 02.09.2015
@@ -43,5 +42,4 @@ public abstract class DependentBlockHeaderRule extends AbstractValidationRule {
      * @return true if validation passed, false otherwise
      */
     public abstract boolean validate(BlockHeader header, BlockHeader dependency);
-
 }

@@ -20,7 +20,6 @@
 package org.ethereum.core;
 
 import co.rsk.core.bc.PendingState;
-
 import java.util.List;
 
 public interface TransactionPool {
@@ -28,7 +27,7 @@ public interface TransactionPool {
     void start(Block initialBestBlock);
 
     /**
-     * Adds transaction to the list of pending or queued state txs  <br>
+     * Adds transaction to the list of pending or queued state txs <br>
      * Triggers an update of pending state
      *
      * @param tx transaction
@@ -36,13 +35,11 @@ public interface TransactionPool {
     TransactionPoolAddResult addTransaction(Transaction tx);
 
     /**
-     * Adds a list of transactions to the list of pending state txs or
-     * queued transactions
+     * Adds a list of transactions to the list of pending state txs or queued transactions
      *
-     * Triggers an update of pending state
+     * <p>Triggers an update of pending state
      *
      * @param txs transaction list
-     *
      * @return the list of added transactions
      */
     List<Transaction> addTransactions(List<Transaction> txs);
@@ -50,10 +47,11 @@ public interface TransactionPool {
     /**
      * It should be called on each block imported as <b>BEST</b> <br>
      * Does several things:
+     *
      * <ul>
-     *     <li>removes block's txs from pending state and wire lists</li>
-     *     <li>removes outdated pending txs</li>
-     *     <li>updates pending state</li>
+     *   <li>removes block's txs from pending state and wire lists
+     *   <li>removes outdated pending txs
+     *   <li>updates pending state
      * </ul>
      *
      * @param block block imported into blockchain as a <b>BEST</b> one
@@ -62,16 +60,12 @@ public interface TransactionPool {
 
     void removeTransactions(List<Transaction> txs);
 
-    /**
-     * @return list of pending transactions (ready to be executed)
-     */
+    /** @return list of pending transactions (ready to be executed) */
     List<Transaction> getPendingTransactions();
 
     // Returns a list of queued txs (out of nonce sequence)
     List<Transaction> getQueuedTransactions();
 
-    /**
-     * @return pending state
-     */
+    /** @return pending state */
     PendingState getPendingState();
 }

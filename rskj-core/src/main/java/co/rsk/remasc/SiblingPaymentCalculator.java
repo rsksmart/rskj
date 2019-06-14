@@ -20,13 +20,10 @@ package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
-
-import javax.annotation.Nullable;
 import java.math.BigInteger;
+import javax.annotation.Nullable;
 
-/**
- * Created by mario on 09/01/17.
- */
+/** Created by mario on 09/01/17. */
 public class SiblingPaymentCalculator {
 
     private final Coin individualPublisherReward;
@@ -35,17 +32,21 @@ public class SiblingPaymentCalculator {
     private final Coin minersSurplus;
     private final Coin punishment;
 
-    public SiblingPaymentCalculator(Coin fullBlockReward, boolean brokenSelectionRule, long siblingsNumber, RemascConfig remascConstants) {
+    public SiblingPaymentCalculator(
+            Coin fullBlockReward, boolean brokenSelectionRule, long siblingsNumber, RemascConfig remascConstants) {
         Coin publishersReward = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getPublishersDivisor()));
         Coin minersReward = fullBlockReward.subtract(publishersReward);
         Coin[] integerDivisionResult = publishersReward.divideAndRemainder(BigInteger.valueOf(siblingsNumber));
         this.individualPublisherReward = integerDivisionResult[0];
         this.publishersSurplus = integerDivisionResult[1];
 
-        Coin[] individualRewardDivisionResult = minersReward.divideAndRemainder(BigInteger.valueOf(siblingsNumber + 1L));
+        Coin[] individualRewardDivisionResult =
+                minersReward.divideAndRemainder(BigInteger.valueOf(siblingsNumber + 1L));
         this.minersSurplus = individualRewardDivisionResult[1];
         if (brokenSelectionRule) {
-            this.punishment = individualRewardDivisionResult[0].divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
+            this.punishment =
+                    individualRewardDivisionResult[0].divide(
+                            BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
             this.individualMinerReward = individualRewardDivisionResult[0].subtract(punishment);
         } else {
             this.punishment = null;

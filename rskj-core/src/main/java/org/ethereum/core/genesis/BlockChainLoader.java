@@ -28,10 +28,16 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
+import java.util.ArrayList;
+import java.util.Map;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
@@ -40,12 +46,7 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Map;
-
-/**
- * Created by mario on 13/01/17.
- */
+/** Created by mario on 13/01/17. */
 public class BlockChainLoader {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
@@ -85,18 +86,18 @@ public class BlockChainLoader {
     }
 
     public BlockChainImpl loadBlockchain() {
-        BlockChainImpl blockchain = new BlockChainImpl(
-                repository,
-                blockStore,
-                receiptStore,
-                transactionPool,
-                listener,
-                blockValidator,
-                config.isFlushEnabled(),
-                config.flushNumberOfBlocks(),
-                blockExecutor,
-                stateRootHandler
-        );
+        BlockChainImpl blockchain =
+                new BlockChainImpl(
+                        repository,
+                        blockStore,
+                        receiptStore,
+                        transactionPool,
+                        listener,
+                        blockValidator,
+                        config.isFlushEnabled(),
+                        config.flushNumberOfBlocks(),
+                        blockExecutor,
+                        stateRootHandler);
 
         Block bestBlock = blockStore.getBestBlock();
         if (bestBlock == null) {
@@ -107,7 +108,7 @@ public class BlockChainLoader {
             blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
             blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
-            listener.onBlock(genesis, new ArrayList<>() );
+            listener.onBlock(genesis, new ArrayList<>());
 
             logger.info("Genesis block loaded");
         } else {
@@ -119,7 +120,8 @@ public class BlockChainLoader {
             loadRepository(genesisRepo);
             updateGenesis(genesisRepo);
 
-            logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
+            logger.info(
+                    "*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     blockchain.getBestBlock().getNumber(),
                     blockchain.getTotalDifficulty(),
                     Hex.toHexString(blockchain.getBestBlock().getStateRoot()));
@@ -137,7 +139,8 @@ public class BlockChainLoader {
     }
 
     private void updateGenesis(Repository repository) {
-        genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), repository.getMutableTrie().getTrie()).getBytes());
+        genesis.setStateRoot(
+                stateRootHandler.convert(genesis.getHeader(), repository.getMutableTrie().getTrie()).getBytes());
         genesis.flushRLP();
         stateRootHandler.register(genesis.getHeader(), repository.getMutableTrie().getTrie());
     }
@@ -171,8 +174,8 @@ public class BlockChainLoader {
     }
 
     /**
-     * When created, contracts are marked in storage for consistency.
-     * Here, we apply this logic to precompiled contracts depending on consensus rules
+     * When created, contracts are marked in storage for consistency. Here, we apply this logic to precompiled contracts
+     * depending on consensus rules
      */
     private void setupPrecompiledContractsStorage(Repository repository) {
         ActivationConfig.ForBlock genesisActivations = config.getActivationConfig().forBlock(0);

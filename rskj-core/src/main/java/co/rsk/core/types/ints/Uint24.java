@@ -38,7 +38,7 @@ public final class Uint24 implements Comparable<Uint24> {
     public byte[] encode() {
         byte[] bytes = new byte[BYTES];
         bytes[2] = (byte) (intValue);
-        bytes[1] = (byte) (intValue >>>  8);
+        bytes[1] = (byte) (intValue >>> 8);
         bytes[0] = (byte) (intValue >>> 16);
         return bytes;
     }
@@ -77,9 +77,7 @@ public final class Uint24 implements Comparable<Uint24> {
     }
 
     public static Uint24 decode(byte[] bytes, int offset) {
-        int intValue =  (bytes[offset + 2] & 0xFF)        +
-                       ((bytes[offset + 1] & 0xFF) <<  8) +
-                       ((bytes[offset    ] & 0xFF) << 16);
+        int intValue = (bytes[offset + 2] & 0xFF) + ((bytes[offset + 1] & 0xFF) << 8) + ((bytes[offset] & 0xFF) << 16);
         return new Uint24(intValue);
     }
 }

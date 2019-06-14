@@ -1,13 +1,16 @@
 package co.rsk.net.sync;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.util.Optional;
 
 public class FindingConnectionPointSyncState extends BaseSyncState {
     private ConnectionPointFinder connectionPointFinder;
 
-    public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, long bestBlockNumber) {
+    public FindingConnectionPointSyncState(
+            SyncConfiguration syncConfiguration,
+            SyncEventsHandler syncEventsHandler,
+            SyncInformation syncInformation,
+            long bestBlockNumber) {
         super(syncInformation, syncEventsHandler, syncConfiguration);
         this.connectionPointFinder = new ConnectionPointFinder(bestBlockNumber);
     }
@@ -34,8 +37,8 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
     private void trySendRequest() {
         boolean sent = syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
         if (!sent) {
-            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), syncInformation.getSelectedPeerId());
+            syncEventsHandler.onSyncIssue(
+                    "Channel failed to sent on {} to {}", this.getClass(), syncInformation.getSelectedPeerId());
         }
     }
 

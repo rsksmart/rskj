@@ -22,11 +22,10 @@ package co.rsk.pcc.blockheader;
 import co.rsk.core.RskAddress;
 import co.rsk.pcc.NativeContract;
 import co.rsk.pcc.NativeMethod;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 /**
  * Precompiled contract that provides access to Block Header fields (coinbase, minimum gas price, block hash, merged
@@ -56,8 +55,7 @@ public class BlockHeaderContract extends NativeContract {
                 new GetGasUsed(getExecutionEnvironment(), this.blockAccessor),
                 new GetDifficulty(getExecutionEnvironment(), this.blockAccessor),
                 new GetBitcoinHeader(getExecutionEnvironment(), this.blockAccessor),
-                new GetUncleCoinbaseAddress(getExecutionEnvironment(), this.blockAccessor)
-        );
+                new GetUncleCoinbaseAddress(getExecutionEnvironment(), this.blockAccessor));
     }
 
     @Override
@@ -65,5 +63,3 @@ public class BlockHeaderContract extends NativeContract {
         return Optional.empty();
     }
 }
-
-

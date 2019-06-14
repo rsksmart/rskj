@@ -18,18 +18,15 @@
 
 package co.rsk.rpc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import javax.annotation.Nonnull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Created by ajlopez on 06/10/2017.
- */
+/** Created by ajlopez on 06/10/2017. */
 public class OriginValidator {
     private static final Logger LOGGER = LoggerFactory.getLogger("jsonrpc");
 
@@ -107,9 +104,9 @@ public class OriginValidator {
         int refererPort = refererUrl.getPort();
 
         for (int k = 0; k < origins.length; k++) {
-            if (refererProtocol.equals(origins[k].getScheme()) &&
-                    refererHost.equals(origins[k].getHost()) &&
-                    refererPort == origins[k].getPort()) {
+            if (refererProtocol.equals(origins[k].getScheme())
+                    && refererHost.equals(origins[k].getHost())
+                    && refererPort == origins[k].getPort()) {
                 return true;
             }
         }

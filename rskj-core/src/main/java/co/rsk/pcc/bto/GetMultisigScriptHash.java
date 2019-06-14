@@ -24,43 +24,41 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.CallTransaction;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.CallTransaction;
 
 /**
- * This implements the "getMultisigScriptHash" method
- * that belongs to the HDWalletUtils native contract.
+ * This implements the "getMultisigScriptHash" method that belongs to the HDWalletUtils native contract.
  *
  * @author Ariel Mendelzon
  */
 public class GetMultisigScriptHash extends NativeMethod {
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "getMultisigScriptHash",
-            new String[]{"int256", "bytes[]"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature(
+                    "getMultisigScriptHash", new String[] {"int256", "bytes[]"}, new String[] {"bytes"});
 
-    private final static int COMPRESSED_PUBLIC_KEY_LENGTH = 33;
-    private final static int UNCOMPRESSED_PUBLIC_KEY_LENGTH = 65;
+    private static final int COMPRESSED_PUBLIC_KEY_LENGTH = 33;
+    private static final int UNCOMPRESSED_PUBLIC_KEY_LENGTH = 65;
 
-    private final static long BASE_COST = 13_500L;
-    private final static long COST_PER_EXTRA_KEY = 500L;
+    private static final long BASE_COST = 13_500L;
+    private static final long COST_PER_EXTRA_KEY = 500L;
 
-    private final static int MINIMUM_REQUIRED_KEYS = 2;
+    private static final int MINIMUM_REQUIRED_KEYS = 2;
 
     // Enforced by the 520-byte size limit of the redeem script
     // (see https://github.com/bitcoin/bips/blob/master/bip-0016.mediawiki#520byte_limitation_on_serialized_script_size)
-    private final static int MAXIMUM_ALLOWED_KEYS = 15;
+    private static final int MAXIMUM_ALLOWED_KEYS = 15;
 
-    private final static String REQUIRED_SIGNATURE_NULL_OR_ZERO = "Minimum required signatures must be present and greater than zero";
-    private final static String PUBLIC_KEYS_NULL_OR_ONE = String.format("At least %d public keys are required", MINIMUM_REQUIRED_KEYS);
-    private final static String INVALID_REQUIRED_SIGNATURE_AND_PUBLIC_KEYS_PAIR = "Given public keys (%d) are less than the minimum required signatures (%d)";
-
+    private static final String REQUIRED_SIGNATURE_NULL_OR_ZERO =
+            "Minimum required signatures must be present and greater than zero";
+    private static final String PUBLIC_KEYS_NULL_OR_ONE =
+            String.format("At least %d public keys are required", MINIMUM_REQUIRED_KEYS);
+    private static final String INVALID_REQUIRED_SIGNATURE_AND_PUBLIC_KEYS_PAIR =
+            "Given public keys (%d) are less than the minimum required signatures (%d)";
 
     public GetMultisigScriptHash(ExecutionEnvironment executionEnvironment) {
         super(executionEnvironment);
@@ -88,41 +86,42 @@ public class GetMultisigScriptHash extends NativeMethod {
         }
 
         if (publicKeys.length < minimumSignatures) {
-            throw new NativeContractIllegalArgumentException(String.format(
-                    INVALID_REQUIRED_SIGNATURE_AND_PUBLIC_KEYS_PAIR,
-                    publicKeys.length, minimumSignatures
-            ));
+            throw new NativeContractIllegalArgumentException(
+                    String.format(
+                            INVALID_REQUIRED_SIGNATURE_AND_PUBLIC_KEYS_PAIR, publicKeys.length, minimumSignatures));
         }
 
         if (publicKeys.length > MAXIMUM_ALLOWED_KEYS) {
-            throw new NativeContractIllegalArgumentException(String.format(
-                    "Given public keys (%d) are more than the maximum allowed signatures (%d)",
-                    publicKeys.length, MAXIMUM_ALLOWED_KEYS
-            ));
+            throw new NativeContractIllegalArgumentException(
+                    String.format(
+                            "Given public keys (%d) are more than the maximum allowed signatures (%d)",
+                            publicKeys.length, MAXIMUM_ALLOWED_KEYS));
         }
 
         List<BtcECKey> btcPublicKeys = new ArrayList<>();
-        Arrays.stream(publicKeys).forEach(o -> {
-            byte[] publicKey = (byte[]) o;
-            if (publicKey.length != COMPRESSED_PUBLIC_KEY_LENGTH && publicKey.length != UNCOMPRESSED_PUBLIC_KEY_LENGTH) {
-                throw new NativeContractIllegalArgumentException(String.format(
-                        "Invalid public key length: %d", publicKey.length
-                ));
-            }
+        Arrays.stream(publicKeys)
+                .forEach(
+                        o -> {
+                            byte[] publicKey = (byte[]) o;
+                            if (publicKey.length != COMPRESSED_PUBLIC_KEY_LENGTH
+                                    && publicKey.length != UNCOMPRESSED_PUBLIC_KEY_LENGTH) {
+                                throw new NativeContractIllegalArgumentException(
+                                        String.format("Invalid public key length: %d", publicKey.length));
+                            }
 
-            // Avoid extra work by not recalculating compressed keys on already compressed keys
-            try {
-                BtcECKey btcPublicKey = BtcECKey.fromPublicOnly(publicKey);
-                if (publicKey.length == UNCOMPRESSED_PUBLIC_KEY_LENGTH) {
-                    btcPublicKey = BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
-                }
-                btcPublicKeys.add(btcPublicKey);
-            } catch (IllegalArgumentException e) {
-                throw new NativeContractIllegalArgumentException(String.format(
-                        "Invalid public key format: %s", Hex.toHexString(publicKey)
-                ), e);
-            }
-        });
+                            // Avoid extra work by not recalculating compressed keys on already compressed keys
+                            try {
+                                BtcECKey btcPublicKey = BtcECKey.fromPublicOnly(publicKey);
+                                if (publicKey.length == UNCOMPRESSED_PUBLIC_KEY_LENGTH) {
+                                    btcPublicKey =
+                                            BtcECKey.fromPublicOnly(btcPublicKey.getPubKeyPoint().getEncoded(true));
+                                }
+                                btcPublicKeys.add(btcPublicKey);
+                            } catch (IllegalArgumentException e) {
+                                throw new NativeContractIllegalArgumentException(
+                                        String.format("Invalid public key format: %s", Hex.toHexString(publicKey)), e);
+                            }
+                        });
 
         Script multisigScript = ScriptBuilder.createP2SHOutputScript(minimumSignatures, btcPublicKeys);
 

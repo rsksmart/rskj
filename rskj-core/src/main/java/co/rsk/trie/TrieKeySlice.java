@@ -20,8 +20,8 @@ package co.rsk.trie;
 import java.util.Arrays;
 
 /**
- * An immutable slice of a trie key.
- * Sub-slices share array references, so external sources are copied and the internal array is not exposed.
+ * An immutable slice of a trie key. Sub-slices share array references, so external sources are copied and the internal
+ * array is not exposed.
  */
 public class TrieKeySlice {
     private final byte[] expandedKey;
@@ -80,9 +80,7 @@ public class TrieKeySlice {
         return slice(0, maxCommonLengthPossible);
     }
 
-    /**
-     * Rebuild a shared path as [...this, implicitByte, ...childSharedPath]
-     */
+    /** Rebuild a shared path as [...this, implicitByte, ...childSharedPath] */
     public TrieKeySlice rebuildSharedPath(byte implicitByte, TrieKeySlice childSharedPath) {
         int length = length();
         int childSharedPathLength = childSharedPath.length();
@@ -90,9 +88,7 @@ public class TrieKeySlice {
         byte[] newExpandedKey = Arrays.copyOfRange(expandedKey, offset, offset + newLength);
         newExpandedKey[length] = implicitByte;
         System.arraycopy(
-                childSharedPath.expandedKey, childSharedPath.offset,
-                newExpandedKey, length + 1, childSharedPathLength
-        );
+                childSharedPath.expandedKey, childSharedPath.offset, newExpandedKey, length + 1, childSharedPathLength);
         return new TrieKeySlice(newExpandedKey, 0, newExpandedKey.length);
     }
 

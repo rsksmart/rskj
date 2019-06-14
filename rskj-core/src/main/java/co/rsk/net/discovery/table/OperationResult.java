@@ -18,13 +18,10 @@
 
 package co.rsk.net.discovery.table;
 
-/**
- * Created by mario on 21/02/17.
- */
+/** Created by mario on 21/02/17. */
 public class OperationResult {
     private final boolean success;
     private final BucketEntry affectedEntry;
-
 
     public OperationResult(final boolean success, final BucketEntry affectedEntry) {
         this.success = success;

@@ -17,7 +17,10 @@
  */
 package co.rsk.rpc.netty;
 
-import co.rsk.jsonrpc.*;
+import co.rsk.jsonrpc.JsonRpcBooleanResult;
+import co.rsk.jsonrpc.JsonRpcIdentifiableMessage;
+import co.rsk.jsonrpc.JsonRpcInternalError;
+import co.rsk.jsonrpc.JsonRpcResultOrError;
 import co.rsk.rpc.EthSubscriptionNotificationEmitter;
 import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
@@ -31,25 +34,21 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /**
  * This handler decodes inbound messages and dispatches valid JSON-RPC requests.
  *
- * Note that we split JSON-RPC handling in two because jsonrpc4j wasn't able to handle the PUB-SUB model.
- * Eventually, we might want to implement all methods in this style and remove jsonrpc4j.
+ * <p>Note that we split JSON-RPC handling in two because jsonrpc4j wasn't able to handle the PUB-SUB model. Eventually,
+ * we might want to implement all methods in this style and remove jsonrpc4j.
  *
- * We make this object Sharable so it can be instanced once in the netty pipeline
- * and since all objects used by this object are thread safe, 
+ * <p>We make this object Sharable so it can be instanced once in the netty pipeline and since all objects used by this
+ * object are thread safe,
  */
-
 @Sharable
-public class RskJsonRpcHandler
-        extends SimpleChannelInboundHandler<ByteBufHolder>
-        implements RskJsonRpcRequestVisitor {
+public class RskJsonRpcHandler extends SimpleChannelInboundHandler<ByteBufHolder> implements RskJsonRpcRequestVisitor {
     private static final Logger LOGGER = LoggerFactory.getLogger(RskJsonRpcHandler.class);
 
     private final EthSubscriptionNotificationEmitter emitter;
@@ -63,9 +62,7 @@ public class RskJsonRpcHandler
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder msg) {
         try {
-            RskJsonRpcRequest request = serializer.deserializeRequest(
-                    new ByteBufInputStream(msg.copy().content())
-            );
+            RskJsonRpcRequest request = serializer.deserializeRequest(new ByteBufInputStream(msg.copy().content()));
 
             // TODO(mc) we should support the ModuleDescription method filters
             JsonRpcResultOrError resultOrError = request.accept(this, ctx);

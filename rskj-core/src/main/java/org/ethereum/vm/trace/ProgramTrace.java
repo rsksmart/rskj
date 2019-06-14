@@ -19,10 +19,20 @@
 
 package org.ethereum.vm.trace;
 
+import static java.lang.String.format;
+import static org.ethereum.util.ByteUtil.toHexString;
+import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
+
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.Memory;
@@ -31,13 +41,6 @@ import org.ethereum.vm.program.Storage;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.*;
-
-import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.toHexString;
-import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
 
 public class ProgramTrace {
 
@@ -54,11 +57,9 @@ public class ProgramTrace {
 
     private Map<String, String> currentStorage = new HashMap<>();
 
-    @JsonIgnore
-    private boolean fullStorage;
+    @JsonIgnore private boolean fullStorage;
 
-    @JsonIgnore
-    private DataWord storageKey;
+    @JsonIgnore private DataWord storageKey;
 
     public ProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
         if (config.vmTrace() && programInvoke != null) {
@@ -101,7 +102,7 @@ public class ProgramTrace {
     private void saveCurrentStorage(Map<String, String> storage) {
         this.currentStorage = new HashMap<>(storage);
     }
-    
+
     public boolean isEmpty() {
         return contractAddress == null;
     }
@@ -198,8 +199,7 @@ public class ProgramTrace {
             if (value != null) {
                 this.currentStorage = new HashMap<>(this.currentStorage);
                 this.currentStorage.put(this.storageKey.toString(), value.toString());
-            }
-            else {
+            } else {
                 this.currentStorage.remove(this.storageKey.toString());
             }
 
@@ -218,9 +218,7 @@ public class ProgramTrace {
         return op;
     }
 
-    /**
-     * Used for merging sub calls execution.
-     */
+    /** Used for merging sub calls execution. */
     public void merge(ProgramTrace programTrace) {
         this.structLogs.addAll(programTrace.structLogs);
     }

@@ -20,23 +20,25 @@
 package org.ethereum.net;
 
 import co.rsk.net.discovery.PeerExplorer;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.net.rlpx.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
 /**
  * The central class for Peer Discovery machinery.
- * <p>
- * The NodeManager manages info on all the Nodes discovered by the peer discovery
- * protocol, routes protocol messages to the corresponding NodeHandlers and
- * supplies the info about discovered Nodes and their usage statistics
- * <p>
- * Created by Anton Nashatyrev on 16.07.2015.
+ *
+ * <p>The NodeManager manages info on all the Nodes discovered by the peer discovery protocol, routes protocol messages
+ * to the corresponding NodeHandlers and supplies the info about discovered Nodes and their usage statistics
+ *
+ * <p>Created by Anton Nashatyrev on 16.07.2015.
  */
 public class NodeManager {
     private static final Logger logger = LoggerFactory.getLogger("discover");
@@ -90,8 +92,8 @@ public class NodeManager {
             foundNodes.stream().filter(n -> !nodeHandlerMap.containsKey(n.getHexId())).forEach(this::createNodeHandler);
         }
 
-        for(NodeHandler handler : this.nodeHandlerMap.values()) {
-            if(!nodesInUse.contains(handler.getNode().getHexId())) {
+        for (NodeHandler handler : this.nodeHandlerMap.values()) {
+            if (!nodesInUse.contains(handler.getNode().getHexId())) {
                 handlers.add(handler);
             }
         }
@@ -100,17 +102,18 @@ public class NodeManager {
 
     private void purgeNodeHandlers() {
         if (nodeHandlerMap.size() > NODES_TRIM_THRESHOLD) {
-            //I create a stream
-            List<NodeHandler> toRemove = nodeHandlerMap.values().stream()
-                    //collect all reputations first to avoid concurrency issues
-                    .map(NodeHandlerWithReputation::new)
-                    //sort by reputation
-                    .sorted(Comparator.comparingInt(o -> o.reputation))
-                    //and just keep the ones that exceeds the MAX_NODES
-                    .limit(nodeHandlerMap.size() - MAX_NODES)
-                    .map(o -> o.nodeHandler)
-                    .collect(Collectors.toList());
-            //Remove them
+            // I create a stream
+            List<NodeHandler> toRemove =
+                    nodeHandlerMap.values().stream()
+                            // collect all reputations first to avoid concurrency issues
+                            .map(NodeHandlerWithReputation::new)
+                            // sort by reputation
+                            .sorted(Comparator.comparingInt(o -> o.reputation))
+                            // and just keep the ones that exceeds the MAX_NODES
+                            .limit(nodeHandlerMap.size() - MAX_NODES)
+                            .map(o -> o.nodeHandler)
+                            .collect(Collectors.toList());
+            // Remove them
             nodeHandlerMap.values().removeAll(toRemove);
         }
     }

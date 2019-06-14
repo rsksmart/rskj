@@ -19,8 +19,11 @@ package co.rsk.cli.config;
 
 import co.rsk.cli.CliArg;
 import co.rsk.cli.OptionalizableCliArg;
-import com.typesafe.config.*;
-
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigRenderOptions;
+import com.typesafe.config.ConfigValue;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -40,10 +43,9 @@ public class Migrator {
     }
 
     public String migrateConfiguration() throws IOException {
-        return  migrateConfiguration(
-            Files.newBufferedReader(configuration.getSourceConfiguration(), StandardCharsets.UTF_8),
-            configuration.getMigrationConfiguration()
-        );
+        return migrateConfiguration(
+                Files.newBufferedReader(configuration.getSourceConfiguration(), StandardCharsets.UTF_8),
+                configuration.getMigrationConfiguration());
     }
 
     public static String migrateConfiguration(Reader sourceReader, Properties migrationConfiguration) {
@@ -54,14 +56,24 @@ public class Migrator {
             if (originalPath.startsWith(NEW_CONFIG_PREFIX)) {
                 try {
                     String newConfigPath = originalPath.substring(NEW_CONFIG_PREFIX.length()).trim();
-                    Config newConfiguration = ConfigFactory.parseString(String.format(MINIMAL_CONFIG_FORMAT, newConfigPath, migrationConfiguration.getProperty(originalPath)));
+                    Config newConfiguration =
+                            ConfigFactory.parseString(
+                                    String.format(
+                                            MINIMAL_CONFIG_FORMAT,
+                                            newConfigPath,
+                                            migrationConfiguration.getProperty(originalPath)));
                     migratedConfig = migratedConfig.withFallback(newConfiguration);
                 } catch (ConfigException e) {
-                    throw new IllegalArgumentException(String.format("Unable to parse value for the %s property", originalPath), e);
+                    throw new IllegalArgumentException(
+                            String.format("Unable to parse value for the %s property", originalPath), e);
                 }
             } else if (migratedConfig.hasPath(originalPath)) {
                 ConfigValue configurationValueToMigrate = migratedConfig.getValue(originalPath);
-                migratedConfig = migratedConfig.withValue(migrationConfiguration.getProperty(originalPath), configurationValueToMigrate).withoutPath(originalPath);
+                migratedConfig =
+                        migratedConfig
+                                .withValue(
+                                        migrationConfiguration.getProperty(originalPath), configurationValueToMigrate)
+                                .withoutPath(originalPath);
             }
         }
 

@@ -2,9 +2,7 @@ package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
 
-/**
- * Created by usuario on 07/06/2017.
- */
+/** Created by usuario on 07/06/2017. */
 public class BlockInformation {
     private byte[] hash;
     private BlockDifficulty totalDifficulty;

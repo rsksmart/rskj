@@ -19,20 +19,16 @@
 
 package org.ethereum.db;
 
+import java.util.ArrayList;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.util.BigIntegers;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-
-/**
- * Created by Ruben on 8/1/2016.
- */
+/** Created by Ruben on 8/1/2016. */
 public class TransactionInfo {
 
     TransactionReceipt receipt;
@@ -49,7 +45,7 @@ public class TransactionInfo {
         ArrayList<RLPElement> params = RLP.decode2(rlp);
         RLPList txInfo = (RLPList) params.get(0);
         RLPList receiptRLP = (RLPList) txInfo.get(0);
-        RLPItem blockHashRLP  = (RLPItem) txInfo.get(1);
+        RLPItem blockHashRLP = (RLPItem) txInfo.get(1);
         RLPItem indexRLP = (RLPItem) txInfo.get(2);
 
         receipt = new TransactionReceipt(receiptRLP.getRLPData());
@@ -61,7 +57,7 @@ public class TransactionInfo {
         }
     }
 
-    public void setTransaction(Transaction tx){
+    public void setTransaction(Transaction tx) {
         receipt.setTransaction(tx);
     }
 
@@ -77,11 +73,15 @@ public class TransactionInfo {
         return rlpEncoded;
     }
 
-    public TransactionReceipt getReceipt(){
+    public TransactionReceipt getReceipt() {
         return receipt;
     }
 
-    public byte[] getBlockHash() { return blockHash; }
+    public byte[] getBlockHash() {
+        return blockHash;
+    }
 
-    public int getIndex() { return index; }
+    public int getIndex() {
+        return index;
+    }
 }

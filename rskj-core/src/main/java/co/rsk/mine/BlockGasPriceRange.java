@@ -19,12 +19,9 @@
 package co.rsk.mine;
 
 import co.rsk.core.Coin;
-
 import java.math.BigInteger;
 
-/**
- * Created by mario on 26/12/16.
- */
+/** Created by mario on 26/12/16. */
 public class BlockGasPriceRange {
 
     private static final BigInteger VARIATION_PERCENTAGE_RANGE = BigInteger.ONE;

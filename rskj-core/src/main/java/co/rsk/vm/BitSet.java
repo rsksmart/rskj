@@ -18,9 +18,7 @@
 
 package co.rsk.vm;
 
-/**
- * Created by ajlopez on 29/04/2017.
- */
+/** Created by ajlopez on 29/04/2017. */
 public class BitSet {
     private byte[] bytes;
     private int size;
@@ -39,7 +37,7 @@ public class BitSet {
         if (position < 0 || position >= this.size) {
             throw new IndexOutOfBoundsException(String.format("Index: %s, Size: %s", position, this.size));
         }
-        
+
         int offset = position / 8;
         int bitoffset = position % 8;
 

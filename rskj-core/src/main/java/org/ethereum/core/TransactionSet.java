@@ -20,8 +20,12 @@ package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class TransactionSet {
@@ -36,7 +40,8 @@ public class TransactionSet {
         this(new HashMap<>(transactionSet.transactionsByHash), new HashMap<>(transactionSet.transactionsByAddress));
     }
 
-    public TransactionSet(Map<Keccak256, Transaction> transactionsByHash, Map<RskAddress, List<Transaction>> transactionsByAddress) {
+    public TransactionSet(
+            Map<Keccak256, Transaction> transactionsByHash, Map<RskAddress, List<Transaction>> transactionsByAddress) {
         this.transactionsByHash = transactionsByHash;
         this.transactionsByAddress = transactionsByAddress;
     }
@@ -58,9 +63,10 @@ public class TransactionSet {
             txs = new ArrayList<>();
             this.transactionsByAddress.put(senderAddress, txs);
         } else {
-            Optional<Transaction> optTxToRemove = txs.stream()
-                    .filter(tx -> tx.getNonceAsInteger().equals(transaction.getNonceAsInteger()))
-                    .findFirst();
+            Optional<Transaction> optTxToRemove =
+                    txs.stream()
+                            .filter(tx -> tx.getNonceAsInteger().equals(transaction.getNonceAsInteger()))
+                            .findFirst();
 
             if (optTxToRemove.isPresent()) {
                 Transaction txToRemove = optTxToRemove.get();

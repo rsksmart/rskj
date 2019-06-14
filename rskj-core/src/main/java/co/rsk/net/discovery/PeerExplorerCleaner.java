@@ -22,9 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by mario on 22/02/17.
- */
+/** Created by mario on 22/02/17. */
 public class PeerExplorerCleaner {
 
     private PeerExplorer peerExplorer;
@@ -52,6 +50,4 @@ public class PeerExplorerCleaner {
         updateTask.scheduleAtFixedRate(() -> peerExplorer.clean(), cleanPeriod, cleanPeriod, TimeUnit.MILLISECONDS);
         updateTask.scheduleAtFixedRate(() -> peerExplorer.update(), updatePeriod, updatePeriod, TimeUnit.MILLISECONDS);
     }
-
-
 }

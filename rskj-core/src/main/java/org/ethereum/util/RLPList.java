@@ -19,8 +19,8 @@
 
 package org.ethereum.util;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import javax.annotation.Nonnull;
 
 /**
  * @author Roman Mandeleil
