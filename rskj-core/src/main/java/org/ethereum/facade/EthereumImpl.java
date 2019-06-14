@@ -20,13 +20,16 @@
 package org.ethereum.facade;
 
 import co.rsk.core.Coin;
-import org.ethereum.core.*;
+import javax.annotation.Nonnull;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.server.ChannelManager;
-
-import javax.annotation.Nonnull;
 
 public class EthereumImpl implements Ethereum {
 

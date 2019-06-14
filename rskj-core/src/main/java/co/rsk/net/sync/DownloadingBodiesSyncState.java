@@ -5,17 +5,23 @@ import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.util.ByteUtil;
 
-import java.time.Duration;
-import java.util.*;
-import java.util.stream.Collectors;
-
-public class DownloadingBodiesSyncState  extends BaseSyncState {
+public class DownloadingBodiesSyncState extends BaseSyncState {
 
     private final BlockFactory blockFactory;
 
@@ -49,12 +55,13 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     // maximum time waiting for a peer to answer
     private final Duration limit;
 
-    public DownloadingBodiesSyncState(SyncConfiguration syncConfiguration,
-                                      SyncEventsHandler syncEventsHandler,
-                                      SyncInformation syncInformation,
-                                      BlockFactory blockFactory,
-                                      List<Deque<BlockHeader>> pendingHeaders,
-                                      Map<NodeID, List<BlockIdentifier>> skeletons) {
+    public DownloadingBodiesSyncState(
+            SyncConfiguration syncConfiguration,
+            SyncEventsHandler syncEventsHandler,
+            SyncInformation syncInformation,
+            BlockFactory blockFactory,
+            List<Deque<BlockHeader>> pendingHeaders,
+            Map<NodeID, List<BlockIdentifier>> skeletons) {
 
         super(syncInformation, syncEventsHandler, syncConfiguration);
         this.blockFactory = blockFactory;
@@ -98,7 +105,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         }
 
         // handle block
-        if (syncInformation.processBlock(block, peer).isInvalidBlock()){
+        if (syncInformation.processBlock(block, peer).isInvalidBlock()) {
             handleInvalidBlock(peerId, header);
             return;
         }
@@ -110,8 +117,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private void verifyDownloadIsFinished() {
         // all headers have been requested and there is not any chunk still in process
-        if (chunksBeingDownloaded.isEmpty() &&
-                pendingHeaders.stream().allMatch(Collection::isEmpty)) {
+        if (chunksBeingDownloaded.isEmpty() && pendingHeaders.stream().allMatch(Collection::isEmpty)) {
             // Finished syncing
             syncEventsHandler.onCompletedSyncing();
         }
@@ -125,11 +131,14 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private void handleInvalidBlock(NodeID peerId, BlockHeader header) {
         syncInformation.reportEvent(
                 "Invalid block received from node {} {} {}",
-                EventType.INVALID_BLOCK, peerId,
-                peerId, header.getNumber(), header.getShortHash());
+                EventType.INVALID_BLOCK,
+                peerId,
+                peerId,
+                header.getNumber(),
+                header.getShortHash());
 
         clearPeerInfo(peerId);
-        if (suitablePeers.isEmpty()){
+        if (suitablePeers.isEmpty()) {
             syncEventsHandler.stopSyncing();
             return;
         }
@@ -141,11 +150,14 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private void handleInvalidMessage(NodeID peerId, BlockHeader header) {
         syncInformation.reportEvent(
                 "Invalid body received from node {} {} {}",
-                EventType.INVALID_MESSAGE, peerId,
-                peerId, header.getNumber(), header.getShortHash());
+                EventType.INVALID_MESSAGE,
+                peerId,
+                peerId,
+                header.getNumber(),
+                header.getShortHash());
 
         clearPeerInfo(peerId);
-        if (suitablePeers.isEmpty()){
+        if (suitablePeers.isEmpty()) {
             syncEventsHandler.stopSyncing();
             return;
         }
@@ -156,8 +168,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private void handleUnexpectedBody(NodeID peerId) {
         syncInformation.reportEvent(
-                "Unexpected body received from node {}",
-                EventType.UNEXPECTED_MESSAGE, peerId, peerId);
+                "Unexpected body received from node {}", EventType.UNEXPECTED_MESSAGE, peerId, peerId);
 
         clearPeerInfo(peerId);
         if (suitablePeers.isEmpty()) {
@@ -196,7 +207,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         }
 
         Optional<BlockHeader> blockHeader = tryFindBlockHeader(peerId);
-        if (!blockHeader.isPresent()){
+        if (!blockHeader.isPresent()) {
             chunksBeingDownloaded.remove(peerId);
             segmentsBeingDownloaded.remove(peerId);
             messagesByPeers.remove(peerId);
@@ -207,7 +218,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private Optional<BlockHeader> tryFindBlockHeader(NodeID peerId) {
         // we start from the last chunk that can be downloaded
-        for (int segmentNumber = segmentByNode.get(peerId); segmentNumber >= 0; segmentNumber--){
+        for (int segmentNumber = segmentByNode.get(peerId); segmentNumber >= 0; segmentNumber--) {
             Deque<Integer> chunks = chunksBySegment.get(segmentNumber);
             // if the segment stack is empty then continue to next segment
             if (!chunks.isEmpty()) {
@@ -240,32 +251,32 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     @Override
     public void tick(Duration duration) {
         // first we update all the nodes that are expected to be working
-        List<NodeID> updatedNodes = timeElapsedByPeer.keySet().stream()
-            .filter(chunksBeingDownloaded::containsKey)
-            .collect(Collectors.toList());
+        List<NodeID> updatedNodes =
+                timeElapsedByPeer.keySet().stream()
+                        .filter(chunksBeingDownloaded::containsKey)
+                        .collect(Collectors.toList());
 
         updatedNodes.forEach(k -> timeElapsedByPeer.put(k, timeElapsedByPeer.get(k).plus(duration)));
 
         // we get the nodes that got beyond timeout limit and remove them
         updatedNodes.stream()
-            .filter(k -> timeElapsedByPeer.get(k).compareTo(limit) >= 0)
-            .forEach(this::handleTimeoutMessage);
+                .filter(k -> timeElapsedByPeer.get(k).compareTo(limit) >= 0)
+                .forEach(this::handleTimeoutMessage);
 
-        if (suitablePeers.isEmpty()){
+        if (suitablePeers.isEmpty()) {
             syncEventsHandler.stopSyncing();
             return;
         }
 
         startDownloading(getInactivePeers());
 
-        if (chunksBeingDownloaded.isEmpty()){
+        if (chunksBeingDownloaded.isEmpty()) {
             syncEventsHandler.stopSyncing();
         }
     }
 
     private void handleTimeoutMessage(NodeID peerId) {
-        syncInformation.reportEvent("Timeout waiting body from node {}",
-                EventType.TIMEOUT_MESSAGE, peerId, peerId);
+        syncInformation.reportEvent("Timeout waiting body from node {}", EventType.TIMEOUT_MESSAGE, peerId, peerId);
         Long messageId = messagesByPeers.remove(peerId);
         BlockHeader header = pendingBodyResponses.remove(messageId).header;
         clearPeerInfo(peerId);
@@ -273,17 +284,14 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private List<NodeID> getInactivePeers() {
-        return suitablePeers.stream()
-                .filter(p -> !chunksBeingDownloaded.containsKey(p))
-                .collect(Collectors.toList());
+        return suitablePeers.stream().filter(p -> !chunksBeingDownloaded.containsKey(p)).collect(Collectors.toList());
     }
 
     /**
-     * This method finds with the skeletons from each node, the segments we can divide chunks.
-     * Each chunk belongs to a single segment, and each node associated to a segment can answer
-     * for each block inside the chunks belonging to a segment.
-     * Also each node on a superior segment can answer for every block on lower segments.
-     * The idea is to find the "min common chunks" between nodes to find when a new segment starts
+     * This method finds with the skeletons from each node, the segments we can divide chunks. Each chunk belongs to a
+     * single segment, and each node associated to a segment can answer for each block inside the chunks belonging to a
+     * segment. Also each node on a superior segment can answer for every block on lower segments. The idea is to find
+     * the "min common chunks" between nodes to find when a new segment starts
      */
     private void initializeSegments() {
         Deque<Integer> segmentChunks = new ArrayDeque<>();
@@ -294,12 +302,12 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         segmentChunks.push(chunkNumber);
         chunkNumber++;
 
-        for (; chunkNumber < pendingHeaders.size(); chunkNumber++){
+        for (; chunkNumber < pendingHeaders.size(); chunkNumber++) {
             nodes = getAvailableNodesIDSFor(chunkNumber);
-            if (prevNodes.size() != nodes.size()){
+            if (prevNodes.size() != nodes.size()) {
                 final List<NodeID> filteringNodes = nodes;
-                List<NodeID> insertedNodes = prevNodes.stream()
-                        .filter(k -> !filteringNodes.contains(k)).collect(Collectors.toList());
+                List<NodeID> insertedNodes =
+                        prevNodes.stream().filter(k -> !filteringNodes.contains(k)).collect(Collectors.toList());
                 insertSegment(segmentChunks, insertedNodes, segmentNumber);
                 segmentNumber++;
                 prevNodes = nodes;
@@ -315,11 +323,13 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private List<NodeID> getAvailableNodesIDSFor(Integer chunkNumber) {
         return skeletons.entrySet().stream()
                 .filter(e -> e.getValue().size() > chunkNumber + 1)
-                .filter(e -> ByteUtil.fastEquals(
-                    // the hash of the start of next chunk
-                    e.getValue().get(chunkNumber + 1).getHash(),
-                    // the first header of chunk
-                    pendingHeaders.get(chunkNumber).getLast().getHash().getBytes()))
+                .filter(
+                        e ->
+                                ByteUtil.fastEquals(
+                                        // the hash of the start of next chunk
+                                        e.getValue().get(chunkNumber + 1).getHash(),
+                                        // the first header of chunk
+                                        pendingHeaders.get(chunkNumber).getLast().getHash().getBytes()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
@@ -329,17 +339,16 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         nodes.forEach(nodeID -> segmentByNode.put(nodeID, segmentNumber));
     }
 
-    private void tryRequestBody(NodeID peerId, BlockHeader header){
+    private void tryRequestBody(NodeID peerId, BlockHeader header) {
         Long messageId = syncEventsHandler.sendBodyRequest(header, peerId);
-        if (messageId != null){
+        if (messageId != null) {
             pendingBodyResponses.put(messageId, new PendingBodyResponse(peerId, header));
             timeElapsedByPeer.put(peerId, Duration.ZERO);
             messagesByPeers.put(peerId, messageId);
         } else {
             // since a message could fail to be delivered we have to discard peer if can't be reached
             clearPeerInfo(peerId);
-            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), peerId);
+            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}", this.getClass(), peerId);
         }
     }
 

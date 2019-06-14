@@ -23,16 +23,15 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
+import java.math.BigInteger;
+import java.util.Iterator;
+import java.util.Set;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
-
-import java.math.BigInteger;
-import java.util.Iterator;
-import java.util.Set;
 
 /*
  * A Storage is a proxy class for Repository. It encapsulates a repository providing tracing services.

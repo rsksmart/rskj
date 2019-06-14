@@ -26,6 +26,7 @@ import org.ethereum.vm.DataWord;
 
 /**
  * Responsible for persisting the remasc state into the contract state
+ *
  * @see co.rsk.peg.BridgeStorageProvider
  * @author Oscar Guindzberg
  */
@@ -53,7 +54,7 @@ class RemascStorageProvider {
 
     public Coin getFederationBalance() {
         if (federationBalance != null) {
-            return federationBalance ;
+            return federationBalance;
         }
 
         DataWord address = DataWord.fromString(FEDERATION_BALANCE_KEY);
@@ -66,7 +67,6 @@ class RemascStorageProvider {
 
         return new Coin(value.getData());
     }
-
 
     public Coin getRewardBalance() {
         if (rewardBalance != null) {
@@ -84,7 +84,6 @@ class RemascStorageProvider {
         return new Coin(value.getData());
     }
 
-
     public void setFederationBalance(Coin federationBalance) {
         this.federationBalance = federationBalance;
     }
@@ -96,7 +95,8 @@ class RemascStorageProvider {
 
         DataWord address = DataWord.fromString(FEDERATION_BALANCE_KEY);
 
-        this.repository.addStorageRow(this.contractAddress, address, DataWord.valueOf(this.federationBalance.getBytes()));
+        this.repository.addStorageRow(
+                this.contractAddress, address, DataWord.valueOf(this.federationBalance.getBytes()));
     }
 
     public void setRewardBalance(Coin rewardBalance) {
@@ -155,7 +155,7 @@ class RemascStorageProvider {
     }
 
     public Boolean getBrokenSelectionRule() {
-        if (brokenSelectionRule!= null) {
+        if (brokenSelectionRule != null) {
             return brokenSelectionRule;
         }
 
@@ -187,7 +187,7 @@ class RemascStorageProvider {
 
         byte[] bytes = new byte[1];
 
-        bytes[0] = (byte)(this.brokenSelectionRule ? 1 : 0);
+        bytes[0] = (byte) (this.brokenSelectionRule ? 1 : 0);
 
         this.repository.addStorageBytes(this.contractAddress, address, bytes);
     }

@@ -18,31 +18,22 @@
 
 package org.ethereum.rpc;
 
+import java.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
-import java.util.Arrays;
-
-/**
- * Created by ajlopez on 18/01/2018.
- */
+/** Created by ajlopez on 18/01/2018. */
 public final class Topic {
-    /**
-     * This is the size of a topic in bytes.
-     */
+    /** This is the size of a topic in bytes. */
     private static final int LENGTH_IN_BYTES = 32;
 
     private final byte[] bytes;
 
-    /**
-     * @param topic the hex-encoded 32 bytes long topic, with or without 0x prefix.
-     */
+    /** @param topic the hex-encoded 32 bytes long topic, with or without 0x prefix. */
     public Topic(String topic) {
         this(TypeConverter.stringHexToByteArray(topic));
     }
 
-    /**
-     * @param bytes the 32 bytes long raw topic bytes.
-     */
+    /** @param bytes the 32 bytes long raw topic bytes. */
     public Topic(byte[] bytes) {
         if (bytes.length != LENGTH_IN_BYTES) {
             throw new RuntimeException(String.format("A topic must be %d bytes long", LENGTH_IN_BYTES));

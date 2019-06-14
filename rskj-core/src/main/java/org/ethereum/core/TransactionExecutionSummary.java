@@ -19,16 +19,19 @@
 
 package org.ethereum.core;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
+import static org.ethereum.util.BIUtil.toBI;
+
 import co.rsk.core.Coin;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
-
-import java.math.BigInteger;
-import java.util.*;
-
-import static java.util.Collections.*;
-import static org.ethereum.util.BIUtil.toBI;
 
 public class TransactionExecutionSummary {
 

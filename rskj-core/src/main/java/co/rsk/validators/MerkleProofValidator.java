@@ -22,8 +22,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 public interface MerkleProofValidator {
 
     /**
-     * Validates that the coinbase hash is included in the serialized PartialMerkleTree
-     * and it has the expected root.
+     * Validates that the coinbase hash is included in the serialized PartialMerkleTree and it has the expected root.
      */
     boolean isValid(Sha256Hash expectedRoot, Sha256Hash coinbaseHash);
 }

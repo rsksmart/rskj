@@ -17,32 +17,29 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package org.ethereum.vm;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
 /**
- * DataWord is the 32-byte array representation of a 256-bit number
- * Calculations can be done on this word with other DataWords
+ * DataWord is the 32-byte array representation of a 256-bit number Calculations can be done on this word with other
+ * DataWords
  *
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
 public final class DataWord implements Comparable<DataWord> {
-    /**
-     * The number of bytes used to represent a DataWord
-     */
+    /** The number of bytes used to represent a DataWord */
     public static final int BYTES = 32;
+
     private static final byte[] ZERO_DATA = new byte[BYTES];
 
     /* Maximum value of the DataWord */
@@ -54,9 +51,7 @@ public final class DataWord implements Comparable<DataWord> {
 
     private final byte[] data;
 
-    /**
-     * Use this constructor for internal operations that don't need copying
-     */
+    /** Use this constructor for internal operations that don't need copying */
     private DataWord(byte[] data) {
         if (data.length != BYTES) {
             throw new IllegalArgumentException(String.format("A DataWord must be %d bytes long", BYTES));
@@ -65,9 +60,7 @@ public final class DataWord implements Comparable<DataWord> {
         this.data = data;
     }
 
-    /**
-     * Returns a copy of the internal data in order to guarantee immutability
-     */
+    /** Returns a copy of the internal data in order to guarantee immutability */
     public byte[] getData() {
         return Arrays.copyOf(data, data.length);
     }
@@ -97,15 +90,14 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     /**
-     * Converts this DataWord to an int.
-     * DOES NOT THROW EXCEPTION ON OVERFLOW
+     * Converts this DataWord to an int. DOES NOT THROW EXCEPTION ON OVERFLOW
+     *
      * @return this DataWord converted to an int.
      */
     public int intValue() {
         int intVal = 0;
         // Assumes 32-byte data always
-        for (int i = data.length-4; i < data.length; i++)
-        {
+        for (int i = data.length - 4; i < data.length; i++) {
             intVal = (intVal << 8) + (data[i] & 0xff);
         }
 
@@ -113,25 +105,21 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     /**
-     * Converts this DataWord to an int, checking for lost information.
-     * If this DataWord is out of the possible range for an int result
-     * then an ArithmeticException is thrown.
+     * Converts this DataWord to an int, checking for lost information. If this DataWord is out of the possible range
+     * for an int result then an ArithmeticException is thrown.
      *
      * @return this DataWord converted to an int.
      * @throws ArithmeticException - if this will not fit in an int.
      */
     public int intValueCheck() {
-        if (bitsOccupied()>31) {
+        if (bitsOccupied() > 31) {
             throw new ArithmeticException();
         }
 
         return intValue();
     }
 
-    /**
-     * In case of int overflow returns Integer.MAX_VALUE
-     * otherwise works as #intValue()
-     */
+    /** In case of int overflow returns Integer.MAX_VALUE otherwise works as #intValue() */
     public int intValueSafe() {
         if (occupyMoreThan(4)) {
             return Integer.MAX_VALUE;
@@ -145,26 +133,22 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     /**
-     * Converts this DataWord to a long.
-     * If data overflows, it will consider only the last 8 bytes
+     * Converts this DataWord to a long. If data overflows, it will consider only the last 8 bytes
+     *
      * @return this DataWord converted to a long.
      */
     public long longValue() {
 
         long longVal = 0;
         // Assumes 32-byte data always
-        for (int i = data.length-8; i < data.length; i++)
-        {
+        for (int i = data.length - 8; i < data.length; i++) {
             longVal = (longVal << 8) + (data[i] & 0xff);
         }
 
         return longVal;
     }
 
-    /**
-     * In case of long overflow returns Long.MAX_VALUE
-     * otherwise works as #longValue()
-     */
+    /** In case of long overflow returns Long.MAX_VALUE otherwise works as #longValue() */
     public long longValueSafe() {
         if (occupyMoreThan(8)) {
             return Long.MAX_VALUE;
@@ -181,12 +165,12 @@ public final class DataWord implements Comparable<DataWord> {
         return new BigInteger(data);
     }
 
-    public String  bigIntValue() {
+    public String bigIntValue() {
         return new BigInteger(data).toString();
     }
 
     public boolean isZero() {
-        for (int i = this.data.length-1; i>=0;i--) {
+        for (int i = this.data.length - 1; i >= 0; i--) {
             if (data[i] != 0) {
                 return false;
             }
@@ -338,10 +322,10 @@ public final class DataWord implements Comparable<DataWord> {
 
     /**
      * Shift left, both this and input arg are treated as unsigned
+     *
      * @param arg
      * @return this << arg
      */
-
     public DataWord shiftLeft(DataWord arg) {
         if (arg.compareTo(DataWord.valueOf(MAX_POW)) >= 0) {
             return DataWord.ZERO;
@@ -354,6 +338,7 @@ public final class DataWord implements Comparable<DataWord> {
 
     /**
      * Shift right, both this and input arg are treated as unsigned
+     *
      * @param arg
      * @return this >> arg
      */
@@ -368,6 +353,7 @@ public final class DataWord implements Comparable<DataWord> {
 
     /**
      * Shift right, this is signed, while input arg is treated as unsigned
+     *
      * @param arg
      * @return this >> arg
      */
@@ -385,7 +371,7 @@ public final class DataWord implements Comparable<DataWord> {
 
         byte[] bytes = ByteUtil.shiftRight(this.getData(), arg.intValueSafe());
 
-        if (isNegative()){
+        if (isNegative()) {
             byte[] allBits = valueOf(MAX_VALUE).getData();
             byte[] significantBits = ByteUtil.shiftLeft(allBits, 256 - arg.intValueSafe());
             bytes = ByteUtil.or(bytes, significantBits);
@@ -393,7 +379,6 @@ public final class DataWord implements Comparable<DataWord> {
 
         return new DataWord(bytes);
     }
-
 
     @JsonValue
     @Override
@@ -431,9 +416,8 @@ public final class DataWord implements Comparable<DataWord> {
         return equalValue((DataWord) o);
     }
 
-    public boolean equalValue(DataWord  o) {
+    public boolean equalValue(DataWord o) {
         return java.util.Arrays.equals(data, o.data);
-
     }
 
     @Override
@@ -446,18 +430,15 @@ public final class DataWord implements Comparable<DataWord> {
         if (o == null || o.data == null) {
             return -1;
         }
-        int result = FastByteComparisons.compareTo(
-                data, 0, data.length,
-                o.data, 0, o.data.length
-        );
+        int result = FastByteComparisons.compareTo(data, 0, data.length, o.data, 0, o.data.length);
 
         // Convert result into -1, 0 or 1 as is the convention
         // SigNum uses floating point arithmetic. It should be faster
         // to solve it in integer arithmetic
         // return (int) Math.signum(result);
-        if (result<0) {
+        if (result < 0) {
             return -1;
-        } else if (result>0) {
+        } else if (result > 0) {
             return 1;
         } else {
             return 0;
@@ -481,7 +462,7 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     public boolean occupyMoreThan(int n) {
-        return bytesOccupied()>n;
+        return bytesOccupied() > n;
     }
 
     public int bytesOccupied() {
@@ -500,15 +481,15 @@ public final class DataWord implements Comparable<DataWord> {
         int n = 0;
         int v = i;
         if (v >>> 4 == 0) {
-            n +=  4; 
-            v <<=  4;
+            n += 4;
+            v <<= 4;
         }
         if (v >>> 6 == 0) {
-            n +=  2; 
-            v <<=  2; 
+            n += 2;
+            v <<= 2;
         }
-        if (v >>> 7 == 0) { 
-            n +=  1;  
+        if (v >>> 7 == 0) {
+            n += 1;
         }
 
         return n;
@@ -525,7 +506,7 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         // TODO Replace/Update this class code with current EthereumJ version
-        return numberOfTrailingNonZeros(data[firstNonZero]) + ((31 - firstNonZero)<<3);
+        return numberOfTrailingNonZeros(data[firstNonZero]) + ((31 - firstNonZero) << 3);
     }
 
     public boolean isHex(String hex) {
@@ -534,6 +515,7 @@ public final class DataWord implements Comparable<DataWord> {
 
     /**
      * Will create a DataWord from the string value.
+     *
      * @param value any string with a byte representation of 32 bytes or less
      * @return a DataWord with the encoded string as the data, padded with zeroes if necessary
      */

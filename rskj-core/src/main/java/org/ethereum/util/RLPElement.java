@@ -19,8 +19,8 @@
 
 package org.ethereum.util;
 
-import javax.annotation.Nullable;
 import java.io.Serializable;
+import javax.annotation.Nullable;
 
 /**
  * Wrapper class for decoded elements from an RLP encoded byte array.
@@ -31,9 +31,9 @@ import java.io.Serializable;
 public interface RLPElement extends Serializable {
 
     /**
-     * @implNote this function will return null when the RLP data is an empty byte array.
-     * It's recommended to use {@link RLPElement#getRLPRawData()} and handle this distinction in the calling code
-     * because RLP can't know if you intended to encode a null or an empty byte array.
+     * @implNote this function will return null when the RLP data is an empty byte array. It's recommended to use {@link
+     *     RLPElement#getRLPRawData()} and handle this distinction in the calling code because RLP can't know if you
+     *     intended to encode a null or an empty byte array.
      */
     @Nullable
     byte[] getRLPData();

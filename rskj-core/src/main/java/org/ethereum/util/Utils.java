@@ -19,23 +19,18 @@
 
 package org.ethereum.util;
 
-import org.bouncycastle.util.encoders.DecoderException;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.lang.reflect.Array;
 import java.math.BigInteger;
-
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
-
+import org.bouncycastle.util.encoders.DecoderException;
+import org.bouncycastle.util.encoders.Hex;
 
 public class Utils {
 
@@ -50,7 +45,7 @@ public class Utils {
         boolean match = Pattern.matches("0[xX][0-9a-fA-F]+", number);
         if (!match) {
             return (new BigInteger(number));
-        } else{
+        } else {
             number = number.substring(2);
             number = number.length() % 2 != 0 ? "0".concat(number) : number;
             byte[] numberBytes = Hex.decode(number);
@@ -59,8 +54,7 @@ public class Utils {
     }
 
     /**
-     * Return formatted Date String: yyyy.MM.dd HH:mm:ss
-     * Based on Unix's time() input in seconds
+     * Return formatted Date String: yyyy.MM.dd HH:mm:ss Based on Unix's time() input in seconds
      *
      * @param timestamp seconds since start of Unix-time
      * @return String formatted as - yyyy.MM.dd HH:mm:ss
@@ -174,7 +168,7 @@ public class Utils {
         return unixTime * 1000;
     }
 
-    public static <T> T[] mergeArrays(T[] ... arr) {
+    public static <T> T[] mergeArrays(T[]... arr) {
         int size = 0;
         for (T[] ts : arr) {
             size += ts.length;
@@ -194,8 +188,8 @@ public class Utils {
         }
         String alignString = repeat("" + fillChar, targetLen - s.length());
         return alignRight ? alignString + s : s + alignString;
-
     }
+
     public static String repeat(String s, int n) {
         if (s.length() == 1) {
             byte[] bb = new byte[n];
@@ -216,7 +210,7 @@ public class Utils {
                 return true;
             }
         }
-        
+
         return false;
     }
 

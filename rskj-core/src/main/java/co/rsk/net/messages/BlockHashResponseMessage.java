@@ -20,9 +20,7 @@ package co.rsk.net.messages;
 
 import org.ethereum.util.RLP;
 
-/**
- * Implements encoding of the BLOCK_HASH_RESPONSE message type.
- */
+/** Implements encoding of the BLOCK_HASH_RESPONSE message type. */
 public class BlockHashResponseMessage extends MessageWithId {
     private final long id;
     private final byte[] hash;
@@ -44,7 +42,11 @@ public class BlockHashResponseMessage extends MessageWithId {
         return RLP.encodeList(rlpHash);
     }
 
-    public long getId() { return this.id; }
+    public long getId() {
+        return this.id;
+    }
 
-    public byte[] getHash() { return this.hash; }
+    public byte[] getHash() {
+        return this.hash;
+    }
 }

@@ -24,8 +24,7 @@ public class AllocatedAccount {
     String nonce;
     Contract contract;
 
-    public AllocatedAccount() {
-    }
+    public AllocatedAccount() {}
 
     public String getBalance() {
         return balance;
@@ -35,9 +34,13 @@ public class AllocatedAccount {
         this.balance = balance;
     }
 
-    public String getNonce() { return nonce; }
+    public String getNonce() {
+        return nonce;
+    }
 
-    public void setNonce(String nonce) { this.nonce = nonce; }
+    public void setNonce(String nonce) {
+        this.nonce = nonce;
+    }
 
     public Contract getContract() {
         return contract;

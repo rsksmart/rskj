@@ -21,22 +21,21 @@ package org.ethereum.listener;
 
 import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
+import java.util.Arrays;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * Calculates a 'reasonable' Gas price based on statistics of the latest transaction's Gas prices
  *
- * Normally the price returned should be sufficient to execute a transaction since ~25% of the latest
- * transactions were executed at this or lower price.
+ * <p>Normally the price returned should be sufficient to execute a transaction since ~25% of the latest transactions
+ * were executed at this or lower price.
  *
- * Created by Anton Nashatyrev on 22.09.2015.
+ * <p>Created by Anton Nashatyrev on 22.09.2015.
  */
 public class GasPriceTracker extends EthereumListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger("gaspricetracker");
@@ -69,7 +68,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
         if (idx == -1) {
             idx = window.length - 1;
             filled = true;
-            lastVal = null;  // recalculate only 'sometimes'
+            lastVal = null; // recalculate only 'sometimes'
         }
 
         window[idx--] = tx.getGasPrice();
@@ -82,7 +81,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
             if (lastVal == null) {
                 Coin[] values = Arrays.copyOf(window, window.length);
                 Arrays.sort(values);
-                lastVal = values[values.length / 4];  // 25% percentile
+                lastVal = values[values.length / 4]; // 25% percentile
             }
             return lastVal;
         }

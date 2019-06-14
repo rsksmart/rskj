@@ -20,20 +20,25 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
+import java.math.BigInteger;
+import javax.annotation.Nullable;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
-
 /**
- * Checks that the transaction nonce is not too higher than the account
- * nonce. This helps limiting the in memory transactions for a given address
+ * Checks that the transaction nonce is not too higher than the account nonce. This helps limiting the in memory
+ * transactions for a given address
  */
-public class TxValidatorNonceRangeValidator implements  TxValidatorStep {
+public class TxValidatorNonceRangeValidator implements TxValidatorStep {
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(
+            Transaction tx,
+            @Nullable AccountState state,
+            BigInteger gasLimit,
+            Coin minimumGasPrice,
+            long bestBlockNumber,
+            boolean isFreeTx) {
         BigInteger nonce = tx.getNonceAsInteger();
         BigInteger stateNonce = state == null ? BigInteger.ZERO : state.getNonce();
         BigInteger maxNumberOfTxsPerAddress = BigInteger.valueOf(4);
@@ -47,5 +52,4 @@ public class TxValidatorNonceRangeValidator implements  TxValidatorStep {
 
         return TransactionValidationResult.ok();
     }
-
 }

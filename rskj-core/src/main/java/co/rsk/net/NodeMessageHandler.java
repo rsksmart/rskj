@@ -22,11 +22,40 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.messages.*;
+import co.rsk.net.messages.BlockHashRequestMessage;
+import co.rsk.net.messages.BlockHashResponseMessage;
+import co.rsk.net.messages.BlockHeadersRequestMessage;
+import co.rsk.net.messages.BlockHeadersResponseMessage;
+import co.rsk.net.messages.BlockMessage;
+import co.rsk.net.messages.BlockRequestMessage;
+import co.rsk.net.messages.BlockResponseMessage;
+import co.rsk.net.messages.BodyRequestMessage;
+import co.rsk.net.messages.BodyResponseMessage;
+import co.rsk.net.messages.GetBlockMessage;
+import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
+import co.rsk.net.messages.NewBlockHashMessage;
+import co.rsk.net.messages.NewBlockHashesMessage;
+import co.rsk.net.messages.SkeletonRequestMessage;
+import co.rsk.net.messages.SkeletonResponseMessage;
+import co.rsk.net.messages.StatusMessage;
+import co.rsk.net.messages.TransactionsMessage;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
@@ -35,14 +64,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class NodeMessageHandler implements MessageHandler, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
@@ -67,13 +88,14 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private volatile boolean stopped;
 
-    public NodeMessageHandler(RskSystemProperties config,
-                              @Nonnull final BlockProcessor blockProcessor,
-                              final SyncProcessor syncProcessor,
-                              @Nullable final ChannelManager channelManager,
-                              @Nullable final TransactionGateway transactionGateway,
-                              @Nullable final PeerScoringManager peerScoringManager,
-                              @Nonnull BlockValidationRule blockValidationRule) {
+    public NodeMessageHandler(
+            RskSystemProperties config,
+            @Nonnull final BlockProcessor blockProcessor,
+            final SyncProcessor syncProcessor,
+            @Nullable final ChannelManager channelManager,
+            @Nullable final TransactionGateway transactionGateway,
+            @Nullable final PeerScoringManager peerScoringManager,
+            @Nonnull BlockValidationRule blockValidationRule) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
@@ -87,7 +109,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     /**
      * processMessage processes a RSK Message, doing the appropriate action based on the message type.
      *
-     * @param sender  the message sender.
+     * @param sender the message sender.
      * @param message the message to be processed.
      */
     public synchronized void processMessage(final MessageChannel sender, @Nonnull final Message message) {
@@ -124,7 +146,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             this.processSkeletonResponseMessage(sender, (SkeletonResponseMessage) message);
         } else if (mType == MessageType.NEW_BLOCK_HASH_MESSAGE) {
             this.processNewBlockHashMessage(sender, (NewBlockHashMessage) message);
-        } else if(!blockProcessor.hasBetterBlockToSync()) {
+        } else if (!blockProcessor.hasBetterBlockToSync()) {
             if (mType == MessageType.NEW_BLOCK_HASHES) {
                 this.processNewBlockHashesMessage(sender, (NewBlockHashesMessage) message);
             } else if (mType == MessageType.TRANSACTIONS) {
@@ -134,12 +156,14 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
         }
 
-        loggerMessageProcess.debug("Message[{}] processed after [{}] nano.", message.getMessageType(), System.nanoTime() - start);
+        loggerMessageProcess.debug(
+                "Message[{}] processed after [{}] nano.", message.getMessageType(), System.nanoTime() - start);
     }
 
     @Override
     public void postMessage(MessageChannel sender, Message message) throws InterruptedException {
-        logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
+        logger.trace(
+                "Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
         // There's an obvious race condition here, but fear not.
         // receivedMessages and logger are thread-safe
         // cleanMsgTimestamp is a long replaced by the next value, we don't care
@@ -152,13 +176,14 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private void tryAddMessage(MessageChannel sender, Message message) {
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         if (!receivedMessages.contains(encodedMessage)) {
-            if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
+            if (message.getMessageType() == MessageType.BLOCK_MESSAGE
+                    || message.getMessageType() == MessageType.TRANSACTIONS) {
                 if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
                     this.receivedMessages.clear();
                 }
                 this.receivedMessages.add(encodedMessage);
             }
-            if (!this.queue.offer(new MessageTask(sender, message))){
+            if (!this.queue.offer(new MessageTask(sender, message))) {
                 logger.trace("Queue full, message not added to the queue");
             }
         } else {
@@ -211,8 +236,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                 }
 
                 updateTimedEvents();
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 logger.error("Unexpected error processing: {}", task, ex);
             }
         }
@@ -223,11 +247,11 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Duration timeTick = Duration.ofMillis(now - lastTickSent);
         // TODO(lsebrie): handle timeouts properly
         lastTickSent = now;
-        if (queue.isEmpty()){
+        if (queue.isEmpty()) {
             this.syncProcessor.onTimePassed(timeTick);
         }
 
-        //Refresh status to peers every 10 seconds or so
+        // Refresh status to peers every 10 seconds or so
         Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
         if (timeStatus.getSeconds() > 10) {
             sendStatusToAll();
@@ -240,8 +264,16 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Block block = blockChainStatus.getBestBlock();
         BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
-        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), totalDifficulty);
-        logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
+        Status status =
+                new Status(
+                        block.getNumber(),
+                        block.getHash().getBytes(),
+                        block.getParentHash().getBytes(),
+                        totalDifficulty);
+        logger.trace(
+                "Sending status best block to all {} {}",
+                status.getBestBlockNumber(),
+                Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
         this.channelManager.broadcastStatus(status);
     }
 
@@ -254,8 +286,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     /**
-     * isValidBlock validates if the given block meets the minimum criteria to be processed:
-     * The PoW should be valid and the block can't be too far in the future.
+     * isValidBlock validates if the given block meets the minimum criteria to be processed: The PoW should be valid and
+     * the block can't be too far in the future.
      *
      * @param block the block to check
      * @return true if the block is valid, false otherwise.
@@ -273,7 +305,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
      * processBlockMessage processes a BlockMessage message, adding the block to the blockchain if appropriate, or
      * forwarding it to peers that are missing the Block.
      *
-     * @param sender  the message sender.
+     * @param sender the message sender.
      * @param message the BlockMessage.
      */
     private void processBlockMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockMessage message) {
@@ -299,12 +331,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
         }
 
-        if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
+        if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())) {
             logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
             return;
         }
 
-        if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())){
+        if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())) {
             logger.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getShortHash());
             return;
         }
@@ -325,15 +357,14 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         byte[] blockHash = block.getHash().getBytes();
         final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
         final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(blockHash);
-        final Set<NodeID> newNodes = this.syncProcessor.getKnownPeersNodeIDs().stream()
-                .filter(p -> !nodesWithBlock.contains(p))
-                .collect(Collectors.toSet());
-
+        final Set<NodeID> newNodes =
+                this.syncProcessor.getKnownPeersNodeIDs().stream()
+                        .filter(p -> !nodesWithBlock.contains(p))
+                        .collect(Collectors.toSet());
 
         List<BlockIdentifier> identifiers = new ArrayList<>();
         identifiers.add(new BlockIdentifier(blockHash, block.getNumber()));
         channelManager.broadcastBlockHash(identifiers, newNodes);
-
     }
 
     private void processStatusMessage(@Nonnull final MessageChannel sender, @Nonnull final StatusMessage message) {
@@ -347,64 +378,77 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         this.blockProcessor.processGetBlock(sender, hash);
     }
 
-    private void processBlockRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockRequestMessage message) {
+    private void processBlockRequestMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final BlockRequestMessage message) {
         final long requestId = message.getId();
         final byte[] hash = message.getBlockHash();
         this.blockProcessor.processBlockRequest(sender, requestId, hash);
     }
 
-    private void processBlockResponseMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockResponseMessage message) {
+    private void processBlockResponseMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final BlockResponseMessage message) {
         this.syncProcessor.processBlockResponse(sender, message);
     }
 
-    private void processSkeletonRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final SkeletonRequestMessage message) {
+    private void processSkeletonRequestMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final SkeletonRequestMessage message) {
         final long requestId = message.getId();
         final long startNumber = message.getStartNumber();
         this.blockProcessor.processSkeletonRequest(sender, requestId, startNumber);
     }
 
-    private void processBlockHeadersRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHeadersRequestMessage message) {
+    private void processBlockHeadersRequestMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final BlockHeadersRequestMessage message) {
         final long requestId = message.getId();
         final byte[] hash = message.getHash();
         final int count = message.getCount();
         this.blockProcessor.processBlockHeadersRequest(sender, requestId, hash, count);
     }
 
-    private void processBlockHashRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHashRequestMessage message) {
+    private void processBlockHashRequestMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final BlockHashRequestMessage message) {
         this.blockProcessor.processBlockHashRequest(sender, message.getId(), message.getHeight());
     }
 
-    private void processBlockHashResponseMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHashResponseMessage message) {
+    private void processBlockHashResponseMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final BlockHashResponseMessage message) {
         this.syncProcessor.processBlockHashResponse(sender, message);
     }
 
-    private void processNewBlockHashMessage(@Nonnull final MessageChannel sender, @Nonnull final NewBlockHashMessage message) {
+    private void processNewBlockHashMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final NewBlockHashMessage message) {
         this.syncProcessor.processNewBlockHash(sender, message);
     }
 
-    private void processSkeletonResponseMessage(@Nonnull final MessageChannel sender, @Nonnull final SkeletonResponseMessage message) {
+    private void processSkeletonResponseMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final SkeletonResponseMessage message) {
         this.syncProcessor.processSkeletonResponse(sender, message);
     }
 
-    private void processBlockHeadersResponseMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHeadersResponseMessage message) {
+    private void processBlockHeadersResponseMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final BlockHeadersResponseMessage message) {
         this.syncProcessor.processBlockHeadersResponse(sender, message);
     }
 
-    private void processBodyRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BodyRequestMessage message) {
+    private void processBodyRequestMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final BodyRequestMessage message) {
         final long requestId = message.getId();
         final byte[] hash = message.getBlockHash();
         this.blockProcessor.processBodyRequest(sender, requestId, hash);
     }
 
-    private void processBodyResponseMessage(@Nonnull final MessageChannel sender, @Nonnull final BodyResponseMessage message) {
+    private void processBodyResponseMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final BodyResponseMessage message) {
         this.syncProcessor.processBodyResponse(sender, message);
     }
 
-    private void processNewBlockHashesMessage(@Nonnull final MessageChannel sender, @Nonnull final NewBlockHashesMessage message) {
+    private void processNewBlockHashesMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final NewBlockHashesMessage message) {
         blockProcessor.processNewBlockHashesMessage(sender, message);
     }
 
-    private void processTransactionsMessage(@Nonnull final MessageChannel sender, @Nonnull final TransactionsMessage message) {
+    private void processTransactionsMessage(
+            @Nonnull final MessageChannel sender, @Nonnull final TransactionsMessage message) {
         long start = System.nanoTime();
         loggerMessageProcess.debug("Tx message about to be process: {}", message.getMessageContentInfo());
 
@@ -457,11 +501,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         @Override
         public String toString() {
-            return "MessageTask{" +
-                    "sender=" + sender +
-                    ", message=" + message +
-                    '}';
+            return "MessageTask{" + "sender=" + sender + ", message=" + message + '}';
         }
     }
 }
-

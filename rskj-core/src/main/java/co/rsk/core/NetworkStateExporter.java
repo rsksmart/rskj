@@ -24,23 +24,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.ethereum.core.Repository;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.PrecompiledContracts;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Iterator;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Repository;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Created by mario on 13/01/17.
- */
+/** Created by mario on 13/01/17. */
 public class NetworkStateExporter {
     private static final Logger logger = LoggerFactory.getLogger(NetworkStateExporter.class);
 
@@ -59,11 +56,12 @@ public class NetworkStateExporter {
 
         File dumpFile = new File(outputFile);
 
-        try(FileWriter fw = new FileWriter(dumpFile.getAbsoluteFile()); BufferedWriter bw = new BufferedWriter(fw)) {
+        try (FileWriter fw = new FileWriter(dumpFile.getAbsoluteFile());
+                BufferedWriter bw = new BufferedWriter(fw)) {
             JsonNodeFactory jsonFactory = new JsonNodeFactory(false);
             ObjectNode mainNode = jsonFactory.objectNode();
             for (RskAddress addr : frozenRepository.getAccountsKeys()) {
-                if(!addr.equals(RskAddress.nullAddress())) {
+                if (!addr.equals(RskAddress.nullAddress())) {
                     mainNode.set(addr.toString(), createAccountNode(mainNode, addr, frozenRepository));
                 }
             }
@@ -78,7 +76,11 @@ public class NetworkStateExporter {
         }
     }
 
-    private ObjectNode createContractNode(ObjectNode accountNode, AccountInformationProvider accountInformation, RskAddress addr, Iterator<DataWord> contractKeys) {
+    private ObjectNode createContractNode(
+            ObjectNode accountNode,
+            AccountInformationProvider accountInformation,
+            RskAddress addr,
+            Iterator<DataWord> contractKeys) {
         ObjectNode contractNode = accountNode.objectNode();
         contractNode.put("code", Hex.toHexString(accountInformation.getCode(addr)));
         ObjectNode dataNode = contractNode.objectNode();
@@ -91,7 +93,8 @@ public class NetworkStateExporter {
         return contractNode;
     }
 
-    private ObjectNode createAccountNode(ObjectNode mainNode, RskAddress addr, AccountInformationProvider accountInformation) {
+    private ObjectNode createAccountNode(
+            ObjectNode mainNode, RskAddress addr, AccountInformationProvider accountInformation) {
         ObjectNode accountNode = mainNode.objectNode();
         Coin balance = accountInformation.getBalance(addr);
         accountNode.put("balance", balance.asBigInteger().toString());

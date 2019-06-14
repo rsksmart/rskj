@@ -19,6 +19,8 @@
 
 package org.ethereum.core;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -28,6 +30,11 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import co.rsk.util.ListArrayUtil;
+import java.math.BigInteger;
+import java.security.SignatureException;
+import java.util.List;
+import java.util.Objects;
+import javax.annotation.Nullable;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -44,32 +51,20 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
-import java.security.SignatureException;
-import java.util.List;
-import java.util.Objects;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-
 /**
- * A transaction (formally, T) is a single cryptographically
- * signed instruction sent by an actor external to Ethereum.
- * An external actor can be a person (via a mobile device or desktop computer)
- * or could be from a piece of automated software running on a server.
- * There are two types of transactions: those which result in message calls
- * and those which result in the creation of new contracts.
+ * A transaction (formally, T) is a single cryptographically signed instruction sent by an actor external to Ethereum.
+ * An external actor can be a person (via a mobile device or desktop computer) or could be from a piece of automated
+ * software running on a server. There are two types of transactions: those which result in message calls and those
+ * which result in the creation of new contracts.
  */
 public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
-    private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
+    private static final byte[] ZERO_BYTE_ARRAY = new byte[] {0};
     private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
-    /**
-     * Since EIP-155, we could encode chainId in V
-     */
+    /** Since EIP-155, we could encode chainId in V */
     private static final byte CHAIN_ID_INC = 35;
 
     private static final byte LOWER_REAL_V = 27;
@@ -136,38 +131,81 @@ public class Transaction {
      * or simple send tx
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
+    public Transaction(
+            byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
     }
 
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
+    public Transaction(
+            byte[] nonce,
+            byte[] gasPriceRaw,
+            byte[] gasLimit,
+            byte[] receiveAddress,
+            byte[] value,
+            byte[] data,
+            byte[] r,
+            byte[] s,
+            byte v) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
 
         this.signature = ECDSASignature.fromComponents(r, s, v);
     }
 
     public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
-        this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
-                BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
-                data, chainId);
-    }
-
-    public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data,
-                       byte chainId) {
-        this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
+        this(
+                BigInteger.valueOf(nonce).toByteArray(),
+                BigInteger.valueOf(gasPrice).toByteArray(),
+                BigInteger.valueOf(gas).toByteArray(),
+                Hex.decode(to),
+                BigInteger.valueOf(value).toByteArray(),
+                data,
                 chainId);
     }
 
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId) {
+    public Transaction(
+            BigInteger nonce,
+            BigInteger gasPrice,
+            BigInteger gas,
+            String to,
+            BigInteger value,
+            byte[] data,
+            byte chainId) {
+        this(
+                nonce.toByteArray(),
+                gasPrice.toByteArray(),
+                gas.toByteArray(),
+                Hex.decode(to),
+                value.toByteArray(),
+                data,
+                chainId);
+    }
+
+    public Transaction(
+            String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId) {
         this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId);
     }
 
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data, byte chainId) {
+    public Transaction(
+            String to,
+            BigInteger amount,
+            BigInteger nonce,
+            BigInteger gasPrice,
+            BigInteger gasLimit,
+            String data,
+            byte chainId) {
         this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId);
     }
 
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData, byte chainId) {
-        this(BigIntegers.asUnsignedByteArray(nonce),
+    public Transaction(
+            String to,
+            BigInteger amount,
+            BigInteger nonce,
+            BigInteger gasPrice,
+            BigInteger gasLimit,
+            byte[] decodedData,
+            byte chainId) {
+        this(
+                BigIntegers.asUnsignedByteArray(nonce),
                 gasPrice.toByteArray(),
                 BigIntegers.asUnsignedByteArray(gasLimit),
                 to != null ? Hex.decode(to) : null,
@@ -176,8 +214,14 @@ public class Transaction {
                 chainId);
     }
 
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
-                       byte chainId) {
+    public Transaction(
+            byte[] nonce,
+            byte[] gasPriceRaw,
+            byte[] gasLimit,
+            byte[] receiveAddress,
+            byte[] valueRaw,
+            byte[] data,
+            byte chainId) {
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
@@ -223,7 +267,9 @@ public class Transaction {
         long nonZeroes = this.nonZeroDataBytes();
         long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
 
-        return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
+        return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION)
+                + zeroVals * GasCost.TX_ZERO_DATA
+                + nonZeroes * GasCost.TX_NO_ZERO_DATA;
     }
 
     public void verify() {
@@ -234,7 +280,9 @@ public class Transaction {
         if (getNonce().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Nonce is not valid");
         }
-        if (receiveAddress != null && receiveAddress.getBytes().length != 0 && receiveAddress.getBytes().length != Constants.getMaxAddressByteLength()) {
+        if (receiveAddress != null
+                && receiveAddress.getBytes().length != 0
+                && receiveAddress.getBytes().length != Constants.getMaxAddressByteLength()) {
             throw new RuntimeException("Receive address is not valid");
         }
         if (gasLimit.length > DATAWORD_LENGTH) {
@@ -253,7 +301,8 @@ public class Transaction {
             if (BigIntegers.asUnsignedByteArray(signature.s).length > DATAWORD_LENGTH) {
                 throw new RuntimeException("Signature S is not valid");
             }
-            if (getSender().getBytes() != null && getSender().getBytes().length != Constants.getMaxAddressByteLength()) {
+            if (getSender().getBytes() != null
+                    && getSender().getBytes().length != Constants.getMaxAddressByteLength()) {
                 throw new RuntimeException("Sender is not valid");
             }
         }
@@ -370,7 +419,7 @@ public class Transaction {
     public ECKey getKey() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         byte[] raw = getRawHash().getBytes();
-        //We clear the 4th bit, the compress bit, in case a signature is using compress in true
+        // We clear the 4th bit, the compress bit, in case a signature is using compress in true
         ECKey key = ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, raw, true);
         profiler.stop(metric);
         return key;
@@ -381,7 +430,6 @@ public class Transaction {
             return sender;
         }
 
-
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         try {
             ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature());
@@ -390,8 +438,7 @@ public class Transaction {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("transaction", e.getMessage());
             sender = RskAddress.nullAddress();
-        }
-        finally {
+        } finally {
             profiler.stop(metric);
         }
 
@@ -404,24 +451,31 @@ public class Transaction {
 
     @Override
     public String toString() {
-        return "TransactionData [" + "hash=" + ByteUtil.toHexString(getHash().getBytes()) +
-                "  nonce=" + ByteUtil.toHexString(nonce) +
-                ", gasPrice=" + gasPrice.toString() +
-                ", gas=" + ByteUtil.toHexString(gasLimit) +
-                ", receiveAddress=" + receiveAddress.toString() +
-                ", value=" + value.toString() +
-                ", data=" + ByteUtil.toHexString(data) +
-                ", signatureV=" + (signature == null ? "" : signature.v) +
-                ", signatureR=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.r))) +
-                ", signatureS=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.s))) +
-                "]";
-
+        return "TransactionData ["
+                + "hash="
+                + ByteUtil.toHexString(getHash().getBytes())
+                + "  nonce="
+                + ByteUtil.toHexString(nonce)
+                + ", gasPrice="
+                + gasPrice.toString()
+                + ", gas="
+                + ByteUtil.toHexString(gasLimit)
+                + ", receiveAddress="
+                + receiveAddress.toString()
+                + ", value="
+                + value.toString()
+                + ", data="
+                + ByteUtil.toHexString(data)
+                + ", signatureV="
+                + (signature == null ? "" : signature.v)
+                + ", signatureR="
+                + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.r)))
+                + ", signatureS="
+                + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.s)))
+                + "]";
     }
 
-    /**
-     * For signatures you have to keep also
-     * RLP of the transaction without any signature data
-     */
+    /** For signatures you have to keep also RLP of the transaction without any signature data */
     public byte[] getEncodedRaw() {
         if (this.rawRlpEncoding == null) {
             // Since EIP-155 use chainId for v
@@ -446,7 +500,12 @@ public class Transaction {
             byte[] s;
 
             if (this.signature != null) {
-                v = RLP.encodeByte((byte) (chainId == 0 ? signature.v : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
+                v =
+                        RLP.encodeByte(
+                                (byte)
+                                        (chainId == 0
+                                                ? signature.v
+                                                : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
                 r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
                 s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
             } else {
@@ -476,12 +535,25 @@ public class Transaction {
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
         if (v == null && r == null && s == null) {
-            return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
-                    toEncodeReceiveAddress, toEncodeValue, toEncodeData);
+            return RLP.encodeList(
+                    toEncodeNonce,
+                    toEncodeGasPrice,
+                    toEncodeGasLimit,
+                    toEncodeReceiveAddress,
+                    toEncodeValue,
+                    toEncodeData);
         }
 
-        return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
-                toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
+        return RLP.encodeList(
+                toEncodeNonce,
+                toEncodeGasPrice,
+                toEncodeGasLimit,
+                toEncodeReceiveAddress,
+                toEncodeValue,
+                toEncodeData,
+                v,
+                r,
+                s);
     }
 
     public BigInteger getGasLimitAsInteger() {
@@ -508,7 +580,6 @@ public class Transaction {
 
         return Objects.equals(this.getHash(), tx.getHash());
     }
-
 
     private byte[] nullToZeroArray(byte[] data) {
         return data == null ? ZERO_BYTE_ARRAY : data;
@@ -539,8 +610,8 @@ public class Transaction {
             return false;
         }
 
-        return Coin.ZERO.equals(getValue()) &&
-                BigInteger.ZERO.equals(new BigInteger(1, getGasLimit())) &&
-                Coin.ZERO.equals(getGasPrice());
+        return Coin.ZERO.equals(getValue())
+                && BigInteger.ZERO.equals(new BigInteger(1, getGasLimit()))
+                && Coin.ZERO.equals(getGasPrice());
     }
 }

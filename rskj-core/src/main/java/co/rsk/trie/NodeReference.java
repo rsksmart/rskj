@@ -19,15 +19,13 @@ package co.rsk.trie;
 
 import co.rsk.core.types.ints.Uint8;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.crypto.Keccak256Helper;
-
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nullable;
+import org.ethereum.crypto.Keccak256Helper;
 
 public class NodeReference {
-
 
     private final TrieStore store;
 
@@ -63,8 +61,8 @@ public class NodeReference {
     }
 
     /**
-     * The node or empty if this is an empty reference.
-     * If the node is not present but its hash is known, it will be retrieved from the store.
+     * The node or empty if this is an empty reference. If the node is not present but its hash is known, it will be
+     * retrieved from the store.
      */
     public Optional<Trie> getNode() {
         if (lazyNode != null) {
@@ -75,16 +73,16 @@ public class NodeReference {
             return Optional.empty();
         }
 
-        lazyNode = Objects.requireNonNull(
-                store.retrieve(lazyHash.getBytes()),
-                "The node with this hash is not present in the trie store"
-        );
+        lazyNode =
+                Objects.requireNonNull(
+                        store.retrieve(lazyHash.getBytes()),
+                        "The node with this hash is not present in the trie store");
         return Optional.of(lazyNode);
     }
 
     /**
-     * The hash or empty if this is an empty reference.
-     * If the hash is not present but its node is known, it will be calculated.
+     * The hash or empty if this is an empty reference. If the hash is not present but its node is known, it will be
+     * calculated.
      */
     public Optional<Keccak256> getHash() {
         if (lazyHash != null) {
@@ -100,8 +98,8 @@ public class NodeReference {
     }
 
     /**
-     * The hash or empty if this is an empty reference.
-     * If the hash is not present but its node is known, it will be calculated.
+     * The hash or empty if this is an empty reference. If the hash is not present but its node is known, it will be
+     * calculated.
      */
     public Optional<Keccak256> getHashOrchid(boolean isSecure) {
         return getNode().map(trie -> trie.getHashOrchid(isSecure));
@@ -118,7 +116,6 @@ public class NodeReference {
             return false;
         }
         return lazyNode.isEmbeddable();
-
     }
 
     // This method should only be called from save()
@@ -141,8 +138,11 @@ public class NodeReference {
                 buffer.put(new Uint8(serialized.length).encode());
                 buffer.put(serialized);
             } else {
-                byte[] hash = getHash().map(Keccak256::getBytes)
-                        .orElseThrow(() -> new IllegalStateException("The hash should always exists at this point"));
+                byte[] hash =
+                        getHash()
+                                .map(Keccak256::getBytes)
+                                .orElseThrow(
+                                        () -> new IllegalStateException("The hash should always exists at this point"));
                 buffer.put(hash);
             }
         }
@@ -150,9 +150,7 @@ public class NodeReference {
 
     /**
      * @return the tree size in bytes as specified in RSKIP107 plus the actual serialized size
-     *
-     * This method will EXPAND internal encoding caches without removing them afterwards.
-     * Do not use.
+     *     <p>This method will EXPAND internal encoding caches without removing them afterwards. Do not use.
      */
     public long referenceSize() {
         return getNode().map(trie -> trie.getTreeSize().value).orElse(0L) + serializedLength();

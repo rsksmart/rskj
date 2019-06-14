@@ -21,15 +21,13 @@ package co.rsk.pcc.bto;
 import co.rsk.core.RskAddress;
 import co.rsk.pcc.NativeContract;
 import co.rsk.pcc.NativeMethod;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 
 /**
- * Precompiled contract that provides certain BTO (Bitcoin Token Offering)
- * related utility functions.
+ * Precompiled contract that provides certain BTO (Bitcoin Token Offering) related utility functions.
  *
  * @author Ariel Mendelzon
  */
@@ -44,11 +42,10 @@ public class HDWalletUtils extends NativeContract {
     @Override
     public List<NativeMethod> getMethods() {
         return Arrays.asList(
-            new ToBase58Check(getExecutionEnvironment()),
-            new DeriveExtendedPublicKey(getExecutionEnvironment(), helper),
-            new ExtractPublicKeyFromExtendedPublicKey(getExecutionEnvironment(), helper),
-            new GetMultisigScriptHash(getExecutionEnvironment())
-        );
+                new ToBase58Check(getExecutionEnvironment()),
+                new DeriveExtendedPublicKey(getExecutionEnvironment(), helper),
+                new ExtractPublicKeyFromExtendedPublicKey(getExecutionEnvironment(), helper),
+                new GetMultisigScriptHash(getExecutionEnvironment()));
     }
 
     @Override

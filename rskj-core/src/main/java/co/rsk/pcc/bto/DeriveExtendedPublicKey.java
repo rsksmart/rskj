@@ -26,23 +26,19 @@ import co.rsk.bitcoinj.crypto.HDUtils;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
-import org.ethereum.core.CallTransaction;
-
 import java.util.Arrays;
 import java.util.List;
+import org.ethereum.core.CallTransaction;
 
 /**
- * This implements the "deriveExtendedPublicKey" method
- * that belongs to the HDWalletUtils native contract.
+ * This implements the "deriveExtendedPublicKey" method that belongs to the HDWalletUtils native contract.
  *
  * @author Ariel Mendelzon
  */
 public class DeriveExtendedPublicKey extends NativeMethod {
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "deriveExtendedPublicKey",
-            new String[]{"string", "string"},
-            new String[]{"string"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature(
+                    "deriveExtendedPublicKey", new String[] {"string", "string"}, new String[] {"string"});
 
     private final HDWalletUtilsHelper helper;
 
@@ -77,7 +73,10 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         // Covering special case: upon splitting a string, if the string ends with the delimiter, then
         // there is no empty string as a last element. Make sure that the whole path starts and ends with a digit
         // just in case.
-        if (path == null || path.length() == 0 || !isDecimal(path.substring(0,1)) || !isDecimal(path.substring(path.length()-1, path.length()))) {
+        if (path == null
+                || path.length() == 0
+                || !isDecimal(path.substring(0, 1))
+                || !isDecimal(path.substring(path.length() - 1, path.length()))) {
             throwInvalidPath(path);
         }
 
@@ -132,7 +131,7 @@ public class DeriveExtendedPublicKey extends NativeMethod {
     private boolean isDecimal(String s) {
         try {
             return Integer.parseInt(s) >= 0;
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return false;
         }
     }

@@ -19,30 +19,25 @@
 package co.rsk.peg;
 
 import com.google.common.primitives.SignedBytes;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 
 /**
- * Immutable representation of a function call
- * spec to any given contract.
- * For simplicity, each of the arguments is assumed to be a byte array.
- * Encoding is up to the user.
+ * Immutable representation of a function call spec to any given contract. For simplicity, each of the arguments is
+ * assumed to be a byte array. Encoding is up to the user.
  *
  * @author Ariel Mendelzon
  */
 public final class ABICallSpec {
-    public static final Comparator<ABICallSpec> byBytesComparator = new Comparator<ABICallSpec>() {
-        @Override
-        public int compare(ABICallSpec specA, ABICallSpec specB) {
-            return SignedBytes.lexicographicalComparator().compare(
-                    specA.getEncoded(),
-                    specB.getEncoded()
-            );
-        }
-    };
+    public static final Comparator<ABICallSpec> byBytesComparator =
+            new Comparator<ABICallSpec>() {
+                @Override
+                public int compare(ABICallSpec specA, ABICallSpec specB) {
+                    return SignedBytes.lexicographicalComparator().compare(specA.getEncoded(), specB.getEncoded());
+                }
+            };
 
     private String function;
     private byte[][] arguments;
@@ -94,13 +89,16 @@ public final class ABICallSpec {
         }
 
         ABICallSpec otherSpec = ((ABICallSpec) other);
-        return otherSpec.getFunction().equals(getFunction()) &&
-                areEqual(arguments, otherSpec.arguments);
+        return otherSpec.getFunction().equals(getFunction()) && areEqual(arguments, otherSpec.arguments);
     }
 
     @Override
     public int hashCode() {
-        int[] argumentsHashes = Arrays.stream(arguments).map(argument -> Arrays.hashCode(argument)).mapToInt(Integer::intValue).toArray();
+        int[] argumentsHashes =
+                Arrays.stream(arguments)
+                        .map(argument -> Arrays.hashCode(argument))
+                        .mapToInt(Integer::intValue)
+                        .toArray();
         return Objects.hash(function, Arrays.hashCode(argumentsHashes));
     }
 

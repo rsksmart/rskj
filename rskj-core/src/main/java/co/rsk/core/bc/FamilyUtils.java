@@ -18,39 +18,36 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.crypto.Keccak256;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.db.BlockStore;
+import static java.lang.Math.max;
 
-import javax.annotation.Nonnull;
+import co.rsk.crypto.Keccak256;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.db.BlockStore;
 
-import static java.lang.Math.max;
-
-/**
- * Created by ajlopez on 12/08/2016.
- */
+/** Created by ajlopez on 12/08/2016. */
 public class FamilyUtils {
 
     /**
      * Calculate the set of hashes of ancestors of a block
      *
-     * @param blockStore    the block store to use
-     * @param block         the block to use
-     * @param limitNum      maximum number of ancestors to retrieve
-     *
+     * @param blockStore the block store to use
+     * @param block the block to use
+     * @param limitNum maximum number of ancestors to retrieve
      * @return set of ancestors block hashes
      */
     public static Set<Keccak256> getAncestors(BlockStore blockStore, Block block, int limitNum) {
         return getAncestors(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
-    public static Set<Keccak256> getAncestors(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
+    public static Set<Keccak256> getAncestors(
+            BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
         Set<Keccak256> ret = new HashSet<>();
 
         if (blockStore == null) {
@@ -60,7 +57,7 @@ public class FamilyUtils {
         int limit = (int) max(0, blockNumber - limitNum);
         Block it = blockStore.getBlockByHash(parentHash.getBytes());
 
-        while(it != null && it.getNumber() >= limit) {
+        while (it != null && it.getNumber() >= limit) {
             ret.add(it.getHash());
             it = blockStore.getBlockByHash(it.getParentHash().getBytes());
         }
@@ -71,17 +68,17 @@ public class FamilyUtils {
     /**
      * Calculate the set of already used hashes in the chain of a block
      *
-     * @param blockStore    the block store to use
-     * @param block         the block to use
-     * @param limitNum      maximum number of ancestors to examine
-     *
+     * @param blockStore the block store to use
+     * @param block the block to use
+     * @param limitNum maximum number of ancestors to examine
      * @return set of already used uncles block hashes
      */
     public static Set<Keccak256> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
         return getUsedUncles(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
-    public static Set<Keccak256> getUsedUncles(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
+    public static Set<Keccak256> getUsedUncles(
+            BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
         Set<Keccak256> ret = new HashSet<>();
 
         if (blockStore == null) {
@@ -91,7 +88,7 @@ public class FamilyUtils {
         long minNumber = max(0, blockNumber - limitNum);
         Block it = blockStore.getBlockByHash(parentHash.getBytes());
 
-        while(it != null && it.getNumber() >= minNumber) {
+        while (it != null && it.getNumber() >= minNumber) {
             for (BlockHeader uncle : it.getUncleList()) {
                 ret.add(uncle.getHash());
             }
@@ -105,7 +102,8 @@ public class FamilyUtils {
         return getUnclesHeaders(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
+    public static List<BlockHeader> getUnclesHeaders(
+            @Nonnull BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         List<BlockHeader> uncles = new ArrayList<>();
         Set<Keccak256> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
 

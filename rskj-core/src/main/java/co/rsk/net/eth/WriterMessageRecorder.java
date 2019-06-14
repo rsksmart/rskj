@@ -19,19 +19,16 @@
 package co.rsk.net.eth;
 
 import co.rsk.net.NodeID;
-import org.ethereum.net.message.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.net.message.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Created by ajlopez on 26/04/2017.
- */
+/** Created by ajlopez on 26/04/2017. */
 public class WriterMessageRecorder implements MessageRecorder {
     private static final Logger logger = LoggerFactory.getLogger("messagerecorder");
     private BufferedWriter writer;
@@ -74,8 +71,7 @@ public class WriterMessageRecorder implements MessageRecorder {
 
             writer.newLine();
             writer.flush();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             logger.error("Exception recording message: ", ex);
         }
     }

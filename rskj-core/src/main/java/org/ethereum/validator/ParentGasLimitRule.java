@@ -19,15 +19,13 @@
 
 package org.ethereum.validator;
 
+import java.math.BigInteger;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-
 /**
  * Checks if {@link BlockHeader#gasLimit} matches gas limit bounds. <br>
- *
  * This check is NOT run in Frontier
  *
  * @author Mikhail Kalinin
@@ -43,7 +41,6 @@ public class ParentGasLimitRule extends DependentBlockHeaderRule {
         this.gasLimitBoundDivisor = BigInteger.valueOf(gasLimitBoundDivisor);
     }
 
-
     @Override
     public boolean validate(BlockHeader header, BlockHeader parent) {
 
@@ -51,9 +48,12 @@ public class ParentGasLimitRule extends DependentBlockHeaderRule {
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
         BigInteger deltaLimit = parentGasLimit.divide(gasLimitBoundDivisor);
 
-        if (headerGasLimit.compareTo(parentGasLimit.subtract(deltaLimit)) < 0 ||
-                headerGasLimit.compareTo(parentGasLimit.add(deltaLimit)) > 0) {
-            logger.error(String.format("#%d: gas limit exceeds parentBlock.getGasLimit() (+-) GAS_LIMIT_BOUND_DIVISOR", header.getNumber()));
+        if (headerGasLimit.compareTo(parentGasLimit.subtract(deltaLimit)) < 0
+                || headerGasLimit.compareTo(parentGasLimit.add(deltaLimit)) > 0) {
+            logger.error(
+                    String.format(
+                            "#%d: gas limit exceeds parentBlock.getGasLimit() (+-) GAS_LIMIT_BOUND_DIVISOR",
+                            header.getNumber()));
             return false;
         }
         return true;

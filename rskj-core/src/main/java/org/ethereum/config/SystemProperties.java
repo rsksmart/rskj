@@ -26,6 +26,25 @@ import co.rsk.config.ConfigLoader;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
@@ -36,26 +55,13 @@ import org.ethereum.net.rlpx.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 /**
  * Utility class to retrieve property values from the rskj.conf files
  *
- * The properties are taken from different sources and merged in the following order
- * (the config option from the next source overrides option from previous):
- * - resource rskj.conf : normally used as a reference config with default values
- *          and shouldn't be changed
- * - system property : each config entry might be altered via -D VM option
- * - [user dir]/config/rskj.conf
- * - config specified with the -Drsk.conf.file=[file.conf] VM option
- * - CLI options
+ * <p>The properties are taken from different sources and merged in the following order (the config option from the next
+ * source overrides option from previous): - resource rskj.conf : normally used as a reference config with default
+ * values and shouldn't be changed - system property : each config entry might be altered via -D VM option - [user
+ * dir]/config/rskj.conf - config specified with the -Drsk.conf.file=[file.conf] VM option - CLI options
  *
  * @author Roman Mandeleil
  * @since 22.05.2014
@@ -65,7 +71,8 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_BLOCKCHAIN_CONFIG = "blockchain.config";
     public static final String PROPERTY_BC_CONFIG_NAME = PROPERTY_BLOCKCHAIN_CONFIG + ".name";
-    public static final String PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS = "genesis_constants.federationPublicKeys";
+    public static final String PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS =
+            "genesis_constants.federationPublicKeys";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_BASE_PATH = "database.dir";
     public static final String PROPERTY_DB_RESET = "database.reset";
@@ -108,8 +115,7 @@ public abstract class SystemProperties {
             this.configFromFiles = loader.getConfig();
             logger.trace(
                     "Config trace: {}",
-                    configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false))
-            );
+                    configFromFiles.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false)));
 
             Properties props = new Properties();
             try (InputStream is = getClass().getResourceAsStream("/version.properties")) {
@@ -160,14 +166,16 @@ public abstract class SystemProperties {
                     constants = Constants.testnet();
                     break;
                 case "devnet":
-                    constants = Constants.devnetWithFederation(
-                            getGenesisFederationPublicKeys().orElse(BridgeDevNetConstants.DEVNET_FEDERATION_PUBLIC_KEYS)
-                    );
+                    constants =
+                            Constants.devnetWithFederation(
+                                    getGenesisFederationPublicKeys()
+                                            .orElse(BridgeDevNetConstants.DEVNET_FEDERATION_PUBLIC_KEYS));
                     break;
                 case "regtest":
-                    constants = Constants.regtestWithFederation(
-                            getGenesisFederationPublicKeys().orElse(BridgeRegTestConstants.REGTEST_FEDERATION_PUBLIC_KEYS)
-                    );
+                    constants =
+                            Constants.regtestWithFederation(
+                                    getGenesisFederationPublicKeys()
+                                            .orElse(BridgeRegTestConstants.REGTEST_FEDERATION_PUBLIC_KEYS));
                     break;
                 default:
                     throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
@@ -190,22 +198,26 @@ public abstract class SystemProperties {
     }
 
     public int defaultP2PVersion() {
-        return configFromFiles.hasPath("peer.p2p.version") ? configFromFiles.getInt("peer.p2p.version") : P2pHandler.VERSION;
+        return configFromFiles.hasPath("peer.p2p.version")
+                ? configFromFiles.getInt("peer.p2p.version")
+                : P2pHandler.VERSION;
     }
 
     public int rlpxMaxFrameSize() {
-        return configFromFiles.hasPath("peer.p2p.framing.maxSize") ? configFromFiles.getInt("peer.p2p.framing.maxSize") : MessageCodec.NO_FRAMING;
+        return configFromFiles.hasPath("peer.p2p.framing.maxSize")
+                ? configFromFiles.getInt("peer.p2p.framing.maxSize")
+                : MessageCodec.NO_FRAMING;
     }
 
     public List<String> peerDiscoveryIPList() {
-        return configFromFiles.hasPath("peer.discovery.ip.list") ? configFromFiles.getStringList("peer.discovery.ip.list") : new ArrayList<>();
+        return configFromFiles.hasPath("peer.discovery.ip.list")
+                ? configFromFiles.getStringList("peer.discovery.ip.list")
+                : new ArrayList<>();
     }
 
     public boolean databaseReset() {
         return configFromFiles.getBoolean("database.reset");
     }
-
-
 
     public List<Node> peerActive() {
         if (!configFromFiles.hasPath("peer.active")) {
@@ -236,7 +248,9 @@ public abstract class SystemProperties {
             if (configObject.toConfig().hasPath("nodeName")) {
                 String nodeName = configObject.toConfig().getString("nodeName").trim();
                 // FIXME should be sha3-512 here ?
-                byte[] nodeId = ECKey.fromPrivate(Keccak256Helper.keccak256(nodeName.getBytes(StandardCharsets.UTF_8))).getNodeId();
+                byte[] nodeId =
+                        ECKey.fromPrivate(Keccak256Helper.keccak256(nodeName.getBytes(StandardCharsets.UTF_8)))
+                                .getNodeId();
                 return new Node(nodeId, ip, port);
             }
 
@@ -249,13 +263,16 @@ public abstract class SystemProperties {
     public NodeFilter trustedPeers() {
         List<? extends ConfigObject> list = configFromFiles.getObjectList("peer.trusted");
         NodeFilter ret = new NodeFilter();
-        list.stream().map(ConfigObject::toConfig).forEach(config -> {
-            String nodeIdData = config.getString("nodeId");
-            String ipData = config.getString("ip");
-            byte[] nodeId = nodeIdData != null ? Hex.decode(nodeIdData.trim()) : null;
-            String ipMask = ipData != null ? ipData.trim() : null;
-            ret.add(nodeId, ipMask);
-        });
+        list.stream()
+                .map(ConfigObject::toConfig)
+                .forEach(
+                        config -> {
+                            String nodeIdData = config.getString("nodeId");
+                            String ipData = config.getString("ip");
+                            byte[] nodeId = nodeIdData != null ? Hex.decode(nodeIdData.trim()) : null;
+                            String ipMask = ipData != null ? ipData.trim() : null;
+                            ret.add(nodeId, ipMask);
+                        });
 
         return ret;
     }
@@ -299,7 +316,6 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("sync.version");
     }
 
-
     public String projectVersion() {
         return projectVersion;
     }
@@ -317,7 +333,9 @@ public abstract class SystemProperties {
     }
 
     public List<String> peerCapabilities() {
-        return configFromFiles.hasPath("peer.capabilities") ?  configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
+        return configFromFiles.hasPath("peer.capabilities")
+                ? configFromFiles.getStringList("peer.capabilities")
+                : new ArrayList<>(Arrays.asList("rsk"));
     }
 
     public boolean vmTrace() {
@@ -359,7 +377,9 @@ public abstract class SystemProperties {
                 props.setProperty("nodeIdPrivateKey", Hex.toHexString(key.getPrivKeyBytes()));
                 props.setProperty("nodeId", Hex.toHexString(key.getNodeId()));
                 file.getParentFile().mkdirs();
-                props.store(new FileWriter(file), "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
+                props.store(
+                        new FileWriter(file),
+                        "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
                 logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
                 logger.info("Generated nodeID and its private key stored in {}", file);
             }
@@ -373,9 +393,7 @@ public abstract class SystemProperties {
         return ECKey.fromPrivate(Hex.decode(privateKey())).decompress();
     }
 
-    /**
-     *  Home NodeID calculated from 'peer.privateKey' property
-     */
+    /** Home NodeID calculated from 'peer.privateKey' property */
     public byte[] nodeId() {
         return getMyKey().getNodeId();
     }
@@ -409,13 +427,12 @@ public abstract class SystemProperties {
         try {
             return InetAddress.getByName(host);
         } catch (UnknownHostException e) {
-            throw new IllegalArgumentException(String.format("%s is not a valid %s property", host, PROPERTY_BIND_ADDRESS), e);
+            throw new IllegalArgumentException(
+                    String.format("%s is not a valid %s property", host, PROPERTY_BIND_ADDRESS), e);
         }
     }
 
-    /**
-     * This can be a blocking call with long timeout (thus no ValidateMe)
-     */
+    /** This can be a blocking call with long timeout (thus no ValidateMe) */
     public synchronized String getPublicIp() {
         if (publicIp != null) {
             return publicIp;
@@ -423,7 +440,7 @@ public abstract class SystemProperties {
 
         if (configFromFiles.hasPath(PROPERTY_PUBLIC_IP)) {
             String externalIpFromConfig = configFromFiles.getString(PROPERTY_PUBLIC_IP).trim();
-            if (!externalIpFromConfig.isEmpty()){
+            if (!externalIpFromConfig.isEmpty()) {
                 try {
                     InetAddress address = tryParseIpOrThrow(externalIpFromConfig);
                     publicIp = address.getHostAddress();
@@ -442,11 +459,12 @@ public abstract class SystemProperties {
         return publicIp;
     }
 
-    private String getMyPublicIpFromRemoteService(){
+    private String getMyPublicIpFromRemoteService() {
         try {
             logger.info("Public IP wasn't set or resolved, using checkip.amazonaws.com to identify it...");
 
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(new URL("http://checkip.amazonaws.com").openStream()))) {
+            try (BufferedReader in =
+                    new BufferedReader(new InputStreamReader(new URL("http://checkip.amazonaws.com").openStream()))) {
                 publicIp = in.readLine();
             }
 
@@ -465,8 +483,9 @@ public abstract class SystemProperties {
         }
 
         String bindAddress = getBindAddress().toString();
-        if (getBindAddress().isAnyLocalAddress()){
-            throw new RuntimeException("Wildcard on bind address it's not allowed as fallback for public IP " + bindAddress);
+        if (getBindAddress().isAnyLocalAddress()) {
+            throw new RuntimeException(
+                    "Wildcard on bind address it's not allowed as fallback for public IP " + bindAddress);
         }
         publicIp = bindAddress;
 
@@ -498,13 +517,14 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("transaction.outdated.timeout");
     }
 
-    public void setGenesisInfo(String genesisInfo){
+    public void setGenesisInfo(String genesisInfo) {
         this.genesisInfo = genesisInfo;
     }
 
     public boolean scoringPunishmentEnabled() {
-        return configFromFiles.hasPath("scoring.punishmentEnabled") ?
-                configFromFiles.getBoolean("scoring.punishmentEnabled") : false;
+        return configFromFiles.hasPath("scoring.punishmentEnabled")
+                ? configFromFiles.getBoolean("scoring.punishmentEnabled")
+                : false;
     }
 
     public int scoringNumberOfNodes() {
@@ -563,17 +583,19 @@ public abstract class SystemProperties {
      *
      */
     public boolean vmTestLoadLocal() {
-        return configFromFiles.hasPath("GitHubTests.VMTest.loadLocal") ?
-                configFromFiles.getBoolean("GitHubTests.VMTest.loadLocal") : DEFAULT_VMTEST_LOAD_LOCAL;
+        return configFromFiles.hasPath("GitHubTests.VMTest.loadLocal")
+                ? configFromFiles.getBoolean("GitHubTests.VMTest.loadLocal")
+                : DEFAULT_VMTEST_LOAD_LOCAL;
     }
 
     public String blocksLoader() {
-        return configFromFiles.hasPath("blocks.loader") ?
-                configFromFiles.getString("blocks.loader") : DEFAULT_BLOCKS_LOADER;
+        return configFromFiles.hasPath("blocks.loader")
+                ? configFromFiles.getString("blocks.loader")
+                : DEFAULT_BLOCKS_LOADER;
     }
 
     public String customSolcPath() {
-        return configFromFiles.hasPath("solc.path") ? configFromFiles.getString("solc.path"): null;
+        return configFromFiles.hasPath("solc.path") ? configFromFiles.getString("solc.path") : null;
     }
 
     public String netName() {
@@ -635,10 +657,11 @@ public abstract class SystemProperties {
             return Optional.empty();
         }
 
-        List<String> configFederationPublicKeys = configFromFiles.getStringList(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS);
+        List<String> configFederationPublicKeys =
+                configFromFiles.getStringList(PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS);
         return Optional.of(
                 configFederationPublicKeys.stream()
-                        .map(key -> BtcECKey.fromPublicOnly(Hex.decode(key))).collect(Collectors.toList())
-        );
+                        .map(key -> BtcECKey.fromPublicOnly(Hex.decode(key)))
+                        .collect(Collectors.toList()));
     }
 }

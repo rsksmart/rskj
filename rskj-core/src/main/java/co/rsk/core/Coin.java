@@ -18,15 +18,13 @@
 
 package co.rsk.core;
 
+import java.math.BigInteger;
+import javax.annotation.Nonnull;
 import org.ethereum.core.Denomination;
 
-import javax.annotation.Nonnull;
-import java.math.BigInteger;
-
 /**
- * RSK's native coin.
- * One coin is convertible to (10^10)^(-1) satoshis.
- * It is comparable to 1 wei in the Ethereum network.
+ * RSK's native coin. One coin is convertible to (10^10)^(-1) satoshis. It is comparable to 1 wei in the Ethereum
+ * network.
  */
 public class Coin implements Comparable<Coin> {
     public static final Coin ZERO = new Coin(BigInteger.ZERO);
@@ -71,12 +69,10 @@ public class Coin implements Comparable<Coin> {
 
     public Coin[] divideAndRemainder(BigInteger val) {
         BigInteger[] raw = value.divideAndRemainder(val);
-        return new Coin[]{new Coin(raw[0]), new Coin(raw[1])};
+        return new Coin[] {new Coin(raw[0]), new Coin(raw[1])};
     }
 
-    /**
-     * @return the value denominated in Bitcoin, according to the 2-way peg convertibility rules.
-     */
+    /** @return the value denominated in Bitcoin, according to the 2-way peg convertibility rules. */
     public co.rsk.bitcoinj.core.Coin toBitcoin() {
         return co.rsk.bitcoinj.core.Coin.valueOf(Denomination.weisToSatoshis(value).longValue());
     }
@@ -105,9 +101,7 @@ public class Coin implements Comparable<Coin> {
         return value.compareTo(other.value);
     }
 
-    /**
-     * @return a DEBUG representation of the value, mainly used for logging.
-     */
+    /** @return a DEBUG representation of the value, mainly used for logging. */
     @Override
     public String toString() {
         return value.toString();

@@ -18,15 +18,12 @@
 
 package org.ethereum.rpc;
 
-import org.ethereum.util.ByteUtil;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
-/**
- * Created by Ruben on 19/11/2015.
- */
+/** Created by Ruben on 19/11/2015. */
 public class TypeConverter {
 
     private TypeConverter() {
@@ -76,7 +73,7 @@ public class TypeConverter {
     }
 
     public static String toJsonHex(String x) {
-        return "0x"+x;
+        return "0x" + x;
     }
 
     public static String toJsonHex(long n) {
@@ -84,12 +81,10 @@ public class TypeConverter {
     }
 
     public static String toJsonHex(BigInteger n) {
-        return "0x"+ n.toString(16);
+        return "0x" + n.toString(16);
     }
 
-    /**
-     * Converts "0x876AF" to "876AF"
-     */
+    /** Converts "0x876AF" to "876AF" */
     public static String removeZeroX(String str) {
         return str.substring(2);
     }

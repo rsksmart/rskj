@@ -28,17 +28,12 @@ public interface MnrModule {
     SubmittedBlockInfo submitBitcoinBlock(String bitcoinBlockHex);
 
     SubmittedBlockInfo submitBitcoinBlockTransactions(
-            String blockHashHex,
-            String blockHeaderHex,
-            String coinbaseHex,
-            String txnHashesHex
-    );
+            String blockHashHex, String blockHeaderHex, String coinbaseHex, String txnHashesHex);
 
     SubmittedBlockInfo submitBitcoinBlockPartialMerkle(
             String blockHashHex,
             String blockHeaderHex,
             String coinbaseHex,
             String merkleHashesHex,
-            String blockTxnCountHex
-    );
+            String blockTxnCountHex);
 }

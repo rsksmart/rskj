@@ -19,9 +19,7 @@
 
 package org.ethereum.net.client;
 
-/**
- * The protocols and versions of those protocols that this peer support
- */
+/** The protocols and versions of those protocols that this peer support */
 public class Capability implements Comparable<Capability> {
 
     public static final String P2P = "p2p";
@@ -52,7 +50,7 @@ public class Capability implements Comparable<Capability> {
         if (this == obj) {
             return true;
         }
-        
+
         if (!(obj instanceof Capability)) {
             return false;
         }

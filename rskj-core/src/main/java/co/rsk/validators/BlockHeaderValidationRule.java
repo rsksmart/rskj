@@ -20,10 +20,7 @@ package co.rsk.validators;
 
 import org.ethereum.core.BlockHeader;
 
-/**
- * Validates a block header.
- * For example, we can validate the PoW using only the header information.
- */
+/** Validates a block header. For example, we can validate the PoW using only the header information. */
 public interface BlockHeaderValidationRule {
     boolean isValid(BlockHeader header);
 }

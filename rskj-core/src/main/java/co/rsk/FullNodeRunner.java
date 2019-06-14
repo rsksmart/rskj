@@ -28,6 +28,7 @@ import co.rsk.net.TransactionGateway;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.rpc.netty.Web3WebSocketServer;
+import java.util.stream.Collectors;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
@@ -39,8 +40,6 @@ import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.stream.Collectors;
 
 public class FullNodeRunner implements NodeRunner {
     private static Logger logger = LoggerFactory.getLogger("fullnoderunner");
@@ -115,8 +114,7 @@ public class FullNodeRunner implements NodeRunner {
                 "Running {},  core version: {}-{}",
                 rskSystemProperties.genesisInfo(),
                 rskSystemProperties.projectVersion(),
-                rskSystemProperties.projectVersionModifier()
-        );
+                rskSystemProperties.projectVersionModifier());
         buildInfo.printInfo(logger);
 
         transactionGateway.start();

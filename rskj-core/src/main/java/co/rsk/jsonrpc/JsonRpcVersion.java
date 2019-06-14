@@ -19,10 +19,7 @@ package co.rsk.jsonrpc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * The JSON-RPC version.
- * For JSON-RPC 2.0, it should always be '2.0'.
- */
+/** The JSON-RPC version. For JSON-RPC 2.0, it should always be '2.0'. */
 public enum JsonRpcVersion {
     @JsonProperty("2.0")
     V2_0

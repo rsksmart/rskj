@@ -1,11 +1,10 @@
 package co.rsk.core.bc;
 
 import co.rsk.trie.Trie;
+import java.util.List;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.util.RLP;
-
-import java.util.List;
 
 public class BlockHashesHelper {
 

@@ -1,22 +1,15 @@
 package co.rsk.net.messages;
 
+import java.util.List;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
 
-import java.util.List;
-
-/**
- * Created by ajlopez on 24/08/2017.
- */
+/** Created by ajlopez on 24/08/2017. */
 public class BlockHeadersResponseMessage extends MessageWithId {
-    /**
-     * Id to identify request/response correlation
-     */
+    /** Id to identify request/response correlation */
     private long id;
 
-    /**
-     * List of block headers from the peer
-     */
+    /** List of block headers from the peer */
     private List<BlockHeader> blockHeaders;
 
     public BlockHeadersResponseMessage(long id, List<BlockHeader> headers) {
@@ -25,15 +18,17 @@ public class BlockHeadersResponseMessage extends MessageWithId {
     }
 
     @Override
-    public long getId() { return this.id; }
+    public long getId() {
+        return this.id;
+    }
 
-    public List<BlockHeader> getBlockHeaders() { return this.blockHeaders; }
+    public List<BlockHeader> getBlockHeaders() {
+        return this.blockHeaders;
+    }
 
     @Override
     protected byte[] getEncodedMessageWithoutId() {
-        byte[][] rlpHeaders = this.blockHeaders.stream()
-                .map(BlockHeader::getEncoded)
-                .toArray(byte[][]::new);
+        byte[][] rlpHeaders = this.blockHeaders.stream().map(BlockHeader::getEncoded).toArray(byte[][]::new);
 
         return RLP.encodeList(RLP.encodeList(rlpHeaders));
     }

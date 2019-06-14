@@ -18,19 +18,19 @@
 
 package org.ethereum.rpc;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.concurrent.GuardedBy;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 
-import javax.annotation.concurrent.GuardedBy;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
-/**
- * Created by ajlopez on 17/01/2018.
- */
+/** Created by ajlopez on 17/01/2018. */
 public class FilterManager {
     private static final long filterTimeout = 5 * 60 * 1000L; // 5 minutes in milliseconds
     private static final long filterCleanupPeriod = 1 * 60 * 1000L; // 1 minute in milliseconds
@@ -45,17 +45,18 @@ public class FilterManager {
     private Map<Integer, Filter> installedFilters = new HashMap<>();
 
     public FilterManager(Ethereum eth) {
-        eth.addListener(new EthereumListenerAdapter() {
-            @Override
-            public void onBlock(Block block, List<TransactionReceipt> receipts) {
-                newBlockReceived(block);
-            }
+        eth.addListener(
+                new EthereumListenerAdapter() {
+                    @Override
+                    public void onBlock(Block block, List<TransactionReceipt> receipts) {
+                        newBlockReceived(block);
+                    }
 
-            @Override
-            public void onPendingTransactionsReceived(List<Transaction> transactions) {
-                newPendingTx(transactions);
-            }
-        });
+                    @Override
+                    public void onPendingTransactionsReceived(List<Transaction> transactions) {
+                        newPendingTx(transactions);
+                    }
+                });
     }
 
     public int registerFilter(Filter filter) {
@@ -87,8 +88,7 @@ public class FilterManager {
 
             if (newevents) {
                 return filter.getNewEvents();
-            }
-            else {
+            } else {
                 return filter.getEvents();
             }
         }

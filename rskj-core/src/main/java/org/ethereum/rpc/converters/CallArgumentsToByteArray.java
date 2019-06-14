@@ -18,14 +18,12 @@
 
 package org.ethereum.rpc.converters;
 
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+
 import co.rsk.core.RskAddress;
 import org.ethereum.rpc.Web3;
 
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
-
-/**
- * Created by martin.medina on 3/7/17.
- */
+/** Created by martin.medina on 3/7/17. */
 public class CallArgumentsToByteArray {
 
     private Web3.CallArguments args;
@@ -64,7 +62,7 @@ public class CallArgumentsToByteArray {
     }
 
     public byte[] getValue() {
-        byte[] value = new byte[] { 0 };
+        byte[] value = new byte[] {0};
         if (args.value != null && args.value.length() != 0) {
             value = stringHexToByteArray(args.value);
         }

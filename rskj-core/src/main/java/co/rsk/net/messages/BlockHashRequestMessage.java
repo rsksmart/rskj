@@ -18,13 +18,10 @@
 
 package co.rsk.net.messages;
 
+import java.math.BigInteger;
 import org.ethereum.util.RLP;
 
-import java.math.BigInteger;
-
-/**
- * Implements encoding of the BLOCK_HASH_REQUEST message type.
- */
+/** Implements encoding of the BLOCK_HASH_REQUEST message type. */
 public class BlockHashRequestMessage extends MessageWithId {
     private final long id;
     private final long height;
@@ -51,7 +48,11 @@ public class BlockHashRequestMessage extends MessageWithId {
         return RLP.encodeList(rlpHeight);
     }
 
-    public long getId() { return this.id; }
+    public long getId() {
+        return this.id;
+    }
 
-    public long getHeight() { return this.height; }
+    public long getHeight() {
+        return this.height;
+    }
 }

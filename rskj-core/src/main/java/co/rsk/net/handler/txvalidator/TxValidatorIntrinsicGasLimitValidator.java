@@ -20,17 +20,14 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
+import java.math.BigInteger;
+import javax.annotation.Nullable;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.*;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Transaction;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
-
-/**
- * Checks if a minimum gas limit estimated based on the data is lower than
- * the gas limit of the transaction
- */
+/** Checks if a minimum gas limit estimated based on the data is lower than the gas limit of the transaction */
 public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
 
     private final Constants constants;
@@ -42,12 +39,19 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
     }
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
-        if (BigInteger.valueOf(tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber))).compareTo(tx.getGasLimitAsInteger()) <= 0) {
+    public TransactionValidationResult validate(
+            Transaction tx,
+            @Nullable AccountState state,
+            BigInteger gasLimit,
+            Coin minimumGasPrice,
+            long bestBlockNumber,
+            boolean isFreeTx) {
+        if (BigInteger.valueOf(tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber)))
+                        .compareTo(tx.getGasLimitAsInteger())
+                <= 0) {
             return TransactionValidationResult.ok();
         }
 
         return TransactionValidationResult.withError("transaction's basic cost is above the gas limit");
     }
-
 }

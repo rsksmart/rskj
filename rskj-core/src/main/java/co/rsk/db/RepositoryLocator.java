@@ -25,9 +25,7 @@ public class RepositoryLocator {
     private final Repository repository;
     private final StateRootHandler stateRootHandler;
 
-    public RepositoryLocator(
-            Repository repository,
-            StateRootHandler stateRootHandler) {
+    public RepositoryLocator(Repository repository, StateRootHandler stateRootHandler) {
         this.repository = repository;
         this.stateRootHandler = stateRootHandler;
     }

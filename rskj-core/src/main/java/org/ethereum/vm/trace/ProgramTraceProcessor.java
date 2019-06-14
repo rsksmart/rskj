@@ -24,13 +24,10 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
-
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Provides tracing and exporting to JSON
- */
+/** Provides tracing and exporting to JSON */
 public class ProgramTraceProcessor {
     private final Map<Keccak256, ProgramTrace> traces = new HashMap<>();
 
@@ -52,7 +49,8 @@ public class ProgramTraceProcessor {
     }
 
     private static VisibilityChecker<?> fieldsOnlyVisibilityChecker(ObjectMapper mapper) {
-        return mapper.getSerializationConfig().getDefaultVisibilityChecker()
+        return mapper.getSerializationConfig()
+                .getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE);

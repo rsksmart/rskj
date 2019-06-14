@@ -18,14 +18,11 @@
 package co.rsk;
 
 import co.rsk.db.migration.OrchidToUnitrieMigrator;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
-/**
- * The entrypoint for the RSK full node
- */
+/** The entrypoint for the RSK full node */
 public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 

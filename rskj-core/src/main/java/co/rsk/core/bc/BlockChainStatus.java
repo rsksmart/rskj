@@ -22,10 +22,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 import org.ethereum.core.Block;
 
-/**
- * Created by ajlopez on 29/07/2016.
- */
-
+/** Created by ajlopez on 29/07/2016. */
 public class BlockChainStatus {
     private final Block bestBlock;
     private final BlockDifficulty totalDifficulty;

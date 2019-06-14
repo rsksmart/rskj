@@ -19,20 +19,19 @@
 
 package org.ethereum.net.p2p;
 
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.net.client.Capability;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.net.client.Capability;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 
 /**
  * Wrapper around an Ethereum HelloMessage on the network
@@ -41,34 +40,25 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class HelloMessage extends P2pMessage {
 
-    /**
-     * The implemented version of the P2P protocol.
-     */
+    /** The implemented version of the P2P protocol. */
     private byte p2pVersion;
-    /**
-     * The underlying client. A user-readable string.
-     */
+    /** The underlying client. A user-readable string. */
     private String clientId;
     /**
-     * A peer-network capability code, readable ASCII and 3 letters.
-     * Currently only "eth", "shh" and "bzz" are known.
+     * A peer-network capability code, readable ASCII and 3 letters. Currently only "eth", "shh" and "bzz" are known.
      */
     private List<Capability> capabilities = Collections.emptyList();
-    /**
-     * The port on which the peer is listening for an incoming connection
-     */
+    /** The port on which the peer is listening for an incoming connection */
     private int listenPort;
-    /**
-     * The identity and public key of the peer
-     */
+    /** The identity and public key of the peer */
     private String peerId;
 
     public HelloMessage(byte[] encoded) {
         super(encoded);
     }
 
-    public HelloMessage(byte p2pVersion, String clientId,
-                        List<Capability> capabilities, int listenPort, String peerId) {
+    public HelloMessage(
+            byte p2pVersion, String clientId, List<Capability> capabilities, int listenPort, String peerId) {
         this.p2pVersion = p2pVersion;
         this.clientId = clientId;
         this.capabilities = capabilities;
@@ -114,16 +104,16 @@ public class HelloMessage extends P2pMessage {
         byte[][] capabilities = new byte[this.capabilities.size()][];
         for (int i = 0; i < this.capabilities.size(); i++) {
             Capability capability = this.capabilities.get(i);
-            capabilities[i] = RLP.encodeList(
-                    RLP.encodeElement(capability.getName().getBytes(StandardCharsets.UTF_8)),
-                    RLP.encodeInt(capability.getVersion()));
+            capabilities[i] =
+                    RLP.encodeList(
+                            RLP.encodeElement(capability.getName().getBytes(StandardCharsets.UTF_8)),
+                            RLP.encodeInt(capability.getVersion()));
         }
         byte[] capabilityList = RLP.encodeList(capabilities);
         byte[] peerPort = RLP.encodeInt(this.listenPort);
         byte[] peerId = RLP.encodeElement(Hex.decode(this.peerId));
 
-        this.encoded = RLP.encodeList(p2pVersion, clientId,
-                capabilityList, peerPort, peerId);
+        this.encoded = RLP.encodeList(p2pVersion, clientId, capabilityList, peerPort, peerId);
     }
 
     @Override
@@ -199,7 +189,6 @@ public class HelloMessage extends P2pMessage {
                 this.clientId,
                 this.capabilities.stream().map(Capability::toString).collect(Collectors.joining(" ")),
                 this.listenPort,
-                this.peerId
-        );
+                this.peerId);
     }
 }

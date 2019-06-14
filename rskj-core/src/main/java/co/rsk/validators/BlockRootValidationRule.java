@@ -20,18 +20,16 @@ package co.rsk.validators;
 
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.panic.PanicProcessor;
+import java.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.Arrays;
 
 /**
- * Validate the transaction root of a block.
- * It calculates the transaction root hash given the block transaction list
+ * Validate the transaction root of a block. It calculates the transaction root hash given the block transaction list
  * and compares the result with the transaction root hash in block header
  *
  * @return true if the transaction root is valid, false if the transaction root is invalid
@@ -54,8 +52,10 @@ public class BlockRootValidationRule implements BlockValidationRule {
         byte[] txListRootHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskip126Enabled);
 
         if (!Arrays.equals(blockTxRootHash, txListRootHash)) {
-            String message = String.format("Block's given Trie Hash doesn't match: %s != %s",
-                      Hex.toHexString(blockTxRootHash), Hex.toHexString(txListRootHash));
+            String message =
+                    String.format(
+                            "Block's given Trie Hash doesn't match: %s != %s",
+                            Hex.toHexString(blockTxRootHash), Hex.toHexString(txListRootHash));
 
             logger.warn(message);
             panicProcessor.panic("invalidtrie", message);

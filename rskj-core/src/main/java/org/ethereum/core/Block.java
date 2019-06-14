@@ -25,24 +25,21 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import javax.annotation.Nonnull;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 
-import javax.annotation.Nonnull;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
- * The block in Ethereum is the collection of relevant pieces of information
- * (known as the blockheader), H, together with information corresponding to
- * the comprised transactions, R, and a set of other blockheaders U that are known
- * to have a parent equalBytes to the present block’s parent’s parent
- * (such blocks are known as uncles).
+ * The block in Ethereum is the collection of relevant pieces of information (known as the blockheader), H, together
+ * with information corresponding to the comprised transactions, R, and a set of other blockheaders U that are known to
+ * have a parent equalBytes to the present block’s parent’s parent (such blocks are known as uncles).
  *
  * @author Roman Mandeleil
  * @author Nick Savers
@@ -63,12 +60,18 @@ public class Block {
     /* Indicates if this block can or cannot be changed */
     private volatile boolean sealed;
 
-    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed) {
+    public Block(
+            BlockHeader header,
+            List<Transaction> transactionsList,
+            List<BlockHeader> uncleList,
+            boolean isRskip126Enabled,
+            boolean sealed) {
         byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskip126Enabled);
         if (!Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
-            String message = String.format(
-                    "Transactions trie root validation failed for block %d %s", header.getNumber(), header.getHash()
-            );
+            String message =
+                    String.format(
+                            "Transactions trie root validation failed for block %d %s",
+                            header.getNumber(), header.getHash());
             panicProcessor.panic("txroot", message);
             throw new IllegalArgumentException(message);
         }
@@ -312,9 +315,16 @@ public class Block {
     }
 
     public String getShortDescr() {
-        return "#" + getNumber() + " (" + getShortHash() + " <~ "
-                + getParentShortHash() + ") Txs:" + getTransactionsList().size() +
-                ", Unc: " + getUncleList().size();
+        return "#"
+                + getNumber()
+                + " ("
+                + getShortHash()
+                + " <~ "
+                + getParentShortHash()
+                + ") Txs:"
+                + getTransactionsList().size()
+                + ", Unc: "
+                + getUncleList().size();
     }
 
     public String getHashJsonString() {

@@ -25,10 +25,9 @@ import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Created by mario on 26/12/16.
- */
-public class PrevMinGasPriceRule implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule {
+/** Created by mario on 26/12/16. */
+public class PrevMinGasPriceRule
+        implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final PanicProcessor panicProcessor = new PanicProcessor();

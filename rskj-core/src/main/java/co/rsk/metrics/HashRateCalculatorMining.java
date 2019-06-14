@@ -21,16 +21,18 @@ package co.rsk.metrics;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.RskCustomCache;
-import org.ethereum.db.BlockStore;
-
 import java.math.BigInteger;
 import java.time.Duration;
+import org.ethereum.db.BlockStore;
 
 public class HashRateCalculatorMining extends HashRateCalculator {
 
     private final RskAddress coinbaseAddress;
 
-    public HashRateCalculatorMining(BlockStore blockStore, RskCustomCache<Keccak256, BlockHeaderElement> headerCache, RskAddress coinbaseAddress) {
+    public HashRateCalculatorMining(
+            BlockStore blockStore,
+            RskCustomCache<Keccak256, BlockHeaderElement> headerCache,
+            RskAddress coinbaseAddress) {
         super(blockStore, headerCache);
         this.coinbaseAddress = coinbaseAddress;
     }
@@ -43,5 +45,4 @@ public class HashRateCalculatorMining extends HashRateCalculator {
     private Boolean checkOwnership(BlockHeaderElement element) {
         return coinbaseAddress.equals(element.getBlockHeader().getCoinbase());
     }
-
 }

@@ -21,13 +21,12 @@ package co.rsk.db;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
+import java.util.Map;
+import java.util.Objects;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.KeyValueDataSource;
-
-import java.util.Map;
-import java.util.Objects;
 
 public class StateRootHandler {
     private final ActivationConfig activationConfig;
@@ -52,9 +51,7 @@ public class StateRootHandler {
         }
 
         return Objects.requireNonNull(
-                stateRootTranslator.get(blockStateRoot),
-                "Reset database or continue syncing with previous version"
-        );
+                stateRootTranslator.get(blockStateRoot), "Reset database or continue syncing with previous version");
     }
 
     public Keccak256 convert(BlockHeader minedBlock, Trie executionResult) {
@@ -63,7 +60,7 @@ public class StateRootHandler {
             return executionResult.getHash();
         }
 
-        //we shouldn't be converting blocks before orchid in stable networks
+        // we shouldn't be converting blocks before orchid in stable networks
         return new Keccak256(trieConverter.getOrchidAccountTrieRoot(executionResult));
     }
 

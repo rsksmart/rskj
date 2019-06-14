@@ -23,6 +23,10 @@ import co.rsk.net.NodeID;
 import co.rsk.net.eth.RskWireProtocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.InetSocketAddress;
+import java.util.List;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.NodeStatistics;
@@ -43,11 +47,6 @@ import org.ethereum.net.rlpx.Node;
 import org.ethereum.sync.SyncStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.InetSocketAddress;
-import java.util.List;
 
 public class Channel {
 
@@ -70,13 +69,14 @@ public class Channel {
 
     private final PeerStatistics peerStats = new PeerStatistics();
 
-    public Channel(MessageQueue msgQueue,
-                   MessageCodec messageCodec,
-                   NodeManager nodeManager,
-                   RskWireProtocol.Factory rskWireProtocolFactory,
-                   Eth62MessageFactory eth62MessageFactory,
-                   StaticMessages staticMessages,
-                   String remoteId) {
+    public Channel(
+            MessageQueue msgQueue,
+            MessageCodec messageCodec,
+            NodeManager nodeManager,
+            RskWireProtocol.Factory rskWireProtocolFactory,
+            Eth62MessageFactory eth62MessageFactory,
+            StaticMessages staticMessages,
+            String remoteId) {
         this.msgQueue = msgQueue;
         this.messageCodec = messageCodec;
         this.nodeManager = nodeManager;
@@ -86,8 +86,9 @@ public class Channel {
         this.isActive = remoteId != null && !remoteId.isEmpty();
     }
 
-    public void sendHelloMessage(ChannelHandlerContext ctx, FrameCodec frameCodec, String nodeId,
-                                 HelloMessage inboundHelloMessage) throws IOException, InterruptedException {
+    public void sendHelloMessage(
+            ChannelHandlerContext ctx, FrameCodec frameCodec, String nodeId, HelloMessage inboundHelloMessage)
+            throws IOException, InterruptedException {
 
         // in discovery mode we are supplying fake port along with fake nodeID to not receive
         // incoming connections with fake public key
@@ -160,8 +161,7 @@ public class Channel {
         return eth.isUsingNewProtocol();
     }
 
-    public void onDisconnect() {
-    }
+    public void onDisconnect() {}
 
     public void onSyncDone(boolean done) {
 
@@ -182,9 +182,7 @@ public class Channel {
         return node == null ? "<null>" : node.getHexIdShort();
     }
 
-    /**
-     * Indicates whether this connection was initiated by our peer
-     */
+    /** Indicates whether this connection was initiated by our peer */
     public boolean isActive() {
         return isActive;
     }
@@ -238,11 +236,12 @@ public class Channel {
 
         Channel channel = (Channel) o;
 
-        if (inetSocketAddress != null ? !inetSocketAddress.equals(channel.inetSocketAddress) : channel.inetSocketAddress != null) {
+        if (inetSocketAddress != null
+                ? !inetSocketAddress.equals(channel.inetSocketAddress)
+                : channel.inetSocketAddress != null) {
             return false;
         }
         return node != null ? node.equals(channel.node) : channel.node == null;
-
     }
 
     @Override

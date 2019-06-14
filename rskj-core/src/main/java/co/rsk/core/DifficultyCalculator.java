@@ -18,14 +18,13 @@
 
 package co.rsk.core;
 
+import static org.ethereum.util.BIUtil.max;
+
+import java.math.BigInteger;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
-
-import java.math.BigInteger;
-
-import static org.ethereum.util.BIUtil.max;
 
 public class DifficultyCalculator {
     private final ActivationConfig activationConfig;
@@ -49,9 +48,7 @@ public class DifficultyCalculator {
     }
 
     private static BlockDifficulty getBlockDifficulty(
-            BlockHeader curBlockHeader,
-            BlockHeader parent,
-            Constants constants) {
+            BlockHeader curBlockHeader, BlockHeader parent, Constants constants) {
         BlockDifficulty pd = parent.getDifficulty();
         long parentBlockTS = parent.getTimestamp();
         int uncleCount = curBlockHeader.getUncleCount();

@@ -22,8 +22,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 /**
- * Work to do.
- * Requested by MinerClient to MinerServer
+ * Work to do. Requested by MinerClient to MinerServer
+ *
  * @author Oscar Guindzberg
  */
 @Immutable
@@ -34,8 +34,12 @@ public class MinerWork {
     private final boolean notify;
     private final String parentBlockHash;
 
-    public MinerWork(@Nonnull final String blockHashForMergedMining, @Nonnull final String target,
-                     final String paidFees, final boolean notify, @Nonnull final String parentBlockHash) {
+    public MinerWork(
+            @Nonnull final String blockHashForMergedMining,
+            @Nonnull final String target,
+            final String paidFees,
+            final boolean notify,
+            @Nonnull final String parentBlockHash) {
         this.blockHashForMergedMining = blockHashForMergedMining;
         this.target = target;
         this.feesPaidToMiner = paidFees;

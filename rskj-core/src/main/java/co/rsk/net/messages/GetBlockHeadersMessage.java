@@ -19,31 +19,27 @@
 
 package co.rsk.net.messages;
 
+import static org.ethereum.crypto.Keccak256Helper.DEFAULT_SIZE_BYTES;
+import static org.ethereum.util.ByteUtil.byteArrayToInt;
+import static org.ethereum.util.ByteUtil.byteArrayToLong;
+
+import java.math.BigInteger;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.math.BigInteger;
-
-import static org.ethereum.crypto.Keccak256Helper.DEFAULT_SIZE_BYTES;
-import static org.ethereum.util.ByteUtil.byteArrayToInt;
-import static org.ethereum.util.ByteUtil.byteArrayToLong;
-
 /**
  * Wrapper around an Ethereum GetBlockHeaders message on the network
  *
  * @see EthMessageCodes#GET_BLOCK_HEADERS
- *
  * @author Mikhail Kalinin
  * @since 04.09.2015
  */
 public class GetBlockHeadersMessage extends Message {
 
-    /**
-     * Block number from which to start sending block headers
-     */
+    /** Block number from which to start sending block headers */
     private long blockNumber;
 
     /**
@@ -75,7 +71,6 @@ public class GetBlockHeadersMessage extends Message {
     private byte[] encoded;
     private boolean parsed;
 
-
     public GetBlockHeadersMessage(long blockNumber, int maxHeaders) {
         this(blockNumber, null, maxHeaders, 0, false);
     }
@@ -101,9 +96,9 @@ public class GetBlockHeadersMessage extends Message {
     }
 
     private void encode() {
-        byte[] maxHeaders  = RLP.encodeInt(this.maxHeaders);
+        byte[] maxHeaders = RLP.encodeInt(this.maxHeaders);
         byte[] skipBlocks = RLP.encodeInt(this.skipBlocks);
-        byte[] reverse  = RLP.encodeByte((byte) (this.reverse ? 1 : 0));
+        byte[] reverse = RLP.encodeByte((byte) (this.reverse ? 1 : 0));
 
         if (this.blockHash != null) {
             byte[] hash = RLP.encodeElement(this.blockHash);
@@ -207,12 +202,19 @@ public class GetBlockHeadersMessage extends Message {
         if (!parsed) {
             parse();
         }
-        
-        return "[" + getMessageType() +
-                " blockNumber=" + String.valueOf(blockNumber) +
-                " blockHash=" + ByteUtil.toHexString(blockHash) +
-                " maxHeaders=" + maxHeaders +
-                " skipBlocks=" + skipBlocks +
-                " reverse=" + reverse + "]";
+
+        return "["
+                + getMessageType()
+                + " blockNumber="
+                + String.valueOf(blockNumber)
+                + " blockHash="
+                + ByteUtil.toHexString(blockHash)
+                + " maxHeaders="
+                + maxHeaders
+                + " skipBlocks="
+                + skipBlocks
+                + " reverse="
+                + reverse
+                + "]";
     }
 }

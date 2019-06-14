@@ -18,6 +18,8 @@
 
 package co.rsk.rpc.modules.debug;
 
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.MessageHandler;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,8 +32,6 @@ import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 public class DebugModuleImpl implements DebugModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");

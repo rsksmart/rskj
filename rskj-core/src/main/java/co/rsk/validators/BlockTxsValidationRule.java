@@ -18,30 +18,28 @@
 
 package co.rsk.validators;
 
+import static java.math.BigInteger.ONE;
+
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.panic.PanicProcessor;
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static java.math.BigInteger.ONE;
-
 /**
- * Validate a transactions list.
- * It validates each transaction nonce againts the expeced sender account nonce
- * It allows many transactions with the same sender
+ * Validate a transactions list. It validates each transaction nonce againts the expeced sender account nonce It allows
+ * many transactions with the same sender
  *
  * @return true if the transactions are valid, false if any transaction is invalid
  */
-public class BlockTxsValidationRule implements BlockParentDependantValidationRule{
+public class BlockTxsValidationRule implements BlockParentDependantValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -55,7 +53,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
     @Override
     public boolean isValid(Block block, Block parent) {
 
-        if(block == null || parent == null) {
+        if (block == null || parent == null) {
             logger.warn("BlockTxsValidationRule - block or parent are null");
             return false;
         }
@@ -86,12 +84,18 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             BigInteger txNonce = new BigInteger(1, tx.getNonce());
 
             if (!expectedNonce.equals(txNonce)) {
-                logger.warn("Invalid transaction: Tx nonce {} != expected nonce {} (parent nonce: {}): {}",
-                        txNonce, expectedNonce, parentRepo.getNonce(sender), tx);
+                logger.warn(
+                        "Invalid transaction: Tx nonce {} != expected nonce {} (parent nonce: {}): {}",
+                        txNonce,
+                        expectedNonce,
+                        parentRepo.getNonce(sender),
+                        tx);
 
-                panicProcessor.panic("invalidtransaction",
-                                     String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
-                                                   txNonce, expectedNonce, parentRepo.getNonce(sender), tx.getHash()));
+                panicProcessor.panic(
+                        "invalidtransaction",
+                        String.format(
+                                "Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
+                                txNonce, expectedNonce, parentRepo.getNonce(sender), tx.getHash()));
 
                 return false;
             }

@@ -20,20 +20,22 @@ package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockStore;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockInformation;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
-/**
- * Created by ajlopez on 19/08/2016.
- */
+/** Created by ajlopez on 19/08/2016. */
 public class BlockUtils {
 
-    private BlockUtils() { }
+    private BlockUtils() {}
 
     public static boolean blockInSomeBlockChain(Block block, Blockchain blockChain) {
         return blockInSomeBlockChain(block.getHash(), block.getNumber(), blockChain);
@@ -54,7 +56,8 @@ public class BlockUtils {
         return unknownAncestorsHashes(hashes, blockChain, store, true);
     }
 
-    public static Set<Keccak256> unknownAncestorsHashes(Set<Keccak256> hashesToProcess, Blockchain blockChain, BlockStore store, boolean withUncles) {
+    public static Set<Keccak256> unknownAncestorsHashes(
+            Set<Keccak256> hashesToProcess, Blockchain blockChain, BlockStore store, boolean withUncles) {
         Set<Keccak256> unknown = new HashSet<>();
         Set<Keccak256> hashes = hashesToProcess;
 
@@ -65,7 +68,12 @@ public class BlockUtils {
         return unknown;
     }
 
-    private static Set<Keccak256> getNextHashes(Set<Keccak256> previousHashes, Set<Keccak256> unknown, Blockchain blockChain, BlockStore store, boolean withUncles) {
+    private static Set<Keccak256> getNextHashes(
+            Set<Keccak256> previousHashes,
+            Set<Keccak256> unknown,
+            Blockchain blockChain,
+            BlockStore store,
+            boolean withUncles) {
         Set<Keccak256> nextHashes = new HashSet<>();
         for (Keccak256 hash : previousHashes) {
             if (unknown.contains(hash)) {
@@ -106,9 +114,6 @@ public class BlockUtils {
     }
 
     public static List<Block> sortBlocksByNumber(List<Block> blocks) {
-        return blocks.stream()
-                .sorted(Comparator.comparingLong(Block::getNumber))
-                .collect(Collectors.toList());
+        return blocks.stream().sorted(Comparator.comparingLong(Block::getNumber)).collect(Collectors.toList());
     }
-
 }

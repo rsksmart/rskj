@@ -18,16 +18,13 @@
 
 package co.rsk.validators;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by mario on 18/01/17.
- */
+/** Created by mario on 18/01/17. */
 public class BlockCompositeRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
@@ -36,21 +33,22 @@ public class BlockCompositeRule implements BlockValidationRule {
 
     public BlockCompositeRule(BlockValidationRule... rules) {
         this.rules = new ArrayList<>();
-        if(rules != null) {
+        if (rules != null) {
             for (BlockValidationRule rule : rules) {
-                if(rule != null) {
+                if (rule != null) {
                     this.rules.add(rule);
                 }
             }
         }
     }
+
     @Override
     public boolean isValid(Block block) {
         String shortHash = block.getShortHash();
         long number = block.getNumber();
         logger.debug("Validating block {} {}", shortHash, number);
-        for(BlockValidationRule rule : this.rules) {
-            if(!rule.isValid(block)) {
+        for (BlockValidationRule rule : this.rules) {
+            if (!rule.isValid(block)) {
                 logger.warn("Error Validating block {} {}", shortHash, number);
                 return false;
             }

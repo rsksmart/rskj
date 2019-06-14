@@ -19,6 +19,7 @@
 
 package org.ethereum.listener;
 
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
@@ -29,8 +30,6 @@ import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 
-import java.util.List;
-
 /**
  * @author Roman Mandeleil
  * @since 08.08.2014
@@ -38,70 +37,48 @@ import java.util.List;
 public class EthereumListenerAdapter implements EthereumListener {
 
     @Override
-    public void trace(String output) {
-    }
+    public void trace(String output) {}
 
     @Override
-    public void onBlock(Block block, List<TransactionReceipt> receipts) {
-    }
+    public void onBlock(Block block, List<TransactionReceipt> receipts) {}
 
     @Override
-    public void onBestBlock(Block block, List<TransactionReceipt> receipts) {
-    }
+    public void onBestBlock(Block block, List<TransactionReceipt> receipts) {}
 
     @Override
-    public void onRecvMessage(Channel channel, Message message) {
-    }
+    public void onRecvMessage(Channel channel, Message message) {}
 
     @Override
-    public void onPeerDisconnect(String host, long port) {
-    }
+    public void onPeerDisconnect(String host, long port) {}
 
     @Override
-    public void onPendingTransactionsReceived(List<Transaction> transactions) {
-    }
+    public void onPendingTransactionsReceived(List<Transaction> transactions) {}
 
     @Override
-    public void onTransactionPoolChanged(TransactionPool transactionPool) {
-    }
+    public void onTransactionPoolChanged(TransactionPool transactionPool) {}
 
     @Deprecated
     @Override
-    public void onSyncDone() {
-    }
+    public void onSyncDone() {}
 
     @Override
-    public void onHandShakePeer(Channel channel, HelloMessage helloMessage) {
-
-    }
+    public void onHandShakePeer(Channel channel, HelloMessage helloMessage) {}
 
     @Override
-    public void onNoConnections() {
-
-    }
+    public void onNoConnections() {}
 
     @Override
-    public void onNodeDiscovered(Node node) {
-
-    }
+    public void onNodeDiscovered(Node node) {}
 
     @Override
-    public void onEthStatusUpdated(Channel channel, StatusMessage statusMessage) {
-
-    }
+    public void onEthStatusUpdated(Channel channel, StatusMessage statusMessage) {}
 
     @Override
-    public void onPeerAddedToSyncPool(Channel peer) {
-
-    }
+    public void onPeerAddedToSyncPool(Channel peer) {}
 
     @Override
-    public void onLongSyncDone() {
-
-    }
+    public void onLongSyncDone() {}
 
     @Override
-    public void onLongSyncStarted() {
-
-    }
+    public void onLongSyncStarted() {}
 }

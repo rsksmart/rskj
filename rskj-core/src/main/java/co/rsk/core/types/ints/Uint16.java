@@ -27,7 +27,6 @@ public final class Uint16 {
     }
 
     public static int decodeToInt(byte[] bytes, int offset) {
-        return  (bytes[offset + 1] & 0xFF)       +
-               ((bytes[offset    ] & 0xFF) << 8);
+        return (bytes[offset + 1] & 0xFF) + ((bytes[offset] & 0xFF) << 8);
     }
 }

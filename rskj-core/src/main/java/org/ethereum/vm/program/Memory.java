@@ -19,18 +19,17 @@
 
 package org.ethereum.vm.program;
 
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.listener.ProgramListener;
-import org.ethereum.vm.program.listener.ProgramListenerAware;
-
-import java.util.LinkedList;
-import java.util.List;
-
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
+
+import java.util.LinkedList;
+import java.util.List;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.program.listener.ProgramListener;
+import org.ethereum.vm.program.listener.ProgramListenerAware;
 
 public class Memory implements ProgramListenerAware {
 
@@ -113,7 +112,6 @@ public class Memory implements ProgramListenerAware {
         }
     }
 
-
     public void extendAndWrite(int address, int allocSize, byte[] data) {
         extend(address, allocSize);
         write(address, data, data.length, false);
@@ -169,7 +167,7 @@ public class Memory implements ProgramListenerAware {
             byte value = readByte(i);
 
             // Check if value is ASCII
-            String character = ((byte) 0x20 <= value && value <= (byte) 0x7e) ? new String(new byte[]{value}) : "?";
+            String character = ((byte) 0x20 <= value && value <= (byte) 0x7e) ? new String(new byte[] {value}) : "?";
             firstLine.append(character).append("");
             secondLine.append(oneByteToHexString(value)).append(" ");
 

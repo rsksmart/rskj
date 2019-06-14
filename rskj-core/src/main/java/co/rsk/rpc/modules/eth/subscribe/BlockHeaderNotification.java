@@ -21,9 +21,7 @@ package co.rsk.rpc.modules.eth.subscribe;
 import org.ethereum.core.Block;
 import org.ethereum.rpc.TypeConverter;
 
-/**
- * The block header DTO for JSON serialization purposes.
- */
+/** The block header DTO for JSON serialization purposes. */
 public class BlockHeaderNotification {
     private final String difficulty;
     private final String extraData;

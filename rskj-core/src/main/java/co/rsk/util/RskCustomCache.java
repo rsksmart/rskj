@@ -20,11 +20,13 @@ package co.rsk.util;
 
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
-/**
- * Created by mario on 09/09/2016.
- */
+/** Created by mario on 09/09/2016. */
 public class RskCustomCache<K, T> {
 
     private Long timeToLive;
@@ -36,11 +38,13 @@ public class RskCustomCache<K, T> {
     public RskCustomCache(Long timeToLive) {
         this.timeToLive = timeToLive;
 
-        cacheTimer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "BlockHeaderCacheTimer");
-            }
-        });
+        cacheTimer =
+                Executors.newSingleThreadScheduledExecutor(
+                        new ThreadFactory() {
+                            public Thread newThread(Runnable r) {
+                                return new Thread(r, "BlockHeaderCacheTimer");
+                            }
+                        });
     }
 
     public void start() {
@@ -62,19 +66,18 @@ public class RskCustomCache<K, T> {
     public T get(K key) {
         T ret = null;
         CacheElement<T> element = this.cache.get(key);
-        if(element != null) {
+        if (element != null) {
             element.updateLastAccess();
             ret = element.value();
         }
         return ret;
     }
 
-
     private void cleanUp() {
         Iterator<Map.Entry<K, CacheElement<T>>> iter = this.cache.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry<K, CacheElement<T>> entry = iter.next();
-            if(entry.getValue().hasExpired()){
+            if (entry.getValue().hasExpired()) {
                 iter.remove();
             }
         }

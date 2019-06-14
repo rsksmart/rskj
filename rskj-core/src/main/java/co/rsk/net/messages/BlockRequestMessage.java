@@ -2,9 +2,7 @@ package co.rsk.net.messages;
 
 import org.ethereum.util.RLP;
 
-/**
- * Created by ajlopez on 24/08/2017.
- */
+/** Created by ajlopez on 24/08/2017. */
 public class BlockRequestMessage extends MessageWithId {
     private long id;
     private byte[] hash;
@@ -14,7 +12,9 @@ public class BlockRequestMessage extends MessageWithId {
         this.hash = hash;
     }
 
-    public long getId() { return this.id; }
+    public long getId() {
+        return this.id;
+    }
 
     public byte[] getBlockHash() {
         return this.hash;

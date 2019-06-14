@@ -18,6 +18,10 @@
 
 package co.rsk.rpc.modules.evm;
 
+import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
+import static org.ethereum.rpc.TypeConverter.stringNumberAsBigInt;
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
+
 import co.rsk.core.SnapshotManager;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerClock;
@@ -28,8 +32,6 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.ethereum.rpc.TypeConverter.*;
 
 public class EvmModuleImpl implements EvmModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");

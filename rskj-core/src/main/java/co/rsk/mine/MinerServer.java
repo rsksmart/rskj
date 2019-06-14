@@ -21,12 +21,10 @@ package co.rsk.mine;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.Block;
-
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Optional;
-
+import javax.annotation.Nonnull;
+import org.ethereum.core.Block;
 
 public interface MinerServer {
 
@@ -41,15 +39,13 @@ public interface MinerServer {
             BtcBlock blockWithOnlyHeader,
             BtcTransaction coinbase,
             List<String> merkleHashes,
-            int blockTxnCount
-    );
+            int blockTxnCount);
 
     SubmitBlockResult submitBitcoinBlockTransactions(
             String blockHashForMergedMining,
             BtcBlock blockWithOnlyHeader,
             BtcTransaction coinbase,
-            List<String> txHashes
-    );
+            List<String> txHashes);
 
     SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock);
 

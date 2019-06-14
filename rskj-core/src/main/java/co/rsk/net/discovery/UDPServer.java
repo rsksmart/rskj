@@ -24,14 +24,11 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeUnit;
-
-/**
- * Created by mario on 10/02/17.
- */
+/** Created by mario on 10/02/17. */
 public class UDPServer {
     private static final Logger logger = LoggerFactory.getLogger(UDPServer.class);
 
@@ -99,17 +96,18 @@ public class UDPServer {
     }
 
     private Bootstrap createBootstrap(EventLoopGroup group) {
-        return new Bootstrap().group(group).channel(NioDatagramChannel.class)
-                .handler(new ChannelInitializer<NioDatagramChannel>() {
-                    @Override
-                    public void initChannel(NioDatagramChannel ch)
-                            throws Exception {
-                        ch.pipeline().addLast(new PacketDecoder());
-                        UDPChannel udpChannel = new UDPChannel(ch, peerExplorer);
-                        peerExplorer.setUDPChannel(udpChannel);
-                        ch.pipeline().addLast(udpChannel);
-                    }
-                });
+        return new Bootstrap()
+                .group(group)
+                .channel(NioDatagramChannel.class)
+                .handler(
+                        new ChannelInitializer<NioDatagramChannel>() {
+                            @Override
+                            public void initChannel(NioDatagramChannel ch) throws Exception {
+                                ch.pipeline().addLast(new PacketDecoder());
+                                UDPChannel udpChannel = new UDPChannel(ch, peerExplorer);
+                                peerExplorer.setUDPChannel(udpChannel);
+                                ch.pipeline().addLast(udpChannel);
+                            }
+                        });
     }
 }
-

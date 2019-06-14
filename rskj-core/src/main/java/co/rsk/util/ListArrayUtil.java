@@ -18,13 +18,13 @@
 
 package co.rsk.util;
 
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
+import javax.annotation.Nullable;
 
 /**
- * Utility Class
- * basic operations with arrays and lists
+ * Utility Class basic operations with arrays and lists
+ *
  * @since 23/04/2019
  * @author alexbraz
  */
@@ -52,16 +52,12 @@ public class ListArrayUtil {
         return byteObjectArray;
     }
 
-    /**
-     * @return true if the array is empty or null
-     */
+    /** @return true if the array is empty or null */
     public static boolean isEmpty(@Nullable byte[] array) {
         return array == null || array.length == 0;
     }
 
-    /**
-     * @return the length of the array, or zero if null
-     */
+    /** @return the length of the array, or zero if null */
     public static int getLength(@Nullable byte[] array) {
         if (array == null) {
             return 0;
@@ -70,9 +66,7 @@ public class ListArrayUtil {
         return array.length;
     }
 
-    /**
-     * @return the same array if not null, or else an empty array
-     */
+    /** @return the same array if not null, or else an empty array */
     public static byte[] nullToEmpty(@Nullable byte[] array) {
         if (array == null) {
             return new byte[0];

@@ -19,8 +19,25 @@
 
 package org.ethereum.sync;
 
+import static java.lang.Math.min;
+import static org.ethereum.util.BIUtil.isIn20PercentRange;
+
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.NodeID;
+import java.math.BigInteger;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
@@ -34,21 +51,9 @@ import org.ethereum.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import static java.lang.Math.min;
-import static org.ethereum.util.BIUtil.isIn20PercentRange;
-
 /**
- * <p>Encapsulates logic which manages peers involved in blockchain sync</p>
- *
- * Holds connections, bans, disconnects and other peers logic<br>
+ * Encapsulates logic which manages peers involved in blockchain sync Holds connections, bans, disconnects and other
+ * peers logic<br>
  * The pool is completely threadsafe<br>
  * Implements {@link Iterable} and can be used in "foreach" loop<br>
  *
@@ -75,7 +80,11 @@ public class SyncPool {
     private final NodeManager nodeManager;
     private final ScheduledExecutorService syncPoolExecutor;
 
-    public SyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager) {
+    public SyncPool(
+            EthereumListener ethereumListener,
+            Blockchain blockchain,
+            SystemProperties config,
+            NodeManager nodeManager) {
         this.ethereumListener = ethereumListener;
         this.blockchain = blockchain;
         this.config = config;
@@ -85,18 +94,20 @@ public class SyncPool {
 
     public void start(PeerClientFactory peerClientFactory) {
         syncPoolExecutor.scheduleWithFixedDelay(
-            () -> {
-                try {
-                    heartBeat();
-                    processConnections();
-                    updateLowerUsefulDifficulty();
-                    fillUp(peerClientFactory);
-                    prepareActive();
-                } catch (Throwable t) {
-                    logger.error("Unhandled exception", t);
-                }
-            }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS
-        );
+                () -> {
+                    try {
+                        heartBeat();
+                        processConnections();
+                        updateLowerUsefulDifficulty();
+                        fillUp(peerClientFactory);
+                        prepareActive();
+                    } catch (Throwable t) {
+                        logger.error("Unhandled exception", t);
+                    }
+                },
+                WORKER_TIMEOUT,
+                WORKER_TIMEOUT,
+                TimeUnit.SECONDS);
     }
 
     public void stop() {
@@ -156,18 +167,12 @@ public class SyncPool {
 
     private void connect(Node node, PeerClientFactory peerClientFactory) {
         if (logger.isTraceEnabled()) {
-            logger.trace(
-                "Peer {}: initiate connection",
-                node.getHexIdShort()
-            );
+            logger.trace("Peer {}: initiate connection", node.getHexIdShort());
         }
 
         if (isInUse(node.getHexId())) {
             if (logger.isTraceEnabled()) {
-                logger.trace(
-                    "Peer {}: connection already initiated",
-                    node.getHexIdShort()
-                );
+                logger.trace("Peer {}: connection already initiated", node.getHexIdShort());
             }
 
             return;
@@ -213,7 +218,7 @@ public class SyncPool {
 
     private void fillUp(PeerClientFactory peerClientFactory) {
         int lackSize = config.maxActivePeers() - peers.size();
-        if(lackSize <= 0) {
+        if (lackSize <= 0) {
             return;
         }
 
@@ -225,14 +230,13 @@ public class SyncPool {
             logDiscoveredNodes(newNodes);
         }
 
-        for(NodeHandler n : newNodes) {
+        for (NodeHandler n : newNodes) {
             connect(n.getNode(), peerClientFactory);
         }
     }
 
     private void prepareActive() {
         synchronized (peers) {
-
             List<Channel> active = new ArrayList<>(peers.values());
 
             if (active.isEmpty()) {
@@ -267,19 +271,16 @@ public class SyncPool {
     private void logDiscoveredNodes(List<NodeHandler> nodes) {
         StringBuilder sb = new StringBuilder();
 
-        for(NodeHandler n : nodes) {
+        for (NodeHandler n : nodes) {
             sb.append(Utils.getNodeIdShort(Hex.toHexString(n.getNode().getId().getID())));
             sb.append(", ");
         }
 
-        if(sb.length() > 0) {
+        if (sb.length() > 0) {
             sb.delete(sb.length() - 2, sb.length());
         }
 
-        logger.trace(
-                "Node list obtained from discovery: {}",
-                nodes.isEmpty() ? "empty" : sb.toString()
-        );
+        logger.trace("Node list obtained from discovery: {}", nodes.isEmpty() ? "empty" : sb.toString());
     }
 
     public void updateLowerUsefulDifficulty() {
@@ -294,7 +295,10 @@ public class SyncPool {
         synchronized (peers) {
             for (Channel peer : peers.values()) {
                 if (!peer.isIdle() && peer.getSyncStats().secondsSinceLastUpdate() > config.peerChannelReadTimeout()) {
-                    logger.info("Peer {}: no response after {} seconds", peer.getPeerIdShort(), config.peerChannelReadTimeout());
+                    logger.info(
+                            "Peer {}: no response after {} seconds",
+                            peer.getPeerIdShort(),
+                            config.peerChannelReadTimeout());
                     peer.dropConnection();
                 }
             }

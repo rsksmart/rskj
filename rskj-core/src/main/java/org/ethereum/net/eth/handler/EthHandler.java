@@ -21,6 +21,7 @@ package org.ethereum.net.eth.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import java.util.List;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -38,13 +39,9 @@ import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 /**
  * Process the messages between peers with 'eth' capability on the network<br>
- * Contains common logic to all supported versions
- * delegating version specific stuff to its descendants
- *
+ * Contains common logic to all supported versions delegating version specific stuff to its descendants
  */
 public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage> implements Eth {
 
@@ -58,18 +55,23 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
     protected EthVersion version;
 
     protected Block bestBlock;
-    protected EthereumListener listener = new EthereumListenerAdapter() {
-        @Override
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
-            bestBlock = block;
-        }
-    };
+    protected EthereumListener listener =
+            new EthereumListenerAdapter() {
+                @Override
+                public void onBlock(Block block, List<TransactionReceipt> receipts) {
+                    bestBlock = block;
+                }
+            };
 
     protected int maxHashesAsk;
 
     protected boolean processTransactions = false;
 
-    protected EthHandler(Blockchain blockchain, SystemProperties config, CompositeEthereumListener ethereumListener, EthVersion version) {
+    protected EthHandler(
+            Blockchain blockchain,
+            SystemProperties config,
+            CompositeEthereumListener ethereumListener,
+            EthVersion version) {
         this.ethereumListener = ethereumListener;
         this.version = version;
         maxHashesAsk = config.maxHashesAsk();

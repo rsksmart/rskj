@@ -18,19 +18,17 @@
 
 package co.rsk.net.discovery;
 
-
 import co.rsk.net.discovery.message.MessageDecoder;
 import co.rsk.net.discovery.message.PeerDiscoveryMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.MessageToMessageDecoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.net.InetSocketAddress;
 import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PacketDecoder extends MessageToMessageDecoder<DatagramPacket> {
     private static final Logger logger = LoggerFactory.getLogger(PacketDecoder.class);
@@ -48,7 +46,11 @@ public class PacketDecoder extends MessageToMessageDecoder<DatagramPacket> {
             PeerDiscoveryMessage msg = MessageDecoder.decode(encoded);
             return new DiscoveryEvent(msg, sender);
         } catch (Exception e) {
-            logger.error("Exception processing inbound message from {} : {}", ctx.channel().remoteAddress(), Hex.toHexString(encoded), e);
+            logger.error(
+                    "Exception processing inbound message from {} : {}",
+                    ctx.channel().remoteAddress(),
+                    Hex.toHexString(encoded),
+                    e);
             throw e;
         }
     }

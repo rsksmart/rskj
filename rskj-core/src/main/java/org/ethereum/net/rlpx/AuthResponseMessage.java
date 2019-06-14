@@ -19,14 +19,14 @@
 
 package org.ethereum.net.rlpx;
 
-import org.ethereum.crypto.ECKey;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 
 /**
  * Authentication response message, to be wrapped inside
  *
- * Created by devrandom on 2015-04-07.
+ * <p>Created by devrandom on 2015-04-07.
  */
 public class AuthResponseMessage {
     ECPoint ephemeralPublicKey; // 64 bytes - uncompressed and no type byte
@@ -54,7 +54,7 @@ public class AuthResponseMessage {
     }
 
     public static int getLength() {
-        return 64+32+1;
+        return 64 + 32 + 1;
     }
 
     public byte[] encode() {
@@ -65,17 +65,20 @@ public class AuthResponseMessage {
         offset += publicBytes.length - 1;
         System.arraycopy(nonce, 0, buffer, offset, nonce.length);
         offset += nonce.length;
-        buffer[offset] = (byte)(isTokenUsed ? 0x01 : 0x00);
+        buffer[offset] = (byte) (isTokenUsed ? 0x01 : 0x00);
         offset += 1;
         return buffer;
     }
 
     @Override
     public String toString() {
-        return "AuthResponseMessage{" +
-                "\n  ephemeralPublicKey=" + ephemeralPublicKey +
-                "\n  nonce=" + Hex.toHexString(nonce) +
-                "\n  isTokenUsed=" + isTokenUsed +
-                '}';
+        return "AuthResponseMessage{"
+                + "\n  ephemeralPublicKey="
+                + ephemeralPublicKey
+                + "\n  nonce="
+                + Hex.toHexString(nonce)
+                + "\n  isTokenUsed="
+                + isTokenUsed
+                + '}';
     }
 }

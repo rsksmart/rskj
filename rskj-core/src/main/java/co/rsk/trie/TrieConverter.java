@@ -26,14 +26,13 @@ import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.MaxSizeHashMap;
+import java.util.Map;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
-
-import java.util.Map;
 
 public class TrieConverter {
 
@@ -51,10 +50,13 @@ public class TrieConverter {
 
     public byte[] getOrchidAccountTrieRoot(Trie src) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_CONVERTER_GET_ACCOUNT_ROOT);
-        byte[] trieRoot =  cacheHashes.computeIfAbsent(src.getHash(), k -> {
-            Trie trie = getOrchidAccountTrieRoot(src.getSharedPath(), src, true);
-            return trie == null ? HashUtil.EMPTY_TRIE_HASH : trie.getHashOrchid(true).getBytes();
-        });
+        byte[] trieRoot =
+                cacheHashes.computeIfAbsent(
+                        src.getHash(),
+                        k -> {
+                            Trie trie = getOrchidAccountTrieRoot(src.getSharedPath(), src, true);
+                            return trie == null ? HashUtil.EMPTY_TRIE_HASH : trie.getHashOrchid(true).getBytes();
+                        });
         profiler.stop(metric);
         return trieRoot;
     }
@@ -78,8 +80,13 @@ public class TrieConverter {
         Trie child1 = src.getNodeReference(RIGHT_CHILD_IMPLICIT_KEY).getNode().orElse(null);
         Trie child1Hash = null;
 
-        boolean isRemascAccount = key.length() == (1 + TrieKeyMapper.SECURE_KEY_SIZE + RemascTransaction.REMASC_ADDRESS.getBytes().length) * Byte.SIZE;
-        if ((key.length() == (1 + TrieKeyMapper.SECURE_KEY_SIZE + RskAddress.LENGTH_IN_BYTES) * Byte.SIZE || isRemascAccount) && src.getValue() != null) {
+        boolean isRemascAccount =
+                key.length()
+                        == (1 + TrieKeyMapper.SECURE_KEY_SIZE + RemascTransaction.REMASC_ADDRESS.getBytes().length)
+                                * Byte.SIZE;
+        if ((key.length() == (1 + TrieKeyMapper.SECURE_KEY_SIZE + RskAddress.LENGTH_IN_BYTES) * Byte.SIZE
+                        || isRemascAccount)
+                && src.getValue() != null) {
             // We've reached the Account level. From now on everything will be different.
             AccountState astate = new AccountState(src.getValue());
             OrchidAccountState oldState = new OrchidAccountState(astate.getNonce(), astate.getBalance());
@@ -109,15 +116,29 @@ public class TrieConverter {
             byte[] avalue = oldState.getEncoded();
             TrieKeySlice orchidKey;
             if (isRemascAccount) {
-                orchidKey = extractOrchidAccountKeyPathFromUnitrieKey(key, sharedPath.length(), RemascTransaction.REMASC_ADDRESS.getBytes().length, TrieKeyMapper.REMASC_ACCOUNT_KEY_SIZE);
+                orchidKey =
+                        extractOrchidAccountKeyPathFromUnitrieKey(
+                                key,
+                                sharedPath.length(),
+                                RemascTransaction.REMASC_ADDRESS.getBytes().length,
+                                TrieKeyMapper.REMASC_ACCOUNT_KEY_SIZE);
             } else {
-                orchidKey = extractOrchidAccountKeyPathFromUnitrieKey(key, sharedPath.length(), RskAddress.LENGTH_IN_BYTES, TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE);
+                orchidKey =
+                        extractOrchidAccountKeyPathFromUnitrieKey(
+                                key,
+                                sharedPath.length(),
+                                RskAddress.LENGTH_IN_BYTES,
+                                TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE);
             }
 
             return new Trie(
-                    null, orchidKey, avalue, NodeReference.empty(), NodeReference.empty(),
-                    new Uint24(avalue.length), null
-            );
+                    null,
+                    orchidKey,
+                    avalue,
+                    NodeReference.empty(),
+                    NodeReference.empty(),
+                    new Uint24(avalue.length),
+                    null);
         }
 
         if (child0 != null) {
@@ -133,17 +154,11 @@ public class TrieConverter {
         NodeReference left = new NodeReference(null, child0Hash, null);
         NodeReference right = new NodeReference(null, child1Hash, null);
 
-        return new Trie(
-                null, sharedPath, src.getValue(), left, right,
-                src.getValueLength(), src.getValueHash()
-        );
+        return new Trie(null, sharedPath, src.getValue(), left, right, src.getValueLength(), src.getValueHash());
     }
 
     private Trie getOrchidStateRoot(
-            TrieKeySlice key,
-            Trie unitrieStorageRoot,
-            boolean removeFirstNodePrefix,
-            boolean onlyChild) {
+            TrieKeySlice key, Trie unitrieStorageRoot, boolean removeFirstNodePrefix, boolean onlyChild) {
 
         Trie storageNodeHash = cacheStorage.get(unitrieStorageRoot.getHash());
         if (storageNodeHash != null && !onlyChild && !removeFirstNodePrefix) {
@@ -192,16 +207,14 @@ public class TrieConverter {
             // 42 = DOMAIN_PREFIX(1) + SECURE_KEY_SIZE(10) + RskAddress(20) + STORAGE_PREFIX(1) + SECURE_KEY_SIZE(10)
             if (key.length() >= 42 * Byte.SIZE) {
                 // there is a branching ahead of the needed shared 10 bytes
-                throw new IllegalArgumentException("The unitrie storage doesn't share as much structure as we need to rebuild the Orchid trie");
+                throw new IllegalArgumentException(
+                        "The unitrie storage doesn't share as much structure as we need to rebuild the Orchid trie");
             }
         }
 
         NodeReference left = new NodeReference(null, child0Hash, null);
         NodeReference right = new NodeReference(null, child1Hash, null);
-        Trie newNode = new Trie(
-                null, sharedPath, value, left, right,
-                valueLength, valueHash
-        );
+        Trie newNode = new Trie(null, sharedPath, value, left, right, valueLength, valueHash);
         if (!onlyChild) {
             cacheStorage.put(unitrieStorageRoot.getHash(), newNode);
         }
@@ -209,9 +222,13 @@ public class TrieConverter {
         return newNode;
     }
 
-    private TrieKeySlice extractOrchidAccountKeyPathFromUnitrieKey(TrieKeySlice key, int sharedPathLength, int addressLengthInBytes, int unitrieKeySizeInBytes) {
-        if (sharedPathLength < (unitrieKeySizeInBytes - TrieKeyMapper.SECURE_KEY_SIZE) * Byte.SIZE) { // = 20 bytes = RskAddress.LENGTH_IN_BYTES
-            throw new IllegalArgumentException("The unitrie doesn't share as much structure as we need to rebuild the Orchid trie");
+    private TrieKeySlice extractOrchidAccountKeyPathFromUnitrieKey(
+            TrieKeySlice key, int sharedPathLength, int addressLengthInBytes, int unitrieKeySizeInBytes) {
+        if (sharedPathLength
+                < (unitrieKeySizeInBytes - TrieKeyMapper.SECURE_KEY_SIZE)
+                        * Byte.SIZE) { // = 20 bytes = RskAddress.LENGTH_IN_BYTES
+            throw new IllegalArgumentException(
+                    "The unitrie doesn't share as much structure as we need to rebuild the Orchid trie");
         }
 
         byte[] encodedKey = key.slice(key.length() - addressLengthInBytes * Byte.SIZE, key.length()).encode();
@@ -235,5 +252,4 @@ public class TrieConverter {
 
         return expandedOrchidTrieSecureKey.slice(nonSharedPathOffset, expandedOrchidTrieSecureKey.length());
     }
-
 }

@@ -18,32 +18,27 @@ package org.ethereum.core;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.bouncycastle.util.encoders.Hex;
+import static org.ethereum.util.ByteUtil.byteArrayToLong;
 
 import java.math.BigInteger;
-
-import static org.ethereum.util.ByteUtil.byteArrayToLong;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 
 /**
  * Block identifier holds block hash and number <br>
- * This tuple is used in some places of the core,
- * like by {@link org.ethereum.net.eth.message.EthMessageCodes#NEW_BLOCK_HASHES} message wrapper
+ * This tuple is used in some places of the core, like by {@link
+ * org.ethereum.net.eth.message.EthMessageCodes#NEW_BLOCK_HASHES} message wrapper
  *
  * @author Mikhail Kalinin
  * @since 04.09.2015
  */
 public class BlockIdentifier {
 
-    /**
-     * Block hash
-     */
+    /** Block hash */
     private byte[] hash;
 
-    /**
-     * Block number
-     */
+    /** Block number */
     private long number;
 
     public BlockIdentifier(RLPList rlp) {
@@ -73,9 +68,6 @@ public class BlockIdentifier {
 
     @Override
     public String toString() {
-        return "BlockIdentifier {" +
-                "hash=" + Hex.toHexString(hash) +
-                ", number=" + number +
-                '}';
+        return "BlockIdentifier {" + "hash=" + Hex.toHexString(hash) + ", number=" + number + '}';
     }
 }

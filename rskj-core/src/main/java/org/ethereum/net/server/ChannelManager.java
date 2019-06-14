@@ -22,34 +22,31 @@ package org.ethereum.net.server;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.MessageWithId;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockIdentifier;
-import org.ethereum.core.Transaction;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.Transaction;
 
 /**
  * @author Ruben Altman
- * @since 9/6/2016
- * Added to make unit testing easier
+ * @since 9/6/2016 Added to make unit testing easier
  */
-
 public interface ChannelManager {
 
     void start();
+
     void stop();
 
     boolean isRecentlyDisconnected(InetAddress peerAddr);
 
-
     /**
-     * broadcastBlock Propagates a block message across active peers with exclusion of
-     * the peers with an id belonging to the skip set.
+     * broadcastBlock Propagates a block message across active peers with exclusion of the peers with an id belonging to
+     * the skip set.
      *
      * @param block new Block to be sent
      * @return a set containing the ids of the peers that received the block.
@@ -58,14 +55,15 @@ public interface ChannelManager {
     Set<NodeID> broadcastBlock(@Nonnull final Block block);
 
     @Nonnull
-    Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, @Nullable final Set<NodeID> targets);
+    Set<NodeID> broadcastBlockHash(
+            @Nonnull final List<BlockIdentifier> identifiers, @Nullable final Set<NodeID> targets);
 
     /**
-     * broadcastTransaction Propagates a transaction message across active peers with exclusion of
-     * the peers with an id belonging to the skip set.
+     * broadcastTransaction Propagates a transaction message across active peers with exclusion of the peers with an id
+     * belonging to the skip set.
      *
      * @param transaction new Transaction to be sent
-     * @param skip  the set of peers to avoid sending the message.
+     * @param skip the set of peers to avoid sending the message.
      * @return a set containing the ids of the peers that received the transaction.
      */
     @Nonnull
@@ -77,7 +75,7 @@ public interface ChannelManager {
 
     void notifyDisconnect(Channel channel);
 
-    void onSyncDone(boolean done) ;
+    void onSyncDone(boolean done);
 
     Collection<Channel> getActivePeers();
 

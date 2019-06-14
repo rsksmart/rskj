@@ -18,22 +18,14 @@
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.BtcBlock;
-
 import java.util.List;
 
-/**
- * Builds Merkle proofs for inclusion in the merged-mining block header
- */
+/** Builds Merkle proofs for inclusion in the merged-mining block header */
 public interface MerkleProofBuilder {
 
-    byte[] buildFromMerkleHashes(
-            BtcBlock blockWithHeaderOnly,
-            List<String> merkleHashesString,
-            int blockTxnCount);
+    byte[] buildFromMerkleHashes(BtcBlock blockWithHeaderOnly, List<String> merkleHashesString, int blockTxnCount);
 
-    byte[] buildFromTxHashes(
-            BtcBlock blockWithHeaderOnly,
-            List<String> txHashesString);
+    byte[] buildFromTxHashes(BtcBlock blockWithHeaderOnly, List<String> txHashesString);
 
     byte[] buildFromBlock(BtcBlock bitcoinMergedMiningBlock);
 }

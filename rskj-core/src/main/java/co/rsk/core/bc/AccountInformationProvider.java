@@ -20,11 +20,10 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.vm.DataWord;
-
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.Iterator;
+import javax.annotation.Nullable;
+import org.ethereum.vm.DataWord;
 
 public interface AccountInformationProvider {
 
@@ -47,7 +46,6 @@ public interface AccountInformationProvider {
     DataWord getStorageValue(RskAddress addr, DataWord key);
 
     /**
-     *
      * @param addr of the account
      * @param key associated with this value
      * @return raw data
@@ -56,14 +54,12 @@ public interface AccountInformationProvider {
     byte[] getStorageBytes(RskAddress addr, DataWord key);
 
     /**
-     *
      * @param addr of the account
      * @return the keys for that addr
      */
     Iterator<DataWord> getStorageKeys(RskAddress addr);
 
     /**
-     *
      * @param addr of the account
      * @return the count of keys for that addr
      */

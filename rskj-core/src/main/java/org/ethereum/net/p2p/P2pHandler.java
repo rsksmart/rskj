@@ -19,8 +19,15 @@
 
 package org.ethereum.net.p2p;
 
+import static org.ethereum.net.message.StaticMessages.PING_MESSAGE;
+import static org.ethereum.net.message.StaticMessages.PONG_MESSAGE;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.message.ReasonCode;
@@ -28,22 +35,18 @@ import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
-
-import static org.ethereum.net.message.StaticMessages.PING_MESSAGE;
-import static org.ethereum.net.message.StaticMessages.PONG_MESSAGE;
-
 /**
  * Process the basic protocol messages between every peer on the network.
  *
- * Peers can send/receive
+ * <p>Peers can send/receive
+ *
  * <ul>
- *  <li>HELLO       :   Announce themselves to the network</li>
- *  <li>DISCONNECT  :   Disconnect themselves from the network</li>
- *  <li>GET_PEERS   :   Request a list of other knows peers</li>
- *  <li>PEERS       :   Send a list of known peers</li>
- *  <li>PING        :   Check if another peer is still alive</li>
- *  <li>PONG        :   Confirm that they themselves are still alive</li>
+ *   <li>HELLO : Announce themselves to the network
+ *   <li>DISCONNECT : Disconnect themselves from the network
+ *   <li>GET_PEERS : Request a list of other knows peers
+ *   <li>PEERS : Send a list of known peers
+ *   <li>PING : Check if another peer is still alive
+ *   <li>PONG : Confirm that they themselves are still alive
  * </ul>
  */
 public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
@@ -64,10 +67,7 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
     private final MessageQueue msgQueue;
     private final int pingInterval;
 
-    public P2pHandler(
-            EthereumListener ethereumListener,
-            MessageQueue msgQueue,
-            int pingInterval) {
+    public P2pHandler(EthereumListener ethereumListener, MessageQueue msgQueue, int pingInterval) {
         this.ethereumListener = ethereumListener;
         this.msgQueue = msgQueue;
         this.pingInterval = pingInterval;
@@ -76,7 +76,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
     private Channel channel;
     private ScheduledFuture<?> pingTask;
 
-
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         logger.info("P2P protocol activated");
@@ -84,7 +83,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
         ethereumListener.trace("P2P protocol activated");
         startTimers();
     }
-
 
     @Override
     public void channelRead0(final ChannelHandlerContext ctx, P2pMessage msg) throws InterruptedException {
@@ -140,8 +138,8 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
             return;
         }
 
-        if (channel.getNodeStatistics().ethInbound.get() - ethInbound > 1 ||
-                channel.getNodeStatistics().ethOutbound.get() - ethOutbound > 1) {
+        if (channel.getNodeStatistics().ethInbound.get() - ethInbound > 1
+                || channel.getNodeStatistics().ethOutbound.get() - ethOutbound > 1) {
 
             // it means that we've been disconnected
             // after some incorrect action from our peer
@@ -166,16 +164,21 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
 
     private void startTimers() {
         // sample for pinging in background
-        pingTask = pingTimer.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    msgQueue.sendMessage(PING_MESSAGE);
-                } catch (Throwable t) {
-                    logger.error("Unhandled exception", t);
-                }
-            }
-        }, 2, pingInterval, TimeUnit.SECONDS);
+        pingTask =
+                pingTimer.scheduleAtFixedRate(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    msgQueue.sendMessage(PING_MESSAGE);
+                                } catch (Throwable t) {
+                                    logger.error("Unhandled exception", t);
+                                }
+                            }
+                        },
+                        2,
+                        pingInterval,
+                        TimeUnit.SECONDS);
     }
 
     public void killTimers() {
@@ -195,5 +198,4 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
         }
         return false;
     }
-
 }

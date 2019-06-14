@@ -20,18 +20,15 @@ package co.rsk.core;
 
 import co.rsk.mine.MinerServer;
 import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-/**
- * Created by ajlopez on 15/04/2017.
- */
+/** Created by ajlopez on 15/04/2017. */
 public class SnapshotManager {
     private List<Long> snapshots = new ArrayList<>();
     private final Blockchain blockchain;

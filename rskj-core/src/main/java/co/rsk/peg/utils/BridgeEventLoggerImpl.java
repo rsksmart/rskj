@@ -23,16 +23,15 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.config.BridgeConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.Federation;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Responsible for logging events triggered by BridgeContract.
@@ -54,25 +53,27 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     public void logUpdateCollections(Transaction rskTx) {
         this.logs.add(
-                new LogInfo(BRIDGE_CONTRACT_ADDRESS,
-                            Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
-                            RLP.encodeElement(rskTx.getSender().getBytes())
-                )
-        );
+                new LogInfo(
+                        BRIDGE_CONTRACT_ADDRESS,
+                        Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
+                        RLP.encodeElement(rskTx.getSender().getBytes())));
     }
 
     public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
         List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
-        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
-                                    RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
-                                    RLP.encodeElement(rskTxHash));
+        byte[] data =
+                RLP.encodeList(
+                        RLP.encodeString(btcTx.getHashAsString()),
+                        RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
+                        RLP.encodeElement(rskTxHash));
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
     }
 
     public void logReleaseBtc(BtcTransaction btcTx) {
         List<DataWord> topics = Collections.singletonList(Bridge.RELEASE_BTC_TOPIC);
-        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()), RLP.encodeElement(btcTx.bitcoinSerialize()));
+        byte[] data =
+                RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()), RLP.encodeElement(btcTx.bitcoinSerialize()));
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
     }
@@ -81,27 +82,31 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         List<DataWord> topics = Collections.singletonList(Bridge.COMMIT_FEDERATION_TOPIC);
 
         byte[] oldFedFlatPubKeys = flatKeysAsRlpCollection(oldFederation.getBtcPublicKeys());
-        byte[] oldFedData = RLP.encodeList(RLP.encodeElement(oldFederation.getAddress().getHash160()), RLP.encodeList(oldFedFlatPubKeys));
+        byte[] oldFedData =
+                RLP.encodeList(
+                        RLP.encodeElement(oldFederation.getAddress().getHash160()), RLP.encodeList(oldFedFlatPubKeys));
 
         byte[] newFedFlatPubKeys = flatKeysAsRlpCollection(newFederation.getBtcPublicKeys());
-        byte[] newFedData = RLP.encodeList(RLP.encodeElement(newFederation.getAddress().getHash160()), RLP.encodeList(newFedFlatPubKeys));
+        byte[] newFedData =
+                RLP.encodeList(
+                        RLP.encodeElement(newFederation.getAddress().getHash160()), RLP.encodeList(newFedFlatPubKeys));
 
-        long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge();
+        long newFedActivationBlockNumber =
+                executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge();
 
-        byte[] data = RLP.encodeList(oldFedData, newFedData, RLP.encodeString(Long.toString(newFedActivationBlockNumber)));
+        byte[] data =
+                RLP.encodeList(oldFedData, newFedData, RLP.encodeString(Long.toString(newFedActivationBlockNumber)));
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
     }
 
     private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
-        List<byte[]> pubKeys = keys.stream()
-                                    .map(k -> RLP.encodeElement(k.getPubKey()))
-                                    .collect(Collectors.toList());
+        List<byte[]> pubKeys = keys.stream().map(k -> RLP.encodeElement(k.getPubKey())).collect(Collectors.toList());
         int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
 
         byte[] flatPubKeys = new byte[pubKeysLength];
         int copyPos = 0;
-        for(byte[] key : pubKeys) {
+        for (byte[] key : pubKeys) {
             System.arraycopy(key, 0, flatPubKeys, copyPos, key.length);
             copyPos += key.length;
         }

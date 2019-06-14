@@ -22,6 +22,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.WalletAccount;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
@@ -34,9 +36,6 @@ import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-
 public class PersonalModuleWalletEnabled implements PersonalModule {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
@@ -46,7 +45,8 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     private final TransactionPool transactionPool;
     private final RskSystemProperties config;
 
-    public PersonalModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
+    public PersonalModuleWalletEnabled(
+            RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
         this.config = config;
         this.eth = eth;
         this.wallet = wallet;
@@ -132,7 +132,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         try {
             return s = sendTransaction(args, getAccount(args.from, passphrase));
         } finally {
-            LOGGER.debug("eth_sendTransaction({}): {}", args,  s);
+            LOGGER.debug("eth_sendTransaction({}): {}", args, s);
         }
     }
 
@@ -181,16 +181,31 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
 
         String toAddress = args.to != null ? Hex.toHexString(TypeConverter.stringHexToByteArray(args.to)) : null;
 
-        BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
+        BigInteger accountNonce =
+                args.nonce != null
+                        ? TypeConverter.stringNumberAsBigInt(args.nonce)
+                        : transactionPool.getPendingState().getNonce(account.getAddress());
         BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
-        BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
-        BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION);
+        BigInteger gasPrice =
+                args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
+        BigInteger gasLimit =
+                args.gas != null
+                        ? TypeConverter.stringNumberAsBigInt(args.gas)
+                        : BigInteger.valueOf(GasCost.TRANSACTION);
 
         if (args.data != null && args.data.startsWith("0x")) {
             args.data = args.data.substring(2);
         }
 
-        Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, config.getNetworkConstants().getChainId());
+        Transaction tx =
+                new Transaction(
+                        toAddress,
+                        value,
+                        accountNonce,
+                        gasPrice,
+                        gasLimit,
+                        args.data,
+                        config.getNetworkConstants().getChainId());
 
         tx.sign(account.getEcKey().getPrivKeyBytes());
 

@@ -18,14 +18,11 @@
 
 package co.rsk.net;
 
+import java.util.Arrays;
+import javax.annotation.Nonnull;
 import org.bouncycastle.util.encoders.Hex;
 
-import javax.annotation.Nonnull;
-import java.util.Arrays;
-
-/**
- * NodeID is a wrapper over the nodeID byte array used by Ethereum.
- */
+/** NodeID is a wrapper over the nodeID byte array used by Ethereum. */
 public class NodeID {
 
     private final byte[] nodeID;
@@ -55,7 +52,9 @@ public class NodeID {
     }
 
     @Nonnull
-    public byte[] getID() { return nodeID; }
+    public byte[] getID() {
+        return nodeID;
+    }
 
     @Override
     public String toString() {

@@ -26,17 +26,13 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.vm.program.ProgramResult;
 
-/**
- * Encapsulates the logic to execute a transaction in an
- * isolated environment (e.g. no persistent state changes).
- */
+/** Encapsulates the logic to execute a transaction in an isolated environment (e.g. no persistent state changes). */
 public class ReversibleTransactionExecutor {
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
 
     public ReversibleTransactionExecutor(
-            RepositoryLocator repositoryLocator,
-            TransactionExecutorFactory transactionExecutorFactory) {
+            RepositoryLocator repositoryLocator, TransactionExecutorFactory transactionExecutorFactory) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
     }
@@ -53,19 +49,11 @@ public class ReversibleTransactionExecutor {
         Repository snapshot = repositoryLocator.snapshotAt(executionBlock.getHeader()).startTracking();
 
         byte[] nonce = snapshot.getNonce(fromAddress).toByteArray();
-        UnsignedTransaction tx = new UnsignedTransaction(
-                nonce,
-                gasPrice,
-                gasLimit,
-                toAddress,
-                value,
-                data,
-                fromAddress
-        );
+        UnsignedTransaction tx =
+                new UnsignedTransaction(nonce, gasPrice, gasLimit, toAddress, value, data, fromAddress);
 
-        TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(tx, 0, coinbase, snapshot, executionBlock, 0)
-                .setLocalCall(true);
+        TransactionExecutor executor =
+                transactionExecutorFactory.newInstance(tx, 0, coinbase, snapshot, executionBlock, 0).setLocalCall(true);
 
         executor.init();
         executor.execute();

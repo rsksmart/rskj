@@ -18,9 +18,7 @@
 
 package co.rsk.peg;
 
-/**
- * Created by oscar on 08/11/2016.
- */
+/** Created by oscar on 08/11/2016. */
 public class BridgeIllegalArgumentException extends IllegalArgumentException {
 
     public BridgeIllegalArgumentException() {
@@ -31,9 +29,7 @@ public class BridgeIllegalArgumentException extends IllegalArgumentException {
         super(s);
     }
 
-
     public BridgeIllegalArgumentException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }

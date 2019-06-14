@@ -19,12 +19,9 @@
 
 package org.ethereum.net.rlpx;
 
-import co.rsk.net.NodeID;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.Utils;
-import org.bouncycastle.util.encoders.Hex;
+import static org.ethereum.util.ByteUtil.byteArrayToInt;
 
+import co.rsk.net.NodeID;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -35,8 +32,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-
-import static org.ethereum.util.ByteUtil.byteArrayToInt;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.Utils;
 
 public class Node implements Serializable {
     private static final long serialVersionUID = -4267600517925770636L;
@@ -73,7 +72,7 @@ public class Node implements Serializable {
         byte[] portB = nodeRLP.get(1).getRLPData();
         byte[] idB;
 
-        //Check getRLP()
+        // Check getRLP()
         if (nodeRLP.size() > 3) {
             idB = nodeRLP.get(3).getRLPData();
         } else {
@@ -87,7 +86,6 @@ public class Node implements Serializable {
         this.host = host;
         this.port = port;
     }
-
 
     public NodeID getId() {
         return new NodeID(id);
@@ -129,14 +127,9 @@ public class Node implements Serializable {
         return (addr == null ? address.getHostString() : addr.getHostAddress()) + ":" + address.getPort();
     }
 
-
     @Override
     public String toString() {
-        return "Node{" +
-                " host='" + host + '\'' +
-                ", port=" + port +
-                ", id=" + getHexId() +
-                '}';
+        return "Node{" + " host='" + host + '\'' + ", port=" + port + ", id=" + getHexId() + '}';
     }
 
     @Override

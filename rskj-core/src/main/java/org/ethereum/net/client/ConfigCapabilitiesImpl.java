@@ -19,22 +19,19 @@
 
 package org.ethereum.net.client;
 
-import org.ethereum.config.SystemProperties;
-import org.ethereum.net.eth.EthVersion;
-import org.ethereum.net.p2p.HelloMessage;
+import static org.ethereum.net.client.Capability.RSK;
+import static org.ethereum.net.eth.EthVersion.fromCode;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import org.ethereum.config.SystemProperties;
+import org.ethereum.net.eth.EthVersion;
+import org.ethereum.net.p2p.HelloMessage;
 
-import static org.ethereum.net.client.Capability.RSK;
-import static org.ethereum.net.eth.EthVersion.fromCode;
-
-/**
- * Created by Anton Nashatyrev on 13.10.2015.
- */
-public class ConfigCapabilitiesImpl implements ConfigCapabilities{
+/** Created by Anton Nashatyrev on 13.10.2015. */
+public class ConfigCapabilitiesImpl implements ConfigCapabilities {
 
     private final SystemProperties config;
 
@@ -54,10 +51,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
         this.config = config;
     }
 
-    /**
-     * Gets the capabilities listed in 'peer.capabilities' config property
-     * sorted by their names.
-     */
+    /** Gets the capabilities listed in 'peer.capabilities' config property sorted by their names. */
     public List<Capability> getConfigCapabilities() {
         List<Capability> ret = new ArrayList<>();
         List<String> caps = config.peerCapabilities();
@@ -69,9 +63,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
         return ret;
     }
 
-    /**
-     * Returns the node's supported capabilities for this hello message
-     */
+    /** Returns the node's supported capabilities for this hello message */
     @Override
     public List<Capability> getSupportedCapabilities(HelloMessage hello) {
         List<Capability> configCaps = getConfigCapabilities();
@@ -105,5 +97,4 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
         supported.add(highest);
         return supported;
     }
-
 }

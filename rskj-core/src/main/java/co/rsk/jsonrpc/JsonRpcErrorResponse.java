@@ -19,9 +19,7 @@ package co.rsk.jsonrpc;
 
 import java.util.Objects;
 
-/**
- * This the JSON-RPC error response DTO for JSON serialization purposes.
- */
+/** This the JSON-RPC error response DTO for JSON serialization purposes. */
 public class JsonRpcErrorResponse extends JsonRpcIdentifiableMessage {
     private final JsonRpcError error;
 

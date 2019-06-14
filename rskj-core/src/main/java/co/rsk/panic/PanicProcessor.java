@@ -21,9 +21,7 @@ package co.rsk.panic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Created by ajlopez on 5/1/2016.
- */
+/** Created by ajlopez on 5/1/2016. */
 public class PanicProcessor {
     private static final Logger logger = LoggerFactory.getLogger("panic");
 

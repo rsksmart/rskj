@@ -19,13 +19,12 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
+import java.math.BigInteger;
+import java.util.Map;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
-
-import java.math.BigInteger;
-import java.util.Map;
 
 public interface Web3EthModule {
     default String[] eth_accounts() {
@@ -74,17 +73,17 @@ public interface Web3EthModule {
 
     String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception;
 
-    String eth_getTransactionCount(String address, String blockId) throws Exception ;
+    String eth_getTransactionCount(String address, String blockId) throws Exception;
 
-    String eth_getBlockTransactionCountByHash(String blockHash)throws Exception;
+    String eth_getBlockTransactionCountByHash(String blockHash) throws Exception;
 
-    String eth_getBlockTransactionCountByNumber(String bnOrId)throws Exception;
+    String eth_getBlockTransactionCountByNumber(String bnOrId) throws Exception;
 
-    String eth_getUncleCountByBlockHash(String blockHash)throws Exception;
+    String eth_getUncleCountByBlockHash(String blockHash) throws Exception;
 
-    String eth_getUncleCountByBlockNumber(String bnOrId)throws Exception;
+    String eth_getUncleCountByBlockNumber(String bnOrId) throws Exception;
 
-    String eth_getCode(String addr, String bnOrId)throws Exception;
+    String eth_getCode(String addr, String bnOrId) throws Exception;
 
     default String eth_sendRawTransaction(String rawData) {
         return getEthModule().sendRawTransaction(rawData);

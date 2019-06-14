@@ -18,9 +18,7 @@
 
 package co.rsk.trie;
 
-/**
- * Created by diegogz on 4/24/17.
- */
+/** Created by diegogz on 4/24/17. */
 public class TriePutResult {
 
     private Trie trie;

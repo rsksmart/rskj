@@ -19,21 +19,14 @@
 
 package org.ethereum.net.client;
 
+import java.util.List;
 import org.ethereum.net.p2p.HelloMessage;
 
-import java.util.List;
-
-/**
- * Created by Ruben Altman on 9/6/2016.
- */
-
+/** Created by Ruben Altman on 9/6/2016. */
 public interface ConfigCapabilities {
 
-    /**
-     * Gets the capabilities listed in 'peer.capabilities' config property
-     * sorted by their names.
-     */
-    List<Capability> getConfigCapabilities() ;
+    /** Gets the capabilities listed in 'peer.capabilities' config property sorted by their names. */
+    List<Capability> getConfigCapabilities();
 
     List<Capability> getSupportedCapabilities(HelloMessage hello);
 }

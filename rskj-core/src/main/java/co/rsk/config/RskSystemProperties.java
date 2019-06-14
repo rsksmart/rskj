@@ -22,13 +22,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
-import org.ethereum.config.Constants;
-import org.ethereum.config.SystemProperties;
-import org.ethereum.core.Account;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-
-import javax.annotation.Nullable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -36,17 +29,23 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.annotation.Nullable;
+import org.ethereum.config.Constants;
+import org.ethereum.config.SystemProperties;
+import org.ethereum.core.Account;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 
-/**
- * Created by ajlopez on 3/3/2016.
- */
+/** Created by ajlopez on 3/3/2016. */
 public class RskSystemProperties extends SystemProperties {
-    /** while timeout period is lower than clean period it doesn't affect much since
-    requests will be checked after a clean period.
-     **/
-    private static final int PD_DEFAULT_CLEAN_PERIOD = 15000; //miliseconds
-    private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; //miliseconds
-    private static final int PD_DEFAULT_REFRESH_PERIOD = 60000; //miliseconds
+    /**
+     * while timeout period is lower than clean period it doesn't affect much since requests will be checked after a
+     * clean period.
+     */
+    private static final int PD_DEFAULT_CLEAN_PERIOD = 15000; // miliseconds
+
+    private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; // miliseconds
+    private static final int PD_DEFAULT_REFRESH_PERIOD = 60000; // miliseconds
 
     private static final String REGTEST_BLOCKCHAIN_CONFIG = "regtest";
 
@@ -54,7 +53,7 @@ public class RskSystemProperties extends SystemProperties {
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
 
-    //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
+    // TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
 
     private List<ModuleDescription> moduleDescriptions;
@@ -66,7 +65,8 @@ public class RskSystemProperties extends SystemProperties {
     @Nullable
     public RskAddress coinbaseAddress() {
         if (!isMinerServerEnabled()) {
-            //todo(diegoll): we should carefully handle the case when you don't have a coinbase and want to execute pending blocks
+            // todo(diegoll): we should carefully handle the case when you don't have a coinbase and want to execute
+            // pending blocks
             return new RskAddress(new byte[20]);
         }
 
@@ -78,7 +78,8 @@ public class RskSystemProperties extends SystemProperties {
 
         String coinbaseAddress = configFromFiles.getString(MINER_REWARD_ADDRESS_CONFIG);
         if (coinbaseAddress.length() != Constants.getMaxAddressByteLength() * 2) {
-            throw new RskConfigurationException(MINER_REWARD_ADDRESS_CONFIG + " needs to be Hex encoded and 20 byte length");
+            throw new RskConfigurationException(
+                    MINER_REWARD_ADDRESS_CONFIG + " needs to be Hex encoded and 20 byte length");
         }
 
         return new RskAddress(coinbaseAddress);
@@ -90,22 +91,33 @@ public class RskSystemProperties extends SystemProperties {
             return null;
         }
 
-        // Regtest always has MINER_COINBASE_SECRET_CONFIG set in regtest.conf file. When MINER_REWARD_ADDRESS_CONFIG is set both values exist
-        // and that does not pass the checks below. If MINER_REWARD_ADDRESS_CONFIG exists, that value must be used so consider that
+        // Regtest always has MINER_COINBASE_SECRET_CONFIG set in regtest.conf file. When MINER_REWARD_ADDRESS_CONFIG is
+        // set both values exist
+        // and that does not pass the checks below. If MINER_REWARD_ADDRESS_CONFIG exists, that value must be used so
+        // consider that
         // special regtest case by adding this guard.
-        if(configFromFiles.getString(PROPERTY_BC_CONFIG_NAME).equals(REGTEST_BLOCKCHAIN_CONFIG) &&
-                configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
+        if (configFromFiles.getString(PROPERTY_BC_CONFIG_NAME).equals(REGTEST_BLOCKCHAIN_CONFIG)
+                && configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
             return null;
         }
 
-        if (configFromFiles.hasPath(MINER_COINBASE_SECRET_CONFIG) &&
-                configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
-            throw new RskConfigurationException("It is required to have only one of " + MINER_REWARD_ADDRESS_CONFIG + " or " + MINER_COINBASE_SECRET_CONFIG);
+        if (configFromFiles.hasPath(MINER_COINBASE_SECRET_CONFIG)
+                && configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
+            throw new RskConfigurationException(
+                    "It is required to have only one of "
+                            + MINER_REWARD_ADDRESS_CONFIG
+                            + " or "
+                            + MINER_COINBASE_SECRET_CONFIG);
         }
 
-        if (!configFromFiles.hasPath(MINER_COINBASE_SECRET_CONFIG) &&
-                !configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
-            throw new RskConfigurationException("It is required to either have " + MINER_REWARD_ADDRESS_CONFIG + " or " + MINER_COINBASE_SECRET_CONFIG + " to use the miner server");
+        if (!configFromFiles.hasPath(MINER_COINBASE_SECRET_CONFIG)
+                && !configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
+            throw new RskConfigurationException(
+                    "It is required to either have "
+                            + MINER_REWARD_ADDRESS_CONFIG
+                            + " or "
+                            + MINER_COINBASE_SECRET_CONFIG
+                            + " to use the miner server");
         }
 
         if (!configFromFiles.hasPath(MINER_COINBASE_SECRET_CONFIG)) {
@@ -191,21 +203,22 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public int flushNumberOfBlocks() {
-        return configFromFiles.hasPath("blockchain.flushNumberOfBlocks") && configFromFiles.getInt("blockchain.flushNumberOfBlocks") > 0 ?
-                configFromFiles.getInt("blockchain.flushNumberOfBlocks") : 20;
+        return configFromFiles.hasPath("blockchain.flushNumberOfBlocks")
+                        && configFromFiles.getInt("blockchain.flushNumberOfBlocks") > 0
+                ? configFromFiles.getInt("blockchain.flushNumberOfBlocks")
+                : 20;
     }
 
     public int soLingerTime() {
         return configFromFiles.getInt("rpc.providers.web.http.linger_time");
-
     }
 
-    //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
+    // TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     public boolean isRemascEnabled() {
         return remascEnabled;
     }
 
-    //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
+    // TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     public void setRemascEnabled(boolean remascEnabled) {
         this.remascEnabled = remascEnabled;
     }
@@ -217,7 +230,7 @@ public class RskSystemProperties extends SystemProperties {
     public long peerDiscoveryRefreshPeriod() {
         long period = getLong("peer.discovery.refresh.period", PD_DEFAULT_REFRESH_PERIOD);
 
-        return (period < PD_DEFAULT_REFRESH_PERIOD)? PD_DEFAULT_REFRESH_PERIOD : period;
+        return (period < PD_DEFAULT_REFRESH_PERIOD) ? PD_DEFAULT_REFRESH_PERIOD : period;
     }
 
     public List<ModuleDescription> getRpcModules() {
@@ -258,7 +271,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public boolean hasMessageRecorderEnabled() {
-        return getBoolean("messages.recorder.enabled",false);
+        return getBoolean("messages.recorder.enabled", false);
     }
 
     public List<String> getMessageRecorderCommands() {
@@ -270,7 +283,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public long getTargetGasLimit() {
-        return getLong("targetgaslimit",6_800_000L);
+        return getLong("targetgaslimit", 6_800_000L);
     }
 
     public boolean getForceTargetGasLimit() {
@@ -311,7 +324,7 @@ public class RskSystemProperties extends SystemProperties {
         return PD_DEFAULT_CLEAN_PERIOD;
     }
 
-    public int getPeerP2PPingInterval(){
+    public int getPeerP2PPingInterval() {
         return configFromFiles.getInt("peer.p2p.pingInterval");
     }
 

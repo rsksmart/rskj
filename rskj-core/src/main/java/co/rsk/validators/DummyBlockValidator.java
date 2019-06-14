@@ -20,9 +20,7 @@ package co.rsk.validators;
 
 import org.ethereum.core.Block;
 
-/**
- * Created by ajlopez on 4/20/2016.
- */
+/** Created by ajlopez on 4/20/2016. */
 public class DummyBlockValidator implements BlockValidator {
     @Override
     public boolean isValid(Block block) {

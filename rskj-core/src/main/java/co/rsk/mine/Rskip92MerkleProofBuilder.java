@@ -21,55 +21,46 @@ import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.Utils;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
+import java.util.List;
+import java.util.stream.Stream;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 
-import java.util.List;
-import java.util.stream.Stream;
-
-/**
- * Builds RSKIP 92 Merkle proofs
- */
+/** Builds RSKIP 92 Merkle proofs */
 public class Rskip92MerkleProofBuilder implements MerkleProofBuilder {
 
     @Override
     public byte[] buildFromMerkleHashes(
-            BtcBlock blockWithHeaderOnly,
-            List<String> merkleHashesString,
-            int blockTxnCount) {
-        Stream<byte[]> hashesStream = merkleHashesString.stream()
-                .map(mh -> Utils.reverseBytes(Hex.decode(mh)));
+            BtcBlock blockWithHeaderOnly, List<String> merkleHashesString, int blockTxnCount) {
+        Stream<byte[]> hashesStream = merkleHashesString.stream().map(mh -> Utils.reverseBytes(Hex.decode(mh)));
         return mergeHashes(hashesStream);
     }
 
     @Override
     public byte[] buildFromTxHashes(BtcBlock blockWithHeaderOnly, List<String> txHashesString) {
-        return buildFromFullPmt(
-                new GenesisMerkleProofBuilder().buildFromTxHashes(blockWithHeaderOnly, txHashesString)
-        );
+        return buildFromFullPmt(new GenesisMerkleProofBuilder().buildFromTxHashes(blockWithHeaderOnly, txHashesString));
     }
 
     @Override
     public byte[] buildFromBlock(BtcBlock bitcoinMergedMiningBlock) {
-        return buildFromFullPmt(
-                new GenesisMerkleProofBuilder().buildFromBlock(bitcoinMergedMiningBlock)
-        );
+        return buildFromFullPmt(new GenesisMerkleProofBuilder().buildFromBlock(bitcoinMergedMiningBlock));
     }
 
     /**
-     * This takes a full PMT and slices and rearranges the needed pieces for the new serialization format.
-     * It would make sense to re-implement this as a standalone algorithm, but reusing the PMT is enough for now.
+     * This takes a full PMT and slices and rearranges the needed pieces for the new serialization format. It would make
+     * sense to re-implement this as a standalone algorithm, but reusing the PMT is enough for now.
      */
     private byte[] buildFromFullPmt(byte[] pmtSerialized) {
-        Stream<byte[]> hashesStream = PartialMerkleTreeFormatUtils.streamIntermediateHashes(pmtSerialized)
-                .map(Sha256Hash::getBytes);
+        Stream<byte[]> hashesStream =
+                PartialMerkleTreeFormatUtils.streamIntermediateHashes(pmtSerialized).map(Sha256Hash::getBytes);
         return mergeHashes(hashesStream);
     }
 
     private byte[] mergeHashes(Stream<byte[]> hashesStream) {
-        byte[][] hashes = hashesStream
-                .skip(1) // skip the coinbase
-                .toArray(byte[][]::new);
+        byte[][] hashes =
+                hashesStream
+                        .skip(1) // skip the coinbase
+                        .toArray(byte[][]::new);
         return ByteUtil.merge(hashes);
     }
 }

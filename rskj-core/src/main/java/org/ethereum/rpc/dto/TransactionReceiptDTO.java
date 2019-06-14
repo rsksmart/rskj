@@ -18,6 +18,8 @@
 
 package org.ethereum.rpc.dto;
 
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
+
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
@@ -25,28 +27,25 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.vm.LogInfo;
 
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
-
-
-/**
- * Created by Ruben on 5/1/2016.
- */
+/** Created by Ruben on 5/1/2016. */
 public class TransactionReceiptDTO {
 
-    public String transactionHash;      // hash of the transaction.
-    public String transactionIndex;     // integer of the transactions index position in the block.
-    public String blockHash;            // hash of the block where this transaction was in.
-    public String blockNumber;          // block number where this transaction was in.
-    public String cumulativeGasUsed;    // The total amount of gas used when this transaction was executed in the block.
-    public String gasUsed;              //The amount of gas used by this specific transaction alone.
-    public String contractAddress;      // The contract address created, if the transaction was a contract creation, otherwise  null .
-    public LogFilterElement[] logs;  // Array of log objects, which this transaction generated.
+    public String transactionHash; // hash of the transaction.
+    public String transactionIndex; // integer of the transactions index position in the block.
+    public String blockHash; // hash of the block where this transaction was in.
+    public String blockNumber; // block number where this transaction was in.
+    public String cumulativeGasUsed; // The total amount of gas used when this transaction was executed in the block.
+    public String gasUsed; // The amount of gas used by this specific transaction alone.
+    public String
+            contractAddress; // The contract address created, if the transaction was a contract creation, otherwise
+                             // null .
+    public LogFilterElement[] logs; // Array of log objects, which this transaction generated.
     public String from;
     public String to;
     public String root;
     public String status;
 
-    public  TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
+    public TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
 
         TransactionReceipt receipt = txInfo.getReceipt();
 
@@ -66,8 +65,7 @@ public class TransactionReceiptDTO {
         logs = new LogFilterElement[receipt.getLogInfoList().size()];
         for (int i = 0; i < logs.length; i++) {
             LogInfo logInfo = receipt.getLogInfoList().get(i);
-            logs[i] = new LogFilterElement(logInfo, block, txInfo.getIndex(),
-                    txInfo.getReceipt().getTransaction(), i);
+            logs[i] = new LogFilterElement(logInfo, block, txInfo.getIndex(), txInfo.getReceipt().getTransaction(), i);
         }
 
         root = toJsonHex(receipt.getPostTxState());

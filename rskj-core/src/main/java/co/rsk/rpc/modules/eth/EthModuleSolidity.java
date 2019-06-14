@@ -18,9 +18,8 @@
 
 package co.rsk.rpc.modules.eth;
 
-import org.ethereum.rpc.dto.CompilationResultDTO;
-
 import java.util.Map;
+import org.ethereum.rpc.dto.CompilationResultDTO;
 
 public interface EthModuleSolidity {
 

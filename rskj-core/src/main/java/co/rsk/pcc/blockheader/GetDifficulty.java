@@ -24,17 +24,13 @@ import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 
 /**
- * This implements the "getDifficulty" method
- * that belongs to the BlockHeaderContract native contract.
+ * This implements the "getDifficulty" method that belongs to the BlockHeaderContract native contract.
  *
  * @author Diego Masini
  */
 public class GetDifficulty extends BlockHeaderContractMethod {
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "getDifficulty",
-            new String[]{"int256"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature("getDifficulty", new String[] {"int256"}, new String[] {"bytes"});
 
     public GetDifficulty(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);

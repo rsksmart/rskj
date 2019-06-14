@@ -27,21 +27,17 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
+import java.net.InetAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.net.InetAddress;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-/**
- * This class establishes a listener for incoming connections.
- * See <a href="http://netty.io">http://netty.io</a>.
- */
+/** This class establishes a listener for incoming connections. See <a href="http://netty.io">http://netty.io</a>. */
 public class PeerServerImpl implements PeerServer {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
@@ -54,7 +50,10 @@ public class PeerServerImpl implements PeerServer {
     private boolean listening;
     private ExecutorService peerServiceExecutor;
 
-    public PeerServerImpl(SystemProperties config, EthereumListener ethereumListener, EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
+    public PeerServerImpl(
+            SystemProperties config,
+            EthereumListener ethereumListener,
+            EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
         this.config = config;
         this.ethereumListener = ethereumListener;
         this.ethereumChannelInitializerFactory = ethereumChannelInitializerFactory;
@@ -63,17 +62,23 @@ public class PeerServerImpl implements PeerServer {
     @Override
     public void start() {
         if (config.getPeerPort() > 0) {
-            peerServiceExecutor = Executors.newSingleThreadExecutor(runnable -> {
-                Thread thread = new Thread(runnable, "Peer Server");
-                thread.setUncaughtExceptionHandler(
-                        (exceptionThread, exception) -> logger.error("Unable to start peer server", exception)
-                );
-                return thread;
-            });
+            peerServiceExecutor =
+                    Executors.newSingleThreadExecutor(
+                            runnable -> {
+                                Thread thread = new Thread(runnable, "Peer Server");
+                                thread.setUncaughtExceptionHandler(
+                                        (exceptionThread, exception) ->
+                                                logger.error("Unable to start peer server", exception));
+                                return thread;
+                            });
             peerServiceExecutor.execute(() -> start(config.getBindAddress(), config.getPeerPort()));
         }
 
-        logger.info("RskJ node started: enode://{}@{}:{}" , Hex.toHexString(config.nodeId()), config.getPublicIp(), config.getPeerPort());
+        logger.info(
+                "RskJ node started: enode://{}@{}:{}",
+                Hex.toHexString(config.nodeId()),
+                config.getPublicIp(),
+                config.getPeerPort());
     }
 
     @Override
@@ -93,7 +98,6 @@ public class PeerServerImpl implements PeerServer {
         EthereumChannelInitializer ethereumChannelInitializer = ethereumChannelInitializerFactory.newInstance("");
 
         ethereumListener.trace("Listening on port " + port);
-
 
         try {
             ServerBootstrap b = new ServerBootstrap();
@@ -125,7 +129,6 @@ public class PeerServerImpl implements PeerServer {
             throw new Error("Server Disconnected");
         } finally {
             workerGroup.shutdownGracefully();
-
         }
     }
 

@@ -18,20 +18,17 @@
 
 package co.rsk.config;
 
-/**
- * Created by ajlopez on 3/3/2016.
- */
+/** Created by ajlopez on 3/3/2016. */
 public class RskMiningConstants {
-    public static final byte[] RSK_TAG = {'R','S','K','B','L','O','C','K',':'};
+    public static final byte[] RSK_TAG = {'R', 'S', 'K', 'B', 'L', 'O', 'C', 'K', ':'};
     public static final int MAX_BYTES_AFTER_MERGED_MINING_HASH = 128;
 
     public static final int BLOCK_HEADER_HASH_SIZE = 32;
 
-    public static final int MIDSTATE_SIZE  = 52;
+    public static final int MIDSTATE_SIZE = 52;
     public static final int MIDSTATE_SIZE_TRIMMED = 40;
 
     public static final int NOTIFY_FEES_PERCENTAGE_INCREASE = 10;
 
-    private RskMiningConstants(){
-    }
+    private RskMiningConstants() {}
 }
