@@ -527,7 +527,7 @@ public class BlockHeader {
                 miningForkDetectionData = Arrays.copyOfRange(coinbaseTransaction, from, to);
             }
 
-            return miningForkDetectionData;
+            return Arrays.copyOf(miningForkDetectionData, miningForkDetectionData.length);
         }
 
         return new byte[0];
