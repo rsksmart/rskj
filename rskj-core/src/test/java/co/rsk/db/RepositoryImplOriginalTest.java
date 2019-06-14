@@ -872,6 +872,6 @@ public class RepositoryImplOriginalTest {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieImpl(new Trie()));
     }
 }

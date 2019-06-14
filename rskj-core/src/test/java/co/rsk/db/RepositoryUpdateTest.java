@@ -80,7 +80,7 @@ public class RepositoryUpdateTest {
         details.put(DataWord.ONE, DataWord.valueOf(42));
         details.put(DataWord.ZERO, DataWord.valueOf(1));
 
-        Repository repo = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        Repository repo = new MutableRepository(new MutableTrieImpl(new Trie()));
         updateContractDetails(repo, address, details);
 
         Assert.assertNotNull(repo.getMutableTrie().getHash().getBytes());

@@ -18,11 +18,14 @@
 
 package co.rsk.trie;
 
+import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -41,13 +44,8 @@ public interface MutableTrie {
     // This method optimizes cache-to-cache transfers
     void put(ByteArrayWrapper key, byte[] value);
 
-    /////////////////////////////////////////////////////////////////////////////////
-    // The semantic of deleteRecursive() is special, and not the same of delete()
-    // When it is applied to a mutable trie which has a cache (such as MutableTrieCache)
-    // then this is DELETE ON COMMIT, which means that changes are not applied until
-    // commit() is called, and changes are applied as the last step of commit.
-    // In a normal MutableTrie or Trie, changes are applied immediately.
-    /////////////////////////////////////////////////////////////////////////////////
+    // the key has to match exactly an account key
+    // it won't work if it is used with an storage key or any other
     void deleteRecursive(byte[] key);
 
     void save();
@@ -58,6 +56,7 @@ public interface MutableTrie {
 
     void rollback();
 
+    // TODO(mc) this method is only used from tests
     Set<ByteArrayWrapper> collectKeys(int size);
 
     MutableTrie getSnapshotTo(Keccak256 hash);
@@ -70,4 +69,8 @@ public interface MutableTrie {
     // without the need to retrieve the value itself. Implementors can fallback to
     // getting the value and then returning its size.
     Uint24 getValueLength(byte[] key);
+
+    // the key has to match exactly an account key
+    // it won't work if it is used with an storage key or any other
+    Iterator<DataWord> getStorageKeys(RskAddress addr);
 }
