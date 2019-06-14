@@ -123,7 +123,7 @@ public class MinerServerImpl implements MinerServer {
         latestParentHash = null;
         coinbaseAddress = miningConfig.getCoinbaseAddress();
         minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
-        gasUnitInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
+        gasUnitInDollars = BigDecimal.valueOf(miningConfig.getGasUnitInDollars());
     }
 
     private LinkedHashMap<Keccak256, Block> createNewBlocksWaitingList() {
