@@ -38,7 +38,6 @@ public class EvmModuleImpl implements EvmModule {
     private final MinerServer minerServer;
     private final MinerClient minerClient;
     private final MinerClock minerClock;
-    private final Blockchain blockchain;
     private final SnapshotManager snapshotManager;
 
     public EvmModuleImpl(
@@ -51,7 +50,6 @@ public class EvmModuleImpl implements EvmModule {
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.minerClock = minerClock;
-        this.blockchain = blockchain;
         this.snapshotManager = new SnapshotManager(blockchain, transactionPool, minerServer);
     }
 
@@ -82,7 +80,7 @@ public class EvmModuleImpl implements EvmModule {
 
     @Override
     public void evm_mine() {
-        minerManager.mineBlock(blockchain, minerClient, minerServer);
+        minerManager.mineBlock(minerClient, minerServer);
         logger.debug("evm_mine()");
     }
 

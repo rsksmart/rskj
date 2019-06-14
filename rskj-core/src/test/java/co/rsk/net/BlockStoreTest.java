@@ -234,6 +234,7 @@ public class BlockStoreTest {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
+                new byte[]{},
                 new byte[]{0},
                 0
         );
@@ -254,6 +255,7 @@ public class BlockStoreTest {
                 new byte[]{},
                 0,
                 0,
+                new byte[]{},
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},

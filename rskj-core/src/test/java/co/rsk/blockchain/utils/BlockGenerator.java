@@ -18,11 +18,13 @@
 
 package co.rsk.blockchain.utils;
 
+import co.rsk.config.MiningConfig;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleRskTransaction;
@@ -90,7 +92,7 @@ public class BlockGenerator {
 
         long   timestamp         = 0; // predictable timeStamp
 
-        byte[] parentHash  = EMPTY_BYTE_ARRAY;
+        byte[] parentHash  = Keccak256.ZERO_HASH.getBytes();
         byte[] extraData   = EMPTY_BYTE_ARRAY;
 
         long   gasLimit         = initialGasLimit;
@@ -138,7 +140,7 @@ public class BlockGenerator {
                         ByteUtils.clone(parent.getStateRoot()), EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         ByteUtils.clone(new Bloom().getData()), difficulty, parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count, EMPTY_BYTE_ARRAY,
-                        Coin.valueOf(fees), null, null, null, null, uncles.size()
+                        Coin.valueOf(fees), null, null, null, new byte[12], null, uncles.size()
                 ),
                 Collections.emptyList(),
                 uncles
@@ -160,7 +162,7 @@ public class BlockGenerator {
                         stateRoot, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled),
                         EMPTY_TRIE_HASH, logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, null, 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], null, 0
                 ),
                 txs,
                 Collections.emptyList(),
@@ -219,6 +221,9 @@ public class BlockGenerator {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
+                parent.getNumber()+1 > MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION ?
+                        new byte[12] :
+                        new byte[0],
                 (minGasPrice != null) ? minGasPrice.toByteArray() : null,
                 uncles.size()
         );
@@ -263,7 +268,7 @@ public class BlockGenerator {
                         EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled), EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), number,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, minimumGasPrice.getBytes(), 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], minimumGasPrice.getBytes(), 0
                 ),
                 txs,
                 Collections.emptyList()
@@ -285,7 +290,7 @@ public class BlockGenerator {
                         EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, Coin.valueOf(10).getBytes(), 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0
                 ),
                 txs,
                 Collections.emptyList()

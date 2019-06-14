@@ -21,9 +21,7 @@ package co.rsk;
 import co.rsk.cli.CliArgs;
 import co.rsk.config.*;
 import co.rsk.core.*;
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.BlockValidatorImpl;
-import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
@@ -132,6 +130,8 @@ public class RskContext implements NodeBootstrapper {
 
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
+    private MiningMainchainView miningMainchainView;
+    private ConsensusValidationMainchainView consensusValidationMainchainView;
     private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
     private org.ethereum.db.BlockStore blockStore;
@@ -140,7 +140,9 @@ public class RskContext implements NodeBootstrapper {
     private Genesis genesis;
     private CompositeEthereumListener compositeEthereumListener;
     private DifficultyCalculator difficultyCalculator;
+    private ForkDetectionDataCalculator forkDetectionDataCalculator;
     private ProofOfWorkRule proofOfWorkRule;
+    private ForkDetectionDataRule forkDetectionDataRule;
     private BlockParentDependantValidationRule blockParentDependantValidationRule;
     private BlockValidationRule blockValidationRule;
     private BlockValidationRule minerServerBlockValidationRule;
@@ -232,6 +234,29 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return blockchain;
+    }
+
+    public MiningMainchainView getMiningMainchainView() {
+        if (miningMainchainView == null) {
+            miningMainchainView = new MiningMainchainViewImpl(
+                    // One would expect getBlockStore to be used here. However, when the BlockStore is created,
+                    // it does not have any blocks, resulting in a NullPointerException when trying to initially
+                    // fill the mainchain view. Hence why we wait for the blockchain to perform its required
+                    // initialization tasks and then we ask for the store
+                    getBlockchain().getBlockStore(),
+                    MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION
+            );
+        }
+
+        return miningMainchainView;
+    }
+
+    public ConsensusValidationMainchainView getConsensusValidationMainchainView() {
+        if (consensusValidationMainchainView == null) {
+            consensusValidationMainchainView = new ConsensusValidationMainchainViewImpl(getBlockStore());
+        }
+
+        return consensusValidationMainchainView;
     }
 
     public BlockFactory getBlockFactory() {
@@ -576,7 +601,7 @@ public class RskContext implements NodeBootstrapper {
             minerServer = new MinerServerImpl(
                     getRskSystemProperties(),
                     getRsk(),
-                    getBlockchain(),
+                    getMiningMainchainView(),
                     getNodeBlockProcessor(),
                     getProofOfWorkRule(),
                     getBlockToMineBuilder(),
@@ -902,6 +927,7 @@ public class RskContext implements NodeBootstrapper {
                             commonConstants.getUncleGenerationLimit(),
                             new BlockHeaderCompositeRule(
                                     getProofOfWorkRule(),
+                                    getForkDetectionDataRule(),
                                     blockTimeStampValidationRule,
                                     new ValidGasUsedRule()
                             ),
@@ -978,12 +1004,33 @@ public class RskContext implements NodeBootstrapper {
         return blockParentDependantValidationRule;
     }
 
+    private ForkDetectionDataCalculator getForkDetectionDataCalculator() {
+        if (forkDetectionDataCalculator == null) {
+            forkDetectionDataCalculator = new ForkDetectionDataCalculator();
+        }
+
+        return forkDetectionDataCalculator;
+    }
+
     private ProofOfWorkRule getProofOfWorkRule() {
         if (proofOfWorkRule == null) {
             proofOfWorkRule = new ProofOfWorkRule(getRskSystemProperties());
         }
 
         return proofOfWorkRule;
+    }
+
+    private ForkDetectionDataRule getForkDetectionDataRule() {
+        if (forkDetectionDataRule == null) {
+            forkDetectionDataRule = new ForkDetectionDataRule(
+                    getRskSystemProperties().getActivationConfig(),
+                    getConsensusValidationMainchainView(),
+                    getForkDetectionDataCalculator(),
+                    MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION
+            );
+        }
+
+        return forkDetectionDataRule;
     }
 
     private DifficultyCalculator getDifficultyCalculator() {
@@ -1008,6 +1055,7 @@ public class RskContext implements NodeBootstrapper {
                     getTransactionPool(),
                     getDifficultyCalculator(),
                     getGasLimitCalculator(),
+                    getForkDetectionDataCalculator(),
                     getMinerServerBlockValidationRule(),
                     getMinerClock(),
                     getBlockFactory(),
@@ -1118,6 +1166,7 @@ public class RskContext implements NodeBootstrapper {
         if (syncProcessor == null) {
             syncProcessor = new SyncProcessor(
                     getBlockchain(),
+                    getConsensusValidationMainchainView(),
                     getBlockSyncService(),
                     getPeerScoringManager(),
                     getChannelManager(),
@@ -1309,6 +1358,7 @@ public class RskContext implements NodeBootstrapper {
     private ExecutionBlockRetriever getExecutionBlockRetriever() {
         if (executionBlockRetriever == null) {
             executionBlockRetriever = new ExecutionBlockRetriever(
+                    getMiningMainchainView(),
                     getBlockchain(),
                     getMinerServer(),
                     getBlockToMineBuilder()

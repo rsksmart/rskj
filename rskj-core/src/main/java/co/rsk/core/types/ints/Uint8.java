@@ -20,7 +20,7 @@ package co.rsk.core.types.ints;
 
 public final class Uint8 {
     private static final int MAX_VALUE_INT = 0xff;
-    public static final int SIZE = 8;
+    private static final int SIZE = 8;
     public static final int BYTES = SIZE / Byte.SIZE;
     public static final Uint8 MAX_VALUE = new Uint8(MAX_VALUE_INT);
 
@@ -34,9 +34,13 @@ public final class Uint8 {
         this.intValue = intValue;
     }
 
+    public byte asByte() {
+        return (byte) intValue;
+    }
+
     public byte[] encode() {
         byte[] bytes = new byte[BYTES];
-        bytes[0] = (byte) (intValue);
+        bytes[0] = asByte();
         return bytes;
     }
 

@@ -1,5 +1,7 @@
 package co.rsk.net.sync;
 
+import co.rsk.core.bc.ConsensusValidationMainchainView;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import com.google.common.annotations.VisibleForTesting;
@@ -8,18 +10,27 @@ import org.ethereum.core.BlockIdentifier;
 import org.ethereum.util.ByteUtil;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DownloadingHeadersSyncState extends BaseSyncState {
 
     private final Map<NodeID, List<BlockIdentifier>> skeletons;
     private final List<Deque<BlockHeader>> pendingHeaders;
     private final ChunksDownloadHelper chunksDownloadHelper;
+    private Map<Keccak256, BlockHeader> pendingHeadersByHash;
 
-    public DownloadingHeadersSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint) {
+    public DownloadingHeadersSyncState(SyncConfiguration syncConfiguration,
+                                       SyncEventsHandler syncEventsHandler,
+                                       SyncInformation syncInformation,
+                                       Map<NodeID, List<BlockIdentifier>> skeletons,
+                                       long connectionPoint,
+                                       ConsensusValidationMainchainView mainchainView) {
         super(syncInformation, syncEventsHandler, syncConfiguration);
         this.pendingHeaders = new ArrayList<>();
         this.skeletons = skeletons;
         this.chunksDownloadHelper = new ChunksDownloadHelper(syncConfiguration, skeletons.get(syncInformation.getSelectedPeerId()), connectionPoint);
+        this.pendingHeadersByHash = new ConcurrentHashMap<>();
+        mainchainView.setPendingHeaders(pendingHeadersByHash);
     }
 
     @Override
@@ -37,7 +48,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
         Deque<BlockHeader> headers = new ArrayDeque<>();
         // the headers come ordered by block number desc
         // we start adding the first parent header
-        headers.add(chunk.get(chunk.size() - 1));
+        BlockHeader headerToAdd = chunk.get(chunk.size() - 1);
+        headers.add(headerToAdd);
+        pendingHeadersByHash.put(headerToAdd.getHash(), headerToAdd);
 
         for (int k = 1; k < chunk.size(); ++k) {
             BlockHeader parentHeader = chunk.get(chunk.size() - k);
@@ -51,6 +64,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             }
 
             headers.add(header);
+            pendingHeadersByHash.put(header.getHash(), header);
         }
 
         pendingHeaders.add(headers);

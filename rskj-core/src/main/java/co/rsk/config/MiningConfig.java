@@ -24,6 +24,8 @@ import co.rsk.core.RskAddress;
  * Wraps configuration for Mining, which is usually derived from configuration files.
  */
 public class MiningConfig {
+    public static final int REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION = 449;
+
     private final RskAddress coinbaseAddress;
     private final double minFeesNotifyInDollars;
     private final double minerGasUnitInDollars;

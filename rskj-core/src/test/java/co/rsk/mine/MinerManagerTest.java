@@ -26,6 +26,7 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -54,6 +55,7 @@ public class MinerManagerTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockchain;
+    private MiningMainchainView miningMainchainView;
     private TransactionPool transactionPool;
     private RepositoryLocator repositoryLocator;
     private BlockStore blockStore;
@@ -64,6 +66,7 @@ public class MinerManagerTest {
     public void setup() {
         RskTestFactory factory = new RskTestFactory(config);
         blockchain = factory.getBlockchain();
+        miningMainchainView = factory.getMiningMainchainView();
         transactionPool = factory.getTransactionPool();
         repositoryLocator = factory.getRepositoryLocator();
         blockStore = factory.getBlockStore();
@@ -82,7 +85,7 @@ public class MinerManagerTest {
 
         Assert.assertNotNull(refreshWork);
         try {
-            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            minerServer.buildBlockToMine(false);
             refreshWork.run();
             Assert.assertTrue(minerClient.mineBlock());
 
@@ -103,12 +106,16 @@ public class MinerManagerTest {
 
         Assert.assertNotNull(refreshWork);
         try {
-            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            minerServer.buildBlockToMine( false);
             refreshWork.run();
 
             Assert.assertTrue(minerClient.mineBlock());
 
-            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            // miningMainchainView new best block update is done by a listener on miner server.
+            // This test does not have that listener so add the new best block manually.
+            miningMainchainView.addBest(blockchain.getBestBlock().getHeader());
+
+            minerServer.buildBlockToMine( false);
             refreshWork.run();
             Assert.assertTrue(minerClient.mineBlock());
 
@@ -125,7 +132,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine( false);
 
         MinerWork minerWork = minerServer.getWork();
 
@@ -163,7 +170,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine( false);
 
         Assert.assertFalse(minerClient.mineBlock());
 
@@ -177,7 +184,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine( false);
         minerClient.doWork();
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
@@ -190,7 +197,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(null);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(false);
         minerClient.doWork();
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
@@ -203,7 +210,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+        minerServer.buildBlockToMine(false);
         Thread thread = minerClient.createDoWorkThread();
         thread.start();
         try {
@@ -231,7 +238,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
-        manager.mineBlock(blockchain, minerClient, minerServer);
+        manager.mineBlock(minerClient, minerServer);
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
         Assert.assertFalse(blockchain.getBestBlock().getTransactionsList().isEmpty());
@@ -241,14 +248,17 @@ public class MinerManagerTest {
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        manager.mineBlock(blockchain, minerClient, minerServer);
-        manager.mineBlock(blockchain, minerClient, minerServer);
+        manager.mineBlock(minerClient, minerServer);
+        // miningMainchainView new best block update is done by a listener on miner server.
+        // This test does not have that listener so add the new best block manually.
+        miningMainchainView.addBest(blockchain.getBestBlock().getHeader());
+        manager.mineBlock(minerClient, minerServer);
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
 
         snapshotManager.resetSnapshots();
         Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
 
-        manager.mineBlock(blockchain, minerClient, minerServer);
+        manager.mineBlock(minerClient, minerServer);
 
         Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
     }
@@ -275,7 +285,7 @@ public class MinerManagerTest {
         return new MinerServerImpl(
                 config,
                 ethereum,
-                blockchain,
+                miningMainchainView,
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockToMineBuilder(
@@ -286,6 +296,7 @@ public class MinerManagerTest {
                         transactionPool,
                         difficultyCalculator,
                         new GasLimitCalculator(config.getNetworkConstants()),
+                        new ForkDetectionDataCalculator(),
                         new BlockValidationRuleDummy(),
                         clock,
                         blockFactory,

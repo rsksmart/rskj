@@ -17,7 +17,7 @@
  */
 package co.rsk.mine;
 
-import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,8 +42,7 @@ public class MinerClockTest {
     public void timestampForChildIsParentTimestampIfRegtest() {
         MinerClock minerClock = new MinerClock(true, clock);
 
-        Block parent = mock(Block.class);
-        when(parent.getTimestamp()).thenReturn(54L);
+        BlockHeader parent = mockBlockHeaderWithTimestamp(54L);
 
         assertEquals(
                 54L,
@@ -55,8 +54,7 @@ public class MinerClockTest {
     public void timestampForChildIsClockTimeIfNotRegtest() {
         MinerClock minerClock = new MinerClock(false, clock);
 
-        Block parent = mock(Block.class);
-        when(parent.getTimestamp()).thenReturn(54L);
+        BlockHeader parent = mockBlockHeaderWithTimestamp(54L);
 
         assertEquals(
                 clock.instant().getEpochSecond(),
@@ -68,8 +66,7 @@ public class MinerClockTest {
     public void timestampForChildIsTimestampPlusOneIfNotRegtest() {
         MinerClock minerClock = new MinerClock(false, clock);
 
-        Block parent = mock(Block.class);
-        when(parent.getTimestamp()).thenReturn(clock.instant().getEpochSecond());
+        BlockHeader parent = mockBlockHeaderWithTimestamp(clock.instant().getEpochSecond());
 
         assertEquals(
                 clock.instant().getEpochSecond() + 1,
@@ -81,8 +78,7 @@ public class MinerClockTest {
     public void adjustTimeIfRegtest() {
         MinerClock minerClock = new MinerClock(true, clock);
 
-        Block parent = mock(Block.class);
-        when(parent.getTimestamp()).thenReturn(33L);
+        BlockHeader parent = mockBlockHeaderWithTimestamp(33L);
 
         minerClock.increaseTime(5392L);
 
@@ -96,8 +92,7 @@ public class MinerClockTest {
     public void adjustTimeIfNotRegtest() {
         MinerClock minerClock = new MinerClock(false, clock);
 
-        Block parent = mock(Block.class);
-        when(parent.getTimestamp()).thenReturn(33L);
+        BlockHeader parent = mockBlockHeaderWithTimestamp(33L);
 
         minerClock.increaseTime(5392L);
 
@@ -111,8 +106,7 @@ public class MinerClockTest {
     public void clearTimeIncrease() {
         MinerClock minerClock = new MinerClock(true, clock);
 
-        Block parent = mock(Block.class);
-        when(parent.getTimestamp()).thenReturn(33L);
+        BlockHeader parent = mockBlockHeaderWithTimestamp(33L);
 
         minerClock.increaseTime(5392L);
         minerClock.clearIncreaseTime();
@@ -121,5 +115,12 @@ public class MinerClockTest {
                 33L,
                 minerClock.calculateTimestampForChild(parent)
         );
+    }
+
+    BlockHeader mockBlockHeaderWithTimestamp(long timestamp) {
+        BlockHeader header = mock(BlockHeader.class);
+        when(header.getTimestamp()).thenReturn(timestamp);
+
+        return header;
     }
 }

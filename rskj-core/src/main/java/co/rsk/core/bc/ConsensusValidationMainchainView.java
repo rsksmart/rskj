@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,15 +16,17 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.mine;
+package co.rsk.core.bc;
 
+import co.rsk.crypto.Keccak256;
+import org.ethereum.core.BlockHeader;
 
-/**
- * Created by ajlopez on 15/04/2017.
- */
-public class MinerManager {
-    public void mineBlock(MinerClient minerClient, MinerServer minerServer) {
-        minerServer.buildBlockToMine(false);
-        minerClient.mineBlock();
-    }
+import java.util.List;
+import java.util.Map;
+
+public interface ConsensusValidationMainchainView {
+
+    List<BlockHeader> get(Keccak256 startingHashToGetMainchainFrom, int height);
+
+    void setPendingHeaders(Map<Keccak256, BlockHeader> pendingHeadersByHash);
 }

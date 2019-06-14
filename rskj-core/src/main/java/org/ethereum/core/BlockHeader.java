@@ -24,15 +24,18 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import org.bouncycastle.util.BigIntegers;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import static java.lang.System.arraycopy;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.toHexString;
 
@@ -42,6 +45,8 @@ import static org.ethereum.util.ByteUtil.toHexString;
  */
 public class BlockHeader {
 
+    private static final int HASH_FOR_MERGED_MINING_PREFIX_LENGTH = 20;
+    private static final int FORK_DETECTION_DATA_LENGTH = 12;
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
     private byte[] parentHash;
@@ -94,6 +99,9 @@ public class BlockHeader {
     private byte[] bitcoinMergedMiningMerkleProof;
     /* The bitcoin protobuf serialized coinbase tx for merged mining */
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
+
+    private byte[] miningForkDetectionData;
+
     /**
      * The mgp for a tx to be included in the block.
      */
@@ -106,12 +114,16 @@ public class BlockHeader {
     /* Indicates if the block was mined according to RSKIP-92 rules */
     private boolean useRskip92Encoding;
 
+    /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
+    private boolean includeForkDetectionData;
+
     public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                       byte[] bitcoinMergedMiningCoinbaseTransaction,
-                       Coin minimumGasPrice, int uncleCount, boolean sealed, boolean useRskip92Encoding) {
+                       byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
+                       Coin minimumGasPrice, int uncleCount, boolean sealed,
+                       boolean useRskip92Encoding, boolean includeForkDetectionData) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -131,8 +143,11 @@ public class BlockHeader {
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
+        this.miningForkDetectionData =
+                Arrays.copyOf(mergedMiningForkDetectionData, mergedMiningForkDetectionData.length);
         this.sealed = sealed;
         this.useRskip92Encoding = useRskip92Encoding;
+        this.includeForkDetectionData = includeForkDetectionData;
     }
 
     @VisibleForTesting
@@ -340,7 +355,6 @@ public class BlockHeader {
             }
         }
 
-
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
     }
 
@@ -379,7 +393,6 @@ public class BlockHeader {
     }
 
     public static byte[] getUnclesEncoded(List<BlockHeader> uncleList) {
-
         byte[][] unclesEncoded = new byte[uncleList.size()][];
         int i = 0;
         for (BlockHeader uncle : uncleList) {
@@ -460,7 +473,22 @@ public class BlockHeader {
     }
 
     public byte[] getHashForMergedMining() {
-        return HashUtil.keccak256(getEncoded(false, false));
+        byte[] encodedBlock = getEncoded(false, false);
+        byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
+        if (includeForkDetectionData) {
+            byte[] mergedMiningForkDetectionData = hasMiningFields() ?
+                    getMiningForkDetectionData() :
+                    miningForkDetectionData;
+            arraycopy(
+                    mergedMiningForkDetectionData,
+                    0,
+                    hashForMergedMining,
+                    HASH_FOR_MERGED_MINING_PREFIX_LENGTH,
+                    FORK_DETECTION_DATA_LENGTH
+            );
+        }
+
+        return hashForMergedMining;
     }
 
     public String getShortHash() {
@@ -471,7 +499,41 @@ public class BlockHeader {
         return HashUtil.shortHash(getParentHash().getBytes());
     }
 
-    private static BigInteger parseBigInteger(byte[] bytes) {
-        return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
+    public byte[] getMiningForkDetectionData() {
+        if(includeForkDetectionData) {
+            if (hasMiningFields() && miningForkDetectionData.length == 0) {
+                byte[] encodedBlock = getEncoded(false, false);
+                byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
+
+                byte[] hashForMergedMiningPrefix = Arrays.copyOfRange(
+                        hashForMergedMining,
+                        0,
+                        HASH_FOR_MERGED_MINING_PREFIX_LENGTH
+                );
+                byte[] coinbaseTransaction = getBitcoinMergedMiningCoinbaseTransaction();
+
+                List<Byte> hashForMergedMiningPrefixAsList = Arrays.asList(ArrayUtils.toObject(hashForMergedMiningPrefix));
+                List<Byte> coinbaseAsList = Arrays.asList(ArrayUtils.toObject(coinbaseTransaction));
+
+                int position = Collections.lastIndexOfSubList(coinbaseAsList, hashForMergedMiningPrefixAsList);
+                if (position == -1) {
+                    throw new IllegalStateException(
+                            String.format("Mining fork detection data could not be found. Header: %s", getShortHash())
+                    );
+                }
+
+                int from = position + HASH_FOR_MERGED_MINING_PREFIX_LENGTH;
+                int to = from + FORK_DETECTION_DATA_LENGTH;
+                miningForkDetectionData = Arrays.copyOfRange(coinbaseTransaction, from, to);
+            }
+
+            return Arrays.copyOf(miningForkDetectionData, miningForkDetectionData.length);
+        }
+
+        return new byte[0];
+    }
+
+    public boolean isParentOf(BlockHeader header) {
+        return this.getHash().equals(header.getParentHash());
     }
 }

@@ -487,7 +487,7 @@ public class BlockValidatorTest {
                         null, HashUtil.EMPTY_TRIE_HASH, null,
                         null, TEST_DIFFICULTY.getBytes(), 0,
                         null, 0L, 0L, new byte[]{}, Coin.ZERO,
-                        null, null, null, Coin.valueOf(10).getBytes(), 0
+                        null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0
                 ),
                 Collections.emptyList(),
                 Collections.emptyList()

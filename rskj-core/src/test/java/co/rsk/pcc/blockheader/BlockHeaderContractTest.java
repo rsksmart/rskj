@@ -28,7 +28,6 @@ import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContract;
@@ -459,25 +458,28 @@ public class BlockHeaderContractTest {
     }
 
     private Block mineBlock(Block parent, RskAddress coinbase) {
+        NetworkParameters networkParameters = RegTestParams.get();
         BlockGenerator blockGenerator = new BlockGenerator(config.getNetworkConstants(), config.getActivationConfig());
+
+        Block childBlock = blockGenerator.createChildBlock(
+                parent, new ArrayList<>(), new ArrayList<>(), parent.getDifficulty().asBigInteger().longValue(),
+                MIN_GAS_PRICE, parent.getGasLimit(), coinbase
+        );
+
+        Block newBlock = blockFactory.cloneBlockForModification(childBlock);
+
         byte[] prefix = new byte[1000];
         byte[] compressedTag = Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG);
+        byte[] mergedMiningHash = childBlock.getHashForMergedMining();
 
-        Keccak256 mergedMiningHash = new Keccak256(parent.getHashForMergedMining());
-
-        NetworkParameters networkParameters = RegTestParams.get();
-        BtcTransaction mergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(networkParameters, mergedMiningHash.getBytes());
-        BtcBlock mergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(networkParameters, mergedMiningCoinbaseTransaction);
+        BtcTransaction mergedMiningCoinbaseTransaction =
+                MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(networkParameters, mergedMiningHash);
+        BtcBlock mergedMiningBlock =
+                MinerUtils.getBitcoinMergedMiningBlock(networkParameters, mergedMiningCoinbaseTransaction);
 
         BigInteger targetDifficulty = DifficultyUtils.difficultyToTarget(parent.getDifficulty());
 
         new BlockMiner(config.getActivationConfig()).findNonce(mergedMiningBlock, targetDifficulty);
-
-        // We need to clone to allow modifications
-        Block newBlock = blockFactory.cloneBlockForModification(blockGenerator.createChildBlock(
-                parent, new ArrayList<>(), new ArrayList<>(), parent.getDifficulty().asBigInteger().longValue(),
-                MIN_GAS_PRICE, parent.getGasLimit(), coinbase
-        ));
 
         newBlock.setBitcoinMergedMiningHeader(mergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 
@@ -486,12 +488,12 @@ public class BlockHeaderContractTest {
                 pb -> pb.buildFromBlock(mergedMiningBlock),
                 newBlock.getNumber()
         );
+        newBlock.setBitcoinMergedMiningMerkleProof(merkleProof);
 
-        byte[] additionalTag = Arrays.concatenate(ADDITIONAL_TAG, mergedMiningHash.getBytes());
-        byte[] mergedMiningTx = org.bouncycastle.util.Arrays.concatenate(compressedTag, mergedMiningHash.getBytes(), additionalTag);
+        byte[] additionalTag = Arrays.concatenate(ADDITIONAL_TAG, mergedMiningHash);
+        byte[] mergedMiningTx = org.bouncycastle.util.Arrays.concatenate(compressedTag, mergedMiningHash, additionalTag);
 
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(mergedMiningTx);
-        newBlock.setBitcoinMergedMiningMerkleProof(merkleProof);
 
         return newBlock;
     }

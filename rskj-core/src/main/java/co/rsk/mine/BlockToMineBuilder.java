@@ -66,6 +66,8 @@ public class BlockToMineBuilder {
     private final MinimumGasPriceCalculator minimumGasPriceCalculator;
     private final MinerUtils minerUtils;
 
+    private final ForkDetectionDataCalculator forkDetectionDataCalculator;
+
     public BlockToMineBuilder(
             ActivationConfig activationConfig,
             MiningConfig miningConfig,
@@ -74,6 +76,7 @@ public class BlockToMineBuilder {
             TransactionPool transactionPool,
             DifficultyCalculator difficultyCalculator,
             GasLimitCalculator gasLimitCalculator,
+            ForkDetectionDataCalculator forkDetectionDataCalculator,
             BlockValidationRule validationRules,
             MinerClock clock,
             BlockFactory blockFactory,
@@ -87,6 +90,7 @@ public class BlockToMineBuilder {
         this.transactionPool = Objects.requireNonNull(transactionPool);
         this.difficultyCalculator = Objects.requireNonNull(difficultyCalculator);
         this.gasLimitCalculator = Objects.requireNonNull(gasLimitCalculator);
+        this.forkDetectionDataCalculator = Objects.requireNonNull(forkDetectionDataCalculator);
         this.validationRules = Objects.requireNonNull(validationRules);
         this.clock = Objects.requireNonNull(clock);
         this.blockFactory = blockFactory;
@@ -96,16 +100,17 @@ public class BlockToMineBuilder {
     }
 
     /**
-     * build creates a block to mine based on the given block as parent.
+     * Creates a new block to mine based on the previous mainchain blocks.
      *
-     * @param newBlockParent the new block parent.
-     * @param extraData      extra data to pass to the block being built
+     * @param mainchainHeaders last best chain blocks where 0 index is the best block and so on.
+     * @param extraData extra data to pass to the block being built.
      */
-    public Block build(Block newBlockParent, byte[] extraData) {
+    public Block build(List<BlockHeader> mainchainHeaders, byte[] extraData) {
+        BlockHeader newBlockParentHeader = mainchainHeaders.get(0);
         List<BlockHeader> uncles = FamilyUtils.getUnclesHeaders(
                 blockStore,
-                newBlockParent.getNumber() + 1,
-                newBlockParent.getHash(),
+                newBlockParentHeader.getNumber() + 1,
+                newBlockParentHeader.getHash(),
                 miningConfig.getUncleGenerationLimit()
         );
 
@@ -114,28 +119,28 @@ public class BlockToMineBuilder {
             uncles = uncles.subList(0, miningConfig.getUncleListLimit());
         }
 
-        Coin minimumGasPrice = minimumGasPriceCalculator.calculate(newBlockParent.getMinimumGasPrice());
+        Coin minimumGasPrice = minimumGasPriceCalculator.calculate(newBlockParentHeader.getMinimumGasPrice());
 
         final List<Transaction> txsToRemove = new ArrayList<>();
-        final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
-        final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice, extraData);
+        final List<Transaction> txs = getTransactions(txsToRemove, newBlockParentHeader, minimumGasPrice);
+        final Block newBlock = createBlock(mainchainHeaders, uncles, txs, minimumGasPrice, extraData);
 
         removePendingTransactions(txsToRemove);
-        executor.executeAndFill(newBlock, newBlockParent.getHeader());
+        executor.executeAndFill(newBlock, newBlockParentHeader);
         return newBlock;
     }
 
-    private List<Transaction> getTransactions(List<Transaction> txsToRemove, Block parent, Coin minGasPrice) {
+    private List<Transaction> getTransactions(List<Transaction> txsToRemove, BlockHeader parentHeader, Coin minGasPrice) {
         logger.debug("getting transactions from pending state");
         List<Transaction> txs = minerUtils.getAllTransactions(transactionPool);
         logger.debug("{} transaction(s) collected from pending state", txs.size());
 
-        Transaction remascTx = new RemascTransaction(parent.getNumber() + 1);
+        Transaction remascTx = new RemascTransaction(parentHeader.getNumber() + 1);
         txs.add(remascTx);
 
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
 
-        Repository originalRepo = repositoryLocator.snapshotAt(parent.getHeader());
+        Repository originalRepo = repositoryLocator.snapshotAt(parentHeader);
 
         return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }
@@ -145,12 +150,12 @@ public class BlockToMineBuilder {
     }
 
     private Block createBlock(
-            Block newBlockParent,
+            List<BlockHeader> mainchainHeaders,
             List<BlockHeader> uncles,
             List<Transaction> txs,
             Coin minimumGasPrice,
             byte[] extraData) {
-        BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice, extraData);
+        BlockHeader newHeader = createHeader(mainchainHeaders, uncles, txs, minimumGasPrice, extraData);
         Block newBlock = blockFactory.newBlock(newHeader, txs, uncles, false);
 
         // TODO(nacho): The validation rules should accept a list of uncles and we should never build invalid blocks.
@@ -162,32 +167,34 @@ public class BlockToMineBuilder {
         // log the panic, and create again the block without uncles to avoid fail abruptly.
         panicProcessor.panic("buildBlock", "some validation failed trying to create a new block");
 
-        newHeader = createHeader(newBlockParent, Collections.emptyList(), txs, minimumGasPrice, extraData);
+        newHeader = createHeader(mainchainHeaders, Collections.emptyList(), txs, minimumGasPrice, extraData);
         return blockFactory.newBlock(newHeader, txs, Collections.emptyList(), false);
     }
 
     private BlockHeader createHeader(
-            Block newBlockParent,
+            List<BlockHeader> mainchainHeaders,
             List<BlockHeader> uncles,
             List<Transaction> txs,
             Coin minimumGasPrice,
             byte[] extraData) {
         final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        final long timestampSeconds = clock.calculateTimestampForChild(newBlockParent);
+        BlockHeader newBlockParentHeader = mainchainHeaders.get(0);
+        final long timestampSeconds = clock.calculateTimestampForChild(newBlockParentHeader);
 
         // Set gas limit before executing block
         BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getMininimum());
         BigInteger targetGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getTarget());
-        BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
-        BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
+        BigInteger parentGasLimit = new BigInteger(1, newBlockParentHeader.getGasLimit());
+        BigInteger gasUsed = BigInteger.valueOf(newBlockParentHeader.getGasUsed());
         boolean forceLimit = miningConfig.getGasLimit().isTargetForced();
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
                                                                         gasUsed, minGasLimit, targetGasLimit, forceLimit);
+        byte[] forkDetectionData = forkDetectionDataCalculator.calculateWithBlockHeaders(mainchainHeaders);
 
-        long blockNumber = newBlockParent.getNumber() + 1;
+        long blockNumber = newBlockParentHeader.getNumber() + 1;
         final BlockHeader newHeader = blockFactory.newHeader(
-                newBlockParent.getHash().getBytes(),
+                newBlockParentHeader.getHash().getBytes(),
                 unclesListHash,
                 miningConfig.getCoinbaseAddress().getBytes(),
                 EMPTY_TRIE_HASH,
@@ -206,10 +213,11 @@ public class BlockToMineBuilder {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
+                forkDetectionData,
                 minimumGasPrice.getBytes(),
                 uncles.size()
         );
-        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
+        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));
         return newHeader;
     }
 }
