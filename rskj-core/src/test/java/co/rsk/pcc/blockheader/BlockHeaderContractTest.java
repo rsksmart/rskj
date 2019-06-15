@@ -97,7 +97,7 @@ public class BlockHeaderContractTest {
     public void setUp() {
         config = new TestSystemProperties();
         blockFactory = new BlockFactory(config.getActivationConfig());
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 

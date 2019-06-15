@@ -31,6 +31,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.encoders.Hex;
@@ -973,7 +974,8 @@ public class RemascProcessMinerFeesTest {
                         blockchain.getBlockStore(),
                         null,
                         blockFactory,
-                        new ProgramInvokeFactoryImpl()
+                        new ProgramInvokeFactoryImpl(),
+                        new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()))
                 )
         );
     }

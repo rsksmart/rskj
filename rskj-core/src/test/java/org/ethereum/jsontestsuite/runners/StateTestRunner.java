@@ -25,6 +25,8 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
@@ -45,6 +47,7 @@ import org.ethereum.jsontestsuite.validators.RepositoryValidator;
 import org.ethereum.jsontestsuite.validators.ValidationStats;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -78,10 +81,13 @@ public class StateTestRunner {
     protected ProgramInvokeFactory invokeFactory;
     protected Block block;
     protected ValidationStats vStats;
+    protected PrecompiledContracts precompiledContracts;
 
     public StateTestRunner(StateTestCase stateTestCase) {
         this.stateTestCase = stateTestCase;
         setstateTestUSeREMASC(false);
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
+        precompiledContracts = new PrecompiledContracts(config, btcBlockStoreFactory);
     }
 
     public StateTestRunner setstateTestUSeREMASC(boolean v) {
@@ -97,8 +103,8 @@ public class StateTestRunner {
                 new BlockStoreDummy(),
                 null,
                 blockFactory,
-                invokeFactory
-        );
+                invokeFactory,
+                precompiledContracts);
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
 
@@ -125,7 +131,6 @@ public class StateTestRunner {
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
-
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         blockchain = new BlockChainImpl(
                 repository,
@@ -145,7 +150,8 @@ public class StateTestRunner {
                                 blockStore,
                                 null,
                                 blockFactory,
-                                new ProgramInvokeFactoryImpl()
+                                new ProgramInvokeFactoryImpl(),
+                                precompiledContracts
                         )
                 ),
                 stateRootHandler

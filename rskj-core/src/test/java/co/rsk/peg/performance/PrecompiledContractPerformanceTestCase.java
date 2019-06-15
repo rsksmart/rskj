@@ -105,7 +105,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
     }
 
     @BeforeClass
-    public static void setupA() throws Exception {
+    public static void setupA() {
         constants = Constants.regtest();
         activationConfig = ActivationConfigsForTest.genesis();
     }
@@ -162,6 +162,7 @@ public abstract class PrecompiledContractPerformanceTestCase {
                     value.toByteArray(),
                     null);
             tx.sign(sender.getPrivKeyBytes());
+            tx.setLocalCallTransaction(true);
 
             return tx;
         }

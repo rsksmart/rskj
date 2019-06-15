@@ -18,6 +18,7 @@
 
 package co.rsk;
 
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.cli.CliArgs;
 import co.rsk.config.*;
 import co.rsk.core.*;
@@ -43,6 +44,8 @@ import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -94,6 +97,7 @@ import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.FileUtil;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.mapdb.DB;
@@ -207,6 +211,8 @@ public class RskContext implements NodeBootstrapper {
     private SolidityCompiler solidityCompiler;
     private BlocksBloomStore blocksBloomStore;
     private BlockExecutor blockExecutor;
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private PrecompiledContracts precompiledContracts;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -338,6 +344,24 @@ public class RskContext implements NodeBootstrapper {
         return blockExecutor;
     }
 
+    public PrecompiledContracts getPrecompiledContracts() {
+        if (precompiledContracts == null) {
+            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBtcBlockStoreFactory());
+        }
+
+        return precompiledContracts;
+    }
+
+
+    public BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
+        if (btcBlockStoreFactory == null) {
+            NetworkParameters btcParams = getRskSystemProperties().getNetworkConstants().getBridgeConstants().getBtcParams();
+            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcParams);
+        }
+
+        return btcBlockStoreFactory;
+    }
+
     public org.ethereum.db.BlockStore getBlockStore() {
         if (blockStore == null) {
             blockStore = buildBlockStore();
@@ -378,7 +402,8 @@ public class RskContext implements NodeBootstrapper {
                     getBlockStore(),
                     getReceiptStore(),
                     getBlockFactory(),
-                    getProgramInvokeFactory()
+                    getProgramInvokeFactory(),
+                    getPrecompiledContracts()
             );
         }
 
@@ -454,7 +479,8 @@ public class RskContext implements NodeBootstrapper {
                     getRepositoryLocator(),
                     getEthModuleSolidity(),
                     getEthModuleWallet(),
-                    getEthModuleTransaction()
+                    getEthModuleTransaction(),
+                    getBtcBlockStoreFactory()
             );
         }
 

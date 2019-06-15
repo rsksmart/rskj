@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -34,6 +35,7 @@ import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -443,8 +445,8 @@ public class TransactionTest {
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
-                            invokeFactory
-                    );
+                            invokeFactory,
+                            new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams())));
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
@@ -703,8 +705,8 @@ public class TransactionTest {
                 blockchain.getBlockStore(),
                 null,
                 blockFactory,
-                new ProgramInvokeFactoryImpl()
-        );
+                new ProgramInvokeFactoryImpl(),
+                new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams())));
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), blockchain.getRepository(), blockchain.getBestBlock(), 0);
 

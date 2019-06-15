@@ -161,6 +161,17 @@ public enum BridgeMethods {
             activations -> activations.isActive(RSKIP89),
             true
     ),
+    GET_BTC_TRANSACTION_CONFIRMATIONS(
+            CallTransaction.Function.fromSignature(
+                    "getBtcTransactionConfirmations",
+                    new String[]{"bytes32", "bytes32", "uint256", "bytes32[]"},
+                    new String[]{"int256"}
+            ),
+            fromMethod(Bridge::getBtcTransactionConfirmationsGetCost),
+            (BridgeMethodExecutorTyped) Bridge::getBtcTransactionConfirmations,
+            activations -> activations.isActive(RSKIP122),
+            false
+    ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
             CallTransaction.Function.fromSignature(
                     "getBtcTxHashProcessedHeight",
@@ -523,27 +534,6 @@ public enum BridgeMethods {
             false
     );
 
-    private interface CostProvider {
-        long getCost(Bridge bridge, ActivationConfig.ForBlock config, Object[] args);
-    }
-
-    private interface BridgeCostProvider {
-        long getCost(Bridge bridge, Object[] args);
-    }
-
-    private static CostProvider fixedCost(long cost) {
-        return (Bridge bridge, ActivationConfig.ForBlock config, Object[] args) -> cost;
-    }
-
-    private static CostProvider fromMethod(BridgeCostProvider bridgeCostProvider) {
-        return (Bridge bridge, ActivationConfig.ForBlock config, Object[] args) -> bridgeCostProvider.getCost(bridge, args);
-    }
-
-    private static final Map<ByteArrayWrapper, BridgeMethods> SIGNATURES = Stream.of(BridgeMethods.values())
-                        .collect(Collectors.toMap(
-                            m -> new ByteArrayWrapper(m.getFunction().encodeSignature()),
-                            Function.identity()
-                        ));
     private final CallTransaction.Function function;
     private final CostProvider costProvider;
     private final Function<ActivationConfig.ForBlock, Boolean> isEnabledFunction;
@@ -611,4 +601,27 @@ public enum BridgeMethods {
 
         void executeVoid(Bridge self, Object[] args) throws Exception;
     }
+
+    private interface CostProvider {
+        long getCost(Bridge bridge, ActivationConfig.ForBlock config, Object[] args);
+    }
+
+    private interface BridgeCostProvider {
+        long getCost(Bridge bridge, Object[] args);
+    }
+
+    private static CostProvider fixedCost(long cost) {
+        return (Bridge bridge, ActivationConfig.ForBlock config, Object[] args) -> cost;
+    }
+
+    private static CostProvider fromMethod(BridgeCostProvider bridgeCostProvider) {
+        return (Bridge bridge, ActivationConfig.ForBlock config, Object[] args) -> bridgeCostProvider.getCost(bridge, args);
+    }
+
+    private static final Map<ByteArrayWrapper, BridgeMethods> SIGNATURES = Stream.of(BridgeMethods.values())
+            .collect(Collectors.toMap(
+                    m -> new ByteArrayWrapper(m.getFunction().encodeSignature()),
+                    Function.identity()
+            ));
+
 }

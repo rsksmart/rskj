@@ -43,13 +43,14 @@ public class TransactionExecutorFactory {
             BlockStore blockStore,
             ReceiptStore receiptStore,
             BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory) {
+            ProgramInvokeFactory programInvokeFactory,
+            PrecompiledContracts precompiledContracts) {
         this.config = config;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
-        this.precompiledContracts = new PrecompiledContracts(config);
+        this.precompiledContracts = precompiledContracts;
     }
 
     public TransactionExecutor newInstance(

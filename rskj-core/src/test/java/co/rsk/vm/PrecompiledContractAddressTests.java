@@ -42,14 +42,14 @@ public class PrecompiledContractAddressTests {
     public static final String BIG_INT_MODEXP_ADDR = "0000000000000000000000000000000000000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
-    public static final String BTOUTILS_ADDR_STR = "0000000000000000000000000000000001000009";
+    public static final String HDWALLETUTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
 
     private final TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void testGetPrecompile() {
-        PrecompiledContracts pcList = new PrecompiledContracts(config);
+        PrecompiledContracts pcList = new PrecompiledContracts(config, null);
         checkAddr(pcList,ECRECOVER_ADDR, "ECRecover");
         checkAddr(pcList,SHA256_ADDR, "Sha256");
         checkAddr(pcList,RIPEMPD160_ADDR ,"Ripempd160");
@@ -58,7 +58,7 @@ public class PrecompiledContractAddressTests {
         checkAddr(pcList,BRIDGE_ADDR_STR ,"Bridge");
         checkAddr(pcList,REMASC_ADDR_STR ,"RemascContract");
         checkAddr(pcList,BLOCK_HEADER_ADDR_STR,"BlockHeaderContract");
-        checkAddr(pcList,BTOUTILS_ADDR_STR,"HDWalletUtils");
+        checkAddr(pcList, HDWALLETUTILS_ADDR_STR,"HDWalletUtils");
     }
 
     void checkAddr(PrecompiledContracts pcList,String addr,String className) {

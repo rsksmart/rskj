@@ -23,9 +23,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
-import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeStorageConfiguration;
-import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.*;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
@@ -48,11 +46,13 @@ import java.util.stream.Collectors;
 public abstract class BridgePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     protected static NetworkParameters networkParameters;
     protected static BridgeConstants bridgeConstants;
+    protected static BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
     @BeforeClass
-    public static void setupB() throws Exception {
+    public static void setupB() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         networkParameters = bridgeConstants.getBtcParams();
+        btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
     }
 
     protected static class Helper extends PrecompiledContractPerformanceTestCase.Helper {
@@ -131,6 +131,10 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
         void initialize(BridgeStorageProvider provider, Repository repository, int executionIndex);
     }
 
+    protected interface PostInitCallback {
+        void afterInit(EnvironmentBuilder.Environment environment);
+    }
+
     protected ExecutionStats executeAndAverage(
             String name,
             int times,
@@ -139,6 +143,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             TxBuilder txBuilder,
             HeightProvider heightProvider,
             ExecutionStats stats) {
+
         return executeAndAverage(
                 name, times, abiEncoder, storageInitializer,
                 txBuilder, heightProvider, stats, null
@@ -155,6 +160,23 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             ExecutionStats stats,
             ResultCallback resultCallback) {
 
+        return executeAndAverage(
+                name, times, abiEncoder, storageInitializer,
+                txBuilder, heightProvider, stats, resultCallback, null
+        );
+    }
+
+    protected ExecutionStats executeAndAverage(
+            String name,
+            int times,
+            ABIEncoder abiEncoder,
+            BridgeStorageProviderInitializer storageInitializer,
+            TxBuilder txBuilder,
+            HeightProvider heightProvider,
+            ExecutionStats stats,
+            ResultCallback resultCallback,
+            PostInitCallback postInitCallback) {
+
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             private Bridge bridge;
             private RepositoryTrackWithBenchmarking benchmarkerTrack;
@@ -169,7 +191,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(activationConfig.forBlock((long) executionIndex));
 
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
-                BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,bridgeStorageConfigurationAtThisHeight);
+                BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
                 storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex);
                 try {
                     storageProvider.save();
@@ -181,7 +203,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
                 List<LogInfo> logs = new ArrayList<>();
 
-                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
+                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, btcBlockStoreFactory);
                 Blockchain blockchain = BlockChainBuilder.ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);
                 bridge.init(
@@ -203,7 +225,8 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 tx.setLocalCallTransaction(oldLocalCall);
                 benchmarkerTrack.getStatistics().clear();
 
-                return new Environment() {
+
+                Environment environment = new Environment() {
                     @Override
                     public PrecompiledContracts.PrecompiledContract getContract() {
                         return bridge;
@@ -219,7 +242,13 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                         benchmarkerTrack.commit();
                     }
                 };
-            };
+
+                if (postInitCallback != null) {
+                    postInitCallback.afterInit(environment);
+                }
+                return environment;
+            }
+
         };
 
         return super.executeAndAverage(name, times, environmentBuilder, abiEncoder, txBuilder, heightProvider, stats, resultCallback);

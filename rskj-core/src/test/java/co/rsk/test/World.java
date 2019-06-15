@@ -31,11 +31,14 @@ import co.rsk.net.BlockStore;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.util.HashMap;
@@ -52,7 +55,7 @@ public class World {
     private Map<String, Account> accounts = new HashMap<>();
     private Map<String, Transaction> transactions = new HashMap<>();
     private StateRootHandler stateRootHandler;
-
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     public World() {
         this(new BlockChainBuilder().build());
     }
@@ -76,7 +79,6 @@ public class World {
             genesis = (Genesis) BlockChainImplTest.getGenesisBlock(blockChain);
             this.blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
         }
-
         this.saveBlock("g00", genesis);
 
         BlockStore store = new BlockStore();
@@ -86,6 +88,8 @@ public class World {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
         this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
         this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+
+        this.btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
@@ -103,7 +107,8 @@ public class World {
                             this.getBlockChain().getBlockStore(),
                             null,
                             new BlockFactory(config.getActivationConfig()),
-                            programInvokeFactory
+                            programInvokeFactory,
+                            new PrecompiledContracts(config, btcBlockStoreFactory)
                     )
             );
         }
@@ -145,5 +150,9 @@ public class World {
 
     public Repository getRepository() {
         return this.blockChain.getRepository();
+    }
+
+    public BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
+        return this.btcBlockStoreFactory;
     }
 }

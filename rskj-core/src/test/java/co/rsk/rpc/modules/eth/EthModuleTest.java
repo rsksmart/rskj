@@ -57,8 +57,8 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                null
-        );
+                null,
+                null);
 
         String result = eth.call(args, "latest");
         assertThat(result, is(TypeConverter.toJsonHex(hreturn)));

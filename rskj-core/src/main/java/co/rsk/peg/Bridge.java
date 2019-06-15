@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
@@ -52,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Precompiled contract that manages the 2 way peg between bitcoin and RSK.
@@ -97,6 +99,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // (replacing the need for getBtcBlockchainBlockLocator).
     // The goal of this function is to help synchronize bridge and federators blockchains.
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH = BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH.getFunction();
+    // Returns the confirmations number of the block for the given transaction. If its not valid or its not part of the main chain it returns a negative number
+    // The goal of this function is to help contracts can use this to validate BTC transactions
+    public static final CallTransaction.Function GET_BTC_TRANSACTION_CONFIRMATIONS = BridgeMethods.GET_BTC_TRANSACTION_CONFIRMATIONS.getFunction();
     // Returns the minimum amount of satoshis a user should send to the federation.
     public static final CallTransaction.Function GET_MINIMUM_LOCK_TX_VALUE = BridgeMethods.GET_MINIMUM_LOCK_TX_VALUE.getFunction();
 
@@ -198,12 +203,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private List<LogInfo> logs;
 
     private BridgeSupport bridgeSupport;
+    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
-    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig) {
+    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig, BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
         this.contractAddress = contractAddress;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
         this.activationConfig = activationConfig;
+        this.btcBlockStoreFactory = btcBlockStoreFactory;
     }
 
     @Override
@@ -316,7 +323,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             }
 
             this.bridgeSupport = setup();
-
             Optional<?> result;
             try {
                 // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
@@ -353,7 +359,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                         BridgeStorageConfiguration.fromBlockchainConfig(activations)
                 ),
                 new BridgeEventLoggerImpl(bridgeConstants, logs),
-                repository, rskExecutionBlock, null, null
+                repository,
+                rskExecutionBlock,
+                btcBlockStoreFactory,
+                null
         );
     }
 
@@ -587,6 +596,32 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return blockHash.getBytes();
+    }
+
+    public long getBtcTransactionConfirmationsGetCost(Object[] args) {
+        return bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
+    }
+
+    public int getBtcTransactionConfirmations(Object[] args)
+    {
+        logger.trace("getBtcTransactionConfirmations");
+        try {
+            Sha256Hash btcTxHash = Sha256Hash.wrap((byte[]) args[0]);
+            Sha256Hash btcBlockHash = Sha256Hash.wrap((byte[]) args[1]);
+
+            int merkleBranchPath = ((BigInteger) args[2]).intValue();
+
+            Object[] merkleBranchHashesArray = (Object[]) args[3];
+            List<Sha256Hash> merkleBranchHashes = Arrays.stream(merkleBranchHashesArray)
+                    .map(hash -> Sha256Hash.wrap((byte[]) hash)).collect(Collectors.toList());
+
+            MerkleBranch merkleBranch = new MerkleBranch(merkleBranchHashes, merkleBranchPath);
+
+            return bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, merkleBranch);
+        } catch (Exception e) {
+            logger.warn("Exception in getBtcTransactionConfirmations", e);
+            throw new RuntimeException("Exception in getBtcTransactionConfirmations", e);
+        }
     }
 
     public Long getMinimumLockTxValue(Object[] args)
@@ -990,7 +1025,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.removeLockWhitelistAddress(rskTx, addressBase58);
     }
 
-    public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException {
+    public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException, BlockStoreException {
         logger.trace("setLockWhitelistDisableBlockDelay");
         BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
         return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);

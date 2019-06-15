@@ -28,6 +28,7 @@ import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -35,6 +36,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
@@ -125,6 +127,7 @@ class RemascTestRunner {
 
         BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), new RepositoryBtcBlockStoreWithCache.Factory(builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()));
         BlockExecutor blockExecutor = new BlockExecutor(
                 builder.getConfig().getActivationConfig(),
                 new RepositoryLocator(blockchain.getRepository(), builder.getStateRootHandler()),
@@ -134,7 +137,8 @@ class RemascTestRunner {
                         blockchain.getBlockStore(),
                         null,
                         blockFactory,
-                        programInvokeFactory
+                        programInvokeFactory,
+                        precompiledContracts
                 )
         );
 

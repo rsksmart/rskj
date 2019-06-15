@@ -177,4 +177,6 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
             input.setScriptSig(inputScript);
         }
     }
+
+
 }

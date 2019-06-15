@@ -58,10 +58,11 @@ public class RskForksBridgeTest {
     private Genesis genesis;
     private BlockChainImpl blockChain;
     private Block blockBase;
+    private World world;
 
     @Before
     public void before() throws IOException, ClassNotFoundException {
-        World world = new World();
+        world = new World();
         blockChain = world.getBlockChain();
         repository = blockChain.getRepository();
 
@@ -237,7 +238,7 @@ public class RskForksBridgeTest {
         return blockBuilder.build();
     }
 
-    private Transaction buildWhitelistTx() throws IOException, ClassNotFoundException {
+    private Transaction buildWhitelistTx() {
         long nonce = 0;
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
@@ -462,8 +463,9 @@ public class RskForksBridgeTest {
                 blockChain.getBlockStore(),
                 null,
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
-                new ProgramInvokeFactoryImpl()
-        );
+                new ProgramInvokeFactoryImpl(),
+                new PrecompiledContracts(beforeBambooProperties, world.getBtcBlockStoreFactory())
+                );
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository, blockChain.getBestBlock(), 0)
                 .setLocalCall(true);

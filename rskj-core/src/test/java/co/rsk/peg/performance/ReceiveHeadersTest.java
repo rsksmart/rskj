@@ -27,7 +27,7 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.RepositoryBlockStore;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -37,6 +37,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @Ignore
@@ -120,7 +121,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
-                    btcBlockStore = new RepositoryBlockStore(BridgeRegTestConstants.getInstance(), (Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR);
+                    btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(), (Repository) environment.getBenchmarkedRepository(), new HashMap<>(),PrecompiledContracts.BRIDGE_ADDR);
                     Sha256Hash bestBlockHash = null;
                     try {
                         bestBlockHash = btcBlockStore.getChainHead().getHeader().getHash();
@@ -162,7 +163,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
 
     private BridgeStorageProviderInitializer buildInitializer(int minBlocks, int maxBlocks) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            btcBlockStore = new RepositoryBlockStore(BridgeRegTestConstants.getInstance(), repository, PrecompiledContracts.BRIDGE_ADDR);
+            btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(), repository, new HashMap<>(),PrecompiledContracts.BRIDGE_ADDR);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {

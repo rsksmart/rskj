@@ -22,12 +22,9 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.peg.RepositoryBlockStore;
+import co.rsk.peg.*;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import org.ethereum.core.Repository;
-import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -97,7 +94,8 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
 
     private BridgeStorageProviderInitializer generateInitializerForLock(int minBtcBlocks, int maxBtcBlocks, int numberOfLockConfirmations, boolean markAsAlreadyProcessed) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBlockStore(bridgeConstants, repository, PrecompiledContracts.BRIDGE_ADDR);
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
+            BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository.startTracking());
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {

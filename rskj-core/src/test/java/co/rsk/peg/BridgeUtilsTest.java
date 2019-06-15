@@ -28,7 +28,10 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.db.MutableTrieCache;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
+import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -36,6 +39,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
@@ -480,8 +484,9 @@ public class BridgeUtilsTest {
 
 
     private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, byte[] privKeyBytes) {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig);
-
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams());
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, btcBlockStoreFactory);
+        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,
                 1,
@@ -492,7 +497,7 @@ public class BridgeUtilsTest {
         rskTx.sign(privKeyBytes);
 
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance());
-        bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
+        bridge.init(rskTx, rskExecutionBlock, repository.startTracking(), null, null, null);
         Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
     }
 

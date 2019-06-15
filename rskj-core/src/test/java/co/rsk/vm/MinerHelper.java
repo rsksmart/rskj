@@ -24,9 +24,11 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.vm.PrecompiledContracts;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,8 +96,8 @@ public class MinerHelper {
                     null,
                     null,
                     blockFactory,
-                    null
-            );
+                    null,
+                    new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams())));
             TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 

@@ -19,6 +19,8 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
@@ -242,13 +244,15 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
+                    BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
+                    precompiledContracts = new PrecompiledContracts(config, btcBlockStoreFactory);
                     TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                             config,
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
-                            invokeFactory
-                    );
+                            invokeFactory,
+                            precompiledContracts);
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);

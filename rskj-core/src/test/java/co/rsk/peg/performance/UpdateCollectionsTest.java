@@ -39,6 +39,7 @@ import java.util.SortedMap;
 
 @Ignore
 public class UpdateCollectionsTest extends BridgePerformanceTestCase {
+
     @Test
     public void updateCollections() throws IOException {
         ExecutionStats stats = new ExecutionStats("updateCollections");

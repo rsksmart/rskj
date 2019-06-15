@@ -284,4 +284,17 @@ public class UtilsTest {
     public void hexadecimalStringToLongFailBis() {
         Utils.hexadecimalStringToLong("zzz");
     }
+
+    @Test
+    public void significantBitCount() {
+        Assert.assertEquals(0, Utils.significantBitCount(0b0));
+        Assert.assertEquals(1, Utils.significantBitCount(0b1));
+        Assert.assertEquals(2, Utils.significantBitCount(0b10));
+        Assert.assertEquals(2, Utils.significantBitCount(0b11));
+        Assert.assertEquals(3, Utils.significantBitCount(0b111));
+        Assert.assertEquals(3, Utils.significantBitCount(0b100));
+        Assert.assertEquals(3, Utils.significantBitCount(0b101));
+        Assert.assertEquals(13, Utils.significantBitCount(0b1000111000101));
+        Assert.assertEquals(9, Utils.significantBitCount(0b000111000101));
+    }
 }

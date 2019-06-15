@@ -15,14 +15,28 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
+import org.ethereum.core.Repository;
 
-public interface BtcBlockstoreWithCache extends BtcBlockStore {
+/**
+ * Implementation of a bitcoinj blockstore that persists to RSK's Repository
+ * @author Oscar Guindzberg
+ */
+public interface BtcBlockStoreWithCache extends BtcBlockStore {
 
-    StoredBlock getFromCache(Sha256Hash hash) throws BlockStoreException;
+    StoredBlock getFromCache(Sha256Hash branchBlockHash);
+
+    StoredBlock getStoredBlockAtMainChainHeight(int height) throws BlockStoreException;
+
+    StoredBlock getStoredBlockAtMainChainDepth(int depth) throws BlockStoreException;
+
+    interface Factory {
+        BtcBlockStoreWithCache newInstance(Repository track);
+    }
 }

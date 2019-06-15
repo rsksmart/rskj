@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.Arrays;
@@ -57,7 +58,7 @@ public class Create2Test {
     private BytecodeCompiler compiler = new BytecodeCompiler();
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()));
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Transaction transaction = createTransaction();
 
