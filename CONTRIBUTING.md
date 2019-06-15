@@ -18,6 +18,31 @@ Continued code reviews and audits are required for security. As such, we encoura
 * Review our code, even if no contributions are planned.
 * Publish their findings whichever way they choose, even if no particular bug or vulnerability was found. We can all learn from new sets of eyes and benefit from increased scrutiny.
 
+### Code contributions
+
+A code contribution process starts with someone identifying a need for writing code. If you're thinking about making your first contribution, we suggest you take a moment to get in touch and see how your idea fits in the development plan:
+
+* Is it a bug in our [issue tracker](https://github.com/rsksmart/rskj/issues)?
+* Is it a novel idea that should be proposed and discussed first?
+
+#### Review process
+
+Once you know what to do, it is important that you provide a full description of the proposed changes. You can also send a draft pull request if you already have code to show.
+
+We make use of GitHub Checks to ensure all changes meet a certain criteria:
+
+1. The `master` branch is protected and only changeable through pull requests
+1. All unit tests must pass
+1. SonarQube quality gate must be met
+1. A project maintainer must approve the pull request
+1. An authorized merger must merge the pull request
+
+Since this is a security-sensitive project, we encourage everyone to be proactive and participate in the review process. To help collaboration we propose adhering to these conventions:
+
+* **Request changes** only for correctness and security issues.
+* **Comment** when leaving feedback without explicit approval or rejection. This is useful for design and implementation discussions.
+* **Approve** when changes look good from a correctness, security, design and implementation standpoint.
+
 ## Styleguides
 
 ### Pull request etiquette
