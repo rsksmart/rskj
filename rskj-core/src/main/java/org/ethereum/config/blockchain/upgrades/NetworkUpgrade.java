@@ -23,7 +23,7 @@ public enum NetworkUpgrade {
     AFTER_BRIDGE_SYNC("afterBridgeSync"),
     ORCHID("orchid"),
     ORCHID_060("orchid060"),
-    SECOND_FORK("secondFork"); // TBD
+    WASABI_100("wasabi100");
 
     private String name;
 

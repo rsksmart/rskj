@@ -265,7 +265,7 @@ public class BridgeSerializationUtils {
 
     /**
      * For the federation serialization format, see serializeFederationWithSerializer.
-     * For compatibility with blocks before the "secondFork" network upgrade,
+     * For compatibility with blocks before the Wasabi network upgrade,
      * each federation member is serialized only as its compressed BTC public key.
      */
     public static byte[] serializeFederationOnlyBtcKeys(Federation federation) {
@@ -329,7 +329,7 @@ public class BridgeSerializationUtils {
     /**
      * A pending federation is serialized as the
      * public keys conforming it.
-     * This is a legacy format for blocks before the "secondFork"
+     * This is a legacy format for blocks before the Wasabi
      * network upgrade.
      * See BridgeSerializationUtils::serializeBtcPublicKeys
      */

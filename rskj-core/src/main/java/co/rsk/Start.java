@@ -31,7 +31,7 @@ public class Start {
 
     public static void main(String[] args) throws IOException {
         RskContext ctx = new RskContext(args);
-        // this feature is only needed until the secondFork (TBD) network upgrade is activated.
+        // this feature is only needed until the Wasabi network upgrade is activated.
         OrchidToUnitrieMigrator.migrateStateToUnitrieIfNeeded(ctx);
 
         NodeRunner runner = ctx.getNodeRunner();

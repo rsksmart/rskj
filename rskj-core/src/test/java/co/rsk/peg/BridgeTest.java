@@ -2230,8 +2230,7 @@ public class BridgeTest {
     }
 
     @Test
-    //TODO RENAME when SecondFork is renamed
-    public void getBtcTransactionConfirmationsBeforeSecondFork() throws Exception {
+    public void getBtcTransactionConfirmationsBeforeWasabi() throws Exception {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP122), anyLong());
 
         Transaction txMock = mock(Transaction.class);
@@ -2246,7 +2245,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getBtcTransactionConfirmationsAfterSecondFork_ok() throws Exception {
+    public void getBtcTransactionConfirmationsAfterWasabi_ok() throws Exception {
         Transaction txMock = mock(Transaction.class);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams());
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, btcBlockStoreFactory));
@@ -2302,7 +2301,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getBtcTransactionConfirmationsAfterSecondFork_errorInBridgeSupport() throws Exception {
+    public void getBtcTransactionConfirmationsAfterWasabi_errorInBridgeSupport() throws Exception {
         Transaction txMock = mock(Transaction.class);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, btcBlockStoreFactory));
@@ -2364,7 +2363,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getBtcTransactionConfirmationsAfterSecondFork_merkleBranchConstructionError() throws Exception {
+    public void getBtcTransactionConfirmationsAfterWasabi_merkleBranchConstructionError() throws Exception {
         Transaction txMock = mock(Transaction.class);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, btcBlockStoreFactory));
