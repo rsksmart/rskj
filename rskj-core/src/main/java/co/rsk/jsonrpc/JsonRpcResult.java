@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package co.rsk.jsonrpc;
 
 /** This is the base class for JSON-RPC results. Inheritors should add properties specific to the result type. */
