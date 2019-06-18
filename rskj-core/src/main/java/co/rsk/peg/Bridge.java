@@ -290,6 +290,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.rskExecutionBlock = rskExecutionBlock;
         this.repository = repository;
         this.logs = logs;
+
+        this.bridgeSupport = setup();
     }
 
     @Override
@@ -322,7 +324,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 throw new BridgeIllegalArgumentException(errorMessage);
             }
 
-            this.bridgeSupport = setup();
             Optional<?> result;
             try {
                 // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
