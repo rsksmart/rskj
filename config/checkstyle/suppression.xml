@@ -5,4 +5,6 @@
 <suppressions>
   <suppress checks="[a-zA-Z0-9]*" files="org/ethereum/crypto/cryptohash/*"/>
   <suppress checks="AbbreviationAsWordInName" files="org/ethereum/vm/VM.java"/>
+  <suppress checks="LineLengthCheck"
+            files="^.*((BridgeDevNetConstants)|(BridgeMainNetConstants)|(BridgeRegTestConstants)|(BridgeTestNetConstants)|(org/ethereum/config/Constants))\.java"/>
 </suppressions>
