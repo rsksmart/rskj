@@ -19,10 +19,9 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
-import org.ethereum.core.BlockHeader;
-
 import java.util.List;
 import java.util.Map;
+import org.ethereum.core.BlockHeader;
 
 public interface ConsensusValidationMainchainView {
 

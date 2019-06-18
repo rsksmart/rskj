@@ -18,10 +18,10 @@
 
 package co.rsk.core.types.ints;
 
-import org.junit.Test;
-
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+
+import org.junit.Test;
 
 public class Uint8Test {
     @Test

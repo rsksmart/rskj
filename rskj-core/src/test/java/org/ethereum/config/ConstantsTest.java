@@ -18,16 +18,15 @@
 
 package org.ethereum.config;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import org.ethereum.crypto.HashUtil;
-import org.junit.Test;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
+import co.rsk.bitcoinj.core.BtcECKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import org.ethereum.crypto.HashUtil;
+import org.junit.Test;
 
 public class ConstantsTest {
     private static final List<BtcECKey> TEST_FED_KEYS = Arrays.asList(

@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.crypto.HDKeyDerivation;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
+import java.util.Random;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
@@ -31,8 +32,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
-
-import java.util.Random;
 
 @Ignore
 public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {

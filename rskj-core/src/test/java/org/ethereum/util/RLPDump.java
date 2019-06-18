@@ -19,11 +19,10 @@
 
 package org.ethereum.util;
 
+import java.util.ArrayList;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.ArrayList;
 
 /**
  * Created by Anton Nashatyrev on 29.09.2015.

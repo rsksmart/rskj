@@ -24,6 +24,12 @@ import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
@@ -35,13 +41,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by oscar on 13/01/2017.

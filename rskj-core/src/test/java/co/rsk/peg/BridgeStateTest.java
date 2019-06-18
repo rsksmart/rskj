@@ -23,14 +23,13 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import java.io.IOException;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.IOException;
 
 /**
  * Created by ajlopez on 16/04/2017.

@@ -18,12 +18,11 @@
 
 package co.rsk.core;
 
+import java.math.BigInteger;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 01/02/2017.

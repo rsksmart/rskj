@@ -20,17 +20,15 @@ package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.OptionalInt;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by mario on 15/02/17.

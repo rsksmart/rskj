@@ -19,12 +19,10 @@
 
 package org.ethereum.crypto;
 
-import org.ethereum.util.Utils;
+import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.KeyEncoder;
@@ -38,15 +36,20 @@ import org.bouncycastle.crypto.generators.EphemeralKeyPairGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
-import org.bouncycastle.crypto.params.*;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.IESParameters;
+import org.bouncycastle.crypto.params.IESWithCipherParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
-
-import static org.ethereum.crypto.HashUtil.keccak256;
-import static org.junit.Assert.assertEquals;
+import org.ethereum.util.Utils;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CryptoTest {
 

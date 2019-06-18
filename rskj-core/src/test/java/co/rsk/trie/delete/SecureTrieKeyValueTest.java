@@ -19,12 +19,11 @@
 package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Created by ajlopez on 03/04/2017.

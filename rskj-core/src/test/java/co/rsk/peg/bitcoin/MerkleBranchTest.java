@@ -18,20 +18,19 @@
 
 package co.rsk.peg.bitcoin;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import org.bouncycastle.util.encoders.Hex;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class MerkleBranchTest {
     @Test

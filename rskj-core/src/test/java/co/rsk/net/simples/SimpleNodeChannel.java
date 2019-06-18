@@ -21,7 +21,6 @@ package co.rsk.net.simples;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
-
 import java.net.InetAddress;
 
 /**

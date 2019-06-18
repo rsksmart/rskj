@@ -21,20 +21,16 @@ package co.rsk.rpc;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
+import java.util.List;
+import java.util.Optional;
+import javax.annotation.Nullable;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.util.Utils;
 
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Optional;
-
-/**
- * Encapsulates the logic to retrieve or create an execution block
- * for Web3 calls.
- */
+/** Encapsulates the logic to retrieve or create an execution block for Web3 calls. */
 public class ExecutionBlockRetriever {
     private static final String LATEST_ID = "latest";
     private static final String PENDING_ID = "pending";
@@ -44,13 +40,13 @@ public class ExecutionBlockRetriever {
     private final MinerServer minerServer;
     private final BlockToMineBuilder builder;
 
-    @Nullable
-    private Block cachedBlock;
+    @Nullable private Block cachedBlock;
 
-    public ExecutionBlockRetriever(MiningMainchainView miningMainchainView,
-                                   Blockchain blockchain,
-                                   MinerServer minerServer,
-                                   BlockToMineBuilder builder) {
+    public ExecutionBlockRetriever(
+            MiningMainchainView miningMainchainView,
+            Blockchain blockchain,
+            MinerServer minerServer,
+            BlockToMineBuilder builder) {
         this.miningMainchainView = miningMainchainView;
         this.blockchain = blockchain;
         this.minerServer = minerServer;
@@ -89,15 +85,17 @@ public class ExecutionBlockRetriever {
         if (executionBlockNumber.isPresent()) {
             Block executionBlock = blockchain.getBlockByNumber(executionBlockNumber.get());
             if (executionBlock == null) {
-                throw new JsonRpcInvalidParamException(String.format("Invalid block number %d", executionBlockNumber.get()));
+                throw new JsonRpcInvalidParamException(
+                        String.format("Invalid block number %d", executionBlockNumber.get()));
             }
             return executionBlock;
         }
 
         // If we got here, the specifier given is unsupported
-        throw new JsonRpcInvalidParamException(String.format(
-                "Unsupported block specifier '%s'. Can only be either 'latest', " +
-                "'pending' or a specific block number (either hex - prepending '0x' or decimal).",
-                bnOrId));
+        throw new JsonRpcInvalidParamException(
+                String.format(
+                        "Unsupported block specifier '%s'. Can only be either 'latest', "
+                                + "'pending' or a specific block number (either hex - prepending '0x' or decimal).",
+                        bnOrId));
     }
 }

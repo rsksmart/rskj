@@ -1,10 +1,8 @@
 package org.ethereum.solidity;
 
+import java.math.BigInteger;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.security.InvalidParameterException;
 
 public class SolidityTypeTest {
 

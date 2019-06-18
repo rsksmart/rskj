@@ -1,11 +1,10 @@
 package co.rsk.scoring;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Random;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by ajlopez on 10/07/2017.

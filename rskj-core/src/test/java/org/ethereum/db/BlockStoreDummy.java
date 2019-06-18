@@ -22,13 +22,12 @@ package org.ethereum.db;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.Sibling;
-import org.ethereum.core.Block;
-import org.ethereum.crypto.HashUtil;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.ethereum.core.Block;
+import org.ethereum.crypto.HashUtil;
 
 /**
  * @author Roman Mandeleil

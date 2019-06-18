@@ -18,17 +18,16 @@
 
 package co.rsk.mine;
 
+import static org.ethereum.validator.ParentGasLimitRuleTest.getHeader;
+
 import co.rsk.config.TestSystemProperties;
+import java.math.BigInteger;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.validator.ParentGasLimitRule;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-
-import static org.ethereum.validator.ParentGasLimitRuleTest.getHeader;
 
 /**
  * Created by Ruben Altman on 5/23/2016.

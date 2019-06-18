@@ -1,21 +1,25 @@
 package co.rsk.net.discovery;
 
-import co.rsk.net.discovery.message.*;
+import static org.ethereum.util.ByteUtil.intToBytes;
+import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
+
+import co.rsk.net.discovery.message.DiscoveryMessageType;
+import co.rsk.net.discovery.message.FindNodePeerMessage;
+import co.rsk.net.discovery.message.MessageDecoder;
+import co.rsk.net.discovery.message.NeighborsPeerMessage;
+import co.rsk.net.discovery.message.PeerDiscoveryMessage;
+import co.rsk.net.discovery.message.PingPeerMessage;
+import co.rsk.net.discovery.message.PongPeerMessage;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.UUID;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.junit.Assert;
-
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.UUID;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import static org.ethereum.util.ByteUtil.intToBytes;
-import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 
 public class MessageDecoderTest {

@@ -20,12 +20,11 @@ package org.ethereum.rpc;
 
 import co.rsk.core.RskAddress;
 import co.rsk.test.builders.AccountBuilder;
+import java.util.Random;
 import org.ethereum.core.Account;
 import org.ethereum.core.Bloom;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Random;
 
 /**
  * Created by ajlopez on 18/01/2018.

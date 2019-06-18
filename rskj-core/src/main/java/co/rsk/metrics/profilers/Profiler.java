@@ -35,7 +35,7 @@ public interface Profiler {
         AFTER_BLOCK_EXEC,
         BUILD_TRIE_FROM_MSG,
         TRIE_TO_MESSAGE, // Currently inactive, to measure, add the hooks in Trie::toMessage() and
-                         // Trie::toMessageOrchid()
+        // Trie::toMessageOrchid()
         TRIE_CONVERTER_GET_ACCOUNT_ROOT
     }
 

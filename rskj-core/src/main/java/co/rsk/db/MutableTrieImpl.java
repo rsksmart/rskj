@@ -24,14 +24,13 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.db.TrieKeyMapper;
-import org.ethereum.vm.DataWord;
-
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.TrieKeyMapper;
+import org.ethereum.vm.DataWord;
 
 public class MutableTrieImpl implements MutableTrie {
 
@@ -86,7 +85,8 @@ public class MutableTrieImpl implements MutableTrie {
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         byte[] accountStorageKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        final int storageKeyOffset = (TrieKeyMapper.storagePrefix().length + TrieKeyMapper.SECURE_KEY_SIZE) * Byte.SIZE - 1;
+        final int storageKeyOffset =
+                (TrieKeyMapper.storagePrefix().length + TrieKeyMapper.SECURE_KEY_SIZE) * Byte.SIZE - 1;
         Trie storageTrie = trie.find(accountStorageKey);
 
         if (storageTrie != null) {

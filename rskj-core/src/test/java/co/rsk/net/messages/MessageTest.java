@@ -24,17 +24,21 @@ import co.rsk.net.Status;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by ajlopez on 5/11/2016.

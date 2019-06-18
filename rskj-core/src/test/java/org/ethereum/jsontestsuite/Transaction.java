@@ -19,11 +19,10 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.json.simple.JSONObject;
+import static org.ethereum.util.ByteUtil.toHexString;
 
 import java.math.BigInteger;
-
-import static org.ethereum.util.ByteUtil.toHexString;
+import org.json.simple.JSONObject;
 
 /**
  * @author Roman Mandeleil

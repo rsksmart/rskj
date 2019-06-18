@@ -22,9 +22,8 @@ import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcBlockChain;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.StoredBlock;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
-
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import java.math.BigInteger;
 
 /**

@@ -18,15 +18,14 @@
 
 package co.rsk.peg.utils;
 
+import static org.hamcrest.CoreMatchers.is;
+
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
 
 public class BtcTransactionFormatUtilsTest {
 

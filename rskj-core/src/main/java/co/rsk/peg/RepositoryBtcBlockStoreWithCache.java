@@ -25,16 +25,15 @@ import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
+import java.nio.ByteBuffer;
+import java.util.Map;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 
-import java.nio.ByteBuffer;
-import java.util.Map;
-
-
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
+ *
  * @author Oscar Guindzberg
  */
 public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache {
@@ -46,7 +45,11 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     public static final int MAX_SIZE_MAP_STORED_BLOCKS = 10_000;
     private final Map<Sha256Hash, StoredBlock> cacheBlocks;
 
-    public RepositoryBtcBlockStoreWithCache(NetworkParameters btcNetworkParams, Repository repository, Map<Sha256Hash, StoredBlock> cacheBlocks, RskAddress contractAddress) {
+    public RepositoryBtcBlockStoreWithCache(
+            NetworkParameters btcNetworkParams,
+            Repository repository,
+            Map<Sha256Hash, StoredBlock> cacheBlocks,
+            RskAddress contractAddress) {
         this.cacheBlocks = cacheBlocks;
         this.repository = repository;
         this.contractAddress = contractAddress;
@@ -74,14 +77,14 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             return null;
         }
         StoredBlock storedBlock = byteArrayToStoredBlock(ba);
-        return  storedBlock;
+        return storedBlock;
     }
 
     @Override
     public synchronized StoredBlock getChainHead() {
         byte[] ba = repository.getStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY));
         if (ba == null) {
-           return null;
+            return null;
         }
         return byteArrayToStoredBlock(ba);
     }
@@ -90,7 +93,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     public synchronized void setChainHead(StoredBlock newChainHead) {
         byte[] ba = storedBlockToByteArray(newChainHead);
         repository.addStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY), ba);
-        if(cacheBlocks != null) {
+        if (cacheBlocks != null) {
             populateCache(newChainHead);
         }
     }
@@ -106,7 +109,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public StoredBlock getFromCache(Sha256Hash branchBlockHash) {
-        if(cacheBlocks == null) {
+        if (cacheBlocks == null) {
             return null;
         }
         return cacheBlocks.get(branchBlockHash);
@@ -114,7 +117,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public StoredBlock getStoredBlockAtMainChainHeight(int height) throws BlockStoreException {
-        StoredBlock chainHead =  getChainHead();
+        StoredBlock chainHead = getChainHead();
         int depth = chainHead.getHeight() - height;
 
         return getStoredBlockAtMainChainDepth(depth);
@@ -122,13 +125,13 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public StoredBlock getStoredBlockAtMainChainDepth(int depth) throws BlockStoreException {
-        StoredBlock chainHead =  getChainHead();
+        StoredBlock chainHead = getChainHead();
         Sha256Hash blockHash = chainHead.getHeader().getHash();
 
         for (int i = 0; i < depth && blockHash != null; i++) {
-            //If its older than cache go to disk
+            // If its older than cache go to disk
             StoredBlock currentBlock = getFromCache(blockHash);
-            if(currentBlock == null) {
+            if (currentBlock == null) {
                 currentBlock = get(blockHash);
                 if (currentBlock == null) {
                     return null;
@@ -141,31 +144,29 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             return null;
         }
         StoredBlock block = getFromCache(blockHash);
-        if(block == null) {
+        if (block == null) {
             block = get(blockHash);
         }
         int expectedHeight = chainHead.getHeight() - depth;
         if (block != null && block.getHeight() != expectedHeight) {
-            throw new BlockStoreException(String.format("Block %s at depth %d Height is %d but should be %d",
-                    block.getHeader().getHash(),
-                    depth,
-                    block.getHeight(),
-                    expectedHeight));
+            throw new BlockStoreException(
+                    String.format(
+                            "Block %s at depth %d Height is %d but should be %d",
+                            block.getHeader().getHash(), depth, block.getHeight(), expectedHeight));
         }
-
 
         return block;
     }
 
     private synchronized void populateCache(StoredBlock chainHead) {
-        if(this.btcNetworkParams.getGenesisBlock().equals(chainHead.getHeader())) {
+        if (this.btcNetworkParams.getGenesisBlock().equals(chainHead.getHeader())) {
             return;
         }
         cacheBlocks.put(chainHead.getHeader().getHash(), chainHead);
         Sha256Hash blockHash = chainHead.getHeader().getPrevBlockHash();
-        int depth = MAX_DEPTH_STORED_BLOCKS-1;
+        int depth = MAX_DEPTH_STORED_BLOCKS - 1;
         while (blockHash != null && depth > 0) {
-            if(cacheBlocks.get(blockHash) != null) {
+            if (cacheBlocks.get(blockHash) != null) {
                 break;
             }
             StoredBlock currentBlock = get(blockHash);
@@ -202,7 +203,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     public static class Factory implements BtcBlockStoreWithCache.Factory {
-        //This is ok as we don't have parallel execution, in the feature we should move to a concurrentHashMap
+        // This is ok as we don't have parallel execution, in the feature we should move to a concurrentHashMap
         private final Map<Sha256Hash, StoredBlock> cacheBlocks = new MaxSizeHashMap<>(MAX_SIZE_MAP_STORED_BLOCKS, true);
         private final RskAddress contractAddress;
         private final NetworkParameters btcNetworkParams;
@@ -217,5 +218,4 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             return new RepositoryBtcBlockStoreWithCache(btcNetworkParams, track, cacheBlocks, contractAddress);
         }
     }
-
 }

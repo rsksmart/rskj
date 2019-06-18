@@ -18,6 +18,8 @@
 
 package co.rsk.net;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
@@ -30,6 +32,8 @@ import co.rsk.validators.BlockCompositeRule;
 import co.rsk.validators.BlockRootValidationRule;
 import co.rsk.validators.BlockUnclesHashValidationRule;
 import co.rsk.validators.DummyBlockValidationRule;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
@@ -37,11 +41,6 @@ import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 5/14/2016.

@@ -19,15 +19,13 @@
 
 package org.ethereum.vm;
 
-import org.junit.Test;
-
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import java.math.BigInteger;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Test;
 
 public class DataWordTest {
 

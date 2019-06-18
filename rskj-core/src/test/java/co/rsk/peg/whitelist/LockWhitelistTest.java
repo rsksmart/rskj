@@ -18,21 +18,20 @@
 
 package co.rsk.peg.whitelist;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
+
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class LockWhitelistTest {
     private Map<Address, LockWhitelistEntry> addresses;

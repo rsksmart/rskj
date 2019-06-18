@@ -19,18 +19,22 @@
 
 package org.ethereum.jsontestsuite.validators;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.DataWord;
-
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class AccountValidator {
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);

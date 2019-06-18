@@ -19,18 +19,19 @@
 
 package org.ethereum.tck;
 
-import org.ethereum.jsontestsuite.*;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.ethereum.jsontestsuite.JSONReader;
+import org.ethereum.jsontestsuite.StateTestCase;
+import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class RunTck {
 

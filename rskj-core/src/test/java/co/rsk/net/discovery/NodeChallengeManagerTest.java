@@ -20,16 +20,14 @@ package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
+import java.util.ArrayList;
+import java.util.UUID;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.ArrayList;
-import java.util.OptionalInt;
-import java.util.UUID;
 
 /**
  * Created by mario on 22/02/17.

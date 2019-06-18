@@ -1,13 +1,12 @@
 package co.rsk.util;
 
-import org.ethereum.core.CallTransaction;
-import org.ethereum.util.ContractRunner;
-import org.ethereum.vm.program.ProgramResult;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.util.ContractRunner;
+import org.ethereum.vm.program.ProgramResult;
 
 public class TestContract {
     public final String bytecode;

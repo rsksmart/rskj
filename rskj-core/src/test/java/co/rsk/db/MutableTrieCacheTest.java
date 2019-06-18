@@ -21,16 +21,18 @@ package co.rsk.db;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieKeySlice;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.nio.charset.StandardCharsets;
-import java.util.*;
 
 /**
  * Created by SerAdmin on 9/26/2018.

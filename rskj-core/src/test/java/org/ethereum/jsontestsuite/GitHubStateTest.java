@@ -19,21 +19,20 @@
 
 package org.ethereum.jsontestsuite;
 
+import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
+
 import co.rsk.config.TestSystemProperties;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.json.simple.parser.ParseException;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Ignore

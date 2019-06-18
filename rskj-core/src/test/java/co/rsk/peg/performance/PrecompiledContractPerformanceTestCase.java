@@ -18,9 +18,16 @@
 
 package co.rsk.peg.performance;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.vm.VMPerformanceTest;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.math.BigInteger;
+import java.util.Random;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -33,14 +40,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.math.BigInteger;
-import java.util.Random;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public abstract class PrecompiledContractPerformanceTestCase {
     protected static Constants constants;

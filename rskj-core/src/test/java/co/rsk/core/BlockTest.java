@@ -23,21 +23,26 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.remasc.RemascTransaction;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.SealedBlockException;
+import org.ethereum.core.SealedBlockHeaderException;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class BlockTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());

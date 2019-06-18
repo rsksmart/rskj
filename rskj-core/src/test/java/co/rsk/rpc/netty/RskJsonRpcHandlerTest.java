@@ -18,25 +18,34 @@
 
 package co.rsk.rpc.netty;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import co.rsk.jsonrpc.JsonRpcBooleanResult;
 import co.rsk.jsonrpc.JsonRpcVersion;
 import co.rsk.rpc.EthSubscriptionNotificationEmitter;
 import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcMethod;
-import co.rsk.rpc.modules.eth.subscribe.*;
+import co.rsk.rpc.modules.eth.subscribe.EthSubscribeParams;
+import co.rsk.rpc.modules.eth.subscribe.EthSubscribeRequest;
+import co.rsk.rpc.modules.eth.subscribe.EthSubscribeTypes;
+import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
+import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeRequest;
+import co.rsk.rpc.modules.eth.subscribe.SubscriptionId;
 import io.netty.buffer.DefaultByteBufHolder;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOException;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
 
 public class RskJsonRpcHandlerTest {
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID = new SubscriptionId("0x3075");

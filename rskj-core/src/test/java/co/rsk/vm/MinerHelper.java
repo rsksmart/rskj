@@ -25,17 +25,23 @@ import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.vm.PrecompiledContracts;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by Sergio on 18/07/2016.

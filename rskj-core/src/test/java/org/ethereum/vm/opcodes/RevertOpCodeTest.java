@@ -4,10 +4,9 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import java.io.FileNotFoundException;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.FileNotFoundException;
 
 public class RevertOpCodeTest {
     /*

@@ -21,14 +21,12 @@ package co.rsk.net.discovery;
 import co.rsk.net.discovery.message.PingPeerMessage;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import java.net.InetSocketAddress;
+import java.util.UUID;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.net.InetSocketAddress;
-import java.util.OptionalInt;
-import java.util.UUID;
 
 /**
  * Created by mario on 15/02/17.

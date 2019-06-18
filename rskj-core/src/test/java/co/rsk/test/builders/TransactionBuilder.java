@@ -18,13 +18,12 @@
 
 package co.rsk.test.builders;
 
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 8/6/2016.

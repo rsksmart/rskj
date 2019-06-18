@@ -18,6 +18,10 @@ package co.rsk.vm;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
@@ -25,6 +29,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
+import java.util.HashSet;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -40,12 +46,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.HashSet;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
-import static org.mockito.Mockito.*;
 
 
 /**

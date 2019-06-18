@@ -22,12 +22,11 @@ import co.rsk.net.discovery.message.DiscoveryMessageType;
 import co.rsk.net.discovery.message.PingPeerMessage;
 import co.rsk.net.discovery.message.PongPeerMessage;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
+import java.net.InetSocketAddress;
+import java.util.UUID;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.net.InetSocketAddress;
-import java.util.UUID;
 
 /**
  * Created by mario on 20/02/17.

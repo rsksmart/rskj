@@ -19,8 +19,13 @@
 
 package org.ethereum.jsontestsuite.runners;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.util.ByteUtil.byteArrayToLong;
+
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.*;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
@@ -28,8 +33,16 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.TrieConverter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
@@ -53,14 +66,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.byteArrayToLong;
 
 public class StateTestRunner {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};

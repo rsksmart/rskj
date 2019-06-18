@@ -18,12 +18,11 @@
 
 package org.ethereum.rpc.Simples;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.p2p.HelloMessage;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by Ruben Altman on 09/06/2016.

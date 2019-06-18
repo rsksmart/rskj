@@ -6,15 +6,14 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutorTest;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by ajlopez on 18/08/2017.

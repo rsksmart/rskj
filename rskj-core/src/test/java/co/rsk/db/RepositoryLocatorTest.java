@@ -18,15 +18,15 @@
 
 package co.rsk.db;
 
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.junit.Test;
-
-import static org.junit.Assert.assertSame;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class RepositoryLocatorTest {
     @Test

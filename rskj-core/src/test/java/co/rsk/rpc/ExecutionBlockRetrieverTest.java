@@ -18,25 +18,29 @@
 
 package co.rsk.rpc;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
 
 public class ExecutionBlockRetrieverTest {
 

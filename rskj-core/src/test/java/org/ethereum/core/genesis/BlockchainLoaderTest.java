@@ -21,15 +21,14 @@ package org.ethereum.core.genesis;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import java.io.IOException;
+import java.math.BigInteger;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
 
 public class BlockchainLoaderTest {
 

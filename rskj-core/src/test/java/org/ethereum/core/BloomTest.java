@@ -19,10 +19,10 @@
 
 package org.ethereum.core;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * @author Roman Mandeleil

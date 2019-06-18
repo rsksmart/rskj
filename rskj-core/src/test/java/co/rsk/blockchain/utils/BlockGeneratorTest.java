@@ -18,11 +18,10 @@
 
 package co.rsk.blockchain.utils;
 
+import java.util.List;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.List;
 
 /**
  * Created by ajlopez on 5/11/2016.

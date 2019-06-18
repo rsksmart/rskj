@@ -18,6 +18,17 @@
 
 package co.rsk.mine;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.GasLimitConfig;
 import co.rsk.config.MiningConfig;
 import co.rsk.core.BlockDifficulty;
@@ -29,11 +40,18 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidationRule;
+import java.util.ArrayList;
+import java.util.Collections;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,16 +59,6 @@ import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.util.ArrayList;
-import java.util.Collections;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({FamilyUtils.class})

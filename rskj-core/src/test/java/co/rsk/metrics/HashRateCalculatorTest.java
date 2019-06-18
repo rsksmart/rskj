@@ -18,10 +18,12 @@
 
 package co.rsk.metrics;
 
-import co.rsk.core.RskAddress;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.RskCustomCache;
+import java.math.BigInteger;
+import java.time.Duration;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -30,9 +32,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
-import java.time.Duration;
 
 /**
  * Created by mario on 05/08/2016.

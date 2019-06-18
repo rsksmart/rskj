@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.BridgeRegTestConstants;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -31,8 +32,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
 
 public class TxValidatorIntrinsicGasLimitValidatorTest {
 

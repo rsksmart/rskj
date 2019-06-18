@@ -2,13 +2,12 @@ package co.rsk.core;
 
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 03/08/2017.

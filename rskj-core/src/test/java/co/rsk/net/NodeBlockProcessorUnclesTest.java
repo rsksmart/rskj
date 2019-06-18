@@ -24,14 +24,13 @@ import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by ajlopez on 16/08/2016.

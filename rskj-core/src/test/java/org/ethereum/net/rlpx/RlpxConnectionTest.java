@@ -19,16 +19,21 @@
 
 package org.ethereum.net.rlpx;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.google.common.collect.Lists;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.security.SecureRandom;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.client.Capability;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.*;
-import java.security.SecureRandom;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by devrandom on 2015-04-11.

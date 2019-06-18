@@ -1,9 +1,12 @@
 package co.rsk.db;
 
+import static org.hamcrest.Matchers.is;
+
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -11,10 +14,6 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-
-import static org.hamcrest.Matchers.is;
 
 /**
  * Created by SerAdmin on 10/24/2018.

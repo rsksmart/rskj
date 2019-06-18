@@ -4,18 +4,17 @@ package co.rsk.core;
  * Created by SerAdmin on 12/5/2017.
  */
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.util.ByteUtil.toHexString;
+
 import com.google.common.collect.Lists;
+import java.math.BigInteger;
+import java.util.List;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.BigIntegers;
-
-import java.math.BigInteger;
-import java.util.List;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.toHexString;
 
 /**
  * Block header is a value object containing

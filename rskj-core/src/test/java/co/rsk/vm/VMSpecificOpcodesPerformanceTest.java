@@ -1,5 +1,8 @@
 package co.rsk.vm;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
@@ -8,6 +11,8 @@ import co.rsk.helpers.PerformanceTestConstants;
 import co.rsk.helpers.Stopwatch;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
+import java.util.HashSet;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -22,12 +27,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.HashSet;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by Sergio Demian Lerner on 12/10/2018.

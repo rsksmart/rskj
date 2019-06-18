@@ -19,12 +19,11 @@
 
 package org.ethereum.jsontestsuite.validators;
 
-import org.bouncycastle.util.encoders.Hex;
+import static org.ethereum.json.Utils.parseData;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.ethereum.json.Utils.parseData;
+import org.bouncycastle.util.encoders.Hex;
 
 public class OutputValidator {
 

@@ -19,6 +19,9 @@
 
 package org.ethereum.vm.trace;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.VmConfig;
 import co.rsk.crypto.Keccak256;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,9 +32,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ProgramTraceProcessorTest {
     @Test

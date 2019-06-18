@@ -19,20 +19,19 @@
 
 package org.ethereum.datasource;
 
+import static org.ethereum.TestUtils.randomBytes;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import co.rsk.config.TestSystemProperties;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.ethereum.TestUtils.randomBytes;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 @Ignore
 public class LevelDbDataSourceTest {

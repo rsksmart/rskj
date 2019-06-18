@@ -1,20 +1,19 @@
 package org.ethereum.vm;
 
+import static org.hamcrest.core.Is.is;
+
 import co.rsk.config.TestSystemProperties;
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.Serializers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.ByteArrayOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import static org.hamcrest.core.Is.is;
 
 public class VMUtilsTest {
 

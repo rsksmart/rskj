@@ -30,6 +30,9 @@ import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import java.time.Clock;
+import java.util.List;
+import java.util.concurrent.Callable;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
@@ -43,10 +46,6 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.time.Clock;
-import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * Created by ajlopez on 15/04/2017.

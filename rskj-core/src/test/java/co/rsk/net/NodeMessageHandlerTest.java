@@ -18,12 +18,30 @@
 
 package co.rsk.net;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.messages.*;
+import co.rsk.net.messages.BlockHeadersRequestMessage;
+import co.rsk.net.messages.BlockHeadersResponseMessage;
+import co.rsk.net.messages.BlockMessage;
+import co.rsk.net.messages.BlockRequestMessage;
+import co.rsk.net.messages.GetBlockHeadersMessage;
+import co.rsk.net.messages.GetBlockMessage;
+import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
+import co.rsk.net.messages.NewBlockHashesMessage;
+import co.rsk.net.messages.StatusMessage;
+import co.rsk.net.messages.TransactionsMessage;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.SyncConfiguration;
@@ -34,8 +52,29 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.validators.*;
-import org.ethereum.core.*;
+import co.rsk.validators.BlockCompositeRule;
+import co.rsk.validators.BlockRootValidationRule;
+import co.rsk.validators.BlockUnclesHashValidationRule;
+import co.rsk.validators.DummyBlockValidationRule;
+import co.rsk.validators.ProofOfWorkRule;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
@@ -46,15 +85,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-
-import javax.annotation.Nonnull;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.net.UnknownHostException;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 5/10/2016.

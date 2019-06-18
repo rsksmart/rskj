@@ -18,7 +18,27 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.TransactionOutPoint;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.UTXOProvider;
+import co.rsk.bitcoinj.core.UTXOProviderException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
@@ -32,19 +52,6 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.trie.Trie;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
-import org.ethereum.core.genesis.GenesisLoader;
-import org.ethereum.db.MutableRepository;
-import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -54,10 +61,23 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.db.MutableRepository;
+import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class BridgeUtilsTest {
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";

@@ -100,7 +100,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
                 if (frame.totalFrameSize >= 0) {
                     loggerNet.warn(
                             "Non-initial chunked frame shouldn't contain totalFrameSize field (context-id: {},"
-                                + " totalFrameSize: {}). Discarding this frame and all previous.",
+                                    + " totalFrameSize: {}). Discarding this frame and all previous.",
                             frame.contextId,
                             frame.totalFrameSize);
                     incompleteFrames.remove(frame.contextId);

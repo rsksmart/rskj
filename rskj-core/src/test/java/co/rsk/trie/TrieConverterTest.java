@@ -18,8 +18,11 @@
 
 package co.rsk.trie;
 
+import static org.hamcrest.Matchers.is;
+
 import co.rsk.core.RskAddress;
 import co.rsk.db.MutableTrieImpl;
+import java.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.AccountState;
@@ -31,10 +34,6 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Arrays;
-
-import static org.hamcrest.Matchers.is;
 
 /**
  * This tests take serialized Orchid tries coming from that version of the Repository and check if the state root is the

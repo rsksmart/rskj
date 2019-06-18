@@ -18,13 +18,12 @@
 
 package org.ethereum.core;
 
+import static org.ethereum.util.TransactionFactoryHelper.createSampleTransaction;
+
 import co.rsk.core.RskAddress;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.List;
-
-import static org.ethereum.util.TransactionFactoryHelper.*;
 
 /**
  * Created by ajlopez on 28/02/2018.

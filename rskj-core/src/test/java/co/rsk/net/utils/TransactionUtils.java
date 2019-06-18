@@ -18,6 +18,9 @@
 
 package co.rsk.net.utils;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
@@ -25,10 +28,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.Utils;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by ajlopez on 7/22/2016.

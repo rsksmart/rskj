@@ -161,7 +161,7 @@ public class RLPElementView {
         if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
             throw new RLPException(
                     "The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is"
-                        + " the largest number of elements an array can have");
+                            + " the largest number of elements an array can have");
         }
 
         return Math.toIntExact(length);

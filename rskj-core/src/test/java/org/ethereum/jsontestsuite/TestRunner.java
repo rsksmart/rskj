@@ -19,6 +19,13 @@
 
 package org.ethereum.jsontestsuite;
 
+import static org.ethereum.crypto.HashUtil.shortHash;
+import static org.ethereum.json.Utils.parseData;
+import static org.ethereum.json.Utils.parseNumericData;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
+import static org.mockito.Mockito.mock;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
@@ -34,12 +41,31 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.validators.DummyBlockValidator;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.*;
+import org.ethereum.db.BlockStoreDummy;
+import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.MutableRepository;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.jsontestsuite.builder.RepositoryBuilder;
 import org.ethereum.jsontestsuite.builder.TransactionBuilder;
 import org.ethereum.jsontestsuite.model.BlockHeaderTck;
@@ -62,19 +88,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.ethereum.crypto.HashUtil.shortHash;
-import static org.ethereum.json.Utils.parseData;
-import static org.ethereum.json.Utils.parseNumericData;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author Roman Mandeleil

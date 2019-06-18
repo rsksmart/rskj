@@ -19,15 +19,14 @@
 
 package co.rsk.net.messages;
 
-import org.ethereum.core.BlockIdentifier;
-import org.junit.Test;
+import static org.bouncycastle.util.encoders.Hex.decode;
+import static org.bouncycastle.util.encoders.Hex.toHexString;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.bouncycastle.util.encoders.Hex.decode;
-import static org.bouncycastle.util.encoders.Hex.toHexString;
+import org.ethereum.core.BlockIdentifier;
+import org.junit.Test;
 
 public class SkeletonResponseMessageTest {
 

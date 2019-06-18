@@ -19,12 +19,14 @@
 
 package org.ethereum.net.rlpx;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.p2p.P2pMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.io.*;
 
 /**
  * Created by devrandom on 2015-04-12.

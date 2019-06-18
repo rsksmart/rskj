@@ -19,12 +19,11 @@
 
 package org.ethereum.jsontestsuite.validators;
 
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 
 public class LogsValidator {
 

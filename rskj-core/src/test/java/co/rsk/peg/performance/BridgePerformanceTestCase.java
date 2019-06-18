@@ -18,15 +18,33 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcBlockChain;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
-import co.rsk.peg.*;
+import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeStorageConfiguration;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -37,11 +55,6 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.BeforeClass;
-
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
 
 public abstract class BridgePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     protected static NetworkParameters networkParameters;

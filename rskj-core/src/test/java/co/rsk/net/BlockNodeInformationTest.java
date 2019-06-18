@@ -19,11 +19,10 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.nio.ByteBuffer;
 import java.util.Set;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class BlockNodeInformationTest {
 

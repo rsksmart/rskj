@@ -5,11 +5,10 @@ import co.rsk.net.BlockProcessResult;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-
 import java.time.Duration;
 import java.time.Instant;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 
 public class SimpleSyncInformation implements SyncInformation {
     private boolean hasLowerDifficulty = true;

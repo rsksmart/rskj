@@ -1,5 +1,8 @@
 package co.rsk.pcc.blockheader;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
@@ -9,15 +12,11 @@ import co.rsk.mine.MinerUtils;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.test.World;
 import co.rsk.util.DifficultyUtils;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class EnvironmentUtils {
     private static final byte[] ADDITIONAL_TAG = {'A', 'L', 'T', 'B', 'L', 'O', 'C', 'K', ':'};

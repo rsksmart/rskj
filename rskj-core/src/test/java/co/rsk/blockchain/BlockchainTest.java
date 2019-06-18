@@ -18,18 +18,17 @@
 
 package co.rsk.blockchain;
 
+import static org.junit.Assert.assertTrue;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.List;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by ajlopez on 4/20/2016.

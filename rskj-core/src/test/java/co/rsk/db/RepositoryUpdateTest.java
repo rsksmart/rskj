@@ -2,14 +2,13 @@ package co.rsk.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
+import java.util.HashMap;
+import java.util.Map;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by SerAdmin on 9/26/2018.

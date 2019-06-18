@@ -18,7 +18,12 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.crypto.Keccak256;
@@ -26,16 +31,15 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
 import co.rsk.peg.ReleaseTransactionSet;
-import org.ethereum.core.Repository;
-import org.ethereum.crypto.HashUtil;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Random;
 import java.util.SortedMap;
+import org.ethereum.core.Repository;
+import org.ethereum.crypto.HashUtil;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class UpdateCollectionsTest extends BridgePerformanceTestCase {

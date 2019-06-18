@@ -18,13 +18,12 @@
 
 package co.rsk.peg;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 public class ABICallSpecTest {
     @Test

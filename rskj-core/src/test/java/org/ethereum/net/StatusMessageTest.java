@@ -19,15 +19,13 @@
 
 package org.ethereum.net;
 
-import org.ethereum.net.eth.message.StatusMessage;
-import org.junit.Test;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.assertEquals;
 
 import org.bouncycastle.util.encoders.Hex;
-
-import static org.junit.Assert.assertEquals;
+import org.ethereum.net.eth.message.StatusMessage;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StatusMessageTest {
 

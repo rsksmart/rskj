@@ -18,9 +18,8 @@
 
 package co.rsk.core.bc;
 
-import org.ethereum.core.BlockHeader;
-
 import java.util.List;
+import org.ethereum.core.BlockHeader;
 
 public interface MiningMainchainView {
 

@@ -22,13 +22,12 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.crypto.Keccak256;
-import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.apache.commons.lang3.tuple.Pair;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by mario on 20/04/17.

@@ -19,13 +19,12 @@
 
 package org.ethereum.core.genesis;
 
-import org.apache.commons.lang3.StringUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.IOException;
 
 /**
  * Created by mario on 03/01/17.

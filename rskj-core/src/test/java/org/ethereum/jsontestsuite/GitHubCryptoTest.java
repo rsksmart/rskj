@@ -19,16 +19,15 @@
 
 package org.ethereum.jsontestsuite;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.HashMap;
 import org.json.simple.parser.ParseException;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import java.io.IOException;
-import java.util.HashMap;
 
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)

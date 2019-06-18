@@ -18,17 +18,16 @@
 
 package co.rsk.mine;
 
-import org.ethereum.core.BlockHeader;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.ethereum.core.BlockHeader;
+import org.junit.Before;
+import org.junit.Test;
 
 public class MinerClockTest {
 

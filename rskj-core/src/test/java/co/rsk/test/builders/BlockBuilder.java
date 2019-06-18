@@ -27,15 +27,18 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.test.World;
 import co.rsk.trie.TrieConverter;
-import org.bouncycastle.util.BigIntegers;
-import org.ethereum.core.*;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
+import org.bouncycastle.util.BigIntegers;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 /**
  * Created by ajlopez on 8/6/2016.

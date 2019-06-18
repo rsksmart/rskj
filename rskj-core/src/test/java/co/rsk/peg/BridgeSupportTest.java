@@ -18,7 +18,41 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.AddressFormatException;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcBlockChain;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.CheckpointManager;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.TransactionOutPoint;
+import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
@@ -49,6 +83,27 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import com.google.common.collect.Lists;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -57,7 +112,11 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -84,26 +143,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
-
-import java.io.*;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
-import java.security.SecureRandom;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 6/9/2016.
@@ -3998,15 +4037,18 @@ public class BridgeSupportTest {
         Assert.assertEquals(btcParams.getGenesisBlock(), chainHead.getHeader());
 
         Assert.assertEquals(btcParams.getGenesisBlock().getHash(), bridgeSupport.getBtcBlockchainBlockHashAtDepth(0));
-        try { bridgeSupport.getBtcBlockchainBlockHashAtDepth(-1); Assert.fail(); } catch (IndexOutOfBoundsException e) {}
+        try { bridgeSupport.getBtcBlockchainBlockHashAtDepth(-1); Assert.fail(); } catch (IndexOutOfBoundsException e) {
+        }
         try { bridgeSupport.getBtcBlockchainBlockHashAtDepth(1); Assert.fail(); } catch (IndexOutOfBoundsException e) {}
 
         List<BtcBlock> blocks = createBtcBlocks(btcParams, btcParams.getGenesisBlock(), 10);
         bridgeSupport.receiveHeaders(blocks.toArray(new BtcBlock[]{}));
 
         Assert.assertEquals(btcParams.getGenesisBlock().getHash(), bridgeSupport.getBtcBlockchainBlockHashAtDepth(10));
-        try { bridgeSupport.getBtcBlockchainBlockHashAtDepth(-1); Assert.fail(); } catch (IndexOutOfBoundsException e) {}
-        try { bridgeSupport.getBtcBlockchainBlockHashAtDepth(11); Assert.fail(); } catch (IndexOutOfBoundsException e) {}
+        try { bridgeSupport.getBtcBlockchainBlockHashAtDepth(-1); Assert.fail(); } catch (IndexOutOfBoundsException e) {
+        }
+        try { bridgeSupport.getBtcBlockchainBlockHashAtDepth(11); Assert.fail(); } catch (IndexOutOfBoundsException e) {
+        }
         for (int i = 0; i < 10; i++) {
             Assert.assertEquals(blocks.get(i).getHash(), bridgeSupport.getBtcBlockchainBlockHashAtDepth(9-i));
         }

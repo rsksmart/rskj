@@ -18,14 +18,13 @@
 
 package co.rsk.core;
 
-import org.ethereum.util.RLP;
-import org.junit.Test;
-
-import java.math.BigInteger;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+
+import java.math.BigInteger;
+import org.ethereum.util.RLP;
+import org.junit.Test;
 
 public class BlockDifficultyTest {
     @Test

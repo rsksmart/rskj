@@ -19,11 +19,10 @@
 package co.rsk.test.dsltest;
 
 import co.rsk.test.dsl.DslCommand;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by ajlopez on 8/6/2016.

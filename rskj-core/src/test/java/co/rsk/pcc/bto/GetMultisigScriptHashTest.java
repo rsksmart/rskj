@@ -19,21 +19,19 @@
 
 package co.rsk.pcc.bto;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.math.BigInteger;
+import java.util.function.Consumer;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.function.Consumer;
-
-import static org.mockito.Mockito.mock;
 
 public class GetMultisigScriptHashTest {
     private GetMultisigScriptHash method;

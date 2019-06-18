@@ -18,20 +18,19 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.crypto.Keccak256;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.db.BlockStore;
-import org.junit.Test;
-
-import java.util.List;
-import java.util.Random;
-
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import co.rsk.crypto.Keccak256;
+import java.util.List;
+import java.util.Random;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.db.BlockStore;
+import org.junit.Test;
 
 
 public class MiningMainchainViewImplTest {

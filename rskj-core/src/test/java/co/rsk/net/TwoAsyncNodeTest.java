@@ -25,13 +25,12 @@ import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
 import co.rsk.validators.DummyBlockValidationRule;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.List;
 
 /**
  * Created by ajlopez on 5/14/2016.

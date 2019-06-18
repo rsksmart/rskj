@@ -23,8 +23,16 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.validators.BlockValidator;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -33,10 +41,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 public class BlockChainImplInvalidTest {
     private RskSystemProperties config;

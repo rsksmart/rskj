@@ -18,7 +18,11 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcBlockChain;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.BridgeRegTestConstants;
@@ -28,15 +32,14 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.util.MaxSizeHashMap;
+import java.io.IOException;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
 
 @Ignore
 public class LockWhitelistTest extends BridgePerformanceTestCase {

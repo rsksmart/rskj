@@ -28,6 +28,11 @@ import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
 import com.google.common.annotations.VisibleForTesting;
+import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import javax.annotation.Nonnull;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -35,14 +40,10 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import java.math.BigInteger;
-import java.util.*;
-
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
+    private static final byte[] ONE_BYTE_ARRAY = new byte[] {0x01};
 
     private final TrieKeyMapper trieKeyMapper;
     private MutableTrie mutableTrie;
@@ -106,7 +107,7 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public void setNonce(RskAddress addr,BigInteger nonce) {
+    public void setNonce(RskAddress addr, BigInteger nonce) {
         AccountState account = getAccountStateOrCreateNew(addr);
 
         account.setNonce(nonce);
@@ -154,7 +155,6 @@ public class MutableRepository implements Repository {
         byte[] key = trieKeyMapper.getCodeKey(addr);
         return mutableTrie.getValueLength(key).intValue();
     }
-
 
     @Override
     public synchronized byte[] getCode(RskAddress addr) {
@@ -230,12 +230,13 @@ public class MutableRepository implements Repository {
 
     @Override
     public int getStorageKeysCount(RskAddress addr) {
-        // FIXME(diegoll): I think it's kind of insane to iterate the whole tree looking for storage keys for this address
+        // FIXME(diegoll): I think it's kind of insane to iterate the whole tree looking for storage keys for this
+        // address
         //  I think we can keep a counter for the keys, using the find function for detecting duplicates and so on
         int storageKeysCount = 0;
         Iterator<DataWord> keysIterator = getStorageKeys(addr);
-        for(;keysIterator.hasNext(); keysIterator.next()) {
-            storageKeysCount ++;
+        for (; keysIterator.hasNext(); keysIterator.next()) {
+            storageKeysCount++;
         }
         return storageKeysCount;
     }
@@ -243,7 +244,7 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized Coin getBalance(RskAddress addr) {
         AccountState account = getAccountState(addr);
-        return (account == null) ? Coin.ZERO: account.getBalance();
+        return (account == null) ? Coin.ZERO : account.getBalance();
     }
 
     @Override
@@ -259,7 +260,7 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized Set<RskAddress> getAccountsKeys() {
         Set<RskAddress> result = new HashSet<>();
-        //TODO(diegoll): this is needed when trie is a MutableTrieCache, check if makes sense to commit here
+        // TODO(diegoll): this is needed when trie is a MutableTrieCache, check if makes sense to commit here
         mutableTrie.commit();
         Trie trie = mutableTrie.getTrie();
         Iterator<Trie.IterationElement> preOrderIterator = trie.getPreOrderIterator();
@@ -267,7 +268,8 @@ public class MutableRepository implements Repository {
             TrieKeySlice nodeKey = preOrderIterator.next().getNodeKey();
             int nodeKeyLength = nodeKey.length();
             if (nodeKeyLength == (1 + TrieKeyMapper.SECURE_KEY_SIZE + RskAddress.LENGTH_IN_BYTES) * Byte.SIZE) {
-                byte[] address = nodeKey.slice(nodeKeyLength - RskAddress.LENGTH_IN_BYTES * Byte.SIZE, nodeKeyLength).encode();
+                byte[] address =
+                        nodeKey.slice(nodeKeyLength - RskAddress.LENGTH_IN_BYTES * Byte.SIZE, nodeKeyLength).encode();
                 result.add(new RskAddress(address));
             }
         }

@@ -20,11 +20,10 @@ package co.rsk.test.builderstest;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.builders.BlockBuilder;
+import java.math.BigInteger;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 8/6/2016.

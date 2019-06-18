@@ -26,7 +26,16 @@ import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.MiningMainchainView;
-import co.rsk.mine.*;
+import co.rsk.mine.BlockToMineBuilder;
+import co.rsk.mine.ForkDetectionDataCalculator;
+import co.rsk.mine.GasLimitCalculator;
+import co.rsk.mine.MinerClientImpl;
+import co.rsk.mine.MinerClock;
+import co.rsk.mine.MinerManagerTest;
+import co.rsk.mine.MinerServer;
+import co.rsk.mine.MinerServerImpl;
+import co.rsk.mine.MinerUtils;
+import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.evm.EvmModule;
@@ -37,6 +46,8 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import java.time.Clock;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
@@ -45,9 +56,6 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.time.Clock;
-import java.util.List;
 
 /**
  * Created by ajlopez on 15/04/2017.

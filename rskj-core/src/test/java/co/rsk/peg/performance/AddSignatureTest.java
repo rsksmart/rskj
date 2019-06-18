@@ -18,22 +18,33 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.*;
+import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.Federation;
+import co.rsk.peg.PegTestUtils;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
 
 @Ignore
 public class AddSignatureTest extends BridgePerformanceTestCase {

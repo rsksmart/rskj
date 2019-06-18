@@ -1,15 +1,14 @@
 package co.rsk.blockchain.utils;
 
+import static co.rsk.mine.MinerServerImpl.compressCoinbase;
+
 import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
+import java.math.BigInteger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
-
-import java.math.BigInteger;
-
-import static co.rsk.mine.MinerServerImpl.compressCoinbase;
 
 /**
  * Created by ajlopez on 13/09/2017.

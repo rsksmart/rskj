@@ -1,11 +1,10 @@
 package co.rsk.net;
 
 import co.rsk.net.sync.SyncPeerStatus;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by ajlopez on 17/09/2017.

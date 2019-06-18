@@ -18,29 +18,28 @@
 
 package co.rsk.validators;
 
-import co.rsk.core.bc.ConsensusValidationMainchainView;
-import co.rsk.crypto.Keccak256;
-import co.rsk.mine.ForkDetectionDataCalculator;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import co.rsk.core.bc.ConsensusValidationMainchainView;
+import co.rsk.crypto.Keccak256;
+import co.rsk.mine.ForkDetectionDataCalculator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ForkDetectionDataRuleTest {
 

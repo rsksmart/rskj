@@ -18,8 +18,21 @@
 
 package co.rsk.mine;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.TestHelpers.Tx;
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
@@ -33,8 +46,20 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.time.Clock;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.ethereum.TestUtils;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
@@ -43,20 +68,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by adrian.eidelman on 3/16/2016.

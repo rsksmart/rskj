@@ -18,18 +18,22 @@
 
 package co.rsk.peg;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.core.RskAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.*;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ABICallElectionTest {
     private ABICallSpec spec_fna, spec_fnb;

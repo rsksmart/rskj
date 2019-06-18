@@ -35,14 +35,18 @@ import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
-import org.ethereum.core.*;
+import java.util.HashMap;
+import java.util.Map;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by ajlopez on 8/7/2016.

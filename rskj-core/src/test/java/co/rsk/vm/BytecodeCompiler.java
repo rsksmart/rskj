@@ -18,11 +18,10 @@
 
 package co.rsk.vm;
 
-import org.ethereum.vm.OpCode;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.vm.OpCode;
 
 /**
  * Created by ajlopez on 25/01/2017.

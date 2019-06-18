@@ -18,9 +18,20 @@
 
 package co.rsk.core;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.AdditionalMatchers.geq;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -32,18 +43,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.AdditionalMatchers.geq;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class BlockFactoryTest {
 

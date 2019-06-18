@@ -18,8 +18,12 @@
 
 package co.rsk.peg.bitcoin;
 
-import co.rsk.bitcoinj.core.*;
-
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.TransactionBag;
+import co.rsk.bitcoinj.core.TransactionInput;
 import java.util.HashMap;
 import java.util.Map;
 

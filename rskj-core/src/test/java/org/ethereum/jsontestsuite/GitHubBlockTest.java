@@ -20,14 +20,13 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
+import java.io.IOException;
+import java.util.Collections;
 import org.json.simple.parser.ParseException;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import java.io.IOException;
-import java.util.Collections;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Ignore

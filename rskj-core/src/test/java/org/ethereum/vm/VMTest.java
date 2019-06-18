@@ -19,6 +19,15 @@
 
 package org.ethereum.vm;
 
+import static java.lang.StrictMath.min;
+import static org.ethereum.util.ByteUtil.oneByteToHexString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.asm.EVMAssembler;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
@@ -27,6 +36,15 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.vm.BitSet;
 import co.rsk.vm.BytecodeCompiler;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.EmptyStackException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.NavigableSet;
+import java.util.TreeSet;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -40,19 +58,12 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.BadJumpDestinationException;
 import org.ethereum.vm.program.Program.StackTooSmallException;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.FixMethodOrder;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.*;
-
-import static java.lang.StrictMath.min;
-import static org.ethereum.util.ByteUtil.oneByteToHexString;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Roman Mandeleil

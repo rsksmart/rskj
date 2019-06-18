@@ -1,21 +1,20 @@
 package co.rsk.net.sync;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.net.NodeID;
 import co.rsk.net.utils.StatusUtils;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class DecidingSyncStateTest {
 

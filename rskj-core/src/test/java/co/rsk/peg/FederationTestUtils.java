@@ -19,13 +19,12 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import org.ethereum.crypto.ECKey;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.ethereum.crypto.ECKey;
 
 public class FederationTestUtils {
     public static List<FederationMember> getFederationMembers(int memberCount) {

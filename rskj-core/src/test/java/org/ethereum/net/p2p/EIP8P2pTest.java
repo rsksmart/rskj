@@ -19,10 +19,10 @@
 
 package org.ethereum.net.p2p;
 
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 import static org.bouncycastle.util.encoders.Hex.decode;
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 /**
  * @author Mikhail Kalinin

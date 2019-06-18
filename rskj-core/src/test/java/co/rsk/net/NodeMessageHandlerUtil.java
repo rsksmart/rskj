@@ -1,12 +1,20 @@
 package co.rsk.net;
 
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
-import co.rsk.validators.*;
+import co.rsk.validators.BlockCompositeRule;
+import co.rsk.validators.BlockRootValidationRule;
+import co.rsk.validators.BlockUnclesHashValidationRule;
+import co.rsk.validators.BlockValidationRule;
+import co.rsk.validators.DummyBlockValidationRule;
+import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.net.server.ChannelManager;
@@ -15,9 +23,6 @@ import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.RskMockFactory;
 import org.mockito.Mockito;
-
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
 
 public class NodeMessageHandlerUtil {
     private static final TestSystemProperties config = new TestSystemProperties();

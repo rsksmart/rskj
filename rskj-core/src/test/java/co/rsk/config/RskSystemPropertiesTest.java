@@ -18,19 +18,18 @@
 
 package co.rsk.config;
 
-import com.typesafe.config.ConfigFactory;
-import org.junit.Assert;
-import org.junit.Test;
-import org.mockito.Mockito;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.typesafe.config.ConfigFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.*;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by ajlopez on 3/16/2016.

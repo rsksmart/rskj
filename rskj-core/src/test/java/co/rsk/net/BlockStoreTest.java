@@ -20,6 +20,9 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import com.google.common.collect.Lists;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
@@ -28,10 +31,6 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by ajlopez on 5/11/2016.

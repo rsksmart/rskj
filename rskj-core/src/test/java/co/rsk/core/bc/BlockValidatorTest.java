@@ -29,8 +29,20 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.ProofOfWorkRule;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 import org.ethereum.TestUtils;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -39,9 +51,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
-
-import java.math.BigInteger;
-import java.util.*;
 
 /**
  * Created by ajlopez on 04/08/2016.

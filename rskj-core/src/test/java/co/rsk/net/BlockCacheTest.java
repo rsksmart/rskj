@@ -19,15 +19,17 @@
 
 package co.rsk.net;
 
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.when;
+
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
 
 public class BlockCacheTest {
 

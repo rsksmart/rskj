@@ -20,14 +20,13 @@ package co.rsk.validators;
 
 import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by mario on 26/12/16.

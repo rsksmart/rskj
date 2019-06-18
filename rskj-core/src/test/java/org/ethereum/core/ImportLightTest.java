@@ -32,6 +32,8 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
+import java.util.HashMap;
+import java.util.Map;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
@@ -41,9 +43,6 @@ import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Created by Anton Nashatyrev on 29.12.2015.

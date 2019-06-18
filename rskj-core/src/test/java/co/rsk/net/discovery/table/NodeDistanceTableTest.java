@@ -19,12 +19,11 @@
 package co.rsk.net.discovery.table;
 
 import co.rsk.net.NodeID;
+import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.List;
 
 /**
  * Created by mario on 21/02/17.

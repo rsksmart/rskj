@@ -18,8 +18,11 @@
 
 package co.rsk.jsontestsuite;
 
+import static org.junit.Assert.assertEquals;
+
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
+import java.io.IOException;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -31,10 +34,6 @@ import org.ethereum.jsontestsuite.JSONReader;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author Angel J Lopez

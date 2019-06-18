@@ -19,10 +19,9 @@
 package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
+import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Arrays;
 
 /**
  * Created by martin.medina on 11/01/2017.

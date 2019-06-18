@@ -4,10 +4,9 @@ import co.rsk.net.discovery.message.DiscoveryMessageType;
 import co.rsk.net.discovery.message.FindNodePeerMessage;
 import co.rsk.net.discovery.message.PingPeerMessage;
 import co.rsk.net.discovery.message.PongPeerMessage;
+import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.*;
 
 public class PeerMessagesTest {
 

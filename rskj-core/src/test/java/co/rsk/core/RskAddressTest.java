@@ -18,9 +18,9 @@
 
 package co.rsk.core;
 
+import org.bouncycastle.util.encoders.DecoderException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.DecoderException;
 
 public class RskAddressTest {
     @Test

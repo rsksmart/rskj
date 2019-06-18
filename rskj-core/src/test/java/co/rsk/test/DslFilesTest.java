@@ -23,6 +23,9 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import java.io.FileNotFoundException;
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
@@ -32,10 +35,6 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.FileNotFoundException;
-import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * Created by ajlopez on 8/7/2016.

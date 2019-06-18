@@ -1,9 +1,8 @@
 package co.rsk.scoring;
 
+import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by ajlopez on 27/06/2017.

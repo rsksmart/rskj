@@ -1,13 +1,31 @@
 package co.rsk.net;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.*;
+import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
+import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
-import co.rsk.net.messages.*;
+import co.rsk.net.messages.BlockHashRequestMessage;
+import co.rsk.net.messages.BlockHashResponseMessage;
+import co.rsk.net.messages.BlockHeadersRequestMessage;
+import co.rsk.net.messages.BlockHeadersResponseMessage;
+import co.rsk.net.messages.BlockResponseMessage;
+import co.rsk.net.messages.BodyResponseMessage;
+import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
+import co.rsk.net.messages.SkeletonRequestMessage;
+import co.rsk.net.messages.SkeletonResponseMessage;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.DownloadingBodiesSyncState;
 import co.rsk.net.sync.DownloadingHeadersSyncState;
@@ -17,9 +35,31 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
-import co.rsk.validators.*;
+import co.rsk.validators.BlockCompositeRule;
+import co.rsk.validators.BlockRootValidationRule;
+import co.rsk.validators.BlockUnclesHashValidationRule;
+import co.rsk.validators.DummyBlockValidationRule;
+import co.rsk.validators.ProofOfWorkRule;
+import java.math.BigInteger;
+import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
@@ -32,12 +72,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
-
-import java.math.BigInteger;
-import java.time.Duration;
-import java.util.*;
-
-import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 29/08/2017.

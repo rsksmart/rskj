@@ -18,9 +18,9 @@
 
 package org.ethereum.rpc;
 
+import org.bouncycastle.util.encoders.DecoderException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.DecoderException;
 
 /**
  * Created by ajlopez on 18/01/2018.

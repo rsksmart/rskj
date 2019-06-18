@@ -30,20 +30,27 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
-import org.ethereum.TestUtils;
-import org.ethereum.config.Constants;
-import org.ethereum.core.*;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 /**
  * Created by martin.medina on 1/5/17.

@@ -18,19 +18,18 @@
 
 package co.rsk.TestHelpers;
 
+import static org.mockito.Mockito.any;
+
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.TestUtils;
-import org.ethereum.core.Transaction;
-import org.mockito.Mockito;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Random;
-
-import static org.mockito.Mockito.any;
+import org.ethereum.TestUtils;
+import org.ethereum.core.Transaction;
+import org.mockito.Mockito;
 
 
 public class Tx {

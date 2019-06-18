@@ -18,8 +18,16 @@
 
 package co.rsk.vm;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP120;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.util.HashSet;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
@@ -32,15 +40,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.util.HashSet;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP120;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 25/01/2017.

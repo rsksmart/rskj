@@ -21,6 +21,9 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.crypto.Keccak256;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.List;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
@@ -30,10 +33,6 @@ import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.List;
 
 @RunWith(PowerMockRunner.class)
 public class PendingFederationTest {

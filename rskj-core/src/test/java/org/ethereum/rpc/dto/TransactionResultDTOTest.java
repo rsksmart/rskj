@@ -18,16 +18,15 @@
 
 package org.ethereum.rpc.dto;
 
-import co.rsk.remasc.RemascTransaction;
-import org.ethereum.core.Block;
-import org.junit.Test;
-
-import java.util.Random;
-
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+
+import co.rsk.remasc.RemascTransaction;
+import java.util.Random;
+import org.ethereum.core.Block;
+import org.junit.Test;
 
 public class TransactionResultDTOTest {
     @Test

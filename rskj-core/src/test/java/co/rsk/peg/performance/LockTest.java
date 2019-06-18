@@ -21,15 +21,14 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
-import org.ethereum.core.Repository;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Random;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Repository;
+import org.junit.Ignore;
+import org.junit.Test;
 
 // Everything related to locking that is not
 // registerBtcTransaction, which has its own
