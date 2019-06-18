@@ -126,6 +126,46 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         }
     }
 
+    private String sendTransaction(Web3.CallArguments args, Account account) throws Exception {
+        if (account == null) {
+            throw new Exception("From address private key could not be found in this node");
+        }
+
+        String toAddress = args.to != null ? Hex.toHexString(TypeConverter.stringHexToByteArray(args.to)) : null;
+
+        BigInteger accountNonce =
+                args.nonce != null
+                        ? TypeConverter.stringNumberAsBigInt(args.nonce)
+                        : transactionPool.getPendingState().getNonce(account.getAddress());
+        BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
+        BigInteger gasPrice =
+                args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
+        BigInteger gasLimit =
+                args.gas != null
+                        ? TypeConverter.stringNumberAsBigInt(args.gas)
+                        : BigInteger.valueOf(GasCost.TRANSACTION);
+
+        if (args.data != null && args.data.startsWith("0x")) {
+            args.data = args.data.substring(2);
+        }
+
+        Transaction tx =
+                new Transaction(
+                        toAddress,
+                        value,
+                        accountNonce,
+                        gasPrice,
+                        gasLimit,
+                        args.data,
+                        config.getNetworkConstants().getChainId());
+
+        tx.sign(account.getEcKey().getPrivKeyBytes());
+
+        eth.submitTransaction(tx);
+
+        return tx.getHash().toJsonString();
+    }
+
     @Override
     public String sendTransaction(Web3.CallArguments args, String passphrase) throws Exception {
         String s = null;
@@ -172,46 +212,6 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
 
     private Account getAccount(String from, String passphrase) {
         return wallet.getAccount(new RskAddress(from), passphrase);
-    }
-
-    private String sendTransaction(Web3.CallArguments args, Account account) throws Exception {
-        if (account == null) {
-            throw new Exception("From address private key could not be found in this node");
-        }
-
-        String toAddress = args.to != null ? Hex.toHexString(TypeConverter.stringHexToByteArray(args.to)) : null;
-
-        BigInteger accountNonce =
-                args.nonce != null
-                        ? TypeConverter.stringNumberAsBigInt(args.nonce)
-                        : transactionPool.getPendingState().getNonce(account.getAddress());
-        BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
-        BigInteger gasPrice =
-                args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
-        BigInteger gasLimit =
-                args.gas != null
-                        ? TypeConverter.stringNumberAsBigInt(args.gas)
-                        : BigInteger.valueOf(GasCost.TRANSACTION);
-
-        if (args.data != null && args.data.startsWith("0x")) {
-            args.data = args.data.substring(2);
-        }
-
-        Transaction tx =
-                new Transaction(
-                        toAddress,
-                        value,
-                        accountNonce,
-                        gasPrice,
-                        gasLimit,
-                        args.data,
-                        config.getNetworkConstants().getChainId());
-
-        tx.sign(account.getEcKey().getPrivKeyBytes());
-
-        eth.submitTransaction(tx);
-
-        return tx.getHash().toJsonString();
     }
 
     private String convertFromJsonHexToHex(String x) throws Exception {

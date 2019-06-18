@@ -23,6 +23,7 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.Profiler.ProfilingType;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.MaxSizeHashMap;
@@ -49,7 +50,7 @@ public class TrieConverter {
     }
 
     public byte[] getOrchidAccountTrieRoot(Trie src) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_CONVERTER_GET_ACCOUNT_ROOT);
+        Metric metric = profiler.start(ProfilingType.TRIE_CONVERTER_GET_ACCOUNT_ROOT);
         byte[] trieRoot =
                 cacheHashes.computeIfAbsent(
                         src.getHash(),

@@ -78,7 +78,7 @@ public class RLPElementView {
     /**
      * Decodes the first item in the byte buffer.
      *
-     * @param data: the buffer position will be after the end of the first object
+     * @param data the buffer position will be after the end of the first object
      */
     public static RLPElementView calculateFirstElementInfo(@Nonnull ByteBuffer data) {
         try {

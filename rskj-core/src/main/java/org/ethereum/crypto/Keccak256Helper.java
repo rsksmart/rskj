@@ -36,25 +36,7 @@ public class Keccak256Helper {
         return keccak256String(message, new KeccakDigest(DEFAULT_SIZE), true);
     }
 
-    public static byte[] keccak256(String message) {
-        return keccak256(Hex.decode(message), new KeccakDigest(DEFAULT_SIZE), true);
-    }
 
-    public static byte[] keccak256(byte[] message) {
-        return keccak256(message, new KeccakDigest(DEFAULT_SIZE), true);
-    }
-
-    public static byte[] keccak256(byte[] message, Size sz) {
-        return keccak256(message, new KeccakDigest(sz.bits), true);
-    }
-
-    public static byte[] keccak256(byte[] m1, byte[] m2) {
-        return keccak256(m1, m2, new KeccakDigest(DEFAULT_SIZE), true);
-    }
-
-    public static byte[] keccak256(byte[] message, int start, int length) {
-        return keccak256(message, start, length, new KeccakDigest(DEFAULT_SIZE), true);
-    }
 
     protected static String keccak256String(String message, Size bitSize) {
         KeccakDigest digest = new KeccakDigest(bitSize.bits);
@@ -91,6 +73,26 @@ public class Keccak256Helper {
             BigInteger bigInt = new BigInteger(1, hash);
             return bigInt.toString(16);
         }
+    }
+
+    public static byte[] keccak256(String message) {
+        return keccak256(Hex.decode(message), new KeccakDigest(DEFAULT_SIZE), true);
+    }
+
+    public static byte[] keccak256(byte[] message) {
+        return keccak256(message, new KeccakDigest(DEFAULT_SIZE), true);
+    }
+
+    public static byte[] keccak256(byte[] message, Size sz) {
+        return keccak256(message, new KeccakDigest(sz.bits), true);
+    }
+
+    public static byte[] keccak256(byte[] m1, byte[] m2) {
+        return keccak256(m1, m2, new KeccakDigest(DEFAULT_SIZE), true);
+    }
+
+    public static byte[] keccak256(byte[] message, int start, int length) {
+        return keccak256(message, start, length, new KeccakDigest(DEFAULT_SIZE), true);
     }
 
     private static byte[] keccak256(byte[] message, KeccakDigest digest, boolean bouncyencoder) {

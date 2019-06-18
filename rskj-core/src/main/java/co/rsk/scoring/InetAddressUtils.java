@@ -34,7 +34,7 @@ public final class InetAddressUtils {
     /**
      * Convert a text representation to an InetAddress It supports IPV4 and IPV6 formats
      *
-     * @param name the address
+     * @param hostname the address
      * @return the text converted to an InetAddress
      */
     public static InetAddress getAddressForBan(@CheckForNull String hostname) throws InvalidInetAddressException {

@@ -34,7 +34,7 @@ public class AddressBasedAuthorizer {
         ONE,
         MAJORITY,
         ALL
-    };
+    }
 
     private List<ECKey> authorizedKeys;
     private MinimumRequiredCalculation requiredCalculation;

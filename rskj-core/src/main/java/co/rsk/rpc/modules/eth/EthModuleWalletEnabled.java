@@ -41,6 +41,21 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         this.wallet = wallet;
     }
 
+    private String sign(String data, ECKey ecKey) {
+        byte[] dataHash = TypeConverter.stringHexToByteArray(data);
+        // 0x19 = 25, length should be an ascii decimals, message - original
+        String prefix = (char) 25 + "Ethereum Signed Message:\n" + dataHash.length;
+
+        byte[] messageHash = HashUtil.keccak256(ByteUtil.merge(prefix.getBytes(StandardCharsets.UTF_8), dataHash));
+        ECKey.ECDSASignature signature = ecKey.sign(messageHash);
+
+        return TypeConverter.toJsonHex(
+                ByteUtil.merge(
+                        ByteUtil.bigIntegerToBytes(signature.r),
+                        ByteUtil.bigIntegerToBytes(signature.s),
+                        new byte[] {signature.v}));
+    }
+
     @Override
     public String sign(String addr, String data) {
         String s = null;
@@ -64,20 +79,5 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         } finally {
             LOGGER.debug("eth_accounts(): {}", Arrays.toString(s));
         }
-    }
-
-    private String sign(String data, ECKey ecKey) {
-        byte[] dataHash = TypeConverter.stringHexToByteArray(data);
-        // 0x19 = 25, length should be an ascii decimals, message - original
-        String prefix = (char) 25 + "Ethereum Signed Message:\n" + dataHash.length;
-
-        byte[] messageHash = HashUtil.keccak256(ByteUtil.merge(prefix.getBytes(StandardCharsets.UTF_8), dataHash));
-        ECKey.ECDSASignature signature = ecKey.sign(messageHash);
-
-        return TypeConverter.toJsonHex(
-                ByteUtil.merge(
-                        ByteUtil.bigIntegerToBytes(signature.r),
-                        ByteUtil.bigIntegerToBytes(signature.s),
-                        new byte[] {signature.v}));
     }
 }

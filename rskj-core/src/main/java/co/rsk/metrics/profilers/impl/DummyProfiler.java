@@ -10,7 +10,7 @@ import co.rsk.metrics.profilers.Profiler;
 public class DummyProfiler implements Profiler {
 
     @Override
-    public Metric start(PROFILING_TYPE type) {
+    public Metric start(ProfilingType type) {
         return null;
     }
 

@@ -27,6 +27,7 @@ import co.rsk.core.types.ints.Uint8;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.Profiler.ProfilingType;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import java.nio.ByteBuffer;
@@ -178,7 +179,7 @@ public class Trie {
         }
 
         Trie trie;
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
+        Metric metric = profiler.start(ProfilingType.BUILD_TRIE_FROM_MSG);
         if (message[0] == ARITY) {
             trie = fromMessageOrchid(message, store);
         } else {
@@ -425,7 +426,7 @@ public class Trie {
      */
     @Nullable
     public byte[] get(byte[] key) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_GET_VALUE_FROM_KEY);
+        Metric metric = profiler.start(ProfilingType.TRIE_GET_VALUE_FROM_KEY);
         Trie node = find(key);
         if (node == null) {
             profiler.stop(metric);
@@ -465,6 +466,7 @@ public class Trie {
     public Trie put(ByteArrayWrapper key, byte[] value) {
         return put(key.getData(), value);
     }
+
     /**
      * put string key to value, the key is converted to byte array utility method to be used from testing
      *
@@ -477,6 +479,64 @@ public class Trie {
     }
 
     /**
+     * put key with associated value, returning a new NewTrie
+     *
+     * @param key key to be updated
+     * @param value associated value
+     * @return the new NewTrie containing the tree with the new key value association
+     */
+    private Trie put(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
+        // First of all, setting the value as an empty byte array is equivalent
+        // to removing the key/value. This is because other parts of the trie make
+        // this equivalent. Use always null to mark a node for deletion.
+        if (value != null && value.length == 0) {
+            value = null;
+        }
+
+        Trie trie = this.internalPut(key, value, isRecursiveDelete);
+
+        // the following code coalesces nodes if needed for delete operation
+
+        // it's null or it is not a delete operation
+        if (trie == null || value != null) {
+            return trie;
+        }
+
+        if (trie.isEmptyTrie()) {
+            return null;
+        }
+
+        // only coalesce if node has only one child and no value
+        if (trie.valueLength.compareTo(Uint24.ZERO) > 0) {
+            return trie;
+        }
+
+        Optional<Trie> leftOpt = trie.left.getNode();
+        Optional<Trie> rightOpt = trie.right.getNode();
+        if (leftOpt.isPresent() && rightOpt.isPresent()) {
+            return trie;
+        }
+
+        if (!leftOpt.isPresent() && !rightOpt.isPresent()) {
+            return trie;
+        }
+
+        Trie child;
+        byte childImplicitByte;
+        if (leftOpt.isPresent()) {
+            child = leftOpt.get();
+            childImplicitByte = (byte) 0;
+        } else { // has right node
+            child = rightOpt.get();
+            childImplicitByte = (byte) 1;
+        }
+
+        TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
+        return new Trie(
+                child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash);
+    }
+
+    /**
      * delete update the key to null value
      *
      * @param key a byte array
@@ -484,14 +544,6 @@ public class Trie {
      */
     public Trie delete(byte[] key) {
         return put(key, null);
-    }
-
-    // This is O(1). The node with exact key "key" MUST exists.
-    public Trie deleteRecursive(byte[] key) {
-        TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        Trie trie = put(keySlice, null, true);
-
-        return trie == null ? new Trie(this.store) : trie;
     }
 
     /**
@@ -502,6 +554,15 @@ public class Trie {
      */
     public Trie delete(String key) {
         return delete(key.getBytes(StandardCharsets.UTF_8));
+    }
+
+
+    // This is O(1). The node with exact key "key" MUST exists.
+    public Trie deleteRecursive(byte[] key) {
+        TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
+        Trie trie = put(keySlice, null, true);
+
+        return trie == null ? new Trie(this.store) : trie;
     }
 
     /**
@@ -605,6 +666,7 @@ public class Trie {
     public boolean isEmbeddable() {
         return isTerminal() && getMessageLength() <= MAX_EMBEDDED_NODE_SIZE_IN_BYTES;
     }
+
     /** save saves the unsaved current trie and subnodes to their associated store */
     public void save() {
         if (this.saved) {
@@ -794,64 +856,6 @@ public class Trie {
         }
 
         return newTrie;
-    }
-
-    /**
-     * put key with associated value, returning a new NewTrie
-     *
-     * @param key key to be updated
-     * @param value associated value
-     * @return the new NewTrie containing the tree with the new key value association
-     */
-    private Trie put(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
-        // First of all, setting the value as an empty byte array is equivalent
-        // to removing the key/value. This is because other parts of the trie make
-        // this equivalent. Use always null to mark a node for deletion.
-        if (value != null && value.length == 0) {
-            value = null;
-        }
-
-        Trie trie = this.internalPut(key, value, isRecursiveDelete);
-
-        // the following code coalesces nodes if needed for delete operation
-
-        // it's null or it is not a delete operation
-        if (trie == null || value != null) {
-            return trie;
-        }
-
-        if (trie.isEmptyTrie()) {
-            return null;
-        }
-
-        // only coalesce if node has only one child and no value
-        if (trie.valueLength.compareTo(Uint24.ZERO) > 0) {
-            return trie;
-        }
-
-        Optional<Trie> leftOpt = trie.left.getNode();
-        Optional<Trie> rightOpt = trie.right.getNode();
-        if (leftOpt.isPresent() && rightOpt.isPresent()) {
-            return trie;
-        }
-
-        if (!leftOpt.isPresent() && !rightOpt.isPresent()) {
-            return trie;
-        }
-
-        Trie child;
-        byte childImplicitByte;
-        if (leftOpt.isPresent()) {
-            child = leftOpt.get();
-            childImplicitByte = (byte) 0;
-        } else { // has right node
-            child = rightOpt.get();
-            childImplicitByte = (byte) 1;
-        }
-
-        TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        return new Trie(
-                child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash);
     }
 
     private static Uint24 getDataLength(byte[] value) {

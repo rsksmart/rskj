@@ -192,7 +192,7 @@ public class PrecompiledContracts {
             if (data == null) {
                 return 15;
             }
-            return 15l + (data.length + 31) / 32 * 3;
+            return 15L + (data.length + 31) / 32 * 3;
         }
 
         @Override
@@ -211,7 +211,7 @@ public class PrecompiledContracts {
             if (data == null) {
                 return 60;
             }
-            return 60l + (data.length + 31) / 32 * 12;
+            return 60L + (data.length + 31) / 32 * 12;
         }
 
         @Override
@@ -235,7 +235,7 @@ public class PrecompiledContracts {
             if (data == null) {
                 return 600;
             }
-            return 600l + (data.length + 31) / 32 * 120;
+            return 600L + (data.length + 31) / 32 * 120;
         }
 
         @Override
@@ -284,6 +284,7 @@ public class PrecompiledContracts {
                     out = DataWord.valueOf(key.getAddress());
                 }
             } catch (Exception any) {
+                // Ignoring exception
             }
 
             if (out == null) {

@@ -45,7 +45,7 @@ public class DebugModuleImplTest {
     public void debug_wireProtocolQueueSize_basic() throws IOException {
         String result = debugModule.wireProtocolQueueSize();
         try {
-            TypeConverter.JSonHexToLong(result);
+            TypeConverter.jsonHexToLong(result);
         } catch (NumberFormatException e) {
             Assert.fail("This method is not returning a  0x Long");
         }
@@ -56,7 +56,7 @@ public class DebugModuleImplTest {
         when(messageHandler.getMessageQueueSize()).thenReturn(5L);
         String result = debugModule.wireProtocolQueueSize();
         try {
-            long value = TypeConverter.JSonHexToLong(result);
+            long value = TypeConverter.jsonHexToLong(result);
             Assert.assertEquals(5L, value);
         } catch (NumberFormatException e) {
             Assert.fail("This method is not returning a  0x Long");

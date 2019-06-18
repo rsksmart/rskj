@@ -205,8 +205,8 @@ public class BlockStore {
     /**
      * hasHeader returns true if this block store has the header of the corresponding block.
      *
-     * @return true if the store has the header, false otherwise.
      * @param hash
+     * @return true if the store has the header, false otherwise.
      */
     public synchronized boolean hasHeader(Keccak256 hash) {
         return this.headers.containsKey(hash);

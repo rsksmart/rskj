@@ -10,7 +10,7 @@ public interface Profiler {
      * List of possible measurement categories (or types). Depending on what is actually being profiled, new categories
      * can be added or categories not needed can be removed
      */
-    enum PROFILING_TYPE {
+    enum ProfilingType {
         // BLOCK_CONNECTION - BLOCK_EXECUTE = Time consumed fetching the block and, after block execution, saving the
         // data
         // that means some DB_READ and DB_WRITE will be included here (and contained in the DB_READ and DB_WRITE
@@ -45,7 +45,7 @@ public interface Profiler {
      * @param type task category that needs to be profiled
      * @return new Metric instance
      */
-    Metric start(PROFILING_TYPE type);
+    Metric start(ProfilingType type);
 
     /**
      * Stops a metric finalizing all the properties being profiled

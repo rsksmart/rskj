@@ -196,12 +196,12 @@ public class TransactionReceipt {
         this.cumulativeGas = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(cumulativeGas));
     }
 
-    public void setGasUsed(long gasUsed) {
-        this.gasUsed = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(gasUsed));
-    }
-
     public void setCumulativeGas(byte[] cumulativeGas) {
         this.cumulativeGas = cumulativeGas;
+    }
+
+    public void setGasUsed(long gasUsed) {
+        this.gasUsed = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(gasUsed));
     }
 
     public void setGasUsed(byte[] gasUsed) {

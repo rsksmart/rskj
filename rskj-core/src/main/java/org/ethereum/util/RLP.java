@@ -243,6 +243,30 @@ public class RLP {
     }
 
     /** Get exactly one message payload */
+    private static void fullTraverse(@Nonnull ByteBuffer msgData, @Nonnull ArrayList<RLPElement> rlpList) {
+
+        try {
+            RLPElementView.forEachRlp(
+                    msgData,
+                    view -> {
+                        // getOrCreateElement will recursively populate lists and sublists
+                        RLPElement element = view.getOrCreateElement();
+                        rlpList.add(element);
+                    });
+        } catch (RLPException ex) {
+            throw ex;
+        } catch (OutOfMemoryError e) {
+            throw new RuntimeException(
+                    "Invalid RLP (excessive mem allocation while parsing) ("
+                            + ByteBufferUtil.toHexString(msgData)
+                            + ")",
+                    e);
+        } catch (Exception e) {
+            throw new RuntimeException("RLP wrong encoding (" + ByteBufferUtil.toHexString(msgData) + ")", e);
+        }
+    }
+
+    /** Get exactly one message payload */
     public static void fullTraverse(
             byte[] msgData, int level, int startPos, int endPos, int levelToIndex, Queue<Integer> index) {
 
@@ -458,30 +482,6 @@ public class RLP {
         }
 
         return new BlockDifficulty(new BigInteger(bytes));
-    }
-
-    /** Get exactly one message payload */
-    private static void fullTraverse(@Nonnull ByteBuffer msgData, @Nonnull ArrayList<RLPElement> rlpList) {
-
-        try {
-            RLPElementView.forEachRlp(
-                    msgData,
-                    view -> {
-                        // getOrCreateElement will recursively populate lists and sublists
-                        RLPElement element = view.getOrCreateElement();
-                        rlpList.add(element);
-                    });
-        } catch (RLPException ex) {
-            throw ex;
-        } catch (OutOfMemoryError e) {
-            throw new RuntimeException(
-                    "Invalid RLP (excessive mem allocation while parsing) ("
-                            + ByteBufferUtil.toHexString(msgData)
-                            + ")",
-                    e);
-        } catch (Exception e) {
-            throw new RuntimeException("RLP wrong encoding (" + ByteBufferUtil.toHexString(msgData) + ")", e);
-        }
     }
 
     /* ******************************************************

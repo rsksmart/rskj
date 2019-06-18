@@ -3,8 +3,7 @@
   "-//Puppy Crawl//DTD Suppressions 1.0//EN"
   "http://www.puppycrawl.com/dtds/suppressions_1_0.dtd">
 <suppressions>
-  <suppress checks="[a-zA-Z0-9]*" files="org/ethereum/crypto/cryptohash/*"/>
-  <suppress checks="AbbreviationAsWordInName" files="org/ethereum/vm/VM.java"/>
+  <suppress checks=".*" files="org/ethereum/crypto/cryptohash/*"/>
   <suppress checks="LineLengthCheck"
-            files="^.*((BridgeDevNetConstants)|(BridgeMainNetConstants)|(BridgeRegTestConstants)|(BridgeTestNetConstants)|(org/ethereum/config/Constants))\.java"/>
+    files="^.*((BridgeDevNetConstants)|(BridgeMainNetConstants)|(BridgeRegTestConstants)|(BridgeTestNetConstants)|(org/ethereum/config/Constants))\.java"/>
 </suppressions>

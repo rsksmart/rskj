@@ -86,13 +86,14 @@ public final class FederationMember {
     /**
      * Compares federation members based on their underlying keys.
      *
-     * <p>The total ordering is defined such that, for any two members M1, M2, 1) M1 < M2 iff BTC_PUB_KEY(M1) <lex
-     * BTC_PUB_KEY(M2) OR (BTC_PUB_KEY(M1) == lex BTC_PUB_KEY(M2) AND RSK_PUB_KEY(M1) < lex RSK_PUB_KEY(M2)) OR
-     * (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND RSK_PUB_KEY(M1) ==lex RSK_PUB_KEY(M2) AND MST_PUB_KEY(M1) <lex
-     * MST_PUB_KEY(M2)) 2) M1 == M2 iff BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND RSK_PUB_KEY(M1) ==lex RSK_PUB_KEY(M2)
-     * AND MST_PUB_KEY(M1) ==lex MST_PUB_KEY(M2) AND 3) M1 > M2 otherwise
+     * <p>The total ordering is defined such that, for any two members M1, M2, 1) M1 < M2 iff
+     * BTC_PUB_KEY(M1) @{literal <}lex BTC_PUB_KEY(M2) OR (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND
+     * RSK_PUB_KEY(M1) @{literal <}lex RSK_PUB_KEY(M2)) OR (BTC_PUB_KEY(M1) ==lex BTC_PUB_KEY(M2) AND RSK_PUB_KEY(M1)
+     * ==lex RSK_PUB_KEY(M2) AND MST_PUB_KEY(M1) @{literal <}lex MST_PUB_KEY(M2)) 2) M1 == M2 iff BTC_PUB_KEY(M1) ==lex
+     * BTC_PUB_KEY(M2) AND RSK_PUB_KEY(M1) ==lex RSK_PUB_KEY(M2) AND MST_PUB_KEY(M1) ==lex MST_PUB_KEY(M2) AND 3)
+     * M1 > M2 otherwise.
      *
-     * <p>where <lex and ==lex is given by negative and zero values (resp.) of the
+     * <p>where @{literal <}lex and ==lex is given by negative and zero values (resp.) of the
      * UnsignedBytes.lexicographicalComparator() comparator.
      */
     public static final Comparator<FederationMember> BTC_RSK_MST_PUBKEYS_COMPARATOR =
