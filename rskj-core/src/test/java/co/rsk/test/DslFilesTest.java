@@ -383,4 +383,25 @@ public class DslFilesTest {
         Assert.assertEquals(200000, gasUsed);
         Assert.assertFalse("Address should not exist", world.getRepository().isExist(new RskAddress("0xa943B74640c466Fc700AF929Cabacb1aC6CC8895")));
     }
+
+    @Test
+    public void runCodeSizeAfterSuicide() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/codeSizeAfterSuicide.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Transaction transaction = world.getTransactionByName("callCodeSizeChecker");
+
+        Assert.assertNotNull(transaction);
+
+        TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(transaction.getHash().getBytes());
+
+        Assert.assertNotNull(txinfo);
+        long gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed()).longValue();
+
+        // Gas consumed SHOULD NOT be all there is available
+        Assert.assertNotEquals(200000, gasUsed);
+        Assert.assertFalse("Transaction should be reverted", txinfo.getReceipt().isSuccessful());
+    }
 }
