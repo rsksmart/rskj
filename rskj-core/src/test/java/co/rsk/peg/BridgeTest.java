@@ -2759,14 +2759,23 @@ public class BridgeTest {
         PowerMockito.doReturn(bridgeSupportMock).when(bridge, "setup");
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
-        byte[][] headers = new byte[][] { Hex.decode(
+        byte[][] headers = new byte[][]{Hex.decode(
                 "0000002006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910ff698ee112158f5573a90b7403cfba074addd61c547b3639c6afdcf52588eb8e2a1ef825cffff7f2000000000"
-        ) };
+        )};
 
-        byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{ headers });
+        byte[] data = BridgeMethods.RECEIVE_HEADERS.getFunction().encode(new Object[]{headers});
 
         Assert.assertNull(bridge.execute(data));
         verify(bridgeSupportMock, times(1)).receiveHeaders(any(BtcBlock[].class));
+    }
+
+    @Test
+    public void bridgeSupportIsCreatedOnInit() {
+        Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, btcBlockFactory));
+
+        bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
+
+        Assert.assertNotNull(Whitebox.getInternalState(bridge, "bridgeSupport"));
     }
 
     private static Repository createRepository() {
