@@ -335,4 +335,8 @@ public class RskSystemProperties extends SystemProperties {
             throw new IllegalArgumentException(e);
         }
     }
+
+    public long getVmExecutionStackSize() {
+        return configFromFiles.getBytes("vm.executionStackSize");
+    }
 }

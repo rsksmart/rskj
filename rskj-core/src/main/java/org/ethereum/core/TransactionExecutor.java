@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import static co.rsk.util.ListArrayUtil.getLength;
@@ -72,6 +73,7 @@ public class TransactionExecutor {
     private final PrecompiledContracts precompiledContracts;
     private final boolean playVm;
     private final boolean enableRemasc;
+    private final ExecutorService vmExecutorService;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
@@ -100,7 +102,7 @@ public class TransactionExecutor {
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
-            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts) {
+            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts, ExecutorService vmExecution) {
         this.constants = constants;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
         this.tx = tx;
@@ -119,6 +121,7 @@ public class TransactionExecutor {
         this.playVm = playVm;
         this.enableRemasc = remascEnabled;
         this.deletedAccounts = new HashSet<>(deletedAccounts);
+        this.vmExecutorService = vmExecution;
     }
 
     /**
@@ -374,7 +377,17 @@ public class TransactionExecutor {
             program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
 
             if (playVm) {
-                vm.play(program);
+                Future<?> vmExecution = vmExecutorService.submit(() -> vm.play(program));
+                try {
+                    vmExecution.get();
+                } catch (ExecutionException e) {
+                    if (e.getCause() instanceof StackOverflowError) {
+                        logger.error("\n !!! StackOverflowError: update your java run command with -Xss32M !!!\n", e);
+                        System.exit(-1);
+                    } else {
+                        throw e.getCause();
+                    }
+                }
             }
 
             result = program.getResult();

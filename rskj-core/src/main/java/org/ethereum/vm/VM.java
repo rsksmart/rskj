@@ -2012,9 +2012,6 @@ public class VM {
 
         } catch (RuntimeException e) {
             program.setRuntimeFailure(e);
-        } catch (StackOverflowError soe){
-            logger.error("\n !!! StackOverflowError: update your java run command with -Xss32M !!!\n", soe);
-            System.exit(-1);
         }
     }
 
