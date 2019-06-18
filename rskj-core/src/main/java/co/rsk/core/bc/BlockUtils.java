@@ -35,7 +35,8 @@ import org.ethereum.db.BlockInformation;
 /** Created by ajlopez on 19/08/2016. */
 public class BlockUtils {
 
-    private BlockUtils() {}
+    private BlockUtils() {
+    }
 
     public static boolean blockInSomeBlockChain(Block block, Blockchain blockChain) {
         return blockInSomeBlockChain(block.getHash(), block.getNumber(), blockChain);

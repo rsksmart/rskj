@@ -167,7 +167,8 @@ public class RLPElementView {
         return Math.toIntExact(length);
     }
 
-    private RLPElementView() {}
+    private RLPElementView() {
+    }
 
     private RLPElement createElement() {
         if (type == RLPElementType.NULL_ITEM) {

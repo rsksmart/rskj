@@ -46,7 +46,8 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
         this.parse(data);
     }
 
-    private PingPeerMessage() {}
+    private PingPeerMessage() {
+    }
 
     public static PingPeerMessage create(String host, int port, String check, ECKey privKey, Integer networkId) {
         /* RLP Encode data */

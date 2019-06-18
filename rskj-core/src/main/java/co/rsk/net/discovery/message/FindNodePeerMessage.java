@@ -44,7 +44,8 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
         this.parse(data);
     }
 
-    private FindNodePeerMessage() {}
+    private FindNodePeerMessage() {
+    }
 
     public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, Integer networkId) {
 

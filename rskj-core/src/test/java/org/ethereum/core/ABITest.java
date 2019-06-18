@@ -67,12 +67,14 @@ public class ABITest {
         try {
             Hex.toHexString(function.encode("0xa1234567890abcdef1234567890abcdef12345678"));
             Assert.assertTrue(false);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
 
         try {
             Hex.toHexString(function.encode("blabla"));
             Assert.assertTrue(false);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     static String funcJson2 = "{\n" +

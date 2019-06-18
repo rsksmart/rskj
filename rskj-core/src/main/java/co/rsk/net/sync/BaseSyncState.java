@@ -42,22 +42,28 @@ public abstract class BaseSyncState implements SyncState {
     }
 
     @Override
-    public void newBlockHeaders(List<BlockHeader> chunk) {}
+    public void newBlockHeaders(List<BlockHeader> chunk) {
+    }
 
     @Override
-    public void newBody(BodyResponseMessage message, MessageChannel peer) {}
+    public void newBody(BodyResponseMessage message, MessageChannel peer) {
+    }
 
     @Override
-    public void newConnectionPointData(byte[] hash) {}
+    public void newConnectionPointData(byte[] hash) {
+    }
 
     @Override
-    public void newPeerStatus() {}
+    public void newPeerStatus() {
+    }
 
     @Override
-    public void newSkeleton(List<BlockIdentifier> skeleton, MessageChannel peer) {}
+    public void newSkeleton(List<BlockIdentifier> skeleton, MessageChannel peer) {
+    }
 
     @Override
-    public void onEnter() {}
+    public void onEnter() {
+    }
 
     @Override
     public boolean isSyncing() {

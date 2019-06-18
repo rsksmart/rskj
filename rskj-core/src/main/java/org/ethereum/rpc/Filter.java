@@ -72,7 +72,8 @@ public class Filter {
         events.add(evt);
     }
 
-    public void newBlockReceived(Block b) {}
+    public void newBlockReceived(Block b) {
+    }
 
     public void newPendingTx(Transaction tx) {
         // add TransactionReceipt for PendingTx

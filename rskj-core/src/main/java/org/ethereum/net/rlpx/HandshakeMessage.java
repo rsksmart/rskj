@@ -51,7 +51,8 @@ public class HandshakeMessage {
         this.nodeId = nodeId;
     }
 
-    HandshakeMessage() {}
+    HandshakeMessage() {
+    }
 
     static HandshakeMessage parse(byte[] wire) {
         RLPList list = (RLPList) RLP.decode2(wire).get(0);

@@ -57,7 +57,8 @@ public class TransactionReceipt {
     /* Tx Receipt in encoded form */
     private byte[] rlpEncoded;
 
-    public TransactionReceipt() {}
+    public TransactionReceipt() {
+    }
 
     public TransactionReceipt(byte[] rlp) {
 

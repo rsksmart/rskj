@@ -42,7 +42,8 @@ public class Value {
         return null;
     }
 
-    public Value() {}
+    public Value() {
+    }
 
     public void init(byte[] rlp) {
         this.rlp = rlp;

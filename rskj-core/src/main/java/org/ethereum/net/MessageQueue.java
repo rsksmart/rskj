@@ -75,7 +75,8 @@ public class MessageQueue {
     private ScheduledFuture<?> timerTask;
     private Channel channel;
 
-    public MessageQueue() {}
+    public MessageQueue() {
+    }
 
     public void activate(ChannelHandlerContext ctx) {
         this.ctx = ctx;

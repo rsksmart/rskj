@@ -50,7 +50,8 @@ public class EthAdapter implements Eth {
     }
 
     @Override
-    public void onShutdown() {}
+    public void onShutdown() {
+    }
 
     @Override
     public boolean isIdle() {
@@ -63,10 +64,12 @@ public class EthAdapter implements Eth {
     }
 
     @Override
-    public void disableTransactions() {}
+    public void disableTransactions() {
+    }
 
     @Override
-    public void enableTransactions() {}
+    public void enableTransactions() {
+    }
 
     @Override
     public EthVersion getVersion() {
@@ -74,16 +77,20 @@ public class EthAdapter implements Eth {
     }
 
     @Override
-    public void onSyncDone(boolean done) {}
+    public void onSyncDone(boolean done) {
+    }
 
     @Override
-    public void sendStatus() {}
+    public void sendStatus() {
+    }
 
     @Override
-    public void dropConnection() {}
+    public void dropConnection() {
+    }
 
     @Override
-    public void sendMessage(EthMessage message) {}
+    public void sendMessage(EthMessage message) {
+    }
 
     @Override
     public boolean isUsingNewProtocol() {

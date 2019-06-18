@@ -20,7 +20,8 @@ package co.rsk.net.discovery.message;
 
 /** Created by mario on 13/02/17. */
 public class PeerDiscoveryMessageFactory {
-    private PeerDiscoveryMessageFactory() {}
+    private PeerDiscoveryMessageFactory() {
+    }
 
     public static PeerDiscoveryMessage createMessage(
             byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {

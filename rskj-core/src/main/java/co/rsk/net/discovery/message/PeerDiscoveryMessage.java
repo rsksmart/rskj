@@ -46,7 +46,8 @@ public abstract class PeerDiscoveryMessage {
     private byte[] data;
     private OptionalInt networkId;
 
-    public PeerDiscoveryMessage() {}
+    public PeerDiscoveryMessage() {
+    }
 
     public PeerDiscoveryMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         this.mdc = mdc;

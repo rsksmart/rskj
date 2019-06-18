@@ -30,7 +30,8 @@ import org.slf4j.LoggerFactory;
 public class FileUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger("file");
 
-    private FileUtil() {}
+    private FileUtil() {
+    }
 
     public static Path getDatabaseDirectoryPath(String databaseDirectory, String name) {
         if (Paths.get(databaseDirectory).isAbsolute()) {

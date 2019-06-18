@@ -38,7 +38,8 @@ public class GenesisJson {
 
     Map<String, AllocatedAccount> alloc;
 
-    public GenesisJson() {}
+    public GenesisJson() {
+    }
 
     public String getMixhash() {
         return mixhash;

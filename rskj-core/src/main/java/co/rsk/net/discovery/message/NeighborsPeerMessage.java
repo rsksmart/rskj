@@ -46,7 +46,8 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
         this.parse(data);
     }
 
-    private NeighborsPeerMessage() {}
+    private NeighborsPeerMessage() {
+    }
 
     @Override
     public final void parse(byte[] data) {

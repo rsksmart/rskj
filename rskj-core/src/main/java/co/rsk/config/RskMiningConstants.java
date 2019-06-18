@@ -30,5 +30,6 @@ public class RskMiningConstants {
 
     public static final int NOTIFY_FEES_PERCENTAGE_INCREASE = 10;
 
-    private RskMiningConstants() {}
+    private RskMiningConstants() {
+    }
 }

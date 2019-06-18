@@ -845,7 +845,8 @@ public class ECKey {
     }
 
     @SuppressWarnings("serial")
-    public static class MissingPrivateKeyException extends RuntimeException {}
+    public static class MissingPrivateKeyException extends RuntimeException {
+    }
 
     private static void check(boolean test, String message) {
         if (!test) {

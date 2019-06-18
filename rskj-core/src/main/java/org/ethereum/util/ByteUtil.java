@@ -30,7 +30,8 @@ import org.ethereum.db.ByteArrayWrapper;
 
 public class ByteUtil {
 
-    private ByteUtil() {}
+    private ByteUtil() {
+    }
 
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final byte[] ZERO_BYTE_ARRAY = new byte[] {0};

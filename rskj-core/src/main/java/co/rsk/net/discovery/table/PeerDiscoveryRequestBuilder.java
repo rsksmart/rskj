@@ -34,7 +34,8 @@ public class PeerDiscoveryRequestBuilder {
     private int attemptNumber;
     private Node relatedNode;
 
-    private PeerDiscoveryRequestBuilder() {}
+    private PeerDiscoveryRequestBuilder() {
+    }
 
     public static PeerDiscoveryRequestBuilder builder() {
         return new PeerDiscoveryRequestBuilder();

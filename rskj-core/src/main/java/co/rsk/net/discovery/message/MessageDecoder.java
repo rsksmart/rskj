@@ -29,7 +29,8 @@ public class MessageDecoder {
     public static final String MDC_CHECK_FAILED = "MDC check failed";
     public static final String BAD_MESSAGE = "Bad message";
 
-    private MessageDecoder() {}
+    private MessageDecoder() {
+    }
 
     public static PeerDiscoveryMessage decode(byte[] wire) {
         if (wire.length < 98) {

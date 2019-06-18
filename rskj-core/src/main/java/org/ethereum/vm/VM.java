@@ -2053,8 +2053,7 @@ public class VM {
             program.stop();
             throw e;
         } finally {
-            if (isLogEnabled) // this must be prevented because it's slow!
-            {
+            if (isLogEnabled) { // this must be prevented because it's slow!
                 program.fullTrace();
             }
         }

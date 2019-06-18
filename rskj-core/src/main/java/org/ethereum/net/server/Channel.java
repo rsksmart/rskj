@@ -161,7 +161,8 @@ public class Channel {
         return eth.isUsingNewProtocol();
     }
 
-    public void onDisconnect() {}
+    public void onDisconnect() {
+    }
 
     public void onSyncDone(boolean done) {
 

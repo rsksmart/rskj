@@ -38,7 +38,8 @@ public class AuthInitiateMessage {
     byte[] nonce; // 32 bytes
     boolean isTokenUsed; // 1 byte - 0x00 or 0x01
 
-    public AuthInitiateMessage() {}
+    public AuthInitiateMessage() {
+    }
 
     public static int getLength() {
         return 65 + 32 + 64 + 32 + 1;

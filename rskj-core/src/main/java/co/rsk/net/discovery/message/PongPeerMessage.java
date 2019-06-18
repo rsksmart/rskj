@@ -46,7 +46,8 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         this.parse(data);
     }
 
-    private PongPeerMessage() {}
+    private PongPeerMessage() {
+    }
 
     public static PongPeerMessage create(String host, int port, String check, ECKey privKey, Integer networkId) {
         /* RLP Encode data */

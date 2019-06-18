@@ -256,7 +256,8 @@ public class CallTransaction {
         public Param[] outputs = new Param[0];
         public FunctionType type;
 
-        private Function() {}
+        private Function() {
+        }
 
         public byte[] encode(Object... args) {
             return ByteUtil.merge(encodeSignature(), encodeArguments(args));
