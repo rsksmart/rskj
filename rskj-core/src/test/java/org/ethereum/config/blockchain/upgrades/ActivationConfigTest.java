@@ -37,7 +37,6 @@ public class ActivationConfigTest {
             "},",
             "consensusRules: {",
             "    areBridgeTxsPaid: afterBridgeSync,",
-            "    difficultyDropEnabled: genesis,",
             "    rskip85: orchid,",
             "    rskip87: orchid,",
             "    rskip88: orchid,",

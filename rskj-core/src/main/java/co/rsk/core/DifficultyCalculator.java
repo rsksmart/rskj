@@ -37,9 +37,8 @@ public class DifficultyCalculator {
     }
 
     public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
-        boolean difficultyDropEnabled = activationConfig.isActive(ConsensusRule.DIFFICULTY_DROP_ENABLED, header.getNumber());
         boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, header.getNumber());
-        if (difficultyDropEnabled || !rskip97Active) {
+        if (!rskip97Active) {
             // If more than 10 minutes, reset to minimum difficulty to allow private mining
             if (header.getTimestamp() >= parentHeader.getTimestamp() + 600) {
                 return constants.getMinimumDifficulty();

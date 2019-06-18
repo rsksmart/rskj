@@ -41,6 +41,6 @@ public class GenesisHashesTest {
         RskContext rskContext = new RskTestContext(new String[]{ "--testnet" });
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();
-        assertThat(genesis.getHash(), is(new Keccak256("26237c8e731999a69d99d13ffcfe20f1aa9575c96f98299283d54cd986ce6c8e")));
+        assertThat(genesis.getHash(), is(new Keccak256("d72e1c76d7b4928acf9812fc3bb5bfddfd1f8d93e3a9a99894b3479a0190a9b0")));
     }
 }
