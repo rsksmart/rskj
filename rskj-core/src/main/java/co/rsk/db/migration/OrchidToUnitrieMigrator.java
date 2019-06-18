@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
- * This is a one-time tool and should be removed after SecondFork (TBD) fork activation
+ * This is a one-time tool and should be removed after Wasabi network upgrade activation
  */
 public class OrchidToUnitrieMigrator {
 
