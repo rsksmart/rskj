@@ -96,7 +96,7 @@ public class TrieMetrics {
             RskAddress addr = randomAccountAddress();
             AccountState accState = repository.createAccount(addr);
             accState.addToBalance(randomCoin(18, 1000));
-            accState.setNonce(randomBigInteger(1));  // 1 ?
+            accState.setNonce(BigInteger.valueOf(128));//randomBigInteger(1));  // 1 ?
             repository.updateAccountState(addr, accState);
             if ((i+1) % COMMITS_SIZE == 0){
                 System.out.println(i+1);
@@ -166,25 +166,9 @@ public class TrieMetrics {
         System.out.println("Total nodes:" + counter);
     }
 
-
-
-
-    public static void main (String[] args) {
-        String path = "resultado.csv";
-        deleteFile("/home/julian/.rsk/unitrie-test");
-        TrieMetrics trieMetrics = new TrieMetrics(path);
-        MutableRepository repositoryDB = new MutableRepository(new Trie(new TrieStoreImpl(RskContext.makeDataSource("unitrie-test-47", "/home/julian/.rsk/"))));
-
-        //stage1(trieMetrics,repositoryDB);
-        //stage2(trieMetrics, "", repositoryDB);
-        stage3(trieMetrics, "", repositoryDB);
-
-        //compareRepositories(repository, repositoryStored);
-
-    }
-
     private static void stage1(TrieMetrics trieMetrics, MutableRepository repositoryDB) {
         trieMetrics.addErc20BalanceRow(repositoryDB);
+        trieMetrics.addRandomAccounts(repositoryDB);
         State1 = repositoryDB.getRoot();
         //System.out.println(State1);
 
@@ -192,7 +176,7 @@ public class TrieMetrics {
 
     private static void stage2(TrieMetrics trieMetrics, String stateRoot, MutableRepository repositoryDB) {
         repositoryDB.syncToRoot(State1);
-        trieMetrics.addRandomAccounts(repositoryDB);
+        //trieMetrics.addRandomAccounts(repositoryDB);
         State2 = repositoryDB.getRoot();
         System.out.println(Hex.toHexString(State2));
     }
@@ -201,5 +185,19 @@ public class TrieMetrics {
         //repositoryDB.syncToRoot(State2);
         repositoryDB.syncToRoot(Hex.decode(stateRoot));
         trieMetrics.unitrieAnalysis(repositoryDB);
+    }
+
+    public static void main (String[] args) {
+        String path = "resultado.csv";
+        //deleteFile("/home/julian/.rsk/unitrie-test");
+        TrieMetrics trieMetrics = new TrieMetrics(path);
+        MutableRepository repositoryDB = new MutableRepository(new Trie(new TrieStoreImpl(RskContext.makeDataSource("unitrie-test-47", "/home/julian/.rsk/"))));
+
+        stage1(trieMetrics,repositoryDB);
+        //stage2(trieMetrics, "", repositoryDB);
+        //stage3(trieMetrics, "", repositoryDB);
+
+        //compareRepositories(repository, repositoryStored);
+
     }
 }
