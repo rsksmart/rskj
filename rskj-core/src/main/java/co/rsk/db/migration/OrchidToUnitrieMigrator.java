@@ -97,6 +97,9 @@ public class OrchidToUnitrieMigrator {
     }
 
     public static void migrateStateToUnitrieIfNeeded(RskContext ctx) throws IOException {
+        if (ctx.getRskSystemProperties().databaseReset()) {
+            return;
+        }
         String databaseDir = ctx.getRskSystemProperties().databaseDir();
         // we need to check these before the data sources are init'ed
         Path unitrieDatabase = Paths.get(databaseDir, "unitrie");
