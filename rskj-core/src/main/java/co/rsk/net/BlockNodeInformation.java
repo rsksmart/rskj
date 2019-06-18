@@ -99,21 +99,6 @@ public class BlockNodeInformation {
     }
 
     /**
-     * getBlocksByNode retrieves all the blocks that a given node knows.
-     *
-     * @param nodeID the node to check.
-     * @return all the blocks known by the given nodeID.
-     */
-    @Nonnull
-    public Set<Keccak256> getBlocksByNode(@Nonnull final NodeID nodeID) {
-        Set<Keccak256> result = blocksByNode.get(nodeID);
-        if (result == null) {
-            result = new HashSet<>();
-        }
-        return Collections.unmodifiableSet(result);
-    }
-
-    /**
      * getNodesByBlock retrieves all the nodes that contain a given block.
      *
      * @param blockHash the block's hash.
@@ -137,6 +122,21 @@ public class BlockNodeInformation {
     @Nonnull
     public Set<NodeID> getNodesByBlock(@Nonnull final byte[] blockHash) {
         return getNodesByBlock(new Keccak256(blockHash));
+    }
+
+    /**
+     * getBlocksByNode retrieves all the blocks that a given node knows.
+     *
+     * @param nodeID the node to check.
+     * @return all the blocks known by the given nodeID.
+     */
+    @Nonnull
+    public Set<Keccak256> getBlocksByNode(@Nonnull final NodeID nodeID) {
+        Set<Keccak256> result = blocksByNode.get(nodeID);
+        if (result == null) {
+            result = new HashSet<>();
+        }
+        return Collections.unmodifiableSet(result);
     }
 
     /**

@@ -19,7 +19,7 @@
 package org.ethereum.rpc;
 
 import static java.lang.Math.max;
-import static org.ethereum.rpc.TypeConverter.JSonHexToLong;
+import static org.ethereum.rpc.TypeConverter.jsonHexToLong;
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
@@ -183,7 +183,7 @@ public class Web3Impl implements Web3 {
         hashRateCalculator.stop();
     }
 
-    public int JSonHexToInt(String x) throws Exception {
+    public int jsonHexToInt(String x) throws Exception {
         if (!x.startsWith("0x")) {
             throw new Exception("Incorrect hex syntax");
         }
@@ -507,7 +507,8 @@ public class Web3Impl implements Web3 {
         } else if ("pending".equals(bnOrId)) {
             throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
         } else {
-            long bn = JSonHexToLong(bnOrId);
+
+            long bn = jsonHexToLong(bnOrId);
             b = blockchain.getBlockByNumber(bn);
         }
 
@@ -750,7 +751,7 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            int idx = JSonHexToInt(index);
+            int idx = jsonHexToInt(index);
 
             if (idx >= b.getTransactionsList().size()) {
                 return null;
@@ -777,7 +778,7 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            int idx = JSonHexToInt(index);
+            int idx = jsonHexToInt(index);
 
             if (idx >= txs.size()) {
                 return null;
@@ -822,7 +823,7 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            int idx = JSonHexToInt(uncleIdx);
+            int idx = jsonHexToInt(uncleIdx);
 
             if (idx >= block.getUncleList().size()) {
                 return null;

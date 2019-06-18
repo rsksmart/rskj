@@ -89,7 +89,7 @@ public class TypeConverter {
         return str.substring(2);
     }
 
-    public static long JSonHexToLong(String x) {
+    public static long jsonHexToLong(String x) {
         if (!x.startsWith("0x")) {
             throw new NumberFormatException("Incorrect hex syntax");
         }

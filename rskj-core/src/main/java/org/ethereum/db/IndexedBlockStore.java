@@ -25,6 +25,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.Profiler.ProfilingType;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.net.BlockCache;
 import co.rsk.remasc.Sibling;
@@ -198,7 +199,7 @@ public class IndexedBlockStore implements BlockStore {
 
     @Override
     public synchronized void flush() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        Metric metric = profiler.start(ProfilingType.DB_WRITE);
 
         // long t1 = System.nanoTime();
         if (indexDB != null) {

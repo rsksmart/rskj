@@ -59,35 +59,6 @@ public class PeerServerImpl implements PeerServer {
         this.ethereumChannelInitializerFactory = ethereumChannelInitializerFactory;
     }
 
-    @Override
-    public void start() {
-        if (config.getPeerPort() > 0) {
-            peerServiceExecutor =
-                    Executors.newSingleThreadExecutor(
-                            runnable -> {
-                                Thread thread = new Thread(runnable, "Peer Server");
-                                thread.setUncaughtExceptionHandler(
-                                        (exceptionThread, exception) ->
-                                                logger.error("Unable to start peer server", exception));
-                                return thread;
-                            });
-            peerServiceExecutor.execute(() -> start(config.getBindAddress(), config.getPeerPort()));
-        }
-
-        logger.info(
-                "RskJ node started: enode://{}@{}:{}",
-                Hex.toHexString(config.nodeId()),
-                config.getPublicIp(),
-                config.getPeerPort());
-    }
-
-    @Override
-    public void stop() {
-        if (peerServiceExecutor != null) {
-            peerServiceExecutor.shutdown();
-        }
-    }
-
     private void start(InetAddress host, int port) {
         // TODO review listening use
         listening = true;
@@ -129,6 +100,35 @@ public class PeerServerImpl implements PeerServer {
             throw new Error("Server Disconnected");
         } finally {
             workerGroup.shutdownGracefully();
+        }
+    }
+
+    @Override
+    public void start() {
+        if (config.getPeerPort() > 0) {
+            peerServiceExecutor =
+                    Executors.newSingleThreadExecutor(
+                            runnable -> {
+                                Thread thread = new Thread(runnable, "Peer Server");
+                                thread.setUncaughtExceptionHandler(
+                                        (exceptionThread, exception) ->
+                                                logger.error("Unable to start peer server", exception));
+                                return thread;
+                            });
+            peerServiceExecutor.execute(() -> start(config.getBindAddress(), config.getPeerPort()));
+        }
+
+        logger.info(
+                "RskJ node started: enode://{}@{}:{}",
+                Hex.toHexString(config.nodeId()),
+                config.getPublicIp(),
+                config.getPeerPort());
+    }
+
+    @Override
+    public void stop() {
+        if (peerServiceExecutor != null) {
+            peerServiceExecutor.shutdown();
         }
     }
 

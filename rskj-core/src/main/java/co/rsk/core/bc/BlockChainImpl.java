@@ -22,6 +22,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.Profiler.ProfilingType;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.validators.BlockValidator;
@@ -189,7 +190,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private ImportResult internalTryToConnect(Block block) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BEFORE_BLOCK_EXEC);
+        Metric metric = profiler.start(ProfilingType.BEFORE_BLOCK_EXEC);
 
         if (blockStore.getBlockByHash(block.getHash().getBytes()) != null
                 && !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
@@ -216,9 +217,7 @@ public class BlockChainImpl implements Blockchain {
         if (bestBlock == null || bestBlock.isParentOf(block)) {
             parent = bestBlock;
             parentTotalDifficulty = bestTotalDifficulty;
-        }
-        // else, Get parent AND total difficulty
-        else {
+        } else { // else, Get parent AND total difficulty
             logger.trace("get parent and total difficulty");
             parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
@@ -255,7 +254,7 @@ public class BlockChainImpl implements Blockchain {
 
             logger.trace("execute done");
 
-            metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
+            metric = profiler.start(ProfilingType.AFTER_BLOCK_EXEC);
             boolean isValid = noValidation ? true : blockExecutor.validate(block, result);
 
             logger.trace("validate done");
@@ -279,7 +278,7 @@ public class BlockChainImpl implements Blockchain {
             profiler.stop(metric);
         }
 
-        metric = profiler.start(Profiler.PROFILING_TYPE.AFTER_BLOCK_EXEC);
+        metric = profiler.start(ProfilingType.AFTER_BLOCK_EXEC);
         // the new accumulated difficulty
         BlockDifficulty totalDifficulty = parentTotalDifficulty.add(block.getCumulativeDifficulty());
         logger.trace("TD: updated to {}", totalDifficulty);
@@ -322,9 +321,7 @@ public class BlockChainImpl implements Blockchain {
 
             profiler.stop(metric);
             return ImportResult.IMPORTED_BEST;
-        }
-        // It is not the new best block
-        else {
+        } else { // It is not the new best block
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
                 logger.trace(
                         "No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
@@ -515,7 +512,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private boolean isValid(Block block) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_VALIDATION);
+        Metric metric = profiler.start(ProfilingType.BLOCK_VALIDATION);
         boolean validation = blockValidator.isValid(block);
         profiler.stop(metric);
         return validation;

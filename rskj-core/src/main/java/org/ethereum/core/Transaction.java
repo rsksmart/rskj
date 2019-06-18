@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.Profiler.ProfilingType;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
@@ -417,7 +418,7 @@ public class Transaction {
      */
 
     public ECKey getKey() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
+        Metric metric = profiler.start(ProfilingType.KEY_RECOV_FROM_SIG);
         byte[] raw = getRawHash().getBytes();
         // We clear the 4th bit, the compress bit, in case a signature is using compress in true
         ECKey key = ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, raw, true);
@@ -430,7 +431,7 @@ public class Transaction {
             return sender;
         }
 
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
+        Metric metric = profiler.start(ProfilingType.KEY_RECOV_FROM_SIG);
         try {
             ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature());
             sender = new RskAddress(key.getAddress());

@@ -34,10 +34,10 @@ public class ListArrayUtil {
     }
 
     /**
-     * Converts primitive byte[] to List<Byte>
+     * Converts primitive byte[] to List{@literal <}Byte>
      *
      * @param primitiveByteArray The primitive array to convert, cannot be null.
-     * @return The input byte array as a List<Byte>, never null but can be empty.
+     * @return The input byte array as a List{@literal <}Byte>, never null but can be empty.
      */
     public static List<Byte> asByteList(byte[] primitiveByteArray) {
         Byte[] arrayObj = convertTo(primitiveByteArray);

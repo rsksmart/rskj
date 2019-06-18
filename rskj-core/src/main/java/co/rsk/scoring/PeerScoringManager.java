@@ -65,6 +65,21 @@ public class PeerScoringManager {
     }
 
     /**
+     * Calculates the reputation for a peer Starts punishment if needed
+     *
+     * @param scoring the peer scoring
+     * @param calculator the calculator to use
+     */
+    private void recordEvent(PeerScoring scoring, EventType event, PunishmentCalculator calculator) {
+        scoring.recordEvent(event);
+        boolean reputation = scoringCalculator.hasGoodReputation(scoring);
+
+        if (!reputation && scoring.hasGoodReputation()) {
+            scoring.startPunishment(calculator.calculate(scoring.getPunishmentCounter(), scoring.getScore()));
+        }
+    }
+
+    /**
      * Record the event, givent the node id and/or the network address
      *
      * @param id node id or null
@@ -254,21 +269,6 @@ public class PeerScoringManager {
             }
 
             return peerScoringFactory.newInstance();
-        }
-    }
-
-    /**
-     * Calculates the reputation for a peer Starts punishment if needed
-     *
-     * @param scoring the peer scoring
-     * @param calculator the calculator to use
-     */
-    private void recordEvent(PeerScoring scoring, EventType event, PunishmentCalculator calculator) {
-        scoring.recordEvent(event);
-        boolean reputation = scoringCalculator.hasGoodReputation(scoring);
-
-        if (!reputation && scoring.hasGoodReputation()) {
-            scoring.startPunishment(calculator.calculate(scoring.getPunishmentCounter(), scoring.getScore()));
         }
     }
 }

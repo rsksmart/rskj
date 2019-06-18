@@ -28,6 +28,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.Profiler.ProfilingType;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -105,7 +106,7 @@ public class BlockExecutor {
     }
 
     private void fill(Block block, BlockResult result) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.FILLING_EXECUTED_BLOCK);
+        Metric metric = profiler.start(ProfilingType.FILLING_EXECUTED_BLOCK);
         BlockHeader header = block.getHeader();
         block.setTransactionsList(result.getExecutedTransactions());
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, block.getNumber());
@@ -143,7 +144,7 @@ public class BlockExecutor {
      * @return true if the block final state is equalBytes to the calculated final state.
      */
     public boolean validate(Block block, BlockResult result) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_FINAL_STATE_VALIDATION);
+        Metric metric = profiler.start(ProfilingType.BLOCK_FINAL_STATE_VALIDATION);
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             logger.error(
                     "Block {} [{}] execution was interrupted because of an invalid transaction",
@@ -285,7 +286,7 @@ public class BlockExecutor {
         // to conect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+        Metric metric = profiler.start(ProfilingType.BLOCK_EXECUTE);
         Repository initialRepository = repositoryLocator.snapshotAt(parent);
 
         Repository track = initialRepository.startTracking();

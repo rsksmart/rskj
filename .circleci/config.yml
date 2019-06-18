@@ -14,6 +14,7 @@ jobs:
       - run: gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
       - run: ./configure.sh
       - run: ./gradlew --no-daemon dependencies
+      - run: ./gradlew --no-daemon checkstyleMain
       - run: ./gradlew --no-daemon --stacktrace build
       - run:
           name: Run SonarQube analysis

@@ -50,7 +50,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         // Currently set to:
         // Monday, November 13, 2017 9:00:00 PM GMT-03:00
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1510617600l);
+        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1510617600L);
 
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
@@ -90,7 +90,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
         List<ECKey> lockWhitelistAuthorizedKeys =
                 Arrays.stream(
                                 new String[] {
-                                    //
                                     // "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
                                     "0447b4aba974c61c6c4045893267346730ec965b308e7ca04a899cf06a901face3106e1eef1bdad04928cd8263522eda4872d20d3fe1ef5e551785c4a482656a6e"
                                 })

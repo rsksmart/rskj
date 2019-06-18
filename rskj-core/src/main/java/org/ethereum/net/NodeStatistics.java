@@ -90,7 +90,7 @@ public class NodeStatistics {
     public final StatHandler discoverOutFind = new StatHandler();
     public final StatHandler discoverInNeighbours = new StatHandler();
     public final StatHandler discoverOutNeighbours = new StatHandler();
-    public final AtomicLong lastPongReplyTime = new AtomicLong(0l); // in milliseconds
+    public final AtomicLong lastPongReplyTime = new AtomicLong(0L); // in milliseconds
 
     // rlpx stat
     public final StatHandler rlpxConnectionAttempts = new StatHandler();

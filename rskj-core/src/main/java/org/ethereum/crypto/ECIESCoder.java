@@ -104,12 +104,13 @@ public class ECIESCoder {
     }
 
     /**
-     * Encryption equivalent to the Crypto++ default ECIES<ECP> settings:
+     * Encryption equivalent to the Crypto++ default ECIES{@literal <}ECP> settings:
      *
-     * <p>DL_KeyAgreementAlgorithm: DL_KeyAgreementAlgorithm_DH<struct ECPPoint,struct EnumToType<enum
-     * CofactorMultiplicationOption,0> > DL_KeyDerivationAlgorithm: DL_KeyDerivationAlgorithm_P1363<struct
-     * ECPPoint,0,class P1363_KDF2<class SHA1> > DL_SymmetricEncryptionAlgorithm: DL_EncryptionAlgorithm_Xor<class
-     * HMAC<class SHA1>,0> DL_PrivateKey: DL_Key<ECPPoint> DL_PrivateKey_EC<class ECP>
+     * <p>DL_KeyAgreementAlgorithm: DL_KeyAgreementAlgorithm_DH{@literal <}struct ECPPoint,struct
+     * EnumToType{@literal <}enum CofactorMultiplicationOption,0> > DL_KeyDerivationAlgorithm:
+     * DL_KeyDerivationAlgorithm_P1363{@literal <}struct ECPPoint,0,class P1363_KDF2{@literal <}class SHA1> >
+     * DL_SymmetricEncryptionAlgorithm: DL_EncryptionAlgorithm_Xor{@literal <}class
+     * HMAC{@literal <}class SHA1>,0> DL_PrivateKey: DL_Key{@literal <}ECPPoint> DL_PrivateKey_EC{@literal <}class ECP>
      *
      * <p>Used for Whisper V3
      */

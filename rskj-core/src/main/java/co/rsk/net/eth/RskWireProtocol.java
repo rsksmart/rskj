@@ -154,6 +154,8 @@ public class RskWireProtocol extends EthHandler {
                                 this.messageSender.getPeerNodeID());
                         syncStats.addStatus();
                         break;
+                    default:
+                        break;
                 }
 
                 if (this.messageHandler != null) {
