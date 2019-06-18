@@ -32,7 +32,8 @@ import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.Serializers;
 
 public final class VMUtils {
-    private VMUtils() {}
+    private VMUtils() {
+    }
 
     public static void saveProgramTraceFile(Path basePath, String txHash, boolean compress, ProgramTrace trace)
             throws IOException {

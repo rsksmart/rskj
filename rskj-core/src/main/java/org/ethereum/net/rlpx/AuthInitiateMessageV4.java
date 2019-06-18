@@ -42,7 +42,8 @@ public class AuthInitiateMessageV4 {
     byte[] nonce; // 32 bytes
     int version = 4; // 4 bytes
 
-    public AuthInitiateMessageV4() {}
+    public AuthInitiateMessageV4() {
+    }
 
     static AuthInitiateMessageV4 decode(byte[] wire) {
         AuthInitiateMessageV4 message = new AuthInitiateMessageV4();

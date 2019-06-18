@@ -38,7 +38,8 @@ public class Bloom {
 
     private byte[] data = new byte[BLOOM_BYTES];
 
-    public Bloom() {}
+    public Bloom() {
+    }
 
     public Bloom(byte[] data) {
         this.data = data;

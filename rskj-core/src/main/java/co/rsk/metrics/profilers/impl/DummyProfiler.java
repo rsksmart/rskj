@@ -15,5 +15,6 @@ public class DummyProfiler implements Profiler {
     }
 
     @Override
-    public void stop(Metric metric) {}
+    public void stop(Metric metric) {
+    }
 }

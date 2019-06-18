@@ -11,7 +11,8 @@ import javax.annotation.CheckForNull;
  * <p>Created by ajlopez on 15/07/2017.
  */
 public final class InetAddressUtils {
-    private InetAddressUtils() {}
+    private InetAddressUtils() {
+    }
 
     /**
      * Returns <tt>true</tt> if the specified texts represent an address with mask ie "192.168.51.1/16" has a mask

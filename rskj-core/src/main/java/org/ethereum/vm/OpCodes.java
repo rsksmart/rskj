@@ -22,7 +22,8 @@ package org.ethereum.vm;
 /** Created by Sergio on 07/07/2016. */
 public class OpCodes {
 
-    private OpCodes() {}
+    private OpCodes() {
+    }
 
     /** Halts execution (0x00) */
     static final byte OP_STOP = 0x00;

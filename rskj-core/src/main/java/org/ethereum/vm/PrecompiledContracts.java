@@ -173,14 +173,16 @@ public class PrecompiledContracts {
                 Repository repository,
                 BlockStore blockStore,
                 ReceiptStore receiptStore,
-                List<LogInfo> logs) {}
+                List<LogInfo> logs) {
+        }
 
         public abstract byte[] execute(byte[] data);
     }
 
     public static class Identity extends PrecompiledContract {
 
-        public Identity() {}
+        public Identity() {
+        }
 
         @Override
         public long getGasForData(byte[] data) {

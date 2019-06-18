@@ -280,7 +280,8 @@ public class RskWireProtocol extends EthHandler {
 
     /** *********************** Sync Management * *********************** */
     @Override
-    public void onShutdown() {}
+    public void onShutdown() {
+    }
 
     /** *********************** Getters, setters * *********************** */
     @Override

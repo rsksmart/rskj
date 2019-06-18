@@ -38,7 +38,8 @@ public class MessageCodesResolver {
 
     private Map<String, Integer> offsets = new HashMap<>();
 
-    public MessageCodesResolver() {}
+    public MessageCodesResolver() {
+    }
 
     public MessageCodesResolver(List<Capability> caps) {
         init(caps);

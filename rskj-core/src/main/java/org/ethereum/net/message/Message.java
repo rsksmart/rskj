@@ -36,7 +36,8 @@ public abstract class Message {
     protected byte[] encoded;
     protected byte code;
 
-    public Message() {}
+    public Message() {
+    }
 
     public Message(byte[] encoded) {
         this.encoded = encoded;

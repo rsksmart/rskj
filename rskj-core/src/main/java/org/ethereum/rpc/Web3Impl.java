@@ -1017,10 +1017,12 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public void db_putString() {}
+    public void db_putString() {
+    }
 
     @Override
-    public void db_getString() {}
+    public void db_getString() {
+    }
 
     @Override
     public boolean eth_submitWork(String nonce, String header, String mince) {
@@ -1033,10 +1035,12 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public void db_putHex() {}
+    public void db_putHex() {
+    }
 
     @Override
-    public void db_getHex() {}
+    public void db_getHex() {
+    }
 
     private List<Transaction> getTransactionsByJsonBlockId(String id) {
         if ("pending".equalsIgnoreCase(id)) {
