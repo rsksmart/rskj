@@ -30,8 +30,8 @@ import io.netty.channel.ChannelHandlerContext;
 /** This is the base class for RSK supported JSON-RPC requests. */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "method", visible = true)
 @JsonSubTypes({
-    @JsonSubTypes.Type(value = EthSubscribeRequest.class, name = "eth_subscribe"),
-    @JsonSubTypes.Type(value = EthUnsubscribeRequest.class, name = "eth_unsubscribe"),
+        @JsonSubTypes.Type(value = EthSubscribeRequest.class, name = "eth_subscribe"),
+        @JsonSubTypes.Type(value = EthUnsubscribeRequest.class, name = "eth_unsubscribe"),
 })
 public abstract class RskJsonRpcRequest extends JsonRpcRequest<RskJsonRpcMethod> {
     public RskJsonRpcRequest(JsonRpcVersion version, RskJsonRpcMethod method, int id) {

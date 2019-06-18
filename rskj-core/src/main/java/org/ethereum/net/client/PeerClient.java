@@ -59,15 +59,15 @@ public class PeerClient {
 
     private static EventLoopGroup workerGroup =
             new NioEventLoopGroup(
-                    0,
-                    new ThreadFactory() {
-                        AtomicInteger cnt = new AtomicInteger(0);
+                0,
+                new ThreadFactory() {
+                    AtomicInteger cnt = new AtomicInteger(0);
 
-                        @Override
-                        public Thread newThread(Runnable r) {
-                            return new Thread(r, "EthJClientWorker-" + cnt.getAndIncrement());
-                        }
-                    });
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, "EthJClientWorker-" + cnt.getAndIncrement());
+                    }
+                });
 
     public ChannelFuture connectAsync(String host, int port, String remoteId) {
         ethereumListener.trace("Connecting to: " + host + ":" + port);

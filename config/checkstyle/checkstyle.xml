@@ -190,7 +190,7 @@
             <property name="caseIndent" value="4"/>
             <property name="throwsIndent" value="4"/>
             <property name="lineWrappingIndentation" value="8"/>
-            <property name="arrayInitIndent" value="2"/>
+            <property name="arrayInitIndent" value="4"/>
         </module>
         <!--<module name="AbbreviationAsWordInName">
             <property name="ignoreFinal" value="false"/>
@@ -226,7 +226,7 @@
             <property name="tokens" value="VARIABLE_DEF"/>
             <property name="allowSamelineMultipleAnnotations" value="true"/>
         </module>
-        <module name="NonEmptyAtclauseDescription"/>
+        <!--<module name="NonEmptyAtclauseDescription"/>-->
         <module name="JavadocTagContinuationIndentation"/>
         <!--<module name="SummaryJavadoc">
             <property name="forbiddenSummaryFragments"
@@ -262,6 +262,6 @@
         <module name="EmptyCatchBlock">
             <property name="exceptionVariableName" value="expected"/>
         </module>
-        <module name="CommentsIndentation"/>
+        <!--<module name="CommentsIndentation"/>-->
     </module>
 </module>
