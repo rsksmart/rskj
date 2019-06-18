@@ -101,9 +101,7 @@ public class AccountState {
             if (stateFlags != 0) {
                 byte[] astateFlags = RLP.encodeInt(this.stateFlags);
                 this.rlpEncoded = RLP.encodeList(anonce, abalance, astateFlags);
-            } else
-            // do not serialize if zero to keep compatibility
-            {
+            } else { // do not serialize if zero to keep compatibility
                 this.rlpEncoded = RLP.encodeList(anonce, abalance);
             }
         }
