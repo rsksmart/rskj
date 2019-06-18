@@ -266,12 +266,7 @@ artifacts {
 
 checkstyle {
     toolVersion '8.21'
-}
-
-tasks.withType(Checkstyle) {
-    reports {
-        xml.enabled true
-    }
+    sourceSets = [sourceSets.main]
 }
 
 def gitCurrentBranch() {

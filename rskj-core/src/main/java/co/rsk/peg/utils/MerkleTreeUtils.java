@@ -110,6 +110,6 @@ public class MerkleTreeUtils {
             return;
         }
 
-        throw new VerificationException("Supplied nodes form a valid btc transaction Verifying CI is currently working with long line");
+        throw new VerificationException("Supplied nodes form a valid btc transaction.");
     }
 }
