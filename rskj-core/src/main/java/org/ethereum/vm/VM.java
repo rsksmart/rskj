@@ -109,9 +109,8 @@ public class VM {
     }
 
     private void checkSizeArgument(long size) {
-        if (size > Program.MAX_MEMORY)
-        // Force exception
-        {
+        if (size > Program.MAX_MEMORY) {
+            // Force exception
             throw Program.ExceptionHelper.notEnoughOpGas(op, Long.MAX_VALUE, program.getRemainingGas());
         }
     }
@@ -834,9 +833,8 @@ public class VM {
                 sizeToBeCopied = fullCode.length - codeOffset; // copy only the remaining
             }
 
-        } else
-        // Code is longer, so limit by user length value
-        {
+        } else {
+            // Code is longer, so limit by user length value
             sizeToBeCopied = lengthData;
         }
 
@@ -1209,18 +1207,13 @@ public class VM {
             // From null to non-zero
             if (oldValue == null && !newValue.isZero()) {
                 gasCost = GasCost.SET_SSTORE;
-            }
-
-            // from non-zero to zero
-            else if (oldValue != null && newValue.isZero()) {
+            } else if (oldValue != null && newValue.isZero()) { // from non-zero to zero
                 // todo: GASREFUND counter policyn
 
                 // refund step cost policy.
                 program.futureRefundGas(GasCost.REFUND_SSTORE);
                 gasCost = GasCost.CLEAR_SSTORE;
-            } else
-            // from zero to zero, or from non-zero to non-zero
-            {
+            } else { // from zero to zero, or from non-zero to non-zero
                 gasCost = GasCost.RESET_SSTORE;
             }
 

@@ -178,16 +178,8 @@ public class EthereumIESEngine {
 
             kdf.generateBytes(k, 0, k.length);
 
-            //            if (v.length != 0)
-            //            {
-            //                System.arraycopy(K, 0, K2, 0, K2.length);
-            //                System.arraycopy(K, K2.length, K1, 0, K1.length);
-            //            }
-            //            else
-            {
-                System.arraycopy(k, 0, k1, 0, k1.length);
-                System.arraycopy(k, inLen, k2, 0, k2.length);
-            }
+            System.arraycopy(k, 0, k1, 0, k1.length);
+            System.arraycopy(k, inLen, k2, 0, k2.length);
 
             c = new byte[inLen];
 
@@ -279,16 +271,8 @@ public class EthereumIESEngine {
 
             kdf.generateBytes(k, 0, k.length);
 
-            //            if (v.length != 0)
-            //            {
-            //                System.arraycopy(K, 0, K2, 0, K2.length);
-            //                System.arraycopy(K, K2.length, K1, 0, K1.length);
-            //            }
-            //            else
-            {
-                System.arraycopy(k, 0, k1, 0, k1.length);
-                System.arraycopy(k, k1.length, k2, 0, k2.length);
-            }
+            System.arraycopy(k, 0, k1, 0, k1.length);
+            System.arraycopy(k, k1.length, k2, 0, k2.length);
 
             m = new byte[k1.length];
 
@@ -399,16 +383,7 @@ public class EthereumIESEngine {
 
         // Create input to KDF.
         byte[] vz;
-        //        if (v.length != 0)
-        //        {
-        //            VZ = new byte[v.length + Z.length];
-        //            System.arraycopy(v, 0, VZ, 0, v.length);
-        //            System.arraycopy(Z, 0, VZ, v.length, Z.length);
-        //        }
-        //        else
-        {
-            vz = Z;
-        }
+        vz = Z;
 
         // Initialise the KDF.
         DerivationParameters kdfParam;
