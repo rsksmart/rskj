@@ -26,12 +26,11 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.SyncUtils;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.List;
 
 /**
  * Created by ajlopez on 9/3/2017.

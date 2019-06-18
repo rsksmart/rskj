@@ -20,6 +20,7 @@ package co.rsk.validators;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
+import java.math.BigInteger;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -31,8 +32,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
 
 /**
  * Created by sergio on 23/01/17.

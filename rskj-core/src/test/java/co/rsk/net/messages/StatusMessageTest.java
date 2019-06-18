@@ -21,11 +21,10 @@ package co.rsk.net.messages;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
+import java.math.BigInteger;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 5/11/2016.

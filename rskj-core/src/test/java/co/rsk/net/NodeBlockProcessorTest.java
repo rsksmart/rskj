@@ -22,10 +22,20 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.messages.*;
+import co.rsk.net.messages.BlockHeadersResponseMessage;
+import co.rsk.net.messages.BlockMessage;
+import co.rsk.net.messages.BlockResponseMessage;
+import co.rsk.net.messages.BodyResponseMessage;
+import co.rsk.net.messages.GetBlockMessage;
+import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
+import co.rsk.net.messages.SkeletonResponseMessage;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.math.BigInteger;
+import java.net.UnknownHostException;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
@@ -33,10 +43,6 @@ import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.net.UnknownHostException;
-import java.util.List;
 
 /**
  * Created by ajlopez on 5/11/2016.

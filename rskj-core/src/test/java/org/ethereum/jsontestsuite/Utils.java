@@ -19,13 +19,12 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.ethereum.util.ByteUtil;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
+
+import java.math.BigInteger;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 /**
  * @author Roman Mandeleil

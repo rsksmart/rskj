@@ -18,20 +18,19 @@
 
 package co.rsk.asm;
 
+import static org.apache.commons.lang3.ArrayUtils.getLength;
+import static org.apache.commons.lang3.ArrayUtils.isEmpty;
+import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
+
 import co.rsk.lll.asm.CodeBlock;
 import co.rsk.lll.asm.EVMAssemblerHelper;
-import org.ethereum.util.Utils;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.OpCode;
-
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-import static org.apache.commons.lang3.ArrayUtils.getLength;
-import static org.apache.commons.lang3.ArrayUtils.isEmpty;
-import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
+import org.ethereum.util.Utils;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.OpCode;
 
 /**
  * Created by Sergio on 25/10/2016.

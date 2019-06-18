@@ -20,13 +20,12 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.*;
-import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.junit.Ignore;
-import org.junit.Test;
-
+import co.rsk.peg.ABICallElection;
+import co.rsk.peg.ABICallSpec;
+import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.FederationMember;
+import co.rsk.peg.PendingFederation;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -34,6 +33,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class FederationChangeTest extends BridgePerformanceTestCase {

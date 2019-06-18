@@ -18,20 +18,23 @@
 
 package co.rsk.jsontestsuite;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
-import org.ethereum.jsontestsuite.JSONReader;
-import org.ethereum.jsontestsuite.RLPTestCase;
-import org.json.simple.parser.ParseException;
-import org.junit.*;
-import org.junit.runners.MethodSorters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import org.ethereum.jsontestsuite.JSONReader;
+import org.ethereum.jsontestsuite.RLPTestCase;
+import org.json.simple.parser.ParseException;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Angel J Lopez

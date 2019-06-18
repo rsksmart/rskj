@@ -18,23 +18,31 @@
 
 package co.rsk.core.bc;
 
+import static org.ethereum.util.TransactionFactoryHelper.createAccount;
+import static org.ethereum.util.TransactionFactoryHelper.createSampleTransaction;
+import static org.ethereum.util.TransactionFactoryHelper.createSampleTransactionWithData;
+import static org.ethereum.util.TransactionFactoryHelper.createSampleTransactionWithGasPrice;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
-import org.ethereum.core.*;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.util.RskTestContext;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.ethereum.util.TransactionFactoryHelper.*;
 
 /**
  * Created by ajlopez on 08/08/2016.

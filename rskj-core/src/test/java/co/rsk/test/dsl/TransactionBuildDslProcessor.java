@@ -20,10 +20,9 @@ package co.rsk.test.dsl;
 
 import co.rsk.test.World;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 8/16/2016.

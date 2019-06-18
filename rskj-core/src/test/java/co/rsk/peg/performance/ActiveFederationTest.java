@@ -23,18 +23,16 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class ActiveFederationTest extends BridgePerformanceTestCase {

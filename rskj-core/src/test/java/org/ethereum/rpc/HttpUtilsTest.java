@@ -1,6 +1,10 @@
 package org.ethereum.rpc;
 
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMessage;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import org.junit.Assert;
 import org.junit.Test;
 

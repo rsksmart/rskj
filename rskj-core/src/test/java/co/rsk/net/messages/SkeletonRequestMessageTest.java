@@ -19,13 +19,9 @@
 
 package co.rsk.net.messages;
 
-import org.ethereum.crypto.HashUtil;
-import org.junit.Test;
-
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.bouncycastle.util.encoders.Hex.decode;
-import static org.bouncycastle.util.encoders.Hex.toHexString;
+
+import org.junit.Test;
 
 public class SkeletonRequestMessageTest {
 

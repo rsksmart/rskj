@@ -18,17 +18,44 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.primitives.UnsignedBytes;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
@@ -39,21 +66,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ RLP.class, BridgeSerializationUtils.class, RskAddress.class })

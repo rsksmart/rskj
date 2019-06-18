@@ -19,12 +19,11 @@
 
 package org.ethereum.jsontestsuite;
 
+import java.util.List;
+import java.util.Map;
 import org.ethereum.jsontestsuite.model.AccountTck;
 import org.ethereum.jsontestsuite.model.BlockHeaderTck;
 import org.ethereum.jsontestsuite.model.BlockTck;
-
-import java.util.List;
-import java.util.Map;
 
 public class BlockTestCase {
 

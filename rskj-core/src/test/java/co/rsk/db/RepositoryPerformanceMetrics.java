@@ -24,17 +24,16 @@ import co.rsk.helpers.PerformanceTestHelper;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepository;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 public class RepositoryPerformanceMetrics {
     private final TestSystemProperties config = new TestSystemProperties();

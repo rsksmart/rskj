@@ -18,6 +18,8 @@
 
 package co.rsk.db;
 
+import static org.hamcrest.Matchers.is;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -25,6 +27,10 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieHashTest;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.Set;
 import org.ethereum.TestUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -33,13 +39,6 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.Set;
-
-import static org.hamcrest.Matchers.is;
 
 /**
  * Created by ajlopez on 29/03/2017.

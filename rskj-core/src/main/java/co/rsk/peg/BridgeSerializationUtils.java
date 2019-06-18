@@ -18,18 +18,17 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
-import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.util.BigIntegers;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-
-import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,12 +36,27 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.BigIntegers;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 
-/**
- * Created by mario on 20/04/17.
- */
+/** Created by mario on 20/04/17. */
 public class BridgeSerializationUtils {
 
     private static final int FEDERATION_RLP_LIST_SIZE = 3;
@@ -55,8 +69,8 @@ public class BridgeSerializationUtils {
     private static final int FEDERATION_MEMBER_RSK_KEY_INDEX = 1;
     private static final int FEDERATION_MEMBER_MST_KEY_INDEX = 2;
 
-
-    private BridgeSerializationUtils(){}
+    private BridgeSerializationUtils() {
+    }
 
     public static byte[] serializeMap(SortedMap<Keccak256, BtcTransaction> map) {
         int ntxs = map.size();
@@ -72,14 +86,15 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static SortedMap<Keccak256, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
+    public static SortedMap<Keccak256, BtcTransaction> deserializeMap(
+            byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
         SortedMap<Keccak256, BtcTransaction> map = new TreeMap<>();
 
         if (data == null || data.length == 0) {
             return map;
         }
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         int ntxs = rlpList.size() / 2;
 
@@ -122,7 +137,7 @@ public class BridgeSerializationUtils {
             return list;
         }
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         int nutxos = rlpList.size();
 
@@ -156,7 +171,7 @@ public class BridgeSerializationUtils {
             return set;
         }
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         int nhashes = rlpList.size();
 
@@ -194,7 +209,8 @@ public class BridgeSerializationUtils {
 
         // List size must be even - key, value pairs expected in sequence
         if (rlpList.size() % 2 != 0) {
-            throw new RuntimeException("deserializeMapOfHashesToLong: expected an even number of entries, but odd given");
+            throw new RuntimeException(
+                    "deserializeMapOfHashesToLong: expected an even number of entries, but odd given");
         }
 
         int numEntries = rlpList.size() / 2;
@@ -217,37 +233,42 @@ public class BridgeSerializationUtils {
     }
 
     /**
-     * A federation is serialized as a list in the following order:
-     * - creation time
-     * - creation block number
-     * - list of federation members -> [member1, member2, ..., membern], sorted
-     * using the lexicographical order of the public keys of the members
-     * (see FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).
-     * Each federation member is in turn serialized using the provided FederationMemberSerializer.
+     * A federation is serialized as a list in the following order: - creation time - creation block number - list of
+     * federation members -> [member1, member2, ..., membern], sorted using the lexicographical order of the public keys
+     * of the members (see FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR). Each federation member is in turn
+     * serialized using the provided FederationMemberSerializer.
      */
-    private static byte[] serializeFederationWithSerializer(Federation federation, FederationMemberSerializer federationMemberSerializer) {
-        List<byte[]> federationMembers = federation.getMembers().stream()
-                .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
-                .map(member -> RLP.encodeElement(federationMemberSerializer.serialize(member)))
-                .collect(Collectors.toList());
+    private static byte[] serializeFederationWithSerializer(
+            Federation federation, FederationMemberSerializer federationMemberSerializer) {
+        List<byte[]> federationMembers =
+                federation.getMembers().stream()
+                        .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
+                        .map(member -> RLP.encodeElement(federationMemberSerializer.serialize(member)))
+                        .collect(Collectors.toList());
 
         byte[][] rlpElements = new byte[FEDERATION_RLP_LIST_SIZE][];
-        rlpElements[FEDERATION_CREATION_TIME_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli()));
-        rlpElements[FEDERATION_CREATION_BLOCK_NUMBER_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationBlockNumber()));
-        rlpElements[FEDERATION_MEMBERS_INDEX] = RLP.encodeList((byte[][])federationMembers.toArray(new byte[federationMembers.size()][]));
+        rlpElements[FEDERATION_CREATION_TIME_INDEX] =
+                RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli()));
+        rlpElements[FEDERATION_CREATION_BLOCK_NUMBER_INDEX] =
+                RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationBlockNumber()));
+        rlpElements[FEDERATION_MEMBERS_INDEX] =
+                RLP.encodeList((byte[][]) federationMembers.toArray(new byte[federationMembers.size()][]));
         return RLP.encodeList(rlpElements);
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationWithSerializer
     private static Federation deserializeFederationWithDesserializer(
-        byte[] data,
-        NetworkParameters networkParameters,
-        FederationMemberDesserializer federationMemberDesserializer) {
+            byte[] data,
+            NetworkParameters networkParameters,
+            FederationMemberDesserializer federationMemberDesserializer) {
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
-            throw new RuntimeException(String.format("Invalid serialized Federation. Expected %d elements but got %d", FEDERATION_RLP_LIST_SIZE, rlpList.size()));
+            throw new RuntimeException(
+                    String.format(
+                            "Invalid serialized Federation. Expected %d elements but got %d",
+                            FEDERATION_RLP_LIST_SIZE, rlpList.size()));
         }
 
         byte[] creationTimeBytes = rlpList.get(FEDERATION_CREATION_TIME_INDEX).getRLPData();
@@ -256,67 +277,70 @@ public class BridgeSerializationUtils {
         byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
         long creationBlockNumber = BigIntegers.fromUnsignedByteArray(creationBlockNumberBytes).longValue();
 
-        List<FederationMember> federationMembers = ((RLPList) rlpList.get(FEDERATION_MEMBERS_INDEX)).stream()
-                .map(memberBytes -> federationMemberDesserializer.deserialize(memberBytes.getRLPData()))
-                .collect(Collectors.toList());
+        List<FederationMember> federationMembers =
+                ((RLPList) rlpList.get(FEDERATION_MEMBERS_INDEX))
+                        .stream()
+                                .map(memberBytes -> federationMemberDesserializer.deserialize(memberBytes.getRLPData()))
+                                .collect(Collectors.toList());
 
         return new Federation(federationMembers, creationTime, creationBlockNumber, networkParameters);
     }
 
     /**
-     * For the federation serialization format, see serializeFederationWithSerializer.
-     * For compatibility with blocks before the Wasabi network upgrade,
-     * each federation member is serialized only as its compressed BTC public key.
+     * For the federation serialization format, see serializeFederationWithSerializer. For compatibility with blocks
+     * before the Wasabi network upgrade, each federation member is serialized only as its compressed BTC public key.
      */
     public static byte[] serializeFederationOnlyBtcKeys(Federation federation) {
-        return serializeFederationWithSerializer(federation,
-                federationMember -> federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true));
+        return serializeFederationWithSerializer(
+                federation, federationMember -> federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true));
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationOnlyBtcKeys
     public static Federation deserializeFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
-        return deserializeFederationWithDesserializer(data, networkParameters,
+        return deserializeFederationWithDesserializer(
+                data,
+                networkParameters,
                 (pubKeyBytes -> FederationMember.getFederationMemberFromKey(BtcECKey.fromPublicOnly(pubKeyBytes))));
     }
 
     /**
-     * For the federation serialization format, see serializeFederationWithSerializer.
-     * For the federation member serialization format, see serializeFederationMember.
+     * For the federation serialization format, see serializeFederationWithSerializer. For the federation member
+     * serialization format, see serializeFederationMember.
      */
     public static byte[] serializeFederation(Federation federation) {
-        return serializeFederationWithSerializer(federation,
-                BridgeSerializationUtils::serializeFederationMember);
+        return serializeFederationWithSerializer(federation, BridgeSerializationUtils::serializeFederationMember);
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederation
     public static Federation deserializeFederation(byte[] data, NetworkParameters networkParameters) {
-        return deserializeFederationWithDesserializer(data, networkParameters,
-                BridgeSerializationUtils::deserializeFederationMember);
+        return deserializeFederationWithDesserializer(
+                data, networkParameters, BridgeSerializationUtils::deserializeFederationMember);
     }
 
     /**
-     * A FederationMember is serialized as a list in the following order:
-     * - BTC public key
-     * - RSK public key
-     * - MST public key
-     * All keys are stored in their COMPRESSED versions.
+     * A FederationMember is serialized as a list in the following order: - BTC public key - RSK public key - MST public
+     * key All keys are stored in their COMPRESSED versions.
      */
     public static byte[] serializeFederationMember(FederationMember federationMember) {
         byte[][] rlpElements = new byte[FEDERATION_MEMBER_LIST_SIZE][];
-        rlpElements[FEDERATION_MEMBER_BTC_KEY_INDEX] = RLP.encodeElement(
-                federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true)
-        );
-        rlpElements[FEDERATION_MEMBER_RSK_KEY_INDEX] = RLP.encodeElement(federationMember.getRskPublicKey().getPubKey(true));
-        rlpElements[FEDERATION_MEMBER_MST_KEY_INDEX] = RLP.encodeElement(federationMember.getMstPublicKey().getPubKey(true));
+        rlpElements[FEDERATION_MEMBER_BTC_KEY_INDEX] =
+                RLP.encodeElement(federationMember.getBtcPublicKey().getPubKeyPoint().getEncoded(true));
+        rlpElements[FEDERATION_MEMBER_RSK_KEY_INDEX] =
+                RLP.encodeElement(federationMember.getRskPublicKey().getPubKey(true));
+        rlpElements[FEDERATION_MEMBER_MST_KEY_INDEX] =
+                RLP.encodeElement(federationMember.getMstPublicKey().getPubKey(true));
         return RLP.encodeList(rlpElements);
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationMember
     private static FederationMember deserializeFederationMember(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
-            throw new RuntimeException(String.format("Invalid serialized FederationMember. Expected %d elements but got %d", FEDERATION_MEMBER_LIST_SIZE, rlpList.size()));
+            throw new RuntimeException(
+                    String.format(
+                            "Invalid serialized FederationMember. Expected %d elements but got %d",
+                            FEDERATION_MEMBER_LIST_SIZE, rlpList.size()));
         }
 
         BtcECKey btcKey = BtcECKey.fromPublicOnly(rlpList.get(FEDERATION_MEMBER_BTC_KEY_INDEX).getRLPData());
@@ -327,11 +351,8 @@ public class BridgeSerializationUtils {
     }
 
     /**
-     * A pending federation is serialized as the
-     * public keys conforming it.
-     * This is a legacy format for blocks before the Wasabi
-     * network upgrade.
-     * See BridgeSerializationUtils::serializeBtcPublicKeys
+     * A pending federation is serialized as the public keys conforming it. This is a legacy format for blocks before
+     * the Wasabi network upgrade. See BridgeSerializationUtils::serializeBtcPublicKeys
      */
     public static byte[] serializePendingFederationOnlyBtcKeys(PendingFederation pendingFederation) {
         return serializeBtcPublicKeys(pendingFederation.getBtcPublicKeys());
@@ -341,33 +362,35 @@ public class BridgeSerializationUtils {
     // and serializePublicKeys::deserializeBtcPublicKeys
     public static PendingFederation deserializePendingFederationOnlyBtcKeys(byte[] data) {
         // BTC, RSK and MST keys are the same
-        List<FederationMember> members = deserializeBtcPublicKeys(data).stream().map(pk ->
-            FederationMember.getFederationMemberFromKey(pk)
-        ).collect(Collectors.toList());
+        List<FederationMember> members =
+                deserializeBtcPublicKeys(data).stream()
+                        .map(pk -> FederationMember.getFederationMemberFromKey(pk))
+                        .collect(Collectors.toList());
 
         return new PendingFederation(members);
     }
 
     /**
-     * A pending federation is serialized as the
-     * list of its sorted members serialized.
-     * For the member serialization format, see BridgeSerializationUtils::serializeFederationMember
+     * A pending federation is serialized as the list of its sorted members serialized. For the member serialization
+     * format, see BridgeSerializationUtils::serializeFederationMember
      */
     public static byte[] serializePendingFederation(PendingFederation pendingFederation) {
-        List<byte[]> encodedMembers = pendingFederation.getMembers().stream()
-                .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
-                .map(BridgeSerializationUtils::serializeFederationMember)
-                .collect(Collectors.toList());
+        List<byte[]> encodedMembers =
+                pendingFederation.getMembers().stream()
+                        .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
+                        .map(BridgeSerializationUtils::serializeFederationMember)
+                        .collect(Collectors.toList());
         return RLP.encodeList(encodedMembers.toArray(new byte[0][]));
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePendingFederation
     public static PendingFederation deserializePendingFederation(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
-        List<FederationMember> members = rlpList.stream()
-                .map(memberBytes -> deserializeFederationMember(memberBytes.getRLPData()))
-                .collect(Collectors.toList());
+        List<FederationMember> members =
+                rlpList.stream()
+                        .map(memberBytes -> deserializeFederationMember(memberBytes.getRLPData()))
+                        .collect(Collectors.toList());
 
         return new PendingFederation(members);
     }
@@ -419,7 +442,9 @@ public class BridgeSerializationUtils {
 
     /**
      * Serializes the data stored in the Tuple.
-     * @param data data MUST be composed of a list of {@link co.rsk.peg.whitelist.OneOffWhiteListEntry} and the value of disableBlockHeight obtained from {@link co.rsk.peg.whitelist.LockWhitelist}
+     *
+     * @param data data MUST be composed of a list of {@link co.rsk.peg.whitelist.OneOffWhiteListEntry} and the value of
+     *     disableBlockHeight obtained from {@link co.rsk.peg.whitelist.LockWhitelist}
      * @return the serialized data
      */
     public static byte[] serializeOneOffLockWhitelist(Pair<List<OneOffWhiteListEntry>, Integer> data) {
@@ -430,7 +455,8 @@ public class BridgeSerializationUtils {
         for (int i = 0; i < entries.size(); i++) {
             OneOffWhiteListEntry entry = entries.get(i);
             serializedLockWhitelist[2 * i] = RLP.encodeElement(entry.address().getHash160());
-            serializedLockWhitelist[2 * i + 1] = RLP.encodeBigInteger(BigInteger.valueOf(entry.maxTransferValue().longValue()));
+            serializedLockWhitelist[2 * i + 1] =
+                    RLP.encodeBigInteger(BigInteger.valueOf(entry.maxTransferValue().longValue()));
         }
         serializedLockWhitelist[serializationSize - 1] = RLP.encodeBigInteger(BigInteger.valueOf(disableBlockHeight));
         return RLP.encodeList(serializedLockWhitelist);
@@ -438,6 +464,7 @@ public class BridgeSerializationUtils {
 
     /**
      * Serializes the provided list of {@link co.rsk.peg.whitelist.UnlimitedWhiteListEntry}
+     *
      * @param entries
      * @return the serialized data
      */
@@ -450,11 +477,12 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(serializedLockWhitelist);
     }
 
-    public static Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializeOneOffLockWhitelistAndDisableBlockHeight(byte[] data, NetworkParameters parameters) {
+    public static Pair<HashMap<Address, OneOffWhiteListEntry>, Integer>
+            deserializeOneOffLockWhitelistAndDisableBlockHeight(byte[] data, NetworkParameters parameters) {
         if (data == null || data.length == 0) {
             return null;
         }
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
         int serializedAddressesSize = rlpList.size() - 1;
 
         // serialized addresses size must be even - key, value pairs expected in sequence
@@ -467,18 +495,22 @@ public class BridgeSerializationUtils {
             byte[] hash160 = rlpList.get(i).getRLPData();
             byte[] maxTransferValueData = rlpList.get(i + 1).getRLPData();
             Address address = new Address(parameters, hash160);
-            entries.put(address, new OneOffWhiteListEntry(address, Coin.valueOf(safeToBigInteger(maxTransferValueData).longValueExact())));
+            entries.put(
+                    address,
+                    new OneOffWhiteListEntry(
+                            address, Coin.valueOf(safeToBigInteger(maxTransferValueData).longValueExact())));
         }
         int disableBlockHeight = safeToBigInteger(rlpList.get(serializedAddressesSize).getRLPData()).intValueExact();
         return Pair.of(entries, disableBlockHeight);
     }
 
-    public static Map<Address, UnlimitedWhiteListEntry> deserializeUnlimitedLockWhitelistEntries(byte[] data, NetworkParameters parameters) {
+    public static Map<Address, UnlimitedWhiteListEntry> deserializeUnlimitedLockWhitelistEntries(
+            byte[] data, NetworkParameters parameters) {
         if (data == null) {
             return new HashMap<>();
         }
 
-        RLPList unlimitedWhitelistEntriesRlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList unlimitedWhitelistEntriesRlpList = (RLPList) RLP.decode2(data).get(0);
         int unlimitedWhitelistEntriesSerializedAddressesSize = unlimitedWhitelistEntriesRlpList.size();
 
         Map<Address, UnlimitedWhiteListEntry> entries = new HashMap<>(unlimitedWhitelistEntriesSerializedAddressesSize);
@@ -537,11 +569,14 @@ public class BridgeSerializationUtils {
             return new ReleaseRequestQueue(entries);
         }
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         // Must have an even number of items
         if (rlpList.size() % 2 != 0) {
-            throw new RuntimeException(String.format("Invalid serialized ReleaseRequestQueue. Expected an even number of elements, but got %d", rlpList.size()));
+            throw new RuntimeException(
+                    String.format(
+                            "Invalid serialized ReleaseRequestQueue. Expected an even number of elements, but got %d",
+                            rlpList.size()));
         }
 
         int n = rlpList.size() / 2;
@@ -581,25 +616,29 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeReleaseTransactionSet
-    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
+    public static ReleaseTransactionSet deserializeReleaseTransactionSet(
+            byte[] data, NetworkParameters networkParameters) {
         Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
 
         if (data == null || data.length == 0) {
             return new ReleaseTransactionSet(entries);
         }
 
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         // Must have an even number of items
         if (rlpList.size() % 2 != 0) {
-            throw new RuntimeException(String.format("Invalid serialized ReleaseTransactionSet. Expected an even number of elements, but got %d", rlpList.size()));
+            throw new RuntimeException(
+                    String.format(
+                            "Invalid serialized ReleaseTransactionSet. Expected an even number of elements, but got %d",
+                            rlpList.size()));
         }
 
         int n = rlpList.size() / 2;
 
         for (int k = 0; k < n; k++) {
             byte[] txPayload = rlpList.get(k * 2).getRLPData();
-            BtcTransaction tx =  new BtcTransaction(networkParameters, txPayload);
+            BtcTransaction tx = new BtcTransaction(networkParameters, txPayload);
 
             Long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
@@ -621,25 +660,25 @@ public class BridgeSerializationUtils {
     // function name encoded in UTF-8
     // arg_1, ..., arg_n
     private static byte[] serializeABICallSpec(ABICallSpec spec) {
-        byte[][] encodedArguments = Arrays.stream(spec.getArguments())
-                .map(arg -> RLP.encodeElement(arg))
-                .toArray(byte[][]::new);
+        byte[][] encodedArguments =
+                Arrays.stream(spec.getArguments()).map(arg -> RLP.encodeElement(arg)).toArray(byte[][]::new);
         return RLP.encodeList(
                 RLP.encodeElement(spec.getFunction().getBytes(StandardCharsets.UTF_8)),
-                RLP.encodeList(encodedArguments)
-        );
+                RLP.encodeList(encodedArguments));
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeABICallSpec
     private static ABICallSpec deserializeABICallSpec(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         if (rlpList.size() != 2) {
-            throw new RuntimeException(String.format("Invalid serialized ABICallSpec. Expected 2 elements, but got %d", rlpList.size()));
+            throw new RuntimeException(
+                    String.format("Invalid serialized ABICallSpec. Expected 2 elements, but got %d", rlpList.size()));
         }
 
         String function = new String(rlpList.get(0).getRLPData(), StandardCharsets.UTF_8);
-        byte[][] arguments = ((RLPList)rlpList.get(1)).stream().map(rlpElement -> rlpElement.getRLPData()).toArray(byte[][]::new);
+        byte[][] arguments =
+                ((RLPList) rlpList.get(1)).stream().map(rlpElement -> rlpElement.getRLPData()).toArray(byte[][]::new);
 
         return new ABICallSpec(function, arguments);
     }
@@ -649,16 +688,17 @@ public class BridgeSerializationUtils {
     // using the lexicographical order of the public keys
     // (see BtcECKey.PUBKEY_COMPARATOR).
     private static byte[] serializeBtcPublicKeys(List<BtcECKey> keys) {
-        List<byte[]> encodedKeys = keys.stream()
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(key -> RLP.encodeElement(key.getPubKey()))
-                .collect(Collectors.toList());
+        List<byte[]> encodedKeys =
+                keys.stream()
+                        .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                        .map(key -> RLP.encodeElement(key.getPubKey()))
+                        .collect(Collectors.toList());
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePublicKeys
     private static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         return rlpList.stream()
                 .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
@@ -669,16 +709,17 @@ public class BridgeSerializationUtils {
     // [voterBytes1, voterBytes2, ..., voterBytesn], sorted
     // using the lexicographical order of the voters' unsigned bytes
     private static byte[] serializeVoters(List<RskAddress> voters) {
-        List<byte[]> encodedKeys = voters.stream()
-                .sorted(RskAddress.LEXICOGRAPHICAL_COMPARATOR)
-                .map(key -> RLP.encodeElement(key.getBytes()))
-                .collect(Collectors.toList());
+        List<byte[]> encodedKeys =
+                voters.stream()
+                        .sorted(RskAddress.LEXICOGRAPHICAL_COMPARATOR)
+                        .map(key -> RLP.encodeElement(key.getBytes()))
+                        .collect(Collectors.toList());
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeVoters
     private static List<RskAddress> deserializeVoters(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         return rlpList.stream()
                 .map(pubKeyBytes -> new RskAddress(pubKeyBytes.getRLPData()))

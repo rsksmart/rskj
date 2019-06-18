@@ -18,6 +18,8 @@
 
 package co.rsk.rpc.modules.eth;
 
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
+
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
@@ -27,6 +29,8 @@ import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import java.io.IOException;
+import java.util.Map;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -41,14 +45,8 @@ import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Map;
-
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
-
 // TODO add all RPC methods
-public class EthModule
-    implements EthModuleSolidity, EthModuleWallet, EthModuleTransaction {
+public class EthModule implements EthModuleSolidity, EthModuleWallet, EthModuleTransaction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
@@ -95,14 +93,17 @@ public class EthModule
         Block bestBlock = blockchain.getBestBlock();
         Repository repository = repositoryLocator.snapshotAt(bestBlock.getHeader()).startTracking();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(
-                bridgeConstants,
-                new BridgeStorageConfiguration(
-                        activationConfig.isActive(ConsensusRule.RSKIP87, bestBlock.getNumber()),
-                        activationConfig.isActive(ConsensusRule.RSKIP123, bestBlock.getNumber())
-                ),
-                null, repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR,
-                btcBlockStoreFactory);
+        BridgeSupport bridgeSupport =
+                new BridgeSupport(
+                        bridgeConstants,
+                        new BridgeStorageConfiguration(
+                                activationConfig.isActive(ConsensusRule.RSKIP87, bestBlock.getNumber()),
+                                activationConfig.isActive(ConsensusRule.RSKIP123, bestBlock.getNumber())),
+                        null,
+                        repository,
+                        bestBlock,
+                        PrecompiledContracts.BRIDGE_ADDR,
+                        btcBlockStoreFactory);
 
         byte[] result = bridgeSupport.getStateForDebugging();
 
@@ -166,7 +167,6 @@ public class EthModule
                 hexArgs.getToAddress(),
                 hexArgs.getValue(),
                 hexArgs.getData(),
-                hexArgs.getFromAddress()
-        );
+                hexArgs.getFromAddress());
     }
 }

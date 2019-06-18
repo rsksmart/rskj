@@ -19,18 +19,17 @@
 
 package co.rsk.pcc.bto;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
-
-import static org.mockito.Mockito.mock;
 
 public class ToBase58CheckTest {
     private ToBase58Check method;

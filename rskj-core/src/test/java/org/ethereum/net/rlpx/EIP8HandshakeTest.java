@@ -19,14 +19,15 @@
 
 package org.ethereum.net.rlpx;
 
+import static org.bouncycastle.util.encoders.Hex.decode;
+import static org.ethereum.crypto.ECKey.fromPrivate;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.ethereum.crypto.ECKey;
 import org.junit.Before;
 import org.junit.Test;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-
-import static org.ethereum.crypto.ECKey.fromPrivate;
-import static org.junit.Assert.*;
-import static org.bouncycastle.util.encoders.Hex.decode;
 
 /**
  * @author Mikhail Kalinin

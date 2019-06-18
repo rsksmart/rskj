@@ -19,7 +19,6 @@
 package co.rsk.net.discovery;
 
 import io.netty.channel.Channel;
-
 import java.util.ArrayList;
 import java.util.List;
 

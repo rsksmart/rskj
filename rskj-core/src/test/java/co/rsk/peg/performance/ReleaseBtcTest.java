@@ -24,14 +24,13 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
+import java.io.IOException;
+import java.math.BigInteger;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
 
 @Ignore
 public class ReleaseBtcTest extends BridgePerformanceTestCase {

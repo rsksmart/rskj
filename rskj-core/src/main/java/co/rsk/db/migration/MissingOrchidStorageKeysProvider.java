@@ -91,7 +91,7 @@ public class MissingOrchidStorageKeysProvider {
             throw new IllegalStateException(
                     String.format(
                             "You have downloaded an inconsistent database. %s doesn't match expected keccak256 hash"
-                                + " (%s)",
+                                    + " (%s)",
                             Hex.toHexString(storageKey), Hex.toHexString(storageKeyHash.getBytes())));
         }
         return storageKey != null ? DataWord.valueOf(storageKey) : null;

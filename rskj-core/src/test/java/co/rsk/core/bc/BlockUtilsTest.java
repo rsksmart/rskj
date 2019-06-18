@@ -23,17 +23,16 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockStore;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Created by ajlopez on 19/08/2016.

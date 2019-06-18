@@ -1649,7 +1649,7 @@ public class VM {
         // Execute operation
         ActivationConfig.ForBlock activations = program.getActivations();
         switch (op.val()) {
-            /** Stop and Arithmetic Operations */
+                /** Stop and Arithmetic Operations */
             case OpCodes.OP_STOP:
                 doSTOP();
                 break;
@@ -1701,7 +1701,7 @@ public class VM {
             case OpCodes.OP_ISZERO:
                 doISZERO();
                 break;
-            /** Bitwise Logic Operations */
+                /** Bitwise Logic Operations */
             case OpCodes.OP_AND:
                 doAND();
                 break;
@@ -1738,12 +1738,12 @@ public class VM {
                 }
                 doSAR();
                 break;
-            /** SHA3 */
+                /** SHA3 */
             case OpCodes.OP_SHA_3:
                 doSHA3();
                 break;
 
-            /** Environmental Information */
+                /** Environmental Information */
             case OpCodes.OP_ADDRESS:
                 doADDRESS();
                 break;
@@ -1786,7 +1786,7 @@ public class VM {
                 doGASPRICE();
                 break;
 
-            /** Block Information */
+                /** Block Information */
             case OpCodes.OP_BLOCKHASH:
                 doBLOCKHASH();
                 break;
@@ -2122,7 +2122,7 @@ public class VM {
             }
             String addressString = Hex.toHexString(program.getOwnerAddress().getLast20Bytes());
             String pcString = Hex.toHexString(DataWord.valueOf(program.getPC()).getNoLeadZeroesData());
-            String opString = Hex.toHexString(new byte[]{op.val()});
+            String opString = Hex.toHexString(new byte[] {op.val()});
             String gasString = Long.toHexString(program.getRemainingGas());
 
             dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);

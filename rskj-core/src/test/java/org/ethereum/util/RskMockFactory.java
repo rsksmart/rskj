@@ -1,11 +1,13 @@
 package org.ethereum.util;
 
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.net.NodeID;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.net.server.ChannelManager;
-
-import static org.mockito.Mockito.*;
 
 public class RskMockFactory {
 

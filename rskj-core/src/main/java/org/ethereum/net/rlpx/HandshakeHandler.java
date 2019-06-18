@@ -254,7 +254,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                     } catch (InvalidCipherTextException ce) {
                         loggerNet.warn(
                                 "Can't decrypt AuthInitiateMessage from {}. Most likely the remote peer used wrong"
-                                    + " public key (NodeID) to encrypt message.",
+                                        + " public key (NodeID) to encrypt message.",
                                 ctx.channel().remoteAddress());
                         return;
                     }

@@ -20,6 +20,10 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -28,11 +32,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 /**
  * Created by ajlopez on 09/08/2016.

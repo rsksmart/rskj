@@ -19,11 +19,26 @@
 
 package org.ethereum.crypto;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SignatureException;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey.ECDSASignature;
@@ -33,17 +48,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SignatureException;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.junit.Assert.*;
 
 public class ECKeyTest {
     private static final Logger log = LoggerFactory.getLogger(ECKeyTest.class);

@@ -19,9 +19,9 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.json.simple.JSONObject;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.json.simple.JSONObject;
 
 /**
  * @author Roman Mandeleil

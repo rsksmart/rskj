@@ -18,8 +18,13 @@
 
 package co.rsk.remasc;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -29,12 +34,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 /**
  * @author martin.medina

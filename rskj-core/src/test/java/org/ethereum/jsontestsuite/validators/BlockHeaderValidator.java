@@ -19,12 +19,11 @@
 
 package org.ethereum.jsontestsuite.validators;
 
-import org.ethereum.core.BlockHeader;
+import static org.ethereum.util.ByteUtil.toHexString;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-
-import static org.ethereum.util.ByteUtil.toHexString;
+import org.ethereum.core.BlockHeader;
 
 public class BlockHeaderValidator {
 

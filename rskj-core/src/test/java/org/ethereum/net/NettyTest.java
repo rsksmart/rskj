@@ -28,10 +28,9 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToMessageCodec;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.List;
 
 /**
  * Created by Anton Nashatyrev on 16.10.2015.

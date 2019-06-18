@@ -19,12 +19,11 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.crypto.Keccak256;
+import java.math.BigInteger;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
 
 public class TxValidatorGasLimitValidatorTest {
     @Test

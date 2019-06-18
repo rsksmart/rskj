@@ -19,10 +19,13 @@
 
 package org.ethereum.jsontestsuite.builder;
 
+import static org.ethereum.json.Utils.parseByte;
+import static org.ethereum.json.Utils.parseData;
+import static org.ethereum.json.Utils.parseNumericData;
+import static org.ethereum.json.Utils.parseVarData;
+
 import org.ethereum.core.Transaction;
 import org.ethereum.jsontestsuite.model.TransactionTck;
-
-import static org.ethereum.json.Utils.*;
 
 public class TransactionBuilder {
 

@@ -18,6 +18,10 @@
 
 package co.rsk.remasc;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
@@ -34,10 +38,24 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
@@ -46,14 +64,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by usuario on 13/04/2017.

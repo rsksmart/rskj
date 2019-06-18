@@ -19,14 +19,12 @@
 
 package org.ethereum.core;
 
-import co.rsk.core.Coin;
-import org.junit.Test;
-
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-
 import static org.junit.Assert.assertEquals;
+
+import co.rsk.core.Coin;
+import java.math.BigInteger;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Test;
 
 public class AccountStateTest {
 

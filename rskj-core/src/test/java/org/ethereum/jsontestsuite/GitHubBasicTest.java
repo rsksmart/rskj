@@ -19,8 +19,11 @@
 
 package org.ethereum.jsontestsuite;
 
+import static org.junit.Assert.assertEquals;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import java.io.IOException;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.json.simple.parser.ParseException;
@@ -30,10 +33,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author Mikhail Kalinin

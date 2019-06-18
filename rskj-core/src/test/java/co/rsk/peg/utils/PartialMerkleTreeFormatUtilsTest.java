@@ -1,15 +1,10 @@
 package co.rsk.peg.utils;
 
+import static org.hamcrest.Matchers.is;
+
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
 
 public class PartialMerkleTreeFormatUtilsTest {
 

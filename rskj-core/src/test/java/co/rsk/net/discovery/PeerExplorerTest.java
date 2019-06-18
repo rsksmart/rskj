@@ -18,21 +18,27 @@
 
 package co.rsk.net.discovery;
 
-import co.rsk.net.discovery.message.*;
+import co.rsk.net.discovery.message.DiscoveryMessageType;
+import co.rsk.net.discovery.message.FindNodePeerMessage;
+import co.rsk.net.discovery.message.NeighborsPeerMessage;
+import co.rsk.net.discovery.message.PingPeerMessage;
+import co.rsk.net.discovery.message.PongPeerMessage;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.net.InetSocketAddress;
-import java.util.*;
 
 /**
  * Created by mario on 15/02/17.

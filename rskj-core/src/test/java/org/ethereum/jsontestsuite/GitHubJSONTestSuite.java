@@ -19,6 +19,13 @@
 
 package org.ethereum.jsontestsuite;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -28,9 +35,6 @@ import org.junit.Assume;
 import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.*;
 
 /**
  * Test file specific for tests maintained in the GitHub repository

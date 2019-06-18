@@ -40,8 +40,17 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -49,10 +58,6 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by ajlopez on 30/11/2016.

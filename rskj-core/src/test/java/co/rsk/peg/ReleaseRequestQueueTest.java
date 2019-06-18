@@ -22,13 +22,12 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ReleaseRequestQueueTest {
     private List<ReleaseRequestQueue.Entry> queueEntries;

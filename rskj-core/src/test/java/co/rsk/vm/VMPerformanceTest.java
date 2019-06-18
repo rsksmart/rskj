@@ -18,9 +18,23 @@
 
 package co.rsk.vm;
 
+import static org.ethereum.TestUtils.padLeft;
+import static org.ethereum.TestUtils.padRight;
+import static org.junit.Assert.assertEquals;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.helpers.PerformanceTestConstants;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -35,21 +49,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.lang.ref.WeakReference;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-
-import static org.ethereum.TestUtils.padLeft;
-import static org.ethereum.TestUtils.padRight;
-import static org.junit.Assert.assertEquals;
 
 // Remove junit imports for standalone use
 

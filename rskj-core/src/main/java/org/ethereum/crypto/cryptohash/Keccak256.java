@@ -22,8 +22,7 @@
 package org.ethereum.crypto.cryptohash;
 
 /**
- * <p>This class implements the Keccak-256 digest algorithm under the
- * {@link org.ethereum.crypto.cryptohash.Digest} API.</p>
+ * This class implements the Keccak-256 digest algorithm under the {@link org.ethereum.crypto.cryptohash.Digest} API.
  *
  * <pre>
  * ==========================(LICENSE BEGIN)============================
@@ -52,28 +51,22 @@ package org.ethereum.crypto.cryptohash;
  * ===========================(LICENSE END)=============================
  * </pre>
  *
- * @version   $Revision: 189 $
- * @author    Thomas Pornin &lt;thomas.pornin@cryptolog.com&gt;
+ * @version $Revision: 189 $
+ * @author Thomas Pornin &lt;thomas.pornin@cryptolog.com&gt;
  */
-
 public class Keccak256 extends KeccakCore {
 
-	/**
-	 * Create the engine.
-	 */
-	public Keccak256()
-	{
-	}
+    /** Create the engine. */
+    public Keccak256() {
+    }
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
-	public Digest copy()
-	{
-		return copyState(new Keccak256());
-	}
+    /** @see org.ethereum.crypto.cryptohash.Digest */
+    public Digest copy() {
+        return copyState(new Keccak256());
+    }
 
-	/** @see org.ethereum.crypto.cryptohash.Digest */
-	public int getDigestLength()
-	{
-		return 32;
-	}
+    /** @see org.ethereum.crypto.cryptohash.Digest */
+    public int getDigestLength() {
+        return 32;
+    }
 }

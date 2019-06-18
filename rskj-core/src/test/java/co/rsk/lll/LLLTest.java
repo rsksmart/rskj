@@ -21,14 +21,13 @@ package co.rsk.lll;
 import co.rsk.asm.EVMDissasembler;
 import co.rsk.lll.asm.CodeBlock;
 import co.rsk.lll.asm.EVMAssemblerHelper;
-import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Test;
 
 /**
  * Created by Sergio on 24/10/2016.

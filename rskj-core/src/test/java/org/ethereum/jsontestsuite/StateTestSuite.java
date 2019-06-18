@@ -19,14 +19,13 @@
 
 package org.ethereum.jsontestsuite;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StateTestSuite {
 

@@ -18,13 +18,13 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueFactory;
 import org.junit.Test;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
 public class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",

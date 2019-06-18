@@ -27,12 +27,14 @@ import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.BenchmarkedRepository;
 import co.rsk.mine.MinerUtils;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import co.rsk.test.World;
 import co.rsk.util.DifficultyUtils;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.LinkedList;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -41,10 +43,6 @@ import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.LinkedList;
 
 @Ignore
 public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerformanceTestCase {

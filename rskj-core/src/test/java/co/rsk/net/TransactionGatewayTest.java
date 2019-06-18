@@ -18,6 +18,14 @@
 
 package co.rsk.net;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
@@ -28,12 +36,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
-import static org.mockito.Mockito.*;
 
 public class TransactionGatewayTest {
     private ChannelManager channelManager;

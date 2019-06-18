@@ -19,13 +19,12 @@
 
 package org.ethereum.jsontestsuite;
 
+import java.math.BigInteger;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECIESCoder;
 import org.ethereum.crypto.ECKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
 
 /**
  * @author Roman Mandeleil

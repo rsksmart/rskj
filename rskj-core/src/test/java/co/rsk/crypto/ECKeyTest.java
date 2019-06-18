@@ -18,14 +18,10 @@
 
 package co.rsk.crypto;
 
-import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Base64;
-import java.security.SignatureException;
-import static org.junit.Assert.*;
 
 public class ECKeyTest {
     private String exampleMessage = new String("This is an example of a signed message.");

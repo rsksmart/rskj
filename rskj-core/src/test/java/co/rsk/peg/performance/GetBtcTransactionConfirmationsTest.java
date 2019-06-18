@@ -1,27 +1,47 @@
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcBlockChain;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.core.Utils;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.*;
+import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.BridgeSupport;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.reflect.Whitebox;
-
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 @Ignore
 public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {

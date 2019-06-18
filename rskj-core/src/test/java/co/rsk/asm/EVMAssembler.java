@@ -18,16 +18,14 @@
 
 package co.rsk.asm;
 
+import static org.ethereum.vm.OpCode.PUSH1;
+
 import co.rsk.lll.asm.CodeBlock;
 import co.rsk.lll.asm.EVMAssemblerHelper;
-import org.ethereum.vm.OpCode;
-
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.StringTokenizer;
-
-import static org.ethereum.vm.OpCode.PUSH1;
+import org.ethereum.vm.OpCode;
 
 /**
  * Created by Sergio on 02/07/2016.

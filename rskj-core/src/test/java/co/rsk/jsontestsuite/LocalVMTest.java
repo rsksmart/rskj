@@ -18,6 +18,11 @@
 
 package co.rsk.jsontestsuite;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
@@ -27,9 +32,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.*;
 
 /**
  * @author Angel J Lopez

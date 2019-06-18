@@ -21,15 +21,18 @@ package org.ethereum.db;
 
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
-import org.ethereum.core.*;
+import java.util.ArrayList;
+import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Block;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.LogInfo;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by ajlopez on 3/1/2016.

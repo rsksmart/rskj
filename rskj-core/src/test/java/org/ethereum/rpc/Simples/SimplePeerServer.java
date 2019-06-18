@@ -20,8 +20,6 @@ package org.ethereum.rpc.Simples;
 
 import org.ethereum.net.server.PeerServer;
 
-import java.net.InetAddress;
-
 /**
  * Created by Ruben on 15/06/2016.
  */

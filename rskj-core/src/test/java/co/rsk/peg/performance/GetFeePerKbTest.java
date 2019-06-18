@@ -22,11 +22,10 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
+import java.io.IOException;
 import org.ethereum.core.Repository;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
 
 @Ignore
 public class GetFeePerKbTest extends BridgePerformanceTestCase {

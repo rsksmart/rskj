@@ -18,13 +18,16 @@
 
 package co.rsk.trie;
 
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
 import co.rsk.crypto.Keccak256;
 import org.ethereum.datasource.HashMapDB;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 05/04/2017.

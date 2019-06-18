@@ -18,12 +18,32 @@
 
 package co.rsk.db.migration;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+
 import co.rsk.RskContext;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.trie.*;
+import co.rsk.trie.OrchidAccountState;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieKeySlice;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -32,24 +52,17 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.*;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPItem;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-
-/**
- * This is a one-time tool and should be removed after Wasabi network upgrade activation
- */
+/** This is a one-time tool and should be removed after Wasabi network upgrade activation */
 public class OrchidToUnitrieMigrator {
 
     private static final Logger logger = LoggerFactory.getLogger(OrchidToUnitrieMigrator.class);
@@ -67,12 +80,13 @@ public class OrchidToUnitrieMigrator {
     private final Repository unitrieRepository;
     private final StateRootHandler stateRootHandler;
 
-    public OrchidToUnitrieMigrator(Block blockToMigrate,
-                                   String databaseDir,
-                                   Repository unitrieRepository,
-                                   StateRootHandler stateRootHandler,
-                                   TrieConverter trieConverter,
-                                   MissingOrchidStorageKeysProvider missingOrchidStorageKeysProvider) {
+    public OrchidToUnitrieMigrator(
+            Block blockToMigrate,
+            String databaseDir,
+            Repository unitrieRepository,
+            StateRootHandler stateRootHandler,
+            TrieConverter trieConverter,
+            MissingOrchidStorageKeysProvider missingOrchidStorageKeysProvider) {
         this.databaseDir = databaseDir;
         this.blockToMigrate = blockToMigrate;
         this.unitrieRepository = unitrieRepository;
@@ -83,17 +97,23 @@ public class OrchidToUnitrieMigrator {
         this.orchidContractsStorage = RskContext.makeDataSource("contracts-storage", databaseDir);
         this.missingOrchidStorageKeysProvider = missingOrchidStorageKeysProvider;
         this.orchidContractsTrieStore = new CachedTrieStore(new TrieStoreImpl(orchidContractsStorage));
-        this.orchidAccountsTrieStore = new CachedTrieStore(new TrieStoreImpl(RskContext.makeDataSource("state", databaseDir)));
+        this.orchidAccountsTrieStore =
+                new CachedTrieStore(new TrieStoreImpl(RskContext.makeDataSource("state", databaseDir)));
         this.keccak256Cache = new HashMap<>();
-        this.addressHashes = orchidContractDetailsDataStore.keys().stream()
-                .filter(accountAddress -> accountAddress.length == 20)
-                .collect(Collectors.toMap(
-                        accountAddress -> ByteUtil.wrap(Keccak256Helper.keccak256(accountAddress)),
-                        RskAddress::new
-                ));
+        this.addressHashes =
+                orchidContractDetailsDataStore.keys().stream()
+                        .filter(accountAddress -> accountAddress.length == 20)
+                        .collect(
+                                Collectors.toMap(
+                                        accountAddress -> ByteUtil.wrap(Keccak256Helper.keccak256(accountAddress)),
+                                        RskAddress::new));
         // Remasc sender and receiver addresses
-        this.addressHashes.put(ByteUtil.wrap(Keccak256Helper.keccak256(PrecompiledContracts.REMASC_ADDR.getBytes())), PrecompiledContracts.REMASC_ADDR);
-        this.addressHashes.put(ByteUtil.wrap(Keccak256Helper.keccak256(RemascTransaction.REMASC_ADDRESS.getBytes())), RemascTransaction.REMASC_ADDRESS);
+        this.addressHashes.put(
+                ByteUtil.wrap(Keccak256Helper.keccak256(PrecompiledContracts.REMASC_ADDR.getBytes())),
+                PrecompiledContracts.REMASC_ADDR);
+        this.addressHashes.put(
+                ByteUtil.wrap(Keccak256Helper.keccak256(RemascTransaction.REMASC_ADDRESS.getBytes())),
+                RemascTransaction.REMASC_ADDRESS);
     }
 
     public static void migrateStateToUnitrieIfNeeded(RskContext ctx) throws IOException {
@@ -120,10 +140,9 @@ public class OrchidToUnitrieMigrator {
         Block blockToMigrate = ctx.getBlockStore().getBestBlock();
         if (blockToMigrate == null || blockToMigrate.getNumber() < minimumBlockNumberToMigrate) {
             logger.error(
-                    "The database can't be migrated because the node wasn't up to date before upgrading. " +
-                            "Please reset the database or sync past block {} with the previous version to continue.",
-                    minimumBlockNumberToMigrate
-            );
+                    "The database can't be migrated because the node wasn't up to date before upgrading. "
+                            + "Please reset the database or sync past block {} with the previous version to continue.",
+                    minimumBlockNumberToMigrate);
             logger.error("Reset database or continue syncing with previous version");
             // just opening the db against the unitrie directory creates certain file structure
             // we clean that here in case of an error
@@ -131,17 +150,15 @@ public class OrchidToUnitrieMigrator {
             System.exit(1);
         }
 
-        OrchidToUnitrieMigrator unitrieMigrationTool = new OrchidToUnitrieMigrator(
-                blockToMigrate,
-                databaseDir,
-                ctx.getRepository(),
-                ctx.getStateRootHandler(),
-                ctx.getTrieConverter(),
-                new MissingOrchidStorageKeysProvider(
+        OrchidToUnitrieMigrator unitrieMigrationTool =
+                new OrchidToUnitrieMigrator(
+                        blockToMigrate,
                         databaseDir,
-                        ctx.getRskSystemProperties().getDatabaseMissingStorageKeysUrl()
-                )
-        );
+                        ctx.getRepository(),
+                        ctx.getStateRootHandler(),
+                        ctx.getTrieConverter(),
+                        new MissingOrchidStorageKeysProvider(
+                                databaseDir, ctx.getRskSystemProperties().getDatabaseMissingStorageKeysUrl()));
 
         unitrieMigrationTool.migrate();
     }
@@ -152,27 +169,29 @@ public class OrchidToUnitrieMigrator {
         Trie migratedTrie = migrateState(blockToMigrate);
         unitrieRepository.flush();
 
-        stateRootHandler.register(
-                blockToMigrate.getHeader(),
-                migratedTrie
-        );
+        stateRootHandler.register(blockToMigrate.getHeader(), migratedTrie);
     }
 
     private Trie migrateState(Block blockToMigrate) {
         byte[] orchidStateRoot = blockToMigrate.getStateRoot();
         Trie orchidAccountsTrie = orchidAccountsTrieStore.retrieve(orchidStateRoot);
         if (!Arrays.equals(orchidStateRoot, orchidAccountsTrie.getHashOrchid(true).getBytes())) {
-            throw new IllegalStateException(String.format("Stored account state is not consistent with the expected root (%s) for block %d", Hex.toHexString(orchidStateRoot), blockToMigrate.getNumber()));
+            throw new IllegalStateException(
+                    String.format(
+                            "Stored account state is not consistent with the expected root (%s) for block %d",
+                            Hex.toHexString(orchidStateRoot), blockToMigrate.getNumber()));
         }
 
         try {
             buildPartialUnitrie(orchidAccountsTrie, unitrieRepository);
         } catch (MissingContractStorageKeysException e) {
-            StringBuilder missingStorageKeysMessage = new StringBuilder(
-                "We have detected an inconsistency in your database and are unable to migrate it automatically.\n" +
-                "Please visit https://www.github.com/rsksmart/rskj/issues/452 for information on how to continue.\n" +
-                "Here is the data you'll need:\n"
-            );
+            StringBuilder missingStorageKeysMessage =
+                    new StringBuilder(
+                            "We have detected an inconsistency in your database and are unable to migrate it"
+                                + " automatically.\n"
+                                + "Please visit https://www.github.com/rsksmart/rskj/issues/452 for information on how"
+                                + " to continue.\n"
+                                + "Here is the data you'll need:\n");
             for (Keccak256 entry : e.getMissingStorageKeys()) {
                 missingStorageKeysMessage.append(entry.toHexString()).append("\n");
             }
@@ -180,7 +199,8 @@ public class OrchidToUnitrieMigrator {
         }
 
         byte[] lastStateRoot = unitrieRepository.getRoot();
-        byte[] orchidMigratedStateRoot = trieConverter.getOrchidAccountTrieRoot(unitrieRepository.getMutableTrie().getTrie());
+        byte[] orchidMigratedStateRoot =
+                trieConverter.getOrchidAccountTrieRoot(unitrieRepository.getMutableTrie().getTrie());
         if (!Arrays.equals(orchidStateRoot, orchidMigratedStateRoot)) {
             logger.error("State root after migration doesn't match");
             logger.error("Orchid state root: {}", Hex.toHexString(orchidStateRoot));
@@ -195,7 +215,8 @@ public class OrchidToUnitrieMigrator {
         return unitrieRepository.getMutableTrie().getTrie();
     }
 
-    private void buildPartialUnitrie(Trie orchidAccountsTrie, Repository repository) throws MissingContractStorageKeysException {
+    private void buildPartialUnitrie(Trie orchidAccountsTrie, Repository repository)
+            throws MissingContractStorageKeysException {
         int accountsToLog = 500;
         int accountsCounter = 0;
         logger.trace("(x = {} accounts): ", accountsToLog);
@@ -207,7 +228,8 @@ public class OrchidToUnitrieMigrator {
             if (currentElementExpandedPath.length() == Keccak256Helper.DEFAULT_SIZE) {
                 accountsCounter++;
                 byte[] hashedAddress = currentElementExpandedPath.encode();
-                OrchidAccountState oldAccountState = new OrchidAccountState(orchidAccountsTrieElement.getNode().getValue());
+                OrchidAccountState oldAccountState =
+                        new OrchidAccountState(orchidAccountsTrieElement.getNode().getValue());
                 AccountState accountState = new AccountState(oldAccountState.getNonce(), oldAccountState.getBalance());
                 RskAddress accountAddress = addressHashes.get(ByteUtil.wrap(hashedAddress));
                 repository.createAccount(accountAddress);
@@ -232,7 +254,13 @@ public class OrchidToUnitrieMigrator {
         }
     }
 
-    private void migrateContract(RskAddress accountAddress, Repository currentRepository, byte[] contractDataRaw, byte[] accountCodeHash, byte[] stateRoot) throws MissingContractStorageKeysException {
+    private void migrateContract(
+            RskAddress accountAddress,
+            Repository currentRepository,
+            byte[] contractDataRaw,
+            byte[] accountCodeHash,
+            byte[] stateRoot)
+            throws MissingContractStorageKeysException {
         ContractData contractData = new ContractData(contractDataRaw);
 
         boolean initialized = false;
@@ -266,7 +294,9 @@ public class OrchidToUnitrieMigrator {
                 Trie.IterationElement iterationElement = inOrderIterator.next();
                 if (iterationElement.getNode().getValue() != null) {
                     Keccak256 storageKeyHash = new Keccak256(iterationElement.getNodeKey().encode());
-                    DataWord storageKey = keccak256Cache.computeIfAbsent(storageKeyHash, missingOrchidStorageKeysProvider::getKeccak256PreImage);
+                    DataWord storageKey =
+                            keccak256Cache.computeIfAbsent(
+                                    storageKeyHash, missingOrchidStorageKeysProvider::getKeccak256PreImage);
                     if (storageKey == null) {
                         missingStorageKeys.add(storageKeyHash);
                         continue;
@@ -317,16 +347,24 @@ public class OrchidToUnitrieMigrator {
         }
 
         // picco-fix (ref: co.rsk.db.ContractStorageStoreFactory#getTrieStore)
-        TrieStore contractTrieStore = contractStoreCache.computeIfAbsent(
-                contractAddress,
-                address -> new CachedTrieStore(new TrieStoreImpl(RskContext.makeDataSource("details-storage/" + address, databaseDir)))
-        );
+        TrieStore contractTrieStore =
+                contractStoreCache.computeIfAbsent(
+                        contractAddress,
+                        address ->
+                                new CachedTrieStore(
+                                        new TrieStoreImpl(
+                                                RskContext.makeDataSource("details-storage/" + address, databaseDir))));
         contractStorageTrie = contractTrieStore.retrieve(root);
         if (contractStorageTrie == null) {
-            throw new IllegalStateException(String.format("Unable to find root %s for the contract %s", Hex.toHexString(root), contractAddress));
+            throw new IllegalStateException(
+                    String.format(
+                            "Unable to find root %s for the contract %s", Hex.toHexString(root), contractAddress));
         }
         if (!Arrays.equals(root, contractStorageTrie.getHashOrchid(true).getBytes())) {
-            throw new IllegalStateException(String.format("Stored contract state is not consistent with the expected root (%s)", Hex.toHexString(root)));
+            throw new IllegalStateException(
+                    String.format(
+                            "Stored contract state is not consistent with the expected root (%s)",
+                            Hex.toHexString(root)));
         }
 
         return contractStorageTrie;
@@ -346,7 +384,8 @@ public class OrchidToUnitrieMigrator {
         Trie newTrie = store.retrieve(root);
 
         if (newTrie == null) {
-            throw new IllegalArgumentException(String.format("Deserialized storage doesn't contain expected trie: %s", Hex.toHexString(root)));
+            throw new IllegalArgumentException(
+                    String.format("Deserialized storage doesn't contain expected trie: %s", Hex.toHexString(root)));
         }
 
         return newTrie;
@@ -363,9 +402,10 @@ public class OrchidToUnitrieMigrator {
             int lkey = readInt(bytes, current);
             current += Integer.BYTES;
             if (lkey > bytes.length - current) {
-                throw new IllegalArgumentException(String.format(
-                        "Left bytes are too short for key expected:%d actual:%d total:%d",
-                        lkey, bytes.length - current, bytes.length));
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Left bytes are too short for key expected:%d actual:%d total:%d",
+                                lkey, bytes.length - current, bytes.length));
             }
             byte[] key = Arrays.copyOfRange(bytes, current, current + lkey);
             current += lkey;
@@ -373,9 +413,10 @@ public class OrchidToUnitrieMigrator {
             int lvalue = readInt(bytes, current);
             current += Integer.BYTES;
             if (lvalue > bytes.length - current) {
-                throw new IllegalArgumentException(String.format(
-                        "Left bytes are too short for value expected:%d actual:%d total:%d",
-                        lvalue, bytes.length - current, bytes.length));
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Left bytes are too short for value expected:%d actual:%d total:%d",
+                                lvalue, bytes.length - current, bytes.length));
             }
             byte[] value = Arrays.copyOfRange(bytes, current, current + lvalue);
             current += lvalue;
@@ -392,9 +433,10 @@ public class OrchidToUnitrieMigrator {
         int ch3 = bytes[position + 2];
         int ch4 = bytes[position + 3];
         if ((ch1 | ch2 | ch3 | ch4) < 0) {
-            throw new IllegalArgumentException(String.format(
-                    "On position %d there are invalid bytes for a short value %s %s %s %s", position, ch1, ch2, ch3, ch4
-            ));
+            throw new IllegalArgumentException(
+                    String.format(
+                            "On position %d there are invalid bytes for a short value %s %s %s %s",
+                            position, ch1, ch2, ch3, ch4));
         }
 
         return (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4);
@@ -417,7 +459,7 @@ public class OrchidToUnitrieMigrator {
             RLPItem rlpIsExternalStorage = (RLPItem) rlpList.get(1);
             RLPItem rlpStorage = (RLPItem) rlpList.get(2);
             byte[] rawAddress = rlpAddress.getRLPData();
-            if (Arrays.equals(rawAddress, new byte[]{0x00})) {
+            if (Arrays.equals(rawAddress, new byte[] {0x00})) {
                 contractAddress = PrecompiledContracts.REMASC_ADDR;
             } else {
                 contractAddress = new RskAddress(rawAddress);
@@ -427,7 +469,7 @@ public class OrchidToUnitrieMigrator {
         }
 
         public byte[] getCode() {
-            return code != null? Arrays.copyOf(code, code.length): null;
+            return code != null ? Arrays.copyOf(code, code.length) : null;
         }
 
         public RskAddress getContractAddress() {
@@ -435,11 +477,11 @@ public class OrchidToUnitrieMigrator {
         }
 
         public byte[] getExternal() {
-            return external != null? Arrays.copyOf(external, external.length): null;
+            return external != null ? Arrays.copyOf(external, external.length) : null;
         }
 
         public byte[] getRoot() {
-            return root != null? Arrays.copyOf(root, root.length): null;
+            return root != null ? Arrays.copyOf(root, root.length) : null;
         }
 
         public RLPList getKeys() {

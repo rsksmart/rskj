@@ -24,11 +24,14 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import java.util.HashMap;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.*;
-
-import java.util.HashMap;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.MutableRepository;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
 
 /**
  * This context overrides every persistent database access with a non-persistent one.

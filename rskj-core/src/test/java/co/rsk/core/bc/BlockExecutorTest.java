@@ -18,6 +18,8 @@
 
 package co.rsk.core.bc;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
@@ -31,10 +33,25 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.cryptohash.Keccak256;
@@ -53,11 +70,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Created by ajlopez on 29/07/2016.

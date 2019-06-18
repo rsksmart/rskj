@@ -24,6 +24,9 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.performance.CombinedExecutionStats;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.stream.Collectors;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
@@ -32,10 +35,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
-
-import java.util.Arrays;
-import java.util.Random;
-import java.util.stream.Collectors;
 
 @Ignore
 public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContractPerformanceTestCase {

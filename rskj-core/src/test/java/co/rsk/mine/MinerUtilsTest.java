@@ -23,16 +23,19 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.core.TransactionPool;
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
-import java.util.*;
 
 public class MinerUtilsTest {
 

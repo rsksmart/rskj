@@ -1,17 +1,16 @@
 package co.rsk.core;
 
 import co.rsk.trie.Trie;
-import org.ethereum.core.ImmutableTransaction;
-import org.ethereum.core.Transaction;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Transaction;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 
 /**
  * Created by SDL on 12/5/2017.

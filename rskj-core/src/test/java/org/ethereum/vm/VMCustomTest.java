@@ -19,10 +19,15 @@
 
 package org.ethereum.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import java.util.HashSet;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
@@ -35,12 +40,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import java.util.HashSet;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 /**
  * @author Roman Mandeleil

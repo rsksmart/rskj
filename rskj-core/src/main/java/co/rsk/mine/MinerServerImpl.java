@@ -33,31 +33,39 @@ import co.rsk.util.DifficultyUtils;
 import co.rsk.util.ListArrayUtil;
 import co.rsk.validators.ProofOfWorkRule;
 import com.google.common.annotations.VisibleForTesting;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.concurrent.GuardedBy;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-
 /**
- * The MinerServer provides support to components that perform the actual mining.
- * It builds blocks to mine and publishes blocks once a valid nonce was found by the miner.
+ * The MinerServer provides support to components that perform the actual mining. It builds blocks to mine and publishes
+ * blocks once a valid nonce was found by the miner.
  *
  * @author Oscar Guindzberg
  */
-
 public class MinerServerImpl implements MinerServer {
     private static final long DELAY_BETWEEN_BUILD_BLOCKS_MS = TimeUnit.MINUTES.toMillis(1);
 
@@ -83,14 +91,19 @@ public class MinerServerImpl implements MinerServer {
 
     @GuardedBy("lock")
     private LinkedHashMap<Keccak256, Block> blocksWaitingforPoW;
+
     @GuardedBy("lock")
     private Keccak256 latestParentHash;
+
     @GuardedBy("lock")
     private Block latestBlock;
+
     @GuardedBy("lock")
     private Coin latestPaidFeesWithNotify;
+
     @GuardedBy("lock")
     private volatile MinerWork currentWork; // This variable can be read at anytime without the lock.
+
     private final Object lock = new Object();
 
     private final RskAddress coinbaseAddress;
@@ -134,7 +147,6 @@ public class MinerServerImpl implements MinerServer {
                 return size() > CACHE_SIZE;
             }
         };
-
     }
 
     @VisibleForTesting
@@ -196,8 +208,7 @@ public class MinerServerImpl implements MinerServer {
                 blockWithHeaderOnly,
                 coinbase,
                 (pb) -> pb.buildFromMerkleHashes(blockWithHeaderOnly, merkleHashes, blockTxnCount),
-                true
-        );
+                true);
     }
 
     @Override
@@ -213,8 +224,7 @@ public class MinerServerImpl implements MinerServer {
                 blockWithHeaderOnly,
                 coinbase,
                 (pb) -> pb.buildFromTxHashes(blockWithHeaderOnly, txHashes),
-                true
-        );
+                true);
     }
 
     @Override
@@ -222,7 +232,8 @@ public class MinerServerImpl implements MinerServer {
         return submitBitcoinBlock(blockHashForMergedMining, bitcoinMergedMiningBlock, true);
     }
 
-    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
+    SubmitBlockResult submitBitcoinBlock(
+            String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
         logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
 
         return processSolution(
@@ -230,8 +241,7 @@ public class MinerServerImpl implements MinerServer {
                 bitcoinMergedMiningBlock,
                 bitcoinMergedMiningBlock.getTransactions().get(0),
                 (pb) -> pb.buildFromBlock(bitcoinMergedMiningBlock),
-                lastTag
-        );
+                lastTag);
     }
 
     private SubmitBlockResult processSolution(
@@ -247,7 +257,8 @@ public class MinerServerImpl implements MinerServer {
             Block workingBlock = blocksWaitingforPoW.get(key);
 
             if (workingBlock == null) {
-                String message = "Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache";
+                String message =
+                        "Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache";
                 logger.warn(message);
 
                 return new SubmitBlockResult("ERROR", message);
@@ -262,19 +273,32 @@ public class MinerServerImpl implements MinerServer {
 
         newBlock.setBitcoinMergedMiningHeader(blockWithHeaderOnly.cloneAsHeader().bitcoinSerialize());
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), lastTag));
-        newBlock.setBitcoinMergedMiningMerkleProof(MinerUtils.buildMerkleProof(activationConfig, proofBuilderFunction, newBlock.getNumber()));
+        newBlock.setBitcoinMergedMiningMerkleProof(
+                MinerUtils.buildMerkleProof(activationConfig, proofBuilderFunction, newBlock.getNumber()));
         newBlock.seal();
 
         if (!isValid(newBlock)) {
-            String message = "Invalid block supplied by miner: " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber();
+            String message =
+                    "Invalid block supplied by miner: "
+                            + newBlock.getShortHash()
+                            + " "
+                            + newBlock.getShortHashForMergedMining()
+                            + " at height "
+                            + newBlock.getNumber();
             logger.error(message);
 
             return new SubmitBlockResult("ERROR", message);
         } else {
             ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
 
-            logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getShortHash(), newBlock.getShortHashForMergedMining(), newBlock.getNumber());
-            SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash().getBytes(), newBlock.getNumber());
+            logger.info(
+                    "Mined block import result is {}: {} {} at height {}",
+                    importResult,
+                    newBlock.getShortHash(),
+                    newBlock.getShortHashForMergedMining(),
+                    newBlock.getNumber());
+            SubmittedBlockInfo blockInfo =
+                    new SubmittedBlockInfo(importResult, newBlock.getHash().getBytes(), newBlock.getNumber());
 
             return new SubmitBlockResult("OK", "OK", blockInfo);
         }
@@ -293,8 +317,10 @@ public class MinerServerImpl implements MinerServer {
         return compressCoinbase(bitcoinMergedMiningCoinbaseTransactionSerialized, true);
     }
 
-    public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized, boolean lastOccurrence) {
-        List<Byte> coinBaseTransactionSerializedAsList = ListArrayUtil.asByteList(bitcoinMergedMiningCoinbaseTransactionSerialized);
+    public static byte[] compressCoinbase(
+            byte[] bitcoinMergedMiningCoinbaseTransactionSerialized, boolean lastOccurrence) {
+        List<Byte> coinBaseTransactionSerializedAsList =
+                ListArrayUtil.asByteList(bitcoinMergedMiningCoinbaseTransactionSerialized);
         List<Byte> tagAsList = ListArrayUtil.asByteList(RskMiningConstants.RSK_TAG);
 
         int rskTagPosition;
@@ -304,7 +330,11 @@ public class MinerServerImpl implements MinerServer {
             rskTagPosition = Collections.indexOfSubList(coinBaseTransactionSerializedAsList, tagAsList);
         }
 
-        int remainingByteCount = bitcoinMergedMiningCoinbaseTransactionSerialized.length - rskTagPosition - RskMiningConstants.RSK_TAG.length - RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
+        int remainingByteCount =
+                bitcoinMergedMiningCoinbaseTransactionSerialized.length
+                        - rskTagPosition
+                        - RskMiningConstants.RSK_TAG.length
+                        - RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
         if (remainingByteCount > RskMiningConstants.MAX_BYTES_AFTER_MERGED_MINING_HASH) {
             throw new IllegalArgumentException("More than 128 bytes after RSK tag");
         }
@@ -316,7 +346,12 @@ public class MinerServerImpl implements MinerServer {
         byte[] trimmedHashedContent = new byte[RskMiningConstants.MIDSTATE_SIZE_TRIMMED];
         System.arraycopy(hashedContent, 8, trimmedHashedContent, 0, RskMiningConstants.MIDSTATE_SIZE_TRIMMED);
         byte[] unHashedContent = new byte[bitcoinMergedMiningCoinbaseTransactionSerialized.length - bytesToHash];
-        System.arraycopy(bitcoinMergedMiningCoinbaseTransactionSerialized, bytesToHash, unHashedContent, 0, unHashedContent.length);
+        System.arraycopy(
+                bitcoinMergedMiningCoinbaseTransactionSerialized,
+                bytesToHash,
+                unHashedContent,
+                0,
+                unHashedContent.length);
         return Arrays.concatenate(trimmedHashedContent, unHashedContent);
     }
 
@@ -329,8 +364,8 @@ public class MinerServerImpl implements MinerServer {
      * getWork returns the latest MinerWork for miners. Subsequent calls to this function with no new work will return
      * currentWork with the notify flag turned off. (they will be different objects too).
      *
-     * This method must be called with MinerServer started. That and the fact that work is never set to null
-     * will ensure that currentWork is not null.
+     * <p>This method must be called with MinerServer started. That and the fact that work is never set to null will
+     * ensure that currentWork is not null.
      *
      * @return the latest MinerWork available.
      */
@@ -340,18 +375,22 @@ public class MinerServerImpl implements MinerServer {
 
         if (work.getNotify()) {
             /**
-             * Set currentWork.notify to false for the next time this function is called.
-             * By doing it this way, we avoid taking the lock every time, we just take it once per MinerWork.
-             * We have to take the lock to reassign currentWork, but it might have happened that
-             * the currentWork got updated when we acquired the lock. In that case, we should just return the new
-             * currentWork, regardless of what it is.
+             * Set currentWork.notify to false for the next time this function is called. By doing it this way, we avoid
+             * taking the lock every time, we just take it once per MinerWork. We have to take the lock to reassign
+             * currentWork, but it might have happened that the currentWork got updated when we acquired the lock. In
+             * that case, we should just return the new currentWork, regardless of what it is.
              */
             synchronized (lock) {
                 if (currentWork != work) {
                     return currentWork;
                 }
-                currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
-                        currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash());
+                currentWork =
+                        new MinerWork(
+                                currentWork.getBlockHashForMergedMining(),
+                                currentWork.getTarget(),
+                                currentWork.getFeesPaidToMiner(),
+                                false,
+                                currentWork.getParentBlockHash());
             }
         }
         return work;
@@ -368,10 +407,20 @@ public class MinerServerImpl implements MinerServer {
         BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
         byte[] targetUnknownLengthArray = targetBI.toByteArray();
         byte[] targetArray = new byte[32];
-        System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
+        System.arraycopy(
+                targetUnknownLengthArray,
+                0,
+                targetArray,
+                32 - targetUnknownLengthArray.length,
+                targetUnknownLengthArray.length);
 
         logger.debug("Sending work for merged mining. Hash: {}", block.getShortHashForMergedMining());
-        return new MinerWork(blockMergedMiningHash.toJsonString(), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString());
+        return new MinerWork(
+                blockMergedMiningHash.toJsonString(),
+                TypeConverter.toJsonHex(targetArray),
+                String.valueOf(block.getFeesPaidToMiner()),
+                notify,
+                block.getParentHashJsonString());
     }
 
     public void setExtraData(byte[] extraData) {
@@ -379,13 +428,12 @@ public class MinerServerImpl implements MinerServer {
     }
 
     /**
-     * buildBlockToMine creates a block to mine using the block received as parent.
-     * This method calls buildBlockToMine and that one uses the internal mainchainView
-     * Hence, mainchainView must be updated to reflect the new mainchain status.
-     * Note. This method is NOT intended to be used in any part of the mining flow and
-     * is only here to be consumed from SnapshotManager.
+     * buildBlockToMine creates a block to mine using the block received as parent. This method calls buildBlockToMine
+     * and that one uses the internal mainchainView Hence, mainchainView must be updated to reflect the new mainchain
+     * status. Note. This method is NOT intended to be used in any part of the mining flow and is only here to be
+     * consumed from SnapshotManager.
      *
-     * @param blockToMineOnTopOf     parent of the block to be built.
+     * @param blockToMineOnTopOf parent of the block to be built.
      * @param createCompetitiveBlock used for testing.
      */
     @Override
@@ -395,8 +443,8 @@ public class MinerServerImpl implements MinerServer {
     }
 
     /**
-     * buildBlockToMine creates a block to mine using the current best block as parent.
-     * best block is obtained from a blockchain view that has the latest mainchain blocks.
+     * buildBlockToMine creates a block to mine using the current best block as parent. best block is obtained from a
+     * blockchain view that has the latest mainchain blocks.
      *
      * @param createCompetitiveBlock used for testing.
      */
@@ -409,7 +457,10 @@ public class MinerServerImpl implements MinerServer {
             newBlockParentHeader = mainchainView.get().get(1);
         }
 
-        logger.info("Starting block to mine from parent {} {}", newBlockParentHeader.getNumber(), newBlockParentHeader.getHash());
+        logger.info(
+                "Starting block to mine from parent {} {}",
+                newBlockParentHeader.getNumber(),
+                newBlockParentHeader.getHash());
 
         List<BlockHeader> mainchainHeaders = mainchainView.get();
         final Block newBlock = builder.build(mainchainHeaders, extraData);
@@ -433,7 +484,10 @@ public class MinerServerImpl implements MinerServer {
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
-        logger.debug("Built block {}. Parent {}", newBlock.getShortHashForMergedMining(), newBlockParentHeader.getShortHashForMergedMining());
+        logger.debug(
+                "Built block {}. Parent {}",
+                newBlock.getShortHashForMergedMining(),
+                newBlockParentHeader.getShortHashForMergedMining());
         for (BlockHeader uncleHeader : newBlock.getUncleList()) {
             logger.debug("With uncle {}", uncleHeader.getShortHashForMergedMining());
         }
@@ -442,7 +496,7 @@ public class MinerServerImpl implements MinerServer {
     /**
      * getNotifies determines whether miners should be notified or not. (Used for mining pools).
      *
-     * @param block      the block to mine.
+     * @param block the block to mine.
      * @param parentHash block's parent hash.
      * @return true if miners should be notified about this new block to mine.
      */
@@ -459,7 +513,6 @@ public class MinerServerImpl implements MinerServer {
         BigDecimal feesPaidToMinerInDollars = new BigDecimal(feesPaidToMiner.asBigInteger()).multiply(gasUnitInDollars);
         return feesPaidToMiner.compareTo(minFeesNotify) > 0
                 && feesPaidToMinerInDollars.compareTo(minFeesNotifyInDollars) >= 0;
-
     }
 
     @Override
@@ -494,9 +547,7 @@ public class MinerServerImpl implements MinerServer {
         }
     }
 
-    /**
-     * RefreshBlocks rebuilds the block to mine.
-     */
+    /** RefreshBlocks rebuilds the block to mine. */
     private class RefreshBlock extends TimerTask {
         @Override
         public void run() {

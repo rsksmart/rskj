@@ -1,12 +1,11 @@
 package co.rsk.util;
 
-import org.junit.Test;
-import org.powermock.reflect.Whitebox;
-
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+
+import java.util.Map;
+import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 
 public class MaxSizeHashMapTest {
 

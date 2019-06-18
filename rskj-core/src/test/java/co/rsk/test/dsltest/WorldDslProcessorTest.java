@@ -22,13 +22,12 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import java.math.BigInteger;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 8/7/2016.

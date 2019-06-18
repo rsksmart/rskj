@@ -19,15 +19,14 @@
 
 package org.ethereum.jsontestsuite;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.core.BlockDifficulty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.math.BigInteger;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-
-import java.math.BigInteger;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * @author Mikhail Kalinin

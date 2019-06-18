@@ -19,18 +19,17 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.json.simple.parser.ParseException;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
+import org.json.simple.parser.ParseException;
+import org.junit.FixMethodOrder;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Ignore

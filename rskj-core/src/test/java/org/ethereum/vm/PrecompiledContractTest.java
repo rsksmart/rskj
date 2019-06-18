@@ -19,17 +19,18 @@
 
 package org.ethereum.vm;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import co.rsk.config.TestSystemProperties;
+import java.math.BigInteger;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.junit.Assert.*;
 
 /**
  * @author Roman Mandeleil

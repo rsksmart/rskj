@@ -18,10 +18,25 @@
 
 package org.ethereum.rpc;
 
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.*;
-import co.rsk.core.bc.*;
+import co.rsk.core.Coin;
+import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.Wallet;
+import co.rsk.core.WalletFactory;
+import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.bc.MiningMainchainViewImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -31,7 +46,11 @@ import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
-import co.rsk.rpc.modules.eth.*;
+import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
+import co.rsk.rpc.modules.eth.EthModuleSolidityEnabled;
+import co.rsk.rpc.modules.eth.EthModuleTransactionBase;
+import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
@@ -42,9 +61,22 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.TestContract;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
@@ -55,7 +87,11 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
-import org.ethereum.rpc.Simples.*;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
+import org.ethereum.rpc.Simples.SimpleEthereum;
+import org.ethereum.rpc.Simples.SimpleMinerClient;
+import org.ethereum.rpc.Simples.SimplePeerServer;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
@@ -66,13 +102,6 @@ import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by Ruben Altman on 09/06/2016.

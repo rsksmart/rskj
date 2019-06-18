@@ -18,20 +18,30 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcBlockChain;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.peg.*;
+import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
-import org.ethereum.core.Repository;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.ethereum.core.Repository;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {

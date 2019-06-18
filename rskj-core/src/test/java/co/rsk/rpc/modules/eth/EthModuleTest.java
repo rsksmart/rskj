@@ -18,6 +18,13 @@
 
 package co.rsk.rpc.modules.eth;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.core.Block;
@@ -25,10 +32,6 @@ import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
 
 public class EthModuleTest {
     @Test

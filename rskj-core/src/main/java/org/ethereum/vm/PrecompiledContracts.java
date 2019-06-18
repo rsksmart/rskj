@@ -138,7 +138,8 @@ public class PrecompiledContracts {
             return identity;
         }
         if (address.equals(BRIDGE_ADDR_DW)) {
-            return new Bridge(BRIDGE_ADDR, config.getNetworkConstants(), config.getActivationConfig(), btcBlockStoreFactory);
+            return new Bridge(
+                    BRIDGE_ADDR, config.getNetworkConstants(), config.getActivationConfig(), btcBlockStoreFactory);
         }
         if (address.equals(BIG_INT_MODEXP_ADDR_DW)) {
             return bigIntegerModexp;

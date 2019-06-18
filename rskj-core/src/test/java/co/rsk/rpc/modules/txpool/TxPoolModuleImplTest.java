@@ -18,10 +18,20 @@
 
 package co.rsk.rpc.modules.txpool;
 
+import static org.mockito.Mockito.when;
+
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
@@ -30,12 +40,6 @@ import org.ethereum.rpc.Web3Mocks;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.mockito.Mockito.when;
 
 public class TxPoolModuleImplTest {
 

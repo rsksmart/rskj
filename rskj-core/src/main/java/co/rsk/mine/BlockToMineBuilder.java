@@ -18,6 +18,8 @@
 
 package co.rsk.mine;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+
 import co.rsk.config.MiningConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
@@ -29,23 +31,30 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-
 /**
- * This component helps build a new block to mine.
- * It can also be used to generate a new block from the pending state, which is useful
- * in places like Web3 with the 'pending' parameter.
+ * This component helps build a new block to mine. It can also be used to generate a new block from the pending state,
+ * which is useful in places like Web3 with the 'pending' parameter.
  */
 public class BlockToMineBuilder {
     private static final Logger logger = LoggerFactory.getLogger("blocktominebuilder");
@@ -107,13 +116,12 @@ public class BlockToMineBuilder {
      */
     public Block build(List<BlockHeader> mainchainHeaders, byte[] extraData) {
         BlockHeader newBlockParentHeader = mainchainHeaders.get(0);
-        List<BlockHeader> uncles = FamilyUtils.getUnclesHeaders(
-                blockStore,
-                newBlockParentHeader.getNumber() + 1,
-                newBlockParentHeader.getHash(),
-                miningConfig.getUncleGenerationLimit()
-        );
-
+        List<BlockHeader> uncles =
+                FamilyUtils.getUnclesHeaders(
+                        blockStore,
+                        newBlockParentHeader.getNumber() + 1,
+                        newBlockParentHeader.getHash(),
+                        miningConfig.getUncleGenerationLimit());
 
         if (uncles.size() > miningConfig.getUncleListLimit()) {
             uncles = uncles.subList(0, miningConfig.getUncleListLimit());
@@ -130,7 +138,8 @@ public class BlockToMineBuilder {
         return newBlock;
     }
 
-    private List<Transaction> getTransactions(List<Transaction> txsToRemove, BlockHeader parentHeader, Coin minGasPrice) {
+    private List<Transaction> getTransactions(
+            List<Transaction> txsToRemove, BlockHeader parentHeader, Coin minGasPrice) {
         logger.debug("getting transactions from pending state");
         List<Transaction> txs = minerUtils.getAllTransactions(transactionPool);
         logger.debug("{} transaction(s) collected from pending state", txs.size());
@@ -188,35 +197,35 @@ public class BlockToMineBuilder {
         BigInteger parentGasLimit = new BigInteger(1, newBlockParentHeader.getGasLimit());
         BigInteger gasUsed = BigInteger.valueOf(newBlockParentHeader.getGasUsed());
         boolean forceLimit = miningConfig.getGasLimit().isTargetForced();
-        BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
-                                                                        gasUsed, minGasLimit, targetGasLimit, forceLimit);
+        BigInteger gasLimit =
+                gasLimitCalculator.calculateBlockGasLimit(
+                        parentGasLimit, gasUsed, minGasLimit, targetGasLimit, forceLimit);
         byte[] forkDetectionData = forkDetectionDataCalculator.calculateWithBlockHeaders(mainchainHeaders);
 
         long blockNumber = newBlockParentHeader.getNumber() + 1;
-        final BlockHeader newHeader = blockFactory.newHeader(
-                newBlockParentHeader.getHash().getBytes(),
-                unclesListHash,
-                miningConfig.getCoinbaseAddress().getBytes(),
-                EMPTY_TRIE_HASH,
-                BlockHashesHelper.getTxTrieRoot(
-                        txs, activationConfig.isActive(ConsensusRule.RSKIP126, blockNumber)
-                ),
-                EMPTY_TRIE_HASH,
-                new Bloom().getData(),
-                new byte[]{1},
-                blockNumber,
-                gasLimit.toByteArray(),
-                0,
-                timestampSeconds,
-                extraData,
-                Coin.ZERO,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                forkDetectionData,
-                minimumGasPrice.getBytes(),
-                uncles.size()
-        );
+        final BlockHeader newHeader =
+                blockFactory.newHeader(
+                        newBlockParentHeader.getHash().getBytes(),
+                        unclesListHash,
+                        miningConfig.getCoinbaseAddress().getBytes(),
+                        EMPTY_TRIE_HASH,
+                        BlockHashesHelper.getTxTrieRoot(
+                                txs, activationConfig.isActive(ConsensusRule.RSKIP126, blockNumber)),
+                        EMPTY_TRIE_HASH,
+                        new Bloom().getData(),
+                        new byte[] {1},
+                        blockNumber,
+                        gasLimit.toByteArray(),
+                        0,
+                        timestampSeconds,
+                        extraData,
+                        Coin.ZERO,
+                        new byte[] {},
+                        new byte[] {},
+                        new byte[] {},
+                        forkDetectionData,
+                        minimumGasPrice.getBytes(),
+                        uncles.size());
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));
         return newHeader;
     }

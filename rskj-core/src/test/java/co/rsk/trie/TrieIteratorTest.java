@@ -18,15 +18,16 @@
 
 package co.rsk.trie;
 
+import static org.bouncycastle.util.encoders.Hex.decode;
+import static org.hamcrest.Matchers.is;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.util.*;
-
-import static org.bouncycastle.util.encoders.Hex.decode;
-import static org.hamcrest.Matchers.*;
 
 @RunWith(Parameterized.class)
 public class TrieIteratorTest {

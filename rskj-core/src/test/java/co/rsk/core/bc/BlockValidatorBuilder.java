@@ -23,13 +23,26 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieConverter;
-import co.rsk.validators.*;
+import co.rsk.validators.BlockCompositeRule;
+import co.rsk.validators.BlockDifficultyRule;
+import co.rsk.validators.BlockHeaderParentDependantValidationRule;
+import co.rsk.validators.BlockHeaderValidationRule;
+import co.rsk.validators.BlockParentCompositeRule;
+import co.rsk.validators.BlockParentGasLimitRule;
+import co.rsk.validators.BlockParentNumberRule;
+import co.rsk.validators.BlockRootValidationRule;
+import co.rsk.validators.BlockTimeStampValidationRule;
+import co.rsk.validators.BlockTxsFieldsValidationRule;
+import co.rsk.validators.BlockTxsValidationRule;
+import co.rsk.validators.BlockUnclesValidationRule;
+import co.rsk.validators.PrevMinGasPriceRule;
+import co.rsk.validators.RemascValidationRule;
+import co.rsk.validators.TxsMinGasPriceRule;
+import java.util.HashMap;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.mockito.Mockito;
-
-import java.util.HashMap;
 
 /**
  * Created by mario on 19/01/17.

@@ -18,9 +18,18 @@
 
 package co.rsk.db;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -33,12 +42,6 @@ import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
 
 /**
  * This tests are based on the org.ethereum.db.RepositoryTest.java

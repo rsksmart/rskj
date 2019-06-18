@@ -23,6 +23,8 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
+import java.nio.charset.StandardCharsets;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -30,9 +32,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.nio.charset.StandardCharsets;
 
 /**
  * @author Roman Mandeleil

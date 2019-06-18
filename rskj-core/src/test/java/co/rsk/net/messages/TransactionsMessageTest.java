@@ -19,11 +19,10 @@
 package co.rsk.net.messages;
 
 import co.rsk.net.utils.TransactionUtils;
+import java.util.List;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.List;
 
 /**
  * Created by ajlopez on 7/22/2016.

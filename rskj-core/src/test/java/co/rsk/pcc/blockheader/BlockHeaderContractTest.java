@@ -19,6 +19,14 @@
 
 package co.rsk.pcc.blockheader;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -35,6 +43,11 @@ import co.rsk.pcc.NativeMethod;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.util.DifficultyUtils;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Optional;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -52,16 +65,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
-
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Optional;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class BlockHeaderContractTest {
     private ExecutionEnvironment executionEnvironment;

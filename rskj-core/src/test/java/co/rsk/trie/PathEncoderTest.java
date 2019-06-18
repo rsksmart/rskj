@@ -18,8 +18,8 @@
 
 package co.rsk.trie;
 
-import org.junit.Test;
 import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by ajlopez on 07/02/2017.

@@ -20,6 +20,12 @@
 package org.ethereum.net;
 
 import co.rsk.net.discovery.PeerExplorer;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.net.rlpx.Node;
@@ -28,8 +34,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
-
-import java.util.*;
 
 /**
  * Created by mario on 20/02/17.

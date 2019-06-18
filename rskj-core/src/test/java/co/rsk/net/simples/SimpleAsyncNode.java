@@ -18,10 +18,19 @@
 
 package co.rsk.net.simples;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
-import co.rsk.net.*;
+import co.rsk.net.BlockNodeInformation;
+import co.rsk.net.BlockStore;
+import co.rsk.net.BlockSyncService;
+import co.rsk.net.MessageChannel;
+import co.rsk.net.MessageHandler;
+import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.NodeMessageHandler;
+import co.rsk.net.SyncProcessor;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
@@ -31,15 +40,17 @@ import co.rsk.validators.BlockCompositeRule;
 import co.rsk.validators.BlockRootValidationRule;
 import co.rsk.validators.BlockUnclesHashValidationRule;
 import co.rsk.validators.DummyBlockValidationRule;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
-
-import java.util.concurrent.*;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 5/15/2016.

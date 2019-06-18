@@ -18,21 +18,25 @@
 
 package co.rsk.core;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.MinerServer;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
-import org.ethereum.core.*;
+import java.math.BigInteger;
+import java.util.List;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 15/04/2017.

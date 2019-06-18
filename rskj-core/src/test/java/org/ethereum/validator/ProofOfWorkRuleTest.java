@@ -19,6 +19,9 @@
 
 package org.ethereum.validator;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
@@ -28,6 +31,11 @@ import co.rsk.mine.MinerUtils;
 import co.rsk.mine.ParameterizedNetworkUpgradeTest;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.Arrays;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
@@ -35,15 +43,6 @@ import org.ethereum.core.BlockFactory;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.Arrays;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Mikhail Kalinin

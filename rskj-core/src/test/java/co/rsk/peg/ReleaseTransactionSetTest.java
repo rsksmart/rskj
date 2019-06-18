@@ -18,19 +18,26 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 public class ReleaseTransactionSetTest {

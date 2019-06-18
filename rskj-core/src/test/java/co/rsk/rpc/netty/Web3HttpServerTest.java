@@ -1,27 +1,39 @@
 package co.rsk.rpc.netty;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.ModuleDescription;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.squareup.okhttp.*;
+import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.ethereum.rpc.Web3;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.mockito.Mockito;
-
-import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
-
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import org.ethereum.rpc.Web3;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 public class Web3HttpServerTest {
 

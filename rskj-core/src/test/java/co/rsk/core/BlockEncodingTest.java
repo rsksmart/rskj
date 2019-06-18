@@ -20,6 +20,10 @@ package co.rsk.core;
 
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.peg.PegTestUtils;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
@@ -30,11 +34,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Created by SDL on 12/5/2017.

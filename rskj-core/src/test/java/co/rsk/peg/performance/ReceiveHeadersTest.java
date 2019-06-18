@@ -28,17 +28,15 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 @Ignore
 public class ReceiveHeadersTest extends BridgePerformanceTestCase {

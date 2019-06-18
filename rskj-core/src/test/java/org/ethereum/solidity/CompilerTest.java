@@ -19,6 +19,7 @@
 
 package org.ethereum.solidity;
 
+import java.io.IOException;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.solidity.compiler.CompilationResult;
 import org.ethereum.solidity.compiler.SolidityCompiler;
@@ -26,8 +27,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.io.IOException;
 
 /**
  * Created by Anton Nashatyrev on 03.03.2016.

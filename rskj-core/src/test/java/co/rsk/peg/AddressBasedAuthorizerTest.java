@@ -18,17 +18,16 @@
 
 package co.rsk.peg;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.core.RskAddress;
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class AddressBasedAuthorizerTest {
     @Test

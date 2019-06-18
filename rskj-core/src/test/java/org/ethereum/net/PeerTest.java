@@ -19,19 +19,15 @@
 
 package org.ethereum.net;
 
-import org.ethereum.net.client.Capability;
-import org.ethereum.net.p2p.Peer;
-
-import org.junit.Test;
-
-import org.bouncycastle.util.encoders.Hex;
+import static org.junit.Assert.assertEquals;
 
 import java.net.InetAddress;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.net.client.Capability;
+import org.ethereum.net.p2p.Peer;
+import org.junit.Test;
 
 public class PeerTest {
 

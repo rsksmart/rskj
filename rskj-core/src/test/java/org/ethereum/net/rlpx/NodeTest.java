@@ -19,20 +19,19 @@
 
 package org.ethereum.net.rlpx;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.nio.charset.Charset;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.nio.charset.Charset;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by mario on 01/08/2016.

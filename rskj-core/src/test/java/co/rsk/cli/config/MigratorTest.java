@@ -1,15 +1,14 @@
 package co.rsk.cli.config;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.junit.Test;
-
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Properties;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class MigratorTest {
 

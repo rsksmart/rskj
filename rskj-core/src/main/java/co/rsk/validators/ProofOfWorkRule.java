@@ -27,6 +27,10 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.util.ListArrayUtil;
 import com.google.common.annotations.VisibleForTesting;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.util.Pack;
 import org.ethereum.config.Constants;
@@ -41,14 +45,7 @@ import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-/**
- * Checks proof value against its boundary for the block header.
- */
+/** Checks proof value against its boundary for the block header. */
 public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
@@ -74,6 +71,157 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
     @Override
     public boolean isValid(Block block) {
         return isValid(block.getHeader());
+    }
+
+
+    @Override
+    public boolean isValid(BlockHeader header) {
+        // TODO: refactor this an move it to another class. Change the Global ProofOfWorkRule to AuthenticationRule.
+        // TODO: Make ProofOfWorkRule one of the classes that inherits from AuthenticationRule.
+        if (isFallbackMiningPossibleAndBlockSigned(header)) {
+            boolean isValidFallbackSignature =
+                    validFallbackBlockSignature(constants, header, header.getBitcoinMergedMiningHeader());
+            if (!isValidFallbackSignature) {
+                logger.warn("Fallback signature failed. Header {}", header.getShortHash());
+            }
+            return isValidFallbackSignature;
+        }
+
+        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = bridgeConstants.getBtcParams();
+        MerkleProofValidator mpValidator;
+        try {
+            if (activationConfig.isActive(ConsensusRule.RSKIP92, header.getNumber())) {
+                mpValidator = new Rskip92MerkleProofValidator(header.getBitcoinMergedMiningMerkleProof());
+            } else {
+                mpValidator =
+                        new GenesisMerkleProofValidator(
+                                bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());
+            }
+        } catch (RuntimeException ex) {
+            logger.warn("Merkle proof can't be validated. Header {}", header.getShortHash(), ex);
+            return false;
+        }
+
+        byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
+
+        if (bitcoinMergedMiningCoinbaseTransactionCompressed == null) {
+            logger.warn("Compressed coinbase transaction does not exist. Header {}", header.getShortHash());
+            return false;
+        }
+
+        if (header.getBitcoinMergedMiningHeader() == null) {
+            logger.warn("Bitcoin merged mining header does not exist. Header {}", header.getShortHash());
+            return false;
+        }
+
+        BtcBlock bitcoinMergedMiningBlock =
+                bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
+
+        BigInteger target = DifficultyUtils.difficultyToTarget(header.getDifficulty());
+
+        BigInteger bitcoinMergedMiningBlockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
+
+        if (bitcoinMergedMiningBlockHashBI.compareTo(target) > 0) {
+            logger.warn(
+                    "Hash {} is higher than target {}",
+                    bitcoinMergedMiningBlockHashBI.toString(16),
+                    target.toString(16));
+            return false;
+        }
+
+        byte[] bitcoinMergedMiningCoinbaseTransactionMidstate = new byte[RskMiningConstants.MIDSTATE_SIZE];
+        System.arraycopy(
+                bitcoinMergedMiningCoinbaseTransactionCompressed,
+                0,
+                bitcoinMergedMiningCoinbaseTransactionMidstate,
+                8,
+                RskMiningConstants.MIDSTATE_SIZE_TRIMMED);
+
+        byte[] bitcoinMergedMiningCoinbaseTransactionTail =
+                new byte[bitcoinMergedMiningCoinbaseTransactionCompressed.length
+                        - RskMiningConstants.MIDSTATE_SIZE_TRIMMED];
+        System.arraycopy(
+                bitcoinMergedMiningCoinbaseTransactionCompressed,
+                RskMiningConstants.MIDSTATE_SIZE_TRIMMED,
+                bitcoinMergedMiningCoinbaseTransactionTail,
+                0,
+                bitcoinMergedMiningCoinbaseTransactionTail.length);
+
+        byte[] expectedCoinbaseMessageBytes =
+                org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, header.getHashForMergedMining());
+
+        List<Byte> bitcoinMergedMiningCoinbaseTransactionTailAsList =
+                ListArrayUtil.asByteList(bitcoinMergedMiningCoinbaseTransactionTail);
+        List<Byte> expectedCoinbaseMessageBytesAsList = ListArrayUtil.asByteList(expectedCoinbaseMessageBytes);
+
+        int rskTagPosition =
+                Collections.lastIndexOfSubList(
+                        bitcoinMergedMiningCoinbaseTransactionTailAsList, expectedCoinbaseMessageBytesAsList);
+        if (rskTagPosition == -1) {
+            logger.warn(
+                    "bitcoin coinbase transaction tail message does not contain expected"
+                            + " RSKBLOCK:RskBlockHeaderHash. Expected: {} . Actual: {} .",
+                    Arrays.toString(expectedCoinbaseMessageBytes),
+                    Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
+            return false;
+        }
+
+        /*
+         * We check that the there is no other block before the rsk tag, to avoid a possible malleability attack:
+         * If we have a mid state with 10 blocks, and the rsk tag, we can also have
+         * another mid state with 9 blocks, 64bytes + the rsk tag, giving us two blocks with different hashes but the
+         * same spv proof.
+         */
+        if (rskTagPosition >= 64) {
+            logger.warn(
+                    "bitcoin coinbase transaction tag position is bigger than expected 64. Actual: {}.",
+                    Integer.toString(rskTagPosition));
+            return false;
+        }
+
+        List<Byte> rskTagAsList = ListArrayUtil.asByteList(RskMiningConstants.RSK_TAG);
+        int lastTag = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, rskTagAsList);
+        if (rskTagPosition != lastTag) {
+            logger.warn(
+                    "The valid RSK tag is not the last RSK tag. Tail: {}.",
+                    Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
+            return false;
+        }
+
+        int remainingByteCount =
+                bitcoinMergedMiningCoinbaseTransactionTail.length
+                        - rskTagPosition
+                        - RskMiningConstants.RSK_TAG.length
+                        - RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
+
+        if (remainingByteCount > RskMiningConstants.MAX_BYTES_AFTER_MERGED_MINING_HASH) {
+            logger.warn("More than 128 bytes after RSK tag");
+            return false;
+        }
+
+        // TODO test
+        long byteCount = Pack.bigEndianToLong(bitcoinMergedMiningCoinbaseTransactionMidstate, 8);
+        long coinbaseLength = bitcoinMergedMiningCoinbaseTransactionTail.length + byteCount;
+        if (coinbaseLength <= 64) {
+            logger.warn(
+                    "Coinbase transaction must always be greater than 64-bytes long. But it was: {}", coinbaseLength);
+            return false;
+        }
+
+        SHA256Digest digest = new SHA256Digest(bitcoinMergedMiningCoinbaseTransactionMidstate);
+        digest.update(bitcoinMergedMiningCoinbaseTransactionTail, 0, bitcoinMergedMiningCoinbaseTransactionTail.length);
+        byte[] bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash = new byte[32];
+        digest.doFinal(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash, 0);
+        Sha256Hash bitcoinMergedMiningCoinbaseTransactionHash =
+                Sha256Hash.wrapReversed(Sha256Hash.hash(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash));
+
+        if (!mpValidator.isValid(
+                bitcoinMergedMiningBlock.getMerkleRoot(), bitcoinMergedMiningCoinbaseTransactionHash)) {
+            logger.warn("bitcoin merkle branch doesn't match coinbase and state root");
+            return false;
+        }
+
+        return true;
     }
 
     private boolean isFallbackMiningPossible(BlockHeader header) {
@@ -108,128 +256,10 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         }
 
         return isFallbackMiningPossible(header);
-
     }
 
-    @Override
-    public boolean isValid(BlockHeader header) {
-        // TODO: refactor this an move it to another class. Change the Global ProofOfWorkRule to AuthenticationRule.
-        // TODO: Make ProofOfWorkRule one of the classes that inherits from AuthenticationRule.
-        if (isFallbackMiningPossibleAndBlockSigned(header)) {
-            boolean isValidFallbackSignature = validFallbackBlockSignature(constants, header, header.getBitcoinMergedMiningHeader());
-            if (!isValidFallbackSignature) {
-                logger.warn("Fallback signature failed. Header {}", header.getShortHash());
-            }
-            return isValidFallbackSignature;
-        }
-
-        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = bridgeConstants.getBtcParams();
-        MerkleProofValidator mpValidator;
-        try {
-            if (activationConfig.isActive(ConsensusRule.RSKIP92, header.getNumber())) {
-                mpValidator = new Rskip92MerkleProofValidator(header.getBitcoinMergedMiningMerkleProof());
-            } else {
-                mpValidator = new GenesisMerkleProofValidator(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());
-            }
-        } catch (RuntimeException ex) {
-            logger.warn("Merkle proof can't be validated. Header {}", header.getShortHash(), ex);
-            return false;
-        }
-
-        byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
-
-        if (bitcoinMergedMiningCoinbaseTransactionCompressed == null) {
-            logger.warn("Compressed coinbase transaction does not exist. Header {}", header.getShortHash());
-            return false;
-        }
-
-        if (header.getBitcoinMergedMiningHeader() == null) {
-            logger.warn("Bitcoin merged mining header does not exist. Header {}", header.getShortHash());
-            return false;
-        }
-
-        BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
-
-        BigInteger target = DifficultyUtils.difficultyToTarget(header.getDifficulty());
-
-        BigInteger bitcoinMergedMiningBlockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
-
-        if (bitcoinMergedMiningBlockHashBI.compareTo(target) > 0) {
-            logger.warn("Hash {} is higher than target {}", bitcoinMergedMiningBlockHashBI.toString(16), target.toString(16));
-            return false;
-        }
-
-        byte[] bitcoinMergedMiningCoinbaseTransactionMidstate = new byte[RskMiningConstants.MIDSTATE_SIZE];
-        System.arraycopy(bitcoinMergedMiningCoinbaseTransactionCompressed, 0, bitcoinMergedMiningCoinbaseTransactionMidstate, 8, RskMiningConstants.MIDSTATE_SIZE_TRIMMED);
-
-        byte[] bitcoinMergedMiningCoinbaseTransactionTail = new byte[bitcoinMergedMiningCoinbaseTransactionCompressed.length - RskMiningConstants.MIDSTATE_SIZE_TRIMMED];
-        System.arraycopy(bitcoinMergedMiningCoinbaseTransactionCompressed, RskMiningConstants.MIDSTATE_SIZE_TRIMMED,
-                bitcoinMergedMiningCoinbaseTransactionTail, 0, bitcoinMergedMiningCoinbaseTransactionTail.length);
-
-        byte[] expectedCoinbaseMessageBytes = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, header.getHashForMergedMining());
-
-        List<Byte> bitcoinMergedMiningCoinbaseTransactionTailAsList = ListArrayUtil.asByteList(bitcoinMergedMiningCoinbaseTransactionTail);
-        List<Byte> expectedCoinbaseMessageBytesAsList = ListArrayUtil.asByteList(expectedCoinbaseMessageBytes);
-
-        int rskTagPosition = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, expectedCoinbaseMessageBytesAsList);
-        if (rskTagPosition == -1) {
-            logger.warn("bitcoin coinbase transaction tail message does not contain expected" +
-                    " RSKBLOCK:RskBlockHeaderHash. Expected: {} . Actual: {} .",
-                    Arrays.toString(expectedCoinbaseMessageBytes),
-                    Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
-            return false;
-        }
-
-        /*
-        * We check that the there is no other block before the rsk tag, to avoid a possible malleability attack:
-        * If we have a mid state with 10 blocks, and the rsk tag, we can also have
-        * another mid state with 9 blocks, 64bytes + the rsk tag, giving us two blocks with different hashes but the same spv proof.
-        * */
-        if (rskTagPosition >= 64) {
-            logger.warn("bitcoin coinbase transaction tag position is bigger than expected 64. Actual: {}.", Integer.toString(rskTagPosition));
-            return false;
-        }
-
-        List<Byte> rskTagAsList = ListArrayUtil.asByteList(RskMiningConstants.RSK_TAG);
-        int lastTag = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, rskTagAsList);
-        if (rskTagPosition !=lastTag) {
-            logger.warn("The valid RSK tag is not the last RSK tag. Tail: {}.", Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
-            return false;
-        }
-
-        int remainingByteCount = bitcoinMergedMiningCoinbaseTransactionTail.length -
-                rskTagPosition -
-                RskMiningConstants.RSK_TAG.length -
-                RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
-
-        if (remainingByteCount > RskMiningConstants.MAX_BYTES_AFTER_MERGED_MINING_HASH) {
-            logger.warn("More than 128 bytes after RSK tag");
-            return false;
-        }
-
-        // TODO test
-        long byteCount = Pack.bigEndianToLong(bitcoinMergedMiningCoinbaseTransactionMidstate, 8);
-        long coinbaseLength = bitcoinMergedMiningCoinbaseTransactionTail.length + byteCount;
-        if (coinbaseLength <= 64) {
-            logger.warn("Coinbase transaction must always be greater than 64-bytes long. But it was: {}", coinbaseLength);
-            return false;
-        }
-
-        SHA256Digest digest = new SHA256Digest(bitcoinMergedMiningCoinbaseTransactionMidstate);
-        digest.update(bitcoinMergedMiningCoinbaseTransactionTail,0,bitcoinMergedMiningCoinbaseTransactionTail.length);
-        byte[] bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash = new byte[32];
-        digest.doFinal(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash, 0);
-        Sha256Hash bitcoinMergedMiningCoinbaseTransactionHash = Sha256Hash.wrapReversed(Sha256Hash.hash(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash));
-
-        if (!mpValidator.isValid(bitcoinMergedMiningBlock.getMerkleRoot(), bitcoinMergedMiningCoinbaseTransactionHash)) {
-            logger.warn("bitcoin merkle branch doesn't match coinbase and state root");
-            return false;
-        }
-
-        return true;
-    }
-
-    private static boolean validFallbackBlockSignature(Constants constants, BlockHeader header, byte[] signatureBytesRLP) {
+    private static boolean validFallbackBlockSignature(
+            Constants constants, BlockHeader header, byte[] signatureBytesRLP) {
 
         byte[] fallbackMiningPubKeyBytes;
         boolean isEvenBlockNumber = header.getNumber() % 2 == 0;

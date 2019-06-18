@@ -21,8 +21,8 @@ package org.ethereum.rpc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
-import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.net.NodeID;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
@@ -35,17 +35,20 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
-import co.rsk.scoring.*;
+import co.rsk.scoring.EventType;
+import co.rsk.scoring.PeerScoring;
+import co.rsk.scoring.PeerScoringInformation;
+import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Random;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.rpc.Simples.SimpleRsk;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Random;
 
 /**
  * Created by ajlopez on 12/07/2017.

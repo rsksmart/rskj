@@ -18,6 +18,9 @@ package co.rsk.vm;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -26,9 +29,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by Sergio Demian Lerner on 12/10/2018.

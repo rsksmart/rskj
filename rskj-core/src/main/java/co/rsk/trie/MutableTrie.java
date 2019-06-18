@@ -21,16 +21,13 @@ package co.rsk.trie;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
+import java.util.Iterator;
+import java.util.Set;
+import javax.annotation.Nullable;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 
-import javax.annotation.Nullable;
-import java.util.Iterator;
-import java.util.Set;
-
-/**
- * Every operation of a MutableTrie mutates the parent trie top node and therefore its stateRoot.
- */
+/** Every operation of a MutableTrie mutates the parent trie top node and therefore its stateRoot. */
 public interface MutableTrie {
     Keccak256 getHash();
 

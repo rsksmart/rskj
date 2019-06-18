@@ -18,19 +18,18 @@
 
 package co.rsk.rpc.modules.eth.subscribe;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import org.junit.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class EthSubscribeRequestTest {
     private JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();

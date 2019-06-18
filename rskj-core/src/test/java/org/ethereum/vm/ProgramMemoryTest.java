@@ -19,7 +19,12 @@
 
 package org.ethereum.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+
 import co.rsk.config.TestSystemProperties;
+import java.util.HashSet;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.util.ByteUtil;
@@ -28,12 +33,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.HashSet;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 
 public class ProgramMemoryTest {
 

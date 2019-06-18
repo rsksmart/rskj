@@ -19,6 +19,8 @@
 
 package co.rsk.pcc.bto;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
 import org.bouncycastle.util.encoders.Hex;
@@ -27,8 +29,6 @@ import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.mockito.Mockito.mock;
 
 public class ExtractPublicKeyFromExtendedPublicKeyTest {
     private ExtractPublicKeyFromExtendedPublicKey method;

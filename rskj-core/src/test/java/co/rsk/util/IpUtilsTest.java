@@ -1,11 +1,10 @@
 package co.rsk.util;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by mario on 13/07/17.

@@ -18,9 +18,8 @@
 
 package co.rsk.mine;
 
-import org.ethereum.core.BlockHeader;
-
 import java.time.Clock;
+import org.ethereum.core.BlockHeader;
 
 public class MinerClock {
     private final boolean isFixedClock;

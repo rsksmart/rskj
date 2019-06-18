@@ -2,10 +2,9 @@ package org.ethereum.util;
 
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 28/02/2018.

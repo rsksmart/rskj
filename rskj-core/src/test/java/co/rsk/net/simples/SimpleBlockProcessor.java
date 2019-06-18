@@ -24,16 +24,15 @@ import co.rsk.net.BlockProcessResult;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.messages.NewBlockHashesMessage;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
 
 /**
  * Created by ajlopez on 5/11/2016.

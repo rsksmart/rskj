@@ -1,16 +1,15 @@
 package co.rsk.net.sync;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.NodeID;
-import org.ethereum.core.BlockIdentifier;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import static org.mockito.Mockito.mock;
+import org.ethereum.core.BlockIdentifier;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class DownloadingHeadersSyncStateTest {
     @Test

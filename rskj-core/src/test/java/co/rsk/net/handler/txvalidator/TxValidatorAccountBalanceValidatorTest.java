@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
@@ -27,8 +28,6 @@ import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
 
 public class TxValidatorAccountBalanceValidatorTest {
 

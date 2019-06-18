@@ -1,5 +1,8 @@
 package co.rsk.mine;
 
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
@@ -16,6 +19,8 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import java.math.BigInteger;
+import java.time.Clock;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.BlockFactory;
@@ -32,12 +37,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
-import java.time.Clock;
-
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by SerAdmin on 1/3/2018.

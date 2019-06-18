@@ -19,11 +19,10 @@
 package co.rsk.peg.performance;
 
 import co.rsk.vm.VMPerformanceTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 public class PrecompiledContractPerformanceTest {
     private static List<ExecutionStats> statsList;

@@ -36,8 +36,6 @@ public class Keccak256Helper {
         return keccak256String(message, new KeccakDigest(DEFAULT_SIZE), true);
     }
 
-
-
     protected static String keccak256String(String message, Size bitSize) {
         KeccakDigest digest = new KeccakDigest(bitSize.bits);
         return keccak256String(message, digest, true);

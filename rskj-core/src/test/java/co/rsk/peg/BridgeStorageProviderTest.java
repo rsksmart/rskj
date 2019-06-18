@@ -18,7 +18,21 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.when;
+
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
@@ -33,12 +47,24 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.util.RLP;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -50,18 +76,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 6/7/2016.

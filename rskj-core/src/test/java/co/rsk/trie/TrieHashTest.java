@@ -18,13 +18,13 @@
 
 package co.rsk.trie;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Created by ajlopez on 11/01/2017.

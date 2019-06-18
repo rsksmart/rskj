@@ -19,9 +19,20 @@
 
 package org.ethereum;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import java.io.File;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -31,13 +42,6 @@ import org.ethereum.vm.DataWord;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
-
-import java.io.File;
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 
 public final class TestUtils {
 

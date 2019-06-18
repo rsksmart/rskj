@@ -1,12 +1,9 @@
 package co.rsk.util;
 
 import co.rsk.asm.EVMAssembler;
+import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.io.IOException;
-import java.math.BigInteger;
 
 /**
  * Created by SerAdmin on 3/20/2018.

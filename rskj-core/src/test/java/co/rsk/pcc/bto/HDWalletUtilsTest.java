@@ -19,20 +19,19 @@
 
 package co.rsk.pcc.bto;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeMethod;
+import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Optional;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 public class HDWalletUtilsTest {
     private HDWalletUtils contract;

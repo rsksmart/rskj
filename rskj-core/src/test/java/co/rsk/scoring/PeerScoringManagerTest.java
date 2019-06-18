@@ -1,15 +1,14 @@
 package co.rsk.scoring;
 
 import co.rsk.net.NodeID;
-import org.junit.Assert;
-import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by ajlopez on 28/06/2017.

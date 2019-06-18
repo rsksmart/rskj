@@ -19,16 +19,15 @@
 package co.rsk.validators;
 
 import co.rsk.remasc.RemascTransaction;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by mario on 30/12/16.

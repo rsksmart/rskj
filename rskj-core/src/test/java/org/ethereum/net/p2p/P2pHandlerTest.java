@@ -18,13 +18,16 @@
 
 package org.ethereum.net.p2p;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.MessageQueue;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.mockito.Mockito.*;
 
 public class P2pHandlerTest {
 

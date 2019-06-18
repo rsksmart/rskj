@@ -19,32 +19,40 @@
 
 package org.ethereum.crypto;
 
-import org.ethereum.ConcatKDFBytesGenerator;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.bouncycastle.asn1.sec.SECNamedCurves;
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.*;
-import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
-import org.bouncycastle.crypto.macs.HMac;
-import org.bouncycastle.crypto.modes.SICBlockCipher;
-import org.bouncycastle.crypto.params.*;
-import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.encoders.Hex;
+import static org.junit.Assert.assertArrayEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.security.Security;
-
-import static org.junit.Assert.assertArrayEquals;
+import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.macs.HMac;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.IESParameters;
+import org.bouncycastle.crypto.params.IESWithCipherParameters;
+import org.bouncycastle.crypto.params.KDFParameters;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.ConcatKDFBytesGenerator;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ECIESTest {
     public static final int KEY_SIZE = 128;

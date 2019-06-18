@@ -19,14 +19,12 @@
 
 package org.ethereum.util;
 
-import co.rsk.core.RskAddress;
-import org.ethereum.crypto.HashUtil;
-
-import org.junit.Test;
-
-import org.bouncycastle.util.encoders.Hex;
-
 import static org.junit.Assert.assertEquals;
+
+import co.rsk.core.RskAddress;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.HashUtil;
+import org.junit.Test;
 
 public class HashUtilTest {
 

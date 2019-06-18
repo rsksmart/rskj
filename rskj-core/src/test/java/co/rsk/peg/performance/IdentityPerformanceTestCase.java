@@ -18,12 +18,11 @@
 
 package co.rsk.peg.performance;
 
+import java.io.IOException;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
 
 @Ignore
 public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceTestCase {

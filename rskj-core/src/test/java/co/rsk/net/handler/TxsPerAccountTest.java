@@ -2,13 +2,12 @@ package co.rsk.net.handler;
 
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
+import java.util.List;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.List;
 
 /**
  * Created by ajlopez on 20/06/2017.

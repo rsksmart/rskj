@@ -18,6 +18,8 @@
 
 package co.rsk.remasc;
 
+import static org.junit.Assert.fail;
+
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import org.ethereum.config.Constants;
@@ -26,8 +28,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.fail;
 
 public class RemascContractExecuteTest {
 

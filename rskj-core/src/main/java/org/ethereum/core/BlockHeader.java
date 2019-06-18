@@ -19,31 +19,27 @@
 
 package org.ethereum.core;
 
+import static java.lang.System.arraycopy;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.util.ByteUtil.toHexString;
+
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import javax.annotation.Nullable;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static java.lang.System.arraycopy;
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.toHexString;
-
-/**
- * Block header is a value object containing
- * the basic information of a block
- */
+/** Block header is a value object containing the basic information of a block */
 public class BlockHeader {
 
     private static final int HASH_FOR_MERGED_MINING_PREFIX_LENGTH = 20;
@@ -72,9 +68,8 @@ public class BlockHeader {
     /* The bloom filter for the logs of the block */
     private byte[] logsBloom;
     /**
-     * A scalar value corresponding to the difficulty level of this block.
-     * This can be calculated from the previous block’s difficulty level
-     * and the timestamp.
+     * A scalar value corresponding to the difficulty level of this block. This can be calculated from the previous
+     * block’s difficulty level and the timestamp.
      */
     private BlockDifficulty difficulty;
     /* A scalar value equalBytes to the reasonable output of Unix's time()
@@ -103,10 +98,9 @@ public class BlockHeader {
 
     private byte[] miningForkDetectionData;
 
-    /**
-     * The mgp for a tx to be included in the block.
-     */
+    /** The mgp for a tx to be included in the block. */
     private Coin minimumGasPrice;
+
     private int uncleCount;
 
     /* Indicates if this block header cannot be changed */
@@ -118,13 +112,30 @@ public class BlockHeader {
     /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
     private boolean includeForkDetectionData;
 
-    public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
-                       byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
-                       long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
-                       Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                       byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
-                       Coin minimumGasPrice, int uncleCount, boolean sealed,
-                       boolean useRskip92Encoding, boolean includeForkDetectionData) {
+    public BlockHeader(
+            byte[] parentHash,
+            byte[] unclesHash,
+            RskAddress coinbase,
+            byte[] stateRoot,
+            byte[] txTrieRoot,
+            byte[] receiptTrieRoot,
+            byte[] logsBloom,
+            BlockDifficulty difficulty,
+            long number,
+            byte[] gasLimit,
+            long gasUsed,
+            long timestamp,
+            byte[] extraData,
+            Coin paidFees,
+            byte[] bitcoinMergedMiningHeader,
+            byte[] bitcoinMergedMiningMerkleProof,
+            byte[] bitcoinMergedMiningCoinbaseTransaction,
+            byte[] mergedMiningForkDetectionData,
+            Coin minimumGasPrice,
+            int uncleCount,
+            boolean sealed,
+            boolean useRskip92Encoding,
+            boolean includeForkDetectionData) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -219,7 +230,6 @@ public class BlockHeader {
         this.txTrieRoot = stateRoot;
     }
 
-
     public byte[] getLogsBloom() {
         return logsBloom;
     }
@@ -304,11 +314,6 @@ public class BlockHeader {
         return this.getEncoded(true, true);
     }
 
-    @Nullable
-    public Coin getMinimumGasPrice() {
-        return this.minimumGasPrice;
-    }
-
     public byte[] getEncoded(boolean withMergedMiningFields, boolean withMerkleProofAndCoinbase) {
         byte[] parentHash = RLP.encodeElement(this.parentHash);
 
@@ -338,9 +343,23 @@ public class BlockHeader {
         byte[] extraData = RLP.encodeElement(this.extraData);
         byte[] paidFees = RLP.encodeCoin(this.paidFees);
         byte[] mgp = RLP.encodeSignedCoinNonNullZero(this.minimumGasPrice);
-        List<byte[]> fieldToEncodeList = Lists.newArrayList(parentHash, unclesHash, coinbase,
-                stateRoot, txTrieRoot, receiptTrieRoot, logsBloom, difficulty, number,
-                gasLimit, gasUsed, timestamp, extraData, paidFees, mgp);
+        List<byte[]> fieldToEncodeList =
+                Lists.newArrayList(
+                        parentHash,
+                        unclesHash,
+                        coinbase,
+                        stateRoot,
+                        txTrieRoot,
+                        receiptTrieRoot,
+                        logsBloom,
+                        difficulty,
+                        number,
+                        gasLimit,
+                        gasUsed,
+                        timestamp,
+                        extraData,
+                        paidFees,
+                        mgp);
 
         byte[] uncleCount = RLP.encodeBigInteger(BigInteger.valueOf(this.uncleCount));
         fieldToEncodeList.add(uncleCount);
@@ -351,17 +370,21 @@ public class BlockHeader {
             if (withMerkleProofAndCoinbase) {
                 byte[] bitcoinMergedMiningMerkleProof = RLP.encodeElement(this.bitcoinMergedMiningMerkleProof);
                 fieldToEncodeList.add(bitcoinMergedMiningMerkleProof);
-                byte[] bitcoinMergedMiningCoinbaseTransaction = RLP.encodeElement(this.bitcoinMergedMiningCoinbaseTransaction);
+                byte[] bitcoinMergedMiningCoinbaseTransaction =
+                        RLP.encodeElement(this.bitcoinMergedMiningCoinbaseTransaction);
                 fieldToEncodeList.add(bitcoinMergedMiningCoinbaseTransaction);
             }
         }
 
-        return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+        return RLP.encodeList(fieldToEncodeList.toArray(new byte[][] {}));
     }
 
-    /**
-     * This is here to override specific non-minimal instances such as the mainnet Genesis
-     */
+    @Nullable
+    public Coin getMinimumGasPrice() {
+        return this.minimumGasPrice;
+    }
+
+    /** This is here to override specific non-minimal instances such as the mainnet Genesis */
     protected byte[] encodeBlockDifficulty(BlockDifficulty difficulty) {
         return RLP.encodeBlockDifficulty(difficulty);
     }
@@ -378,7 +401,8 @@ public class BlockHeader {
     }
 
     public boolean hasMiningFields() {
-        if (this.bitcoinMergedMiningCoinbaseTransaction != null && this.bitcoinMergedMiningCoinbaseTransaction.length > 0) {
+        if (this.bitcoinMergedMiningCoinbaseTransaction != null
+                && this.bitcoinMergedMiningCoinbaseTransaction.length > 0) {
             return true;
         }
 
@@ -419,7 +443,13 @@ public class BlockHeader {
         toStringBuff.append("  number=").append(number).append(suffix);
         toStringBuff.append("  gasLimit=").append(toHexString(gasLimit)).append(suffix);
         toStringBuff.append("  gasUsed=").append(gasUsed).append(suffix);
-        toStringBuff.append("  timestamp=").append(timestamp).append(" (").append(Utils.longToDateTime(timestamp)).append(")").append(suffix);
+        toStringBuff
+                .append("  timestamp=")
+                .append(timestamp)
+                .append(" (")
+                .append(Utils.longToDateTime(timestamp))
+                .append(")")
+                .append(suffix);
         toStringBuff.append("  extraData=").append(toHexString(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
 
@@ -477,16 +507,14 @@ public class BlockHeader {
         byte[] encodedBlock = getEncoded(false, false);
         byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
         if (includeForkDetectionData) {
-            byte[] mergedMiningForkDetectionData = hasMiningFields() ?
-                    getMiningForkDetectionData() :
-                    miningForkDetectionData;
+            byte[] mergedMiningForkDetectionData =
+                    hasMiningFields() ? getMiningForkDetectionData() : miningForkDetectionData;
             arraycopy(
                     mergedMiningForkDetectionData,
                     0,
                     hashForMergedMining,
                     HASH_FOR_MERGED_MINING_PREFIX_LENGTH,
-                    FORK_DETECTION_DATA_LENGTH
-            );
+                    FORK_DETECTION_DATA_LENGTH);
         }
 
         return hashForMergedMining;
@@ -501,26 +529,23 @@ public class BlockHeader {
     }
 
     public byte[] getMiningForkDetectionData() {
-        if(includeForkDetectionData) {
+        if (includeForkDetectionData) {
             if (hasMiningFields() && miningForkDetectionData.length == 0) {
                 byte[] encodedBlock = getEncoded(false, false);
                 byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
 
-                byte[] hashForMergedMiningPrefix = Arrays.copyOfRange(
-                        hashForMergedMining,
-                        0,
-                        HASH_FOR_MERGED_MINING_PREFIX_LENGTH
-                );
+                byte[] hashForMergedMiningPrefix =
+                        Arrays.copyOfRange(hashForMergedMining, 0, HASH_FOR_MERGED_MINING_PREFIX_LENGTH);
                 byte[] coinbaseTransaction = getBitcoinMergedMiningCoinbaseTransaction();
 
-                List<Byte> hashForMergedMiningPrefixAsList = Arrays.asList(ArrayUtils.toObject(hashForMergedMiningPrefix));
+                List<Byte> hashForMergedMiningPrefixAsList =
+                        Arrays.asList(ArrayUtils.toObject(hashForMergedMiningPrefix));
                 List<Byte> coinbaseAsList = Arrays.asList(ArrayUtils.toObject(coinbaseTransaction));
 
                 int position = Collections.lastIndexOfSubList(coinbaseAsList, hashForMergedMiningPrefixAsList);
                 if (position == -1) {
                     throw new IllegalStateException(
-                            String.format("Mining fork detection data could not be found. Header: %s", getShortHash())
-                    );
+                            String.format("Mining fork detection data could not be found. Header: %s", getShortHash()));
                 }
 
                 int from = position + HASH_FOR_MERGED_MINING_PREFIX_LENGTH;

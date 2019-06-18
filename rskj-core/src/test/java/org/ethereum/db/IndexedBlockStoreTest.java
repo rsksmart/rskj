@@ -19,9 +19,28 @@
 
 package org.ethereum.db;
 
+import static co.rsk.core.BlockDifficulty.ZERO;
+import static org.ethereum.TestUtils.createIndexMap;
+import static org.ethereum.TestUtils.createMapDB;
+import static org.ethereum.TestUtils.getRandomChain;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import java.io.File;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -37,20 +56,6 @@ import org.junit.Test;
 import org.mapdb.DB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.*;
-
-import static co.rsk.core.BlockDifficulty.ZERO;
-import static org.ethereum.TestUtils.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 
 public class IndexedBlockStoreTest {

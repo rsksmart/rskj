@@ -19,6 +19,8 @@
 package co.rsk.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
+import java.io.IOException;
+import java.util.Collections;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
@@ -27,9 +29,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import java.io.IOException;
-import java.util.Collections;
 
 /**
  * @author Angel J Lopez

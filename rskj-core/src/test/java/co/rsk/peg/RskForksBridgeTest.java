@@ -18,7 +18,9 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.AddressFormatException;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
@@ -27,9 +29,21 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -37,15 +51,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class RskForksBridgeTest {
     private static ECKey fedECPrivateKey = ECKey.fromPrivate(

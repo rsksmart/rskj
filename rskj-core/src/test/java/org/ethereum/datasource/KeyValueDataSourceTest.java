@@ -1,20 +1,24 @@
 package org.ethereum.datasource;
 
-import org.ethereum.TestUtils;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
-import org.junit.*;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
-
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import org.ethereum.TestUtils;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.util.ByteUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
 public class KeyValueDataSourceTest {

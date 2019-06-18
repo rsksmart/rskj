@@ -18,6 +18,11 @@
 
 package co.rsk.peg;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
@@ -29,18 +34,15 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import org.apache.commons.lang3.tuple.Triple;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Test;
-
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.math.BigInteger;
-import java.util.ArrayList;
-
-import static org.junit.Assert.*;
 
 public class RepositoryBtcBlockStoreWithCacheTest {
 

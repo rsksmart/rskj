@@ -19,17 +19,14 @@
 
 package org.ethereum.util;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Assert;
-import org.junit.Test;
-
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+
+import java.math.BigInteger;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author Roman Mandeleil

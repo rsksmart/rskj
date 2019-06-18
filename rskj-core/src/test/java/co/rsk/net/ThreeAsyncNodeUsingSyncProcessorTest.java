@@ -24,12 +24,11 @@ import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.SyncUtils;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.util.Random;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.Random;
 
 public class ThreeAsyncNodeUsingSyncProcessorTest {
 

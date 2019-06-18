@@ -24,13 +24,20 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
-
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.function.Function;
 
 public class MutableTrieCache implements MutableTrie {
 
@@ -68,9 +75,7 @@ public class MutableTrieCache implements MutableTrie {
     }
 
     private <T> Optional<T> internalGet(
-            byte[] key,
-            Function<byte[], T> trieRetriever,
-            Function<byte[], T> cacheTransformer) {
+            byte[] key, Function<byte[], T> trieRetriever, Function<byte[], T> cacheTransformer) {
         ByteArrayWrapper wrapper = new ByteArrayWrapper(key);
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
 
@@ -175,12 +180,13 @@ public class MutableTrieCache implements MutableTrie {
     public void commit() {
         // in case something was deleted and then put again, we first have to delete all the previous data
         deleteRecursiveLog.forEach(item -> trie.deleteRecursive(item.getData()));
-        cache.forEach((accountKey, accountData) -> {
-            if (accountData != null) {
-                // cached account
-                accountData.forEach((realKey, value) -> this.trie.put(realKey, value));
-            }
-        });
+        cache.forEach(
+                (accountKey, accountData) -> {
+                    if (accountData != null) {
+                        // cached account
+                        accountData.forEach((realKey, value) -> this.trie.put(realKey, value));
+                    }
+                });
 
         deleteRecursiveLog.clear();
         cache.clear();
@@ -208,17 +214,18 @@ public class MutableTrieCache implements MutableTrie {
         Set<ByteArrayWrapper> parentSet = trie.collectKeys(size);
 
         // all cached items to be transferred to parent
-        cache.forEach((accountKey, account) ->
-              account.forEach((realKey, value) -> {
-                  if (size == Integer.MAX_VALUE || realKey.getData().length == size) {
-                      if (this.get(realKey.getData()) == null) {
-                          parentSet.remove(realKey);
-                      } else {
-                          parentSet.add(realKey);
-                      }
-                  }
-              })
-        );
+        cache.forEach(
+                (accountKey, account) ->
+                        account.forEach(
+                                (realKey, value) -> {
+                                    if (size == Integer.MAX_VALUE || realKey.getData().length == size) {
+                                        if (this.get(realKey.getData()) == null) {
+                                            parentSet.remove(realKey);
+                                        } else {
+                                            parentSet.add(realKey);
+                                        }
+                                    }
+                                }));
         return parentSet;
     }
 
@@ -245,19 +252,20 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override
     public Uint24 getValueLength(byte[] key) {
-        return internalGet(key, trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
+        return internalGet(key, trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length))
+                .orElse(Uint24.ZERO);
     }
 
     private static class StorageKeysIterator implements Iterator<DataWord> {
         private final Iterator<DataWord> keysIterator;
         private final Map<ByteArrayWrapper, byte[]> accountItems;
         private final RskAddress address;
-        private final int storageKeyOffset = (
-                TrieKeyMapper.domainPrefix().length +
-                TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE +
-                TrieKeyMapper.storagePrefix().length +
-                TrieKeyMapper.SECURE_KEY_SIZE)
-                * Byte.SIZE;
+        private final int storageKeyOffset =
+                (TrieKeyMapper.domainPrefix().length
+                                + TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE
+                                + TrieKeyMapper.storagePrefix().length
+                                + TrieKeyMapper.SECURE_KEY_SIZE)
+                        * Byte.SIZE;
         private final TrieKeyMapper trieKeyMapper;
         private DataWord currentStorageKey;
         private Iterator<Map.Entry<ByteArrayWrapper, byte[]>> accountIterator;
@@ -284,7 +292,7 @@ public class MutableTrieCache implements MutableTrie {
                 ByteArrayWrapper fullKey = getCompleteKey(item);
                 if (accountItems.containsKey(fullKey)) {
                     byte[] value = accountItems.remove(fullKey);
-                    if (value == null){
+                    if (value == null) {
                         continue;
                     }
                 }

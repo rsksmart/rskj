@@ -18,16 +18,15 @@
 
 package co.rsk.rpc.modules.eth.subscribe;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
+import java.io.IOException;
 import org.ethereum.core.Block;
 import org.junit.Test;
-
-import java.io.IOException;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
 
 public class EthSubscriptionNotificationTest {
     private static final Block TEST_BLOCK = new BlockGenerator().createBlock(12, 0);

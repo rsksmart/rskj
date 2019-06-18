@@ -19,11 +19,10 @@
 package co.rsk.rpc;
 
 import co.rsk.config.TestSystemProperties;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by ajlopez on 19/04/2017.

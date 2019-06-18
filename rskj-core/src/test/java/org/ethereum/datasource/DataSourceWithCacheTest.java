@@ -1,19 +1,32 @@
 package org.ethereum.datasource;
 
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyMap;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.*;
 
 public class DataSourceWithCacheTest {
 

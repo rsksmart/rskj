@@ -20,12 +20,15 @@
 package org.ethereum.config;
 
 import co.rsk.config.TestSystemProperties;
-import com.typesafe.config.*;
-import org.junit.Assert;
-import org.junit.Test;
-
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigParseOptions;
+import com.typesafe.config.ConfigRenderOptions;
 import java.io.File;
 import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by Anton Nashatyrev on 13.07.2015.

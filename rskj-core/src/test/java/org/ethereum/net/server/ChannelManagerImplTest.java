@@ -19,21 +19,22 @@
 
 package org.ethereum.net.server;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.net.NodeID;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeManager;
 import org.ethereum.sync.SyncPool;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Roman Mandeleil

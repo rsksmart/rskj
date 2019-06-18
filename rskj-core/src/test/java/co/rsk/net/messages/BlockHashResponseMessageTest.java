@@ -18,10 +18,9 @@
 
 package co.rsk.net.messages;
 
+import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Random;
 
 public class BlockHashResponseMessageTest {
     @Test

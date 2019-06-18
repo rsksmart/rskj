@@ -19,15 +19,14 @@
 
 package org.ethereum.jsontestsuite;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 public class Logs {
     List<LogInfo> logs = new ArrayList<>();

@@ -19,13 +19,12 @@
 
 package org.ethereum.jsontestsuite;
 
+import java.util.List;
+import java.util.Map;
 import org.ethereum.jsontestsuite.model.AccountTck;
 import org.ethereum.jsontestsuite.model.EnvTck;
 import org.ethereum.jsontestsuite.model.LogTck;
 import org.ethereum.jsontestsuite.model.TransactionTck;
-
-import java.util.List;
-import java.util.Map;
 
 public class StateTestCase {
 

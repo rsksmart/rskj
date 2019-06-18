@@ -18,10 +18,16 @@
 
 package co.rsk.core;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThat;
+
 import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import com.google.common.primitives.Bytes;
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
@@ -29,13 +35,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
 
 public class BlockHeaderTest {
     @Test

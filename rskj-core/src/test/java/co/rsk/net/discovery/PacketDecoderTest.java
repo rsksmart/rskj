@@ -18,17 +18,20 @@
 
 package co.rsk.net.discovery;
 
-import co.rsk.net.discovery.message.*;
+import co.rsk.net.discovery.message.DiscoveryMessageType;
+import co.rsk.net.discovery.message.FindNodePeerMessage;
+import co.rsk.net.discovery.message.NeighborsPeerMessage;
+import co.rsk.net.discovery.message.PingPeerMessage;
+import co.rsk.net.discovery.message.PongPeerMessage;
 import io.netty.channel.ChannelHandlerContext;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.UUID;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.UUID;
 
 /**
  * Created by mario on 15/02/17.

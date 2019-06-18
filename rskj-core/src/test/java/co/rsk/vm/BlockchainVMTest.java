@@ -22,16 +22,20 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.test.World;
-import org.ethereum.config.Constants;
-import org.ethereum.core.*;
-import org.ethereum.crypto.ECKey;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
+import org.ethereum.config.Constants;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created by ajlopez on 4/20/2016.

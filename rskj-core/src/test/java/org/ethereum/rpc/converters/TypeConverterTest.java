@@ -19,7 +19,6 @@
 package org.ethereum.rpc.converters;
 
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.junit.Assert;
 import org.junit.Test;
 

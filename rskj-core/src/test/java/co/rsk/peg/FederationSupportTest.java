@@ -18,25 +18,24 @@
 
 package co.rsk.peg;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class FederationSupportTest {
 

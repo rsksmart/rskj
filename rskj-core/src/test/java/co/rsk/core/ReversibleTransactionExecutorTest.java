@@ -20,6 +20,7 @@
 package co.rsk.core;
 
 import co.rsk.util.TestContract;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
@@ -29,8 +30,6 @@ import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
 
 public class ReversibleTransactionExecutorTest {
 

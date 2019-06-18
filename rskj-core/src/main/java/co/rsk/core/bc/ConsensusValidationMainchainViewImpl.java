@@ -19,15 +19,14 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class ConsensusValidationMainchainViewImpl implements ConsensusValidationMainchainView {
 
@@ -42,9 +41,9 @@ public class ConsensusValidationMainchainViewImpl implements ConsensusValidation
     }
 
     /**
-     * Design decision note. headers for blocks not yet added to the blockchain are not in the BlockStore.
-     * These headers are in a collection used by the SyncProcessor and friends.
-     * Sync process creates a new version of this collection periodically and that is why a setter is needed.
+     * Design decision note. headers for blocks not yet added to the blockchain are not in the BlockStore. These headers
+     * are in a collection used by the SyncProcessor and friends. Sync process creates a new version of this collection
+     * periodically and that is why a setter is needed.
      */
     public void setPendingHeaders(Map<Keccak256, BlockHeader> pendingHeadersByHash) {
         this.pendingHeadersByHash = pendingHeadersByHash;
@@ -55,20 +54,20 @@ public class ConsensusValidationMainchainViewImpl implements ConsensusValidation
         List<BlockHeader> headers = new ArrayList<>();
 
         Keccak256 currentHash = startingHashToGetMainchainFrom;
-        for(int i = 0; i < height; i++) {
+        for (int i = 0; i < height; i++) {
             Block block = blockStore.getBlockByHash(currentHash.getBytes());
             BlockHeader header;
             if (block != null) {
                 header = block.getHeader();
             } else {
-                if(pendingHeadersByHash == null) {
+                if (pendingHeadersByHash == null) {
                     logger.error("Pending headers by hash has not been set.");
                     return new ArrayList<>();
                 }
                 header = pendingHeadersByHash.get(currentHash);
             }
 
-            if(header == null) {
+            if (header == null) {
                 return new ArrayList<>();
             }
 

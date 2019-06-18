@@ -22,11 +22,16 @@ import co.rsk.asm.EVMAssembler;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -34,9 +39,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * Created by Sergio on 26/02/2017.

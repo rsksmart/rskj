@@ -1,15 +1,14 @@
 package co.rsk.core.bc;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import co.rsk.blockchain.utils.BlockGenerator;
+import java.util.ArrayList;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Test;
-
-import java.util.ArrayList;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class SelectionRuleTest {
 

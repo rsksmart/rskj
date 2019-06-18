@@ -556,7 +556,6 @@ public class Trie {
         return delete(key.getBytes(StandardCharsets.UTF_8));
     }
 
-
     // This is O(1). The node with exact key "key" MUST exists.
     public Trie deleteRecursive(byte[] key) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);

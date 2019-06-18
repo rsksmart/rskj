@@ -19,10 +19,12 @@
 
 package org.ethereum.jsontestsuite.builder;
 
+import static org.ethereum.json.Utils.parseData;
+import static org.ethereum.json.Utils.parseNumericData;
+import static org.ethereum.json.Utils.parseVarData;
+
 import org.ethereum.jsontestsuite.Env;
 import org.ethereum.jsontestsuite.model.EnvTck;
-
-import static org.ethereum.json.Utils.*;
 
 public class EnvBuilder {
 

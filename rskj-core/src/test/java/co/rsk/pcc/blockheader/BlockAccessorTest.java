@@ -19,17 +19,16 @@
 
 package co.rsk.pcc.blockheader;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
+import java.util.Optional;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Optional;
-
-import static org.mockito.Mockito.mock;
 
 public class BlockAccessorTest {
     private static short MAXIMUM_BLOCK_DEPTH = 100;

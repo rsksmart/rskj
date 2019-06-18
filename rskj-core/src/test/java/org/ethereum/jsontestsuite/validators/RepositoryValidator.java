@@ -20,13 +20,12 @@
 package org.ethereum.jsontestsuite.validators;
 
 import co.rsk.core.RskAddress;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Repository;
-import org.ethereum.util.ByteUtil;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Repository;
+import org.ethereum.util.ByteUtil;
 
 public class RepositoryValidator {
 

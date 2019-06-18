@@ -38,7 +38,7 @@ public class TransactionReceiptDTO {
     public String gasUsed; // The amount of gas used by this specific transaction alone.
     public String
             contractAddress; // The contract address created, if the transaction was a contract creation, otherwise
-                             // null .
+    // null .
     public LogFilterElement[] logs; // Array of log objects, which this transaction generated.
     public String from;
     public String to;

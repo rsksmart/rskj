@@ -18,6 +18,9 @@
 
 package co.rsk.blockchain.utils;
 
+import static org.ethereum.core.Genesis.getZeroHash;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+
 import co.rsk.config.MiningConfig;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
@@ -28,23 +31,29 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleRskTransaction;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.*;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
-
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.ethereum.core.Genesis.getZeroHash;
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * Created by ajlopez on 5/10/2016.

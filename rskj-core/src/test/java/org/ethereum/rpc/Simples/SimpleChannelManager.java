@@ -18,27 +18,31 @@
 
 package org.ethereum.rpc.Simples;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.MessageWithId;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.net.simples.SimpleNodeChannel;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.net.InetAddress;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by Ruben on 09/06/2016.

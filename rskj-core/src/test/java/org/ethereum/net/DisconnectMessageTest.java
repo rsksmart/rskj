@@ -19,16 +19,15 @@
 
 package org.ethereum.net;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.p2p.DisconnectMessage;
-
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import static org.junit.Assert.*;
 
 public class DisconnectMessageTest {
 

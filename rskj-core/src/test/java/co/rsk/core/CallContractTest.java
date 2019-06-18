@@ -23,14 +23,18 @@ import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
-import org.ethereum.core.*;
+import java.math.BigInteger;
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 07/05/2017.

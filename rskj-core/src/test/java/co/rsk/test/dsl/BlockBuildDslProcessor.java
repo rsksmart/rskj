@@ -20,12 +20,11 @@ package co.rsk.test.dsl;
 
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by ajlopez on 8/16/2016.
