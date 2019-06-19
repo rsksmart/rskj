@@ -18,14 +18,17 @@
 
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeStorageConfiguration;
+import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.FederationSupport;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -95,14 +98,21 @@ public class EthModule
         Block bestBlock = blockchain.getBestBlock();
         Repository repository = repositoryLocator.snapshotAt(bestBlock.getHeader()).startTracking();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository,
+                PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
                 new BridgeStorageConfiguration(
                         activationConfig.isActive(ConsensusRule.RSKIP87, bestBlock.getNumber()),
                         activationConfig.isActive(ConsensusRule.RSKIP123, bestBlock.getNumber())
-                ),
-                null, repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR,
-                btcBlockStoreFactory);
+                )
+        );
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                bridgeConstants, provider, null, repository, bestBlock,
+                        new Context(bridgeConstants.getBtcParams()),
+                        new FederationSupport(bridgeConstants, provider, bestBlock),
+                btcBlockStoreFactory, null
+                );
 
         byte[] result = bridgeSupport.getStateForDebugging();
 

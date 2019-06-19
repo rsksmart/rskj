@@ -351,20 +351,18 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private BridgeSupport setup() {
-        return new BridgeSupport(
-                bridgeConstants,
-                new BridgeStorageProvider(
-                        repository,
-                        contractAddress,
-                        bridgeConstants,
-                        BridgeStorageConfiguration.fromBlockchainConfig(activations)
-                ),
-                new BridgeEventLoggerImpl(bridgeConstants, logs),
+        BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository,
-                rskExecutionBlock,
-                btcBlockStoreFactory,
-                null
+                contractAddress,
+                bridgeConstants,
+                BridgeStorageConfiguration.fromBlockchainConfig(activations)
         );
+        return new BridgeSupport(
+                bridgeConstants, provider, new BridgeEventLoggerImpl(bridgeConstants, logs), repository, rskExecutionBlock,
+                        new Context(bridgeConstants.getBtcParams()),
+                        new FederationSupport(bridgeConstants, provider, rskExecutionBlock),
+                btcBlockStoreFactory, null
+                );
     }
 
     private void teardown() throws IOException {

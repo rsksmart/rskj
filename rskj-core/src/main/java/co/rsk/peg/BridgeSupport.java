@@ -110,44 +110,6 @@ public class BridgeSupport {
     private BtcBlockChain btcBlockChain;
     private final org.ethereum.core.Block rskExecutionBlock;
 
-    // Used by bridge
-    public BridgeSupport(
-            BridgeConstants bridgeConstants,
-            BridgeStorageConfiguration bridgeStorageConfiguration,
-            BridgeEventLogger eventLogger,
-            Repository repository,
-            Block rskExecutionBlock,
-            RskAddress contractAddress,
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
-        this(
-                bridgeConstants,
-                new BridgeStorageProvider(
-                        repository,
-                        contractAddress,
-                        bridgeConstants,
-                        bridgeStorageConfiguration
-                ),
-                eventLogger, repository, rskExecutionBlock, btcBlockStoreFactory, null
-        );
-    }
-
-    // Used by unit tests
-    public BridgeSupport(
-            BridgeConstants bridgeConstants,
-            BridgeStorageProvider provider,
-            BridgeEventLogger eventLogger,
-            Repository repository,
-            Block executionBlock,
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
-            BtcBlockChain btcBlockChain) {
-        this(
-                bridgeConstants, provider, eventLogger, repository, executionBlock,
-                new Context(bridgeConstants.getBtcParams()),
-                new FederationSupport(bridgeConstants, provider, executionBlock),
-                btcBlockStoreFactory, btcBlockChain
-        );
-    }
-
     public BridgeSupport(
             BridgeConstants bridgeConstants,
             BridgeStorageProvider provider,
