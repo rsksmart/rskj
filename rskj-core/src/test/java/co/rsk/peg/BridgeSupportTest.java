@@ -727,8 +727,8 @@ public class BridgeSupportTest {
 
         BridgeSupport bridgeSupport = new BridgeSupport(bridgeConstants, provider, null, track, null, mockFactory, btcBlockChain);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, btcParams.getGenesisBlock().getDifficultyTarget(), 1, new ArrayList<BtcTransaction>());
-        co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
+        BtcBlock block = new BtcBlock(btcParams, 1, Sha256Hash.wrap("d800000000000000000000000000000000000000000000000000000000000000"), Sha256Hash.wrap("d900000000000000000000000000000000000000000000000000000000000000"), 1, btcParams.getGenesisBlock().getDifficultyTarget(), 1, new ArrayList<BtcTransaction>());
+        BtcBlock[] headers = new BtcBlock[1];
         headers[0] = block;
 
         bridgeSupport.receiveHeaders(headers);
@@ -755,8 +755,8 @@ public class BridgeSupportTest {
 
         BridgeSupport bridgeSupport = new BridgeSupport(bridgeConstants, provider, null, track, null, mockFactory, btcBlockChain);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, 1, 1, new ArrayList<BtcTransaction>());
-        co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
+        BtcBlock block = new BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, 1, 1, new ArrayList<BtcTransaction>());
+        BtcBlock[] headers = new BtcBlock[1];
         headers[0] = block;
 
         bridgeSupport.receiveHeaders(headers);
@@ -765,6 +765,61 @@ public class BridgeSupportTest {
         track.commit();
 
         Assert.assertNotNull(btcBlockStore.get(block.getHash()));
+    }
+
+    @Test
+    public void addForkedBlockHeader() throws IOException, BlockStoreException {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        Context btcContext = new Context(btcParams);
+        BtcBlockstoreWithCache btcBlockStore = new RepositoryBlockStore(bridgeConstants, track, PrecompiledContracts.BRIDGE_ADDR);
+        BtcBlockChain btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, bridgeConstants, bridgeStorageConfigurationAtHeightZero);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(bridgeConstants, provider, null, track, null, btcBlockStore, btcBlockChain);
+
+        Sha256Hash genesisBlockHash = btcParams.getGenesisBlock().getHash();
+        long actualDifficulty = btcParams.getGenesisBlock().getDifficultyTarget();
+
+        BtcBlock bestBlock = new BtcBlock(btcParams, 1, genesisBlockHash, Sha256Hash.wrap("dc00000000000000000000000000000000000000000000000000000000000000"), 1, actualDifficulty, 1, new ArrayList<>());
+        BtcBlock[] headers = new BtcBlock[1];
+        headers[0] = bestBlock;
+
+        bridgeSupport.receiveHeaders(headers);
+        bridgeSupport.save();
+
+        track.commit();
+
+        Assert.assertNotNull(btcBlockStore.get(bestBlock.getHash()));
+
+        // block has same work than previous block and connects at the same height, so it won't be consider chain head.
+        BtcBlock notBestBlock = new BtcBlock(btcParams, 1, genesisBlockHash, Sha256Hash.wrap("dd00000000000000000000000000000000000000000000000000000000000000"), 1, actualDifficulty, 1, new ArrayList<>());
+        headers[0] = notBestBlock;
+
+        bridgeSupport.receiveHeaders(headers);
+        bridgeSupport.save();
+
+        track.commit();
+
+        Assert.assertNotNull(btcBlockStore.get(notBestBlock.getHash()));
+        Assert.assertEquals(btcBlockStore.getChainHead().getHeader().getHash(), bestBlock.getHash());
+
+        // block connect to block that wasn't main chain, and as it has more work will now be main chain
+        BtcBlock newBestBlock = spy(new BtcBlock(btcParams, 1, notBestBlock.getHash(), Sha256Hash.wrap("de00000000000000000000000000000000000000000000000000000000000000"), 1, bestBlock.getDifficultyTarget(), 1, new ArrayList<>()));
+        // As we are creating the merkleroot using a hash generator dependant on the amount of calls, the header validation might fail depending on the order of this test execution
+        // Just override the validation and continue with the block connection
+        doNothing().when(newBestBlock).verifyHeader();
+        headers[0] = newBestBlock;
+
+        bridgeSupport.receiveHeaders(headers);
+        bridgeSupport.save();
+
+        track.commit();
+
+        Assert.assertNotNull(btcBlockStore.get(newBestBlock.getHash()));
+        Assert.assertEquals(btcBlockStore.getChainHead().getHeader().getHash(), newBestBlock.getHash());
     }
 
     @Test
@@ -1391,7 +1446,7 @@ public class BridgeSupportTest {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        BtcBlock block = new BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         btcBlockChain.add(block);
 
@@ -1469,7 +1524,7 @@ public class BridgeSupportTest {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        BtcBlock registerHeader = new BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         int height = 30;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
@@ -1564,7 +1619,7 @@ public class BridgeSupportTest {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        BtcBlock registerHeader = new BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         int height = 30;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
@@ -1748,7 +1803,7 @@ public class BridgeSupportTest {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        BtcBlock registerHeader = new BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         int height = 30;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
@@ -1862,7 +1917,7 @@ public class BridgeSupportTest {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        BtcBlock registerHeader = new BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         int height = 30;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
