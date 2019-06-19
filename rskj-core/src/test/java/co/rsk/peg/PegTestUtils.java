@@ -38,20 +38,33 @@ public class PegTestUtils {
 
     private static int nhash = 0;
 
+    /**
+     * @deprecated Use createHash3(int) instead. Avoid using persisted state in static class in test environments
+     */
+    @Deprecated
     public static Keccak256 createHash3() {
-        byte[] bytes = new byte[32];
-        nhash++;
-        bytes[0] = (byte) (nhash & 0xFF);
-        bytes[1] = (byte) (nhash>>8 & 0xFF);
-        Keccak256 hash = new Keccak256(bytes);
-        return hash;
+        return createHash3(nhash++);
     }
 
-    public static Sha256Hash createHash() {
+    public static Keccak256 createHash3(int nHash) {
         byte[] bytes = new byte[32];
-        bytes[0] = (byte) nhash++;
-        Sha256Hash hash = Sha256Hash.wrap(bytes);
-        return hash;
+        bytes[0] = (byte) (nHash & 0xFF);
+        bytes[1] = (byte) (nHash >>8 & 0xFF);
+        return new Keccak256(bytes);
+    }
+
+    /**
+     * @deprecated Use createHash(int) instead. Avoid using persisted state in static class in test environments
+     */
+    @Deprecated
+    public static Sha256Hash createHash() {
+        return createHash(nhash++);
+    }
+
+    public static Sha256Hash createHash(int nHash) {
+        byte[] bytes = new byte[32];
+        bytes[0] = (byte) nHash;
+        return Sha256Hash.wrap(bytes);
     }
 
     public static Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation) {
