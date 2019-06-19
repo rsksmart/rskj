@@ -63,7 +63,7 @@ public class BlockGenerator {
     private ActivationConfig activationConfig;
 
     public BlockGenerator() {
-        this(Constants.regtest(), ActivationConfigsForTest.all());
+        this(Constants.regtest(), ActivationConfigsForTest.regtest());
     }
 
     public BlockGenerator(Constants networkConstants, ActivationConfig activationConfig) {

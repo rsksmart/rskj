@@ -18,12 +18,18 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
+import com.typesafe.config.ConfigFactory;
+import org.ethereum.config.SystemProperties;
+
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ActivationConfigsForTest {
+
+    private static final ActivationConfig REGTEST = read("config/regtest");
+
     public static ActivationConfig genesis() {
         return only();
     }
@@ -41,6 +47,10 @@ public class ActivationConfigsForTest {
                 ConsensusRule.RSKIP97,
                 ConsensusRule.RSKIP98
         );
+    }
+
+    public static ActivationConfig regtest() {
+        return REGTEST;
     }
 
     public static ActivationConfig all() {
@@ -72,5 +82,12 @@ public class ActivationConfigsForTest {
                 .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
         allDisabled.put(ConsensusRule.ARE_BRIDGE_TXS_PAID, 10L);
         return new ActivationConfig(allDisabled);
+    }
+
+    private static ActivationConfig read(String resourceBasename) {
+        return ActivationConfig.read(
+                ConfigFactory.load(resourceBasename)
+                        .getConfig(SystemProperties.PROPERTY_BLOCKCHAIN_CONFIG)
+        );
     }
 }
