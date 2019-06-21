@@ -18,6 +18,8 @@
 
 package co.rsk.rpc.modules.eth;
 
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
+
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
@@ -30,8 +32,9 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.FederationSupport;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import java.io.IOException;
+import java.util.Map;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -43,11 +46,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Map;
-
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
 // TODO add all RPC methods
 public class EthModule
@@ -97,21 +95,19 @@ public class EthModule
     public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
         Block bestBlock = blockchain.getBestBlock();
         Repository repository = repositoryLocator.snapshotAt(bestBlock.getHeader()).startTracking();
+        ActivationConfig.ForBlock activations = activationConfig.forBlock(bestBlock.getNumber());
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                new BridgeStorageConfiguration(
-                        activationConfig.isActive(ConsensusRule.RSKIP87, bestBlock.getNumber()),
-                        activationConfig.isActive(ConsensusRule.RSKIP123, bestBlock.getNumber())
-                )
+                BridgeStorageConfiguration.fromBlockchainConfig(activations)
         );
         BridgeSupport bridgeSupport = new BridgeSupport(
                 bridgeConstants, provider, null, repository, bestBlock,
                         new Context(bridgeConstants.getBtcParams()),
                         new FederationSupport(bridgeConstants, provider, bestBlock),
-                btcBlockStoreFactory, null
+                btcBlockStoreFactory
                 );
 
         byte[] result = bridgeSupport.getStateForDebugging();

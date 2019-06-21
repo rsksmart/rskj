@@ -44,6 +44,7 @@ import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.*;
@@ -213,6 +214,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockExecutor blockExecutor;
     private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     private PrecompiledContracts precompiledContracts;
+    private BridgeSupportFactory bridgeSupportFactory;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -346,12 +348,21 @@ public class RskContext implements NodeBootstrapper {
 
     public PrecompiledContracts getPrecompiledContracts() {
         if (precompiledContracts == null) {
-            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBtcBlockStoreFactory());
+            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBridgeSupportFactory());
         }
 
         return precompiledContracts;
     }
 
+    public BridgeSupportFactory getBridgeSupportFactory() {
+        if (bridgeSupportFactory == null) {
+            bridgeSupportFactory = new BridgeSupportFactory(getBtcBlockStoreFactory(),
+                    getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
+                    getRskSystemProperties().getActivationConfig());
+        }
+
+        return bridgeSupportFactory;
+    }
 
     public BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
         if (btcBlockStoreFactory == null) {

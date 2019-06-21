@@ -27,6 +27,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -127,7 +128,13 @@ class RemascTestRunner {
 
         BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), new RepositoryBtcBlockStoreWithCache.Factory(builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()));
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(
+                        builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()),
+                builder.getConfig().getNetworkConstants().getBridgeConstants(),
+                builder.getConfig().getActivationConfig());
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory);
         BlockExecutor blockExecutor = new BlockExecutor(
                 builder.getConfig().getActivationConfig(),
                 new RepositoryLocator(blockchain.getRepository(), builder.getStateRootHandler()),

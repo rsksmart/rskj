@@ -24,6 +24,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.*;
+import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
@@ -203,7 +204,13 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
                 List<LogInfo> logs = new ArrayList<>();
 
-                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, btcBlockStoreFactory);
+                Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                        constants.getBridgeConstants().getBtcParams());
+                BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                        btcBlockStoreFactory, constants.getBridgeConstants(), activationConfig);
+
+                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                        bridgeSupportFactory);
                 Blockchain blockchain = BlockChainBuilder.ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);
                 bridge.init(

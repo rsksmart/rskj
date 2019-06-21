@@ -118,8 +118,7 @@ public class BridgeSupport {
             Block executionBlock,
             Context btcContext,
             FederationSupport federationSupport,
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
-            BtcBlockChain btcBlockChain) {
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
@@ -128,7 +127,6 @@ public class BridgeSupport {
         this.btcContext = btcContext;
         this.federationSupport = federationSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
-        this.btcBlockChain = btcBlockChain;
     }
 
     @VisibleForTesting

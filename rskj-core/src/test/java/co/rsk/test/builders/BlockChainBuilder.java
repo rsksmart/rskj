@@ -26,6 +26,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
@@ -64,7 +65,7 @@ public class BlockChainBuilder {
     private RskSystemProperties config;
     private EthereumListener listener;
     private StateRootHandler stateRootHandler;
-    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private BridgeSupportFactory bridgeSupportFactory;
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -112,7 +113,6 @@ public class BlockChainBuilder {
     }
 
     public BlockChainBuilder setBtcBlockStoreFactory(BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
-        this.btcBlockStoreFactory = btcBlockStoreFactory;
         return this;
     }
 
@@ -165,9 +165,12 @@ public class BlockChainBuilder {
             listener = new BlockExecutorTest.SimpleEthereumListener();
         }
 
-        if(btcBlockStoreFactory == null) {
-            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()
-            );
+        if (bridgeSupportFactory == null) {
+            bridgeSupportFactory = new BridgeSupportFactory(
+                    new RepositoryBtcBlockStoreWithCache.Factory(
+                            config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                    config.getNetworkConstants().getBridgeConstants(),
+                    config.getActivationConfig());
         }
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
@@ -183,7 +186,7 @@ public class BlockChainBuilder {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, btcBlockStoreFactory)
+                new PrecompiledContracts(config, bridgeSupportFactory)
         );
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(
                 config, this.repository, this.blockStore, blockFactory, new TestCompositeEthereumListener(),

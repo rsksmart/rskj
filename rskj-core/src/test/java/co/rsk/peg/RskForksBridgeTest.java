@@ -38,14 +38,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RskForksBridgeTest {
     private static ECKey fedECPrivateKey = ECKey.fromPrivate(
@@ -464,7 +461,7 @@ public class RskForksBridgeTest {
                 null,
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(beforeBambooProperties, world.getBtcBlockStoreFactory())
+                new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory())
                 );
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository, blockChain.getBestBlock(), 0)

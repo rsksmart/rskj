@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.bouncycastle.util.BigIntegers;
@@ -244,8 +245,12 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
-                    BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
-                    precompiledContracts = new PrecompiledContracts(config, btcBlockStoreFactory);
+                    BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                            new RepositoryBtcBlockStoreWithCache.Factory(
+                                    config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                            config.getNetworkConstants().getBridgeConstants(),
+                            config.getActivationConfig());
+                    precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory);
                     TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                             config,
                             new BlockStoreDummy(),

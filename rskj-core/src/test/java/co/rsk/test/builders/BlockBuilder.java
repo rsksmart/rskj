@@ -24,7 +24,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
-import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.test.World;
 import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.BigIntegers;
@@ -49,7 +49,7 @@ public class BlockBuilder {
     private List<BlockHeader> uncles;
     private BigInteger minGasPrice;
     private byte[] gasLimit;
-    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private BridgeSupportFactory bridgeSupportFactory;
 
     public BlockBuilder() {
         this.blockGenerator = new BlockGenerator();
@@ -57,7 +57,7 @@ public class BlockBuilder {
 
     public BlockBuilder(World world) {
         this(world.getBlockChain(), new BlockGenerator());
-        this.btcBlockStoreFactory = world.getBtcBlockStoreFactory();
+        this.bridgeSupportFactory = world.getBridgeSupportFactory();
     }
 
     public BlockBuilder(Blockchain blockChain) {
@@ -121,7 +121,7 @@ public class BlockBuilder {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl(),
-                            new PrecompiledContracts(config, btcBlockStoreFactory)
+                            new PrecompiledContracts(config, bridgeSupportFactory)
                     )
             );
             executor.executeAndFill(block, parent.getHeader());
