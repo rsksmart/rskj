@@ -483,7 +483,6 @@ public class RskContext implements NodeBootstrapper {
         if (ethModule == null) {
             ethModule = new EthModule(
                     getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
-                    getRskSystemProperties().getActivationConfig(),
                     getBlockchain(),
                     getReversibleTransactionExecutor(),
                     getExecutionBlockRetriever(),
@@ -491,7 +490,7 @@ public class RskContext implements NodeBootstrapper {
                     getEthModuleSolidity(),
                     getEthModuleWallet(),
                     getEthModuleTransaction(),
-                    getBtcBlockStoreFactory()
+                    getBridgeSupportFactory()
             );
         }
 

@@ -341,11 +341,15 @@ public class TransactionModuleTest {
             transactionModule = new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool);
         }
 
+        final RepositoryBtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                config.getNetworkConstants().getBridgeConstants().getBtcParams());
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
+                config.getNetworkConstants().getBridgeConstants(), blockchain,
                 reversibleTransactionExecutor1, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
                 repositoryLocator, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule,
-                new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams())
+                new BridgeSupportFactory(
+                        btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
+                        config.getActivationConfig())
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);

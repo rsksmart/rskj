@@ -27,6 +27,7 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.simples.SimpleBlockProcessor;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -1248,10 +1249,11 @@ public class Web3ImplTest {
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
+                config.getNetworkConstants().getBridgeConstants(), blockchain,
                 null, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
-                null
+                new BridgeSupportFactory(
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
@@ -1328,11 +1330,12 @@ public class Web3ImplTest {
         res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
         when(executor.executeTransaction(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(res);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain, executor,
+                config.getNetworkConstants().getBridgeConstants(), blockchain, executor,
                 new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator,
                 new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool),
-                null);
+                new BridgeSupportFactory(
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()));
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
         MinerClient minerClient = new SimpleMinerClient();
@@ -1376,10 +1379,11 @@ public class Web3ImplTest {
         when(systemProperties.customSolcPath()).thenReturn(solc);
         Ethereum eth = mock(Ethereum.class);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), null,
+                config.getNetworkConstants().getBridgeConstants(), null,
                 null, new ExecutionBlockRetriever(null, null, null, null), null,
                 new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null, null,
-                null
+                new BridgeSupportFactory(
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
         );
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
@@ -1438,10 +1442,11 @@ public class Web3ImplTest {
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
+                config.getNetworkConstants().getBridgeConstants(), blockchain,
                 null, new ExecutionBlockRetriever(null, null, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
-                null);
+                new BridgeSupportFactory(
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()));
         TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
         Web3Impl web3 = new Web3RskImpl(

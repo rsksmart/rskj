@@ -109,7 +109,7 @@ public class PrecompiledContracts {
     private static Identity identity = new Identity();
     private static BigIntegerModexp bigIntegerModexp = new BigIntegerModexp();
     private final RskSystemProperties config;
-    private BridgeSupportFactory bridgeSupportFactory;
+    private final BridgeSupportFactory bridgeSupportFactory;
 
     public PrecompiledContracts(RskSystemProperties config, BridgeSupportFactory bridgeSupportFactory) {
         this.config = config;
