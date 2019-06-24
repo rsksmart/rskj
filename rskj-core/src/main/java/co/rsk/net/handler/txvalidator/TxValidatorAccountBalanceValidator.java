@@ -20,19 +20,22 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
+import java.math.BigInteger;
+import javax.annotation.Nullable;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
-
-/**
- * Checks if an account can pay the transaction execution cost
- */
+/** Checks if an account can pay the transaction execution cost */
 public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
 
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(
+            Transaction tx,
+            @Nullable AccountState state,
+            BigInteger gasLimit,
+            Coin minimumGasPrice,
+            long bestBlockNumber,
+            boolean isFreeTx) {
         if (isFreeTx) {
             return TransactionValidationResult.ok();
         }
@@ -49,5 +52,4 @@ public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
 
         return TransactionValidationResult.withError("insufficient funds");
     }
-
 }

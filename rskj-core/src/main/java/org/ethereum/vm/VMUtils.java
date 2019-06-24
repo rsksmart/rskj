@@ -19,9 +19,6 @@
 
 package org.ethereum.vm;
 
-import org.ethereum.vm.trace.ProgramTrace;
-import org.ethereum.vm.trace.Serializers;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -31,28 +28,37 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import org.ethereum.vm.trace.ProgramTrace;
+import org.ethereum.vm.trace.Serializers;
 
 public final class VMUtils {
-    private VMUtils() {
-    }
+    private VMUtils() {}
 
-    public static void saveProgramTraceFile(Path basePath, String txHash, boolean compress, ProgramTrace trace) throws IOException {
+    public static void saveProgramTraceFile(
+            Path basePath, String txHash, boolean compress, ProgramTrace trace) throws IOException {
         if (compress) {
-            try(final FileOutputStream fos = new FileOutputStream(basePath.resolve(txHash + ".zip").toFile());
-                final ZipOutputStream zos = new ZipOutputStream(fos)
-            ) {
+            try (final FileOutputStream fos =
+                            new FileOutputStream(basePath.resolve(txHash + ".zip").toFile());
+                    final ZipOutputStream zos = new ZipOutputStream(fos)) {
                 ZipEntry zipEntry = new ZipEntry(txHash + ".json");
                 zos.putNextEntry(zipEntry);
                 Serializers.serializeFieldsOnly(trace, true, zos);
             }
         } else {
-            try (final OutputStream out = Files.newOutputStream(basePath.resolve(txHash + ".json"))) {
+            try (final OutputStream out =
+                    Files.newOutputStream(basePath.resolve(txHash + ".json"))) {
                 Serializers.serializeFieldsOnly(trace, true, out);
             }
         }
     }
 
-    public static void saveProgramTraceFile(String txHash, ProgramTrace trace, String databaseDir, String vmTraceDir, boolean vmTraceCompressed) throws IOException {
+    public static void saveProgramTraceFile(
+            String txHash,
+            ProgramTrace trace,
+            String databaseDir,
+            String vmTraceDir,
+            boolean vmTraceCompressed)
+            throws IOException {
         Path tracePath = Paths.get(databaseDir, vmTraceDir);
         File traceDir = tracePath.toFile();
         if (!traceDir.exists()) {

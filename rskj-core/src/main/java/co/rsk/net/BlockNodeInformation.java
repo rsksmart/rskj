@@ -19,18 +19,17 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
-
-import javax.annotation.Nonnull;
 import java.util.*;
+import javax.annotation.Nonnull;
 
 /**
- * BlockNodeInformation has information about which blocks are known by which peer,
- * and provides convenient functions to retrieve all the blocks known by a node, and
- * which nodes know a certain block.
- * <p>
- * BlockNodeInformation will only hold a limited amount of blocks and peers. Blocks
- * that aren't accessed frequently will be deleted, as well as peers.
- * Peers will only remember the last maxBlocks blocks that were inserted.
+ * BlockNodeInformation has information about which blocks are known by which peer, and provides
+ * convenient functions to retrieve all the blocks known by a node, and which nodes know a certain
+ * block.
+ *
+ * <p>BlockNodeInformation will only hold a limited amount of blocks and peers. Blocks that aren't
+ * accessed frequently will be deleted, as well as peers. Peers will only remember the last
+ * maxBlocks blocks that were inserted.
  */
 public class BlockNodeInformation {
     private final Map<NodeID, Set<Keccak256>> blocksByNode;
@@ -43,19 +42,23 @@ public class BlockNodeInformation {
         this.maxPeers = maxPeers;
 
         // Nodes are evicted in Least-recently-accessed order.
-        blocksByNode = new LinkedHashMap<NodeID, Set<Keccak256>>(BlockNodeInformation.this.maxPeers, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<NodeID, Set<Keccak256>> eldest) {
-                return size() > BlockNodeInformation.this.maxPeers;
-            }
-        };
+        blocksByNode =
+                new LinkedHashMap<NodeID, Set<Keccak256>>(
+                        BlockNodeInformation.this.maxPeers, 0.75f, true) {
+                    @Override
+                    protected boolean removeEldestEntry(Map.Entry<NodeID, Set<Keccak256>> eldest) {
+                        return size() > BlockNodeInformation.this.maxPeers;
+                    }
+                };
         // Blocks are evicted in Least-recently-accessed order.
-        nodesByBlock = new LinkedHashMap<Keccak256, Set<NodeID>>(BlockNodeInformation.this.maxBlocks, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<Keccak256, Set<NodeID>> eldest) {
-                return size() > BlockNodeInformation.this.maxBlocks;
-            }
-        };
+        nodesByBlock =
+                new LinkedHashMap<Keccak256, Set<NodeID>>(
+                        BlockNodeInformation.this.maxBlocks, 0.75f, true) {
+                    @Override
+                    protected boolean removeEldestEntry(Map.Entry<Keccak256, Set<NodeID>> eldest) {
+                        return size() > BlockNodeInformation.this.maxBlocks;
+                    }
+                };
     }
 
     public BlockNodeInformation() {
@@ -66,20 +69,21 @@ public class BlockNodeInformation {
      * addBlockToNode specifies that a given node knows about a given block.
      *
      * @param blockHash the block hash.
-     * @param nodeID    the node to add the block to.
+     * @param nodeID the node to add the block to.
      */
     public void addBlockToNode(@Nonnull final Keccak256 blockHash, @Nonnull final NodeID nodeID) {
         Set<Keccak256> nodeBlocks = blocksByNode.get(nodeID);
         if (nodeBlocks == null) {
             // Create a new empty LRUCache for the blocks that a node know.
             // NodeBlocks are evicted in reverse insertion order.
-            nodeBlocks = Collections.newSetFromMap(
-                    new LinkedHashMap<Keccak256, Boolean>() {
-                        protected boolean removeEldestEntry(Map.Entry<Keccak256, Boolean> eldest) {
-                            return size() > maxBlocks;
-                        }
-                    }
-            );
+            nodeBlocks =
+                    Collections.newSetFromMap(
+                            new LinkedHashMap<Keccak256, Boolean>() {
+                                protected boolean removeEldestEntry(
+                                        Map.Entry<Keccak256, Boolean> eldest) {
+                                    return size() > maxBlocks;
+                                }
+                            });
             blocksByNode.put(nodeID, nodeBlocks);
         }
 

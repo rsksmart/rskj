@@ -22,9 +22,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by ajlopez on 8/6/2016.
- */
+/** Created by ajlopez on 8/6/2016. */
 public class DslParser {
     private BufferedReader reader;
 
@@ -48,17 +46,14 @@ public class DslParser {
     public DslCommand nextCommand() {
         String[] words;
 
-        for (words = nextWords(); words != null && words.length == 0; words = nextWords())
-            ;
+        for (words = nextWords(); words != null && words.length == 0; words = nextWords()) ;
 
-        if (words == null)
-            return null;
+        if (words == null) return null;
 
         String verb = words[0];
         List<String> arguments = new ArrayList<>();
 
-        for (int k = 1; k < words.length; k++)
-            arguments.add(words[k]);
+        for (int k = 1; k < words.length; k++) arguments.add(words[k]);
 
         return new DslCommand(verb, arguments);
     }
@@ -73,32 +68,27 @@ public class DslParser {
             return null;
         }
 
-        if (line == null)
-            return null;
+        if (line == null) return null;
 
         String[] words = line.split("\\s+");
 
-        return normalizeWords(words).toArray(new String[]{});
+        return normalizeWords(words).toArray(new String[] {});
     }
 
     private List<String> normalizeWords(String[] words) {
         List<String> result = new ArrayList<String>();
 
-        for (int k = 0; k < words.length; k++)
-            if (words[k].length() > 0)
-                result.add(words[k]);
+        for (int k = 0; k < words.length; k++) if (words[k].length() > 0) result.add(words[k]);
 
         return result;
     }
 
     private static String normalizeLine(String line) {
-        if (line == null)
-            return null;
+        if (line == null) return null;
 
         int position = line.indexOf('#');
 
-        if (position < 0)
-            return line;
+        if (position < 0) return line;
 
         return line.substring(0, position);
     }

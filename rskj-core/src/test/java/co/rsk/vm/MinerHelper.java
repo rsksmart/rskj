@@ -25,6 +25,9 @@ import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -33,13 +36,7 @@ import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by Sergio on 18/07/2016.
- */
+/** Created by Sergio on 18/07/2016. */
 public class MinerHelper {
     private static final Logger logger = LoggerFactory.getLogger("minerhelper");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -55,23 +52,24 @@ public class MinerHelper {
     private Coin totalPaidFees = Coin.ZERO;
     private List<TransactionReceipt> txReceipts;
 
-    public MinerHelper(Repository repository , Blockchain blockchain) {
+    public MinerHelper(Repository repository, Blockchain blockchain) {
         this.repository = repository;
         this.blockchain = blockchain;
         this.gasLimitCalculator = new GasLimitCalculator(config.getNetworkConstants());
         this.blockFactory = new BlockFactory(config.getActivationConfig());
     }
 
-    public void processBlock( Block block, Block parent) {
+    public void processBlock(Block block, Block parent) {
         latestStateRootHash = null;
         totalGasUsed = 0;
         totalPaidFees = Coin.ZERO;
         txReceipts = new ArrayList<>();
 
-        //Repository originalRepo  = ((Repository) ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
+        // Repository originalRepo  = ((Repository)
+        // ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
 
         // This creates a snapshot WITHOUT history of the current "parent" reponsitory.
-        Repository originalRepo  = repository.getSnapshotTo(parent.getStateRoot());
+        Repository originalRepo = repository.getSnapshotTo(parent.getStateRoot());
 
         Repository track = originalRepo.startTracking();
 
@@ -85,21 +83,31 @@ public class MinerHelper {
         String stateHash2 = Hex.toHexString(repository.getRoot());
         if (stateHash1.compareTo(stateHash2) != 0) {
             logger.error("Strange state in block {} {}", block.getNumber(), block.getHash());
-            panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), block.getHash()));
+            panicProcessor.panic(
+                    "minerserver",
+                    String.format(
+                            "Strange state in block %d %s", block.getNumber(), block.getHash()));
         }
 
         int txindex = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
-            TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
-                    config,
-                    null,
-                    null,
-                    blockFactory,
-                    null,
-                    new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams())));
-            TransactionExecutor executor = transactionExecutorFactory
-                    .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
+            TransactionExecutorFactory transactionExecutorFactory =
+                    new TransactionExecutorFactory(
+                            config,
+                            null,
+                            null,
+                            blockFactory,
+                            null,
+                            new PrecompiledContracts(
+                                    config,
+                                    new RepositoryBtcBlockStoreWithCache.Factory(
+                                            config.getNetworkConstants()
+                                                    .getBridgeConstants()
+                                                    .getBtcParams())));
+            TransactionExecutor executor =
+                    transactionExecutorFactory.newInstance(
+                            tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 
             executor.init();
             executor.execute();
@@ -130,8 +138,11 @@ public class MinerHelper {
     public void completeBlock(Block newBlock, Block parent) {
         processBlock(newBlock, parent);
 
-        boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, newBlock.getNumber());
-        newBlock.getHeader().setReceiptsRoot(BlockHashesHelper.calculateReceiptsTrieRoot(txReceipts, isRskip126Enabled));
+        boolean isRskip126Enabled =
+                config.getActivationConfig().isActive(ConsensusRule.RSKIP126, newBlock.getNumber());
+        newBlock.getHeader()
+                .setReceiptsRoot(
+                        BlockHashesHelper.calculateReceiptsTrieRoot(txReceipts, isRskip126Enabled));
         newBlock.getHeader().setStateRoot(latestStateRootHash);
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
@@ -143,7 +154,13 @@ public class MinerHelper {
         BigInteger minGasLimit = BigInteger.valueOf(config.getNetworkConstants().getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
-        BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit, false);
+        BigInteger gasLimit =
+                gasLimitCalculator.calculateBlockGasLimit(
+                        parentGasLimit,
+                        BigInteger.valueOf(totalGasUsed),
+                        minGasLimit,
+                        targetGasLimit,
+                        false);
 
         Whitebox.setInternalState(newBlock.getHeader(), "gasLimit", gasLimit.toByteArray());
         newBlock.getHeader().setPaidFees(totalPaidFees);

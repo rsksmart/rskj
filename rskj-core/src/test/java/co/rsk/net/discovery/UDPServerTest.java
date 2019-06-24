@@ -20,31 +20,33 @@ package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.OptionalInt;
-import java.util.concurrent.TimeUnit;
-
-/**
- * Created by mario on 15/02/17.
- */
+/** Created by mario on 15/02/17. */
 public class UDPServerTest {
 
-    private static final String KEY_1 = "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
-    private static final String NODE_ID_1 = "826fbe97bc03c7c09d7b7d05b871282d8ac93d4446d44b55566333b240dd06260a9505f0fd3247e63d84d557f79bb63691710e40d4d9fc39f3bfd5397bcea065";
+    private static final String KEY_1 =
+            "bd1d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38261f";
+    private static final String NODE_ID_1 =
+            "826fbe97bc03c7c09d7b7d05b871282d8ac93d4446d44b55566333b240dd06260a9505f0fd3247e63d84d557f79bb63691710e40d4d9fc39f3bfd5397bcea065";
 
-    private static final String KEY_2 = "bd2d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38262f";
-    private static final String NODE_ID_2 = "3c7931f323989425a1e56164043af0dff567f33df8c67d4c6918647535f88798d54bc864b936d8c77d4096e8b8485b6061b0d0d2b708cd9154e6dcf981533261";
+    private static final String KEY_2 =
+            "bd2d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38262f";
+    private static final String NODE_ID_2 =
+            "3c7931f323989425a1e56164043af0dff567f33df8c67d4c6918647535f88798d54bc864b936d8c77d4096e8b8485b6061b0d0d2b708cd9154e6dcf981533261";
 
-    private static final String KEY_3 = "bd3d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38263f";
-    private static final String NODE_ID_3 = "e229918d45c131e130c91c4ea51c97ab4f66cfbd0437b35c92392b5c2b3d44b28ea15b84a262459437c955f6cc7f10ad1290132d3fc866bfaf4115eac0e8e860";
+    private static final String KEY_3 =
+            "bd3d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38263f";
+    private static final String NODE_ID_3 =
+            "e229918d45c131e130c91c4ea51c97ab4f66cfbd0437b35c92392b5c2b3d44b28ea15b84a262459437c955f6cc7f10ad1290132d3fc866bfaf4115eac0e8e860";
 
     private String HOST = "localhost";
     private static final int PORT_1 = 40305;
@@ -75,13 +77,43 @@ public class UDPServerTest {
         Node node2 = new Node(key2.getNodeId(), HOST, PORT_2);
         Node node3 = new Node(key3.getNodeId(), HOST, PORT_3);
 
-        NodeDistanceTable distanceTable1 = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node1);
-        NodeDistanceTable distanceTable2 = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node2);
-        NodeDistanceTable distanceTable3 = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node3);
+        NodeDistanceTable distanceTable1 =
+                new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node1);
+        NodeDistanceTable distanceTable2 =
+                new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node2);
+        NodeDistanceTable distanceTable3 =
+                new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node3);
 
-        PeerExplorer peerExplorer1 = new PeerExplorer(node1BootNode, node1, distanceTable1, key1, TIMEOUT, UPDATE, CLEAN, NETWORK_ID);
-        PeerExplorer peerExplorer2 = new PeerExplorer(node2BootNode, node2, distanceTable2, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID);
-        PeerExplorer peerExplorer3 = new PeerExplorer(node3BootNode, node3, distanceTable3, key3, TIMEOUT, UPDATE, CLEAN, NETWORK_ID);
+        PeerExplorer peerExplorer1 =
+                new PeerExplorer(
+                        node1BootNode,
+                        node1,
+                        distanceTable1,
+                        key1,
+                        TIMEOUT,
+                        UPDATE,
+                        CLEAN,
+                        NETWORK_ID);
+        PeerExplorer peerExplorer2 =
+                new PeerExplorer(
+                        node2BootNode,
+                        node2,
+                        distanceTable2,
+                        key2,
+                        TIMEOUT,
+                        UPDATE,
+                        CLEAN,
+                        NETWORK_ID);
+        PeerExplorer peerExplorer3 =
+                new PeerExplorer(
+                        node3BootNode,
+                        node3,
+                        distanceTable3,
+                        key3,
+                        TIMEOUT,
+                        UPDATE,
+                        CLEAN,
+                        NETWORK_ID);
 
         Assert.assertEquals(0, peerExplorer1.getNodes().size());
         Assert.assertEquals(0, peerExplorer2.getNodes().size());
@@ -140,8 +172,7 @@ public class UDPServerTest {
             } else {
                 check = false;
                 for (Node n : nodes) {
-                    if (StringUtils.equals(n.getHexId(), id))
-                        check = true;
+                    if (StringUtils.equals(n.getHexId(), id)) check = true;
                 }
             }
         }

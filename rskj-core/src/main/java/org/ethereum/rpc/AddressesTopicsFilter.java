@@ -20,16 +20,15 @@
 package org.ethereum.rpc;
 
 import co.rsk.core.RskAddress;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class AddressesTopicsFilter {
-    private List<Topic[]> topics = new ArrayList<>();  //  [[addr1, addr2], null, [A, B], [C]]
+    private List<Topic[]> topics = new ArrayList<>(); //  [[addr1, addr2], null, [A, B], [C]]
     private RskAddress[] addresses = new RskAddress[0];
     private Bloom[][] filterBlooms;
 

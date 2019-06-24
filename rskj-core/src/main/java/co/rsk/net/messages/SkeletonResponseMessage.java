@@ -18,14 +18,11 @@
  */
 package co.rsk.net.messages;
 
+import java.util.List;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.util.RLP;
 
-import java.util.List;
-
-/**
- * Wrapper around an RSK Skeleton message.
- */
+/** Wrapper around an RSK Skeleton message. */
 public class SkeletonResponseMessage extends MessageWithId {
 
     private long id;
@@ -43,9 +40,8 @@ public class SkeletonResponseMessage extends MessageWithId {
 
     @Override
     public byte[] getEncodedMessageWithoutId() {
-        byte[][] encodedElementArray = blockIdentifiers.stream()
-                .map(BlockIdentifier::getEncoded)
-                .toArray(byte[][]::new);
+        byte[][] encodedElementArray =
+                blockIdentifiers.stream().map(BlockIdentifier::getEncoded).toArray(byte[][]::new);
         return RLP.encodeList(RLP.encodeList(encodedElementArray));
     }
 
@@ -56,5 +52,4 @@ public class SkeletonResponseMessage extends MessageWithId {
     public List<BlockIdentifier> getBlockIdentifiers() {
         return blockIdentifiers;
     }
-
 }

@@ -18,15 +18,14 @@
 
 package co.rsk.trie;
 
+import static org.bouncycastle.util.encoders.Hex.decode;
+import static org.hamcrest.Matchers.*;
+
+import java.util.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.util.*;
-
-import static org.bouncycastle.util.encoders.Hex.decode;
-import static org.hamcrest.Matchers.*;
 
 @RunWith(Parameterized.class)
 public class TrieIteratorTest {
@@ -41,12 +40,21 @@ public class TrieIteratorTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection primeNumbers() {
-        return Arrays.asList(new Object[][] {
-            { buildTestTrie().getInOrderIterator(), new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x09, 0x08} },
-            { buildTestTrie().getPreOrderIterator(), new byte[] {0x06, 0x02, 0x01, 0x04, 0x03, 0x05, 0x07, 0x08, 0x09} },
-            { buildTestTrie().getPostOrderIterator(), new byte[] {0x01, 0x03, 0x05, 0x04, 0x02, 0x09, 0x08, 0x07, 0x06} },
-        });
-
+        return Arrays.asList(
+                new Object[][] {
+                    {
+                        buildTestTrie().getInOrderIterator(),
+                        new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x09, 0x08}
+                    },
+                    {
+                        buildTestTrie().getPreOrderIterator(),
+                        new byte[] {0x06, 0x02, 0x01, 0x04, 0x03, 0x05, 0x07, 0x08, 0x09}
+                    },
+                    {
+                        buildTestTrie().getPostOrderIterator(),
+                        new byte[] {0x01, 0x03, 0x05, 0x04, 0x02, 0x09, 0x08, 0x07, 0x06}
+                    },
+                });
     }
 
     @Test
@@ -55,7 +63,9 @@ public class TrieIteratorTest {
         while (iterator.hasNext()) {
             byte[] value = iterator.next().getNode().getValue();
             Assert.assertThat(value.length, is(1));
-            Assert.assertThat("Unexpected value at [%d]\n", value, is(new byte[] { expectedValues[nodeCount] }));
+            Assert.assertThat(
+                    "Unexpected value at [%d]\n",
+                    value, is(new byte[] {expectedValues[nodeCount]}));
             nodeCount++;
         }
         Assert.assertThat(nodeCount, is(expectedValues.length));
@@ -63,29 +73,19 @@ public class TrieIteratorTest {
 
     /**
      * @return the following tree
-     *
-     *       6
-     *      / \
-     *     /   \
-     *    /     7
-     *   2       \
-     *  / \       \
-     * 1   \       8
-     *      4     /
-     *     / \   9
-     *    3   5
+     *     <p>6 / \ / \ / 7 2 \ / \ \ 1 \ 8 4 / / \ 9 3 5
      */
     private static Trie buildTestTrie() {
         Trie trie = new Trie();
-        trie = trie.put(decode("0a"), new byte[] { 0x06 });
-        trie = trie.put(decode("0a00"), new byte[] { 0x02 });
-        trie = trie.put(decode("0a80"), new byte[] { 0x07 });
-        trie = trie.put(decode("0a0000"), new byte[] { 0x01 });
-        trie = trie.put(decode("0a0080"), new byte[] { 0x04 });
-        trie = trie.put(decode("0a008000"), new byte[] { 0x03 });
-        trie = trie.put(decode("0a008080"), new byte[] { 0x05 });
-        trie = trie.put(decode("0a8080"), new byte[] { 0x08 });
-        trie = trie.put(decode("0a808000"), new byte[] { 0x09 });
+        trie = trie.put(decode("0a"), new byte[] {0x06});
+        trie = trie.put(decode("0a00"), new byte[] {0x02});
+        trie = trie.put(decode("0a80"), new byte[] {0x07});
+        trie = trie.put(decode("0a0000"), new byte[] {0x01});
+        trie = trie.put(decode("0a0080"), new byte[] {0x04});
+        trie = trie.put(decode("0a008000"), new byte[] {0x03});
+        trie = trie.put(decode("0a008080"), new byte[] {0x05});
+        trie = trie.put(decode("0a8080"), new byte[] {0x08});
+        trie = trie.put(decode("0a808000"), new byte[] {0x09});
         return trie;
     }
 }

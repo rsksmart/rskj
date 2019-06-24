@@ -20,9 +20,7 @@ package co.rsk.validators;
 
 import org.ethereum.core.Block;
 
-/**
- * Created by mario on 18/01/17.
- */
+/** Created by mario on 18/01/17. */
 @FunctionalInterface
 public interface BlockParentDependantValidationRule {
     boolean isValid(Block block, Block parent);

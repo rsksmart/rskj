@@ -19,15 +19,14 @@
 
 package org.ethereum.jsontestsuite;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 public class Logs {
     List<LogInfo> logs = new ArrayList<>();
@@ -53,11 +52,9 @@ public class Logs {
         }
     }
 
-
     public Iterator<LogInfo> getIterator() {
         return logs.iterator();
     }
-
 
     public List<String> compareToReal(List<LogInfo> logs) {
 
@@ -73,8 +70,10 @@ public class Logs {
 
             if (!postAddress.equals(realAddress)) {
 
-                String formattedString = String.format("Log: %s: has unexpected address, expected address: %s found address: %s",
-                        i, postAddress, realAddress);
+                String formattedString =
+                        String.format(
+                                "Log: %s: has unexpected address, expected address: %s found address: %s",
+                                i, postAddress, realAddress);
                 results.add(formattedString);
             }
 
@@ -83,8 +82,10 @@ public class Logs {
 
             if (!postData.equals(realData)) {
 
-                String formattedString = String.format("Log: %s: has unexpected data, expected data: %s found data: %s",
-                        i, postData, realData);
+                String formattedString =
+                        String.format(
+                                "Log: %s: has unexpected data, expected data: %s found data: %s",
+                                i, postData, realData);
                 results.add(formattedString);
             }
 
@@ -93,8 +94,10 @@ public class Logs {
 
             if (!postData.equals(realData)) {
 
-                String formattedString = String.format("Log: %s: has unexpected bloom, expected bloom: %s found bloom: %s",
-                        i, postBloom, realBloom);
+                String formattedString =
+                        String.format(
+                                "Log: %s: has unexpected bloom, expected bloom: %s found bloom: %s",
+                                i, postBloom, realBloom);
                 results.add(formattedString);
             }
 
@@ -108,8 +111,10 @@ public class Logs {
 
                 if (!postTopic.equals(realTopic)) {
 
-                    String formattedString = String.format("Log: %s: has unexpected topic: %s, expected topic: %s found topic: %s",
-                            i, j, postTopic, realTopic);
+                    String formattedString =
+                            String.format(
+                                    "Log: %s: has unexpected topic: %s, expected topic: %s found topic: %s",
+                                    i, j, postTopic, realTopic);
                     results.add(formattedString);
                 }
                 ++j;
@@ -120,5 +125,4 @@ public class Logs {
 
         return results;
     }
-
 }

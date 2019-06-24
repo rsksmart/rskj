@@ -19,7 +19,6 @@
 
 package org.ethereum.jsontestsuite.model;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,8 +37,7 @@ public class AccountTck {
 
     String privateKey;
 
-    public AccountTck() {
-    }
+    public AccountTck() {}
 
     public boolean isForcedContract() {
         return forcedContract;
@@ -91,11 +89,18 @@ public class AccountTck {
 
     @Override
     public String toString() {
-        return "AccountState2{" +
-                "balance='" + balance + '\'' +
-                ", code='" + code + '\'' +
-                ", nonce='" + nonce + '\'' +
-                ", storage=" + storage +
-                '}';
+        return "AccountState2{"
+                + "balance='"
+                + balance
+                + '\''
+                + ", code='"
+                + code
+                + '\''
+                + ", nonce='"
+                + nonce
+                + '\''
+                + ", storage="
+                + storage
+                + '}';
     }
 }

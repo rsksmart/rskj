@@ -19,9 +19,9 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.json.simple.JSONObject;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.json.simple.JSONObject;
 
 /**
  * @author Roman Mandeleil
@@ -36,10 +36,13 @@ public class Env {
     private final byte[] currentTimestamp;
     private final byte[] previousHash;
 
-
-    public Env(byte[] currentCoinbase, byte[] currentDifficulty, byte[] 
-            currentGasLimit, byte[] currentNumber, byte[] 
-            currentTimestamp, byte[] previousHash) {
+    public Env(
+            byte[] currentCoinbase,
+            byte[] currentDifficulty,
+            byte[] currentGasLimit,
+            byte[] currentNumber,
+            byte[] currentTimestamp,
+            byte[] previousHash) {
         this.currentCoinbase = currentCoinbase;
         this.currentDifficulty = currentDifficulty;
         this.currentGasLimit = currentGasLimit;
@@ -49,31 +52,32 @@ public class Env {
     }
 
     /*
-                e.g:
-                    "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
-                    "currentDifficulty" : "256",
-                    "currentGasLimit" : "1000000",
-                    "currentNumber" : "0",
-                    "currentTimestamp" : 1,
-                    "previousHash" : "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6"
-          */
+          e.g:
+              "currentCoinbase" : "2adc25665018aa1fe0e6bc666dac8fc2697ff9ba",
+              "currentDifficulty" : "256",
+              "currentGasLimit" : "1000000",
+              "currentNumber" : "0",
+              "currentTimestamp" : 1,
+              "previousHash" : "5e20a0453cecd065ea59c37ac63e079ee08998b6045136a8ce6635c7912ec0b6"
+    */
     public Env(JSONObject env) {
 
         String coinbase = env.get("currentCoinbase").toString();
         String difficulty = env.get("currentDifficulty").toString();
         String timestamp = env.get("currentTimestamp").toString();
         String number = env.get("currentNumber").toString();
-        String gasLimit = org.ethereum.json.Utils.parseUnidentifiedBase(env.get("currentGasLimit").toString());
+        String gasLimit =
+                org.ethereum.json.Utils.parseUnidentifiedBase(
+                        env.get("currentGasLimit").toString());
         Object previousHash = env.get("previousHash");
         String prevHash = previousHash == null ? "" : previousHash.toString();
 
         this.currentCoinbase = Hex.decode(coinbase);
-        this.currentDifficulty = BigIntegers.asUnsignedByteArray(TestCase.toBigInt(difficulty) );
-        this.currentGasLimit =   BigIntegers.asUnsignedByteArray(TestCase.toBigInt(gasLimit));
+        this.currentDifficulty = BigIntegers.asUnsignedByteArray(TestCase.toBigInt(difficulty));
+        this.currentGasLimit = BigIntegers.asUnsignedByteArray(TestCase.toBigInt(gasLimit));
         this.currentNumber = TestCase.toBigInt(number).toByteArray();
         this.currentTimestamp = TestCase.toBigInt(timestamp).toByteArray();
         this.previousHash = Hex.decode(prevHash);
-
     }
 
     public byte[] getCurrentCoinbase() {
@@ -102,13 +106,19 @@ public class Env {
 
     @Override
     public String toString() {
-        return "Env{" +
-                "currentCoinbase=" + Hex.toHexString(currentCoinbase) +
-                ", currentDifficulty=" + Hex.toHexString(currentDifficulty) +
-                ", currentGasLimit=" + Hex.toHexString(currentGasLimit) +
-                ", currentNumber=" + Hex.toHexString(currentNumber) +
-                ", currentTimestamp=" + Hex.toHexString(currentTimestamp) +
-                ", previousHash=" + Hex.toHexString(previousHash) +
-                '}';
+        return "Env{"
+                + "currentCoinbase="
+                + Hex.toHexString(currentCoinbase)
+                + ", currentDifficulty="
+                + Hex.toHexString(currentDifficulty)
+                + ", currentGasLimit="
+                + Hex.toHexString(currentGasLimit)
+                + ", currentNumber="
+                + Hex.toHexString(currentNumber)
+                + ", currentTimestamp="
+                + Hex.toHexString(currentTimestamp)
+                + ", previousHash="
+                + Hex.toHexString(previousHash)
+                + '}';
     }
 }

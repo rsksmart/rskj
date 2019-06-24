@@ -19,17 +19,16 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
-
-import javax.annotation.Nonnull;
 import java.util.*;
+import javax.annotation.Nonnull;
 
 /**
- * TransactionNodeInformation has information about which transactions are known by which nodes,
- * and provides convenient functions to retrieve all the nodes that know a certain transaction.
- * <p>
- * TransactionNodeInformation will only hold a limited amount of transactions and peers. Blocks
- * that aren't accessed frequently will be deleted, as well as peers.
- * Peers will only remember the last maxTransactions transactions that were inserted.
+ * TransactionNodeInformation has information about which transactions are known by which nodes, and
+ * provides convenient functions to retrieve all the nodes that know a certain transaction.
+ *
+ * <p>TransactionNodeInformation will only hold a limited amount of transactions and peers. Blocks
+ * that aren't accessed frequently will be deleted, as well as peers. Peers will only remember the
+ * last maxTransactions transactions that were inserted.
  */
 public class TransactionNodeInformation {
     private final LinkedHashMap<Keccak256, Set<NodeID>> nodesByTransaction;
@@ -41,12 +40,14 @@ public class TransactionNodeInformation {
         this.maxPeers = maxPeers;
 
         // Transactions are evicted in Least-recently-accessed order.
-        nodesByTransaction = new LinkedHashMap<Keccak256, Set<NodeID>>(TransactionNodeInformation.this.maxTransactions, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<Keccak256, Set<NodeID>> eldest) {
-                return size() > TransactionNodeInformation.this.maxTransactions;
-            }
-        };
+        nodesByTransaction =
+                new LinkedHashMap<Keccak256, Set<NodeID>>(
+                        TransactionNodeInformation.this.maxTransactions, 0.75f, true) {
+                    @Override
+                    protected boolean removeEldestEntry(Map.Entry<Keccak256, Set<NodeID>> eldest) {
+                        return size() > TransactionNodeInformation.this.maxTransactions;
+                    }
+                };
     }
 
     public TransactionNodeInformation() {
@@ -57,9 +58,10 @@ public class TransactionNodeInformation {
      * addTransactionToNode specifies that a given node knows about a given transaction.
      *
      * @param transactionHash the transaction hash.
-     * @param nodeID    the node to add the block to.
+     * @param nodeID the node to add the block to.
      */
-    public void addTransactionToNode(@Nonnull final Keccak256 transactionHash, @Nonnull final NodeID nodeID) {
+    public void addTransactionToNode(
+            @Nonnull final Keccak256 transactionHash, @Nonnull final NodeID nodeID) {
         Set<NodeID> transactionNodes = nodesByTransaction.get(transactionHash);
         if (transactionNodes == null) {
             // Create a new set for the nodes that know about a block.
@@ -85,5 +87,4 @@ public class TransactionNodeInformation {
         }
         return Collections.unmodifiableSet(result);
     }
-
 }

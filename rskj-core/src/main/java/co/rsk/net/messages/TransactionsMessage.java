@@ -18,15 +18,12 @@
 
 package co.rsk.net.messages;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 7/22/2016.
- */
+/** Created by ajlopez on 7/22/2016. */
 public class TransactionsMessage extends Message {
     private List<Transaction> transactions;
 

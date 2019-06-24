@@ -19,13 +19,10 @@
 package co.rsk.peg.bitcoin;
 
 import co.rsk.bitcoinj.core.*;
-
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by ajlopez on 6/1/2016.
- */
+/** Created by ajlopez on 6/1/2016. */
 public class SimpleBtcTransaction extends BtcTransaction {
     private NetworkParameters networkParameters;
     private Sha256Hash hash;
@@ -52,10 +49,12 @@ public class SimpleBtcTransaction extends BtcTransaction {
     }
 
     @Override
-    public void verify() { }
+    public void verify() {}
 
     @Override
-    public Coin getValueSentToMe(TransactionBag wallet) { return Coin.COIN; }
+    public Coin getValueSentToMe(TransactionBag wallet) {
+        return Coin.COIN;
+    }
 
     @Override
     public TransactionInput getInput(long index) {

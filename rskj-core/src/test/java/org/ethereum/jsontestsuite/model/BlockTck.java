@@ -31,8 +31,7 @@ public class BlockTck {
     String chainname;
     boolean reverted;
 
-    public BlockTck() {
-    }
+    public BlockTck() {}
 
     public String getBlocknumber() {
         return blocknumber;
@@ -92,11 +91,16 @@ public class BlockTck {
 
     @Override
     public String toString() {
-        return "Block{" +
-                "blockHeader=" + blockHeader +
-                ", transactions=" + transactions +
-                ", uncleHeaders=" + uncleHeaders +
-                ", rlp='" + rlp + '\'' +
-                '}';
+        return "Block{"
+                + "blockHeader="
+                + blockHeader
+                + ", transactions="
+                + transactions
+                + ", uncleHeaders="
+                + uncleHeaders
+                + ", rlp='"
+                + rlp
+                + '\''
+                + '}';
     }
 }

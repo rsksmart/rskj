@@ -19,9 +19,15 @@
 
 package org.ethereum;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import java.io.File;
+import java.math.BigInteger;
+import java.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -32,26 +38,17 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
 
-import java.io.File;
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
-
 public final class TestUtils {
 
-    private TestUtils() {
-    }
+    private TestUtils() {}
 
     // Fix the Random object to make tests more deterministic. Each new Random object
     // created gets a seed xores with system nanoTime.
     // Alse it reduces the time to get the random in performance tests
     static Random aRandom;
 
-    static public Random getRandom() {
-        if (aRandom==null)
-            aRandom = new Random();
+    public static Random getRandom() {
+        if (aRandom == null) aRandom = new Random();
         return aRandom;
     }
 
@@ -62,12 +59,14 @@ public final class TestUtils {
     }
 
     public static BigInteger randomBigInteger(int maxSizeBytes) {
-        return new BigInteger(maxSizeBytes*8,getRandom());
+        return new BigInteger(maxSizeBytes * 8, getRandom());
     }
 
-    public static Coin randomCoin(int decimalZeros,int maxValue) {
-        return new Coin(BigInteger.TEN.pow(decimalZeros).multiply(
-                BigInteger.valueOf(getRandom().nextInt(maxValue))));
+    public static Coin randomCoin(int decimalZeros, int maxValue) {
+        return new Coin(
+                BigInteger.TEN
+                        .pow(decimalZeros)
+                        .multiply(BigInteger.valueOf(getRandom().nextInt(maxValue))));
     }
 
     public static DataWord randomDataWord() {
@@ -82,55 +81,66 @@ public final class TestUtils {
         return new Keccak256(randomBytes(32));
     }
 
-    public static Map<Long, List<IndexedBlockStore.BlockInfo>> createIndexMap(DB db){
+    public static Map<Long, List<IndexedBlockStore.BlockInfo>> createIndexMap(DB db) {
 
-        Map<Long, List<IndexedBlockStore.BlockInfo>> index = db.hashMapCreate("index")
-                .keySerializer(Serializer.LONG)
-                .valueSerializer(BLOCK_INFO_SERIALIZER)
-                .makeOrGet();
+        Map<Long, List<IndexedBlockStore.BlockInfo>> index =
+                db.hashMapCreate("index")
+                        .keySerializer(Serializer.LONG)
+                        .valueSerializer(BLOCK_INFO_SERIALIZER)
+                        .makeOrGet();
 
         return index;
     }
 
-    public static DB createMapDB(String testDBDir){
+    public static DB createMapDB(String testDBDir) {
 
         String blocksIndexFile = testDBDir + "/blocks/index";
         File dbFile = new File(blocksIndexFile);
         if (!dbFile.getParentFile().exists()) dbFile.getParentFile().mkdirs();
 
-        DB db = DBMaker.fileDB(dbFile)
-                .transactionDisable()
-                .closeOnJvmShutdown()
-                .make();
-
+        DB db = DBMaker.fileDB(dbFile).transactionDisable().closeOnJvmShutdown().make();
 
         return db;
     }
 
-    public static List<Block> getRandomChain(BlockFactory blockFactory, byte[] startParentHash, long startNumber, long length){
+    public static List<Block> getRandomChain(
+            BlockFactory blockFactory, byte[] startParentHash, long startNumber, long length) {
 
         List<Block> result = new ArrayList<>();
 
         byte[] lastHash = startParentHash;
         long lastIndex = startNumber;
 
-
-        for (int i = 0; i < length; ++i){
+        for (int i = 0; i < length; ++i) {
 
             byte[] difficutly = new BigInteger(8, new Random()).toByteArray();
             byte[] newHash = HashUtil.randomHash();
 
-            Block block = blockFactory.newBlock(
-                    blockFactory.newHeader(
-                            lastHash, newHash, RskAddress.nullAddress().getBytes(),
-                            HashUtil.randomHash(), EMPTY_TRIE_HASH, null,
-                            null, difficutly, lastIndex,
-                            new byte[] {0}, 0, 0, null, Coin.ZERO,
-                            null, null, null, null, null, 0
-                    ),
-                    Collections.emptyList(),
-                    Collections.emptyList()
-            );
+            Block block =
+                    blockFactory.newBlock(
+                            blockFactory.newHeader(
+                                    lastHash,
+                                    newHash,
+                                    RskAddress.nullAddress().getBytes(),
+                                    HashUtil.randomHash(),
+                                    EMPTY_TRIE_HASH,
+                                    null,
+                                    null,
+                                    difficutly,
+                                    lastIndex,
+                                    new byte[] {0},
+                                    0,
+                                    0,
+                                    null,
+                                    Coin.ZERO,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    0),
+                            Collections.emptyList(),
+                            Collections.emptyList());
 
             ++lastIndex;
             lastHash = block.getHash().getBytes();

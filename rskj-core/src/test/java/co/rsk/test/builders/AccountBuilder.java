@@ -28,17 +28,14 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 
-/**
- * Created by ajlopez on 8/6/2016.
- */
+/** Created by ajlopez on 8/6/2016. */
 public class AccountBuilder {
     private String name;
     private Coin balance;
     private byte[] code;
     private Blockchain blockChain;
 
-    public AccountBuilder() {
-    }
+    public AccountBuilder() {}
 
     public AccountBuilder(World world) {
         this(world.getBlockChain());
@@ -77,8 +74,7 @@ public class AccountBuilder {
 
             track.createAccount(account.getAddress());
 
-            if (this.balance != null)
-                track.addBalance(account.getAddress(), this.balance);
+            if (this.balance != null) track.addBalance(account.getAddress(), this.balance);
 
             if (this.code != null) {
                 track.saveCode(account.getAddress(), this.code);

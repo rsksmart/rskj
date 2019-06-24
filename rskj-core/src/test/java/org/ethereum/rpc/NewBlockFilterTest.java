@@ -23,9 +23,7 @@ import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 17/01/2018.
- */
+/** Created by ajlopez on 17/01/2018. */
 public class NewBlockFilterTest {
     @Test
     public void noEvents() {

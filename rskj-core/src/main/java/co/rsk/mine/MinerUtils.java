@@ -26,40 +26,45 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.rpc.TypeConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.Arrays;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.function.Function;
+import org.bouncycastle.util.Arrays;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.rpc.TypeConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MinerUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("minerserver");
 
-    public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, MinerWork work) {
-        return getBitcoinMergedMiningCoinbaseTransaction(params, TypeConverter.stringHexToByteArray(work.getBlockHashForMergedMining()));
+    public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(
+            co.rsk.bitcoinj.core.NetworkParameters params, MinerWork work) {
+        return getBitcoinMergedMiningCoinbaseTransaction(
+                params, TypeConverter.stringHexToByteArray(work.getBlockHashForMergedMining()));
     }
 
-    public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, byte[] blockHashForMergedMining) {
-        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction = new co.rsk.bitcoinj.core.BtcTransaction(params);
-        //Add a random number of random bytes before the RSK tag
+    public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(
+            co.rsk.bitcoinj.core.NetworkParameters params, byte[] blockHashForMergedMining) {
+        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction =
+                new co.rsk.bitcoinj.core.BtcTransaction(params);
+        // Add a random number of random bytes before the RSK tag
         SecureRandom random = new SecureRandom();
         byte[] prefix = new byte[random.nextInt(1000)];
         random.nextBytes(prefix);
-        byte[] bytes = Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG, blockHashForMergedMining);
+        byte[] bytes =
+                Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG, blockHashForMergedMining);
         // Add the Tag to the scriptSig of first input
-        co.rsk.bitcoinj.core.TransactionInput ti = new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, bytes);
+        co.rsk.bitcoinj.core.TransactionInput ti =
+                new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, bytes);
         coinbaseTransaction.addInput(ti);
         ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
         co.rsk.bitcoinj.core.BtcECKey key = new co.rsk.bitcoinj.core.BtcECKey();
@@ -69,35 +74,45 @@ public class MinerUtils {
             throw new RuntimeException(e);
         }
         scriptPubKeyBytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKSIG);
-        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(50, 0), scriptPubKeyBytes.toByteArray()));
+        coinbaseTransaction.addOutput(
+                new co.rsk.bitcoinj.core.TransactionOutput(
+                        params,
+                        coinbaseTransaction,
+                        co.rsk.bitcoinj.core.Coin.valueOf(50, 0),
+                        scriptPubKeyBytes.toByteArray()));
         return coinbaseTransaction;
     }
 
-    public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
-            co.rsk.bitcoinj.core.NetworkParameters params,
-            MinerWork work,
-            MinerWork work2) {
+    public static co.rsk.bitcoinj.core.BtcTransaction
+            getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
+                    co.rsk.bitcoinj.core.NetworkParameters params,
+                    MinerWork work,
+                    MinerWork work2) {
         return getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
                 params,
                 TypeConverter.stringHexToByteArray(work.getBlockHashForMergedMining()),
                 TypeConverter.stringHexToByteArray(work2.getBlockHashForMergedMining()));
     }
 
-    public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
-            co.rsk.bitcoinj.core.NetworkParameters params,
-            byte[] blockHashForMergedMining1,
-            byte[] blockHashForMergedMining2) {
-        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction = new co.rsk.bitcoinj.core.BtcTransaction(params);
-        //Add a random number of random bytes before the RSK tag
+    public static co.rsk.bitcoinj.core.BtcTransaction
+            getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
+                    co.rsk.bitcoinj.core.NetworkParameters params,
+                    byte[] blockHashForMergedMining1,
+                    byte[] blockHashForMergedMining2) {
+        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction =
+                new co.rsk.bitcoinj.core.BtcTransaction(params);
+        // Add a random number of random bytes before the RSK tag
         SecureRandom random = new SecureRandom();
         byte[] prefix = new byte[random.nextInt(1000)];
         random.nextBytes(prefix);
 
         byte[] bytes0 = Arrays.concatenate(RskMiningConstants.RSK_TAG, blockHashForMergedMining1);
         // addsecond tag
-        byte[] bytes1 = Arrays.concatenate(bytes0, RskMiningConstants.RSK_TAG, blockHashForMergedMining2);
+        byte[] bytes1 =
+                Arrays.concatenate(bytes0, RskMiningConstants.RSK_TAG, blockHashForMergedMining2);
 
-        co.rsk.bitcoinj.core.TransactionInput ti = new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, prefix);
+        co.rsk.bitcoinj.core.TransactionInput ti =
+                new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, prefix);
         coinbaseTransaction.addInput(ti);
         ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
         co.rsk.bitcoinj.core.BtcECKey key = new co.rsk.bitcoinj.core.BtcECKey();
@@ -107,7 +122,12 @@ public class MinerUtils {
             throw new RuntimeException(e);
         }
         scriptPubKeyBytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKSIG);
-        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(50, 0), scriptPubKeyBytes.toByteArray()));
+        coinbaseTransaction.addOutput(
+                new co.rsk.bitcoinj.core.TransactionOutput(
+                        params,
+                        coinbaseTransaction,
+                        co.rsk.bitcoinj.core.Coin.valueOf(50, 0),
+                        scriptPubKeyBytes.toByteArray()));
         // add opreturn output with two tags
         ByteArrayOutputStream output2Bytes = new ByteArrayOutputStream();
         output2Bytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_RETURN);
@@ -118,25 +138,39 @@ public class MinerUtils {
             throw new RuntimeException(e);
         }
         coinbaseTransaction.addOutput(
-                new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(1), output2Bytes.toByteArray()));
+                new co.rsk.bitcoinj.core.TransactionOutput(
+                        params,
+                        coinbaseTransaction,
+                        co.rsk.bitcoinj.core.Coin.valueOf(1),
+                        output2Bytes.toByteArray()));
 
         return coinbaseTransaction;
     }
 
-    public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(co.rsk.bitcoinj.core.NetworkParameters params, BtcTransaction transaction) {
+    public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(
+            co.rsk.bitcoinj.core.NetworkParameters params, BtcTransaction transaction) {
         return getBitcoinMergedMiningBlock(params, Collections.singletonList(transaction));
     }
 
-    public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(co.rsk.bitcoinj.core.NetworkParameters params, List<BtcTransaction> transactions) {
+    public static co.rsk.bitcoinj.core.BtcBlock getBitcoinMergedMiningBlock(
+            co.rsk.bitcoinj.core.NetworkParameters params, List<BtcTransaction> transactions) {
         co.rsk.bitcoinj.core.Sha256Hash prevBlockHash = co.rsk.bitcoinj.core.Sha256Hash.ZERO_HASH;
         long time = System.currentTimeMillis() / 1000L;
         long difficultyTarget = co.rsk.bitcoinj.core.Utils.encodeCompactBits(params.getMaxTarget());
-        return new co.rsk.bitcoinj.core.BtcBlock(params, params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT), prevBlockHash, null, time, difficultyTarget, 0, transactions);
+        return new co.rsk.bitcoinj.core.BtcBlock(
+                params,
+                params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT),
+                prevBlockHash,
+                null,
+                time,
+                difficultyTarget,
+                0,
+                transactions);
     }
 
     /**
-     * Takes in a proofBuilderFunction (e.g. buildFromTxHashes)
-     * and executes it on the builder corresponding to this block number.
+     * Takes in a proofBuilderFunction (e.g. buildFromTxHashes) and executes it on the builder
+     * corresponding to this block number.
      */
     public static byte[] buildMerkleProof(
             ActivationConfig activationConfig,
@@ -156,7 +190,12 @@ public class MinerUtils {
         return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, Coin minGasPrice) {
+    public List<org.ethereum.core.Transaction> filterTransactions(
+            List<Transaction> txsToRemove,
+            List<Transaction> txs,
+            Map<RskAddress, BigInteger> accountNonces,
+            Repository originalRepo,
+            Coin minGasPrice) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
@@ -164,7 +203,12 @@ public class MinerUtils {
                 Coin txValue = tx.getValue();
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
                 RskAddress txSender = tx.getSender();
-                logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
+                logger.debug(
+                        "Examining tx={} sender: {} value: {} nonce: {}",
+                        hash,
+                        txSender,
+                        txValue,
+                        txNonce);
 
                 BigInteger expectedNonce;
 
@@ -174,21 +218,34 @@ public class MinerUtils {
                     expectedNonce = originalRepo.getNonce(txSender);
                 }
 
-                if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(minGasPrice) < 0) {
-                    logger.warn("Rejected tx={} because of low gas account {}, removing tx from pending state.", hash, txSender);
+                if (!(tx instanceof RemascTransaction)
+                        && tx.getGasPrice().compareTo(minGasPrice) < 0) {
+                    logger.warn(
+                            "Rejected tx={} because of low gas account {}, removing tx from pending state.",
+                            hash,
+                            txSender);
 
                     txsToRemove.add(tx);
                     continue;
                 }
 
                 if (!expectedNonce.equals(txNonce)) {
-                    logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hash);
+                    logger.warn(
+                            "Invalid nonce, expected {}, found {}, tx={}",
+                            expectedNonce,
+                            txNonce,
+                            hash);
                     continue;
                 }
 
                 accountNonces.put(txSender, txNonce);
 
-                logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
+                logger.debug(
+                        "Accepted tx={} sender: {} value: {} nonce: {}",
+                        hash,
+                        txSender,
+                        txValue,
+                        txNonce);
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
                 logger.warn(String.format("Error when processing tx=%s", tx.getHash()), e);

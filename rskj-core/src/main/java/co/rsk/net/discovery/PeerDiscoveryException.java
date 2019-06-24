@@ -18,10 +18,8 @@
 
 package co.rsk.net.discovery;
 
-/**
- * Created by mario on 13/02/17.
- */
-public class PeerDiscoveryException extends RuntimeException{
+/** Created by mario on 13/02/17. */
+public class PeerDiscoveryException extends RuntimeException {
     public PeerDiscoveryException(String msg) {
         super(msg);
     }

@@ -18,9 +18,9 @@
 
 package co.rsk.core;
 
+import org.bouncycastle.util.encoders.DecoderException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.DecoderException;
 
 public class RskAddressTest {
     @Test
@@ -92,5 +92,4 @@ public class RskAddressTest {
     public void invalidLongAddressBytes() {
         new RskAddress(new byte[21]);
     }
-
 }

@@ -24,18 +24,15 @@ import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
-import org.junit.Assert;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import org.junit.Assert;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+/** Created by ajlopez on 5/11/2016. */
 public class SimpleMessageChannel implements MessageChannel {
     private static Random random = new Random();
     private List<Message> messages = new ArrayList<>();
@@ -91,8 +88,12 @@ public class SimpleMessageChannel implements MessageChannel {
     }
 
     @Override
-    public InetAddress getAddress() { return this.address; }
+    public InetAddress getAddress() {
+        return this.address;
+    }
 
     @Override
-    public void setAddress(InetAddress address) { this.address = address; }
+    public void setAddress(InetAddress address) {
+        this.address = address;
+    }
 }

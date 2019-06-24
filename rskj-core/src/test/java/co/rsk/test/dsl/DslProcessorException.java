@@ -18,9 +18,7 @@
 
 package co.rsk.test.dsl;
 
-/**
- * Created by ajlopez on 8/7/2016.
- */
+/** Created by ajlopez on 8/7/2016. */
 public class DslProcessorException extends Exception {
     public DslProcessorException(String message) {
         super(message);

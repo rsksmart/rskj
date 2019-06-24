@@ -19,12 +19,11 @@
 package org.ethereum.config.blockchain.upgrades;
 
 import com.typesafe.config.ConfigFactory;
-import org.ethereum.config.SystemProperties;
-
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.ethereum.config.SystemProperties;
 
 public class ActivationConfigsForTest {
 
@@ -45,8 +44,7 @@ public class ActivationConfigsForTest {
                 ConsensusRule.RSKIP92,
                 ConsensusRule.RSKIP94,
                 ConsensusRule.RSKIP97,
-                ConsensusRule.RSKIP98
-        );
+                ConsensusRule.RSKIP98);
     }
 
     public static ActivationConfig regtest() {
@@ -58,8 +56,9 @@ public class ActivationConfigsForTest {
     }
 
     public static ActivationConfig allBut(ConsensusRule... upgradesToEnable) {
-        Map<ConsensusRule, Long> consensusRules = EnumSet.allOf(ConsensusRule.class).stream()
-                .collect(Collectors.toMap(Function.identity(), ignored -> 0L));
+        Map<ConsensusRule, Long> consensusRules =
+                EnumSet.allOf(ConsensusRule.class).stream()
+                        .collect(Collectors.toMap(Function.identity(), ignored -> 0L));
         for (ConsensusRule consensusRule : upgradesToEnable) {
             consensusRules.put(consensusRule, -1L);
         }
@@ -68,8 +67,9 @@ public class ActivationConfigsForTest {
     }
 
     public static ActivationConfig only(ConsensusRule... upgradesToEnable) {
-        Map<ConsensusRule, Long> consensusRules = EnumSet.allOf(ConsensusRule.class).stream()
-                .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
+        Map<ConsensusRule, Long> consensusRules =
+                EnumSet.allOf(ConsensusRule.class).stream()
+                        .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
         for (ConsensusRule consensusRule : upgradesToEnable) {
             consensusRules.put(consensusRule, 0L);
         }
@@ -78,8 +78,9 @@ public class ActivationConfigsForTest {
     }
 
     public static ActivationConfig bridgeUnitTest() {
-        Map<ConsensusRule, Long> allDisabled = EnumSet.allOf(ConsensusRule.class).stream()
-                .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
+        Map<ConsensusRule, Long> allDisabled =
+                EnumSet.allOf(ConsensusRule.class).stream()
+                        .collect(Collectors.toMap(Function.identity(), ignored -> -1L));
         allDisabled.put(ConsensusRule.ARE_BRIDGE_TXS_PAID, 10L);
         return new ActivationConfig(allDisabled);
     }
@@ -87,7 +88,6 @@ public class ActivationConfigsForTest {
     private static ActivationConfig read(String resourceBasename) {
         return ActivationConfig.read(
                 ConfigFactory.load(resourceBasename)
-                        .getConfig(SystemProperties.PROPERTY_BLOCKCHAIN_CONFIG)
-        );
+                        .getConfig(SystemProperties.PROPERTY_BLOCKCHAIN_CONFIG));
     }
 }

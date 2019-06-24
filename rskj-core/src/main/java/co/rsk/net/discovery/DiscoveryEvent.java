@@ -19,7 +19,6 @@
 package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.message.PeerDiscoveryMessage;
-
 import java.net.InetSocketAddress;
 
 public class DiscoveryEvent {
@@ -42,5 +41,4 @@ public class DiscoveryEvent {
     public String getAddressIp() {
         return this.address.getAddress().getHostAddress();
     }
-
 }

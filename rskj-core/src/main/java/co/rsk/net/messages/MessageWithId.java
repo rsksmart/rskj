@@ -18,9 +18,8 @@
 
 package co.rsk.net.messages;
 
-import org.ethereum.util.RLP;
-
 import java.math.BigInteger;
+import org.ethereum.util.RLP;
 
 public abstract class MessageWithId extends Message {
 
@@ -34,8 +33,8 @@ public abstract class MessageWithId extends Message {
 
     protected abstract byte[] getEncodedMessageWithoutId();
 
-    public MessageType getResponseMessageType(){
-        throw new AbstractMethodError("This method should be implemented by children (request Messages)");
+    public MessageType getResponseMessageType() {
+        throw new AbstractMethodError(
+                "This method should be implemented by children (request Messages)");
     }
-
 }

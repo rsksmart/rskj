@@ -19,6 +19,8 @@
 
 package co.rsk.pcc.bto;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
 import org.bouncycastle.util.encoders.Hex;
@@ -27,8 +29,6 @@ import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.mockito.Mockito.mock;
 
 public class ExtractPublicKeyFromExtendedPublicKeyTest {
     private ExtractPublicKeyFromExtendedPublicKey method;
@@ -66,17 +66,21 @@ public class ExtractPublicKeyFromExtendedPublicKeyTest {
     public void executes() {
         Assert.assertEquals(
                 "02be517550b9e3be7fe42c80932d51e88e698663b4926e598b269d050e87e34d8c",
-                Hex.toHexString((byte[]) method.execute(new Object[]{
-                    "xpub661MyMwAqRbcFMGNG2YcHvj3x63bAZN9U5cKikaiQ4zu2D1cvpnZYyXNR9nH62sGp4RR39Ui7SVQSq1PY4JbPuEuu5prVJJC3d5Pogft712",
-                })));
+                Hex.toHexString(
+                        (byte[])
+                                method.execute(
+                                        new Object[] {
+                                            "xpub661MyMwAqRbcFMGNG2YcHvj3x63bAZN9U5cKikaiQ4zu2D1cvpnZYyXNR9nH62sGp4RR39Ui7SVQSq1PY4JbPuEuu5prVJJC3d5Pogft712",
+                                        })));
     }
 
     @Test
     public void validatesExtendedPublicKeyFormat() {
         try {
-            method.execute(new Object[]{
-                    "this-is-not-an-xpub",
-            });
+            method.execute(
+                    new Object[] {
+                        "this-is-not-an-xpub",
+                    });
             Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid extended public key"));
@@ -86,9 +90,10 @@ public class ExtractPublicKeyFromExtendedPublicKeyTest {
     @Test
     public void failsUponInvalidPublicKey() {
         try {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1s",
-            });
+            method.execute(
+                    new Object[] {
+                        "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1s",
+                    });
             Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid extended public key"));

@@ -4,9 +4,7 @@ import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 23/08/2017.
- */
+/** Created by ajlopez on 23/08/2017. */
 public class BlockHeadersRequestMessageTest {
     @Test
     public void createMessage() {

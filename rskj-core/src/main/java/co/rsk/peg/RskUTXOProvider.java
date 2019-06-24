@@ -19,11 +19,11 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
-
 import java.util.List;
 
 /**
  * Support class for the bridge btc wallet
+ *
  * @author Oscar Guindzberg
  */
 public class RskUTXOProvider implements UTXOProvider {
@@ -37,7 +37,8 @@ public class RskUTXOProvider implements UTXOProvider {
     }
 
     @Override
-    public List<UTXO> getOpenTransactionOutputs(List<Address> addresses) throws UTXOProviderException {
+    public List<UTXO> getOpenTransactionOutputs(List<Address> addresses)
+            throws UTXOProviderException {
         return utxos;
     }
 
@@ -50,5 +51,4 @@ public class RskUTXOProvider implements UTXOProvider {
     public NetworkParameters getParams() {
         return params;
     }
-
 }

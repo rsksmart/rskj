@@ -1,9 +1,12 @@
 package co.rsk.db;
 
+import static org.hamcrest.Matchers.is;
+
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -12,13 +15,7 @@ import org.ethereum.db.MutableRepository;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
-import static org.hamcrest.Matchers.is;
-
-/**
- * Created by SerAdmin on 10/24/2018.
- */
+/** Created by SerAdmin on 10/24/2018. */
 public class RepositoryMigrationTest {
     @Test
     public void test() {
@@ -38,5 +35,4 @@ public class RepositoryMigrationTest {
         // expected ab158b4a1d2411492194768fbd2669c069b60e5d0bcc859e51fe477855829ae7
         System.out.println(Hex.toHexString(oldRoot));
     }
-
 }

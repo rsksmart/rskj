@@ -19,40 +19,42 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import org.ethereum.crypto.ECKey;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.ethereum.crypto.ECKey;
 
 public class FederationTestUtils {
     public static List<FederationMember> getFederationMembers(int memberCount) {
         List<FederationMember> result = new ArrayList<>();
         for (int i = 1; i <= memberCount; i++) {
-            result.add(new FederationMember(
-                    BtcECKey.fromPrivate(BigInteger.valueOf((i) * 100)),
-                    ECKey.fromPrivate(BigInteger.valueOf((i) * 101)),
-                    ECKey.fromPrivate(BigInteger.valueOf((i) * 102))
-            ));
+            result.add(
+                    new FederationMember(
+                            BtcECKey.fromPrivate(BigInteger.valueOf((i) * 100)),
+                            ECKey.fromPrivate(BigInteger.valueOf((i) * 101)),
+                            ECKey.fromPrivate(BigInteger.valueOf((i) * 102))));
         }
         result.sort(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR);
         return result;
     }
 
     public static List<FederationMember> getFederationMembersFromPks(Integer... pks) {
-        return Arrays.stream(pks).map(n -> new FederationMember(
-                BtcECKey.fromPrivate(BigInteger.valueOf(n)),
-                ECKey.fromPrivate(BigInteger.valueOf(n+1)),
-                ECKey.fromPrivate(BigInteger.valueOf(n+2))
-        )).collect(Collectors.toList());
+        return Arrays.stream(pks)
+                .map(
+                        n ->
+                                new FederationMember(
+                                        BtcECKey.fromPrivate(BigInteger.valueOf(n)),
+                                        ECKey.fromPrivate(BigInteger.valueOf(n + 1)),
+                                        ECKey.fromPrivate(BigInteger.valueOf(n + 2))))
+                .collect(Collectors.toList());
     }
 
     public static List<FederationMember> getFederationMembersWithBtcKeys(List<BtcECKey> keys) {
-        return keys.stream().map(btcKey ->
-                new FederationMember(btcKey, new ECKey(), new ECKey())
-        ).collect(Collectors.toList());
+        return keys.stream()
+                .map(btcKey -> new FederationMember(btcKey, new ECKey(), new ECKey()))
+                .collect(Collectors.toList());
     }
 
     public static List<FederationMember> getFederationMembersWithKeys(List<BtcECKey> pks) {

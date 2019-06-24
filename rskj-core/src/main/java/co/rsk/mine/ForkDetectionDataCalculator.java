@@ -22,13 +22,12 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.core.types.ints.Uint8;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 
 public class ForkDetectionDataCalculator {
 
@@ -43,7 +42,7 @@ public class ForkDetectionDataCalculator {
 
     private NetworkParameters params;
 
-    public ForkDetectionDataCalculator(){
+    public ForkDetectionDataCalculator() {
         this.params = RegTestParams.get();
         new Context(params);
     }
@@ -53,10 +52,8 @@ public class ForkDetectionDataCalculator {
             return new byte[0];
         }
 
-        List<BlockHeader> mainchainBlockHeaders = mainchainBlocks
-                .stream()
-                .map(Block::getHeader)
-                .collect(Collectors.toList());
+        List<BlockHeader> mainchainBlockHeaders =
+                mainchainBlocks.stream().map(Block::getHeader).collect(Collectors.toList());
 
         return calculateWithBlockHeaders(mainchainBlockHeaders);
     }
@@ -85,12 +82,13 @@ public class ForkDetectionDataCalculator {
         long cpvStartHeight = (bestBlockHeight / CPV_JUMP_FACTOR) * CPV_JUMP_FACTOR;
 
         byte[] commitToParentsVector = new byte[CPV_SIZE];
-        for(int i = 0; i < CPV_SIZE; i++){
+        for (int i = 0; i < CPV_SIZE; i++) {
             long currentCpvElement = bestBlockHeight - cpvStartHeight + i * CPV_JUMP_FACTOR;
-            BlockHeader blockHeader = mainchainBlocks.get((int)currentCpvElement);
+            BlockHeader blockHeader = mainchainBlocks.get((int) currentCpvElement);
             byte[] bitcoinBlock = blockHeader.getBitcoinMergedMiningHeader();
 
-            byte[] bitcoinBlockHash = params.getDefaultSerializer().makeBlock(bitcoinBlock).getHash().getBytes();
+            byte[] bitcoinBlockHash =
+                    params.getDefaultSerializer().makeBlock(bitcoinBlock).getHash().getBytes();
             byte leastSignificantByte = bitcoinBlockHash[bitcoinBlockHash.length - 1];
 
             commitToParentsVector[i] = leastSignificantByte;
@@ -100,9 +98,10 @@ public class ForkDetectionDataCalculator {
     }
 
     private Uint8 getNumberOfUncles(List<BlockHeader> mainchainBlocks) {
-        int sum = IntStream
-                .range(0, NUMBER_OF_UNCLES)
-                .map(i -> mainchainBlocks.get(i).getUncleCount()).sum();
+        int sum =
+                IntStream.range(0, NUMBER_OF_UNCLES)
+                        .map(i -> mainchainBlocks.get(i).getUncleCount())
+                        .sum();
 
         final int maxUint = Uint8.MAX_VALUE.intValue();
         if (sum > maxUint) {
@@ -114,6 +113,6 @@ public class ForkDetectionDataCalculator {
 
     private byte[] getBlockBeingMinedHeight(List<BlockHeader> mainchainBlocks) {
         long blockBeingMinedHeight = mainchainBlocks.get(0).getNumber() + 1;
-        return ByteBuffer.allocate(4).putInt((int)blockBeingMinedHeight).array();
+        return ByteBuffer.allocate(4).putInt((int) blockBeingMinedHeight).array();
     }
 }

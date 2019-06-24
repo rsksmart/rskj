@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import java.math.BigInteger;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
@@ -25,11 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
-
-/**
- * Created by martin.medina on 07/02/17.
- */
+/** Created by martin.medina on 07/02/17. */
 public class ValidGasUsedValidatorTest {
 
     private BlockHeader blockHeader;

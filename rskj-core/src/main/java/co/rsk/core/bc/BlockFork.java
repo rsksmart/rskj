@@ -18,15 +18,12 @@
 
 package co.rsk.core.bc;
 
+import java.util.LinkedList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 
-import java.util.LinkedList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 09/08/2016.
- */
+/** Created by ajlopez on 09/08/2016. */
 public class BlockFork {
     private Block commonAncestor;
     private List<Block> oldBlocks = new LinkedList<>();
@@ -34,27 +31,33 @@ public class BlockFork {
 
     /**
      * getCommonAncestor gets the common ancestor of the two chains.
-     * @return highest block such that is an ancestor of all the blocks in oldBlocks and in newBlocks.
+     *
+     * @return highest block such that is an ancestor of all the blocks in oldBlocks and in
+     *     newBlocks.
      */
     public Block getCommonAncestor() {
         return commonAncestor;
     }
 
     /**
-     * getOldBlocks returns the blocks from the old chain, not including the common ancestor.
-     * if oldBlock is the common ancestor, it won't be included in oldBlocks.
-     * @return If oldBlock is the commonAncestor: the empty list. Otherwise, it will return a list containing all chain
-     * from commonAncestor (not included) to oldBlock (included), in ascending number order.
+     * getOldBlocks returns the blocks from the old chain, not including the common ancestor. if
+     * oldBlock is the common ancestor, it won't be included in oldBlocks.
+     *
+     * @return If oldBlock is the commonAncestor: the empty list. Otherwise, it will return a list
+     *     containing all chain from commonAncestor (not included) to oldBlock (included), in
+     *     ascending number order.
      */
     public List<Block> getOldBlocks() {
         return oldBlocks;
     }
 
     /**
-     * getNewBlocks returns the blocks from the new chain, not including the common ancestor.
-     * if newBlock is the common ancestor, it won't be included in newBlocks.
-     * @return If newBlock is the commonAncestor: the empty list. Otherwise, it will return a list containing all chain
-     * from commonAncestor (not included) to newBlock (included), in ascending number order.
+     * getNewBlocks returns the blocks from the new chain, not including the common ancestor. if
+     * newBlock is the common ancestor, it won't be included in newBlocks.
+     *
+     * @return If newBlock is the commonAncestor: the empty list. Otherwise, it will return a list
+     *     containing all chain from commonAncestor (not included) to newBlock (included), in
+     *     ascending number order.
      */
     public List<Block> getNewBlocks() {
         return newBlocks;

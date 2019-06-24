@@ -18,6 +18,8 @@
 
 package co.rsk.net.simples;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
@@ -31,19 +33,14 @@ import co.rsk.validators.BlockCompositeRule;
 import co.rsk.validators.BlockRootValidationRule;
 import co.rsk.validators.BlockUnclesHashValidationRule;
 import co.rsk.validators.DummyBlockValidationRule;
+import java.util.concurrent.*;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
 
-import java.util.concurrent.*;
-
-import static org.mockito.Mockito.mock;
-
-/**
- * Created by ajlopez on 5/15/2016.
- */
+/** Created by ajlopez on 5/15/2016. */
 public class SimpleAsyncNode extends SimpleNode {
     private static final TestSystemProperties config = new TestSystemProperties();
     private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -55,7 +52,10 @@ public class SimpleAsyncNode extends SimpleNode {
         super(handler);
     }
 
-    public SimpleAsyncNode(MessageHandler handler, SyncProcessor syncProcessor, SimpleChannelManager simpleChannelManager) {
+    public SimpleAsyncNode(
+            MessageHandler handler,
+            SyncProcessor syncProcessor,
+            SimpleChannelManager simpleChannelManager) {
         super(handler);
         this.syncProcessor = syncProcessor;
         this.simpleChannelManager = simpleChannelManager;
@@ -64,8 +64,7 @@ public class SimpleAsyncNode extends SimpleNode {
     @Override
     public void receiveMessageFrom(SimpleNode peer, Message message) {
         MessageChannel senderToPeer = simpleChannelManager.getMessageChannel(this, peer);
-        futures.add(
-                executor.submit(() -> this.getHandler().processMessage(senderToPeer, message)));
+        futures.add(executor.submit(() -> this.getHandler().processMessage(senderToPeer, message)));
     }
 
     public void joinWithTimeout() {
@@ -73,7 +72,8 @@ public class SimpleAsyncNode extends SimpleNode {
             executor.shutdown();
             executor.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
-            throw new RuntimeException("Join operation timed out. Remaining tasks: " + this.futures.size() + " .");
+            throw new RuntimeException(
+                    "Join operation timed out. Remaining tasks: " + this.futures.size() + " .");
         }
     }
 
@@ -82,7 +82,8 @@ public class SimpleAsyncNode extends SimpleNode {
             for (int i = 0; i < number; i++) {
                 Future task = this.futures.poll(10, TimeUnit.SECONDS);
                 if (task == null) {
-                    throw new RuntimeException("Exceeded waiting time. Expected " + (number - i) + " more tasks.");
+                    throw new RuntimeException(
+                            "Exceeded waiting time. Expected " + (number - i) + " more tasks.");
                 }
                 task.get();
             }
@@ -97,7 +98,8 @@ public class SimpleAsyncNode extends SimpleNode {
         waitUntilNTasksWithTimeout(number);
         int remaining = this.futures.size();
         if (remaining > 0)
-            throw new RuntimeException("Too many tasks. Expected " + number + " but got " + (number + remaining));
+            throw new RuntimeException(
+                    "Too many tasks. Expected " + number + " but got " + (number + remaining));
     }
 
     public void clearQueue() {
@@ -108,29 +110,48 @@ public class SimpleAsyncNode extends SimpleNode {
         return this.syncProcessor;
     }
 
-
-
-    public static SimpleAsyncNode createDefaultNode(Blockchain blockChain){
+    public static SimpleAsyncNode createDefaultNode(Blockchain blockChain) {
         return createNode(blockChain, SyncConfiguration.DEFAULT);
     }
 
-    public static SimpleAsyncNode createNode(Blockchain blockchain, SyncConfiguration syncConfiguration) {
+    public static SimpleAsyncNode createNode(
+            Blockchain blockchain, SyncConfiguration syncConfiguration) {
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
         SimpleChannelManager channelManager = new SimpleChannelManager();
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-        SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, peerScoringManager, channelManager, syncConfiguration, blockFactory,
-                blockValidationRule,
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants())
-        );
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
+        SyncProcessor syncProcessor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        peerScoringManager,
+                        channelManager,
+                        syncConfiguration,
+                        blockFactory,
+                        blockValidationRule,
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        new DifficultyCalculator(
+                                config.getActivationConfig(), config.getNetworkConstants()));
+        NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        processor,
+                        syncProcessor,
+                        channelManager,
+                        null,
+                        peerScoringManager,
+                        blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }
 
@@ -142,7 +163,8 @@ public class SimpleAsyncNode extends SimpleNode {
         return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
     }
 
-    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles, boolean mining) {
+    public static SimpleAsyncNode createNodeWithWorldBlockChain(
+            int size, boolean withUncles, boolean mining) {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, size, withUncles, mining);

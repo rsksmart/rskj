@@ -19,8 +19,11 @@
 
 package org.ethereum.jsontestsuite;
 
+import static org.junit.Assert.assertEquals;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import java.io.IOException;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.json.simple.parser.ParseException;
@@ -30,10 +33,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author Mikhail Kalinin
@@ -45,7 +44,8 @@ public class GitHubBasicTest {
 
     private static TestSystemProperties config = new TestSystemProperties();
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR =
+            new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
     public String shacommit = "99afe8f5aad7bca5d0f1b1685390a4dea32d73c3";
 
@@ -64,7 +64,9 @@ public class GitHubBasicTest {
             BlockHeader current = testCase.getCurrent(blockFactory);
             BlockHeader parent = testCase.getParent(blockFactory);
 
-            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
+            assertEquals(
+                    testCase.getExpectedDifficulty(),
+                    DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
         }
     }
 
@@ -73,7 +75,8 @@ public class GitHubBasicTest {
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
-        String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyFrontier.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("BasicTests/difficultyFrontier.json", shacommit);
 
         DifficultyTestSuite testSuite = new DifficultyTestSuite(json);
 
@@ -84,7 +87,9 @@ public class GitHubBasicTest {
             BlockHeader current = testCase.getCurrent(blockFactory);
             BlockHeader parent = testCase.getParent(blockFactory);
 
-            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
+            assertEquals(
+                    testCase.getExpectedDifficulty(),
+                    DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
         }
     }
 
@@ -93,7 +98,8 @@ public class GitHubBasicTest {
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
-        String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyHomestead.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("BasicTests/difficultyHomestead.json", shacommit);
 
         DifficultyTestSuite testSuite = new DifficultyTestSuite(json);
 
@@ -104,7 +110,9 @@ public class GitHubBasicTest {
             BlockHeader current = testCase.getCurrent(blockFactory);
             BlockHeader parent = testCase.getParent(blockFactory);
 
-            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
+            assertEquals(
+                    testCase.getExpectedDifficulty(),
+                    DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
         }
     }
 }

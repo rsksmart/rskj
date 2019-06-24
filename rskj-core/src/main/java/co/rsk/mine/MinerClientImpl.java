@@ -18,22 +18,22 @@
 
 package co.rsk.mine;
 
-import co.rsk.panic.PanicProcessor;
 import co.rsk.core.Rsk;
-import org.ethereum.rpc.TypeConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
+import co.rsk.panic.PanicProcessor;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.Timer;
 import java.util.TimerTask;
+import javax.annotation.Nonnull;
+import org.ethereum.rpc.TypeConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * MinerClient mines new blocks.
- * In fact it just performs the proof-of-work needed to find a valid block and uses
- * uses MinerServer to build blocks to mine and publish blocks once a valid nonce was found.
+ * MinerClient mines new blocks. In fact it just performs the proof-of-work needed to find a valid
+ * block and uses uses MinerServer to build blocks to mine and publish blocks once a valid nonce was
+ * found.
+ *
  * @author Oscar Guindzberg
  */
 public class MinerClientImpl implements MinerClient {
@@ -56,7 +56,11 @@ public class MinerClientImpl implements MinerClient {
     private volatile MinerWork work;
     private Timer aTimer;
 
-    public MinerClientImpl(Rsk rsk, MinerServer minerServer, Duration delayBetweenBlocks, Duration delayBetweenRefreshes) {
+    public MinerClientImpl(
+            Rsk rsk,
+            MinerServer minerServer,
+            Duration delayBetweenBlocks,
+            Duration delayBetweenRefreshes) {
         this.rsk = rsk;
         this.minerServer = minerServer;
         this.delayBetweenBlocks = delayBetweenBlocks;
@@ -123,9 +127,14 @@ public class MinerClientImpl implements MinerClient {
         newBestBlockArrivedFromAnotherNode = false;
         work = minerServer.getWork();
 
-        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
+        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters =
+                co.rsk.bitcoinj.params.RegTestParams.get();
+        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction =
+                MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(
+                        bitcoinNetworkParameters, work);
+        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock =
+                MinerUtils.getBitcoinMergedMiningBlock(
+                        bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 
         BigInteger target = new BigInteger(1, TypeConverter.stringHexToByteArray(work.getTarget()));
         boolean foundNonce = findNonce(bitcoinMergedMiningBlock, target);
@@ -140,22 +149,27 @@ public class MinerClientImpl implements MinerClient {
 
         if (foundNonce) {
             logger.info("Mined block: {}", work.getBlockHashForMergedMining());
-            minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+            minerServer.submitBitcoinBlock(
+                    work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
         }
 
         return foundNonce;
     }
 
     /**
-     * findNonce will try to find a valid nonce for bitcoinMergedMiningBlock, that satisfies the given target difficulty.
+     * findNonce will try to find a valid nonce for bitcoinMergedMiningBlock, that satisfies the
+     * given target difficulty.
      *
-     * @param bitcoinMergedMiningBlock bitcoinBlock to find nonce for. This block's nonce will be modified.
-     * @param target                   target difficulty. Block's hash should be lower than this number.
+     * @param bitcoinMergedMiningBlock bitcoinBlock to find nonce for. This block's nonce will be
+     *     modified.
+     * @param target target difficulty. Block's hash should be lower than this number.
      * @return true if a nonce was found, false otherwise.
-     * @remarks This method will return if the stop or newBetBlockArrivedFromAnotherNode intance variables are set to true.
+     * @remarks This method will return if the stop or newBetBlockArrivedFromAnotherNode intance
+     *     variables are set to true.
      */
-    private boolean findNonce(@Nonnull final co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock,
-                              @Nonnull final BigInteger target) {
+    private boolean findNonce(
+            @Nonnull final co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock,
+            @Nonnull final BigInteger target) {
         bitcoinMergedMiningBlock.setNonce(nextNonceToUse++);
 
         while (!stop && !newBestBlockArrivedFromAnotherNode) {
@@ -177,23 +191,26 @@ public class MinerClientImpl implements MinerClient {
     public void stop() {
         stop = true;
 
-        if (aTimer!=null) {
+        if (aTimer != null) {
             aTimer.cancel();
         }
     }
 
-    /**
-     * RefreshWork asks the minerServer for new work.
-     */
+    /** RefreshWork asks the minerServer for new work. */
     public class RefreshWork extends TimerTask {
         @Override
         public void run() {
             MinerWork receivedWork = minerServer.getWork();
             MinerWork previousWork = work;
-            if (previousWork != null && receivedWork != null &&
-                    !receivedWork.getBlockHashForMergedMining().equals(previousWork.getBlockHashForMergedMining())) {
+            if (previousWork != null
+                    && receivedWork != null
+                    && !receivedWork
+                            .getBlockHashForMergedMining()
+                            .equals(previousWork.getBlockHashForMergedMining())) {
                 newBestBlockArrivedFromAnotherNode = true;
-                logger.debug("There is a new best block: {}", receivedWork.getBlockHashForMergedMining());
+                logger.debug(
+                        "There is a new best block: {}",
+                        receivedWork.getBlockHashForMergedMining());
             }
         }
     }

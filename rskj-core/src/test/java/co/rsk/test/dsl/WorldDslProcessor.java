@@ -31,19 +31,16 @@ import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieConverter;
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.StringTokenizer;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.StringTokenizer;
-
-/**
- * Created by ajlopez on 8/7/2016.
- */
+/** Created by ajlopez on 8/7/2016. */
 public class WorldDslProcessor {
     private static final Logger logger = LoggerFactory.getLogger("dsl");
 
@@ -56,7 +53,9 @@ public class WorldDslProcessor {
         this.blockBuilder = new BlockBuilder(world);
     }
 
-    public World getWorld() { return this.world; }
+    public World getWorld() {
+        return this.world;
+    }
 
     public void processCommands(DslParser parser) throws DslProcessorException {
         for (DslCommand cmd = parser.nextCommand(); cmd != null; cmd = parser.nextCommand())
@@ -64,43 +63,35 @@ public class WorldDslProcessor {
     }
 
     private void processCommand(DslParser parser, DslCommand cmd) throws DslProcessorException {
-        if (cmd.isCommand("block_chain"))
-            processBlockChainCommand(cmd);
-        else if (cmd.isCommand("block_connect"))
-            processBlockConnectCommand(cmd);
-        else if (cmd.isCommand("block_process"))
-            processBlockProcessCommand(cmd);
-        else if (cmd.isCommand("block_build"))
-            processBlockBuildCommand(cmd, parser);
-        else if (cmd.isCommand("transaction_build"))
-            processTransactionBuildCommand(cmd, parser);
-        else if (cmd.isCommand("account_new"))
-            processAccountNewCommand(cmd);
-        else if (cmd.isCommand("assert_best"))
-            processAssertBestCommand(cmd);
-        else if (cmd.isCommand("assert_balance"))
-            processAssertBalanceCommand(cmd);
-        else if (cmd.isCommand("assert_connect"))
-            processAssertConnectCommand(cmd);
-        else if (cmd.isCommand("log_info"))
-            processLogInfoCommand(cmd);
-        else
-            throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
+        if (cmd.isCommand("block_chain")) processBlockChainCommand(cmd);
+        else if (cmd.isCommand("block_connect")) processBlockConnectCommand(cmd);
+        else if (cmd.isCommand("block_process")) processBlockProcessCommand(cmd);
+        else if (cmd.isCommand("block_build")) processBlockBuildCommand(cmd, parser);
+        else if (cmd.isCommand("transaction_build")) processTransactionBuildCommand(cmd, parser);
+        else if (cmd.isCommand("account_new")) processAccountNewCommand(cmd);
+        else if (cmd.isCommand("assert_best")) processAssertBestCommand(cmd);
+        else if (cmd.isCommand("assert_balance")) processAssertBalanceCommand(cmd);
+        else if (cmd.isCommand("assert_connect")) processAssertConnectCommand(cmd);
+        else if (cmd.isCommand("log_info")) processLogInfoCommand(cmd);
+        else throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
     }
 
     private void processLogInfoCommand(DslCommand cmd) {
         logger.info(cmd.getArgument(0));
     }
 
-    private void processBlockBuildCommand(DslCommand cmd, DslParser parser) throws DslProcessorException {
+    private void processBlockBuildCommand(DslCommand cmd, DslParser parser)
+            throws DslProcessorException {
         String name = cmd.getArgument(0);
         BlockBuildDslProcessor subprocessor = new BlockBuildDslProcessor(this.world, name);
         subprocessor.processCommands(parser);
     }
 
-    private void processTransactionBuildCommand(DslCommand cmd, DslParser parser) throws DslProcessorException {
+    private void processTransactionBuildCommand(DslCommand cmd, DslParser parser)
+            throws DslProcessorException {
         String name = cmd.getArgument(0);
-        TransactionBuildDslProcessor subprocessor = new TransactionBuildDslProcessor(this.world, name);
+        TransactionBuildDslProcessor subprocessor =
+                new TransactionBuildDslProcessor(this.world, name);
         subprocessor.processCommands(parser);
     }
 
@@ -109,8 +100,7 @@ public class WorldDslProcessor {
         String name = cmd.getArgument(0);
         builder.name(name);
 
-        if (cmd.getArity() > 1)
-            builder.balance(new Coin(new BigInteger(cmd.getArgument(1))));
+        if (cmd.getArity() > 1) builder.balance(new Coin(new BigInteger(cmd.getArgument(1))));
 
         Account account = builder.build();
 
@@ -125,22 +115,21 @@ public class WorldDslProcessor {
 
         Account account = world.getAccountByName(accountName);
 
-        if (account != null)
-            accountAddress = account.getAddress();
+        if (account != null) accountAddress = account.getAddress();
         else {
             Transaction tx = world.getTransactionByName(accountName);
 
-            if (tx != null)
-                accountAddress = tx.getContractAddress();
-            else
-                accountAddress = new RskAddress(accountName);
+            if (tx != null) accountAddress = tx.getContractAddress();
+            else accountAddress = new RskAddress(accountName);
         }
 
         Coin accountBalance = world.getRepository().getBalance(accountAddress);
-        if (expected.equals(accountBalance))
-            return;
+        if (expected.equals(accountBalance)) return;
 
-        throw new DslProcessorException(String.format("Expected account '%s' with balance '%s', but got '%s'", accountName, expected, accountBalance));
+        throw new DslProcessorException(
+                String.format(
+                        "Expected account '%s' with balance '%s', but got '%s'",
+                        accountName, expected, accountBalance));
     }
 
     private void processAssertBestCommand(DslCommand cmd) throws DslProcessorException {
@@ -149,8 +138,7 @@ public class WorldDslProcessor {
 
         Block best = world.getBlockChain().getStatus().getBestBlock();
 
-        if (best.getHash().equals(block.getHash()))
-            return;
+        if (best.getHash().equals(block.getHash())) return;
 
         throw new DslProcessorException(String.format("Expected best block '%s'", name));
     }
@@ -159,22 +147,22 @@ public class WorldDslProcessor {
         String expected = cmd.getArgument(0);
 
         if (latestImportResult == ImportResult.IMPORTED_BEST)
-            if ("best".equals(expected))
-                return;
+            if ("best".equals(expected)) return;
             else
-                throw new DslProcessorException(String.format("Expected '%s' instead of 'best'", expected));
+                throw new DslProcessorException(
+                        String.format("Expected '%s' instead of 'best'", expected));
 
         if (latestImportResult == ImportResult.IMPORTED_NOT_BEST)
-            if ("not_best".equals(expected))
-                return;
+            if ("not_best".equals(expected)) return;
             else
-                throw new DslProcessorException(String.format("Expected '%s' instead of 'not_best'", expected));
+                throw new DslProcessorException(
+                        String.format("Expected '%s' instead of 'not_best'", expected));
 
         if (latestImportResult == ImportResult.NO_PARENT)
-            if ("no_parent".equals(expected))
-                return;
+            if ("no_parent".equals(expected)) return;
             else
-                throw new DslProcessorException(String.format("Expected '%s' instead of 'no_parent'", expected));
+                throw new DslProcessorException(
+                        String.format("Expected '%s' instead of 'no_parent'", expected));
 
         throw new DslProcessorException(String.format("Unknown assert connect '%s", expected));
     }
@@ -197,9 +185,9 @@ public class WorldDslProcessor {
 
             if (block.getParentHash().equals(blockChain.getBestBlock().getHash())) {
                 executor.executeAndFill(block, blockChain.getBestBlock().getHeader());
-            }
-            else {
-                executor.executeAndFill(block, world.getBlockByHash(block.getParentHash()).getHeader());
+            } else {
+                executor.executeAndFill(
+                        block, world.getBlockByHash(block.getParentHash()).getHeader());
             }
 
             block.seal();
@@ -239,27 +227,34 @@ public class WorldDslProcessor {
             String name = cmd.getArgument(k);
             int difficulty = k;
             if (name != null) {
-                StringTokenizer difficultyTokenizer = new StringTokenizer(name,":");
+                StringTokenizer difficultyTokenizer = new StringTokenizer(name, ":");
                 name = difficultyTokenizer.nextToken();
-                difficulty = difficultyTokenizer.hasMoreTokens()?parseDifficulty(difficultyTokenizer.nextToken(),k):k;
+                difficulty =
+                        difficultyTokenizer.hasMoreTokens()
+                                ? parseDifficulty(difficultyTokenizer.nextToken(), k)
+                                : k;
             }
             Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
-            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
-            BlockExecutor executor = new BlockExecutor(
-                    config.getActivationConfig(),
-                    new RepositoryLocator(world.getRepository(), stateRootHandler),
-                    stateRootHandler,
-                    new TransactionExecutorFactory(
-                            config,
-                            world.getBlockChain().getBlockStore(),
-                            null,
-                            new BlockFactory(config.getActivationConfig()),
-                            programInvokeFactory,
-                            null
-                    )
-            );
+            StateRootHandler stateRootHandler =
+                    new StateRootHandler(
+                            config.getActivationConfig(),
+                            new TrieConverter(),
+                            new HashMapDB(),
+                            new HashMap<>());
+            BlockExecutor executor =
+                    new BlockExecutor(
+                            config.getActivationConfig(),
+                            new RepositoryLocator(world.getRepository(), stateRootHandler),
+                            stateRootHandler,
+                            new TransactionExecutorFactory(
+                                    config,
+                                    world.getBlockChain().getBlockStore(),
+                                    null,
+                                    new BlockFactory(config.getActivationConfig()),
+                                    programInvokeFactory,
+                                    null));
             executor.executeAndFill(block, parent.getHeader());
             world.saveBlock(name, block);
             parent = block;
@@ -267,4 +262,3 @@ public class WorldDslProcessor {
         }
     }
 }
-

@@ -19,27 +19,27 @@
 
 package org.ethereum.core;
 
-import co.rsk.core.Coin;
-import org.junit.Test;
-
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-
 import static org.junit.Assert.assertEquals;
+
+import co.rsk.core.Coin;
+import java.math.BigInteger;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Test;
 
 public class AccountStateTest {
 
     @Test
     public void testGetEncoded() {
         String expected = "dc809a0100000000000000000000000000000000000000000000000000";
-        AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
+        AccountState acct =
+                new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         assertEquals(expected, Hex.toHexString(acct.getEncoded()));
     }
 
     @Test
     public void encodeDecodeStateWithZeroInStateFlags() {
-        AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
+        AccountState acct =
+                new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         AccountState result = new AccountState(acct.getEncoded());
 
         assertEquals(BigInteger.ZERO, result.getNonce());
@@ -49,7 +49,8 @@ public class AccountStateTest {
 
     @Test
     public void encodeDecodeStateWith128InStateFlags() {
-        AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
+        AccountState acct =
+                new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         acct.setStateFlags(128);
         AccountState result = new AccountState(acct.getEncoded());
 
@@ -60,7 +61,8 @@ public class AccountStateTest {
 
     @Test
     public void encodeDecodeStateWith238InStateFlags() {
-        AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
+        AccountState acct =
+                new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         acct.setStateFlags(238);
         AccountState result = new AccountState(acct.getEncoded());
 

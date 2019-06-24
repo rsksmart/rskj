@@ -17,13 +17,13 @@
  */
 package org.ethereum.net.p2p;
 
+import static org.mockito.Mockito.*;
+
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.MessageQueue;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.mockito.Mockito.*;
 
 public class P2pHandlerTest {
 

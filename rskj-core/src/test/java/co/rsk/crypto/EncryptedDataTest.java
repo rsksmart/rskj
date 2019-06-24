@@ -18,7 +18,6 @@
 
 package co.rsk.crypto;
 
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,9 +25,9 @@ public class EncryptedDataTest {
 
     @Test
     public void testEncryptedData() {
-        EncryptedData ed = new EncryptedData(new byte[]{1,2,3}, new byte[]{4,5,6});
-        EncryptedData ed2 = new EncryptedData(new byte[]{1,2,3}, new byte[]{4,5,6});
-        EncryptedData ed3 = new EncryptedData(new byte[]{1,2,3}, new byte[]{4,5,7});
+        EncryptedData ed = new EncryptedData(new byte[] {1, 2, 3}, new byte[] {4, 5, 6});
+        EncryptedData ed2 = new EncryptedData(new byte[] {1, 2, 3}, new byte[] {4, 5, 6});
+        EncryptedData ed3 = new EncryptedData(new byte[] {1, 2, 3}, new byte[] {4, 5, 7});
         Assert.assertEquals(ed.toString(), ed2.toString());
         Assert.assertEquals(ed.hashCode(), ed2.hashCode());
         Assert.assertEquals(ed, ed);

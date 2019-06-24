@@ -19,16 +19,15 @@
 
 package org.ethereum.solidity.compiler;
 
-import org.ethereum.config.SystemProperties;
-import org.slf4j.LoggerFactory;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import org.ethereum.config.SystemProperties;
+import org.slf4j.LoggerFactory;
 
 public class SolidityCompiler {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger("soliditycompiler");
@@ -90,7 +89,7 @@ public class SolidityCompiler {
 
         public synchronized String getContent(boolean waitForComplete) {
             if (waitForComplete) {
-                while(stream != null) {
+                while (stream != null) {
                     try {
                         wait();
                     } catch (InterruptedException e) {
@@ -118,12 +117,14 @@ public class SolidityCompiler {
         }
     }
 
-    public Result compile(byte[] source, boolean combinedJson, Options... options) throws IOException {
+    public Result compile(byte[] source, boolean combinedJson, Options... options)
+            throws IOException {
         List<String> commandParts = new ArrayList<>();
         commandParts.add(solc.getExecutable().getCanonicalPath());
         if (combinedJson) {
             commandParts.add("--combined-json");
-            String combined = Arrays.stream(options).map(Options::toString).collect(Collectors.joining(","));
+            String combined =
+                    Arrays.stream(options).map(Options::toString).collect(Collectors.joining(","));
             commandParts.add(combined);
         } else {
             for (Options option : options) {
@@ -131,10 +132,11 @@ public class SolidityCompiler {
             }
         }
 
-        ProcessBuilder processBuilder = new ProcessBuilder(commandParts)
-                .directory(solc.getExecutable().getParentFile());
-        processBuilder.environment().put("LD_LIBRARY_PATH",
-                solc.getExecutable().getParentFile().getCanonicalPath());
+        ProcessBuilder processBuilder =
+                new ProcessBuilder(commandParts).directory(solc.getExecutable().getParentFile());
+        processBuilder
+                .environment()
+                .put("LD_LIBRARY_PATH", solc.getExecutable().getParentFile().getCanonicalPath());
 
         Process process = processBuilder.start();
 

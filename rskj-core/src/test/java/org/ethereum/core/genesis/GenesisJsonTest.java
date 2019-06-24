@@ -19,37 +19,35 @@
 
 package org.ethereum.core.genesis;
 
-import org.apache.commons.lang3.StringUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-
-/**
- * Created by mario on 03/01/17.
- */
+/** Created by mario on 03/01/17. */
 public class GenesisJsonTest {
 
-    private static final String GENESIS_JSON = "{ " +
-            "\"alloc\": { " +
-            "\"0000000000000000000000000000000000000006\": {" +
-            "\"balance\": \"21000000000000000000000000\"" +
-            "}}," +
-            "\"nonce\": \"0xffffffffffffffff\"," +
-            "\"mixhash\": \"0x00\"," +
-            "\"bitcoinMergedMiningHeader\": \"0x00\"," +
-            "\"bitcoinMergedMiningMerkleProof\": \"0x00\"," +
-            "\"bitcoinMergedMiningCoinbaseTransaction\": \"0x00\"," +
-            "\"timestamp\": \"0x00\"," +
-            "\"parentHash\": \"0x0000000000000000000000000000000000000000000000000000000000000000\"," +
-            "\"extraData\": \"0x686f727365\"," +
-            "\"gasLimit\": \"0x2dc6c0\"," +
-            "\"difficulty\": \"0x0000000001\"," +
-            "\"coinbase\": \"0x3333333333333333333333333333333333333333\"," +
-            "\"minimumGasPrice\": \"0x00\"" +
-            "}";
+    private static final String GENESIS_JSON =
+            "{ "
+                    + "\"alloc\": { "
+                    + "\"0000000000000000000000000000000000000006\": {"
+                    + "\"balance\": \"21000000000000000000000000\""
+                    + "}},"
+                    + "\"nonce\": \"0xffffffffffffffff\","
+                    + "\"mixhash\": \"0x00\","
+                    + "\"bitcoinMergedMiningHeader\": \"0x00\","
+                    + "\"bitcoinMergedMiningMerkleProof\": \"0x00\","
+                    + "\"bitcoinMergedMiningCoinbaseTransaction\": \"0x00\","
+                    + "\"timestamp\": \"0x00\","
+                    + "\"parentHash\": \"0x0000000000000000000000000000000000000000000000000000000000000000\","
+                    + "\"extraData\": \"0x686f727365\","
+                    + "\"gasLimit\": \"0x2dc6c0\","
+                    + "\"difficulty\": \"0x0000000001\","
+                    + "\"coinbase\": \"0x3333333333333333333333333333333333333333\","
+                    + "\"minimumGasPrice\": \"0x00\""
+                    + "}";
 
     @Test
     public void generateGenesisJson() throws IOException {
@@ -61,7 +59,8 @@ public class GenesisJsonTest {
         Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getMinimumGasPrice()));
         Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getParentHash()));
         Assert.assertTrue(genesisJson.getAlloc().size() > 0);
-        Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getBitcoinMergedMiningCoinbaseTransaction()));
+        Assert.assertTrue(
+                StringUtils.isNotBlank(genesisJson.getBitcoinMergedMiningCoinbaseTransaction()));
         Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getBitcoinMergedMiningHeader()));
         Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getBitcoinMergedMiningMerkleProof()));
         Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getCoinbase()));
@@ -69,7 +68,5 @@ public class GenesisJsonTest {
         Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getExtraData()));
         Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getMixhash()));
         Assert.assertTrue(StringUtils.isNotBlank(genesisJson.getTimestamp()));
-
     }
-
 }

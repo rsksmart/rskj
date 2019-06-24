@@ -19,16 +19,14 @@
 
 package org.ethereum.net;
 
+import static org.junit.Assert.*;
+
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.p2p.DisconnectMessage;
-
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import static org.junit.Assert.*;
 
 public class DisconnectMessageTest {
 
@@ -69,7 +67,7 @@ public class DisconnectMessageTest {
         assertEquals(ReasonCode.NULL_IDENTITY, disconnectMessage.getReason());
     }
 
-    @Test //handling boundary-high
+    @Test // handling boundary-high
     public void test_4() {
 
         byte[] payload = Hex.decode("C180");
@@ -77,10 +75,11 @@ public class DisconnectMessageTest {
         DisconnectMessage disconnectMessage = new DisconnectMessage(payload);
         logger.trace("{}" + disconnectMessage);
 
-        assertEquals(disconnectMessage.getReason(), ReasonCode.REQUESTED); //high numbers are zeroed
+        assertEquals(
+                disconnectMessage.getReason(), ReasonCode.REQUESTED); // high numbers are zeroed
     }
 
-    @Test //handling boundary-low minus 1 (error)
+    @Test // handling boundary-low minus 1 (error)
     public void test_6() {
 
         String disconnectMessageRaw = "C19999";
@@ -88,14 +87,14 @@ public class DisconnectMessageTest {
 
         try {
             DisconnectMessage disconnectMessage = new DisconnectMessage(payload);
-            disconnectMessage.toString(); //throws exception
+            disconnectMessage.toString(); // throws exception
             assertTrue("Valid raw encoding for disconnectMessage", false);
         } catch (RuntimeException e) {
             assertTrue("Invalid raw encoding for disconnectMessage", true);
         }
     }
 
-    @Test //handling boundary-high plus 1 (error)
+    @Test // handling boundary-high plus 1 (error)
     public void test_7() {
 
         String disconnectMessageRaw = "C28081";
@@ -103,11 +102,10 @@ public class DisconnectMessageTest {
 
         try {
             DisconnectMessage disconnectMessage = new DisconnectMessage(payload);
-            disconnectMessage.toString(); //throws exception
+            disconnectMessage.toString(); // throws exception
             assertTrue("Valid raw encoding for disconnectMessage", false);
         } catch (RuntimeException e) {
             assertTrue("Invalid raw encoding for disconnectMessage", true);
         }
     }
 }
-

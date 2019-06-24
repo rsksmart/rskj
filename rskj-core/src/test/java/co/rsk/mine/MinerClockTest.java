@@ -17,17 +17,16 @@
  */
 package co.rsk.mine;
 
-import org.ethereum.core.BlockHeader;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.ethereum.core.BlockHeader;
+import org.junit.Before;
+import org.junit.Test;
 
 public class MinerClockTest {
 
@@ -44,10 +43,7 @@ public class MinerClockTest {
 
         BlockHeader parent = mockBlockHeaderWithTimestamp(54L);
 
-        assertEquals(
-                54L,
-                minerClock.calculateTimestampForChild(parent)
-        );
+        assertEquals(54L, minerClock.calculateTimestampForChild(parent));
     }
 
     @Test
@@ -57,9 +53,7 @@ public class MinerClockTest {
         BlockHeader parent = mockBlockHeaderWithTimestamp(54L);
 
         assertEquals(
-                clock.instant().getEpochSecond(),
-                minerClock.calculateTimestampForChild(parent)
-        );
+                clock.instant().getEpochSecond(), minerClock.calculateTimestampForChild(parent));
     }
 
     @Test
@@ -70,8 +64,7 @@ public class MinerClockTest {
 
         assertEquals(
                 clock.instant().getEpochSecond() + 1,
-                minerClock.calculateTimestampForChild(parent)
-        );
+                minerClock.calculateTimestampForChild(parent));
     }
 
     @Test
@@ -82,10 +75,7 @@ public class MinerClockTest {
 
         minerClock.increaseTime(5392L);
 
-        assertEquals(
-                33L + 5392L,
-                minerClock.calculateTimestampForChild(parent)
-        );
+        assertEquals(33L + 5392L, minerClock.calculateTimestampForChild(parent));
     }
 
     @Test
@@ -98,8 +88,7 @@ public class MinerClockTest {
 
         assertEquals(
                 clock.instant().getEpochSecond() + 5392L,
-                minerClock.calculateTimestampForChild(parent)
-        );
+                minerClock.calculateTimestampForChild(parent));
     }
 
     @Test
@@ -111,10 +100,7 @@ public class MinerClockTest {
         minerClock.increaseTime(5392L);
         minerClock.clearIncreaseTime();
 
-        assertEquals(
-                33L,
-                minerClock.calculateTimestampForChild(parent)
-        );
+        assertEquals(33L, minerClock.calculateTimestampForChild(parent));
     }
 
     BlockHeader mockBlockHeaderWithTimestamp(long timestamp) {

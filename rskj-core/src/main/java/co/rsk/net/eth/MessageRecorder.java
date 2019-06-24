@@ -21,9 +21,7 @@ package co.rsk.net.eth;
 import co.rsk.net.NodeID;
 import org.ethereum.net.message.Message;
 
-/**
- * Created by ajlopez on 26/04/2017.
- */
+/** Created by ajlopez on 26/04/2017. */
 public interface MessageRecorder {
     public void recordMessage(NodeID sender, Message message);
 }

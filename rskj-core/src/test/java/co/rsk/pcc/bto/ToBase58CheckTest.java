@@ -19,18 +19,17 @@
 
 package co.rsk.pcc.bto;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
-
-import static org.mockito.Mockito.mock;
 
 public class ToBase58CheckTest {
     private ToBase58Check method;
@@ -68,19 +67,17 @@ public class ToBase58CheckTest {
     public void executes() {
         Assert.assertEquals(
                 "mgivuh9jErcGdRr81cJ3A7YfgbJV7WNyZV",
-                method.execute(new Object[]{
-                        Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
-                        BigInteger.valueOf(111L)
-                }));
+                method.execute(
+                        new Object[] {
+                            Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
+                            BigInteger.valueOf(111L)
+                        }));
     }
 
     @Test
     public void validatesHashPresence() {
         try {
-            method.execute(new Object[]{
-                    Hex.decode("aabbcc"),
-                    BigInteger.valueOf(111L)
-            });
+            method.execute(new Object[] {Hex.decode("aabbcc"), BigInteger.valueOf(111L)});
             Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid hash160"));
@@ -90,10 +87,7 @@ public class ToBase58CheckTest {
     @Test
     public void validatesHashLength() {
         try {
-            method.execute(new Object[]{
-                    Hex.decode("aabbcc"),
-                    BigInteger.valueOf(111L)
-            });
+            method.execute(new Object[] {Hex.decode("aabbcc"), BigInteger.valueOf(111L)});
             Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid hash160"));
@@ -103,22 +97,26 @@ public class ToBase58CheckTest {
     @Test
     public void validatesVersion() {
         try {
-            method.execute(new Object[]{
-                    Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
-                    BigInteger.valueOf(-1L)
-            });
+            method.execute(
+                    new Object[] {
+                        Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
+                        BigInteger.valueOf(-1L)
+                    });
             Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("version must be a numeric value between 0 and 255"));
+            Assert.assertTrue(
+                    e.getMessage().contains("version must be a numeric value between 0 and 255"));
         }
         try {
-            method.execute(new Object[]{
-                    Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
-                    BigInteger.valueOf(256L)
-            });
+            method.execute(
+                    new Object[] {
+                        Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
+                        BigInteger.valueOf(256L)
+                    });
             Assert.fail();
         } catch (NativeContractIllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("version must be a numeric value between 0 and 255"));
+            Assert.assertTrue(
+                    e.getMessage().contains("version must be a numeric value between 0 and 255"));
         }
     }
 }

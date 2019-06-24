@@ -4,9 +4,7 @@ import org.ethereum.core.Bloom;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 05/02/2019.
- */
+/** Created by ajlopez on 05/02/2019. */
 public class BlocksBloomStoreTest {
     @Test
     public void getFirstNumberInRange() {
@@ -14,18 +12,28 @@ public class BlocksBloomStoreTest {
 
         Assert.assertEquals(0, blocksBloomStore.firstNumberInRange(0));
         Assert.assertEquals(0, blocksBloomStore.firstNumberInRange(1));
-        Assert.assertEquals(blocksBloomStore.getNoBlocks(), blocksBloomStore.firstNumberInRange(blocksBloomStore.getNoBlocks()));
-        Assert.assertEquals(blocksBloomStore.getNoBlocks(), blocksBloomStore.firstNumberInRange(blocksBloomStore.getNoBlocks() * 2 - 1));
+        Assert.assertEquals(
+                blocksBloomStore.getNoBlocks(),
+                blocksBloomStore.firstNumberInRange(blocksBloomStore.getNoBlocks()));
+        Assert.assertEquals(
+                blocksBloomStore.getNoBlocks(),
+                blocksBloomStore.firstNumberInRange(blocksBloomStore.getNoBlocks() * 2 - 1));
     }
 
     @Test
     public void getLastNumberInRange() {
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0);
 
-        Assert.assertEquals(blocksBloomStore.getNoBlocks() - 1, blocksBloomStore.lastNumberInRange(0));
-        Assert.assertEquals(blocksBloomStore.getNoBlocks() - 1, blocksBloomStore.lastNumberInRange(1));
-        Assert.assertEquals(blocksBloomStore.getNoBlocks() * 2 - 1, blocksBloomStore.lastNumberInRange(blocksBloomStore.getNoBlocks()));
-        Assert.assertEquals(blocksBloomStore.getNoBlocks() * 2 - 1, blocksBloomStore.lastNumberInRange(blocksBloomStore.getNoBlocks() * 2 - 1));
+        Assert.assertEquals(
+                blocksBloomStore.getNoBlocks() - 1, blocksBloomStore.lastNumberInRange(0));
+        Assert.assertEquals(
+                blocksBloomStore.getNoBlocks() - 1, blocksBloomStore.lastNumberInRange(1));
+        Assert.assertEquals(
+                blocksBloomStore.getNoBlocks() * 2 - 1,
+                blocksBloomStore.lastNumberInRange(blocksBloomStore.getNoBlocks()));
+        Assert.assertEquals(
+                blocksBloomStore.getNoBlocks() * 2 - 1,
+                blocksBloomStore.lastNumberInRange(blocksBloomStore.getNoBlocks() * 2 - 1));
     }
 
     @Test
@@ -34,7 +42,8 @@ public class BlocksBloomStoreTest {
 
         Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(0));
         Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(1));
-        Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks() - 1));
+        Assert.assertNull(
+                blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks() - 1));
         Assert.assertNull(blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks()));
     }
 
@@ -56,6 +65,8 @@ public class BlocksBloomStoreTest {
 
         blocksBloomStore.setBlocksBloom(blocksBloom);
 
-        Assert.assertSame(blocksBloom, blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks()));
+        Assert.assertSame(
+                blocksBloom,
+                blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks()));
     }
 }

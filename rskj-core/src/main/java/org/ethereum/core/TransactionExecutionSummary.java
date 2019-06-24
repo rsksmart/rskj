@@ -19,16 +19,15 @@
 
 package org.ethereum.core;
 
+import static java.util.Collections.*;
+import static org.ethereum.util.BIUtil.toBI;
+
 import co.rsk.core.Coin;
+import java.math.BigInteger;
+import java.util.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
-
-import java.math.BigInteger;
-import java.util.*;
-
-import static java.util.Collections.*;
-import static org.ethereum.util.BIUtil.toBI;
 
 public class TransactionExecutionSummary {
 
@@ -137,7 +136,8 @@ public class TransactionExecutionSummary {
         private final TransactionExecutionSummary summary;
 
         Builder(Transaction transaction) {
-            Objects.requireNonNull(transaction, "Cannot build TransactionExecutionSummary for null transaction.");
+            Objects.requireNonNull(
+                    transaction, "Cannot build TransactionExecutionSummary for null transaction.");
 
             summary = new TransactionExecutionSummary();
             summary.tx = transaction;

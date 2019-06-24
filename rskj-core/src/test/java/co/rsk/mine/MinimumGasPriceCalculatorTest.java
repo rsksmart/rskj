@@ -22,9 +22,7 @@ import co.rsk.core.Coin;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by mario on 22/12/16.
- */
+/** Created by mario on 22/12/16. */
 public class MinimumGasPriceCalculatorTest {
 
     @Test

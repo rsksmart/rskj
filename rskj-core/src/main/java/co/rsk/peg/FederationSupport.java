@@ -20,22 +20,27 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.config.BridgeConstants;
-import org.ethereum.core.Block;
-
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import javax.annotation.Nullable;
+import org.ethereum.core.Block;
 
 public class FederationSupport {
 
-    private enum StorageFederationReference { NONE, NEW, OLD, GENESIS }
+    private enum StorageFederationReference {
+        NONE,
+        NEW,
+        OLD,
+        GENESIS
+    }
 
     private final BridgeStorageProvider provider;
     private final BridgeConstants bridgeConstants;
     private final Block executionBlock;
 
-    public FederationSupport(BridgeConstants bridgeConstants, BridgeStorageProvider provider, Block executionBlock) {
+    public FederationSupport(
+            BridgeConstants bridgeConstants, BridgeStorageProvider provider, Block executionBlock) {
         this.provider = provider;
         this.bridgeConstants = bridgeConstants;
         this.executionBlock = executionBlock;
@@ -43,6 +48,7 @@ public class FederationSupport {
 
     /**
      * Returns the federation's size
+     *
      * @return the federation size
      */
     public int getFederationSize() {
@@ -51,6 +57,7 @@ public class FederationSupport {
 
     /**
      * Returns the BTC public key of the federation's federator at the given index
+     *
      * @param index the federator's index (zero-based)
      * @return the federator's public key
      */
@@ -58,7 +65,9 @@ public class FederationSupport {
         List<BtcECKey> publicKeys = getActiveFederation().getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
-            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", publicKeys.size() - 1));
+            throw new IndexOutOfBoundsException(
+                    String.format(
+                            "Federator index must be between 0 and %d", publicKeys.size() - 1));
         }
 
         return publicKeys.get(index).getPubKey();
@@ -66,34 +75,42 @@ public class FederationSupport {
 
     /**
      * Returns the public key of given type of the federation's federator at the given index
+     *
      * @param index the federator's index (zero-based)
      * @param keyType the key type
      * @return the federator's public key
      */
     public byte[] getFederatorPublicKeyOfType(int index, FederationMember.KeyType keyType) {
-        return getMemberPublicKeyOfType(getActiveFederation().getMembers(), index, keyType, "Federator");
+        return getMemberPublicKeyOfType(
+                getActiveFederation().getMembers(), index, keyType, "Federator");
     }
 
     /**
-     * Returns the compressed public key of given type of the member list at the given index
-     * Throws a custom index out of bounds exception when appropiate
+     * Returns the compressed public key of given type of the member list at the given index Throws
+     * a custom index out of bounds exception when appropiate
+     *
      * @param members the list of federation members
      * @param index the federator's index (zero-based)
      * @param keyType the key type
      * @param errorPrefix the index out of bounds error prefix
      * @return the federation member's public key
      */
-    public byte[] getMemberPublicKeyOfType(List<FederationMember> members, int index, FederationMember.KeyType keyType, String errorPrefix) {
+    public byte[] getMemberPublicKeyOfType(
+            List<FederationMember> members,
+            int index,
+            FederationMember.KeyType keyType,
+            String errorPrefix) {
         if (index < 0 || index >= members.size()) {
-            throw new IndexOutOfBoundsException(String.format("%s index must be between 0 and %d", errorPrefix, members.size() - 1));
+            throw new IndexOutOfBoundsException(
+                    String.format(
+                            "%s index must be between 0 and %d", errorPrefix, members.size() - 1));
         }
 
         return members.get(index).getPublicKey(keyType).getPubKey(true);
     }
 
     /**
-     * Returns the currently active federation.
-     * See getActiveFederationReference() for details.
+     * Returns the currently active federation. See getActiveFederationReference() for details.
      *
      * @return the currently active federation.
      */
@@ -110,8 +127,7 @@ public class FederationSupport {
     }
 
     /**
-     * Returns the currently retiring federation.
-     * See getRetiringFederationReference() for details.
+     * Returns the currently retiring federation. See getRetiringFederationReference() for details.
      *
      * @return the retiring federation.
      */
@@ -151,18 +167,18 @@ public class FederationSupport {
         Federation newFederation = provider.getNewFederation();
         Federation oldFederation = provider.getOldFederation();
 
-        return newFederation != null && oldFederation != null && !shouldFederationBeActive(newFederation);
+        return newFederation != null
+                && oldFederation != null
+                && !shouldFederationBeActive(newFederation);
     }
 
     /**
-     * Returns the currently active federation reference.
-     * Logic is as follows:
-     * When no "new" federation is recorded in the blockchain, then return GENESIS
-     * When a "new" federation is present and no "old" federation is present, then return NEW
-     * When both "new" and "old" federations are present, then
-     * 1) If the "new" federation is at least bridgeConstants::getFederationActivationAge() blocks old,
-     * return the NEW
-     * 2) Otherwise, return OLD
+     * Returns the currently active federation reference. Logic is as follows: When no "new"
+     * federation is recorded in the blockchain, then return GENESIS When a "new" federation is
+     * present and no "old" federation is present, then return NEW When both "new" and "old"
+     * federations are present, then 1) If the "new" federation is at least
+     * bridgeConstants::getFederationActivationAge() blocks old, return the NEW 2) Otherwise, return
+     * OLD
      *
      * @return a reference to where the currently active federation is stored.
      */
@@ -195,13 +211,11 @@ public class FederationSupport {
     }
 
     /**
-     * Returns the currently retiring federation reference.
-     * Logic is as follows:
-     * When no "new" or "old" federation is recorded in the blockchain, then return empty.
-     * When both "new" and "old" federations are present, then
-     * 1) If the "new" federation is at least bridgeConstants::getFederationActivationAge() blocks old,
-     * return OLD
-     * 2) Otherwise, return empty
+     * Returns the currently retiring federation reference. Logic is as follows: When no "new" or
+     * "old" federation is recorded in the blockchain, then return empty. When both "new" and "old"
+     * federations are present, then 1) If the "new" federation is at least
+     * bridgeConstants::getFederationActivationAge() blocks old, return OLD 2) Otherwise, return
+     * empty
      *
      * @return the retiring federation.
      */

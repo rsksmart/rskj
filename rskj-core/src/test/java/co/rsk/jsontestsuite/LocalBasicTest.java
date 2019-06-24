@@ -18,8 +18,11 @@
 
 package co.rsk.jsontestsuite;
 
+import static org.junit.Assert.assertEquals;
+
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
+import java.io.IOException;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -31,10 +34,6 @@ import org.ethereum.jsontestsuite.JSONReader;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author Angel J Lopez
@@ -60,25 +59,22 @@ public class LocalBasicTest {
 
             BlockHeader current = testCase.getCurrent(blockFactory);
             BlockHeader parent = testCase.getParent(blockFactory);
-            BlockDifficulty calc = new DifficultyCalculator(activationConfig, networkConstants).calcDifficulty(current, parent);
+            BlockDifficulty calc =
+                    new DifficultyCalculator(activationConfig, networkConstants)
+                            .calcDifficulty(current, parent);
             int c = calc.compareTo(parent.getDifficulty());
-            if (c>0)
-                logger.info(" Difficulty increase test\n");
-            else
-            if (c<0)
-                logger.info(" Difficulty decrease test\n");
-            else
-                logger.info(" Difficulty without change test\n");
+            if (c > 0) logger.info(" Difficulty increase test\n");
+            else if (c < 0) logger.info(" Difficulty decrease test\n");
+            else logger.info(" Difficulty without change test\n");
 
-
-            assertEquals(testCase.getExpectedDifficulty(),calc);
+            assertEquals(testCase.getExpectedDifficulty(), calc);
         }
     }
 
-
-
     private static String getJSON(String name) {
-        String json = JSONReader.loadJSONFromResource("json/BasicTests/" + name + ".json", LocalVMTest.class.getClassLoader());
+        String json =
+                JSONReader.loadJSONFromResource(
+                        "json/BasicTests/" + name + ".json", LocalVMTest.class.getClassLoader());
         return json;
     }
 }

@@ -20,11 +20,9 @@ package co.rsk.trie;
 
 import javax.annotation.Nonnull;
 
-/**
- * Created by martin.medina on 5/04/17.
- */
+/** Created by martin.medina on 5/04/17. */
 public class PathEncoder {
-    private PathEncoder() { }
+    private PathEncoder() {}
 
     @Nonnull
     public static byte[] encode(byte[] path) {

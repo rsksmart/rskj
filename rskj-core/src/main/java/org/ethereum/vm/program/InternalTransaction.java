@@ -19,13 +19,13 @@
 
 package org.ethereum.vm.program;
 
+import static co.rsk.util.ListArrayUtil.*;
+
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
-
-import static co.rsk.util.ListArrayUtil.*;
 
 public class InternalTransaction extends Transaction {
 
@@ -35,10 +35,26 @@ public class InternalTransaction extends Transaction {
     private boolean rejected = false;
     private String note;
 
-    public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
-                               byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
+    public InternalTransaction(
+            byte[] parentHash,
+            int deep,
+            int index,
+            byte[] nonce,
+            DataWord gasPrice,
+            DataWord gasLimit,
+            byte[] sendAddress,
+            byte[] receiveAddress,
+            byte[] value,
+            byte[] data,
+            String note) {
 
-        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
+        super(
+                nonce,
+                getData(gasPrice),
+                getData(gasLimit),
+                receiveAddress,
+                nullToEmpty(value),
+                nullToEmpty(data));
 
         this.parentHash = parentHash;
         this.deep = deep;
@@ -54,7 +70,6 @@ public class InternalTransaction extends Transaction {
     public void reject() {
         this.rejected = true;
     }
-
 
     public int getDeep() {
         return deep;
@@ -96,8 +111,19 @@ public class InternalTransaction extends Transaction {
         byte[] index = RLP.encodeInt(this.index);
         byte[] rejected = RLP.encodeInt(this.rejected ? 1 : 0);
 
-        return RLP.encodeList(nonce, parentHash, senderAddress, receiveAddress, value,
-                gasPrice, gasLimit, data, type, deep, index, rejected);
+        return RLP.encodeList(
+                nonce,
+                parentHash,
+                senderAddress,
+                receiveAddress,
+                value,
+                gasPrice,
+                gasLimit,
+                data,
+                type,
+                deep,
+                index,
+                rejected);
     }
 
     @Override

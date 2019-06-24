@@ -17,10 +17,15 @@
  */
 package co.rsk.rpc.modules.txpool;
 
+import static org.mockito.Mockito.when;
+
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.*;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
@@ -30,12 +35,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.mockito.Mockito.when;
-
 public class TxPoolModuleImplTest {
 
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
@@ -44,7 +43,7 @@ public class TxPoolModuleImplTest {
     private Map<Integer, Account> accountMap;
 
     @Before
-    public void setup(){
+    public void setup() {
         transactionPool = Web3Mocks.getMockTransactionPool();
         txPoolModule = new TxPoolModuleImpl(transactionPool);
         accountMap = new HashMap();
@@ -54,11 +53,12 @@ public class TxPoolModuleImplTest {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .value(BigInteger.TEN)
-                .build();
+        Transaction tx =
+                new TransactionBuilder()
+                        .sender(sender)
+                        .receiver(receiver)
+                        .value(BigInteger.TEN)
+                        .build();
 
         return tx;
     }
@@ -67,19 +67,20 @@ public class TxPoolModuleImplTest {
         Account sender = getAccount(from);
         Account receiver = getAccount(to);
 
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .nonce(nonce)
-                .value(BigInteger.valueOf(value))
-                .build();
+        Transaction tx =
+                new TransactionBuilder()
+                        .sender(sender)
+                        .receiver(receiver)
+                        .nonce(nonce)
+                        .value(BigInteger.valueOf(value))
+                        .build();
 
         return tx;
     }
 
     private Account getAccount(int naccount) {
         Account account = accountMap.get(naccount);
-        if (account != null){
+        if (account != null) {
             return account;
         }
         account = createAccount(naccount);
@@ -94,22 +95,22 @@ public class TxPoolModuleImplTest {
     @Test
     public void txpool_content_basic() throws IOException {
         JsonNode node = txPoolModule.content();
-        checkFieldIsObject(node,"pending");
-        checkFieldIsObject(node,"queued");
+        checkFieldIsObject(node, "pending");
+        checkFieldIsObject(node, "queued");
     }
 
     @Test
     public void txpool_inspect_basic() throws IOException {
         JsonNode node = txPoolModule.inspect();
-        checkFieldIsObject(node,"pending");
-        checkFieldIsObject(node,"queued");
+        checkFieldIsObject(node, "pending");
+        checkFieldIsObject(node, "queued");
     }
 
     @Test
     public void txpool_status_basic() throws IOException {
         JsonNode node = txPoolModule.status();
-        checkFieldIsNumber(node,"pending");
-        checkFieldIsNumber(node,"queued");
+        checkFieldIsNumber(node, "pending");
+        checkFieldIsNumber(node, "queued");
     }
 
     @Test
@@ -153,7 +154,7 @@ public class TxPoolModuleImplTest {
         JsonNode nonceNode = checkFieldIsArray(senderNode, tx1.getNonceAsInteger().toString());
 
         int i = 0;
-        for (Iterator<JsonNode> iter = nonceNode.elements(); iter.hasNext();){
+        for (Iterator<JsonNode> iter = nonceNode.elements(); iter.hasNext(); ) {
             JsonNode item = iter.next();
             assertFullTransaction(transactions.get(i), item);
             i++;
@@ -175,7 +176,7 @@ public class TxPoolModuleImplTest {
         JsonNode nonceNode = checkFieldIsArray(senderNode, tx1.getNonceAsInteger().toString());
 
         int i = 0;
-        for (Iterator<JsonNode> iter = nonceNode.elements(); iter.hasNext();){
+        for (Iterator<JsonNode> iter = nonceNode.elements(); iter.hasNext(); ) {
             JsonNode item = iter.next();
             assertSummaryTransaction(transactions.get(i), item);
             i++;
@@ -322,20 +323,20 @@ public class TxPoolModuleImplTest {
         void verify(Transaction tx, JsonNode node);
     }
 
-    private void checkGroupedTransactions(List<Transaction> transactions, JsonNode txsNode, JsonNodeVerifier verifier) {
+    private void checkGroupedTransactions(
+            List<Transaction> transactions, JsonNode txsNode, JsonNodeVerifier verifier) {
         int i = 0;
-        for (Iterator<JsonNode> iterSenders = txsNode.elements(); iterSenders.hasNext();){
+        for (Iterator<JsonNode> iterSenders = txsNode.elements(); iterSenders.hasNext(); ) {
             JsonNode fieldSender = iterSenders.next();
-            for (Iterator<JsonNode> iterNonces = fieldSender.elements(); iterNonces.hasNext();){
+            for (Iterator<JsonNode> iterNonces = fieldSender.elements(); iterNonces.hasNext(); ) {
                 JsonNode fieldNonce = iterNonces.next();
-                for (Iterator<JsonNode> iterTxs = fieldNonce.elements(); iterTxs.hasNext();) {
+                for (Iterator<JsonNode> iterTxs = fieldNonce.elements(); iterTxs.hasNext(); ) {
                     JsonNode txNode = iterTxs.next();
                     Transaction tx = transactions.get(i);
                     verifier.verify(tx, txNode);
                     i++;
                 }
             }
-
         }
     }
 
@@ -369,36 +370,55 @@ public class TxPoolModuleImplTest {
 
     private void assertFullTransaction(Transaction tx, JsonNode transactionNode) {
         Assert.assertTrue(transactionNode.has("blockHash"));
-        Assert.assertEquals(transactionNode.get("blockHash").asText(), "0x0000000000000000000000000000000000000000000000000000000000000000");
+        Assert.assertEquals(
+                transactionNode.get("blockHash").asText(),
+                "0x0000000000000000000000000000000000000000000000000000000000000000");
         Assert.assertTrue(transactionNode.has("blockNumber"));
         Assert.assertEquals(transactionNode.get("blockNumber"), jsonNodeFactory.nullNode());
         Assert.assertTrue(transactionNode.has("from"));
-        Assert.assertEquals(transactionNode.get("from").asText(), TypeConverter.toJsonHex(tx.getSender().getBytes()));
+        Assert.assertEquals(
+                transactionNode.get("from").asText(),
+                TypeConverter.toJsonHex(tx.getSender().getBytes()));
         Assert.assertTrue(transactionNode.has("gas"));
-        Assert.assertEquals(transactionNode.get("gas").asText(), TypeConverter.toJsonHex(tx.getGasLimitAsInteger()));
+        Assert.assertEquals(
+                transactionNode.get("gas").asText(),
+                TypeConverter.toJsonHex(tx.getGasLimitAsInteger()));
         Assert.assertTrue(transactionNode.has("gasPrice"));
-        Assert.assertEquals(transactionNode.get("gasPrice").asText(), TypeConverter.toJsonHex(tx.getGasPrice().getBytes()));
+        Assert.assertEquals(
+                transactionNode.get("gasPrice").asText(),
+                TypeConverter.toJsonHex(tx.getGasPrice().getBytes()));
         Assert.assertTrue(transactionNode.has("hash"));
-        Assert.assertEquals(transactionNode.get("hash").asText(), TypeConverter.toJsonHex(tx.getHash().toHexString()));
+        Assert.assertEquals(
+                transactionNode.get("hash").asText(),
+                TypeConverter.toJsonHex(tx.getHash().toHexString()));
         Assert.assertTrue(transactionNode.has("input"));
-        Assert.assertEquals(transactionNode.get("input").asText(), TypeConverter.toJsonHex(tx.getData()));
+        Assert.assertEquals(
+                transactionNode.get("input").asText(), TypeConverter.toJsonHex(tx.getData()));
         Assert.assertTrue(transactionNode.has("nonce"));
-        Assert.assertEquals(transactionNode.get("nonce").asText(), TypeConverter.toJsonHex(tx.getNonceAsInteger()));
+        Assert.assertEquals(
+                transactionNode.get("nonce").asText(),
+                TypeConverter.toJsonHex(tx.getNonceAsInteger()));
         Assert.assertTrue(transactionNode.has("to"));
-        Assert.assertEquals(transactionNode.get("to").asText(), TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes()));
+        Assert.assertEquals(
+                transactionNode.get("to").asText(),
+                TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes()));
         Assert.assertTrue(transactionNode.has("transactionIndex"));
         Assert.assertEquals(transactionNode.get("transactionIndex"), jsonNodeFactory.nullNode());
         Assert.assertTrue(transactionNode.has("value"));
-        Assert.assertEquals(transactionNode.get("value").asText(), TypeConverter.toJsonHex(tx.getValue().getBytes()));
+        Assert.assertEquals(
+                transactionNode.get("value").asText(),
+                TypeConverter.toJsonHex(tx.getValue().getBytes()));
     }
 
     private void assertSummaryTransaction(Transaction tx, JsonNode summaryNode) {
         String summary = "{}: {} wei + {} x {} gas";
-        String summaryFormatted = String.format(summary,
-                tx.getReceiveAddress().toString(),
-                tx.getValue().toString(),
-                tx.getGasLimitAsInteger().toString(),
-                tx.getGasPrice().toString());
+        String summaryFormatted =
+                String.format(
+                        summary,
+                        tx.getReceiveAddress().toString(),
+                        tx.getValue().toString(),
+                        tx.getGasLimitAsInteger().toString(),
+                        tx.getGasPrice().toString());
 
         Assert.assertEquals(summaryFormatted, summaryNode.asText());
     }

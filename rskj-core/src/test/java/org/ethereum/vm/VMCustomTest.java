@@ -19,10 +19,15 @@
 
 package org.ethereum.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import java.util.HashSet;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
@@ -36,12 +41,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import java.util.HashSet;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-
 /**
  * @author Roman Mandeleil
  * @since 01.06.2014
@@ -52,15 +51,18 @@ public class VMCustomTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts =
+            new PrecompiledContracts(config, null);
     private ProgramInvokeMockImpl invoke;
     private Program program;
 
     @Before
     public void setup() {
         RskAddress ownerAddress = new RskAddress("77045E71A7A2C50903D88E564CD72FAB11E82051");
-        byte[] msgData = Hex.decode("00000000000000000000000000000000000000000000000000000000000000A1" +
-                "00000000000000000000000000000000000000000000000000000000000000B1");
+        byte[] msgData =
+                Hex.decode(
+                        "00000000000000000000000000000000000000000000000000000000000000A1"
+                                + "00000000000000000000000000000000000000000000000000000000000000B1");
 
         invoke = new ProgramInvokeMockImpl(msgData);
         invoke.setOwnerAddress(ownerAddress);
@@ -81,7 +83,6 @@ public class VMCustomTest {
         DataWord item1 = program.stackPop();
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
     }
-
 
     @Test // CALLDATALOAD OP
     public void testCALLDATALOAD_1() {
@@ -111,7 +112,6 @@ public class VMCustomTest {
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
     }
 
-
     @Test // CALLDATALOAD OP
     public void testCALLDATALOAD_3() {
 
@@ -125,7 +125,6 @@ public class VMCustomTest {
         DataWord item1 = program.stackPop();
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
     }
-
 
     @Test // CALLDATALOAD OP
     public void testCALLDATALOAD_4() {
@@ -187,8 +186,9 @@ public class VMCustomTest {
 
         VM vm = getSubject();
         program = getProgram("60406000600037");
-        String m_expected = "00000000000000000000000000000000000000000000000000000000000000A1" +
-                "00000000000000000000000000000000000000000000000000000000000000B1";
+        String m_expected =
+                "00000000000000000000000000000000000000000000000000000000000000A1"
+                        + "00000000000000000000000000000000000000000000000000000000000000B1";
 
         vm.step(program);
         vm.step(program);
@@ -197,15 +197,15 @@ public class VMCustomTest {
 
         assertEquals(m_expected, Hex.toHexString(program.getMemory()).toUpperCase());
     }
-
 
     @Test // CALLDATACOPY OP
     public void testCALLDATACOPY_3() {
 
         VM vm = getSubject();
         program = getProgram("60406004600037");
-        String m_expected = "000000000000000000000000000000000000000000000000000000A100000000" +
-                "000000000000000000000000000000000000000000000000000000B100000000";
+        String m_expected =
+                "000000000000000000000000000000000000000000000000000000A100000000"
+                        + "000000000000000000000000000000000000000000000000000000B100000000";
 
         vm.step(program);
         vm.step(program);
@@ -215,15 +215,15 @@ public class VMCustomTest {
         assertEquals(m_expected, Hex.toHexString(program.getMemory()).toUpperCase());
     }
 
-
     @Test // CALLDATACOPY OP
     public void testCALLDATACOPY_4() {
 
         VM vm = getSubject();
         program = getProgram("60406000600437");
-        String m_expected = "0000000000000000000000000000000000000000000000000000000000000000" +
-                "000000A100000000000000000000000000000000000000000000000000000000" +
-                "000000B100000000000000000000000000000000000000000000000000000000";
+        String m_expected =
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                        + "000000A100000000000000000000000000000000000000000000000000000000"
+                        + "000000B100000000000000000000000000000000000000000000000000000000";
 
         vm.step(program);
         vm.step(program);
@@ -238,9 +238,10 @@ public class VMCustomTest {
 
         VM vm = getSubject();
         program = getProgram("60406000600437");
-        String m_expected = "0000000000000000000000000000000000000000000000000000000000000000" +
-                "000000A100000000000000000000000000000000000000000000000000000000" +
-                "000000B100000000000000000000000000000000000000000000000000000000";
+        String m_expected =
+                "0000000000000000000000000000000000000000000000000000000000000000"
+                        + "000000A100000000000000000000000000000000000000000000000000000000"
+                        + "000000B100000000000000000000000000000000000000000000000000000000";
 
         vm.step(program);
         vm.step(program);
@@ -249,7 +250,6 @@ public class VMCustomTest {
 
         assertEquals(m_expected, Hex.toHexString(program.getMemory()).toUpperCase());
     }
-
 
     @Test(expected = StackTooSmallException.class) // CALLDATACOPY OP mal
     public void testCALLDATACOPY_6() {
@@ -479,7 +479,7 @@ public class VMCustomTest {
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
     }
 
-    @Ignore //TODO #POC9
+    @Ignore // TODO #POC9
     @Test // GAS OP
     public void testGAS_1() {
 
@@ -528,39 +528,30 @@ public class VMCustomTest {
     }
 
     private Program getProgram(String ops) {
-        return new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), Hex.decode(ops), invoke, null, new HashSet<>());
+        return new Program(
+                vmConfig,
+                precompiledContracts,
+                blockFactory,
+                mock(ActivationConfig.ForBlock.class),
+                Hex.decode(ops),
+                invoke,
+                null,
+                new HashSet<>());
     }
-
 }
 
 // TODO: add gas expeted and calculated to all test cases
 // TODO: considering: G_TXDATA + G_TRANSACTION
 
 /**
- *   TODO:
+ * TODO:
  *
- *   22) CREATE:
- *   23) CALL:
- *
- *
- **/
+ * <p>22) CREATE: 23) CALL:
+ */
 
 /**
-
- contract creation (gas usage)
- -----------------------------
- G_TRANSACTION =                                (500)
- 60016000546006601160003960066000f261778e600054 (115)
- PUSH1    6001 (1)
- PUSH1    6000 (1)
- MSTORE   54   (1 + 1)
- PUSH1    6006 (1)
- PUSH1    6011 (1)
- PUSH1    6000 (1)
- CODECOPY 39   (1)
- PUSH1    6006 (1)
- PUSH1    6000 (1)
- RETURN   f2   (1)
- 61778e600054
-
+ * contract creation (gas usage) ----------------------------- G_TRANSACTION = (500)
+ * 60016000546006601160003960066000f261778e600054 (115) PUSH1 6001 (1) PUSH1 6000 (1) MSTORE 54 (1 +
+ * 1) PUSH1 6006 (1) PUSH1 6011 (1) PUSH1 6000 (1) CODECOPY 39 (1) PUSH1 6006 (1) PUSH1 6000 (1)
+ * RETURN f2 (1) 61778e600054
  */

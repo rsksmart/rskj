@@ -17,17 +17,15 @@
  */
 package co.rsk.rpc.modules.debug;
 
+import static org.mockito.Mockito.when;
+
 import co.rsk.net.MessageHandler;
+import java.io.IOException;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Mocks;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOException;
-
-import static org.mockito.Mockito.when;
-
 
 public class DebugModuleImplTest {
 
@@ -35,7 +33,7 @@ public class DebugModuleImplTest {
     private MessageHandler messageHandler;
 
     @Before
-    public void setup(){
+    public void setup() {
         messageHandler = Web3Mocks.getMockMessageHandler();
         debugModule = new DebugModuleImpl(null, null, messageHandler, null);
     }
@@ -61,6 +59,4 @@ public class DebugModuleImplTest {
             Assert.fail("This method is not returning a  0x Long");
         }
     }
-
-
 }

@@ -1,28 +1,20 @@
 package co.rsk.core;
 
-/**
- * Created by SerAdmin on 12/5/2017.
- */
-
-import com.google.common.collect.Lists;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.BigIntegers;
-
-import java.math.BigInteger;
-import java.util.List;
-
+/** Created by SerAdmin on 12/5/2017. */
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.toHexString;
 
-/**
- * Block header is a value object containing
- * the basic information of a block
- */
-public class FreeBlockHeader {
+import com.google.common.collect.Lists;
+import java.math.BigInteger;
+import java.util.List;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.BigIntegers;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 
+/** Block header is a value object containing the basic information of a block */
+public class FreeBlockHeader {
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
     private byte[] parentHash;
@@ -64,7 +56,7 @@ public class FreeBlockHeader {
     private byte[] paidFees;
 
     /* An arbitrary byte array containing data relevant to this block.
-    * With the exception of the genesis block, this must be 32 bytes or fewer */
+     * With the exception of the genesis block, this must be 32 bytes or fewer */
     private byte[] extraData;
 
     /* The 80-byte bitcoin block header for merged mining */
@@ -86,16 +78,13 @@ public class FreeBlockHeader {
         this.unclesHash = rlpHeader.get(1).getRLPData();
         this.coinbase = rlpHeader.get(2).getRLPData();
         this.stateRoot = rlpHeader.get(3).getRLPData();
-        if (this.stateRoot == null)
-            this.stateRoot = EMPTY_TRIE_HASH;
+        if (this.stateRoot == null) this.stateRoot = EMPTY_TRIE_HASH;
 
         this.txTrieRoot = rlpHeader.get(4).getRLPData();
-        if (this.txTrieRoot == null)
-            this.txTrieRoot = EMPTY_TRIE_HASH;
+        if (this.txTrieRoot == null) this.txTrieRoot = EMPTY_TRIE_HASH;
 
         this.receiptTrieRoot = rlpHeader.get(5).getRLPData();
-        if (this.receiptTrieRoot == null)
-            this.receiptTrieRoot = EMPTY_TRIE_HASH;
+        if (this.receiptTrieRoot == null) this.receiptTrieRoot = EMPTY_TRIE_HASH;
 
         this.logsBloom = rlpHeader.get(6).getRLPData();
         this.difficulty = rlpHeader.get(7).getRLPData();
@@ -128,9 +117,7 @@ public class FreeBlockHeader {
             this.bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
             this.bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPData();
             this.bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
-
         }
-
     }
 
     private long parseLong(byte[] nrBytes) {
@@ -147,12 +134,19 @@ public class FreeBlockHeader {
         return b.intValueExact();
     }
 
-    public FreeBlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
-                       byte[] logsBloom, byte[] difficulty, byte[] number,
-                       byte[] gasLimit, byte[] gasUsed, byte[] timestamp,
-                       byte[] extraData,
-                       byte[] minimumGasPrice,
-                           byte[] uncleCount) {
+    public FreeBlockHeader(
+            byte[] parentHash,
+            byte[] unclesHash,
+            byte[] coinbase,
+            byte[] logsBloom,
+            byte[] difficulty,
+            byte[] number,
+            byte[] gasLimit,
+            byte[] gasUsed,
+            byte[] timestamp,
+            byte[] extraData,
+            byte[] minimumGasPrice,
+            byte[] uncleCount) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -169,14 +163,22 @@ public class FreeBlockHeader {
         this.uncleCount = uncleCount;
     }
 
-    public FreeBlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
-                       byte[] logsBloom, byte[] difficulty, byte[] number,
-                       byte[] gasLimit, byte[] gasUsed, byte[] timestamp,
-                       byte[] extraData,
-                       byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                       byte[] bitcoinMergedMiningCoinbaseTransaction,
-                       byte[] minimumGasPrice,
-                           byte[] uncleCount) {
+    public FreeBlockHeader(
+            byte[] parentHash,
+            byte[] unclesHash,
+            byte[] coinbase,
+            byte[] logsBloom,
+            byte[] difficulty,
+            byte[] number,
+            byte[] gasLimit,
+            byte[] gasUsed,
+            byte[] timestamp,
+            byte[] extraData,
+            byte[] bitcoinMergedMiningHeader,
+            byte[] bitcoinMergedMiningMerkleProof,
+            byte[] bitcoinMergedMiningCoinbaseTransaction,
+            byte[] minimumGasPrice,
+            byte[] uncleCount) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -195,7 +197,6 @@ public class FreeBlockHeader {
         this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.uncleCount = uncleCount;
     }
-
 
     public byte[] getParentHash() {
         return parentHash;
@@ -249,7 +250,6 @@ public class FreeBlockHeader {
 
         this.txTrieRoot = stateRoot;
     }
-
 
     public byte[] getLogsBloom() {
         return logsBloom;
@@ -377,9 +377,23 @@ public class FreeBlockHeader {
         byte[] extraData = RLP.encodeElement(this.extraData);
         byte[] paidFees = RLP.encodeElement(this.paidFees);
         byte[] mgp = RLP.encodeElement(this.minimumGasPrice);
-        List<byte[]> fieldToEncodeList = Lists.newArrayList(parentHash, unclesHash, coinbase,
-                stateRoot, txTrieRoot, receiptTrieRoot, logsBloom, difficulty, number,
-                gasLimit, gasUsed, timestamp, extraData, paidFees, mgp);
+        List<byte[]> fieldToEncodeList =
+                Lists.newArrayList(
+                        parentHash,
+                        unclesHash,
+                        coinbase,
+                        stateRoot,
+                        txTrieRoot,
+                        receiptTrieRoot,
+                        logsBloom,
+                        difficulty,
+                        number,
+                        gasLimit,
+                        gasUsed,
+                        timestamp,
+                        extraData,
+                        paidFees,
+                        mgp);
 
         byte[] uncleCount = RLP.encodeElement(this.uncleCount);
         fieldToEncodeList.add(uncleCount);
@@ -387,14 +401,15 @@ public class FreeBlockHeader {
         if (withMergedMiningFields && hasMiningFields()) {
             byte[] bitcoinMergedMiningHeader = RLP.encodeElement(this.bitcoinMergedMiningHeader);
             fieldToEncodeList.add(bitcoinMergedMiningHeader);
-            byte[] bitcoinMergedMiningMerkleProof = RLP.encodeElement(this.bitcoinMergedMiningMerkleProof);
+            byte[] bitcoinMergedMiningMerkleProof =
+                    RLP.encodeElement(this.bitcoinMergedMiningMerkleProof);
             fieldToEncodeList.add(bitcoinMergedMiningMerkleProof);
-            byte[] bitcoinMergedMiningCoinbaseTransaction = RLP.encodeElement(this.bitcoinMergedMiningCoinbaseTransaction);
+            byte[] bitcoinMergedMiningCoinbaseTransaction =
+                    RLP.encodeElement(this.bitcoinMergedMiningCoinbaseTransaction);
             fieldToEncodeList.add(bitcoinMergedMiningCoinbaseTransaction);
         }
 
-
-        return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+        return RLP.encodeList(fieldToEncodeList.toArray(new byte[][] {}));
     }
 
     // Warining: This method does not uses the object's attributes
@@ -410,14 +425,14 @@ public class FreeBlockHeader {
     }
 
     public boolean hasMiningFields() {
-        if (this.bitcoinMergedMiningCoinbaseTransaction != null && this.bitcoinMergedMiningCoinbaseTransaction.length > 0)
-            return true;
+        if (this.bitcoinMergedMiningCoinbaseTransaction != null
+                && this.bitcoinMergedMiningCoinbaseTransaction.length > 0) return true;
 
         if (this.bitcoinMergedMiningHeader != null && this.bitcoinMergedMiningHeader.length > 0)
             return true;
 
-        if (this.bitcoinMergedMiningMerkleProof != null && this.bitcoinMergedMiningMerkleProof.length > 0)
-            return true;
+        if (this.bitcoinMergedMiningMerkleProof != null
+                && this.bitcoinMergedMiningMerkleProof.length > 0) return true;
 
         return false;
     }
@@ -444,12 +459,19 @@ public class FreeBlockHeader {
         toStringBuff.append("  coinbase=").append(toHexString(coinbase)).append(suffix);
         toStringBuff.append("  stateRoot=").append(toHexString(stateRoot)).append(suffix);
         toStringBuff.append("  txTrieHash=").append(toHexString(txTrieRoot)).append(suffix);
-        toStringBuff.append("  receiptsTrieHash=").append(toHexString(receiptTrieRoot)).append(suffix);
+        toStringBuff
+                .append("  receiptsTrieHash=")
+                .append(toHexString(receiptTrieRoot))
+                .append(suffix);
         toStringBuff.append("  difficulty=").append(toHexString(difficulty)).append(suffix);
         toStringBuff.append("  number=").append(toHexString(number)).append(suffix);
         toStringBuff.append("  gasLimit=").append(toHexString(gasLimit)).append(suffix);
         toStringBuff.append("  gasUsed=").append(toHexString(gasUsed)).append(suffix);
-        toStringBuff.append("  timestamp=").append(toHexString(timestamp)).append(")").append(suffix);
+        toStringBuff
+                .append("  timestamp=")
+                .append(toHexString(timestamp))
+                .append(")")
+                .append(suffix);
         toStringBuff.append("  extraData=").append(toHexString(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(toHexString(minimumGasPrice)).append(suffix);
 
@@ -488,7 +510,8 @@ public class FreeBlockHeader {
         return bitcoinMergedMiningCoinbaseTransaction;
     }
 
-    public void setBitcoinMergedMiningCoinbaseTransaction(byte[] bitcoinMergedMiningCoinbaseTransaction) {
+    public void setBitcoinMergedMiningCoinbaseTransaction(
+            byte[] bitcoinMergedMiningCoinbaseTransaction) {
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
     }
 

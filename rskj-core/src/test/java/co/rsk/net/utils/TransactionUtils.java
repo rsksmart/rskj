@@ -18,6 +18,9 @@
 
 package co.rsk.net.utils;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
@@ -26,19 +29,18 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.Utils;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 7/22/2016.
- */
+/** Created by ajlopez on 7/22/2016. */
 public class TransactionUtils {
     public static List<Transaction> getTransactions(int n) {
         List<Transaction> txs = new ArrayList<>();
 
         for (long k = 0; k < n; k++)
-            txs.add(createTransaction(getPrivateKeyBytes(), getAddress(), BigInteger.valueOf(k + 1), BigInteger.valueOf(k)));
+            txs.add(
+                    createTransaction(
+                            getPrivateKeyBytes(),
+                            getAddress(),
+                            BigInteger.valueOf(k + 1),
+                            BigInteger.valueOf(k)));
 
         return txs;
     }
@@ -52,12 +54,22 @@ public class TransactionUtils {
         return HashUtil.keccak256("this is a seed".getBytes());
     }
 
-    public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {
-        return createTransaction(privateKey, toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000));
+    public static Transaction createTransaction(
+            byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {
+        return createTransaction(
+                privateKey, toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000));
     }
 
-    public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
-        Transaction tx = new Transaction(toAddress, value, nonce, gasPrice, gasLimit, Constants.REGTEST_CHAIN_ID);
+    public static Transaction createTransaction(
+            byte[] privateKey,
+            String toAddress,
+            BigInteger value,
+            BigInteger nonce,
+            BigInteger gasPrice,
+            BigInteger gasLimit) {
+        Transaction tx =
+                new Transaction(
+                        toAddress, value, nonce, gasPrice, gasLimit, Constants.REGTEST_CHAIN_ID);
         tx.sign(privateKey);
         return tx;
     }

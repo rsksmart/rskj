@@ -17,13 +17,10 @@
  */
 package org.ethereum.listener;
 
-/**
- * This uses a same-thread executor, avoiding issues with delayed callbacks.
- */
+/** This uses a same-thread executor, avoiding issues with delayed callbacks. */
 public class TestCompositeEthereumListener extends CompositeEthereumListener {
 
     public TestCompositeEthereumListener() {
         super();
     }
-
 }

@@ -19,7 +19,14 @@
 
 package org.ethereum.jsontestsuite;
 
+import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
+
 import co.rsk.config.TestSystemProperties;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.json.simple.parser.ParseException;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -27,21 +34,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Ignore
 public class GitHubStateTest {
 
-    //SHACOMMIT of tested commit, ethereum/tests.git
+    // SHACOMMIT of tested commit, ethereum/tests.git
     public String shacommit = "f28ac81493281feec0b17290565cf74042893677";
-
 
     private long oldForkValue;
     private static TestSystemProperties config;
@@ -56,7 +54,8 @@ public class GitHubStateTest {
     @Ignore
     @Test // this method is mostly for hands-on convenient testing
     public void stSingleTest() throws ParseException, IOException {
-        String json = JSONReader.loadJSONFromCommit("StateTests/stSystemOperationsTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("StateTests/stSystemOperationsTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, "suicideSendEtherPostDeath");
     }
 
@@ -74,14 +73,14 @@ public class GitHubStateTest {
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stCallCodes.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
     public void stCallDelegateCodes() throws ParseException, IOException {
         Set<String> excluded = new HashSet<>();
 
-        String json = JSONReader.loadJSONFromCommit("StateTests/stCallDelegateCodes.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("StateTests/stCallDelegateCodes.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
     }
 
@@ -89,7 +88,9 @@ public class GitHubStateTest {
     public void stCallDelegateCodesCallCode() throws ParseException, IOException {
 
         Set<String> excluded = new HashSet<>();
-        String json = JSONReader.loadJSONFromCommit("StateTests/stCallDelegateCodesCallCode.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit(
+                        "StateTests/stCallDelegateCodesCallCode.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
     }
 
@@ -97,7 +98,8 @@ public class GitHubStateTest {
     public void stHomeSteadSpecific() throws ParseException, IOException {
 
         Set<String> excluded = new HashSet<>();
-        String json = JSONReader.loadJSONFromCommit("StateTests/stHomeSteadSpecific.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("StateTests/stHomeSteadSpecific.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
     }
 
@@ -105,7 +107,9 @@ public class GitHubStateTest {
     public void stCallCreateCallCodeTest() throws ParseException, IOException {
 
         Set<String> excluded = new HashSet<>();
-        String json = JSONReader.loadJSONFromCommit("StateTests/stCallCreateCallCodeTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit(
+                        "StateTests/stCallCreateCallCodeTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
 
         json = JSONReader.loadJSONFromCommit("StateTests/stCallCreateCallCodeTest.json", shacommit);
@@ -116,7 +120,8 @@ public class GitHubStateTest {
     public void stDelegatecallTest() throws ParseException, IOException {
 
         Set<String> excluded = new HashSet<>();
-        String json = JSONReader.loadJSONFromCommit("StateTests/stDelegatecallTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("StateTests/stDelegatecallTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
     }
 
@@ -125,7 +130,6 @@ public class GitHubStateTest {
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stInitCodeTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -133,16 +137,15 @@ public class GitHubStateTest {
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stLogTests.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
     public void stPreCompiledContracts() throws ParseException, IOException {
         Set<String> excluded = new HashSet<>();
 
-        String json = JSONReader.loadJSONFromCommit("StateTests/stPreCompiledContracts.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("StateTests/stPreCompiledContracts.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -154,9 +157,9 @@ public class GitHubStateTest {
         excluded.add("mload32bitBound_return");
         // The test extends memory to 4Gb which can't be handled with Java arrays
         excluded.add("mload32bitBound_Msize");
-        String json = JSONReader.loadJSONFromCommit("StateTests/stMemoryStressTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("StateTests/stMemoryStressTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -165,14 +168,15 @@ public class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stMemoryTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
     public void stQuadraticComplexityTest() throws ParseException, IOException {
         Set<String> excluded = new HashSet<>();
 
-        String json = JSONReader.loadJSONFromCommit("StateTests/stQuadraticComplexityTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit(
+                        "StateTests/stQuadraticComplexityTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
     }
 
@@ -188,7 +192,6 @@ public class GitHubStateTest {
         Set<String> excluded = new HashSet<>();
         String json = JSONReader.loadJSONFromCommit("StateTests/stRecursiveCreate.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -197,7 +200,6 @@ public class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stRefundTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -206,7 +208,6 @@ public class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stSpecialTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -219,7 +220,8 @@ public class GitHubStateTest {
     public void stSystemOperationsTest() throws IOException {
         Set<String> excluded = new HashSet<>();
 
-        String json = JSONReader.loadJSONFromCommit("StateTests/stSystemOperationsTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("StateTests/stSystemOperationsTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
 
         json = JSONReader.loadJSONFromCommit("StateTests/stSystemOperationsTest.json", shacommit);
@@ -232,7 +234,6 @@ public class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stTransactionTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -249,7 +250,6 @@ public class GitHubStateTest {
 
         String json = JSONReader.loadJSONFromCommit("StateTests/stWalletTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test // testing full suite
@@ -261,17 +261,14 @@ public class GitHubStateTest {
                 Arrays.asList(
                         "st201504081841JAVA.json",
                         "st201504081842JAVA.json",
-                        "st201504081843JAVA.json"
-                );
+                        "st201504081843JAVA.json");
 
         for (String fileName : fileNames) {
             if (includedFiles.contains(fileName)) {
-              System.out.println("Running: " + fileName);
-              String json = JSONReader.loadJSON("StateTests//RandomTests/" + fileName);
-              GitHubJSONTestSuite.runStateTest(json);
+                System.out.println("Running: " + fileName);
+                String json = JSONReader.loadJSON("StateTests//RandomTests/" + fileName);
+                GitHubJSONTestSuite.runStateTest(json);
             }
         }
-
     }
 }
-

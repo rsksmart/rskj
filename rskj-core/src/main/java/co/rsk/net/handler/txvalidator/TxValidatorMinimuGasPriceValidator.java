@@ -20,24 +20,27 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
+import java.math.BigInteger;
+import javax.annotation.Nullable;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
-
-/**
- * Created by maty on 06/03/17.
- */
+/** Created by maty on 06/03/17. */
 public class TxValidatorMinimuGasPriceValidator implements TxValidatorStep {
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(
+            Transaction tx,
+            @Nullable AccountState state,
+            BigInteger gasLimit,
+            Coin minimumGasPrice,
+            long bestBlockNumber,
+            boolean isFreeTx) {
         Coin gasPrice = tx.getGasPrice();
         if (gasPrice != null && gasPrice.compareTo(minimumGasPrice) >= 0) {
             return TransactionValidationResult.ok();
         }
 
-        return TransactionValidationResult.withError("transaction's gas price lower than block's minimum");
+        return TransactionValidationResult.withError(
+                "transaction's gas price lower than block's minimum");
     }
-
 }

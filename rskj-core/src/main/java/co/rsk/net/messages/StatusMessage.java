@@ -19,13 +19,10 @@
 package co.rsk.net.messages;
 
 import co.rsk.net.Status;
+import java.math.BigInteger;
 import org.ethereum.util.RLP;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 5/11/2016.
- */
+/** Created by ajlopez on 5/11/2016. */
 public class StatusMessage extends Message {
     private Status status;
 

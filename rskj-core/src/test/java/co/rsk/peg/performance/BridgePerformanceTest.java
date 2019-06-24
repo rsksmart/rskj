@@ -24,23 +24,22 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        ReleaseBtcTest.class,
-        UpdateCollectionsTest.class,
-        ReceiveHeadersTest.class,
-        RegisterBtcTransactionTest.class,
-        AddSignatureTest.class,
-        BtcBlockchainTest.class,
-        LockTest.class,
-        ActiveFederationTest.class,
-        RetiringFederationTest.class,
-        PendingFederationTest.class,
-        FederationChangeTest.class,
-        VoteFeePerKbChangeTest.class,
-        GetFeePerKbTest.class,
-        LockWhitelistTest.class,
-        StateForBtcReleaseClientTest.class,
-        GetBtcTransactionConfirmationsTest.class,
+    ReleaseBtcTest.class,
+    UpdateCollectionsTest.class,
+    ReceiveHeadersTest.class,
+    RegisterBtcTransactionTest.class,
+    AddSignatureTest.class,
+    BtcBlockchainTest.class,
+    LockTest.class,
+    ActiveFederationTest.class,
+    RetiringFederationTest.class,
+    PendingFederationTest.class,
+    FederationChangeTest.class,
+    VoteFeePerKbChangeTest.class,
+    GetFeePerKbTest.class,
+    LockWhitelistTest.class,
+    StateForBtcReleaseClientTest.class,
+    GetBtcTransactionConfirmationsTest.class,
 })
 @Ignore
-public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {
-}
+public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {}

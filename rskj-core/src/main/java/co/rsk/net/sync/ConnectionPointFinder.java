@@ -1,12 +1,9 @@
 package co.rsk.net.sync;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.util.Optional;
 
-/**
- * Uses Binary Search to help find a connection point with another peer.
- */
+/** Uses Binary Search to help find a connection point with another peer. */
 public class ConnectionPointFinder {
 
     // Status used to find connection point

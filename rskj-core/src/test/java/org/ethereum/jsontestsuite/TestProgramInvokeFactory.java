@@ -44,74 +44,104 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         this.env = env;
     }
 
-
     @Override
-    public ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block, Repository repository, BlockStore blockStore) {
+    public ProgramInvoke createProgramInvoke(
+            Transaction tx,
+            int txindex,
+            Block block,
+            Repository repository,
+            BlockStore blockStore) {
         return generalInvoke(tx, txindex, repository, blockStore);
     }
 
     @Override
-    public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
-                                             DataWord inValue, long inGas,
-                                             Coin balanceInt, byte[] dataIn,
-                                             Repository repository, BlockStore blockStore,
-                                             boolean isStaticCall, boolean byTestingSuite) {
+    public ProgramInvoke createProgramInvoke(
+            Program program,
+            DataWord toAddress,
+            DataWord callerAddress,
+            DataWord inValue,
+            long inGas,
+            Coin balanceInt,
+            byte[] dataIn,
+            Repository repository,
+            BlockStore blockStore,
+            boolean isStaticCall,
+            boolean byTestingSuite) {
         return null;
     }
 
-    private ProgramInvoke generalInvoke(Transaction tx, int txindex, Repository repository, BlockStore blockStore) {
+    private ProgramInvoke generalInvoke(
+            Transaction tx, int txindex, Repository repository, BlockStore blockStore) {
 
-        /***         ADDRESS op       ***/
+        /** * ADDRESS op ** */
         // YP: Get address of currently executing account.
-        RskAddress addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
+        RskAddress addr =
+                tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
 
-        /***         ORIGIN op       ***/
+        /** * ORIGIN op ** */
         // YP: This is the sender of original transaction; it is never a contract.
         RskAddress origin = tx.getSender();
 
-        /***         CALLER op       ***/
+        /** * CALLER op ** */
         // YP: This is the address of the account that is directly responsible for this execution.
         RskAddress caller = tx.getSender();
 
-        /***         BALANCE op       ***/
+        /** * BALANCE op ** */
         Coin balance = repository.getBalance(addr);
 
-        /***         GASPRICE op       ***/
+        /** * GASPRICE op ** */
         Coin gasPrice = tx.getGasPrice();
 
-        /*** GAS op ***/
+        /** * GAS op ** */
         byte[] gas = tx.getGasLimit();
 
-        /***        CALLVALUE op      ***/
+        /** * CALLVALUE op ** */
         Coin callValue = tx.getValue() == null ? Coin.ZERO : tx.getValue();
 
-        /***     CALLDATALOAD  op   ***/
-        /***     CALLDATACOPY  op   ***/
-        /***     CALLDATASIZE  op   ***/
-        byte[] data = tx.isContractCreation() ? ByteUtil.EMPTY_BYTE_ARRAY :( tx.getData() == null ? ByteUtil.EMPTY_BYTE_ARRAY : tx.getData() );
-//        byte[] data =  tx.getData() == null ? ByteUtil.EMPTY_BYTE_ARRAY : tx.getData() ;
+        /** * CALLDATALOAD op ** */
+        /** * CALLDATACOPY op ** */
+        /** * CALLDATASIZE op ** */
+        byte[] data =
+                tx.isContractCreation()
+                        ? ByteUtil.EMPTY_BYTE_ARRAY
+                        : (tx.getData() == null ? ByteUtil.EMPTY_BYTE_ARRAY : tx.getData());
+        //        byte[] data =  tx.getData() == null ? ByteUtil.EMPTY_BYTE_ARRAY : tx.getData() ;
 
-        /***    PREVHASH  op  ***/
+        /** * PREVHASH op ** */
         byte[] lastHash = env.getPreviousHash();
 
-        /***   COINBASE  op ***/
+        /** * COINBASE op ** */
         byte[] coinbase = env.getCurrentCoinbase();
 
-        /*** TIMESTAMP  op  ***/
+        /** * TIMESTAMP op ** */
         long timestamp = ByteUtil.byteArrayToLong(env.getCurrentTimestamp());
 
-        /*** NUMBER  op  ***/
+        /** * NUMBER op ** */
         long number = ByteUtil.byteArrayToLong(env.getCurrentNumber());
 
-        /*** DIFFICULTY  op  ***/
+        /** * DIFFICULTY op ** */
         byte[] difficulty = env.getCurrentDifficulty();
 
-        /*** GASLIMIT op ***/
+        /** * GASLIMIT op ** */
         byte[] gaslimit = env.getCurrentGasLimit();
 
-        return new ProgramInvokeImpl(addr.getBytes(), origin.getBytes(), caller.getBytes(), balance.getBytes(),
-                gasPrice.getBytes(), gas, callValue.getBytes(), data, lastHash, coinbase,
-                timestamp, number, txindex, difficulty, gaslimit, repository, blockStore);
+        return new ProgramInvokeImpl(
+                addr.getBytes(),
+                origin.getBytes(),
+                caller.getBytes(),
+                balance.getBytes(),
+                gasPrice.getBytes(),
+                gas,
+                callValue.getBytes(),
+                data,
+                lastHash,
+                coinbase,
+                timestamp,
+                number,
+                txindex,
+                difficulty,
+                gaslimit,
+                repository,
+                blockStore);
     }
-
 }

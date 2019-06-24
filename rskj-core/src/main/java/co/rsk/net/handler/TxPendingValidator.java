@@ -21,22 +21,21 @@ package co.rsk.net.handler;
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
+import java.math.BigInteger;
+import java.util.LinkedList;
+import java.util.List;
+import javax.annotation.Nullable;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.BigIntegers;
-
-import javax.annotation.Nullable;
-import java.math.BigInteger;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Validator for using in pending state.
  *
- * Add/remove checks here.
+ * <p>Add/remove checks here.
  */
 public class TxPendingValidator {
     private static final Logger logger = LoggerFactory.getLogger("txpendingvalidator");
@@ -60,11 +59,13 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig));
     }
 
-    public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
+    public TransactionValidationResult isValid(
+            Transaction tx, Block executionBlock, @Nullable AccountState state) {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
-        long basicTxCost = tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber));
+        long basicTxCost =
+                tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber));
 
         if (state == null && basicTxCost != 0) {
             logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender());
@@ -72,9 +73,19 @@ public class TxPendingValidator {
         }
 
         for (TxValidatorStep step : validatorSteps) {
-            TransactionValidationResult validationResult = step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0);
+            TransactionValidationResult validationResult =
+                    step.validate(
+                            tx,
+                            state,
+                            blockGasLimit,
+                            minimumGasPrice,
+                            bestBlockNumber,
+                            basicTxCost == 0);
             if (!validationResult.transactionIsValid()) {
-                logger.info("[tx={}] validation failed with error: {}", tx.getHash(), validationResult.getErrorMessage());
+                logger.info(
+                        "[tx={}] validation failed with error: {}",
+                        tx.getHash(),
+                        validationResult.getErrorMessage());
                 return validationResult;
             }
         }

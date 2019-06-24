@@ -19,17 +19,14 @@
 
 package org.ethereum.util;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Assert;
-import org.junit.Test;
-
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+
+import java.math.BigInteger;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author Roman Mandeleil
@@ -118,40 +115,37 @@ public class UtilsTest {
         Utils.validateArrayAllegedSize(data, 8, 1);
         Utils.validateArrayAllegedSize(data, 0, 10);
         Utils.validateArrayAllegedSize(data, 8, 2);
-        Utils.validateArrayAllegedSize(data, 11, -1); // This makes no sense but we don't care about negative indices
-        Utils.validateArrayAllegedSize(data, -2, 12); // This makes no sense but we don't care about negative indices
+        Utils.validateArrayAllegedSize(
+                data, 11, -1); // This makes no sense but we don't care about negative indices
+        Utils.validateArrayAllegedSize(
+                data, -2, 12); // This makes no sense but we don't care about negative indices
 
         // Invalid indices
         try {
             Utils.validateArrayAllegedSize(data, 0, 11);
             fail("should have failed");
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             // Only type of exception expected
         }
         try {
             Utils.validateArrayAllegedSize(data, 2, 9);
             fail("should have failed");
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             // Only type of exception expected
         }
         try {
             Utils.validateArrayAllegedSize(new byte[0], 1, 0);
             fail("should have failed");
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             // Only type of exception expected
         }
         byte[] noData = null;
         try {
             Utils.validateArrayAllegedSize(noData, 1, 1);
             fail("should have failed");
-        }
-        catch (NullPointerException e) {
+        } catch (NullPointerException e) {
             // Only type of exception expected
         }
-
     }
 
     @Test
@@ -166,89 +160,63 @@ public class UtilsTest {
         try {
             Utils.safeCopyOfRange(new byte[2], 1, 2);
             fail("should have failed");
-        }
-        catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
         }
         try {
             Utils.safeCopyOfRange(new byte[100], 98, 3);
             fail("should have failed");
-        }
-        catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
         }
         try {
             Utils.safeCopyOfRange(new byte[0], 0, 1);
             fail("should have failed");
-        }
-        catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
         }
         try {
             Utils.safeCopyOfRange(new byte[0], 1, 0);
             fail("should have failed");
-        }
-        catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
         }
     }
 
     @Test
     public void isHexadecimalString() {
-        String[] hexStrings = new String[] {
-                "0x1",
-                "0xaaa",
-                "0xAAA",
-                "0xAFe1",
-                "0x10",
-                "0xA12"
-        };
-        java.util.Arrays.stream(hexStrings).forEach(s -> Assert.assertTrue(s, Utils.isHexadecimalString(s)));
+        String[] hexStrings = new String[] {"0x1", "0xaaa", "0xAAA", "0xAFe1", "0x10", "0xA12"};
+        java.util.Arrays.stream(hexStrings)
+                .forEach(s -> Assert.assertTrue(s, Utils.isHexadecimalString(s)));
 
-        String[] nonHexStrings = new String[] {
-                "hellothisisnotahex",
-                "123",
-                "AAA",
-                "AFe1",
-                "0xab123z",
-                "0xnothing"
-        };
-        java.util.Arrays.stream(nonHexStrings).forEach(s -> Assert.assertFalse(s, Utils.isHexadecimalString(s)));
+        String[] nonHexStrings =
+                new String[] {"hellothisisnotahex", "123", "AAA", "AFe1", "0xab123z", "0xnothing"};
+        java.util.Arrays.stream(nonHexStrings)
+                .forEach(s -> Assert.assertFalse(s, Utils.isHexadecimalString(s)));
     }
 
     @Test
     public void isDecimalString() {
-        String[] decStrings = new String[] {
-                "1",
-                "123",
-                "045670",
-                "220",
-                "0",
-                "01"
-        };
-        java.util.Arrays.stream(decStrings).forEach(s -> Assert.assertTrue(s, Utils.isDecimalString(s)));
+        String[] decStrings = new String[] {"1", "123", "045670", "220", "0", "01"};
+        java.util.Arrays.stream(decStrings)
+                .forEach(s -> Assert.assertTrue(s, Utils.isDecimalString(s)));
 
-        String[] nonDecStrings = new String[] {
-                "hellothisisnotadec",
-                "123a",
-                "0b",
-                "b1",
-                "AAA",
-                "0xabcd",
-                "0x123"
-        };
-        java.util.Arrays.stream(nonDecStrings).forEach(s -> Assert.assertFalse(s, Utils.isDecimalString(s)));
+        String[] nonDecStrings =
+                new String[] {"hellothisisnotadec", "123a", "0b", "b1", "AAA", "0xabcd", "0x123"};
+        java.util.Arrays.stream(nonDecStrings)
+                .forEach(s -> Assert.assertFalse(s, Utils.isDecimalString(s)));
     }
 
     @Test
     public void decimalStringToLong() {
-        Object[] cases = new Object[] {
-                "1", 1L,
-                "123", 123L,
-                "045670", 45670L,
-                "220", 220L,
-                "0", 0L,
-                "01", 1L
-        };
-        for (int i = 0; i < cases.length/2; i++) {
-            String s = (String) cases[i*2];
-            long expected = (long) cases[i*2+1];
+        Object[] cases =
+                new Object[] {
+                    "1", 1L,
+                    "123", 123L,
+                    "045670", 45670L,
+                    "220", 220L,
+                    "0", 0L,
+                    "01", 1L
+                };
+        for (int i = 0; i < cases.length / 2; i++) {
+            String s = (String) cases[i * 2];
+            long expected = (long) cases[i * 2 + 1];
             Assert.assertEquals(expected, Utils.decimalStringToLong(s));
         }
     }
@@ -260,17 +228,18 @@ public class UtilsTest {
 
     @Test
     public void hexadecimalStringToLong() {
-        Object[] cases = new Object[] {
-                "0x1", 1L,
-                "0xaaa", 2730L,
-                "0xAAA", 2730L,
-                "0xAFe1", 45025L,
-                "0x10", 16L,
-                "0xA12", 2578L
-        };
-        for (int i = 0; i < cases.length/2; i++) {
-            String s = (String) cases[i*2];
-            long expected = (long) cases[i*2+1];
+        Object[] cases =
+                new Object[] {
+                    "0x1", 1L,
+                    "0xaaa", 2730L,
+                    "0xAAA", 2730L,
+                    "0xAFe1", 45025L,
+                    "0x10", 16L,
+                    "0xA12", 2578L
+                };
+        for (int i = 0; i < cases.length / 2; i++) {
+            String s = (String) cases[i * 2];
+            long expected = (long) cases[i * 2 + 1];
             Assert.assertEquals(expected, Utils.hexadecimalStringToLong(s));
         }
     }

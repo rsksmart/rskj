@@ -1,17 +1,14 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 24/08/2017.
- */
+/** Created by ajlopez on 24/08/2017. */
 public class BlockHeadersByHashMessageTest {
     @Test
     public void createMessage() {

@@ -38,10 +38,15 @@ public class TxValidatorMinimumGasPriceValidatorTest {
 
         TxValidatorMinimuGasPriceValidator tvmgpv = new TxValidatorMinimuGasPriceValidator();
 
-
-        Assert.assertTrue(tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertTrue(tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertTrue(tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
+        Assert.assertTrue(
+                tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false)
+                        .transactionIsValid());
+        Assert.assertTrue(
+                tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false)
+                        .transactionIsValid());
+        Assert.assertTrue(
+                tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false)
+                        .transactionIsValid());
     }
 
     @Test
@@ -56,9 +61,14 @@ public class TxValidatorMinimumGasPriceValidatorTest {
 
         TxValidatorMinimuGasPriceValidator tvmgpv = new TxValidatorMinimuGasPriceValidator();
 
-        Assert.assertFalse(tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertFalse(tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertFalse(tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false).transactionIsValid());
+        Assert.assertFalse(
+                tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false)
+                        .transactionIsValid());
+        Assert.assertFalse(
+                tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false)
+                        .transactionIsValid());
+        Assert.assertFalse(
+                tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false)
+                        .transactionIsValid());
     }
-
 }

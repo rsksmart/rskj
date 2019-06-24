@@ -32,6 +32,12 @@ import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.*;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -43,17 +49,10 @@ import org.ethereum.rpc.Web3Impl;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.*;
 
 /**
- * Handles requests for work and block submission.
- * Full responsibility for processing the request is delegated to MinerServer.
+ * Handles requests for work and block submission. Full responsibility for processing the request is
+ * delegated to MinerServer.
  *
  * @author Adrian Eidelman
  * @author Martin Medina
@@ -88,10 +87,30 @@ public class Web3RskImpl extends Web3Impl {
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
             BlocksBloomStore blocksBloomStore) {
-        super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
-              personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule,
-              channelManager, repositoryLocator, peerScoringManager, peerServer, nodeBlockProcessor,
-              hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore);
+        super(
+                eth,
+                blockchain,
+                transactionPool,
+                blockStore,
+                receiptStore,
+                properties,
+                minerClient,
+                minerServer,
+                personalModule,
+                ethModule,
+                evmModule,
+                txPoolModule,
+                mnrModule,
+                debugModule,
+                channelManager,
+                repositoryLocator,
+                peerScoringManager,
+                peerServer,
+                nodeBlockProcessor,
+                hashRateCalculator,
+                configCapabilities,
+                buildInfo,
+                blocksBloomStore);
 
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;
@@ -99,19 +118,26 @@ public class Web3RskImpl extends Web3Impl {
 
     public void ext_dumpState() {
         Block bestBlcock = blockStore.getBestBlock();
-        logger.info("Dumping state for block hash {}, block number {}", bestBlcock.getHash(), bestBlcock.getNumber());
+        logger.info(
+                "Dumping state for block hash {}, block number {}",
+                bestBlcock.getHash(),
+                bestBlcock.getNumber());
         networkStateExporter.exportStatus(System.getProperty("user.dir") + "/" + "rskdump.json");
     }
 
     /**
      * Export the blockchain tree as a tgf file to user.dir/rskblockchain.tgf
      *
-     * @param numberOfBlocks Number of block heights to include. Eg if best block is block 2300 and numberOfBlocks is 10, the graph will include blocks in heights 2290 to 2300.
-     * @param includeUncles  Whether to show uncle links (recommended value is false)
+     * @param numberOfBlocks Number of block heights to include. Eg if best block is block 2300 and
+     *     numberOfBlocks is 10, the graph will include blocks in heights 2290 to 2300.
+     * @param includeUncles Whether to show uncle links (recommended value is false)
      */
     public void ext_dumpBlockchain(long numberOfBlocks, boolean includeUncles) {
         Block bestBlock = blockStore.getBestBlock();
-        logger.info("Dumping blockchain starting on block number {}, to best block number {}", bestBlock.getNumber() - numberOfBlocks, bestBlock.getNumber());
+        logger.info(
+                "Dumping blockchain starting on block number {}, to best block number {}",
+                bestBlock.getNumber() - numberOfBlocks,
+                bestBlock.getNumber());
         File graphFile = new File(System.getProperty("user.dir") + "/" + "rskblockchain.tgf");
         try (PrintWriter writer = new PrintWriter(new FileWriter(graphFile))) {
 
@@ -124,15 +150,27 @@ public class Web3RskImpl extends Web3Impl {
                 result.addAll(blockStore.getChainBlocksByNumber(i));
             }
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash().getBytes()) + " " + block.getNumber() + "-" + toSmallHash(
-                        block.getHash().getBytes()));
+                writer.println(
+                        toSmallHash(block.getHash().getBytes())
+                                + " "
+                                + block.getNumber()
+                                + "-"
+                                + toSmallHash(block.getHash().getBytes()));
             }
             writer.println("#");
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(block.getParentHash().getBytes()) + " P");
+                writer.println(
+                        toSmallHash(block.getHash().getBytes())
+                                + " "
+                                + toSmallHash(block.getParentHash().getBytes())
+                                + " P");
                 if (includeUncles) {
                     for (BlockHeader uncleHeader : block.getUncleList()) {
-                        writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(uncleHeader.getHash().getBytes()) + " U");
+                        writer.println(
+                                toSmallHash(block.getHash().getBytes())
+                                        + " "
+                                        + toSmallHash(uncleHeader.getHash().getBytes())
+                                        + " U");
                     }
                 }
             }

@@ -18,9 +18,16 @@
 
 package co.rsk.peg.performance;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.vm.VMPerformanceTest;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.math.BigInteger;
+import java.util.Random;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -33,14 +40,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.math.BigInteger;
-import java.util.Random;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public abstract class PrecompiledContractPerformanceTestCase {
     protected static Constants constants;
@@ -122,7 +121,8 @@ public abstract class PrecompiledContractPerformanceTestCase {
         thread = ManagementFactory.getThreadMXBean();
         if (!thread.isThreadCpuTimeSupported()) {
             throw new RuntimeException("Thread CPU time not supported");
-        };
+        }
+        ;
 
         oldCpuTimeEnabled = thread.isThreadCpuTimeEnabled();
         thread.setThreadCpuTimeEnabled(true);
@@ -154,13 +154,14 @@ public abstract class PrecompiledContractPerformanceTestCase {
             byte[] gasPrice = Hex.decode("00");
             byte[] gasLimit = Hex.decode("00");
 
-            Transaction tx = new Transaction(
-                    null,
-                    gasPrice,
-                    gasLimit,
-                    sender.getAddress(),
-                    value.toByteArray(),
-                    null);
+            Transaction tx =
+                    new Transaction(
+                            null,
+                            gasPrice,
+                            gasLimit,
+                            sender.getAddress(),
+                            value.toByteArray(),
+                            null);
             tx.sign(sender.getPrivKeyBytes());
             tx.setLocalCallTransaction(true);
 
@@ -201,7 +202,9 @@ public abstract class PrecompiledContractPerformanceTestCase {
     protected interface EnvironmentBuilder {
         interface Environment {
             PrecompiledContracts.PrecompiledContract getContract();
+
             BenchmarkedRepository getBenchmarkedRepository();
+
             void finalise();
 
             static Environment withContract(PrecompiledContracts.PrecompiledContract contract) {
@@ -242,14 +245,13 @@ public abstract class PrecompiledContractPerformanceTestCase {
         ExecutionTracker executionInfo = new ExecutionTracker(thread);
 
         // Initialize the environment, obtaining a fresh contract ready for execution
-        EnvironmentBuilder.Environment environment = environmentBuilder.build(
-                executionIndex,
-                txBuilder,
-                heightProvider.getHeight(executionIndex)
-        );
+        EnvironmentBuilder.Environment environment =
+                environmentBuilder.build(
+                        executionIndex, txBuilder, heightProvider.getHeight(executionIndex));
 
         executionInfo.startTimer();
-        byte[] executionResult = environment.getContract().execute(abiEncoder.encode(executionIndex));
+        byte[] executionResult =
+                environment.getContract().execute(abiEncoder.encode(executionIndex));
         executionInfo.endTimer();
 
         environment.finalise();
@@ -258,7 +260,8 @@ public abstract class PrecompiledContractPerformanceTestCase {
             resultCallback.callback(environment, executionResult);
         }
 
-        executionInfo.setRepositoryStatistics(environment.getBenchmarkedRepository().getStatistics());
+        executionInfo.setRepositoryStatistics(
+                environment.getBenchmarkedRepository().getStatistics());
 
         return executionInfo;
     }
@@ -276,7 +279,14 @@ public abstract class PrecompiledContractPerformanceTestCase {
         for (int i = 0; i < times; i++) {
             printLine(String.format("%s %d/%d", name, i + 1, times));
 
-            ExecutionTracker tracker = execute(environmentBuilder, abiEncoder, txBuilder, heightProvider, i, resultCallback);
+            ExecutionTracker tracker =
+                    execute(
+                            environmentBuilder,
+                            abiEncoder,
+                            txBuilder,
+                            heightProvider,
+                            i,
+                            resultCallback);
 
             stats.executionTimes.add(tracker.getExecutionTime());
             stats.realExecutionTimes.add(tracker.getRealExecutionTime());

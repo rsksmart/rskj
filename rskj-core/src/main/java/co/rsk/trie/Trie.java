@@ -18,6 +18,8 @@
 
 package co.rsk.trie;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.bitcoinj.core.VarInt;
 import co.rsk.core.types.ints.Uint16;
 import co.rsk.core.types.ints.Uint24;
@@ -27,6 +29,10 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import javax.annotation.Nullable;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
@@ -34,27 +40,20 @@ import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-
 /**
  * A binary trie node.
  *
- * Each node has an optional associated value (a byte array)
+ * <p>Each node has an optional associated value (a byte array)
  *
- * A node is referenced via a key (a byte array)
+ * <p>A node is referenced via a key (a byte array)
  *
- * A node can be serialized to/from a message (a byte array)
+ * <p>A node can be serialized to/from a message (a byte array)
  *
- * A node has a hash (keccak256 of its serialization)
+ * <p>A node has a hash (keccak256 of its serialization)
  *
- * A node is immutable: to add/change a value or key, a new node is created
+ * <p>A node is immutable: to add/change a value or key, a new node is created
  *
- * An empty node has no subnodes and a null value
+ * <p>An empty node has no subnodes and a null value
  */
 public class Trie {
     private static final int ARITY = 2;
@@ -116,7 +115,6 @@ public class Trie {
     // shared Path
     private final TrieKeySlice sharedPath;
 
-
     // default constructor, no secure
     public Trie() {
         this(null);
@@ -127,15 +125,37 @@ public class Trie {
     }
 
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value) {
-        this(store, sharedPath, value, NodeReference.empty(), NodeReference.empty(), getDataLength(value), null);
+        this(
+                store,
+                sharedPath,
+                value,
+                NodeReference.empty(),
+                NodeReference.empty(),
+                getDataLength(value),
+                null);
     }
 
-    public Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash) {
+    public Trie(
+            TrieStore store,
+            TrieKeySlice sharedPath,
+            byte[] value,
+            NodeReference left,
+            NodeReference right,
+            Uint24 valueLength,
+            Keccak256 valueHash) {
         this(store, sharedPath, value, left, right, valueLength, valueHash, null);
     }
 
     // full constructor
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt treeSize) {
+    private Trie(
+            TrieStore store,
+            TrieKeySlice sharedPath,
+            byte[] value,
+            NodeReference left,
+            NodeReference right,
+            Uint24 valueLength,
+            Keccak256 valueHash,
+            VarInt treeSize) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -148,9 +168,9 @@ public class Trie {
     }
 
     /**
-     * Deserialize a Trie, either using the original format or RSKIP 107 format, based on version flags.
-     * The original trie wasted the first byte by encoding the arity, which was always 2. We use this marker to
-     * recognize the old serialization format.
+     * Deserialize a Trie, either using the original format or RSKIP 107 format, based on version
+     * flags. The original trie wasted the first byte by encoding the arity, which was always 2. We
+     * use this marker to recognize the old serialization format.
      */
     public static Trie fromMessage(byte[] message, TrieStore store) {
         if (message == null) {
@@ -191,9 +211,10 @@ public class Trie {
         int lencoded = PathEncoder.calculateEncodedLength(lshared);
         if (lencoded > 0) {
             if (message.length - current < lencoded) {
-                throw new IllegalArgumentException(String.format(
-                        "Left message is too short for encoded shared path expected:%d actual:%d total:%d",
-                        lencoded, message.length - current, message.length));
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Left message is too short for encoded shared path expected:%d actual:%d total:%d",
+                                lencoded, message.length - current, message.length));
             }
             sharedPath = TrieKeySlice.fromEncoded(message, current, lshared, lencoded);
             current += lencoded;
@@ -229,10 +250,11 @@ public class Trie {
         } else {
             int remaining = message.length - offset;
             if (remaining > 0) {
-                if (message.length - current  < remaining) {
-                    throw new IllegalArgumentException(String.format(
-                            "Left message is too short for value expected:%d actual:%d total:%d",
-                            remaining, message.length - current, message.length));
+                if (message.length - current < remaining) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Left message is too short for value expected:%d actual:%d total:%d",
+                                    remaining, message.length - current, message.length));
                 }
 
                 value = Arrays.copyOfRange(message, current, current + remaining);
@@ -352,15 +374,15 @@ public class Trie {
     /**
      * getHash calculates and/or returns the hash associated with this node content
      *
-     * the internal variable hash could contains the cached hash.
+     * <p>the internal variable hash could contains the cached hash.
      *
-     * This method is not synchronized because the result of it's execution
+     * <p>This method is not synchronized because the result of it's execution
      *
-     * disregarding the lazy initialization is idempotent. It's better to keep
+     * <p>disregarding the lazy initialization is idempotent. It's better to keep
      *
-     * it out of synchronized.
+     * <p>it out of synchronized.
      *
-     * @return  a byte array with the node serialized to bytes
+     * @return a byte array with the node serialized to bytes
      */
     public Keccak256 getHash() {
         if (this.hash != null) {
@@ -378,9 +400,7 @@ public class Trie {
         return this.hash.copy();
     }
 
-    /**
-     * The hash based on pre-RSKIP 107 serialization
-     */
+    /** The hash based on pre-RSKIP 107 serialization */
     public Keccak256 getHashOrchid(boolean isSecure) {
         if (this.hashOrchid != null) {
             return this.hashOrchid.copy();
@@ -401,8 +421,8 @@ public class Trie {
      * get returns the value associated with a key
      *
      * @param key the key associated with the value, a byte array (variable length)
-     *
-     * @return  the associated value, a byte array, or null if there is no associated value to the key
+     * @return the associated value, a byte array, or null if there is no associated value to the
+     *     key
      */
     @Nullable
     public byte[] get(byte[] key) {
@@ -421,7 +441,7 @@ public class Trie {
     /**
      * get by string, utility method used from test methods
      *
-     * @param key   a string, that is converted to a byte array
+     * @param key a string, that is converted to a byte array
      * @return a byte array with the associated value
      */
     public byte[] get(String key) {
@@ -431,12 +451,10 @@ public class Trie {
     /**
      * put key value association, returning a new NewTrie
      *
-     * @param key   key to be updated or created, a byte array
+     * @param key key to be updated or created, a byte array
      * @param value value to associated to the key, a byte array
-     *
-     * @return a new NewTrie node, the top node of the new tree having the
-     * key-value association. The original node is immutable, a new tree
-     * is build, adding some new nodes
+     * @return a new NewTrie node, the top node of the new tree having the key-value association.
+     *     The original node is immutable, a new tree is build, adding some new nodes
      */
     public Trie put(byte[] key, byte[] value) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
@@ -449,14 +467,12 @@ public class Trie {
         return put(key.getData(), value);
     }
     /**
-     * put string key to value, the key is converted to byte array
-     * utility method to be used from testing
+     * put string key to value, the key is converted to byte array utility method to be used from
+     * testing
      *
-     * @param key   a string
+     * @param key a string
      * @param value an associated value, a byte array
-     *
-     * @return  a new NewTrie, the top node of a new trie having the key
-     * value association
+     * @return a new NewTrie, the top node of a new trie having the key value association
      */
     public Trie put(String key, byte[] value) {
         return put(key.getBytes(StandardCharsets.UTF_8), value);
@@ -465,10 +481,8 @@ public class Trie {
     /**
      * delete update the key to null value
      *
-     * @param key   a byte array
-     *
+     * @param key a byte array
      * @return the new top node of the trie with the association removed
-     *
      */
     public Trie delete(byte[] key) {
         return put(key, null);
@@ -486,7 +500,6 @@ public class Trie {
      * delete string key, utility method to be used for testing
      *
      * @param key a string
-     *
      * @return the new top node of the trie with the key removed
      */
     public Trie delete(String key) {
@@ -494,15 +507,12 @@ public class Trie {
     }
 
     /**
-     * toMessage serialize the node to bytes. Used to persist the node in a key-value store
-     * like levelDB or redis.
+     * toMessage serialize the node to bytes. Used to persist the node in a key-value store like
+     * levelDB or redis.
      *
-     * The serialization includes:
-     * - arity: byte
-     * - bits with present hashes: two bytes (example: 0x0203 says that the node has
-     * hashes at index 0, 1, 9 (the other subnodes are null)
-     * - present hashes: 32 bytes each
-     * - associated value: remainder bytes (no bytes if null)
+     * <p>The serialization includes: - arity: byte - bits with present hashes: two bytes (example:
+     * 0x0203 says that the node has hashes at index 0, 1, 9 (the other subnodes are null) - present
+     * hashes: 32 bytes each - associated value: remainder bytes (no bytes if null)
      *
      * @return a byte array with the serialized info
      */
@@ -522,9 +532,7 @@ public class Trie {
         return encoded.length;
     }
 
-    /**
-     * Serialize the node to bytes with the pre-RSKIP 107 format
-     */
+    /** Serialize the node to bytes with the pre-RSKIP 107 format */
     public byte[] toMessageOrchid(boolean isSecure) {
         Uint24 lvalue = this.valueLength;
         int lshared = this.sharedPath.length();
@@ -545,9 +553,14 @@ public class Trie {
             nnodes++;
         }
 
-        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH  + (lshared > 0 ? lencoded: 0)
-                + nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES
-                + (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES : lvalue.intValue()));
+        ByteBuffer buffer =
+                ByteBuffer.allocate(
+                        MESSAGE_HEADER_LENGTH
+                                + (lshared > 0 ? lencoded : 0)
+                                + nnodes * Keccak256Helper.DEFAULT_SIZE_BYTES
+                                + (hasLongVal
+                                        ? Keccak256Helper.DEFAULT_SIZE_BYTES
+                                        : lvalue.intValue()));
 
         buffer.put((byte) ARITY);
 
@@ -576,8 +589,7 @@ public class Trie {
         if (lvalue.compareTo(Uint24.ZERO) > 0) {
             if (hasLongVal) {
                 buffer.put(this.getValueHash().getBytes());
-            }
-            else {
+            } else {
                 buffer.put(this.getValue());
             }
         }
@@ -586,11 +598,11 @@ public class Trie {
     }
 
     /**
-     * sends all data to disk. This applies to the store and all keys saved into the
-     * store, not only to this node.
+     * sends all data to disk. This applies to the store and all keys saved into the store, not only
+     * to this node.
      */
     public void flush() {
-        if (this.store==null) {
+        if (this.store == null) {
             return;
         }
         this.store.flush();
@@ -601,10 +613,7 @@ public class Trie {
     public boolean isEmbeddable() {
         return isTerminal() && getMessageLength() <= MAX_EMBEDDED_NODE_SIZE_IN_BYTES;
     }
-    /**
-     * save saves the unsaved current trie and subnodes to their associated store
-     *
-     */
+    /** save saves the unsaved current trie and subnodes to their associated store */
     public void save() {
         if (this.saved) {
             return;
@@ -670,16 +679,16 @@ public class Trie {
      * @return the number of tries nodes, includes the current one
      */
     public int trieSize() {
-        return 1 + this.left.getNode().map(Trie::trieSize).orElse(0)
+        return 1
+                + this.left.getNode().map(Trie::trieSize).orElse(0)
                 + this.right.getNode().map(Trie::trieSize).orElse(0);
     }
 
     /**
      * get retrieves the associated value given the key
      *
-     * @param key   full key
+     * @param key full key
      * @return the associated value, null if the key is not found
-     *
      */
     @Nullable
     public Trie find(byte[] key) {
@@ -716,14 +725,17 @@ public class Trie {
         SharedPathSerializer sharedPathSerializer = new SharedPathSerializer(this.sharedPath);
         VarInt treeSize = getTreeSize();
 
-        ByteBuffer buffer = ByteBuffer.allocate(
-                1 + // flags
-                        sharedPathSerializer.serializedLength() +
-                        this.left.serializedLength() +
-                        this.right.serializedLength() +
-                        (this.isTerminal() ? 0 : treeSize.getSizeInBytes()) +
-                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue())
-        );
+        ByteBuffer buffer =
+                ByteBuffer.allocate(
+                        1
+                                + // flags
+                                sharedPathSerializer.serializedLength()
+                                + this.left.serializedLength()
+                                + this.right.serializedLength()
+                                + (this.isTerminal() ? 0 : treeSize.getSizeInBytes())
+                                + (hasLongVal
+                                        ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES
+                                        : lvalue.intValue()));
 
         // current serialization version: 01
         byte flags = 0b01000000;
@@ -797,11 +809,9 @@ public class Trie {
     /**
      * put key with associated value, returning a new NewTrie
      *
-     * @param key   key to be updated
-     * @param value     associated value
-     *
+     * @param key key to be updated
+     * @param value associated value
      * @return the new NewTrie containing the tree with the new key value association
-     *
      */
     private Trie put(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
         // First of all, setting the value as an empty byte array is equivalent
@@ -849,8 +859,16 @@ public class Trie {
             childImplicitByte = (byte) 1;
         }
 
-        TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash);
+        TrieKeySlice newSharedPath =
+                trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
+        return new Trie(
+                child.store,
+                newSharedPath,
+                child.value,
+                child.left,
+                child.right,
+                child.valueLength,
+                child.valueHash);
     }
 
     private static Uint24 getDataLength(byte[] value) {
@@ -864,7 +882,8 @@ public class Trie {
     private Trie internalPut(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
         TrieKeySlice commonPath = key.commonPath(sharedPath);
         if (commonPath.length() < sharedPath.length()) {
-            // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
+            // when we are removing a key we know splitting is not necessary. the key wasn't found
+            // at this point.
             if (value == null) {
                 return this;
             }
@@ -877,7 +896,8 @@ public class Trie {
             // if not already done so. We could also compare by hash, to avoid retrieval
             // We do a small optimization here: if sizes are not equal, then values
             // obviously are not.
-            if (this.valueLength.equals(getDataLength(value)) && Arrays.equals(this.getValue(), value)) {
+            if (this.valueLength.equals(getDataLength(value))
+                    && Arrays.equals(this.getValue(), value)) {
                 return this;
             }
 
@@ -896,8 +916,7 @@ public class Trie {
                     this.left,
                     this.right,
                     getDataLength(value),
-                    null
-            );
+                    null);
         }
 
         if (isEmptyTrie()) {
@@ -935,13 +954,29 @@ public class Trie {
             return null;
         }
 
-        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash);
+        return new Trie(
+                this.store,
+                this.sharedPath,
+                this.value,
+                newLeft,
+                newRight,
+                this.valueLength,
+                this.valueHash);
     }
 
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
-        TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        Trie newChildTrie = new Trie(this.store, newChildSharedPath, this.value, this.left, this.right, this.valueLength, this.valueHash);
+        TrieKeySlice newChildSharedPath =
+                sharedPath.slice(commonPathLength + 1, sharedPath.length());
+        Trie newChildTrie =
+                new Trie(
+                        this.store,
+                        newChildSharedPath,
+                        this.value,
+                        this.left,
+                        this.right,
+                        this.valueLength,
+                        this.valueHash);
         NodeReference newChildReference = new NodeReference(this.store, newChildTrie, null);
 
         // this bit will be implicit and not present in a shared path
@@ -975,13 +1010,13 @@ public class Trie {
     /**
      * isEmptyTrie checks the existence of subnodes, subnodes hashes or value
      *
-     * @param valueLength     length of current value
-     * @param left      a reference to the left node
-     * @param right     a reference to the right node
-     *
+     * @param valueLength length of current value
+     * @param left a reference to the left node
+     * @param right a reference to the right node
      * @return true if no data
      */
-    private static boolean isEmptyTrie(Uint24 valueLength, NodeReference left, NodeReference right) {
+    private static boolean isEmptyTrie(
+            Uint24 valueLength, NodeReference left, NodeReference right) {
         if (valueLength.compareTo(Uint24.ZERO) > 0) {
             return false;
         }
@@ -1035,10 +1070,8 @@ public class Trie {
 
     /**
      * @return the tree size in bytes as specified in RSKIP107
-     *
-     * This method will EXPAND internal encoding caches without removing them afterwards.
-     * It shouldn't be called from outside. It's still public for NodeReference call
-     *
+     *     <p>This method will EXPAND internal encoding caches without removing them afterwards. It
+     *     shouldn't be called from outside. It's still public for NodeReference call
      */
     public VarInt getTreeSize() {
         if (treeSize == null) {
@@ -1110,10 +1143,10 @@ public class Trie {
     private static Keccak256 readHash(byte[] bytes, int position) {
         int keccakSize = Keccak256Helper.DEFAULT_SIZE_BYTES;
         if (bytes.length - position < keccakSize) {
-            throw new IllegalArgumentException(String.format(
-                    "Left message is too short for hash expected:%d actual:%d total:%d",
-                    keccakSize, bytes.length - position, bytes.length
-            ));
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Left message is too short for hash expected:%d actual:%d total:%d",
+                            keccakSize, bytes.length - position, bytes.length));
         }
 
         return new Keccak256(Arrays.copyOfRange(bytes, position, position + keccakSize));
@@ -1146,7 +1179,8 @@ public class Trie {
     }
 
     private static VarInt readVarInt(ByteBuffer message) {
-        // read without touching the buffer position so when we read into bytes it contains the header
+        // read without touching the buffer position so when we read into bytes it contains the
+        // header
         int first = Byte.toUnsignedInt(message.get(message.position()));
         byte[] bytes;
         if (first < 253) {
@@ -1164,7 +1198,8 @@ public class Trie {
     }
 
     /**
-     * Returns the leftmost node that has not yet been visited that node is normally on top of the stack
+     * Returns the leftmost node that has not yet been visited that node is normally on top of the
+     * stack
      */
     private static class InOrderIterator implements Iterator<IterationElement> {
 
@@ -1181,7 +1216,8 @@ public class Trie {
         }
 
         /**
-         * return the leftmost node that has not yet been visited that node is normally on top of the stack
+         * return the leftmost node that has not yet been visited that node is normally on top of
+         * the stack
          */
         @Override
         // NoSuchElementException is thrown by {@link Deque#pop()} when it's empty
@@ -1192,7 +1228,10 @@ public class Trie {
             // if the node has a right child, its leftmost node is next
             Trie rightNode = node.retrieveNode((byte) 0x01);
             if (rightNode != null) {
-                TrieKeySlice rightNodeKey = visitingElement.getNodeKey().rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
+                TrieKeySlice rightNodeKey =
+                        visitingElement
+                                .getNodeKey()
+                                .rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
                 visiting.push(new IterationElement(rightNodeKey, rightNode)); // push the right node
                 // find the leftmost node of the right child
                 pushLeftmostNode(rightNodeKey, rightNode);
@@ -1208,7 +1247,8 @@ public class Trie {
         }
 
         /**
-         * Find the leftmost node from this root, pushing all the intermediate nodes onto the visiting stack
+         * Find the leftmost node from this root, pushing all the intermediate nodes onto the
+         * visiting stack
          *
          * @param nodeKey
          * @param node the root of the subtree for which we are trying to reach the leftmost node
@@ -1217,7 +1257,8 @@ public class Trie {
             // find the leftmost node
             Trie leftNode = node.retrieveNode((byte) 0x00);
             if (leftNode != null) {
-                TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
+                TrieKeySlice leftNodeKey =
+                        nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
                 visiting.push(new IterationElement(leftNodeKey, leftNode)); // push the left node
                 pushLeftmostNode(leftNodeKey, leftNode); // recurse on next left node
             }
@@ -1242,16 +1283,19 @@ public class Trie {
             IterationElement visitingElement = visiting.pop();
             Trie node = visitingElement.getNode();
             TrieKeySlice nodeKey = visitingElement.getNodeKey();
-            // need to visit the left subtree first, then the right since a stack is a LIFO, push the right subtree first,
+            // need to visit the left subtree first, then the right since a stack is a LIFO, push
+            // the right subtree first,
             // then the left
             Trie rightNode = node.retrieveNode((byte) 0x01);
             if (rightNode != null) {
-                TrieKeySlice rightNodeKey = nodeKey.rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
+                TrieKeySlice rightNodeKey =
+                        nodeKey.rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
                 visiting.push(new IterationElement(rightNodeKey, rightNode));
             }
             Trie leftNode = node.retrieveNode((byte) 0x00);
             if (leftNode != null) {
-                TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
+                TrieKeySlice leftNodeKey =
+                        nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
                 visiting.push(new IterationElement(leftNodeKey, leftNode));
             }
             // may not have pushed anything.  If so, we are at the end
@@ -1278,7 +1322,8 @@ public class Trie {
             visiting.push(new IterationElement(traversedPath, root));
             visitingRightChild.push(Boolean.FALSE);
             pushLeftmostNodeRecord(traversedPath, root);
-            // the node on top of the visiting stack is the next one to be visited, unless it has a right subtree
+            // the node on top of the visiting stack is the next one to be visited, unless it has a
+            // right subtree
         }
 
         @Override
@@ -1304,9 +1349,13 @@ public class Trie {
                 visitingRightChild.removeFirst();
                 visitingRightChild.push(Boolean.TRUE);
 
-                TrieKeySlice rightNodeKey = visitingElement.getNodeKey().rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
+                TrieKeySlice rightNodeKey =
+                        visitingElement
+                                .getNodeKey()
+                                .rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
                 visiting.push(new IterationElement(rightNodeKey, rightNode)); // push the right node
-                visitingRightChild.push(Boolean.FALSE); // we're visiting the left subtree of the right node
+                visitingRightChild.push(
+                        Boolean.FALSE); // we're visiting the left subtree of the right node
 
                 // now push everything down to the leftmost node in the right subtree
                 pushLeftmostNodeRecord(rightNodeKey, rightNode);
@@ -1315,8 +1364,9 @@ public class Trie {
         }
 
         /**
-         * Find the leftmost node from this root, pushing all the intermediate nodes onto the visiting stack
-         * and also stating that each is a left child of its parent
+         * Find the leftmost node from this root, pushing all the intermediate nodes onto the
+         * visiting stack and also stating that each is a left child of its parent
+         *
          * @param nodeKey
          * @param node the root of the subtree for which we are trying to reach the leftmost node
          */
@@ -1324,7 +1374,8 @@ public class Trie {
             // find the leftmost node
             Trie leftNode = node.retrieveNode((byte) 0x00);
             if (leftNode != null) {
-                TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
+                TrieKeySlice leftNodeKey =
+                        nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
                 visiting.push(new IterationElement(leftNodeKey, leftNode)); // push the left node
                 visitingRightChild.push(Boolean.FALSE); // record that it is on the left
                 pushLeftmostNodeRecord(leftNodeKey, leftNode); // continue looping
@@ -1353,7 +1404,7 @@ public class Trie {
             byte[] encodedFullKey = nodeKey.encode();
             StringBuilder ouput = new StringBuilder();
             for (byte b : encodedFullKey) {
-                ouput.append( b == 0 ? '0': '1');
+                ouput.append(b == 0 ? '0' : '1');
             }
             return ouput.toString();
         }

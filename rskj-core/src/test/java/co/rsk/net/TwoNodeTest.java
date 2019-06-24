@@ -25,17 +25,14 @@ import co.rsk.net.simples.SimpleNode;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
 import co.rsk.validators.DummyBlockValidationRule;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.List;
-
-/**
- * Created by ajlopez on 5/14/2016.
- */
+/** Created by ajlopez on 5/14/2016. */
 public class TwoNodeTest {
     private static SimpleNode createNode(int size) {
         final World world = new World();
@@ -44,15 +41,25 @@ public class TwoNodeTest {
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
 
-        for (Block b: blocks)
-            blockchain.tryToConnect(b);
+        for (Block b : blocks) blockchain.tryToConnect(b);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(new TestSystemProperties(), processor, null, null, null, null, new DummyBlockValidationRule());
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        new TestSystemProperties(),
+                        processor,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new DummyBlockValidationRule());
 
         return new SimpleNode(handler);
     }
@@ -82,8 +89,7 @@ public class TwoNodeTest {
             BlockMessage message = new BlockMessage(block);
             node1.receiveMessageFrom(null, message);
 
-            if (block.getNumber() <= 5)
-                node2.receiveMessageFrom(null, message);
+            if (block.getNumber() <= 5) node2.receiveMessageFrom(null, message);
         }
 
         node1.sendStatusTo(node2);

@@ -25,11 +25,10 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        ToBase58CheckPerformanceTestCase.class,
-        DeriveExtendedPublicKeyPerformanceTestCase.class,
-        ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase.class,
-        GetMultisigScriptHashPerformanceTestCase.class
+    ToBase58CheckPerformanceTestCase.class,
+    DeriveExtendedPublicKeyPerformanceTestCase.class,
+    ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase.class,
+    GetMultisigScriptHashPerformanceTestCase.class
 })
 @Ignore
-public class HDWalletUtilsPerformanceTest extends PrecompiledContractPerformanceTest {
-}
+public class HDWalletUtilsPerformanceTest extends PrecompiledContractPerformanceTest {}

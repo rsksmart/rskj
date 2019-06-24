@@ -17,13 +17,12 @@
  */
 package co.rsk.jsonrpc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
-
-import java.io.IOException;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import org.junit.Test;
 
 public class JsonRpcResultResponseTest {
     private ObjectMapper serializer = new ObjectMapper();
@@ -33,9 +32,7 @@ public class JsonRpcResultResponseTest {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":48,\"result\":true}";
         assertThat(
                 serializer.writeValueAsString(
-                        new JsonRpcResultResponse(48, new JsonRpcBooleanResult(true))
-                ),
-                is(message)
-        );
+                        new JsonRpcResultResponse(48, new JsonRpcBooleanResult(true))),
+                is(message));
     }
 }

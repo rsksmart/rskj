@@ -19,7 +19,6 @@
 
 package org.ethereum.core.genesis;
 
-
 import java.util.Map;
 
 public class GenesisJson {
@@ -39,9 +38,7 @@ public class GenesisJson {
 
     Map<String, AllocatedAccount> alloc;
 
-    public GenesisJson() {
-    }
-
+    public GenesisJson() {}
 
     public String getMixhash() {
         return mixhash;
@@ -115,20 +112,32 @@ public class GenesisJson {
         this.alloc = alloc;
     }
 
-    public String getBitcoinMergedMiningHeader() {return bitcoinMergedMiningHeader;}
+    public String getBitcoinMergedMiningHeader() {
+        return bitcoinMergedMiningHeader;
+    }
 
-    public void setBitcoinMergedMiningHeader(String bitcoinMergedMiningHeader) {this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;}
+    public void setBitcoinMergedMiningHeader(String bitcoinMergedMiningHeader) {
+        this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
+    }
 
-    public String getBitcoinMergedMiningMerkleProof() {return bitcoinMergedMiningMerkleProof;}
+    public String getBitcoinMergedMiningMerkleProof() {
+        return bitcoinMergedMiningMerkleProof;
+    }
 
-    public void setBitcoinMergedMiningMerkleProof(String bitcoinMergedMiningMerkleProof) {this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;}
+    public void setBitcoinMergedMiningMerkleProof(String bitcoinMergedMiningMerkleProof) {
+        this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
+    }
 
-    public String getBitcoinMergedMiningCoinbaseTransaction() {return bitcoinMergedMiningCoinbaseTransaction;}
+    public String getBitcoinMergedMiningCoinbaseTransaction() {
+        return bitcoinMergedMiningCoinbaseTransaction;
+    }
 
-    public void setBitcoinMergedMiningCoinbaseTransaction(String bitcoinMergedMiningCoinbaseTransaction) {this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;}
+    public void setBitcoinMergedMiningCoinbaseTransaction(
+            String bitcoinMergedMiningCoinbaseTransaction) {
+        this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
+    }
 
     public String getMinimumGasPrice() {
         return minimumGasPrice;
     }
-
 }

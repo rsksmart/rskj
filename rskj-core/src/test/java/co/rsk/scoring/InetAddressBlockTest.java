@@ -1,15 +1,12 @@
 package co.rsk.scoring;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Random;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Created by ajlopez on 11/07/2017.
- */
+/** Created by ajlopez on 11/07/2017. */
 public class InetAddressBlockTest {
     private static Random random = new Random();
 
@@ -178,7 +175,8 @@ public class InetAddressBlockTest {
         return InetAddress.getByAddress(bytes);
     }
 
-    private static InetAddress alterByte(InetAddress address, int nbyte) throws UnknownHostException {
+    private static InetAddress alterByte(InetAddress address, int nbyte)
+            throws UnknownHostException {
         byte[] bytes = address.getAddress();
 
         bytes[nbyte]++;

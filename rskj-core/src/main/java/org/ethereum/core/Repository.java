@@ -24,11 +24,10 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
-import org.ethereum.vm.DataWord;
-
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.Set;
+import javax.annotation.Nullable;
+import org.ethereum.vm.DataWord;
 
 public interface Repository extends AccountInformationProvider {
 
@@ -39,15 +38,12 @@ public interface Repository extends AccountInformationProvider {
      *
      * @param addr of the contract
      * @return newly created account state
-     *
-     * This method creates an account, but is DOES NOT create a contract.
-     * To create a contract, internally the account node is extended with a root node
-     * for storage. To avoid creating the root node for storage each time a storage cell
-     * is added, we pre-create the storage node when we know the account will become a
-     * contract. This is done in setupContract().
-     * Note that we can't use the length or existence of the code node for this,
-     * because a contract's code can be empty!
-     *
+     *     <p>This method creates an account, but is DOES NOT create a contract. To create a
+     *     contract, internally the account node is extended with a root node for storage. To avoid
+     *     creating the root node for storage each time a storage cell is added, we pre-create the
+     *     storage node when we know the account will become a contract. This is done in
+     *     setupContract(). Note that we can't use the length or existence of the code node for
+     *     this, because a contract's code can be empty!
      */
     AccountState createAccount(RskAddress addr);
 
@@ -55,8 +51,7 @@ public interface Repository extends AccountInformationProvider {
 
     /**
      * @param addr - account to check
-     * @return - true if account exist,
-     *           false otherwise
+     * @return - true if account exist, false otherwise
      */
     boolean isExist(RskAddress addr);
 
@@ -90,7 +85,7 @@ public interface Repository extends AccountInformationProvider {
      */
     BigInteger increaseNonce(RskAddress addr);
 
-    void setNonce(RskAddress addr,BigInteger  nonce);
+    void setNonce(RskAddress addr, BigInteger nonce);
 
     /**
      * Store code associated with an account
@@ -103,15 +98,14 @@ public interface Repository extends AccountInformationProvider {
     /**
      * get the code associated with an account
      *
-     * This method returns null if there is no code at the address.
-     * It may return the empty array for contracts that have installed zero code on construction.
-     * (not checked)
-    */
+     * <p>This method returns null if there is no code at the address. It may return the empty array
+     * for contracts that have installed zero code on construction. (not checked)
+     */
     @Override
     @Nullable
     byte[] getCode(RskAddress addr);
 
-     // This method can retrieve the code size without actually retrieving the code
+    // This method can retrieve the code size without actually retrieving the code
     // in some cases.
     int getCodeLength(RskAddress addr);
 
@@ -138,9 +132,7 @@ public interface Repository extends AccountInformationProvider {
      */
     Coin addBalance(RskAddress addr, Coin value);
 
-    /**
-     * @return Returns set of all the account addresses
-     */
+    /** @return Returns set of all the account addresses */
     Set<RskAddress> getAccountsKeys();
 
     /**
@@ -154,23 +146,16 @@ public interface Repository extends AccountInformationProvider {
 
     void flushNoReconnect();
 
-    /**
-     * Store all the temporary changes made
-     * to the repository in the actual database
-     */
+    /** Store all the temporary changes made to the repository in the actual database */
     void commit();
 
-    /**
-     * Undo all the changes made so far
-     * to a snapshot of the repository
-     */
+    /** Undo all the changes made so far to a snapshot of the repository */
     void rollback();
 
     void save();
 
     /**
-     * Return to one of the previous snapshots
-     * by moving the root.
+     * Return to one of the previous snapshots by moving the root.
      *
      * @param root - new root
      */

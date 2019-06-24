@@ -18,9 +18,14 @@
 
 package co.rsk.db;
 
+import static org.junit.Assert.*;
+
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -34,21 +39,16 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
-
 /**
- * This tests are based on the org.ethereum.db.RepositoryTest.java
- * It's main goal is to add more coverage.
+ * This tests are based on the org.ethereum.db.RepositoryTest.java It's main goal is to add more
+ * coverage.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class RepositoryTest {
 
     public static final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
-    public static final RskAddress HORSE = new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5F");
+    public static final RskAddress HORSE =
+            new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5F");
 
     private MutableRepository repository;
     private TrieStoreImpl trieStore;
@@ -73,13 +73,13 @@ public class RepositoryTest {
         repository.addStorageBytes(COW, DataWord.valueOf(cow1Key), cow1Value);
 
         byte[] stateRoot2 = repository.getStorageStateRoot(COW);
-        assertFalse(Arrays.equals(stateRoot1,stateRoot2));
+        assertFalse(Arrays.equals(stateRoot1, stateRoot2));
 
         repository.addStorageBytes(COW, DataWord.valueOf(cow2Key), cow2Value);
 
         byte[] stateRoot3 = repository.getStorageStateRoot(COW);
-        assertFalse(Arrays.equals(stateRoot1,stateRoot3));
-        assertFalse(Arrays.equals(stateRoot2,stateRoot3));
+        assertFalse(Arrays.equals(stateRoot1, stateRoot3));
+        assertFalse(Arrays.equals(stateRoot2, stateRoot3));
 
         // Now delete the last item
         repository.addStorageBytes(COW, DataWord.valueOf(cow2Key), ByteUtil.EMPTY_BYTE_ARRAY);
@@ -92,7 +92,6 @@ public class RepositoryTest {
 
         byte[] stateRoot5 = repository.getStorageStateRoot(COW);
         assertArrayEquals(stateRoot1, stateRoot5);
-
     }
 
     @Test
@@ -110,7 +109,8 @@ public class RepositoryTest {
         track.commit();
 
         assertArrayEquals(cowValue, repository.getStorageBytes(COW, DataWord.valueOf(cowKey)));
-        assertArrayEquals(horseValue, repository.getStorageBytes(HORSE, DataWord.valueOf(horseKey)));
+        assertArrayEquals(
+                horseValue, repository.getStorageBytes(HORSE, DataWord.valueOf(horseKey)));
     }
 
     @Test
@@ -205,10 +205,12 @@ public class RepositoryTest {
         // leaving level_1
 
         assertArrayEquals(cowValue1, repository.getStorageBytes(COW, DataWord.valueOf(cowKey1)));
-        assertArrayEquals(horseValue1, repository.getStorageBytes(HORSE, DataWord.valueOf(horseKey1)));
+        assertArrayEquals(
+                horseValue1, repository.getStorageBytes(HORSE, DataWord.valueOf(horseKey1)));
 
         assertArrayEquals(cowValue2, repository.getStorageBytes(COW, DataWord.valueOf(cowKey2)));
-        assertArrayEquals(horseValue2, repository.getStorageBytes(HORSE, DataWord.valueOf(horseKey2)));
+        assertArrayEquals(
+                horseValue2, repository.getStorageBytes(HORSE, DataWord.valueOf(horseKey2)));
     }
 
     @Test
@@ -262,7 +264,8 @@ public class RepositoryTest {
         assertNull(repository.getStorageBytes(HORSE, DataWord.valueOf(horseKey1)));
 
         assertArrayEquals(cowValue2, repository.getStorageBytes(COW, DataWord.valueOf(cowKey2)));
-        assertArrayEquals(horseValue2, repository.getStorageBytes(HORSE, DataWord.valueOf(horseKey2)));
+        assertArrayEquals(
+                horseValue2, repository.getStorageBytes(HORSE, DataWord.valueOf(horseKey2)));
     }
 
     @Test
@@ -379,7 +382,8 @@ public class RepositoryTest {
         track1.commit();
         // leaving level_1
 
-        Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), Hex.toHexString(repository.getRoot()));
+        Assert.assertEquals(
+                Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), Hex.toHexString(repository.getRoot()));
     }
 
     @Test
@@ -398,7 +402,7 @@ public class RepositoryTest {
         track.addStorageBytes(HORSE, horseKey1, horseVal0);
         track.commit();
 
-        Repository track2 = repository.startTracking(); //track
+        Repository track2 = repository.startTracking(); // track
 
         track2.addStorageBytes(HORSE, horseKey1, horseVal0);
         Repository track3 = track2.startTracking();
@@ -419,7 +423,7 @@ public class RepositoryTest {
         final DataWord cowKey2 = DataWord.valueFromHex("c2");
         final byte[] cowVal0 = Hex.decode("c0a0");
 
-        Repository track2 = repository.startTracking(); //track
+        Repository track2 = repository.startTracking(); // track
         track2.addStorageBytes(COW, cowKey2, cowVal0);
         track2.commit();
         repository.flush();
@@ -429,45 +433,50 @@ public class RepositoryTest {
         final CountDownLatch failSema = new CountDownLatch(2);
 
         Repository snap = repository.getSnapshotTo(repository.getRoot());
-        new Thread(() -> {
-            try {
-                int cnt = 1;
-                while(true) {
+        new Thread(
+                        () -> {
+                            try {
+                                int cnt = 1;
+                                while (true) {
 
-                    Repository snapTrack = snap.startTracking();
-                    byte[] vcnr = new byte[1];
-                    vcnr[0] = (byte)(cnt % 128);
-                    snapTrack.addStorageBytes(COW, cowKey1, vcnr);
-                    cnt++;
+                                    Repository snapTrack = snap.startTracking();
+                                    byte[] vcnr = new byte[1];
+                                    vcnr[0] = (byte) (cnt % 128);
+                                    snapTrack.addStorageBytes(COW, cowKey1, vcnr);
+                                    cnt++;
+                                }
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                                failSema.countDown();
+                            }
+                        })
+                .start();
 
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-                failSema.countDown();
-            }
-        }).start();
+        new Thread(
+                        () -> {
+                            int cnt = 1;
+                            try {
+                                while (true) {
+                                    Repository track21 = repository.startTracking(); // track
+                                    byte[] cVal = new byte[1];
+                                    cVal[0] = (byte) (cnt % 128);
+                                    track21.addStorageBytes(COW, cowKey1, cVal);
+                                    track21.commit();
 
-        new Thread(() -> {
-            int cnt = 1;
-            try {
-                while(true) {
-                    Repository track21 = repository.startTracking(); //track
-                    byte[] cVal = new byte[1];
-                    cVal[0] = (byte)(cnt % 128);
-                    track21.addStorageBytes(COW, cowKey1, cVal);
-                    track21.commit();
+                                    repository.flush();
 
-                    repository.flush();
-
-                    assertArrayEquals(cVal, repository.getStorageBytes(COW, cowKey1));
-                    assertArrayEquals(cowVal0, repository.getStorageBytes(COW, cowKey2));
-                    cnt++;
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-                failSema.countDown();
-            }
-        }).start();
+                                    assertArrayEquals(
+                                            cVal, repository.getStorageBytes(COW, cowKey1));
+                                    assertArrayEquals(
+                                            cowVal0, repository.getStorageBytes(COW, cowKey2));
+                                    cnt++;
+                                }
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                                failSema.countDown();
+                            }
+                        })
+                .start();
 
         failSema.await(10, TimeUnit.SECONDS);
 
@@ -480,7 +489,7 @@ public class RepositoryTest {
     public void testCode() {
         Repository track = repository.startTracking();
         byte[] codeLongerThan32bytes = "this-is-code-because-I-say-it-man".getBytes();
-        assertTrue(codeLongerThan32bytes.length>32);
+        assertTrue(codeLongerThan32bytes.length > 32);
 
         track.saveCode(COW, codeLongerThan32bytes);
         byte[] returnedCode = track.getCode(COW);
@@ -502,7 +511,9 @@ public class RepositoryTest {
         // this new repository to read all nodes from the store. The results must
         // be the same: lazy evaluation of the value must work.
 
-        Repository repository2 = new MutableRepository(new MutableTrieImpl(new Trie(trieStore))).getSnapshotTo(prevRoot);
+        Repository repository2 =
+                new MutableRepository(new MutableTrieImpl(new Trie(trieStore)))
+                        .getSnapshotTo(prevRoot);
         // Now try to get the size
         codeSize = repository2.getCodeLength(COW);
         assertEquals(codeLongerThan32bytes.length, codeSize);

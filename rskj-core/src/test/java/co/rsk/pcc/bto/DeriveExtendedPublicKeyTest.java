@@ -19,6 +19,8 @@
 
 package co.rsk.pcc.bto;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
 import org.ethereum.core.CallTransaction;
@@ -26,8 +28,6 @@ import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.mockito.Mockito.mock;
 
 public class DeriveExtendedPublicKeyTest {
     private DeriveExtendedPublicKey method;
@@ -66,144 +66,175 @@ public class DeriveExtendedPublicKeyTest {
     public void executes() {
         Assert.assertEquals(
                 "tpubDCGMkPKredy7oh6zw8f4ExWFdTgQCrAHToF1ytny3gbVy9GkUNK2Nqh7NbKbh8dkd5VtjUiLJPkbEkeg29NVHwxYwzHJFt9SazGLZrrU4Y4",
-                method.execute(new Object[]{
-                        "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                        "2/3/4"
-                }));
+                method.execute(
+                        new Object[] {
+                            "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                            "2/3/4"
+                        }));
 
         Assert.assertEquals(
                 "tpubDJ28nwFGUypUD6i8eGCQfMkwNGxzzabA5Mh7AcUdwm6ziFxCSWjy4HyhPXH5uU2ovdMMYLT9W3g3MrGo52TrprMvX8o1dzT2ZGz1pwCPTNv",
-                method.execute(new Object[]{
-                        "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                        "0/0/0/0/0/0"
-                }));
+                method.execute(
+                        new Object[] {
+                            "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                            "0/0/0/0/0/0"
+                        }));
 
         Assert.assertEquals(
                 "tpubD8fY35uPCY1rUjMUZwhkGUFi33pwkffMEBaCsTSw1he2AbM6DMbPaRR2guvk5qTWDfE9ubFB5pzuUNnMtsqbCeKAAjfepSvEWyetyF9Q4fG",
-                method.execute(new Object[]{
-                        "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                        "2147483647"
-                }));
+                method.execute(
+                        new Object[] {
+                            "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                            "2147483647"
+                        }));
     }
 
     @Test
     public void validatesExtendedPublicKeyFormat() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "this-is-not-an-xpub",
-                    "this-doesnt-matter"
-            });
-        }, "Invalid extended public key");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(new Object[] {"this-is-not-an-xpub", "this-doesnt-matter"});
+                },
+                "Invalid extended public key");
     }
 
     @Test
     public void ExtendedPublicKeyCannotBeNull() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    null,
-                    "M/0/1/2"
-            });
-        }, "Invalid extended public key 'null");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(new Object[] {null, "M/0/1/2"});
+                },
+                "Invalid extended public key 'null");
     }
 
     @Test
     public void pathCannotBeAnything() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "this-is-not-a-path"
-            });
-        }, "Invalid path");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(
+                            new Object[] {
+                                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                                "this-is-not-a-path"
+                            });
+                },
+                "Invalid path");
     }
 
     @Test
     public void pathCannotBeNull() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    null
-            });
-        }, "Invalid path");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(
+                            new Object[] {
+                                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                                null
+                            });
+                },
+                "Invalid path");
     }
 
     @Test
     public void pathCannotBeEmpty() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    ""
-            });
-        }, "Invalid path");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(
+                            new Object[] {
+                                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                                ""
+                            });
+                },
+                "Invalid path");
     }
 
     @Test
     public void pathCannotContainALeadingM() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "M/0/1/2"
-            });
-        }, "Invalid path");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(
+                            new Object[] {
+                                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                                "M/0/1/2"
+                            });
+                },
+                "Invalid path");
     }
 
     @Test
     public void pathCannotContainALeadingSlash() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "/0"
-            });
-        }, "Invalid path");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(
+                            new Object[] {
+                                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                                "/0"
+                            });
+                },
+                "Invalid path");
     }
 
     @Test
     public void pathCannotContainATrailingSlash() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "0/"
-            });
-        }, "Invalid path");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(
+                            new Object[] {
+                                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                                "0/"
+                            });
+                },
+                "Invalid path");
     }
 
     @Test
     public void pathCannotContainHardening() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "4'/5"
-            });
-        }, "Invalid path");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(
+                            new Object[] {
+                                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                                "4'/5"
+                            });
+                },
+                "Invalid path");
     }
 
     @Test
     public void pathCannotContainNegativeNumbers() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "0/-1"
-            });
-        }, "Invalid path");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(
+                            new Object[] {
+                                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                                "0/-1"
+                            });
+                },
+                "Invalid path");
     }
 
     @Test
     public void pathCannotContainPartsBiggerOrEqualThan2Pwr31() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "0/1/2/2147483648"
-            });
-        }, "Invalid path");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(
+                            new Object[] {
+                                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                                "0/1/2/2147483648"
+                            });
+                },
+                "Invalid path");
     }
 
     @Test
     public void pathCannotContainMoreThanTenParts() {
-        assertFailsWithMessage(() -> {
-            method.execute(new Object[]{
-                    "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
-                    "0/1/2/3/4/5/6/7/8/9/10"
-            });
-        }, "Path should contain 10 levels at most");
+        assertFailsWithMessage(
+                () -> {
+                    method.execute(
+                            new Object[] {
+                                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                                "0/1/2/3/4/5/6/7/8/9/10"
+                            });
+                },
+                "Path should contain 10 levels at most");
     }
 
     private void assertFailsWithMessage(Runnable statement, String message) {

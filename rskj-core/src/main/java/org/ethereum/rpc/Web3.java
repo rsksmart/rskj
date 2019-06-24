@@ -20,11 +20,11 @@ package org.ethereum.rpc;
 
 import co.rsk.rpc.*;
 import co.rsk.scoring.PeerScoringInformation;
-
 import java.util.Arrays;
 import java.util.Map;
 
-public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule {
+public interface Web3
+        extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule {
     class SyncingResult {
         public String startingBlock;
         public String currentBlock;
@@ -42,15 +42,29 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
 
         @Override
         public String toString() {
-            return "CallArguments{" +
-                    "from='" + from + '\'' +
-                    ", to='" + to + '\'' +
-                    ", gasLimit='" + gas + '\'' +
-                    ", gasPrice='" + gasPrice + '\'' +
-                    ", value='" + value + '\'' +
-                    ", data='" + data + '\'' +
-                    ", nonce='" + nonce + '\'' +
-                    '}';
+            return "CallArguments{"
+                    + "from='"
+                    + from
+                    + '\''
+                    + ", to='"
+                    + to
+                    + '\''
+                    + ", gasLimit='"
+                    + gas
+                    + '\''
+                    + ", gasPrice='"
+                    + gasPrice
+                    + '\''
+                    + ", value='"
+                    + value
+                    + '\''
+                    + ", data='"
+                    + data
+                    + '\''
+                    + ", nonce='"
+                    + nonce
+                    + '\''
+                    + '}';
         }
     }
 
@@ -90,27 +104,63 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
 
         @Override
         public String toString() {
-            return "BlockResult{" +
-                    "number='" + number + '\'' +
-                    ", hash='" + hash + '\'' +
-                    ", parentHash='" + parentHash + '\'' +
-                    ", sha3Uncles='" + sha3Uncles + '\'' +
-                    ", logsBloom='" + logsBloom + '\'' +
-                    ", transactionsRoot='" + transactionsRoot + '\'' +
-                    ", stateRoot='" + stateRoot + '\'' +
-                    ", receiptsRoot='" + receiptsRoot + '\'' +
-                    ", miner='" + miner + '\'' +
-                    ", difficulty='" + difficulty + '\'' +
-                    ", totalDifficulty='" + totalDifficulty + '\'' +
-                    ", extraData='" + extraData + '\'' +
-                    ", size='" + size + '\'' +
-                    ", gasLimit='" + gasLimit + '\'' +
-                    ", minimumGasPrice='" + minimumGasPrice + '\'' +
-                    ", gasUsed='" + gasUsed + '\'' +
-                    ", timestamp='" + timestamp + '\'' +
-                    ", transactions=" + Arrays.toString(transactions) +
-                    ", uncles=" + Arrays.toString(uncles) +
-                    '}';
+            return "BlockResult{"
+                    + "number='"
+                    + number
+                    + '\''
+                    + ", hash='"
+                    + hash
+                    + '\''
+                    + ", parentHash='"
+                    + parentHash
+                    + '\''
+                    + ", sha3Uncles='"
+                    + sha3Uncles
+                    + '\''
+                    + ", logsBloom='"
+                    + logsBloom
+                    + '\''
+                    + ", transactionsRoot='"
+                    + transactionsRoot
+                    + '\''
+                    + ", stateRoot='"
+                    + stateRoot
+                    + '\''
+                    + ", receiptsRoot='"
+                    + receiptsRoot
+                    + '\''
+                    + ", miner='"
+                    + miner
+                    + '\''
+                    + ", difficulty='"
+                    + difficulty
+                    + '\''
+                    + ", totalDifficulty='"
+                    + totalDifficulty
+                    + '\''
+                    + ", extraData='"
+                    + extraData
+                    + '\''
+                    + ", size='"
+                    + size
+                    + '\''
+                    + ", gasLimit='"
+                    + gasLimit
+                    + '\''
+                    + ", minimumGasPrice='"
+                    + minimumGasPrice
+                    + '\''
+                    + ", gasUsed='"
+                    + gasUsed
+                    + '\''
+                    + ", timestamp='"
+                    + timestamp
+                    + '\''
+                    + ", transactions="
+                    + Arrays.toString(transactions)
+                    + ", uncles="
+                    + Arrays.toString(uncles)
+                    + '}';
         }
     }
 
@@ -122,12 +172,18 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
 
         @Override
         public String toString() {
-            return "FilterRequest{" +
-                    "fromBlock='" + fromBlock + '\'' +
-                    ", toBlock='" + toBlock + '\'' +
-                    ", address=" + address +
-                    ", topics=" + Arrays.toString(topics) +
-                    '}';
+            return "FilterRequest{"
+                    + "fromBlock='"
+                    + fromBlock
+                    + '\''
+                    + ", toBlock='"
+                    + toBlock
+                    + '\''
+                    + ", address="
+                    + address
+                    + ", topics="
+                    + Arrays.toString(topics)
+                    + '}';
         }
     }
 
@@ -136,33 +192,52 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
     void stop();
 
     String web3_clientVersion();
+
     String web3_sha3(String data) throws Exception;
+
     String net_version();
+
     String net_peerCount();
+
     boolean net_listening();
+
     String[] net_peerList();
+
     String rsk_protocolVersion();
 
     // methods required by dev environments
     Map<String, String> rpc_modules();
 
     void db_putString();
+
     void db_getString();
 
     void db_putHex();
+
     void db_getHex();
 
     String personal_newAccountWithSeed(String seed);
+
     String personal_newAccount(String passphrase);
+
     String[] personal_listAccounts();
+
     String personal_importRawKey(String key, String passphrase);
-    String personal_sendTransaction(CallArguments transactionArgs, String passphrase) throws Exception;
+
+    String personal_sendTransaction(CallArguments transactionArgs, String passphrase)
+            throws Exception;
+
     boolean personal_unlockAccount(String key, String passphrase, String duration);
+
     boolean personal_lockAccount(String key);
+
     String personal_dumpRawKey(String address) throws Exception;
 
     void sco_banAddress(String address);
+
     void sco_unbanAddress(String address);
+
     PeerScoringInformation[] sco_peerList();
+
     String[] sco_bannedAddresses();
 }

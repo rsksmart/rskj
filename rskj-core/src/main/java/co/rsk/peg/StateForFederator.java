@@ -18,17 +18,14 @@
 
 package co.rsk.peg;
 
-import co.rsk.crypto.Keccak256;
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.crypto.Keccak256;
+import java.util.SortedMap;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.SortedMap;
-
-/**
- * Created by mario on 20/04/17.
- */
+/** Created by mario on 20/04/17. */
 public class StateForFederator {
     private SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures;
 
@@ -40,7 +37,8 @@ public class StateForFederator {
         RLPList rlpList = (RLPList) RLP.decode2(rlpData).get(0);
         byte[] encodedWaitingForSign = rlpList.get(0).getRLPData();
 
-        this.rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(encodedWaitingForSign, parameters, false);
+        this.rskTxsWaitingForSignatures =
+                BridgeSerializationUtils.deserializeMap(encodedWaitingForSign, parameters, false);
     }
 
     public SortedMap<Keccak256, BtcTransaction> getRskTxsWaitingForSignatures() {
@@ -48,7 +46,8 @@ public class StateForFederator {
     }
 
     public byte[] getEncoded() {
-        byte[] encodedWaitingForSign = BridgeSerializationUtils.serializeMap(this.rskTxsWaitingForSignatures);
+        byte[] encodedWaitingForSign =
+                BridgeSerializationUtils.serializeMap(this.rskTxsWaitingForSignatures);
         return RLP.encodeList(encodedWaitingForSign);
     }
 }

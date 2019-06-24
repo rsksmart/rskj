@@ -30,7 +30,8 @@ import org.slf4j.LoggerFactory;
  * @author Mikhail Kalinin
  * @since 02.09.2015
  */
-public class BlockParentNumberRule implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule {
+public class BlockParentNumberRule
+        implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 

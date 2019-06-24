@@ -23,6 +23,10 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockStore;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Genesis;
@@ -30,14 +34,7 @@ import org.ethereum.core.ImportResult;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-/**
- * Created by ajlopez on 19/08/2016.
- */
+/** Created by ajlopez on 19/08/2016. */
 public class BlockUtilsTest {
     @Test
     public void blockInSomeBlockChain() {
@@ -78,7 +75,8 @@ public class BlockUtilsTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
         Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
 
-        Set<Keccak256> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
+        Set<Keccak256> hashes =
+                BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertTrue(hashes.isEmpty());
@@ -131,7 +129,8 @@ public class BlockUtilsTest {
         blockChain.tryToConnect(block1);
         blockChain.tryToConnect(block1b);
 
-        Set<Keccak256> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
+        Set<Keccak256> hashes =
+                BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertTrue(hashes.isEmpty());

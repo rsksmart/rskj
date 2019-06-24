@@ -18,43 +18,38 @@
 
 package org.ethereum.rpc.Simples;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.MessageWithId;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.net.simples.SimpleNodeChannel;
+import java.net.InetAddress;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.net.InetAddress;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-/**
- * Created by Ruben on 09/06/2016.
- */
+/** Created by Ruben on 09/06/2016. */
 public class SimpleChannelManager implements ChannelManager {
     private List<Transaction> transactions = new ArrayList<>();
     private Set<NodeID> lastSkip;
     private Map<NodeID, MessageChannel> simpleChannels = new ConcurrentHashMap<>();
 
     @Override
-    public void start() {
-    }
+    public void start() {}
 
     @Override
-    public void stop() {
-    }
+    public void stop() {}
 
     @Override
     public boolean isRecentlyDisconnected(InetAddress peerAddr) {
@@ -69,13 +64,15 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Nonnull
     @Override
-    public Set<NodeID> broadcastBlockHash(@Nonnull List<BlockIdentifier> identifiers, @Nullable Set<NodeID> targets) {
+    public Set<NodeID> broadcastBlockHash(
+            @Nonnull List<BlockIdentifier> identifiers, @Nullable Set<NodeID> targets) {
         return new HashSet<>();
     }
 
     @Nonnull
     @Override
-    public Set<NodeID> broadcastTransaction(@Nonnull Transaction transaction, @Nullable Set<NodeID> skip) {
+    public Set<NodeID> broadcastTransaction(
+            @Nonnull Transaction transaction, @Nullable Set<NodeID> skip) {
         this.transactions.add(transaction);
         this.lastSkip = skip;
         return new HashSet<>();
@@ -87,39 +84,35 @@ public class SimpleChannelManager implements ChannelManager {
     }
 
     @Override
-    public void add(Channel peer) {
-
-    }
+    public void add(Channel peer) {}
 
     public MessageChannel getMessageChannel(SimpleNode sender, SimpleNode receiver) {
         MessageChannel channel = simpleChannels.get(sender.getNodeID());
-        if (channel != null){
+        if (channel != null) {
             return channel;
         }
 
         channel = new SimpleNodeChannel(sender, receiver);
         simpleChannels.put(channel.getPeerNodeID(), channel);
-        return  channel;
+        return channel;
     }
 
     @Override
-    public void notifyDisconnect(Channel channel) {
-
-    }
+    public void notifyDisconnect(Channel channel) {}
 
     @Override
-    public void onSyncDone(boolean done) {
-
-    }
+    public void onSyncDone(boolean done) {}
 
     @Override
     public Collection<Channel> getActivePeers() {
-        return simpleChannels.values().stream().map(this::getMockedChannel).collect(Collectors.toList());
+        return simpleChannels.values().stream()
+                .map(this::getMockedChannel)
+                .collect(Collectors.toList());
 
-//        Collection<Channel> channels = new ArrayList<Channel>();
-//        channels.add(new Channel(null, null, null, null, null, null, null, null));
-//        channels.add(new Channel(null, null, null, null, null, null, null, null));
-//        return channels;
+        //        Collection<Channel> channels = new ArrayList<Channel>();
+        //        channels.add(new Channel(null, null, null, null, null, null, null, null));
+        //        channels.add(new Channel(null, null, null, null, null, null, null, null));
+        //        return channels;
     }
 
     private Channel getMockedChannel(MessageChannel mc) {
@@ -130,10 +123,10 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Override
     public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
-//        simpleChannels.get(nodeID).sendMessage(message);
+        //        simpleChannels.get(nodeID).sendMessage(message);
         MessageChannel channel = simpleChannels.get(nodeID);
         // TODO(lsebrie): handle better tests where channels are not initialized
-        if (channel != null){
+        if (channel != null) {
             channel.sendMessage(message);
         }
         return true;
@@ -152,5 +145,7 @@ public class SimpleChannelManager implements ChannelManager {
         return lastSkip;
     }
 
-    public void setLastSkip(Set<NodeID> value) { lastSkip = value; }
+    public void setLastSkip(Set<NodeID> value) {
+        lastSkip = value;
+    }
 }

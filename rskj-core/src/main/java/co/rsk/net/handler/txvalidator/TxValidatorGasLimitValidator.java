@@ -20,32 +20,36 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
+import java.math.BigInteger;
+import javax.annotation.Nullable;
 import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
-import javax.annotation.Nullable;
-import java.math.BigInteger;
-
 /**
- * Checks that the transaction gas limit is lower than the `block` gas limit
- * though there's no check that the actual block gas limit is used
- * Also Checks that the transaction gas limit is not higher than the max allowed value
+ * Checks that the transaction gas limit is lower than the `block` gas limit though there's no check
+ * that the actual block gas limit is used Also Checks that the transaction gas limit is not higher
+ * than the max allowed value
  */
 public class TxValidatorGasLimitValidator implements TxValidatorStep {
     @Override
-    public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
+    public TransactionValidationResult validate(
+            Transaction tx,
+            @Nullable AccountState state,
+            BigInteger gasLimit,
+            Coin minimumGasPrice,
+            long bestBlockNumber,
+            boolean isFreeTx) {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
 
-        if (txGasLimit.compareTo(gasLimit) <= 0 && txGasLimit.compareTo(Constants.getTransactionGasCap()) <= 0) {
+        if (txGasLimit.compareTo(gasLimit) <= 0
+                && txGasLimit.compareTo(Constants.getTransactionGasCap()) <= 0) {
             return TransactionValidationResult.ok();
         }
 
-        return TransactionValidationResult.withError(String.format(
-                "transaction's gas limit of %s is higher than the block's gas limit of %s",
-                txGasLimit,
-                gasLimit
-        ));
+        return TransactionValidationResult.withError(
+                String.format(
+                        "transaction's gas limit of %s is higher than the block's gas limit of %s",
+                        txGasLimit, gasLimit));
     }
-
 }

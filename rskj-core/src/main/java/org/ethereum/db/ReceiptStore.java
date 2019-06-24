@@ -19,15 +19,10 @@
 
 package org.ethereum.db;
 
+import java.util.List;
 import org.ethereum.core.TransactionReceipt;
 
-import java.util.List;
-
-/**
- * Created by Ruben on 6/1/2016.
- * Interface used for store transaction receipts
- */
-
+/** Created by Ruben on 6/1/2016. Interface used for store transaction receipts */
 public interface ReceiptStore {
 
     void add(byte[] blockHash, int transactionIndex, TransactionReceipt receipt);

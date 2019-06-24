@@ -18,6 +18,8 @@
 
 package org.ethereum.rpc;
 
+import static org.mockito.Mockito.*;
+
 import co.rsk.config.RskSystemProperties;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.MinerClient;
@@ -30,8 +32,6 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.net.server.ChannelManager;
-
-import static org.mockito.Mockito.*;
 
 public class Web3Mocks {
     public static Ethereum getMockEthereum() {

@@ -20,9 +20,7 @@ package co.rsk.net.discovery;
 
 import org.ethereum.net.rlpx.Node;
 
-/**
- * Created by mario on 22/02/17.
- */
+/** Created by mario on 22/02/17. */
 public class NodeChallenge {
     private final Node challengedNode;
     private final Node challenger;

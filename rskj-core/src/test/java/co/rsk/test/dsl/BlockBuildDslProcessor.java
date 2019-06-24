@@ -20,16 +20,13 @@ package co.rsk.test.dsl;
 
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 8/16/2016.
- */
+/** Created by ajlopez on 8/16/2016. */
 public class BlockBuildDslProcessor {
     private World world;
     private String name;
@@ -43,8 +40,7 @@ public class BlockBuildDslProcessor {
     public void processCommands(DslParser parser) throws DslProcessorException {
         for (DslCommand cmd = parser.nextCommand(); cmd != null; cmd = parser.nextCommand()) {
             processCommand(cmd);
-            if (cmd.isCommand("build"))
-                return;
+            if (cmd.isCommand("build")) return;
         }
     }
 
@@ -54,25 +50,21 @@ public class BlockBuildDslProcessor {
         else if (cmd.isCommand("build")) {
             Block block = this.builder.build();
             this.world.saveBlock(this.name, block);
-        }
-        else if (cmd.isCommand("uncles")) {
+        } else if (cmd.isCommand("uncles")) {
             List<BlockHeader> uncles = new ArrayList<>();
 
             for (int k = 0; k < cmd.getArity(); k++)
                 uncles.add(this.world.getBlockByName(cmd.getArgument(k)).getHeader());
 
             this.builder.uncles(uncles);
-        }
-        else if (cmd.isCommand("transactions")) {
+        } else if (cmd.isCommand("transactions")) {
             List<Transaction> transactions = new ArrayList<>();
 
             for (int k = 0; k < cmd.getArity(); k++)
                 transactions.add(this.world.getTransactionByName(cmd.getArgument(k)));
 
             this.builder.transactions(transactions);
-        }
-        else
+        } else
             throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
     }
 }
-

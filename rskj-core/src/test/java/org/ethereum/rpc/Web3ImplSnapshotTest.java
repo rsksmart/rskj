@@ -37,6 +37,8 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import java.time.Clock;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
@@ -46,12 +48,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.Clock;
-import java.util.List;
-
-/**
- * Created by ajlopez on 15/04/2017.
- */
+/** Created by ajlopez on 15/04/2017. */
 public class Web3ImplSnapshotTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
@@ -154,12 +151,22 @@ public class Web3ImplSnapshotTest {
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
     }
 
-
     private Web3Impl createWeb3(SimpleEthereum ethereum) {
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = getMinerServerForTest(ethereum, minerClock);
-        MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
-        EvmModule evmModule = new EvmModuleImpl(minerServer, minerClient, minerClock, blockchain, factory.getTransactionPool());
+        MinerClientImpl minerClient =
+                new MinerClientImpl(
+                        null,
+                        minerServer,
+                        config.minerClientDelayBetweenBlocks(),
+                        config.minerClientDelayBetweenRefreshes());
+        EvmModule evmModule =
+                new EvmModuleImpl(
+                        minerServer,
+                        minerClient,
+                        minerClock,
+                        blockchain,
+                        factory.getTransactionPool());
         PersonalModule pm = new PersonalModuleWalletDisabled();
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
@@ -189,8 +196,7 @@ public class Web3ImplSnapshotTest {
                 null,
                 null,
                 null,
-                null
-        );
+                null);
     }
 
     private Web3Impl createWeb3() {
@@ -200,7 +206,9 @@ public class Web3ImplSnapshotTest {
 
     private MinerServer getMinerServerForTest(SimpleEthereum ethereum, MinerClock clock) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+        DifficultyCalculator difficultyCalculator =
+                new DifficultyCalculator(
+                        config.getActivationConfig(), config.getNetworkConstants());
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         return new MinerServerImpl(
                 config,
@@ -221,19 +229,17 @@ public class Web3ImplSnapshotTest {
                         clock,
                         blockFactory,
                         factory.getBlockExecutor(),
-                        new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils()
-                ),
+                        new MinimumGasPriceCalculator(
+                                Coin.valueOf(miningConfig.getMinGasPriceTarget())),
+                        new MinerUtils()),
                 clock,
                 blockFactory,
-                miningConfig
-        );
+                miningConfig);
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
 
-        for (Block block : blocks)
-            blockchain.tryToConnect(block);
+        for (Block block : blocks) blockchain.tryToConnect(block);
     }
 }

@@ -19,14 +19,13 @@
 
 package org.ethereum.vm.program.invoke;
 
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Map;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.Program;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Map;
 
 /**
  * @author Roman Mandeleil
@@ -35,10 +34,9 @@ import java.util.Map;
 public class ProgramInvokeImpl implements ProgramInvoke {
 
     private BlockStore blockStore;
-    /**
-     * TRANSACTION  env **
-     */
+    /** TRANSACTION env ** */
     private final DataWord address;
+
     private final DataWord origin;
     private final DataWord caller;
     private final DataWord balance;
@@ -48,10 +46,9 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
     byte[] msgData;
 
-    /**
-     * BLOCK  env **
-     */
+    /** BLOCK env ** */
     private final DataWord prevHash;
+
     private final DataWord coinbase;
     private final DataWord timestamp;
     private final DataWord number;
@@ -68,15 +65,27 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private int callDeep = 0;
     private boolean isStaticCall = false;
 
-    public ProgramInvokeImpl(DataWord address, DataWord origin, DataWord caller, DataWord balance,
-                             DataWord gasPrice,
-                             long gas,
-                             DataWord callValue, byte[] msgData,
-                             DataWord lastHash, DataWord coinbase, DataWord timestamp, DataWord number, DataWord transactionIndex, DataWord
-                                     difficulty,
-                             DataWord gaslimit, Repository repository, int callDeep, BlockStore blockStore,
-                             boolean isStaticCall,
-                             boolean byTestingSuite) {
+    public ProgramInvokeImpl(
+            DataWord address,
+            DataWord origin,
+            DataWord caller,
+            DataWord balance,
+            DataWord gasPrice,
+            long gas,
+            DataWord callValue,
+            byte[] msgData,
+            DataWord lastHash,
+            DataWord coinbase,
+            DataWord timestamp,
+            DataWord number,
+            DataWord transactionIndex,
+            DataWord difficulty,
+            DataWord gaslimit,
+            Repository repository,
+            int callDeep,
+            BlockStore blockStore,
+            boolean isStaticCall,
+            boolean byTestingSuite) {
 
         // Transaction env
         this.address = address;
@@ -105,24 +114,65 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.byTestingSuite = byTestingSuite;
     }
 
-    public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
-                             byte[] gasPrice, byte[] gas, byte[] callValue, byte[] msgData,
-                             byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
-                             byte[] gaslimit,
-                             Repository repository, BlockStore blockStore,
-                             boolean byTestingSuite) {
-        this(address, origin, caller, balance, gasPrice, gas, callValue, msgData, lastHash, coinbase,
-                timestamp, number, transactionIndex, difficulty, gaslimit, repository, blockStore);
+    public ProgramInvokeImpl(
+            byte[] address,
+            byte[] origin,
+            byte[] caller,
+            byte[] balance,
+            byte[] gasPrice,
+            byte[] gas,
+            byte[] callValue,
+            byte[] msgData,
+            byte[] lastHash,
+            byte[] coinbase,
+            long timestamp,
+            long number,
+            int transactionIndex,
+            byte[] difficulty,
+            byte[] gaslimit,
+            Repository repository,
+            BlockStore blockStore,
+            boolean byTestingSuite) {
+        this(
+                address,
+                origin,
+                caller,
+                balance,
+                gasPrice,
+                gas,
+                callValue,
+                msgData,
+                lastHash,
+                coinbase,
+                timestamp,
+                number,
+                transactionIndex,
+                difficulty,
+                gaslimit,
+                repository,
+                blockStore);
 
         this.byTestingSuite = byTestingSuite;
     }
 
-
-    public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
-                             byte[] gasPrice, byte[] gas, byte[] callValue, byte[] msgData,
-                             byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
-                             byte[] gaslimit,
-                             Repository repository, BlockStore blockStore) {
+    public ProgramInvokeImpl(
+            byte[] address,
+            byte[] origin,
+            byte[] caller,
+            byte[] balance,
+            byte[] gasPrice,
+            byte[] gas,
+            byte[] callValue,
+            byte[] msgData,
+            byte[] lastHash,
+            byte[] coinbase,
+            long timestamp,
+            long number,
+            int transactionIndex,
+            byte[] difficulty,
+            byte[] gaslimit,
+            Repository repository,
+            BlockStore blockStore) {
 
         // Transaction env
         this.address = DataWord.valueOf(address);
@@ -173,7 +223,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*           GAS op       */
-    public long  getGas() {
+    public long getGas() {
         return gas;
     }
 
@@ -182,9 +232,9 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         return callValue;
     }
 
-    /*****************/
-    /***  msg data ***/
-    /*****************/
+    /** ************** */
+    /** * msg data ** */
+    /** ************** */
     /* NOTE: In the protocol there is no restriction on the maximum message data,
      * However msgData here is a byte[] and this can't hold more than 2^32-1
      */
@@ -197,8 +247,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         int index = tempIndex.intValue(); // possible overflow is caught below
         int size = 32; // maximum datavalue size
 
-        if (msgData == null || index >= msgData.length
-                || tempIndex.compareTo(maxMsgData) == 1) {
+        if (msgData == null || index >= msgData.length || tempIndex.compareTo(maxMsgData) == 1) {
             return DataWord.ZERO;
         }
         if (index + size > msgData.length) {
@@ -242,7 +291,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
         return data;
     }
-
 
     /*     PREVHASH op    */
     public DataWord getPrevHash() {
@@ -348,7 +396,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         if (difficulty != null ? !difficulty.equals(that.difficulty) : that.difficulty != null) {
             return false;
         }
-        if (gas!=that.gas) {
+        if (gas != that.gas) {
             return false;
         }
         if (gasPrice != null ? !gasPrice.equals(that.gasPrice) : that.gasPrice != null) {
@@ -384,26 +432,45 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
     @Override
     public String toString() {
-        return "ProgramInvokeImpl{" +
-                "address=" + address +
-                ", origin=" + origin +
-                ", caller=" + caller +
-                ", balance=" + balance +
-                ", gas=" + gas +
-                ", gasPrice=" + gasPrice +
-                ", callValue=" + callValue +
-                ", msgData=" + Arrays.toString(msgData) +
-                ", prevHash=" + prevHash +
-                ", coinbase=" + coinbase +
-                ", timestamp=" + timestamp +
-                ", number=" + number +
-                ", difficulty=" + difficulty +
-                ", gaslimit=" + gaslimit +
-                ", storage=" + storage +
-                ", repository=" + repository +
-                ", byTransaction=" + byTransaction +
-                ", byTestingSuite=" + byTestingSuite +
-                ", callDeep=" + callDeep +
-                '}';
+        return "ProgramInvokeImpl{"
+                + "address="
+                + address
+                + ", origin="
+                + origin
+                + ", caller="
+                + caller
+                + ", balance="
+                + balance
+                + ", gas="
+                + gas
+                + ", gasPrice="
+                + gasPrice
+                + ", callValue="
+                + callValue
+                + ", msgData="
+                + Arrays.toString(msgData)
+                + ", prevHash="
+                + prevHash
+                + ", coinbase="
+                + coinbase
+                + ", timestamp="
+                + timestamp
+                + ", number="
+                + number
+                + ", difficulty="
+                + difficulty
+                + ", gaslimit="
+                + gaslimit
+                + ", storage="
+                + storage
+                + ", repository="
+                + repository
+                + ", byTransaction="
+                + byTransaction
+                + ", byTestingSuite="
+                + byTestingSuite
+                + ", callDeep="
+                + callDeep
+                + '}';
     }
 }

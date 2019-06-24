@@ -21,14 +21,13 @@ package co.rsk.pcc.bto;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
+import java.util.Random;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.Random;
 
 @Ignore
 public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
@@ -41,12 +40,22 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
     public void toBase58Check() {
         function = new ToBase58Check(null).getFunction();
 
-        EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
-            HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
-            contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
+        EnvironmentBuilder environmentBuilder =
+                (int executionIndex, TxBuilder txBuilder, int height) -> {
+                    HDWalletUtils contract =
+                            new HDWalletUtils(
+                                    new TestSystemProperties().getActivationConfig(),
+                                    PrecompiledContracts.HD_WALLET_UTILS_ADDR);
+                    contract.init(
+                            txBuilder.build(executionIndex),
+                            Helper.getMockBlock(1),
+                            null,
+                            null,
+                            null,
+                            null);
 
-            return EnvironmentBuilder.Environment.withContract(contract);
-        };
+                    return EnvironmentBuilder.Environment.withContract(contract);
+                };
 
         HDWalletUtilsPerformanceTest.addStats(estimateToBase58Check(2000, environmentBuilder));
     }
@@ -55,19 +64,21 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
         String name = function.name;
         ExecutionStats stats = new ExecutionStats(name);
         Random rnd = new Random();
-        int[] versions = new int[] {
-                // Testnet and mainnet pubkey hash and script hash only
-                // See https://en.bitcoin.it/wiki/Base58Check_encoding for details
-                0, 5, 111, 196
-        };
+        int[] versions =
+                new int[] {
+                    // Testnet and mainnet pubkey hash and script hash only
+                    // See https://en.bitcoin.it/wiki/Base58Check_encoding for details
+                    0, 5, 111, 196
+                };
         byte[] hash = new byte[20];
 
-        ABIEncoder abiEncoder = (int executionIndex) -> {
-            rnd.nextBytes(hash);
-            int version = versions[rnd.nextInt(versions.length)];
+        ABIEncoder abiEncoder =
+                (int executionIndex) -> {
+                    rnd.nextBytes(hash);
+                    int version = versions[rnd.nextInt(versions.length)];
 
-            return function.encode(new Object[] { hash, version });
-        };
+                    return function.encode(new Object[] {hash, version});
+                };
 
         executeAndAverage(
                 name,
@@ -83,8 +94,7 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
                     String address = (String) decodedResult[0];
                     Assert.assertTrue(MIN_ADDRESS_LENGTH <= address.length());
                     Assert.assertTrue(MAX_ADDRESS_LENGTH >= address.length());
-                }
-        );
+                });
 
         return stats;
     }

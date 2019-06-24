@@ -17,6 +17,11 @@
  */
 package co.rsk.net;
 
+import static org.mockito.Mockito.*;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
@@ -27,12 +32,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
-import static org.mockito.Mockito.*;
 
 public class TransactionGatewayTest {
     private ChannelManager channelManager;
@@ -80,7 +79,8 @@ public class TransactionGatewayTest {
     public void relayingTwiceSkipsReceivingNodes() {
         List<Transaction> txs = Collections.singletonList(tx);
         Set<NodeID> receivingNodes = Collections.singleton(node);
-        when(channelManager.broadcastTransaction(tx, Collections.emptySet())).thenReturn(receivingNodes);
+        when(channelManager.broadcastTransaction(tx, Collections.emptySet()))
+                .thenReturn(receivingNodes);
         listener.onPendingTransactionsReceived(txs);
 
         listener.onPendingTransactionsReceived(txs);

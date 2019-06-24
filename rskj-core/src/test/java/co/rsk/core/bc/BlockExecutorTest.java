@@ -18,6 +18,8 @@
 
 package co.rsk.core.bc;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
@@ -31,6 +33,8 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
+import java.math.BigInteger;
+import java.util.*;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -54,14 +58,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-
-/**
- * Created by ajlopez on 29/07/2016.
- */
+/** Created by ajlopez on 29/07/2016. */
 public class BlockExecutorTest {
     public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     private static final TestSystemProperties config = new TestSystemProperties();
@@ -112,14 +109,17 @@ public class BlockExecutorTest {
         Assert.assertEquals(tx, receipt.getTransaction());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
-        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+        Assert.assertTrue(
+                receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
         Assert.assertEquals(21000, result.getGasUsed());
         Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
 
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
+        Assert.assertFalse(
+                Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
 
-        byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
+        byte[] calculatedLogsBloom =
+                BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
         Assert.assertEquals(256, calculatedLogsBloom.length);
         Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
 
@@ -128,12 +128,14 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
+        Repository finalRepository =
+                repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
 
         accountState = finalRepository.getAccountState(account);
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(
+                BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
     }
 
     @Test
@@ -156,25 +158,32 @@ public class BlockExecutorTest {
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
         Assert.assertEquals(tx1, receipt.getTransaction());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(21000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
-        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+        Assert.assertEquals(
+                21000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
+        Assert.assertTrue(
+                receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
         receipt = result.getTransactionReceipts().get(1);
         Assert.assertEquals(tx2, receipt.getTransaction());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(42000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
-        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+        Assert.assertEquals(
+                42000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
+        Assert.assertTrue(
+                receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
         Assert.assertEquals(42000, result.getGasUsed());
         Assert.assertEquals(42000, result.getPaidFees().asBigInteger().intValueExact());
 
-        //here is the problem: in the prior code repository root would never be overwritten by childs
-        //while the new code does overwrite the root.
-        //Which semantic is correct ? I don't know
+        // here is the problem: in the prior code repository root would never be overwritten by
+        // childs
+        // while the new code does overwrite the root.
+        // Which semantic is correct ? I don't know
 
-        Assert.assertFalse(Arrays.equals(parent.getStateRoot(), result.getFinalState().getHash().getBytes()));
+        Assert.assertFalse(
+                Arrays.equals(parent.getStateRoot(), result.getFinalState().getHash().getBytes()));
 
-        byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
+        byte[] calculatedLogsBloom =
+                BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
         Assert.assertEquals(256, calculatedLogsBloom.length);
         Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
 
@@ -185,12 +194,14 @@ public class BlockExecutorTest {
 
         // here is the papa. my commit changes stateroot while previous commit did not.
 
-        Repository finalRepository = repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
+        Repository finalRepository =
+                repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
 
         accountState = finalRepository.getAccountState(account);
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(
+                BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
     }
 
     @Test
@@ -203,19 +214,24 @@ public class BlockExecutorTest {
         BlockResult result = executor.execute(block, parent.getHeader(), false);
         executor.executeAndFill(block, parent.getHeader());
 
-        byte[] calculatedReceiptsRoot = BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), true);
+        byte[] calculatedReceiptsRoot =
+                BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), true);
         Assert.assertArrayEquals(calculatedReceiptsRoot, block.getReceiptsRoot());
         Assert.assertArrayEquals(result.getFinalState().getHash().getBytes(), block.getStateRoot());
         Assert.assertEquals(result.getGasUsed(), block.getGasUsed());
         Assert.assertEquals(result.getPaidFees(), block.getFeesPaidToMiner());
-        Assert.assertArrayEquals(BlockExecutor.calculateLogsBloom(result.getTransactionReceipts()), block.getLogBloom());
+        Assert.assertArrayEquals(
+                BlockExecutor.calculateLogsBloom(result.getTransactionReceipts()),
+                block.getLogBloom());
 
         Assert.assertEquals(3000000, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
     @Test
     public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance() {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+        Repository repository =
+                new MutableRepository(
+                        new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
 
         Repository track = repository.startTracking();
 
@@ -229,18 +245,18 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(repository);
 
-        Transaction tx = createTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress())
-        );
-        Transaction tx2 = createTransaction(
-                account3,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account3.getAddress())
-        );
+        Transaction tx =
+                createTransaction(
+                        account,
+                        account2,
+                        BigInteger.TEN,
+                        repository.getNonce(account.getAddress()));
+        Transaction tx2 =
+                createTransaction(
+                        account3,
+                        account2,
+                        BigInteger.TEN,
+                        repository.getNonce(account3.getAddress()));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -259,15 +275,16 @@ public class BlockExecutorTest {
         Assert.assertEquals(tx, block.getTransactionsList().get(0));
         Assert.assertArrayEquals(
                 calculateTxTrieRoot(Collections.singletonList(tx), block.getNumber()),
-                block.getTxTrieRoot()
-        );
+                block.getTxTrieRoot());
 
         Assert.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
     @Test
     public void executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalance() {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+        Repository repository =
+                new MutableRepository(
+                        new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
 
         Repository track = repository.startTracking();
 
@@ -281,18 +298,18 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(repository);
 
-        Transaction tx = createTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress())
-        );
-        Transaction tx2 = createTransaction(
-                account3,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account3.getAddress())
-        );
+        Transaction tx =
+                createTransaction(
+                        account,
+                        account2,
+                        BigInteger.TEN,
+                        repository.getNonce(account.getAddress()));
+        Transaction tx2 =
+                createTransaction(
+                        account3,
+                        account2,
+                        BigInteger.TEN,
+                        repository.getNonce(account3.getAddress()));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -397,12 +414,12 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(repository);
 
-        Transaction tx = createTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress())
-        );
+        Transaction tx =
+                createTransaction(
+                        account,
+                        account2,
+                        BigInteger.TEN,
+                        repository.getNonce(account.getAddress()));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
@@ -438,9 +455,13 @@ public class BlockExecutorTest {
         bestBlock.setStateRoot(repository.getRoot());
 
         // then we create the new block to connect
-        List<Transaction> txs = Collections.singletonList(
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()))
-        );
+        List<Transaction> txs =
+                Collections.singletonList(
+                        createTransaction(
+                                account,
+                                account2,
+                                BigInteger.TEN,
+                                repository.getNonce(account.getAddress())));
 
         List<BlockHeader> uncles = new ArrayList<>();
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
@@ -461,19 +482,35 @@ public class BlockExecutorTest {
         bestBlock.setStateRoot(repository.getRoot());
 
         // then we create the new block to connect
-        List<Transaction> txs = Arrays.asList(
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress())),
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()).add(BigInteger.ONE))
-        );
+        List<Transaction> txs =
+                Arrays.asList(
+                        createTransaction(
+                                account,
+                                account2,
+                                BigInteger.TEN,
+                                repository.getNonce(account.getAddress())),
+                        createTransaction(
+                                account,
+                                account2,
+                                BigInteger.TEN,
+                                repository.getNonce(account.getAddress()).add(BigInteger.ONE)));
 
         List<BlockHeader> uncles = new ArrayList<>();
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
-    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
+    private static Transaction createTransaction(
+            Account sender, Account receiver, BigInteger value, BigInteger nonce) {
         String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
+        Transaction tx =
+                new Transaction(
+                        toAddress,
+                        value,
+                        nonce,
+                        BigInteger.ONE,
+                        BigInteger.valueOf(21000),
+                        config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);
         return tx;
     }
@@ -498,25 +535,27 @@ public class BlockExecutorTest {
     @Test(expected = RuntimeException.class)
     public void executeBlocksWithOneStrangeTransactions1() {
         // will fail to create an address that is not 20 bytes long
-        executeBlockWithOneStrangeTransaction(true, false, generateBlockWithOneStrangeTransaction(0));
+        executeBlockWithOneStrangeTransaction(
+                true, false, generateBlockWithOneStrangeTransaction(0));
     }
 
     @Test(expected = RuntimeException.class)
     public void executeBlocksWithOneStrangeTransactions2() {
         // will fail to create an address that is not 20 bytes long
-        executeBlockWithOneStrangeTransaction(true, true, generateBlockWithOneStrangeTransaction(1));
+        executeBlockWithOneStrangeTransaction(
+                true, true, generateBlockWithOneStrangeTransaction(1));
     }
 
     @Test
     public void executeBlocksWithOneStrangeTransactions3() {
-        // the wrongly-encoded value parameter will be re-encoded with the correct serialization and won't fail
-        executeBlockWithOneStrangeTransaction(false, false, generateBlockWithOneStrangeTransaction(2));
+        // the wrongly-encoded value parameter will be re-encoded with the correct serialization and
+        // won't fail
+        executeBlockWithOneStrangeTransaction(
+                false, false, generateBlockWithOneStrangeTransaction(2));
     }
 
     public void executeBlockWithOneStrangeTransaction(
-            boolean mustFailValidation,
-            boolean mustFailExecution,
-            TestObjects objects) {
+            boolean mustFailValidation, boolean mustFailExecution, TestObjects objects) {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         BlockExecutor executor = buildBlockExecutor(objects.getRepository());
@@ -532,7 +571,8 @@ public class BlockExecutorTest {
 
         Assert.assertEquals(validator.isValid(block), !mustFailValidation);
         if (mustFailValidation) {
-            // If it fails validation, is it important if it fails or not execution? I don't think so.
+            // If it fails validation, is it important if it fails or not execution? I don't think
+            // so.
             return;
         }
 
@@ -556,9 +596,11 @@ public class BlockExecutorTest {
         Assert.assertEquals(21000, result.getGasUsed());
         Assert.assertEquals(Coin.valueOf(21000), result.getPaidFees());
 
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
+        Assert.assertFalse(
+                Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
 
-        byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
+        byte[] calculatedLogsBloom =
+                BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
         Assert.assertEquals(256, calculatedLogsBloom.length);
         Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
 
@@ -567,12 +609,14 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
+        Repository finalRepository =
+                repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(
+                BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
     }
 
     public TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
@@ -592,13 +636,13 @@ public class BlockExecutorTest {
         BlockExecutor executor = buildBlockExecutor(repository);
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = createStrangeTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress()),
-                strangeTransactionType
-        );
+        Transaction tx =
+                createStrangeTransaction(
+                        account,
+                        account2,
+                        BigInteger.TEN,
+                        repository.getNonce(account.getAddress()),
+                        strangeTransactionType);
         txs.add(tx);
 
         List<BlockHeader> uncles = new ArrayList<>();
@@ -615,20 +659,22 @@ public class BlockExecutorTest {
     private byte[] calculateTxTrieRoot(List<Transaction> transactions, long blockNumber) {
         return BlockHashesHelper.getTxTrieRoot(
                 transactions,
-                config.getActivationConfig().isActive(ConsensusRule.RSKIP126, blockNumber)
-        );
+                config.getActivationConfig().isActive(ConsensusRule.RSKIP126, blockNumber));
     }
 
-    private byte[] calculateReceiptsTrieRoot(List<TransactionReceipt> transactionReceipts, long blockNumber) {
+    private byte[] calculateReceiptsTrieRoot(
+            List<TransactionReceipt> transactionReceipts, long blockNumber) {
         return BlockHashesHelper.calculateReceiptsTrieRoot(
                 transactionReceipts,
-                config.getActivationConfig().isActive(ConsensusRule.RSKIP126, blockNumber)
-        );
+                config.getActivationConfig().isActive(ConsensusRule.RSKIP126, blockNumber));
     }
 
     private static Transaction createStrangeTransaction(
-            Account sender, Account receiver,
-            BigInteger value, BigInteger nonce, int strangeTransactionType) {
+            Account sender,
+            Account receiver,
+            BigInteger value,
+            BigInteger nonce,
+            int strangeTransactionType) {
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         byte[] to = receiver.getAddress().getBytes();
         byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21000));
@@ -647,14 +693,14 @@ public class BlockExecutorTest {
             valueData = newValueData;
         }
 
-        Transaction tx = new Transaction(
-                BigIntegers.asUnsignedByteArray(nonce),
-                BigIntegers.asUnsignedByteArray(BigInteger.ONE), //gasPrice
-                gasLimitData, // gasLimit
-                to,
-                valueData,
-                null
-        ); // no data
+        Transaction tx =
+                new Transaction(
+                        BigIntegers.asUnsignedByteArray(nonce),
+                        BigIntegers.asUnsignedByteArray(BigInteger.ONE), // gasPrice
+                        gasLimitData, // gasLimit
+                        to,
+                        valueData,
+                        null); // no data
         tx.sign(privateKeyBytes);
         return tx;
     }
@@ -666,7 +712,12 @@ public class BlockExecutorTest {
     }
 
     private static BlockExecutor buildBlockExecutor(Repository repository) {
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler =
+                new StateRootHandler(
+                        config.getActivationConfig(),
+                        new TrieConverter(),
+                        new HashMapDB(),
+                        new HashMap<>());
         return new BlockExecutor(
                 config.getActivationConfig(),
                 new RepositoryLocator(repository, stateRootHandler),
@@ -677,9 +728,12 @@ public class BlockExecutorTest {
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()))
-                )
-        );
+                        new PrecompiledContracts(
+                                config,
+                                new RepositoryBtcBlockStoreWithCache.Factory(
+                                        config.getNetworkConstants()
+                                                .getBridgeConstants()
+                                                .getBtcParams()))));
     }
 
     public static class TestObjects {
@@ -690,12 +744,16 @@ public class BlockExecutorTest {
         private Account account;
         byte[] rootPriorExecution;
 
-
         public byte[] getRootPriorExecution() {
             return rootPriorExecution;
         }
 
-        public TestObjects(Repository repository, Block block, Block parent, Transaction transaction, Account account) {
+        public TestObjects(
+                Repository repository,
+                Block block,
+                Block parent,
+                Transaction transaction,
+                Account account) {
             this.repository = repository;
             this.block = block;
             this.parent = parent;
@@ -744,28 +802,19 @@ public class BlockExecutorTest {
         private Block bestBlock;
 
         @Override
-        public void trace(String output) {
-        }
+        public void trace(String output) {}
 
         @Override
-        public void onNodeDiscovered(Node node) {
-
-        }
+        public void onNodeDiscovered(Node node) {}
 
         @Override
-        public void onHandShakePeer(Channel channel, HelloMessage helloMessage) {
-
-        }
+        public void onHandShakePeer(Channel channel, HelloMessage helloMessage) {}
 
         @Override
-        public void onEthStatusUpdated(Channel channel, StatusMessage status) {
-
-        }
+        public void onEthStatusUpdated(Channel channel, StatusMessage status) {}
 
         @Override
-        public void onRecvMessage(Channel channel, Message message) {
-
-        }
+        public void onRecvMessage(Channel channel, Message message) {}
 
         @Override
         public void onBestBlock(Block block, List<TransactionReceipt> receipts) {
@@ -786,43 +835,27 @@ public class BlockExecutorTest {
         }
 
         @Override
-        public void onPeerDisconnect(String host, long port) {
-
-        }
+        public void onPeerDisconnect(String host, long port) {}
 
         @Override
-        public void onPendingTransactionsReceived(List<Transaction> transactions) {
-
-        }
+        public void onPendingTransactionsReceived(List<Transaction> transactions) {}
 
         @Override
-        public void onTransactionPoolChanged(TransactionPool transactionPool) {
-
-        }
+        public void onTransactionPoolChanged(TransactionPool transactionPool) {}
 
         @Override
-        public void onSyncDone() {
-
-        }
+        public void onSyncDone() {}
 
         @Override
-        public void onNoConnections() {
-
-        }
+        public void onNoConnections() {}
 
         @Override
-        public void onPeerAddedToSyncPool(Channel peer) {
-
-        }
+        public void onPeerAddedToSyncPool(Channel peer) {}
 
         @Override
-        public void onLongSyncDone() {
-
-        }
+        public void onLongSyncDone() {}
 
         @Override
-        public void onLongSyncStarted() {
-
-        }
+        public void onLongSyncStarted() {}
     }
 }

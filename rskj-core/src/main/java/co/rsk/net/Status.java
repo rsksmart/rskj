@@ -19,12 +19,9 @@
 package co.rsk.net;
 
 import co.rsk.core.BlockDifficulty;
-
 import javax.annotation.Nullable;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+/** Created by ajlopez on 5/11/2016. */
 public class Status {
     private final long bestBlockNumber;
     private final byte[] bestBlockHash;
@@ -35,7 +32,11 @@ public class Status {
         this(bestBlockNumber, bestBlockHash, null, null);
     }
 
-    public Status(long bestBlockNumber, byte[] bestBlockHash, byte[] bestBlockParentHash, BlockDifficulty totalDifficulty) {
+    public Status(
+            long bestBlockNumber,
+            byte[] bestBlockHash,
+            byte[] bestBlockParentHash,
+            BlockDifficulty totalDifficulty) {
         this.bestBlockNumber = bestBlockNumber;
         this.bestBlockHash = bestBlockHash;
         this.bestBlockParentHash = bestBlockParentHash;
@@ -51,8 +52,12 @@ public class Status {
     }
 
     @Nullable
-    public byte[] getBestBlockParentHash() { return this.bestBlockParentHash; }
+    public byte[] getBestBlockParentHash() {
+        return this.bestBlockParentHash;
+    }
 
     @Nullable
-    public BlockDifficulty getTotalDifficulty() { return this.totalDifficulty; }
+    public BlockDifficulty getTotalDifficulty() {
+        return this.totalDifficulty;
+    }
 }

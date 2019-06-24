@@ -19,11 +19,11 @@
 package co.rsk.rpc.exception;
 
 /**
- * Holds error codes defined as determined by JSON-RPC standard.
- * For more information please refer to http://www.jsonrpc.org/specification (section 5.1)
+ * Holds error codes defined as determined by JSON-RPC standard. For more information please refer
+ * to http://www.jsonrpc.org/specification (section 5.1)
  *
  * @author martin.medina
- * @since  10.23.17
+ * @since 10.23.17
  */
 class JsonRpcApplicationDefinedErrorCodes {
 

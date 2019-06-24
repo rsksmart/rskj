@@ -19,11 +19,9 @@
 
 package org.ethereum.crypto;
 
-import org.bouncycastle.crypto.digests.KeccakDigest;
+import java.math.BigInteger;
 import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
 
 public class Keccak256Helper {
 
@@ -78,14 +76,16 @@ public class Keccak256Helper {
         return keccak256String(message, digest, bouncyencoder);
     }
 
-    private static String keccak256String(String message, KeccakDigest digest, boolean bouncyencoder) {
+    private static String keccak256String(
+            String message, KeccakDigest digest, boolean bouncyencoder) {
         if (message != null) {
             return keccak256String(Hex.decode(message), digest, bouncyencoder);
         }
         throw new NullPointerException("Can't hash a NULL value");
     }
 
-    private static String keccak256String(byte[] message, KeccakDigest digest, boolean bouncyencoder) {
+    private static String keccak256String(
+            byte[] message, KeccakDigest digest, boolean bouncyencoder) {
         byte[] hash = doKeccak256(message, digest, bouncyencoder);
         if (bouncyencoder) {
             return Hex.toHexString(hash);
@@ -99,11 +99,13 @@ public class Keccak256Helper {
         return doKeccak256(message, digest, bouncyencoder);
     }
 
-    private static byte[] keccak256(byte[] m1, byte[] m2, KeccakDigest digest, boolean bouncyencoder) {
+    private static byte[] keccak256(
+            byte[] m1, byte[] m2, KeccakDigest digest, boolean bouncyencoder) {
         return doKeccak256(m1, m2, digest, bouncyencoder);
     }
 
-    private static byte[] keccak256(byte[] message, int start, int length, KeccakDigest digest, boolean bouncyencoder) {
+    private static byte[] keccak256(
+            byte[] message, int start, int length, KeccakDigest digest, boolean bouncyencoder) {
         byte[] hash = new byte[digest.getDigestSize()];
 
         if (message.length != 0) {
@@ -112,7 +114,6 @@ public class Keccak256Helper {
         digest.doFinal(hash, 0);
         return hash;
     }
-
 
     private static byte[] doKeccak256(byte[] message, KeccakDigest digest, boolean bouncyencoder) {
         byte[] hash = new byte[digest.getDigestSize()];
@@ -124,7 +125,8 @@ public class Keccak256Helper {
         return hash;
     }
 
-    private static byte[] doKeccak256(byte[] m1, byte[] m2, KeccakDigest digest, boolean bouncyencoder) {
+    private static byte[] doKeccak256(
+            byte[] m1, byte[] m2, KeccakDigest digest, boolean bouncyencoder) {
         byte[] hash = new byte[digest.getDigestSize()];
         digest.update(m1, 0, m1.length);
         digest.update(m2, 0, m2.length);
@@ -134,7 +136,6 @@ public class Keccak256Helper {
     }
 
     public enum Size {
-
         S224(224),
         S256(256),
         S384(384),
@@ -150,5 +151,4 @@ public class Keccak256Helper {
             return this.bits;
         }
     }
-
 }

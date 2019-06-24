@@ -23,6 +23,9 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.validators.BlockValidator;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -34,10 +37,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-
 public class BlockChainImplInvalidTest {
     private RskSystemProperties config;
     private Blockchain blockChain;
@@ -45,21 +44,22 @@ public class BlockChainImplInvalidTest {
 
     @Before
     public void setup() {
-        objects = new RskTestContext(new String[0]) {
-            @Override
-            public Genesis buildGenesis() {
-                return GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
-            }
+        objects =
+                new RskTestContext(new String[0]) {
+                    @Override
+                    public Genesis buildGenesis() {
+                        return GenesisLoader.loadGenesis(
+                                "rsk-unittests.json", BigInteger.ZERO, true, true, true);
+                    }
 
-            @Override
-            public BlockValidator buildBlockValidator() {
-                return new BlockValidatorImpl(
-                        getBlockStore(),
-                        getBlockParentDependantValidationRule(),
-                        getBlockValidationRule()
-                );
-            }
-        };
+                    @Override
+                    public BlockValidator buildBlockValidator() {
+                        return new BlockValidatorImpl(
+                                getBlockStore(),
+                                getBlockParentDependantValidationRule(),
+                                getBlockValidationRule());
+                    }
+                };
         config = objects.getRskSystemProperties();
         blockChain = objects.getBlockchain();
     }
@@ -90,25 +90,39 @@ public class BlockChainImplInvalidTest {
         BlockStore blockStore = objects.getBlockStore();
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
-        validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
-                .addBlockTxsValidationRule(repository).addPrevMinGasPriceRule().addTxsMinGasPriceRule();
+        validatorBuilder
+                .addBlockRootValidationRule()
+                .addBlockUnclesValidationRule(blockStore)
+                .addBlockTxsValidationRule(repository)
+                .addPrevMinGasPriceRule()
+                .addTxsMinGasPriceRule();
 
         validatorBuilder.build();
 
         Block genesis = blockChain.getBestBlock();
 
-        Block block = new BlockBuilder().minGasPrice(BigInteger.ONE)
-                .parent(genesis).build();
+        Block block = new BlockBuilder().minGasPrice(BigInteger.ONE).parent(genesis).build();
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(1L), BigInteger.TEN, Constants.REGTEST_CHAIN_ID);
-        tx.sign(new byte[]{22, 11, 00});
+        Transaction tx =
+                new Transaction(
+                        "0000000000000000000000000000000000000006",
+                        BigInteger.ZERO,
+                        BigInteger.ZERO,
+                        BigInteger.valueOf(1L),
+                        BigInteger.TEN,
+                        Constants.REGTEST_CHAIN_ID);
+        tx.sign(new byte[] {22, 11, 00});
         txs.add(tx);
 
-        block = new BlockBuilder().transactions(txs).minGasPrice(BigInteger.valueOf(11L))
-                .parent(genesis).build();
+        block =
+                new BlockBuilder()
+                        .transactions(txs)
+                        .minGasPrice(BigInteger.valueOf(11L))
+                        .parent(genesis)
+                        .build();
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
     }

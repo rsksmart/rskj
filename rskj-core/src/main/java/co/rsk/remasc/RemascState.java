@@ -18,14 +18,13 @@
 
 package co.rsk.remasc;
 
-
 import co.rsk.core.Coin;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 /**
- * DTO to send the contract state.
- * Not production code, just used for debugging.
+ * DTO to send the contract state. Not production code, just used for debugging.
+ *
  * @author Oscar Guindzberg
  */
 public class RemascState {
@@ -63,12 +62,14 @@ public class RemascState {
             rlpBrokenSelectionRule[0] = 0;
         }
 
-        // we add an empty list because Remasc state expects to have an empty siblings list after 0.5.0 activation
-        return RLP.encodeList(rlpRewardBalance, rlpBurnedBalance, RLP.encodedEmptyList(), rlpBrokenSelectionRule);
+        // we add an empty list because Remasc state expects to have an empty siblings list after
+        // 0.5.0 activation
+        return RLP.encodeList(
+                rlpRewardBalance, rlpBurnedBalance, RLP.encodedEmptyList(), rlpBrokenSelectionRule);
     }
 
     public static RemascState create(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
         Coin rlpRewardBalance = RLP.parseCoin(rlpList.get(0).getRLPData());
         Coin rlpBurnedBalance = RLP.parseCoin(rlpList.get(1).getRLPData());
@@ -77,7 +78,9 @@ public class RemascState {
 
         Boolean rlpBrokenSelectionRule;
 
-        if (rlpBrokenSelectionRuleBytes != null && rlpBrokenSelectionRuleBytes.length != 0 && rlpBrokenSelectionRuleBytes[0] != 0) {
+        if (rlpBrokenSelectionRuleBytes != null
+                && rlpBrokenSelectionRuleBytes.length != 0
+                && rlpBrokenSelectionRuleBytes[0] != 0) {
             rlpBrokenSelectionRule = Boolean.TRUE;
         } else {
             rlpBrokenSelectionRule = Boolean.FALSE;
@@ -88,10 +91,13 @@ public class RemascState {
 
     @Override
     public String toString() {
-        return "RemascState{" +
-                "rewardBalance=" + rewardBalance +
-                ", burnedBalance=" + burnedBalance +
-                ", brokenSelectionRule=" + brokenSelectionRule +
-                '}';
+        return "RemascState{"
+                + "rewardBalance="
+                + rewardBalance
+                + ", burnedBalance="
+                + burnedBalance
+                + ", brokenSelectionRule="
+                + brokenSelectionRule
+                + '}';
     }
 }

@@ -27,7 +27,7 @@ import org.ethereum.db.BlockStore;
 /**
  * BlockValidator has methods to validate block content before its execution
  *
- * Created by ajlopez on 29/07/2016.
+ * <p>Created by ajlopez on 29/07/2016.
  */
 public class BlockValidatorImpl implements BlockValidator {
 
@@ -37,21 +37,21 @@ public class BlockValidatorImpl implements BlockValidator {
 
     private BlockValidationRule blockValidator;
 
-    public BlockValidatorImpl(BlockStore blockStore, BlockParentDependantValidationRule blockParentValidator, BlockValidationRule blockValidator) {
+    public BlockValidatorImpl(
+            BlockStore blockStore,
+            BlockParentDependantValidationRule blockParentValidator,
+            BlockValidationRule blockValidator) {
         this.blockStore = blockStore;
         this.blockParentValidator = blockParentValidator;
         this.blockValidator = blockValidator;
     }
 
     /**
-     * Validate a block.
-     * The validation includes
-     * - Validate the header data relative to parent block
-     * - Validate the transaction root hash to transaction list
-     * - Validate uncles
-     * - Validate transactions
+     * Validate a block. The validation includes - Validate the header data relative to parent block
+     * - Validate the transaction root hash to transaction list - Validate uncles - Validate
+     * transactions
      *
-     * @param block        Block to validate
+     * @param block Block to validate
      * @return true if the block is valid, false if the block is invalid
      */
     @Override
@@ -62,11 +62,11 @@ public class BlockValidatorImpl implements BlockValidator {
 
         Block parent = getParent(block);
 
-        if(!this.blockParentValidator.isValid(block, parent)) {
+        if (!this.blockParentValidator.isValid(block, parent)) {
             return false;
         }
 
-        if(!this.blockValidator.isValid(block)) {
+        if (!this.blockValidator.isValid(block)) {
             return false;
         }
 
@@ -81,4 +81,3 @@ public class BlockValidatorImpl implements BlockValidator {
         return blockStore.getBlockByHash(block.getParentHash().getBytes());
     }
 }
-

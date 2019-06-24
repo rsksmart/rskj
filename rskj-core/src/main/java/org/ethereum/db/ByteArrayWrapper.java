@@ -19,13 +19,11 @@
 
 package org.ethereum.db;
 
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.FastByteComparisons;
-
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.Serializable;
 import java.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.FastByteComparisons;
 
 /**
  * @author Roman Mandeleil
@@ -59,9 +57,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
 
     @Override
     public int compareTo(ByteArrayWrapper o) {
-        return FastByteComparisons.compareTo(
-                data, 0, data.length,
-                o.data, 0, o.data.length);
+        return FastByteComparisons.compareTo(data, 0, data.length, o.data, 0, o.data.length);
     }
 
     public byte[] getData() {

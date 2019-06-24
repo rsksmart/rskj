@@ -19,7 +19,12 @@
 
 package org.ethereum.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+
 import co.rsk.config.TestSystemProperties;
+import java.util.HashSet;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.util.ByteUtil;
@@ -29,12 +34,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.HashSet;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-
 public class ProgramMemoryTest {
 
     ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -43,7 +42,16 @@ public class ProgramMemoryTest {
     @Before
     public void createProgram() {
         TestSystemProperties config = new TestSystemProperties();
-        program = new Program(config.getVmConfig(), new PrecompiledContracts(config, null), new BlockFactory(config.getActivationConfig()), mock(ActivationConfig.ForBlock.class), ByteUtil.EMPTY_BYTE_ARRAY, pi, null, new HashSet<>());
+        program =
+                new Program(
+                        config.getVmConfig(),
+                        new PrecompiledContracts(config, null),
+                        new BlockFactory(config.getActivationConfig()),
+                        mock(ActivationConfig.ForBlock.class),
+                        ByteUtil.EMPTY_BYTE_ARRAY,
+                        pi,
+                        null,
+                        new HashSet<>());
     }
 
     @Test
@@ -180,9 +188,7 @@ public class ProgramMemoryTest {
         assertEquals(64, program.getMemSize());
     }
 
-    /************************************************/
-
-
+    /** ********************************************* */
     @Test
     public void testAllocateMemory10() {
 
@@ -350,7 +356,6 @@ public class ProgramMemoryTest {
     @Ignore
     @Test
     public void testInitialInsert() {
-
 
         // todo: fix the array out of bound here
         int offset = 32;

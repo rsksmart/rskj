@@ -18,20 +18,18 @@
 
 package co.rsk.TestHelpers;
 
+import static org.mockito.Mockito.any;
+
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.TestUtils;
-import org.ethereum.core.Transaction;
-import org.mockito.Mockito;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Random;
-
-import static org.mockito.Mockito.any;
-
+import org.ethereum.TestUtils;
+import org.ethereum.core.Transaction;
+import org.mockito.Mockito;
 
 public class Tx {
 
@@ -46,7 +44,8 @@ public class Tx {
         Random r = new Random(sender);
         Transaction transaction = Mockito.mock(Transaction.class);
         Mockito.when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(value)));
-        Mockito.when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(gaslimit).toByteArray());
+        Mockito.when(transaction.getGasLimit())
+                .thenReturn(BigInteger.valueOf(gaslimit).toByteArray());
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(gaslimit));
         Mockito.when(transaction.getGasPrice()).thenReturn(Coin.valueOf(gasprice));
         Mockito.when(transaction.getNonce()).thenReturn(BigInteger.valueOf(nonce).toByteArray());
@@ -62,18 +61,21 @@ public class Tx {
 
         Mockito.when(transaction.getSender()).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
-        Mockito.when(transaction.acceptTransactionSignature(config.getNetworkConstants().getChainId())).thenReturn(Boolean.TRUE);
+        Mockito.when(
+                        transaction.acceptTransactionSignature(
+                                config.getNetworkConstants().getChainId()))
+                .thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
         ArrayList<Byte> bytes = new ArrayList();
         long amount = 21000;
         if (data != 0) {
             data /= 2;
             for (int i = 0; i < data / 4; i++) {
-                bytes.add((byte)0);
+                bytes.add((byte) 0);
                 amount += 4;
             }
             for (int i = 0; i < data / 68; i++) {
-                bytes.add((byte)1);
+                bytes.add((byte) 1);
                 amount += 68;
             }
         }

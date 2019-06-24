@@ -39,7 +39,8 @@ public class BlockHeaderCompositeRule implements BlockHeaderValidationRule {
         logger.debug("Validating header {} {}", shortHash, number);
         for (BlockHeaderValidationRule rule : this.rules) {
             if (!rule.isValid(header)) {
-                logger.warn("Error Validating {} for header {} {}", rule.getClass(), shortHash, number);
+                logger.warn(
+                        "Error Validating {} for header {} {}", rule.getClass(), shortHash, number);
                 return false;
             }
         }

@@ -18,13 +18,10 @@
 
 package co.rsk.net.messages;
 
+import java.math.BigInteger;
 import org.ethereum.util.RLP;
 
-import java.math.BigInteger;
-
-/**
- * Wrapper around an RSK GetSkeleton message.
- */
+/** Wrapper around an RSK GetSkeleton message. */
 public class SkeletonRequestMessage extends MessageWithId {
     private long id;
     private long startNumber;
@@ -50,7 +47,9 @@ public class SkeletonRequestMessage extends MessageWithId {
         return RLP.encodeList(rlpStartNumber);
     }
 
-    public long getId() { return this.id; }
+    public long getId() {
+        return this.id;
+    }
 
     public long getStartNumber() {
         return this.startNumber;

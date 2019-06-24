@@ -18,10 +18,10 @@
 
 package co.rsk.core.types.ints;
 
-import org.junit.Test;
-
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+
+import org.junit.Test;
 
 public class Uint8Test {
     @Test
@@ -45,7 +45,7 @@ public class Uint8Test {
     @Test
     public void asByteReturnsByteValue() {
         Uint8 fortyTwo = new Uint8(42);
-        assertThat(fortyTwo.asByte(), is((byte)42));
+        assertThat(fortyTwo.asByte(), is((byte) 42));
     }
 
     @Test(expected = IllegalArgumentException.class)

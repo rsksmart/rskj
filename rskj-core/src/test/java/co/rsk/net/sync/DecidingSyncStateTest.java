@@ -1,21 +1,20 @@
 package co.rsk.net.sync;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.net.NodeID;
 import co.rsk.net.utils.StatusUtils;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class DecidingSyncStateTest {
 
@@ -25,8 +24,11 @@ public class DecidingSyncStateTest {
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation();
         ChannelManager channelManager = RskMockFactory.getChannelManager();
-        PeersInformation knownPeers = new PeersInformation(syncInformation, channelManager, syncConfiguration);
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
+        PeersInformation knownPeers =
+                new PeersInformation(syncInformation, channelManager, syncConfiguration);
+        SyncState syncState =
+                new DecidingSyncState(
+                        syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
         Collection<Channel> peers = new ArrayList<>();
 
         for (int i = 0; i < 5; i++) {
@@ -49,8 +51,11 @@ public class DecidingSyncStateTest {
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation();
         ChannelManager channelManager = RskMockFactory.getChannelManager();
-        PeersInformation knownPeers = new PeersInformation(syncInformation, channelManager, syncConfiguration);
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
+        PeersInformation knownPeers =
+                new PeersInformation(syncInformation, channelManager, syncConfiguration);
+        SyncState syncState =
+                new DecidingSyncState(
+                        syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
         Collection<Channel> peers = new ArrayList<>();
 
         NodeID peerToRepeat = new NodeID(HashUtil.randomPeerId());
@@ -82,8 +87,12 @@ public class DecidingSyncStateTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation();
-        PeersInformation knownPeers = new PeersInformation(syncInformation, RskMockFactory.getChannelManager(), syncConfiguration);
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
+        PeersInformation knownPeers =
+                new PeersInformation(
+                        syncInformation, RskMockFactory.getChannelManager(), syncConfiguration);
+        SyncState syncState =
+                new DecidingSyncState(
+                        syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
 
         syncState.tick(Duration.ofMinutes(2));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -95,8 +104,11 @@ public class DecidingSyncStateTest {
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation();
         ChannelManager channelManager = RskMockFactory.getChannelManager();
-        PeersInformation knownPeers = new PeersInformation(syncInformation, channelManager, syncConfiguration);
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
+        PeersInformation knownPeers =
+                new PeersInformation(syncInformation, channelManager, syncConfiguration);
+        SyncState syncState =
+                new DecidingSyncState(
+                        syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         Channel channel = mock(Channel.class);
@@ -116,8 +128,12 @@ public class DecidingSyncStateTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation();
-        PeersInformation knownPeers = new PeersInformation(syncInformation, RskMockFactory.getChannelManager(), syncConfiguration);
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
+        PeersInformation knownPeers =
+                new PeersInformation(
+                        syncInformation, RskMockFactory.getChannelManager(), syncConfiguration);
+        SyncState syncState =
+                new DecidingSyncState(
+                        syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         knownPeers.registerPeer(new NodeID(HashUtil.randomPeerId()));
@@ -131,8 +147,12 @@ public class DecidingSyncStateTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation().withWorsePeers();
-        PeersInformation knownPeers = new PeersInformation(syncInformation, RskMockFactory.getChannelManager(), syncConfiguration);
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
+        PeersInformation knownPeers =
+                new PeersInformation(
+                        syncInformation, RskMockFactory.getChannelManager(), syncConfiguration);
+        SyncState syncState =
+                new DecidingSyncState(
+                        syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         knownPeers.registerPeer(new NodeID(HashUtil.randomPeerId()));
@@ -146,8 +166,12 @@ public class DecidingSyncStateTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation().withBadReputation();
-        PeersInformation knownPeers = new PeersInformation(syncInformation, RskMockFactory.getChannelManager(), syncConfiguration);
-        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
+        PeersInformation knownPeers =
+                new PeersInformation(
+                        syncInformation, RskMockFactory.getChannelManager(), syncConfiguration);
+        SyncState syncState =
+                new DecidingSyncState(
+                        syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
         knownPeers.registerPeer(new NodeID(HashUtil.randomPeerId()));

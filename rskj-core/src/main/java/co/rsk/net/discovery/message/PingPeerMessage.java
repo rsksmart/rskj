@@ -18,7 +18,14 @@
 
 package co.rsk.net.discovery.message;
 
+import static org.ethereum.util.ByteUtil.intToBytes;
+import static org.ethereum.util.ByteUtil.longToBytes;
+import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
+
 import co.rsk.net.discovery.PeerDiscoveryException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.OptionalInt;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -26,17 +33,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.OptionalInt;
-
-import static org.ethereum.util.ByteUtil.intToBytes;
-import static org.ethereum.util.ByteUtil.longToBytes;
-import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
-
-/**
- * Created by mario on 16/02/17.
- */
+/** Created by mario on 16/02/17. */
 public class PingPeerMessage extends PeerDiscoveryMessage {
     public static final String MORE_DATA = "PingPeerMessage needs more data";
     public static final String MORE_FROM_DATA = "PingPeerMessage needs more data in the from";
@@ -51,7 +48,8 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
 
     private PingPeerMessage() {}
 
-    public static PingPeerMessage create(String host, int port, String check, ECKey privKey, Integer networkId) {
+    public static PingPeerMessage create(
+            String host, int port, String check, ECKey privKey, Integer networkId) {
         /* RLP Encode data */
         byte[] rlpIp = RLP.encodeElement(host.getBytes(StandardCharsets.UTF_8));
 
@@ -61,14 +59,14 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
         byte[] rlpIpTo = RLP.encodeElement(host.getBytes(StandardCharsets.UTF_8));
         byte[] tmpPortTo = longToBytes(port);
         byte[] rlpPortTo = RLP.encodeElement(stripLeadingZeroes(tmpPortTo));
-        byte[] type = new byte[]{(byte) DiscoveryMessageType.PING.getTypeValue()};
+        byte[] type = new byte[] {(byte) DiscoveryMessageType.PING.getTypeValue()};
         byte[] rlpFromList = RLP.encodeList(rlpIp, rlpPort, rlpPort);
         byte[] rlpToList = RLP.encodeList(rlpIpTo, rlpPortTo, rlpPortTo);
         byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
         byte[] data;
         byte[] tmpNetworkId = intToBytes(networkId);
         byte[] rlpNetworkID = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
-            data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkID);
+        data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkID);
 
         PingPeerMessage message = new PingPeerMessage();
         message.encode(type, data, privKey);
@@ -102,8 +100,8 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
         this.port = ByteUtil.byteArrayToInt(fromList.get(1).getRLPData());
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
 
-        //Message from nodes that do not have this
-        this.setNetworkIdWithRLP(dataList.size()>3?dataList.get(3):null);
+        // Message from nodes that do not have this
+        this.setNetworkIdWithRLP(dataList.size() > 3 ? dataList.get(3) : null);
     }
 
     public String getMessageId() {
@@ -128,7 +126,7 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
         return new ToStringBuilder(this)
                 .append(this.host)
                 .append(this.port)
-                .append(this.messageId).toString();
+                .append(this.messageId)
+                .toString();
     }
-
 }

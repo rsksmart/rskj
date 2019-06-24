@@ -18,15 +18,13 @@
 
 package co.rsk.net.messages;
 
+import static org.mockito.Mockito.mock;
+
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.mockito.Mockito.mock;
-
-/**
- * Created by ajlopez on 5/10/2016.
- */
+/** Created by ajlopez on 5/10/2016. */
 public class BlockMessageTest {
     @Test
     public void getMessageType() {

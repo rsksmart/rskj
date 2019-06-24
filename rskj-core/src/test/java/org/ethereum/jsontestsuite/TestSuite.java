@@ -19,12 +19,11 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 
 /**
  * @author Roman Mandeleil
@@ -44,7 +43,7 @@ public class TestSuite {
         }
     }
 
-    public List<TestCase> getAllTests(){
+    public List<TestCase> getAllTests() {
         return testList;
     }
 

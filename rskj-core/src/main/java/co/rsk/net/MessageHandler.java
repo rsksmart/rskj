@@ -18,10 +18,7 @@
 
 package co.rsk.net;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
-
+/** Created by ajlopez on 5/11/2016. */
 import co.rsk.net.messages.Message;
 
 public interface MessageHandler {

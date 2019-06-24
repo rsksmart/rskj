@@ -28,8 +28,7 @@ public class LogTck {
     String data;
     List<String> topics;
 
-    public LogTck() {
-    }
+    public LogTck() {}
 
     public String getAddress() {
         return address;

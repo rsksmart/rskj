@@ -20,24 +20,16 @@ package org.ethereum.rpc.Simples;
 
 import org.ethereum.net.server.PeerServer;
 
-import java.net.InetAddress;
-
-/**
- * Created by Ruben on 15/06/2016.
- */
+/** Created by Ruben on 15/06/2016. */
 public class SimplePeerServer implements PeerServer {
 
     public boolean isListening = false;
 
     @Override
-    public void start() {
-
-    }
+    public void start() {}
 
     @Override
-    public void stop() {
-
-    }
+    public void stop() {}
 
     public boolean isListening() {
         return isListening;

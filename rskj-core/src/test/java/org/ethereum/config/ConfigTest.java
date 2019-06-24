@@ -21,15 +21,12 @@ package org.ethereum.config;
 
 import co.rsk.config.TestSystemProperties;
 import com.typesafe.config.*;
+import java.io.File;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
-import java.util.List;
-
-/**
- * Created by Anton Nashatyrev on 13.07.2015.
- */
+/** Created by Anton Nashatyrev on 13.07.2015. */
 public class ConfigTest {
 
     @Test
@@ -38,7 +35,8 @@ public class ConfigTest {
         System.out.println(config.root().render(ConfigRenderOptions.defaults().setComments(false)));
 
         System.out.println("peer.port: " + config.getInt("peer.port"));
-        System.out.println("peer.discovery.ip.list: " + config.getAnyRefList("peer.discovery.ip.list"));
+        System.out.println(
+                "peer.discovery.ip.list: " + config.getAnyRefList("peer.discovery.ip.list"));
         System.out.println("peer.discovery.ip.list: " + config.getAnyRefList("peer.active"));
 
         List<? extends ConfigObject> list = config.getObjectList("peer.active");
@@ -60,17 +58,19 @@ public class ConfigTest {
         Config config = ConfigFactory.load("rskj.conf");
         // Ignore this assertion since the SystemProperties are loaded by the static initializer
         // so if the ConfigFactory was used prior to this test the setProperty() has no effect
-//        Assert.assertEquals("bla-bla", config.getString("blocks.loader"));
+        //        Assert.assertEquals("bla-bla", config.getString("blocks.loader"));
         String string = config.getString("keyvalue.datasource");
         Assert.assertNotNull(string);
 
-        Config overrides = ConfigFactory.parseString("blocks.loader=another, peer.active=[{url=sdfsfd}]");
+        Config overrides =
+                ConfigFactory.parseString("blocks.loader=another, peer.active=[{url=sdfsfd}]");
         Config merged = overrides.withFallback(config);
         Assert.assertEquals("another", merged.getString("blocks.loader"));
         Assert.assertTrue(merged.getObjectList("peer.active").size() == 1);
         Assert.assertNotNull(merged.getString("keyvalue.datasource"));
 
-        Config emptyConf = ConfigFactory.parseFile(new File("nosuchfile.conf"), ConfigParseOptions.defaults());
+        Config emptyConf =
+                ConfigFactory.parseFile(new File("nosuchfile.conf"), ConfigParseOptions.defaults());
         Assert.assertFalse(emptyConf.hasPath("blocks.loader"));
     }
 

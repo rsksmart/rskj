@@ -30,6 +30,9 @@ import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import java.time.Clock;
+import java.util.List;
+import java.util.concurrent.Callable;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
@@ -44,13 +47,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.Clock;
-import java.util.List;
-import java.util.concurrent.Callable;
-
-/**
- * Created by ajlopez on 15/04/2017.
- */
+/** Created by ajlopez on 15/04/2017. */
 public class MinerManagerTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
@@ -106,7 +103,7 @@ public class MinerManagerTest {
 
         Assert.assertNotNull(refreshWork);
         try {
-            minerServer.buildBlockToMine( false);
+            minerServer.buildBlockToMine(false);
             refreshWork.run();
 
             Assert.assertTrue(minerClient.mineBlock());
@@ -115,7 +112,7 @@ public class MinerManagerTest {
             // This test does not have that listener so add the new best block manually.
             miningMainchainView.addBest(blockchain.getBestBlock().getHeader());
 
-            minerServer.buildBlockToMine( false);
+            minerServer.buildBlockToMine(false);
             refreshWork.run();
             Assert.assertTrue(minerClient.mineBlock());
 
@@ -132,7 +129,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
-        minerServer.buildBlockToMine( false);
+        minerServer.buildBlockToMine(false);
 
         MinerWork minerWork = minerServer.getWork();
 
@@ -161,16 +158,17 @@ public class MinerManagerTest {
     public void mineBlockWhileSyncingBlocks() {
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        RskImplForTest rsk = new RskImplForTest() {
-            @Override
-            public boolean hasBetterBlockToSync() {
-                return true;
-            }
-        };
+        RskImplForTest rsk =
+                new RskImplForTest() {
+                    @Override
+                    public boolean hasBetterBlockToSync() {
+                        return true;
+                    }
+                };
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
 
-        minerServer.buildBlockToMine( false);
+        minerServer.buildBlockToMine(false);
 
         Assert.assertFalse(minerClient.mineBlock());
 
@@ -184,7 +182,7 @@ public class MinerManagerTest {
         MinerServerImpl minerServer = getMinerServer();
         MinerClientImpl minerClient = getMinerClient(minerServer);
 
-        minerServer.buildBlockToMine( false);
+        minerServer.buildBlockToMine(false);
         minerClient.doWork();
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
@@ -215,12 +213,15 @@ public class MinerManagerTest {
         thread.start();
         try {
 
-            Awaitility.await().timeout(Duration.FIVE_SECONDS).until(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return minerClient.isMining();
-                }
-            });
+            Awaitility.await()
+                    .timeout(Duration.FIVE_SECONDS)
+                    .until(
+                            new Callable<Boolean>() {
+                                @Override
+                                public Boolean call() throws Exception {
+                                    return minerClient.isMining();
+                                }
+                            });
 
             Assert.assertTrue(minerClient.isMining());
         } finally {
@@ -243,7 +244,8 @@ public class MinerManagerTest {
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
         Assert.assertFalse(blockchain.getBestBlock().getTransactionsList().isEmpty());
 
-        SnapshotManager snapshotManager = new SnapshotManager(blockchain, transactionPool, minerServer);
+        SnapshotManager snapshotManager =
+                new SnapshotManager(blockchain, transactionPool, minerServer);
         snapshotManager.resetSnapshots();
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
@@ -264,22 +266,30 @@ public class MinerManagerTest {
     }
 
     private static MinerClientImpl getMinerClient(MinerServerImpl minerServer) {
-        return getMinerClient(new RskImplForTest() {
-            @Override
-            public boolean hasBetterBlockToSync() {
-                return false;
-            }
-        }, minerServer);
+        return getMinerClient(
+                new RskImplForTest() {
+                    @Override
+                    public boolean hasBetterBlockToSync() {
+                        return false;
+                    }
+                },
+                minerServer);
     }
 
     private static MinerClientImpl getMinerClient(RskImplForTest rsk, MinerServerImpl minerServer) {
-        return new MinerClientImpl(rsk, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
+        return new MinerClientImpl(
+                rsk,
+                minerServer,
+                config.minerClientDelayBetweenBlocks(),
+                config.minerClientDelayBetweenRefreshes());
     }
 
     private MinerServerImpl getMinerServer() {
         SimpleEthereum ethereum = new SimpleEthereum();
         ethereum.blockchain = blockchain;
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+        DifficultyCalculator difficultyCalculator =
+                new DifficultyCalculator(
+                        config.getActivationConfig(), config.getNetworkConstants());
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         return new MinerServerImpl(
@@ -301,13 +311,12 @@ public class MinerManagerTest {
                         clock,
                         blockFactory,
                         blockExecutor,
-                        new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils()
-                ),
+                        new MinimumGasPriceCalculator(
+                                Coin.valueOf(miningConfig.getMinGasPriceTarget())),
+                        new MinerUtils()),
                 clock,
                 blockFactory,
-                miningConfig
-        );
+                miningConfig);
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {

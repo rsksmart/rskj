@@ -27,9 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-/**
- * Created by mario on 26/12/16.
- */
+/** Created by mario on 26/12/16. */
 public class PrevMinGasPriceValidatorTest {
 
     private static final Coin BLOCK_MGP = Coin.valueOf(1050L);
@@ -93,7 +91,6 @@ public class PrevMinGasPriceValidatorTest {
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
         Assert.assertFalse(pmgpv.isValid(header, parent));
-
     }
 
     @Test

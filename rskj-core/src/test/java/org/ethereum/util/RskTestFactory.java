@@ -11,7 +11,8 @@ import org.ethereum.core.Genesis;
 import org.ethereum.core.genesis.GenesisLoader;
 
 /**
- * @deprecated use {@link RskTestContext} instead which builds the same graph of dependencies than the productive code
+ * @deprecated use {@link RskTestContext} instead which builds the same graph of dependencies than
+ *     the productive code
  */
 @Deprecated
 public class RskTestFactory extends RskTestContext {
@@ -47,8 +48,15 @@ public class RskTestFactory extends RskTestContext {
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {
-        boolean useRskip92Encoding = config.getActivationConfig().isActive(ConsensusRule.RSKIP92, 0L);
-        boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, 0L);
-        return GenesisLoader.loadGenesis(config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, useRskip92Encoding, isRskip126Enabled);
+        boolean useRskip92Encoding =
+                config.getActivationConfig().isActive(ConsensusRule.RSKIP92, 0L);
+        boolean isRskip126Enabled =
+                config.getActivationConfig().isActive(ConsensusRule.RSKIP126, 0L);
+        return GenesisLoader.loadGenesis(
+                config.genesisInfo(),
+                config.getNetworkConstants().getInitialNonce(),
+                false,
+                useRskip92Encoding,
+                isRskip126Enabled);
     }
 }

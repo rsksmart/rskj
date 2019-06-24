@@ -20,9 +20,7 @@ package org.ethereum.rpc.Simples;
 
 import co.rsk.core.Rsk;
 
-/**
- * Created by ajlopez on 12/07/2017.
- */
+/** Created by ajlopez on 12/07/2017. */
 public class SimpleRsk extends SimpleEthereum implements Rsk {
     @Override
     public boolean hasBetterBlockToSync() {

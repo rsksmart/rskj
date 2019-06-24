@@ -2,11 +2,10 @@ package co.rsk.pcc.blockheader;
 
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeMethod;
-import org.ethereum.core.Block;
-import org.ethereum.util.ByteUtil;
-
 import java.math.BigInteger;
 import java.util.Optional;
+import org.ethereum.core.Block;
+import org.ethereum.util.ByteUtil;
 
 /**
  * Base class of BlockHeader contract methods to provide common functionality to all methods.
@@ -16,8 +15,9 @@ import java.util.Optional;
 public abstract class BlockHeaderContractMethod extends NativeMethod {
     private final BlockAccessor blockAccessor;
 
-    public BlockHeaderContractMethod(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
-       super(executionEnvironment);
+    public BlockHeaderContractMethod(
+            ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
+        super(executionEnvironment);
         this.blockAccessor = blockAccessor;
     }
 

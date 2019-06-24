@@ -19,10 +19,9 @@
 
 package org.ethereum.validator;
 
-import org.slf4j.Logger;
-
 import java.util.LinkedList;
 import java.util.List;
+import org.slf4j.Logger;
 
 /**
  * Holds errors list to share between all rules

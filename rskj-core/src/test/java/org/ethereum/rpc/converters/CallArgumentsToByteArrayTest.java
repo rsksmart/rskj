@@ -23,9 +23,7 @@ import org.ethereum.rpc.Web3;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by martin.medina on 3/7/17.
- */
+/** Created by martin.medina on 3/7/17. */
 public class CallArgumentsToByteArrayTest {
 
     @Test

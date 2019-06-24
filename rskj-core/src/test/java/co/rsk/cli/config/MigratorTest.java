@@ -1,29 +1,30 @@
 package co.rsk.cli.config;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.junit.Test;
-
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Properties;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class MigratorTest {
 
     @Test
     public void migrateConfiguration() {
-        Reader initialConfiguration = new StringReader("inline.config.name=\"value\"\n" +
-                "nested {\n" +
-                "  nested = {\n" +
-                "    #test comment\n" +
-                "    config = 13\n" +
-                "  }\n" +
-                "}\n" +
-                "flat.config = \"0.0.0.0\"\n" +
-                "another.config=\"don't change\"");
+        Reader initialConfiguration =
+                new StringReader(
+                        "inline.config.name=\"value\"\n"
+                                + "nested {\n"
+                                + "  nested = {\n"
+                                + "    #test comment\n"
+                                + "    config = 13\n"
+                                + "  }\n"
+                                + "}\n"
+                                + "flat.config = \"0.0.0.0\"\n"
+                                + "another.config=\"don't change\"");
         Properties migrationProperties = new Properties();
         migrationProperties.put("inline.config.name", "inline.config.new.name");
         migrationProperties.put("flat.config", "flat_config");
@@ -32,7 +33,8 @@ public class MigratorTest {
         migrationProperties.put("[new]new.key", "new value");
         migrationProperties.put("[new] other.new.key", "12");
 
-        String migratedConfiguration = Migrator.migrateConfiguration(initialConfiguration, migrationProperties);
+        String migratedConfiguration =
+                Migrator.migrateConfiguration(initialConfiguration, migrationProperties);
         Config config = ConfigFactory.parseString(migratedConfiguration);
         assertThat(config.hasPath("inline.config.name"), is(false));
         assertThat(config.getString("inline.config.new.name"), is("value"));

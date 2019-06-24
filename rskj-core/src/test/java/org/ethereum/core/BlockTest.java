@@ -19,9 +19,14 @@
 
 package org.ethereum.core;
 
+import static org.junit.Assert.assertEquals;
+
 import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
+import java.math.BigInteger;
+import java.util.Set;
+import org.bouncycastle.util.encoders.Hex;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -31,13 +36,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
-
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class BlockTest {
@@ -45,22 +43,23 @@ public class BlockTest {
     private static final Logger logger = LoggerFactory.getLogger("test");
 
     static String TEST_GENESIS =
-            "{" +
-                    "'0000000000000000000000000000000000000001': { 'wei': '1' }" +
-                    "'0000000000000000000000000000000000000002': { 'wei': '1' }" +
-                    "'0000000000000000000000000000000000000003': { 'wei': '1' }" +
-                    "'0000000000000000000000000000000000000004': { 'wei': '1' }" +
-                    "'dbdbdb2cbd23b783741e8d7fcf51e459b497e4a6': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
-                    "'e6716f9544a56c530d868e4bfbacb172315bdead': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
-                    "'b9c015918bdaba24b4ff057a92a3873d6eb201be': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
-                    "'1a26338f0d905e295fccb71fa9ea849ffa12aaf4': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
-                    "'2ef47100e0787b915105fd5e3f4ff6752079d5cb': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
-                    "'cd2a3d9f938e13cd947ec05abc7fe734df8dd826': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
-                    "'6c386a4b26f73c802f34673f7248bb118f97424a': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
-                    "'e4157b34ea9615cfbde6b4fda419828124b70c78': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
-                    "}";
+            "{"
+                    + "'0000000000000000000000000000000000000001': { 'wei': '1' }"
+                    + "'0000000000000000000000000000000000000002': { 'wei': '1' }"
+                    + "'0000000000000000000000000000000000000003': { 'wei': '1' }"
+                    + "'0000000000000000000000000000000000000004': { 'wei': '1' }"
+                    + "'dbdbdb2cbd23b783741e8d7fcf51e459b497e4a6': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }"
+                    + "'e6716f9544a56c530d868e4bfbacb172315bdead': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }"
+                    + "'b9c015918bdaba24b4ff057a92a3873d6eb201be': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }"
+                    + "'1a26338f0d905e295fccb71fa9ea849ffa12aaf4': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }"
+                    + "'2ef47100e0787b915105fd5e3f4ff6752079d5cb': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }"
+                    + "'cd2a3d9f938e13cd947ec05abc7fe734df8dd826': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }"
+                    + "'6c386a4b26f73c802f34673f7248bb118f97424a': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }"
+                    + "'e4157b34ea9615cfbde6b4fda419828124b70c78': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }"
+                    + "}";
 
-    private Keccak256 GENESIS_STATE_ROOT = new Keccak256("53e6153aca120147697cfeb5e6769996f747af9a216b98072996d56cf73297a4");
+    private Keccak256 GENESIS_STATE_ROOT =
+            new Keccak256("53e6153aca120147697cfeb5e6769996f747af9a216b98072996d56cf73297a4");
 
     static {
         TEST_GENESIS = TEST_GENESIS.replace("'", "\"");
@@ -83,7 +82,10 @@ public class BlockTest {
             String denom = (String) val.keySet().toArray()[0];
             String value = (String) val.values().toArray()[0];
 
-            BigInteger wei = Denomination.valueOf(denom.toUpperCase()).value().multiply(new BigInteger(value));
+            BigInteger wei =
+                    Denomination.valueOf(denom.toUpperCase())
+                            .value()
+                            .multiply(new BigInteger(value));
 
             AccountState accountState = new AccountState(BigInteger.ZERO, new Coin(wei));
             byte[] encodedAccountState = accountState.getEncoded();
@@ -96,5 +98,4 @@ public class BlockTest {
         // TODO(mc): the new encoding is different so the genesis hash is different too
         assertEquals(GENESIS_STATE_ROOT, state.getHashOrchid(true));
     }
-
 }

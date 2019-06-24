@@ -19,6 +19,9 @@
 
 package org.ethereum.validator;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
@@ -28,6 +31,11 @@ import co.rsk.mine.MinerUtils;
 import co.rsk.mine.ParameterizedNetworkUpgradeTest;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.Arrays;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
@@ -35,15 +43,6 @@ import org.ethereum.core.BlockFactory;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.Arrays;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Mikhail Kalinin
@@ -67,7 +66,10 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
     @Test
     public void test_1() {
         // mined block
-        Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
+        Block b =
+                new BlockMiner(activationConfig)
+                        .mineBlock(
+                                new BlockGenerator(networkConstants, activationConfig).getBlock(1));
         assertTrue(rule.isValid(b));
     }
 
@@ -75,7 +77,10 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
     @Test // invalid block
     public void test_2() {
         // mined block
-        Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
+        Block b =
+                new BlockMiner(activationConfig)
+                        .mineBlock(
+                                new BlockGenerator(networkConstants, activationConfig).getBlock(1));
         byte[] mergeMiningHeader = b.getBitcoinMergedMiningHeader();
         // TODO improve, the mutated block header could be still valid
         mergeMiningHeader[0]++;
@@ -87,16 +92,19 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
     @Test
     public void test_RLPEncoding() {
         // mined block
-        Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
+        Block b =
+                new BlockMiner(activationConfig)
+                        .mineBlock(
+                                new BlockGenerator(networkConstants, activationConfig).getBlock(1));
         byte[] lastField = b.getBitcoinMergedMiningCoinbaseTransaction(); // last field
-        b.flushRLP();// force re-encode
+        b.flushRLP(); // force re-encode
         byte[] encoded = b.getEncoded();
         Block b2 = blockFactory.decodeBlock(encoded);
         byte[] lastField2 = b2.getBitcoinMergedMiningCoinbaseTransaction(); // last field
-        b2.flushRLP();// force re-encode
+        b2.flushRLP(); // force re-encode
         byte[] encoded2 = b2.getEncoded();
-        Assert.assertTrue(Arrays.equals(encoded,encoded2));
-        Assert.assertTrue(Arrays.equals(lastField,lastField2));
+        Assert.assertTrue(Arrays.equals(encoded, encoded2));
+        Assert.assertTrue(Arrays.equals(lastField, lastField2));
     }
 
     @Ignore
@@ -105,15 +113,20 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         int iterCnt = 1_000_000;
 
         // mined block
-        Block b = new BlockMiner(activationConfig).mineBlock(new BlockGenerator(networkConstants, activationConfig).getBlock(1));
+        Block b =
+                new BlockMiner(activationConfig)
+                        .mineBlock(
+                                new BlockGenerator(networkConstants, activationConfig).getBlock(1));
 
         long start = System.currentTimeMillis();
-        for (int i = 0; i < iterCnt; i++)
-            rule.isValid(b);
+        for (int i = 0; i < iterCnt; i++) rule.isValid(b);
 
         long total = System.currentTimeMillis() - start;
 
-        System.out.println(String.format("Time: total = %d ms, per block = %.2f ms", total, (double) total / iterCnt));
+        System.out.println(
+                String.format(
+                        "Time: total = %d ms, per block = %.2f ms",
+                        total, (double) total / iterCnt));
     }
 
     @Test
@@ -121,7 +134,9 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         BlockGenerator blockGenerator = new BlockGenerator(networkConstants, activationConfig);
 
         // mined block
-        Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), new byte[100]);
+        Block b =
+                mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(
+                        blockGenerator.getBlock(1), new byte[100]);
 
         Assert.assertFalse(rule.isValid(b));
     }
@@ -134,17 +149,25 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         byte[] bytes = org.bouncycastle.util.Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG);
 
         // mined block
-        Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), bytes);
+        Block b =
+                mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(
+                        blockGenerator.getBlock(1), bytes);
 
         Assert.assertFalse(rule.isValid(b));
     }
 
-    private Block mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(Block block, byte[] compressed) {
+    private Block mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(
+            Block block, byte[] compressed) {
         Keccak256 blockMergedMiningHash = new Keccak256(block.getHashForMergedMining());
 
-        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, blockMergedMiningHash.getBytes());
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
+        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters =
+                co.rsk.bitcoinj.params.RegTestParams.get();
+        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction =
+                MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(
+                        bitcoinNetworkParameters, blockMergedMiningHash.getBytes());
+        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock =
+                MinerUtils.getBitcoinMergedMiningBlock(
+                        bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 
         BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
 
@@ -152,27 +175,35 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
 
         Block newBlock = blockFactory.cloneBlockForModification(block);
 
-        newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
+        newBlock.setBitcoinMergedMiningHeader(
+                bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 
-        byte[] merkleProof = MinerUtils.buildMerkleProof(
-                activationConfig,
-                pb -> pb.buildFromBlock(bitcoinMergedMiningBlock),
-                newBlock.getNumber()
-        );
+        byte[] merkleProof =
+                MinerUtils.buildMerkleProof(
+                        activationConfig,
+                        pb -> pb.buildFromBlock(bitcoinMergedMiningBlock),
+                        newBlock.getNumber());
 
-        newBlock.setBitcoinMergedMiningCoinbaseTransaction(org.bouncycastle.util.Arrays.concatenate(compressed, blockMergedMiningHash.getBytes()));
+        newBlock.setBitcoinMergedMiningCoinbaseTransaction(
+                org.bouncycastle.util.Arrays.concatenate(
+                        compressed, blockMergedMiningHash.getBytes()));
         newBlock.setBitcoinMergedMiningMerkleProof(merkleProof);
 
         return newBlock;
     }
 
-    private static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransactionWithoutRSKTag(co.rsk.bitcoinj.core.NetworkParameters params, byte[] blockHashForMergedMining) {
-        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction = new co.rsk.bitcoinj.core.BtcTransaction(params);
-        //Add a random number of random bytes before the RSK tag
+    private static co.rsk.bitcoinj.core.BtcTransaction
+            getBitcoinMergedMiningCoinbaseTransactionWithoutRSKTag(
+                    co.rsk.bitcoinj.core.NetworkParameters params,
+                    byte[] blockHashForMergedMining) {
+        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction =
+                new co.rsk.bitcoinj.core.BtcTransaction(params);
+        // Add a random number of random bytes before the RSK tag
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[1000];
         random.nextBytes(bytes);
-        co.rsk.bitcoinj.core.TransactionInput ti = new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, bytes);
+        co.rsk.bitcoinj.core.TransactionInput ti =
+                new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, bytes);
         coinbaseTransaction.addInput(ti);
         ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
         co.rsk.bitcoinj.core.BtcECKey key = new co.rsk.bitcoinj.core.BtcECKey();
@@ -182,7 +213,12 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
             throw new RuntimeException(e);
         }
         scriptPubKeyBytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKSIG);
-        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(50, 0), scriptPubKeyBytes.toByteArray()));
+        coinbaseTransaction.addOutput(
+                new co.rsk.bitcoinj.core.TransactionOutput(
+                        params,
+                        coinbaseTransaction,
+                        co.rsk.bitcoinj.core.Coin.valueOf(50, 0),
+                        scriptPubKeyBytes.toByteArray()));
         return coinbaseTransaction;
     }
 }

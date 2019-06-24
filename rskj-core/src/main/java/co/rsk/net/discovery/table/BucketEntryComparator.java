@@ -21,9 +21,7 @@ package co.rsk.net.discovery.table;
 import java.io.Serializable;
 import java.util.Comparator;
 
-/**
- * Created by mario on 21/02/17.
- */
+/** Created by mario on 21/02/17. */
 public class BucketEntryComparator implements Comparator<BucketEntry>, Serializable {
     @Override
     public int compare(BucketEntry e1, BucketEntry e2) {

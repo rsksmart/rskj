@@ -18,6 +18,9 @@ package co.rsk.vm;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
+import static org.mockito.Mockito.*;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
@@ -25,6 +28,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
+import java.util.HashSet;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -41,16 +46,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.HashSet;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
-import static org.mockito.Mockito.*;
-
-
-/**
- * Created by Sebastian Sicardi on 22/05/2019.
- */
+/** Created by Sebastian Sicardi on 22/05/2019. */
 public class Create2Test {
 
     private ActivationConfig.ForBlock activationConfig;
@@ -58,7 +54,11 @@ public class Create2Test {
     private BytecodeCompiler compiler = new BytecodeCompiler();
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()));
+    private final PrecompiledContracts precompiledContracts =
+            new PrecompiledContracts(
+                    config,
+                    new RepositoryBtcBlockStoreWithCache.Factory(
+                            config.getNetworkConstants().getBridgeConstants().getBtcParams()));
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Transaction transaction = createTransaction();
 
@@ -70,10 +70,9 @@ public class Create2Test {
 
     @Test
     public void testCREATE2_BasicTest() {
-        /**
-         * Initial test for Create2, just check that the contract is created
-         */
-        callCreate2("0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
+        /** Initial test for Create2, just check that the contract is created */
+        callCreate2(
+                "0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
                 "0x0000000000000000000000000000000000000000000000000000000000000000",
                 "PUSH32 0x600b000000000000000000000000000000000000000000000000000000000000",
                 2,
@@ -84,10 +83,9 @@ public class Create2Test {
 
     @Test
     public void testCREATE2_SaltNumber() {
-        /**
-         * Check that address changes with different salt than before
-         */
-        callCreate2("0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
+        /** Check that address changes with different salt than before */
+        callCreate2(
+                "0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
                 "0x00000000000000000000000000000000000000000000000000000000cafebabe",
                 "PUSH32 0x601b000000000000000000000000000000000000000000000000000000000000",
                 2,
@@ -98,10 +96,9 @@ public class Create2Test {
 
     @Test
     public void testCREATE2_Address() {
-        /**
-         * Check that address changes with different sender address than before
-         */
-        callCreate2("0xdeadbeef00000000000000000000000000000000",
+        /** Check that address changes with different sender address than before */
+        callCreate2(
+                "0xdeadbeef00000000000000000000000000000000",
                 "0x00000000000000000000000000000000000000000000000000000000cafebabe",
                 "PUSH32 0x601b000000000000000000000000000000000000000000000000000000000000",
                 2,
@@ -112,10 +109,9 @@ public class Create2Test {
 
     @Test
     public void testCREATE2_InitCode() {
-        /**
-         * Check for a different length of init_code
-         */
-        callCreate2("0xdeadbeef00000000000000000000000000000000",
+        /** Check for a different length of init_code */
+        callCreate2(
+                "0xdeadbeef00000000000000000000000000000000",
                 "0x00000000000000000000000000000000000000000000000000000000cafebabe",
                 "PUSH32 0x601b601b601b601b601b601b601b601b601b601b601b601b601b601b601b601b",
                 32,
@@ -127,10 +123,11 @@ public class Create2Test {
     @Test
     public void testCREATE2_ZeroSize() {
         /**
-         * Check for a call with init_code with size 0
-         * (Note that it should return same address than next test)
+         * Check for a call with init_code with size 0 (Note that it should return same address than
+         * next test)
          */
-        callCreate2("0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
+        callCreate2(
+                "0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
                 "0x0000000000000000000000000000000000000000000000000000000000000000",
                 "PUSH32 0x601b601b601b601b601b601b601b601b601b601b601b601b601b601b601b601b",
                 0,
@@ -142,10 +139,11 @@ public class Create2Test {
     @Test
     public void testCREATE2_EmptyCode() {
         /**
-         * Check for a call with no init_code
-         * (Note that it should return same address than previous test)
+         * Check for a call with no init_code (Note that it should return same address than previous
+         * test)
          */
-        callCreate2("0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
+        callCreate2(
+                "0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
                 "0x0000000000000000000000000000000000000000000000000000000000000000",
                 "",
                 0,
@@ -156,10 +154,9 @@ public class Create2Test {
 
     @Test
     public void testCREATE2_CodeOffset() {
-        /**
-         * Check that the offset parameter works correctly
-         */
-        callCreate2("0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
+        /** Check that the offset parameter works correctly */
+        callCreate2(
+                "0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
                 "0x0000000000000000000000000000000000000000000000000000000000000000",
                 "PUSH32 0x601b601b601b601b601b601b601b601b601b601b601b601b601b601b601b601b",
                 10,
@@ -170,10 +167,9 @@ public class Create2Test {
 
     @Test
     public void testCREATE2_NoCodePushed() {
-        /**
-         * No code pushed but code sized is greater than zero, it should get zeroes and pass
-         */
-        callCreate2("0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
+        /** No code pushed but code sized is greater than zero, it should get zeroes and pass */
+        callCreate2(
+                "0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
                 "0x0000000000000000000000000000000000000000000000000000000000000000",
                 "",
                 12,
@@ -185,10 +181,11 @@ public class Create2Test {
     @Test
     public void testCREATE2_InvalidInitCode() {
         /**
-         * INIT_CODE fails (Create2 with invalid arguments) so it returns a ZERO address
-         * as it fails, it spends all the gas
+         * INIT_CODE fails (Create2 with invalid arguments) so it returns a ZERO address as it
+         * fails, it spends all the gas
          */
-        callCreate2("0x0000000000000000000000000000000000000000",
+        callCreate2(
+                "0x0000000000000000000000000000000000000000",
                 "0x0000000000000000000000000000000000000000000000000000000000000000",
                 "PUSH32 0xf500000000000000000000000000000000000000000000000000000000000000",
                 1,
@@ -197,15 +194,13 @@ public class Create2Test {
                 1000000);
     }
 
-
     @Test
     public void testCREATE2_DuplicateContractCreation() {
-        /**
-         *  Two CREATE2 calls, second should fail and consume all gas
-         */
+        /** Two CREATE2 calls, second should fail and consume all gas */
         String address = "0x0000000000000000000000000000000000000000";
         String salt = "0x0000000000000000000000000000000000000000000000000000000000000000";
-        String pushInitCode = "PUSH32 0x6000000000000000000000000000000000000000000000000000000000000000";
+        String pushInitCode =
+                "PUSH32 0x6000000000000000000000000000000000000000000000000000000000000000";
         String expectedAddress1 = "9CC90A6BDF7A59E213CFB70958A2E1A8EA5AF1E6";
         String expectedAddress2 = "0000000000000000000000000000000000000000";
         int size = 1;
@@ -221,19 +216,31 @@ public class Create2Test {
 
         pushInitCode += " PUSH1 0x00 MSTORE";
 
-        String codeToExecute = pushInitCode +
-                " PUSH32 " + salt +
-                " PUSH32 " + inSize +
-                " PUSH32 " + inOffset +
-                " PUSH32 " + "0x" + DataWord.valueOf(value) +
-                " CREATE2 ";
+        String codeToExecute =
+                pushInitCode
+                        + " PUSH32 "
+                        + salt
+                        + " PUSH32 "
+                        + inSize
+                        + " PUSH32 "
+                        + inOffset
+                        + " PUSH32 "
+                        + "0x"
+                        + DataWord.valueOf(value)
+                        + " CREATE2 ";
 
-        codeToExecute += pushInitCode +
-                " PUSH32 " + salt +
-                " PUSH32 " + inSize +
-                " PUSH32 " + inOffset +
-                " PUSH32 " + "0x" + DataWord.valueOf(value) +
-                " CREATE2 ";
+        codeToExecute +=
+                pushInitCode
+                        + " PUSH32 "
+                        + salt
+                        + " PUSH32 "
+                        + inSize
+                        + " PUSH32 "
+                        + inOffset
+                        + " PUSH32 "
+                        + "0x"
+                        + DataWord.valueOf(value)
+                        + " CREATE2 ";
 
         Program program = executeCode(codeToExecute);
         Stack stack = program.getStack();
@@ -248,10 +255,9 @@ public class Create2Test {
     @Test
     public void testCREATE_CheckFunctionBeforeRSKIP() {
         /**
-         * Check that the CREATE opcode functions correctly before the RSKIP
-         * It should create the contract and have nonce 0
+         * Check that the CREATE opcode functions correctly before the RSKIP It should create the
+         * contract and have nonce 0
          */
-
         when(activationConfig.isActive(RSKIP125)).thenReturn(false);
 
         String code = "PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 CREATE";
@@ -271,7 +277,8 @@ public class Create2Test {
     public void testCREATE2ShouldFailInvalidOpcode() {
         when(activationConfig.isActive(RSKIP125)).thenReturn(false);
 
-        callCreate2("0x0000000000000000000000000000000000000000",
+        callCreate2(
+                "0x0000000000000000000000000000000000000000",
                 "0x0000000000000000000000000000000000000000000000000000000000000000",
                 "PUSH32 0x601b601b601b601b601b601b601b601b601b601b601b601b601b601b601b601b",
                 10,
@@ -280,7 +287,14 @@ public class Create2Test {
                 32045);
     }
 
-    private void callCreate2(String address, String salt, String pushInitCode, int size, int intOffset, String expected, long gasExpected) {
+    private void callCreate2(
+            String address,
+            String salt,
+            String pushInitCode,
+            int size,
+            int intOffset,
+            String expected,
+            long gasExpected) {
         int value = 10;
         RskAddress testAddress = new RskAddress(address);
         invoke.setOwnerAddress(testAddress);
@@ -292,15 +306,24 @@ public class Create2Test {
             pushInitCode += " PUSH1 0x00 MSTORE";
         }
 
-        Program program = executeCode(
-                pushInitCode +
-                        " PUSH32 " + salt +
-                        " PUSH32 " + inSize +
-                        " PUSH32 " + inOffset +
-                        " PUSH32 " + "0x" + DataWord.valueOf(value) +
-                        " CREATE2");
+        Program program =
+                executeCode(
+                        pushInitCode
+                                + " PUSH32 "
+                                + salt
+                                + " PUSH32 "
+                                + inSize
+                                + " PUSH32 "
+                                + inOffset
+                                + " PUSH32 "
+                                + "0x"
+                                + DataWord.valueOf(value)
+                                + " CREATE2");
         Stack stack = program.getStack();
-        String result = Hex.toHexString(Arrays.copyOfRange(stack.peek().getData(), 12, stack.peek().getData().length));
+        String result =
+                Hex.toHexString(
+                        Arrays.copyOfRange(
+                                stack.peek().getData(), 12, stack.peek().getData().length));
 
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(expected.toUpperCase(), result.toUpperCase());
@@ -315,17 +338,29 @@ public class Create2Test {
         acbuilder.name("receiver" + number);
         Account receiver = acbuilder.build();
         TransactionBuilder txbuilder = new TransactionBuilder();
-        return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(number * 1000 + 1000)).build();
+        return txbuilder
+                .sender(sender)
+                .receiver(receiver)
+                .value(BigInteger.valueOf(number * 1000 + 1000))
+                .build();
     }
-
 
     private Program executeCode(String stringCode) {
         byte[] code = compiler.compile(stringCode);
-        VM vm = new VM(vmConfig,precompiledContracts);
+        VM vm = new VM(vmConfig, precompiledContracts);
 
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, transaction, new HashSet<>());
+        Program program =
+                new Program(
+                        vmConfig,
+                        precompiledContracts,
+                        blockFactory,
+                        activationConfig,
+                        code,
+                        invoke,
+                        transaction,
+                        new HashSet<>());
 
-        while (!program.isStopped()){
+        while (!program.isStopped()) {
             vm.step(program);
         }
 

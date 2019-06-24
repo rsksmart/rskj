@@ -1,9 +1,7 @@
 package org.ethereum.rpc.exception;
 
-/**
- * Created by mario on 17/10/2016.
- */
-public class RskJsonRpcRequestException extends RuntimeException{
+/** Created by mario on 17/10/2016. */
+public class RskJsonRpcRequestException extends RuntimeException {
 
     private final Integer code;
 
@@ -30,11 +28,11 @@ public class RskJsonRpcRequestException extends RuntimeException{
     }
 
     private static RskJsonRpcRequestException executionError(String message) {
-        return new RskJsonRpcRequestException(-32015, String.format("VM execution error: %s", message));
+        return new RskJsonRpcRequestException(
+                -32015, String.format("VM execution error: %s", message));
     }
 
     public static RskJsonRpcRequestException transactionError(String message) {
         return new RskJsonRpcRequestException(-32010, message);
     }
-
 }

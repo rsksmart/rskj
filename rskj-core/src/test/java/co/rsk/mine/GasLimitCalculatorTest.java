@@ -18,7 +18,10 @@
 
 package co.rsk.mine;
 
+import static org.ethereum.validator.ParentGasLimitRuleTest.getHeader;
+
 import co.rsk.config.TestSystemProperties;
+import java.math.BigInteger;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
@@ -26,13 +29,7 @@ import org.ethereum.validator.ParentGasLimitRule;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
-import static org.ethereum.validator.ParentGasLimitRuleTest.getHeader;
-
-/**
- * Created by Ruben Altman on 5/23/2016.
- */
+/** Created by Ruben Altman on 5/23/2016. */
 public class GasLimitCalculatorTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
@@ -47,9 +44,12 @@ public class GasLimitCalculatorTest {
         BigInteger parentGasLimit = minGasLimit.add(BigInteger.valueOf(21000));
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
 
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(parentGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, false);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(
+                        parentGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, false);
 
-        BigInteger factor = parentGasLimit.divide(BigInteger.valueOf(constants.getGasLimitBoundDivisor()));
+        BigInteger factor =
+                parentGasLimit.divide(BigInteger.valueOf(constants.getGasLimitBoundDivisor()));
         Assert.assertTrue(newGasLimit.compareTo(parentGasLimit) < 0);
         Assert.assertTrue(newGasLimit.compareTo(parentGasLimit.subtract(factor)) == 0);
     }
@@ -59,7 +59,9 @@ public class GasLimitCalculatorTest {
         GasLimitCalculator calc = new GasLimitCalculator(config.getNetworkConstants());
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, false);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(
+                        minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, false);
 
         Assert.assertTrue(newGasLimit.compareTo(minGasLimit) == 0);
     }
@@ -71,7 +73,9 @@ public class GasLimitCalculatorTest {
         BigInteger gasUsed = BigInteger.valueOf(3000000);
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
 
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(parentGas, gasUsed, BigInteger.ZERO, targetGasLimit, false);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(
+                        parentGas, gasUsed, BigInteger.ZERO, targetGasLimit, false);
 
         // These are strategic values, don't know why some people like this
         BigInteger expected = BigInteger.valueOf(3500977);
@@ -85,19 +89,24 @@ public class GasLimitCalculatorTest {
         BigInteger gasUsed = BigInteger.valueOf(3500000);
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
 
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(parentGas, gasUsed, BigInteger.ZERO, targetGasLimit, false);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(
+                        parentGas, gasUsed, BigInteger.ZERO, targetGasLimit, false);
 
         // These are strategic values, don't know why some people like this
         BigInteger expected = BigInteger.valueOf(3501709);
         Assert.assertTrue(newGasLimit.compareTo(expected) == 0);
     }
+
     @Test
     public void NextBlockGasLimitIsNotIncreasedMoreThanTargetGasLimit() {
         GasLimitCalculator calc = new GasLimitCalculator(config.getNetworkConstants());
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger gasUsed = targetGasLimit;
 
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(targetGasLimit, gasUsed, BigInteger.ZERO, targetGasLimit, false);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(
+                        targetGasLimit, gasUsed, BigInteger.ZERO, targetGasLimit, false);
 
         Assert.assertTrue(newGasLimit.compareTo(targetGasLimit) == 0);
     }
@@ -107,7 +116,9 @@ public class GasLimitCalculatorTest {
         GasLimitCalculator calc = new GasLimitCalculator(config.getNetworkConstants());
         BigInteger minGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(targetGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(
+                        targetGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
         Assert.assertTrue(newGasLimit.compareTo(targetGasLimit) == 0);
         Assert.assertTrue(validByConsensus(newGasLimit, targetGasLimit));
     }
@@ -117,10 +128,16 @@ public class GasLimitCalculatorTest {
         GasLimitCalculator calc = new GasLimitCalculator(config.getNetworkConstants());
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
-        BigInteger newGasLimit2 = calc.calculateBlockGasLimit(minGasLimit, minGasLimit, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(
+                        minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit2 =
+                calc.calculateBlockGasLimit(
+                        minGasLimit, minGasLimit, minGasLimit, targetGasLimit, true);
         Assert.assertTrue(newGasLimit.compareTo(newGasLimit2) == 0);
-        Assert.assertTrue(newGasLimit.compareTo(minGasLimit.add(minGasLimit.divide(BigInteger.valueOf(1024)))) == 0);
+        Assert.assertTrue(
+                newGasLimit.compareTo(minGasLimit.add(minGasLimit.divide(BigInteger.valueOf(1024))))
+                        == 0);
         Assert.assertTrue(validByConsensus(newGasLimit, minGasLimit));
         Assert.assertTrue(validByConsensus(newGasLimit2, minGasLimit));
         Assert.assertFalse(validByConsensus(newGasLimit.add(BigInteger.ONE), minGasLimit));
@@ -131,8 +148,12 @@ public class GasLimitCalculatorTest {
         GasLimitCalculator calc = new GasLimitCalculator(config.getNetworkConstants());
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = minGasLimit.add(BigInteger.ONE);
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
-        BigInteger newGasLimit2 = calc.calculateBlockGasLimit(minGasLimit, minGasLimit, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(
+                        minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit2 =
+                calc.calculateBlockGasLimit(
+                        minGasLimit, minGasLimit, minGasLimit, targetGasLimit, true);
         Assert.assertTrue(newGasLimit.compareTo(targetGasLimit) == 0);
         Assert.assertTrue(newGasLimit.compareTo(newGasLimit2) == 0);
         Assert.assertTrue(validByConsensus(newGasLimit, minGasLimit));
@@ -145,8 +166,11 @@ public class GasLimitCalculatorTest {
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = minGasLimit.add(BigInteger.ONE);
         BigInteger usedGas = targetGasLimit.add(BigInteger.ONE);
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(usedGas, usedGas, minGasLimit, targetGasLimit, true);
-        BigInteger newGasLimit2 = calc.calculateBlockGasLimit(usedGas, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(usedGas, usedGas, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit2 =
+                calc.calculateBlockGasLimit(
+                        usedGas, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
         Assert.assertTrue(newGasLimit.compareTo(targetGasLimit) == 0);
         Assert.assertTrue(newGasLimit.compareTo(newGasLimit2) == 0);
         Assert.assertTrue(validByConsensus(newGasLimit, usedGas));
@@ -159,23 +183,32 @@ public class GasLimitCalculatorTest {
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = minGasLimit.subtract(BigInteger.ONE);
         BigInteger usedGas = minGasLimit.add(BigInteger.ONE);
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(usedGas, usedGas, minGasLimit, targetGasLimit, true);
-        BigInteger newGasLimit2 = calc.calculateBlockGasLimit(usedGas, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(usedGas, usedGas, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit2 =
+                calc.calculateBlockGasLimit(
+                        usedGas, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
         Assert.assertTrue(newGasLimit.compareTo(minGasLimit) == 0);
         Assert.assertTrue(newGasLimit.compareTo(newGasLimit2) == 0);
         Assert.assertTrue(validByConsensus(newGasLimit, usedGas));
         Assert.assertTrue(validByConsensus(newGasLimit2, usedGas));
     }
+
     @Test
     public void NextBlockGasLimitIsDecreasedByMaximumValue() {
         GasLimitCalculator calc = new GasLimitCalculator(config.getNetworkConstants());
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger usedGas = targetGasLimit.multiply(BigInteger.valueOf(2));
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(usedGas, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
-        BigInteger newGasLimit2 = calc.calculateBlockGasLimit(usedGas, usedGas, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit =
+                calc.calculateBlockGasLimit(
+                        usedGas, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
+        BigInteger newGasLimit2 =
+                calc.calculateBlockGasLimit(usedGas, usedGas, minGasLimit, targetGasLimit, true);
         Assert.assertTrue(newGasLimit.compareTo(newGasLimit2) == 0);
-        Assert.assertTrue(newGasLimit.compareTo(usedGas.subtract(usedGas.divide(BigInteger.valueOf(1024)))) == 0);
+        Assert.assertTrue(
+                newGasLimit.compareTo(usedGas.subtract(usedGas.divide(BigInteger.valueOf(1024))))
+                        == 0);
         Assert.assertTrue(validByConsensus(newGasLimit, usedGas));
         Assert.assertTrue(validByConsensus(newGasLimit2, usedGas));
         Assert.assertFalse(validByConsensus(newGasLimit.subtract(BigInteger.ONE), usedGas));

@@ -28,8 +28,7 @@ public class EnvTck {
     String currentTimestamp;
     String previousHash;
 
-    public EnvTck() {
-    }
+    public EnvTck() {}
 
     public String getCurrentCoinbase() {
         return currentCoinbase;

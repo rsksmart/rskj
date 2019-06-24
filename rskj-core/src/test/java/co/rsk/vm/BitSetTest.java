@@ -21,9 +21,7 @@ package co.rsk.vm;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 29/04/2017.
- */
+/** Created by ajlopez on 29/04/2017. */
 public class BitSetTest {
     @Test
     public void createEmptyBitSet() {
@@ -31,8 +29,7 @@ public class BitSetTest {
 
         Assert.assertEquals(17, set.size());
 
-        for (int k = 0; k < set.size(); k++)
-            Assert.assertFalse(set.get(k));
+        for (int k = 0; k < set.size(); k++) Assert.assertFalse(set.get(k));
     }
 
     @Test
@@ -41,8 +38,7 @@ public class BitSetTest {
 
         Assert.assertEquals(16, set.size());
 
-        for (int k = 0; k < set.size(); k++)
-            Assert.assertFalse(set.get(k));
+        for (int k = 0; k < set.size(); k++) Assert.assertFalse(set.get(k));
     }
 
     @Test
@@ -54,8 +50,7 @@ public class BitSetTest {
 
         Assert.assertEquals(16, set.size());
 
-        for (int k = 1; k < set.size() - 1; k++)
-            Assert.assertFalse(set.get(k));
+        for (int k = 1; k < set.size() - 1; k++) Assert.assertFalse(set.get(k));
 
         Assert.assertTrue(set.get(0));
         Assert.assertTrue(set.get(15));
@@ -65,24 +60,20 @@ public class BitSetTest {
     public void fillBits() {
         BitSet set = new BitSet(17);
 
-        for (int k = 0; k < set.size(); k++)
-            set.set(k);
+        for (int k = 0; k < set.size(); k++) set.set(k);
 
         Assert.assertEquals(17, set.size());
 
-        for (int k = 0; k < set.size(); k++)
-            Assert.assertTrue(set.get(k));
+        for (int k = 0; k < set.size(); k++) Assert.assertTrue(set.get(k));
     }
 
     @Test
     public void exceptionIfCreatedWithNegativeSize() {
 
-
         try {
             new BitSet(-17);
             Assert.fail();
-        }
-        catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException ex) {
             Assert.assertEquals("Negative size: -17", ex.getMessage());
         }
     }
@@ -94,8 +85,7 @@ public class BitSetTest {
         try {
             set.get(-1);
             Assert.fail();
-        }
-        catch (IndexOutOfBoundsException ex) {
+        } catch (IndexOutOfBoundsException ex) {
             Assert.assertEquals("Index: -1, Size: 17", ex.getMessage());
         }
     }
@@ -107,8 +97,7 @@ public class BitSetTest {
         try {
             set.get(17);
             Assert.fail();
-        }
-        catch (IndexOutOfBoundsException ex) {
+        } catch (IndexOutOfBoundsException ex) {
             Assert.assertEquals("Index: 17, Size: 17", ex.getMessage());
         }
     }
@@ -120,8 +109,7 @@ public class BitSetTest {
         try {
             set.set(-1);
             Assert.fail();
-        }
-        catch (IndexOutOfBoundsException ex) {
+        } catch (IndexOutOfBoundsException ex) {
             Assert.assertEquals("Index: -1, Size: 17", ex.getMessage());
         }
     }
@@ -133,8 +121,7 @@ public class BitSetTest {
         try {
             set.set(17);
             Assert.fail();
-        }
-        catch (IndexOutOfBoundsException ex) {
+        } catch (IndexOutOfBoundsException ex) {
             Assert.assertEquals("Index: 17, Size: 17", ex.getMessage());
         }
     }

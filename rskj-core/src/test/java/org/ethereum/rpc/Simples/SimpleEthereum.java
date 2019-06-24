@@ -19,6 +19,7 @@
 package org.ethereum.rpc.Simples;
 
 import co.rsk.core.Coin;
+import javax.annotation.Nonnull;
 import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -26,11 +27,7 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.listener.TestCompositeEthereumListener;
 
-import javax.annotation.Nonnull;
-
-/**
- * Created by Ruben Altman on 09/06/2016.
- */
+/** Created by Ruben Altman on 09/06/2016. */
 public class SimpleEthereum implements Ethereum {
 
     public Transaction tx;
@@ -54,9 +51,7 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public void removeListener(EthereumListener listener) {
-
-    }
+    public void removeListener(EthereumListener listener) {}
 
     @Override
     public ImportResult addNewMinedBlock(final @Nonnull Block block) {

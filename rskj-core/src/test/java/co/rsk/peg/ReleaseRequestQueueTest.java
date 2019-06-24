@@ -22,13 +22,12 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ReleaseRequestQueueTest {
     private List<ReleaseRequestQueue.Entry> queueEntries;
@@ -36,23 +35,28 @@ public class ReleaseRequestQueueTest {
 
     @Before
     public void createQueue() {
-        queueEntries = Arrays.asList(
-            new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150)),
-            new ReleaseRequestQueue.Entry(mockAddress(5), Coin.COIN),
-            new ReleaseRequestQueue.Entry(mockAddress(4), Coin.FIFTY_COINS),
-            new ReleaseRequestQueue.Entry(mockAddress(3), Coin.MILLICOIN),
-            new ReleaseRequestQueue.Entry(mockAddress(8), Coin.CENT.times(5))
-        );
+        queueEntries =
+                Arrays.asList(
+                        new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150)),
+                        new ReleaseRequestQueue.Entry(mockAddress(5), Coin.COIN),
+                        new ReleaseRequestQueue.Entry(mockAddress(4), Coin.FIFTY_COINS),
+                        new ReleaseRequestQueue.Entry(mockAddress(3), Coin.MILLICOIN),
+                        new ReleaseRequestQueue.Entry(mockAddress(8), Coin.CENT.times(5)));
         queue = new ReleaseRequestQueue(queueEntries);
     }
 
     @Test
     public void entryEquals() {
-        ReleaseRequestQueue.Entry e1 = new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150));
-        ReleaseRequestQueue.Entry e2 = new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150));
-        ReleaseRequestQueue.Entry e3 = new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(149));
-        ReleaseRequestQueue.Entry e4 = new ReleaseRequestQueue.Entry(mockAddress(5), Coin.valueOf(150));
-        ReleaseRequestQueue.Entry e5 = new ReleaseRequestQueue.Entry(mockAddress(5), Coin.valueOf(151));
+        ReleaseRequestQueue.Entry e1 =
+                new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150));
+        ReleaseRequestQueue.Entry e2 =
+                new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150));
+        ReleaseRequestQueue.Entry e3 =
+                new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(149));
+        ReleaseRequestQueue.Entry e4 =
+                new ReleaseRequestQueue.Entry(mockAddress(5), Coin.valueOf(150));
+        ReleaseRequestQueue.Entry e5 =
+                new ReleaseRequestQueue.Entry(mockAddress(5), Coin.valueOf(151));
 
         Assert.assertEquals(e1, e2);
         Assert.assertNotEquals(e1, e3);
@@ -62,7 +66,8 @@ public class ReleaseRequestQueueTest {
 
     @Test
     public void entryGetters() {
-        ReleaseRequestQueue.Entry entry = new ReleaseRequestQueue.Entry(mockAddress(5), Coin.valueOf(100));
+        ReleaseRequestQueue.Entry entry =
+                new ReleaseRequestQueue.Entry(mockAddress(5), Coin.valueOf(100));
 
         Assert.assertEquals(mockAddress(5), entry.getDestination());
         Assert.assertEquals(Coin.valueOf(100), entry.getAmount());
@@ -76,9 +81,15 @@ public class ReleaseRequestQueueTest {
 
     @Test
     public void add() {
-        Assert.assertFalse(queue.getEntries().contains(new ReleaseRequestQueue.Entry(mockAddress(10), Coin.valueOf(10))));
+        Assert.assertFalse(
+                queue.getEntries()
+                        .contains(
+                                new ReleaseRequestQueue.Entry(mockAddress(10), Coin.valueOf(10))));
         queue.add(mockAddress(10), Coin.valueOf(10));
-        Assert.assertTrue(queue.getEntries().contains(new ReleaseRequestQueue.Entry(mockAddress(10), Coin.valueOf(10))));
+        Assert.assertTrue(
+                queue.getEntries()
+                        .contains(
+                                new ReleaseRequestQueue.Entry(mockAddress(10), Coin.valueOf(10))));
     }
 
     @Test
@@ -88,15 +99,18 @@ public class ReleaseRequestQueueTest {
         }
 
         Indexer idx = new Indexer();
-        queue.process(30, entry -> {
-            Assert.assertEquals(entry, queueEntries.get(idx.index));
-            return idx.index++ % 2 == 0;
-        });
+        queue.process(
+                30,
+                entry -> {
+                    Assert.assertEquals(entry, queueEntries.get(idx.index));
+                    return idx.index++ % 2 == 0;
+                });
         Assert.assertEquals(5, idx.index);
-        Assert.assertEquals(Arrays.asList(
-            new ReleaseRequestQueue.Entry(mockAddress(5), Coin.COIN),
-            new ReleaseRequestQueue.Entry(mockAddress(3), Coin.MILLICOIN)
-        ), queue.getEntries());
+        Assert.assertEquals(
+                Arrays.asList(
+                        new ReleaseRequestQueue.Entry(mockAddress(5), Coin.COIN),
+                        new ReleaseRequestQueue.Entry(mockAddress(3), Coin.MILLICOIN)),
+                queue.getEntries());
     }
 
     @Test
@@ -106,19 +120,27 @@ public class ReleaseRequestQueueTest {
         }
 
         Indexer idx = new Indexer();
-        queue.process(3, entry -> {
-            Assert.assertEquals(entry, queueEntries.get(idx.index));
-            return idx.index++ % 2 == 0;
-        });
+        queue.process(
+                3,
+                entry -> {
+                    Assert.assertEquals(entry, queueEntries.get(idx.index));
+                    return idx.index++ % 2 == 0;
+                });
         Assert.assertEquals(3, idx.index);
-        Assert.assertEquals(Arrays.asList(
-            new ReleaseRequestQueue.Entry(mockAddress(3), Coin.MILLICOIN), // this wasn't processed
-            new ReleaseRequestQueue.Entry(mockAddress(8), Coin.CENT.times(5)), // this wasn't processed
-            new ReleaseRequestQueue.Entry(mockAddress(5), Coin.COIN) // this was sent to the back
-        ), queue.getEntries());
+        Assert.assertEquals(
+                Arrays.asList(
+                        new ReleaseRequestQueue.Entry(
+                                mockAddress(3), Coin.MILLICOIN), // this wasn't processed
+                        new ReleaseRequestQueue.Entry(
+                                mockAddress(8), Coin.CENT.times(5)), // this wasn't processed
+                        new ReleaseRequestQueue.Entry(
+                                mockAddress(5), Coin.COIN) // this was sent to the back
+                        ),
+                queue.getEntries());
     }
 
     private Address mockAddress(int pk) {
-        return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        return BtcECKey.fromPrivate(BigInteger.valueOf(pk))
+                .toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
     }
 }

@@ -19,22 +19,21 @@
 
 package co.rsk.validators;
 
+import java.math.BigInteger;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-
 /**
  * Checks if {@link BlockHeader#gasLimit} matches gas limit bounds. <br>
- *
  * This check is NOT run in Frontier
  *
  * @author Mikhail Kalinin
  * @since 02.09.2015
  */
-public class BlockParentGasLimitRule implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule {
+public class BlockParentGasLimitRule
+        implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
@@ -43,7 +42,6 @@ public class BlockParentGasLimitRule implements BlockParentDependantValidationRu
     public BlockParentGasLimitRule(int gasLimitBoundDivisor) {
         this.gasLimitBoundDivisor = gasLimitBoundDivisor;
     }
-
 
     @Override
     public boolean isValid(BlockHeader header, Block parent) {
@@ -55,9 +53,20 @@ public class BlockParentGasLimitRule implements BlockParentDependantValidationRu
         BigInteger headerGasLimit = new BigInteger(1, header.getGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
 
-        if (headerGasLimit.compareTo(parentGasLimit.multiply(BigInteger.valueOf(gasLimitBoundDivisor - 1L)).divide(BigInteger.valueOf(gasLimitBoundDivisor))) < 0 ||
-            headerGasLimit.compareTo(parentGasLimit.multiply(BigInteger.valueOf(gasLimitBoundDivisor + 1L)).divide(BigInteger.valueOf(gasLimitBoundDivisor))) > 0) {
-            logger.warn(String.format("#%d: gas limit exceeds parentBlock.getGasLimit() (+-) GAS_LIMIT_BOUND_DIVISOR", header.getNumber()));
+        if (headerGasLimit.compareTo(
+                                parentGasLimit
+                                        .multiply(BigInteger.valueOf(gasLimitBoundDivisor - 1L))
+                                        .divide(BigInteger.valueOf(gasLimitBoundDivisor)))
+                        < 0
+                || headerGasLimit.compareTo(
+                                parentGasLimit
+                                        .multiply(BigInteger.valueOf(gasLimitBoundDivisor + 1L))
+                                        .divide(BigInteger.valueOf(gasLimitBoundDivisor)))
+                        > 0) {
+            logger.warn(
+                    String.format(
+                            "#%d: gas limit exceeds parentBlock.getGasLimit() (+-) GAS_LIMIT_BOUND_DIVISOR",
+                            header.getNumber()));
             return false;
         }
         return true;

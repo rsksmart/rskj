@@ -20,18 +20,15 @@ package co.rsk.validators;
 
 import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by mario on 26/12/16.
- */
+/** Created by mario on 26/12/16. */
 public class TxsMinGasPriceValidatorTest {
 
     private static final Coin BLOCK_MGP = Coin.valueOf(10);
@@ -93,13 +90,13 @@ public class TxsMinGasPriceValidatorTest {
     private List<Transaction> buildTxList(int validTxNbr, int invalidTxNbr, Coin blockGasPrice) {
         List<Transaction> ret = new ArrayList<>();
 
-        for(int i = 0; i < validTxNbr; i++) {
+        for (int i = 0; i < validTxNbr; i++) {
             Transaction tx = Mockito.mock(Transaction.class);
             Mockito.when(tx.getGasPrice()).thenReturn(blockGasPrice.add(Coin.valueOf(1)));
             ret.add(tx);
         }
 
-        for(int i = 0; i < invalidTxNbr; i++) {
+        for (int i = 0; i < invalidTxNbr; i++) {
             Transaction tx = Mockito.mock(Transaction.class);
             Mockito.when(tx.getGasPrice()).thenReturn(blockGasPrice.subtract(Coin.valueOf(1)));
             Mockito.when(tx.getHash()).thenReturn(Keccak256.ZERO_HASH);

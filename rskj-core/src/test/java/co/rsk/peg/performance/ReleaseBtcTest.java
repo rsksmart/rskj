@@ -24,14 +24,13 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
+import java.io.IOException;
+import java.math.BigInteger;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
 
 @Ignore
 public class ReleaseBtcTest extends BridgePerformanceTestCase {
@@ -41,34 +40,47 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
         int maxCentsBtc = 100;
 
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            ReleaseRequestQueue queue;
+        BridgeStorageProviderInitializer storageInitializer =
+                (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+                    ReleaseRequestQueue queue;
 
-            try {
-                queue = provider.getReleaseRequestQueue();
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to gather release request queue");
-            }
+                    try {
+                        queue = provider.getReleaseRequestQueue();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to gather release request queue");
+                    }
 
-            for (int i = 0; i < Helper.randomInRange(10, 100); i++) {
-                Coin value = Coin.CENT.multiply(Helper.randomInRange(minCentsBtc, maxCentsBtc));
-                queue.add(new BtcECKey().toAddress(parameters), value);
-            }
-        };
+                    for (int i = 0; i < Helper.randomInRange(10, 100); i++) {
+                        Coin value =
+                                Coin.CENT.multiply(Helper.randomInRange(minCentsBtc, maxCentsBtc));
+                        queue.add(new BtcECKey().toAddress(parameters), value);
+                    }
+                };
 
         final byte[] releaseBtcEncoded = Bridge.RELEASE_BTC.encode();
         ABIEncoder abiEncoder = (int executionIndex) -> releaseBtcEncoded;
 
-        TxBuilder txBuilder = (int executionIndex) -> {
-            long satoshis = Coin.CENT.multiply(Helper.randomInRange(minCentsBtc, maxCentsBtc)).getValue();
-            BigInteger weis = Denomination.satoshisToWeis(BigInteger.valueOf(satoshis));
-            ECKey sender = new ECKey();
+        TxBuilder txBuilder =
+                (int executionIndex) -> {
+                    long satoshis =
+                            Coin.CENT
+                                    .multiply(Helper.randomInRange(minCentsBtc, maxCentsBtc))
+                                    .getValue();
+                    BigInteger weis = Denomination.satoshisToWeis(BigInteger.valueOf(satoshis));
+                    ECKey sender = new ECKey();
 
-            return Helper.buildSendValueTx(sender, weis);
-        };
+                    return Helper.buildSendValueTx(sender, weis);
+                };
 
         ExecutionStats stats = new ExecutionStats("releaseBtc");
-        executeAndAverage("releaseBtc", 1000, abiEncoder, storageInitializer, txBuilder, Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "releaseBtc",
+                1000,
+                abiEncoder,
+                storageInitializer,
+                txBuilder,
+                Helper.getRandomHeightProvider(10),
+                stats);
 
         BridgePerformanceTest.addStats(stats);
     }

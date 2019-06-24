@@ -18,6 +18,8 @@
 
 package co.rsk.db;
 
+import static org.hamcrest.Matchers.is;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -25,6 +27,10 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieHashTest;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.Set;
 import org.ethereum.TestUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -34,16 +40,7 @@ import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.Set;
-
-import static org.hamcrest.Matchers.is;
-
-/**
- * Created by ajlopez on 29/03/2017.
- */
+/** Created by ajlopez on 29/03/2017. */
 public class RepositoryImplTest {
     private static Keccak256 emptyHash = TrieHashTest.makeEmptyHash();
 
@@ -162,7 +159,8 @@ public class RepositoryImplTest {
 
         Repository repository = createRepository();
 
-        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
+        Assert.assertEquals(
+                BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
 
         Assert.assertEquals(BigInteger.ONE, repository.getBalance(accAddress).asBigInteger());
     }
@@ -174,7 +172,8 @@ public class RepositoryImplTest {
         Repository repository = createRepository();
 
         repository.createAccount(accAddress);
-        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
+        Assert.assertEquals(
+                BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
 
         Assert.assertEquals(BigInteger.ONE, repository.getBalance(accAddress).asBigInteger());
     }
@@ -186,8 +185,10 @@ public class RepositoryImplTest {
         Repository repository = createRepository();
 
         repository.createAccount(accAddress);
-        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
-        Assert.assertEquals(2, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger().longValue());
+        Assert.assertEquals(
+                BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
+        Assert.assertEquals(
+                2, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger().longValue());
 
         Assert.assertEquals(2, repository.getBalance(accAddress).asBigInteger().longValue());
     }
@@ -233,13 +234,12 @@ public class RepositoryImplTest {
         // From now on null represents no code, because the code node is not even
         // created
         Assert.assertNull(code);
-
     }
 
     @Test
     public void saveAndGetCodeFromAccount() {
         RskAddress accAddress = randomAccountAddress();
-        byte[] accCode = new byte[] { 0x01, 0x02, 0x03 };
+        byte[] accCode = new byte[] {0x01, 0x02, 0x03};
 
         Repository repository = createRepository();
 
@@ -271,7 +271,7 @@ public class RepositoryImplTest {
     @Test
     public void getCodeFromHibernatedAccount() {
         RskAddress accAddress = randomAccountAddress();
-        byte[] accCode = new byte[] { 0x01, 0x02, 0x03 };
+        byte[] accCode = new byte[] {0x01, 0x02, 0x03};
 
         Repository repository = createRepository();
 
@@ -349,7 +349,7 @@ public class RepositoryImplTest {
         // so the returned value was null.
         // This semantic has changed. If you modify a repository, you modify
         // a repository. The previous semantics were really really weird.
-        Assert.assertEquals(DataWord.ONE,value);
+        Assert.assertEquals(DataWord.ONE, value);
     }
 
     @Test
@@ -397,7 +397,7 @@ public class RepositoryImplTest {
     @Test
     public void setAndGetStorageBytesUsingTrack() {
         RskAddress accAddress = randomAccountAddress();
-        byte[] bytes = new byte[] { 0x01, 0x02, 0x03 };
+        byte[] bytes = new byte[] {0x01, 0x02, 0x03};
 
         Repository repository = createRepository();
 
@@ -412,8 +412,7 @@ public class RepositoryImplTest {
     }
 
     @Test
-    public void emptyAccountsKeysOnNonExistentAccount()
-    {
+    public void emptyAccountsKeysOnNonExistentAccount() {
         Repository repository = createRepository();
 
         Set<RskAddress> keys = repository.getAccountsKeys();
@@ -441,8 +440,7 @@ public class RepositoryImplTest {
     }
 
     @Test
-    public void getAccountsKeysOnSnapshot()
-    {
+    public void getAccountsKeysOnSnapshot() {
         RskAddress accAddress1 = randomAccountAddress();
         RskAddress accAddress2 = randomAccountAddress();
 

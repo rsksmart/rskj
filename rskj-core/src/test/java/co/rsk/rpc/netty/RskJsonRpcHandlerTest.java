@@ -17,6 +17,10 @@
  */
 package co.rsk.rpc.netty;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.*;
+
 import co.rsk.jsonrpc.JsonRpcBooleanResult;
 import co.rsk.jsonrpc.JsonRpcVersion;
 import co.rsk.rpc.EthSubscriptionNotificationEmitter;
@@ -28,24 +32,18 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
-
 public class RskJsonRpcHandlerTest {
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID = new SubscriptionId("0x3075");
-    private static final EthSubscribeRequest SAMPLE_SUBSCRIBE_REQUEST = new EthSubscribeRequest(
-            JsonRpcVersion.V2_0,
-            RskJsonRpcMethod.ETH_SUBSCRIBE,
-            35,
-            new EthSubscribeParams(EthSubscribeTypes.NEW_HEADS)
-
-    );
+    private static final EthSubscribeRequest SAMPLE_SUBSCRIBE_REQUEST =
+            new EthSubscribeRequest(
+                    JsonRpcVersion.V2_0,
+                    RskJsonRpcMethod.ETH_SUBSCRIBE,
+                    35,
+                    new EthSubscribeParams(EthSubscribeTypes.NEW_HEADS));
 
     private RskJsonRpcHandler handler;
     private EthSubscriptionNotificationEmitter emitter;
@@ -60,53 +58,40 @@ public class RskJsonRpcHandlerTest {
 
     @Test
     public void visitUnsubscribe() {
-        EthUnsubscribeRequest unsubscribe = new EthUnsubscribeRequest(
-                JsonRpcVersion.V2_0,
-                RskJsonRpcMethod.ETH_UNSUBSCRIBE,
-                35,
-                new EthUnsubscribeParams(SAMPLE_SUBSCRIPTION_ID)
+        EthUnsubscribeRequest unsubscribe =
+                new EthUnsubscribeRequest(
+                        JsonRpcVersion.V2_0,
+                        RskJsonRpcMethod.ETH_UNSUBSCRIBE,
+                        35,
+                        new EthUnsubscribeParams(SAMPLE_SUBSCRIPTION_ID));
 
-        );
+        when(emitter.unsubscribe(SAMPLE_SUBSCRIPTION_ID)).thenReturn(true);
 
-        when(emitter.unsubscribe(SAMPLE_SUBSCRIPTION_ID))
-            .thenReturn(true);
-
-        assertThat(
-                handler.visit(unsubscribe, null),
-                is(new JsonRpcBooleanResult(true))
-        );
+        assertThat(handler.visit(unsubscribe, null), is(new JsonRpcBooleanResult(true)));
     }
 
     @Test
     public void visitSubscribe() {
         Channel channel = mock(Channel.class);
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
-        when(ctx.channel())
-                .thenReturn(channel);
-        when(emitter.subscribe(channel))
-            .thenReturn(SAMPLE_SUBSCRIPTION_ID);
+        when(ctx.channel()).thenReturn(channel);
+        when(emitter.subscribe(channel)).thenReturn(SAMPLE_SUBSCRIPTION_ID);
 
-        assertThat(
-                handler.visit(SAMPLE_SUBSCRIBE_REQUEST, ctx),
-                is(SAMPLE_SUBSCRIPTION_ID)
-        );
+        assertThat(handler.visit(SAMPLE_SUBSCRIBE_REQUEST, ctx), is(SAMPLE_SUBSCRIPTION_ID));
     }
 
     @Test
     public void handlerDeserializesAndHandlesRequest() throws Exception {
         Channel channel = mock(Channel.class);
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
-        when(ctx.channel())
-                .thenReturn(channel);
+        when(ctx.channel()).thenReturn(channel);
 
-        when(serializer.deserializeRequest(any()))
-                .thenReturn(SAMPLE_SUBSCRIBE_REQUEST);
-        when(emitter.subscribe(channel))
-                .thenReturn(SAMPLE_SUBSCRIPTION_ID);
-        when(serializer.serializeMessage(any()))
-                .thenReturn("serialized");
+        when(serializer.deserializeRequest(any())).thenReturn(SAMPLE_SUBSCRIBE_REQUEST);
+        when(emitter.subscribe(channel)).thenReturn(SAMPLE_SUBSCRIPTION_ID);
+        when(serializer.serializeMessage(any())).thenReturn("serialized");
 
-        DefaultByteBufHolder msg = new DefaultByteBufHolder(Unpooled.copiedBuffer("raw".getBytes()));
+        DefaultByteBufHolder msg =
+                new DefaultByteBufHolder(Unpooled.copiedBuffer("raw".getBytes()));
         handler.channelRead(ctx, msg);
 
         verify(ctx, times(1)).writeAndFlush(new TextWebSocketFrame("serialized"));
@@ -117,10 +102,10 @@ public class RskJsonRpcHandlerTest {
     public void handlerPassesRequestToNextHandlerOnException() throws Exception {
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
 
-        when(serializer.deserializeRequest(any()))
-                .thenThrow(new IOException());
+        when(serializer.deserializeRequest(any())).thenThrow(new IOException());
 
-        DefaultByteBufHolder msg = new DefaultByteBufHolder(Unpooled.copiedBuffer("raw".getBytes()));
+        DefaultByteBufHolder msg =
+                new DefaultByteBufHolder(Unpooled.copiedBuffer("raw".getBytes()));
         handler.channelRead(ctx, msg);
 
         verify(ctx, never()).writeAndFlush(any());

@@ -19,16 +19,15 @@
 package co.rsk.validators;
 
 import co.rsk.panic.PanicProcessor;
+import java.math.BigInteger;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-
 /**
  * Rule to check that gas limit is greater than minimum gas limit
  *
- * Created by martin.medina on 07/02/17.
+ * <p>Created by martin.medina on 07/02/17.
  */
 public class GasLimitRule implements BlockValidationRule {
 
@@ -43,7 +42,9 @@ public class GasLimitRule implements BlockValidationRule {
 
     @Override
     public boolean isValid(Block block) {
-        if (new BigInteger(1, block.getHeader().getGasLimit()).compareTo(BigInteger.valueOf(this.minGasLimit)) < 0) {
+        if (new BigInteger(1, block.getHeader().getGasLimit())
+                        .compareTo(BigInteger.valueOf(this.minGasLimit))
+                < 0) {
             logger.warn("header.getGasLimit() < MIN_GAS_LIMIT");
             panicProcessor.panic("invalidMinGasLimit", "header.getGasLimit() < MIN_GAS_LIMIT");
             return false;

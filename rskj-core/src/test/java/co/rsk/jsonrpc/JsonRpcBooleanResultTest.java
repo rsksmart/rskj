@@ -17,34 +17,23 @@
  */
 package co.rsk.jsonrpc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
-
-import java.io.IOException;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import org.junit.Test;
 
 public class JsonRpcBooleanResultTest {
     private ObjectMapper serializer = new ObjectMapper();
 
     @Test
     public void serializeTrue() throws IOException {
-        assertThat(
-                serializer.writeValueAsString(
-                        new JsonRpcBooleanResult(true)
-                ),
-                is("true")
-        );
+        assertThat(serializer.writeValueAsString(new JsonRpcBooleanResult(true)), is("true"));
     }
 
     @Test
     public void serializeFalse() throws IOException {
-        assertThat(
-                serializer.writeValueAsString(
-                        new JsonRpcBooleanResult(false)
-                ),
-                is("false")
-        );
+        assertThat(serializer.writeValueAsString(new JsonRpcBooleanResult(false)), is("false"));
     }
 }

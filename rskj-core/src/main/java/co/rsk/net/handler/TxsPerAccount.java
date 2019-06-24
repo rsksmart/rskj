@@ -19,11 +19,10 @@
 package co.rsk.net.handler;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.Transaction;
-
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
+import org.ethereum.core.Transaction;
 
 public class TxsPerAccount {
 
@@ -39,11 +38,11 @@ public class TxsPerAccount {
         return false;
     }
 
-    public List<Transaction> getTransactions(){
+    public List<Transaction> getTransactions() {
         return txs;
     }
 
-    public void setTransactions(List<Transaction> txs){
+    public void setTransactions(List<Transaction> txs) {
         this.txs = txs;
     }
 

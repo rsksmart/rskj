@@ -29,7 +29,6 @@ import java.util.List;
  * @since 14.08.2015
  */
 public enum EthVersion {
-
     V62((byte) 62);
 
     public static final byte LOWER = V62.getCode();

@@ -1,11 +1,10 @@
 package co.rsk.core.bc;
 
 import co.rsk.trie.Trie;
+import java.util.List;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.util.RLP;
-
-import java.util.List;
 
 public class BlockHashesHelper {
 
@@ -13,7 +12,8 @@ public class BlockHashesHelper {
         // helper class
     }
 
-    public static byte[] calculateReceiptsTrieRoot(List<TransactionReceipt> receipts, boolean isRskip126Enabled) {
+    public static byte[] calculateReceiptsTrieRoot(
+            List<TransactionReceipt> receipts, boolean isRskip126Enabled) {
         Trie trie = calculateReceiptsTrieRootFor(receipts);
         if (isRskip126Enabled) {
             return trie.getHash().getBytes();

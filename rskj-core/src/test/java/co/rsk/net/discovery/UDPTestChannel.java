@@ -19,14 +19,11 @@
 package co.rsk.net.discovery;
 
 import io.netty.channel.Channel;
-
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by mario on 15/02/17.
- */
-public class UDPTestChannel extends UDPChannel{
+/** Created by mario on 15/02/17. */
+public class UDPTestChannel extends UDPChannel {
 
     private List<DiscoveryEvent> eventsWritten = new ArrayList<>();
 

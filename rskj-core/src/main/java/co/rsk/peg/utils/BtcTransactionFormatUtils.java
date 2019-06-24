@@ -37,7 +37,9 @@ public class BtcTransactionFormatUtils {
     }
 
     public static boolean isBlockHeaderSize(int size, ActivationConfig.ForBlock activations) {
-        return (activations.isActive(ConsensusRule.RSKIP124) && size == MIN_BLOCK_HEADER_SIZE) ||
-                (!activations.isActive(ConsensusRule.RSKIP124) && size >= MIN_BLOCK_HEADER_SIZE && size <= MAX_BLOCK_HEADER_SIZE);
+        return (activations.isActive(ConsensusRule.RSKIP124) && size == MIN_BLOCK_HEADER_SIZE)
+                || (!activations.isActive(ConsensusRule.RSKIP124)
+                        && size >= MIN_BLOCK_HEADER_SIZE
+                        && size <= MAX_BLOCK_HEADER_SIZE);
     }
 }

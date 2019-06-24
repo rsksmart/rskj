@@ -22,11 +22,10 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
+import java.io.IOException;
 import org.ethereum.core.Repository;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
 
 @Ignore
 public class GetFeePerKbTest extends BridgePerformanceTestCase {
@@ -36,20 +35,21 @@ public class GetFeePerKbTest extends BridgePerformanceTestCase {
     public void getFeePerKb() throws IOException {
         ExecutionStats stats = new ExecutionStats("getFeePerKb");
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEE_PER_KB.encode();
-        executeTestCaseSection(abiEncoder, "getFeePerKb", true,50, stats);
-        executeTestCaseSection(abiEncoder, "getFeePerKb", false,500, stats);
+        executeTestCaseSection(abiEncoder, "getFeePerKb", true, 50, stats);
+        executeTestCaseSection(abiEncoder, "getFeePerKb", false, 500, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) {
+    private void executeTestCaseSection(
+            ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) {
         executeAndAverage(
                 String.format("%s-%s", name, genesis ? "genesis" : "non-genesis"),
-                times, abiEncoder,
+                times,
+                abiEncoder,
                 buildInitializer(genesis),
                 Helper.getZeroValueRandomSenderTxBuilder(),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     private BridgeStorageProviderInitializer buildInitializer(boolean genesis) {
@@ -61,6 +61,4 @@ public class GetFeePerKbTest extends BridgePerformanceTestCase {
             }
         };
     }
-
-
 }

@@ -96,7 +96,7 @@ public class ArrayListIndex implements Index {
         if (index.isEmpty()) {
             return null;
         }
-        
+
         return index.get(index.size() - 1);
     }
 

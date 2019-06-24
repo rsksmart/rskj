@@ -21,7 +21,6 @@ package co.rsk.rpc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 import com.googlecode.jsonrpc4j.RequestInterceptor;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -33,7 +32,6 @@ public class JsonRpcMethodFilter implements RequestInterceptor {
      * This checks the JSON RPC invoked method against the received list of modules
      *
      * @see co.rsk.rpc.ModuleDescription#methodIsEnable
-     *
      * @param modules list of configured modules
      */
     public JsonRpcMethodFilter(List<ModuleDescription> modules) {
@@ -48,7 +46,7 @@ public class JsonRpcMethodFilter implements RequestInterceptor {
     }
 
     private void checkMethod(String methodName) throws IOException {
-        for (ModuleDescription module: this.modules) {
+        for (ModuleDescription module : this.modules) {
             if (module.methodIsEnable(methodName)) {
                 return;
             }

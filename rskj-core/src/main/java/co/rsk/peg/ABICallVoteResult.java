@@ -19,11 +19,9 @@
 package co.rsk.peg;
 
 /**
- * Immutable representation of the result of a vote
- * on a given ABI function call.
- * Can either be successful or failed.
- * Both successful and failed vote results
- * can carry an associated result.
+ * Immutable representation of the result of a vote on a given ABI function call. Can either be
+ * successful or failed. Both successful and failed vote results can carry an associated result.
+ *
  * @author Ariel Mendelzon
  */
 public final class ABICallVoteResult {

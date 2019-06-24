@@ -24,7 +24,8 @@ import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 
-public class RepositoryTrackWithBenchmarking extends MutableRepository implements BenchmarkedRepository {
+public class RepositoryTrackWithBenchmarking extends MutableRepository
+        implements BenchmarkedRepository {
     protected final Statistics statistics;
 
     public RepositoryTrackWithBenchmarking(Repository repository) {

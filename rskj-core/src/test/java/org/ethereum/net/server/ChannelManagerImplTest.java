@@ -19,21 +19,20 @@
 
 package org.ethereum.net.server;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.*;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.net.NodeID;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeManager;
 import org.ethereum.sync.SyncPool;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Roman Mandeleil
@@ -42,10 +41,11 @@ import static org.mockito.Mockito.*;
 @Ignore
 public class ChannelManagerImplTest {
 
-
     @Test
     public void getNumberOfPeersToSendStatusTo() {
-        ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
+        ChannelManagerImpl channelManagerImpl =
+                new ChannelManagerImpl(new TestSystemProperties(), null);
+        ;
 
         assertEquals(1, channelManagerImpl.getNumberOfPeersToSendStatusTo(1));
         assertEquals(2, channelManagerImpl.getNumberOfPeersToSendStatusTo(2));
@@ -60,7 +60,9 @@ public class ChannelManagerImplTest {
 
     @Test
     public void blockAddressIsAvailable() throws UnknownHostException {
-        ChannelManagerImpl channelManagerImpl = new ChannelManagerImpl(new TestSystemProperties(), null);;
+        ChannelManagerImpl channelManagerImpl =
+                new ChannelManagerImpl(new TestSystemProperties(), null);
+        ;
         Assert.assertTrue(channelManagerImpl.isAddressBlockAvailable(InetAddress.getLocalHost()));
     }
 
@@ -77,19 +79,20 @@ public class ChannelManagerImplTest {
         NodeManager nodeManager = new NodeManager(null, config);
 
         Channel peer = spy(new Channel(null, null, nodeManager, null, null, null, remoteId));
-        peer.setInetSocketAddress(new InetSocketAddress("127.0.0.1",5554));
+        peer.setInetSocketAddress(new InetSocketAddress("127.0.0.1", 5554));
         peer.setNode(new NodeID(HashUtil.randomPeerId()).getID());
         when(peer.isProtocolsInitialized()).thenReturn(true);
         when(peer.isActive()).thenReturn(true);
         when(peer.isUsingNewProtocol()).thenReturn(true);
 
         Channel otherPeer = new Channel(null, null, nodeManager, null, null, null, remoteId);
-        otherPeer.setInetSocketAddress(new InetSocketAddress("127.0.0.1",5554));
+        otherPeer.setInetSocketAddress(new InetSocketAddress("127.0.0.1", 5554));
 
         channelManager.add(peer);
         channelManager.tryProcessNewPeers();
 
-        Assert.assertFalse(channelManager.isAddressBlockAvailable(otherPeer.getInetSocketAddress().getAddress()));
+        Assert.assertFalse(
+                channelManager.isAddressBlockAvailable(
+                        otherPeer.getInetSocketAddress().getAddress()));
     }
-
 }

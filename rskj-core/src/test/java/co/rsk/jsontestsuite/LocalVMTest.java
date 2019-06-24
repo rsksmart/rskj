@@ -18,6 +18,8 @@
 
 package co.rsk.jsontestsuite;
 
+import java.io.IOException;
+import java.util.*;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
@@ -28,9 +30,6 @@ import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.*;
-
 /**
  * @author Angel J Lopez
  * @since 02.23.2016
@@ -38,6 +37,7 @@ import java.util.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalVMTest {
     private Logger logger = LoggerFactory.getLogger("VM-Test");
+
     @Test
     public void runSingle() throws ParseException {
         String json = getJSON("vmEnvironmentalInfoTest");
@@ -48,11 +48,11 @@ public class LocalVMTest {
     public void testArithmetic() throws ParseException {
         Set<String> excluded = new HashSet<>();
         Set<String> included = null;
-        //included  =new HashSet<>();
-        //included.add("expXY");
+        // included  =new HashSet<>();
+        // included.add("expXY");
         // TODO: these are excluded due to bad wrapping behavior in ADDMOD/DataWord.add
         String json = getJSON("vmArithmeticTest");
-        GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded,included);
+        GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded, included);
     }
 
     @Test // testing full suite
@@ -90,7 +90,7 @@ public class LocalVMTest {
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
-    @Ignore //FIXME - 20M - possibly provide percentage indicator
+    @Ignore // FIXME - 20M - possibly provide percentage indicator
     @Test
     public void testvmInputLimitsLight() throws ParseException {
         Set<String> excluded = new HashSet<>();
@@ -104,6 +104,7 @@ public class LocalVMTest {
         String json = getJSON("vmLogTest");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
+
     @Ignore
     @Test // testing full suite
     public void testPerformance() throws ParseException {
@@ -148,13 +149,14 @@ public class LocalVMTest {
     public void testRandomVM() throws ParseException, IOException {
         List<String> resources =
                 Arrays.asList(
-                        //--TODO: These cases have been commented out after adding the remaining gas condition
-                        //--in doCall method in VM.java. This will be addressed in next release.
-                        //"201503102037PYTHON",
-                        //"201503102148PYTHON",
-                        //"201503102300PYTHON",
-                        //"201503102320PYTHON",
-                        //"201503110050PYTHON",
+                        // --TODO: These cases have been commented out after adding the remaining
+                        // gas condition
+                        // --in doCall method in VM.java. This will be addressed in next release.
+                        // "201503102037PYTHON",
+                        // "201503102148PYTHON",
+                        // "201503102300PYTHON",
+                        // "201503102320PYTHON",
+                        // "201503110050PYTHON",
                         "201503110206PYTHON",
                         "201503110219PYTHON",
                         "201503110226PYTHON_DUP6",
@@ -166,8 +168,7 @@ public class LocalVMTest {
                         "201503120525PYTHON",
                         "201503120547PYTHON",
                         "201503120909PYTHON",
-                        "randomTest"
-                );
+                        "randomTest");
 
         for (String resource : resources) {
             String json = getJSON("RandomTests/" + resource);
@@ -178,7 +179,7 @@ public class LocalVMTest {
 
     private String getJSON(String name) {
         String fullName = "json/VMTests/" + name + ".json";
-        logger.info("Reading resource "+fullName);
+        logger.info("Reading resource " + fullName);
         String json = JSONReader.loadJSONFromResource(fullName, LocalVMTest.class.getClassLoader());
         return json;
     }

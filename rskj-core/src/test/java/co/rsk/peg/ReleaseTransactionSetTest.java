@@ -18,19 +18,18 @@
 
 package co.rsk.peg;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.*;
+import java.math.BigInteger;
+import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.math.BigInteger;
-import java.util.*;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 public class ReleaseTransactionSetTest {
@@ -39,22 +38,32 @@ public class ReleaseTransactionSetTest {
 
     @Before
     public void createSet() {
-        setEntries = new HashSet<>(Arrays.asList(
-            new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 32L),
-            new ReleaseTransactionSet.Entry(createTransaction(5, Coin.COIN), 100L),
-            new ReleaseTransactionSet.Entry(createTransaction(4, Coin.FIFTY_COINS), 7L),
-            new ReleaseTransactionSet.Entry(createTransaction(3, Coin.MILLICOIN), 10L),
-            new ReleaseTransactionSet.Entry(createTransaction(8, Coin.CENT.times(5)), 5L)
-        ));
+        setEntries =
+                new HashSet<>(
+                        Arrays.asList(
+                                new ReleaseTransactionSet.Entry(
+                                        createTransaction(2, Coin.valueOf(150)), 32L),
+                                new ReleaseTransactionSet.Entry(
+                                        createTransaction(5, Coin.COIN), 100L),
+                                new ReleaseTransactionSet.Entry(
+                                        createTransaction(4, Coin.FIFTY_COINS), 7L),
+                                new ReleaseTransactionSet.Entry(
+                                        createTransaction(3, Coin.MILLICOIN), 10L),
+                                new ReleaseTransactionSet.Entry(
+                                        createTransaction(8, Coin.CENT.times(5)), 5L)));
         set = new ReleaseTransactionSet(setEntries);
     }
 
     @Test
     public void entryEquals() {
-        ReleaseTransactionSet.Entry e1 = new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 15L);
-        ReleaseTransactionSet.Entry e2 = new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 15L);
-        ReleaseTransactionSet.Entry e3 = new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(149)), 14L);
-        ReleaseTransactionSet.Entry e4 = new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(230)), 15L);
+        ReleaseTransactionSet.Entry e1 =
+                new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 15L);
+        ReleaseTransactionSet.Entry e2 =
+                new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 15L);
+        ReleaseTransactionSet.Entry e3 =
+                new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(149)), 14L);
+        ReleaseTransactionSet.Entry e4 =
+                new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(230)), 15L);
 
         Assert.assertEquals(e1, e2);
         Assert.assertNotEquals(e1, e3);
@@ -63,7 +72,8 @@ public class ReleaseTransactionSetTest {
 
     @Test
     public void entryGetters() {
-        ReleaseTransactionSet.Entry entry = new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(100)), 7L);
+        ReleaseTransactionSet.Entry entry =
+                new ReleaseTransactionSet.Entry(createTransaction(5, Coin.valueOf(100)), 7L);
 
         Assert.assertEquals(createTransaction(5, Coin.valueOf(100)), entry.getTransaction());
         Assert.assertEquals(7L, entry.getRskBlockNumber().longValue());
@@ -92,19 +102,53 @@ public class ReleaseTransactionSetTest {
 
     @Test
     public void add_nonExisting() {
-        Assert.assertFalse(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L)));
+        Assert.assertFalse(
+                set.getEntries()
+                        .contains(
+                                new ReleaseTransactionSet.Entry(
+                                        createTransaction(123, Coin.COIN.multiply(3)), 34L)));
         set.add(createTransaction(123, Coin.COIN.multiply(3)), 34L);
-        Assert.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(123, Coin.COIN.multiply(3)), 34L)));
+        Assert.assertTrue(
+                set.getEntries()
+                        .contains(
+                                new ReleaseTransactionSet.Entry(
+                                        createTransaction(123, Coin.COIN.multiply(3)), 34L)));
     }
 
     @Test
     public void add_existing() {
-        Assert.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
-        Assert.assertEquals(1, set.getEntries().stream().filter(e -> e.getTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
+        Assert.assertTrue(
+                set.getEntries()
+                        .contains(
+                                new ReleaseTransactionSet.Entry(
+                                        createTransaction(2, Coin.valueOf(150)), 32L)));
+        Assert.assertEquals(
+                1,
+                set.getEntries().stream()
+                        .filter(
+                                e ->
+                                        e.getTransaction()
+                                                .equals(createTransaction(2, Coin.valueOf(150))))
+                        .count());
         set.add(createTransaction(2, Coin.valueOf(150)), 23L);
-        Assert.assertTrue(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 32L)));
-        Assert.assertFalse(set.getEntries().contains(new ReleaseTransactionSet.Entry(createTransaction(2, Coin.valueOf(150)), 23L)));
-        Assert.assertEquals(1, set.getEntries().stream().filter(e -> e.getTransaction().equals(createTransaction(2, Coin.valueOf(150)))).count());
+        Assert.assertTrue(
+                set.getEntries()
+                        .contains(
+                                new ReleaseTransactionSet.Entry(
+                                        createTransaction(2, Coin.valueOf(150)), 32L)));
+        Assert.assertFalse(
+                set.getEntries()
+                        .contains(
+                                new ReleaseTransactionSet.Entry(
+                                        createTransaction(2, Coin.valueOf(150)), 23L)));
+        Assert.assertEquals(
+                1,
+                set.getEntries().stream()
+                        .filter(
+                                e ->
+                                        e.getTransaction()
+                                                .equals(createTransaction(2, Coin.valueOf(150))))
+                        .count());
     }
 
     @Test
@@ -118,7 +162,8 @@ public class ReleaseTransactionSetTest {
     public void sliceWithConfirmations_withLimit_singleMatch() {
         Set<BtcTransaction> result = set.sliceWithConfirmations(10L, 5, Optional.of(2));
         Assert.assertEquals(1, result.size());
-        setEntries.remove(new ReleaseTransactionSet.Entry(createTransaction(8, Coin.CENT.times(5)), 5L));
+        setEntries.remove(
+                new ReleaseTransactionSet.Entry(createTransaction(8, Coin.CENT.times(5)), 5L));
         Assert.assertEquals(setEntries, set.getEntries());
     }
 
@@ -129,7 +174,11 @@ public class ReleaseTransactionSetTest {
         Iterator<BtcTransaction> resultIterator = result.iterator();
         while (resultIterator.hasNext()) {
             BtcTransaction itemTx = resultIterator.next();
-            ReleaseTransactionSet.Entry item = setEntries.stream().filter(e -> e.getTransaction().equals(itemTx)).findFirst().get();
+            ReleaseTransactionSet.Entry item =
+                    setEntries.stream()
+                            .filter(e -> e.getTransaction().equals(itemTx))
+                            .findFirst()
+                            .get();
             Assert.assertTrue(15L - item.getRskBlockNumber() >= 5);
             setEntries.remove(item);
         }
@@ -148,7 +197,8 @@ public class ReleaseTransactionSetTest {
     public void sliceWithConfirmations_noLimit_singleMatch() {
         Set<BtcTransaction> result = set.sliceWithConfirmations(10L, 5, Optional.empty());
         Assert.assertEquals(1, result.size());
-        setEntries.remove(new ReleaseTransactionSet.Entry(createTransaction(8, Coin.CENT.times(5)), 5L));
+        setEntries.remove(
+                new ReleaseTransactionSet.Entry(createTransaction(8, Coin.CENT.times(5)), 5L));
         Assert.assertEquals(setEntries, set.getEntries());
     }
 
@@ -159,7 +209,11 @@ public class ReleaseTransactionSetTest {
         Iterator<BtcTransaction> resultIterator = result.iterator();
         while (resultIterator.hasNext()) {
             BtcTransaction itemTx = resultIterator.next();
-            ReleaseTransactionSet.Entry item = setEntries.stream().filter(e -> e.getTransaction().equals(itemTx)).findFirst().get();
+            ReleaseTransactionSet.Entry item =
+                    setEntries.stream()
+                            .filter(e -> e.getTransaction().equals(itemTx))
+                            .findFirst()
+                            .get();
             Assert.assertTrue(15L - item.getRskBlockNumber() >= 5);
             setEntries.remove(item);
         }
@@ -170,7 +224,9 @@ public class ReleaseTransactionSetTest {
     private BtcTransaction createTransaction(int toPk, Coin value) {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BtcTransaction input = new BtcTransaction(params);
-        input.addOutput(Coin.FIFTY_COINS, BtcECKey.fromPrivate(BigInteger.valueOf(123456)).toAddress(params));
+        input.addOutput(
+                Coin.FIFTY_COINS,
+                BtcECKey.fromPrivate(BigInteger.valueOf(123456)).toAddress(params));
 
         Address to = BtcECKey.fromPrivate(BigInteger.valueOf(toPk)).toAddress(params);
 

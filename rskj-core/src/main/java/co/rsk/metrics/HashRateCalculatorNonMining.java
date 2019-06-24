@@ -20,14 +20,14 @@ package co.rsk.metrics;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.RskCustomCache;
-import org.ethereum.db.BlockStore;
-
 import java.math.BigInteger;
 import java.time.Duration;
+import org.ethereum.db.BlockStore;
 
 public class HashRateCalculatorNonMining extends HashRateCalculator {
 
-    public HashRateCalculatorNonMining(BlockStore blockStore, RskCustomCache<Keccak256, BlockHeaderElement> headerCache) {
+    public HashRateCalculatorNonMining(
+            BlockStore blockStore, RskCustomCache<Keccak256, BlockHeaderElement> headerCache) {
         super(blockStore, headerCache);
     }
 
@@ -35,5 +35,4 @@ public class HashRateCalculatorNonMining extends HashRateCalculator {
     public BigInteger calculateNodeHashRate(Duration period) {
         return BigInteger.ZERO;
     }
-
 }

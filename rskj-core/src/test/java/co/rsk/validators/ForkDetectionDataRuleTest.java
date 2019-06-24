@@ -18,29 +18,28 @@
 
 package co.rsk.validators;
 
-import co.rsk.core.bc.ConsensusValidationMainchainView;
-import co.rsk.crypto.Keccak256;
-import co.rsk.mine.ForkDetectionDataCalculator;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import co.rsk.core.bc.ConsensusValidationMainchainView;
+import co.rsk.crypto.Keccak256;
+import co.rsk.mine.ForkDetectionDataCalculator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ForkDetectionDataRuleTest {
 
@@ -54,12 +53,12 @@ public class ForkDetectionDataRuleTest {
     @Test
     public void validForBlocksBeforeRskip110UsingMethodThatReceivesBlockAsParameter() {
         long blockNumber = 4242;
-        ForkDetectionDataRule rule = new ForkDetectionDataRule(
-                activationConfig,
-                mock(ConsensusValidationMainchainView.class),
-                mock(ForkDetectionDataCalculator.class),
-                449
-        );
+        ForkDetectionDataRule rule =
+                new ForkDetectionDataRule(
+                        activationConfig,
+                        mock(ConsensusValidationMainchainView.class),
+                        mock(ForkDetectionDataCalculator.class),
+                        449);
 
         BlockHeader header = mock(BlockHeader.class);
         when(header.getNumber()).thenReturn(blockNumber);
@@ -73,12 +72,12 @@ public class ForkDetectionDataRuleTest {
     @Test
     public void validForBlocksBeforeRskip110() {
         long blockNumber = 4242;
-        ForkDetectionDataRule rule = new ForkDetectionDataRule(
-                activationConfig,
-                mock(ConsensusValidationMainchainView.class),
-                mock(ForkDetectionDataCalculator.class),
-                449
-        );
+        ForkDetectionDataRule rule =
+                new ForkDetectionDataRule(
+                        activationConfig,
+                        mock(ConsensusValidationMainchainView.class),
+                        mock(ForkDetectionDataCalculator.class),
+                        449);
 
         BlockHeader header = mock(BlockHeader.class);
         when(header.getNumber()).thenReturn(blockNumber);
@@ -91,16 +90,17 @@ public class ForkDetectionDataRuleTest {
         long blockNumber = 42;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 
-        ForkDetectionDataRule rule = new ForkDetectionDataRule(
-                activationConfig,
-                mock(ConsensusValidationMainchainView.class),
-                mock(ForkDetectionDataCalculator.class),
-                449
-        );
+        ForkDetectionDataRule rule =
+                new ForkDetectionDataRule(
+                        activationConfig,
+                        mock(ConsensusValidationMainchainView.class),
+                        mock(ForkDetectionDataCalculator.class),
+                        449);
 
         BlockHeader header = mock(BlockHeader.class);
         when(header.getNumber()).thenReturn(blockNumber);
-        when(header.getMiningForkDetectionData()).thenReturn(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 });
+        when(header.getMiningForkDetectionData())
+                .thenReturn(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
 
         assertFalse(rule.isValid(header));
     }
@@ -110,12 +110,12 @@ public class ForkDetectionDataRuleTest {
         long blockNumber = 42;
         enableRulesAt(blockNumber, ConsensusRule.RSKIP110);
 
-        ForkDetectionDataRule rule = new ForkDetectionDataRule(
-                activationConfig,
-                mock(ConsensusValidationMainchainView.class),
-                mock(ForkDetectionDataCalculator.class),
-                449
-        );
+        ForkDetectionDataRule rule =
+                new ForkDetectionDataRule(
+                        activationConfig,
+                        mock(ConsensusValidationMainchainView.class),
+                        mock(ForkDetectionDataCalculator.class),
+                        449);
 
         BlockHeader header = mock(BlockHeader.class);
         when(header.getNumber()).thenReturn(blockNumber);
@@ -131,22 +131,24 @@ public class ForkDetectionDataRuleTest {
 
         Keccak256 parentBlockHash = new Keccak256(getRandomHash());
         int requiredBlocksForForkDataCalculation = 449;
-        ConsensusValidationMainchainView mainchainView = mock(ConsensusValidationMainchainView.class);
-        when(mainchainView.get(parentBlockHash, requiredBlocksForForkDataCalculation)).thenReturn(new ArrayList<>());
+        ConsensusValidationMainchainView mainchainView =
+                mock(ConsensusValidationMainchainView.class);
+        when(mainchainView.get(parentBlockHash, requiredBlocksForForkDataCalculation))
+                .thenReturn(new ArrayList<>());
 
-        ForkDetectionDataRule rule = new ForkDetectionDataRule(
-                activationConfig,
-                mainchainView,
-                mock(ForkDetectionDataCalculator.class),
-                requiredBlocksForForkDataCalculation
-        );
+        ForkDetectionDataRule rule =
+                new ForkDetectionDataRule(
+                        activationConfig,
+                        mainchainView,
+                        mock(ForkDetectionDataCalculator.class),
+                        requiredBlocksForForkDataCalculation);
 
         BlockHeader header = mock(BlockHeader.class);
         when(header.getNumber()).thenReturn(blockNumber);
         when(header.getParentHash()).thenReturn(parentBlockHash);
         Keccak256 blockHash = new Keccak256(getRandomHash());
         when(header.getHash()).thenReturn(blockHash);
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         when(header.getMiningForkDetectionData()).thenReturn(forkDetectionData);
 
         assertFalse(rule.isValid(header));
@@ -159,24 +161,26 @@ public class ForkDetectionDataRuleTest {
 
         Keccak256 parentBlockHash = new Keccak256(getRandomHash());
         int requiredBlocksForForkDataCalculation = 449;
-        List<BlockHeader> previousBlocks = IntStream
-                .range(0, requiredBlocksForForkDataCalculation)
-                .mapToObj(i -> mock(BlockHeader.class))
-                .collect(Collectors.toList());
-        ConsensusValidationMainchainView mainchainView = mock(ConsensusValidationMainchainView.class);
-        when(mainchainView.get(parentBlockHash, requiredBlocksForForkDataCalculation)).thenReturn(previousBlocks);
+        List<BlockHeader> previousBlocks =
+                IntStream.range(0, requiredBlocksForForkDataCalculation)
+                        .mapToObj(i -> mock(BlockHeader.class))
+                        .collect(Collectors.toList());
+        ConsensusValidationMainchainView mainchainView =
+                mock(ConsensusValidationMainchainView.class);
+        when(mainchainView.get(parentBlockHash, requiredBlocksForForkDataCalculation))
+                .thenReturn(previousBlocks);
 
         ForkDetectionDataCalculator calculator = mock(ForkDetectionDataCalculator.class);
         Keccak256 blockHash = new Keccak256(getRandomHash());
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         when(calculator.calculateWithBlockHeaders(previousBlocks)).thenReturn(forkDetectionData);
 
-        ForkDetectionDataRule rule = new ForkDetectionDataRule(
-                activationConfig,
-                mainchainView,
-                calculator,
-                requiredBlocksForForkDataCalculation
-        );
+        ForkDetectionDataRule rule =
+                new ForkDetectionDataRule(
+                        activationConfig,
+                        mainchainView,
+                        calculator,
+                        requiredBlocksForForkDataCalculation);
 
         BlockHeader header = mock(BlockHeader.class);
         when(header.getNumber()).thenReturn(blockNumber);
@@ -194,30 +198,32 @@ public class ForkDetectionDataRuleTest {
 
         Keccak256 parentBlockHash = new Keccak256(getRandomHash());
         int requiredBlocksForForkDataCalculation = 449;
-        List<BlockHeader> previousBlocks = IntStream
-                .range(0, requiredBlocksForForkDataCalculation)
-                .mapToObj(i -> mock(BlockHeader.class))
-                .collect(Collectors.toList());
-        ConsensusValidationMainchainView mainchainView = mock(ConsensusValidationMainchainView.class);
-        when(mainchainView.get(parentBlockHash, requiredBlocksForForkDataCalculation)).thenReturn(previousBlocks);
+        List<BlockHeader> previousBlocks =
+                IntStream.range(0, requiredBlocksForForkDataCalculation)
+                        .mapToObj(i -> mock(BlockHeader.class))
+                        .collect(Collectors.toList());
+        ConsensusValidationMainchainView mainchainView =
+                mock(ConsensusValidationMainchainView.class);
+        when(mainchainView.get(parentBlockHash, requiredBlocksForForkDataCalculation))
+                .thenReturn(previousBlocks);
 
         ForkDetectionDataCalculator calculator = mock(ForkDetectionDataCalculator.class);
         Keccak256 blockHash = new Keccak256(getRandomHash());
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         when(calculator.calculateWithBlockHeaders(previousBlocks)).thenReturn(forkDetectionData);
 
-        ForkDetectionDataRule rule = new ForkDetectionDataRule(
-                activationConfig,
-                mainchainView,
-                calculator,
-                requiredBlocksForForkDataCalculation
-        );
+        ForkDetectionDataRule rule =
+                new ForkDetectionDataRule(
+                        activationConfig,
+                        mainchainView,
+                        calculator,
+                        requiredBlocksForForkDataCalculation);
 
         BlockHeader header = mock(BlockHeader.class);
         when(header.getNumber()).thenReturn(blockNumber);
         when(header.getHash()).thenReturn(blockHash);
         when(header.getParentHash()).thenReturn(parentBlockHash);
-        byte[] headerForkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 42, 8, 9, 10, 11, 12 };
+        byte[] headerForkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 42, 8, 9, 10, 11, 12};
         when(header.getMiningForkDetectionData()).thenReturn(headerForkDetectionData);
 
         assertFalse(rule.isValid(header));

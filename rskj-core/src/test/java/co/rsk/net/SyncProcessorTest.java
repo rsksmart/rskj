@@ -1,5 +1,7 @@
 package co.rsk.net;
 
+import static org.mockito.Mockito.*;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
@@ -18,6 +20,9 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
 import co.rsk.validators.*;
+import java.math.BigInteger;
+import java.time.Duration;
+import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -33,20 +38,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 
-import java.math.BigInteger;
-import java.time.Duration;
-import java.util.*;
-
-import static org.mockito.Mockito.*;
-
-/**
- * Created by ajlopez on 29/08/2017.
- */
+/** Created by ajlopez on 29/08/2017. */
 public class SyncProcessorTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-    public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
+    public static final DifficultyCalculator DIFFICULTY_CALCULATOR =
+            new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
     @Test
     public void noPeers() {
@@ -54,16 +52,27 @@ public class SyncProcessorTest {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getPeerScoringManager(), getChannelManager(),
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        getPeerScoringManager(),
+                        getChannelManager(),
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
 
         Assert.assertEquals(0, processor.getPeersCount());
         Assert.assertEquals(0, processor.getNoAdvancedPeers());
@@ -78,32 +87,50 @@ public class SyncProcessorTest {
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 
-        Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(new BlockDifficulty(BigInteger.TEN)));
+        Status status =
+                new Status(
+                        100,
+                        hash,
+                        parentHash,
+                        blockchain.getTotalDifficulty().add(new BlockDifficulty(BigInteger.TEN)));
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
         Channel channel = mock(Channel.class);
         when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final List<Message> messages = new ArrayList<>();
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            messages.add(invocation.getArgument(1));
-            return true;
-        });
+        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any()))
+                .then(
+                        (InvocationOnMock invocation) -> {
+                            messages.add(invocation.getArgument(1));
+                            return true;
+                        });
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager,
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        channelManager,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getPeersCount());
@@ -120,7 +147,7 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
-        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
+        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage) message;
 
         Assert.assertEquals(status.getBestBlockHash(), request.getHash());
     }
@@ -132,33 +159,51 @@ public class SyncProcessorTest {
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 
-        Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(new BlockDifficulty(BigInteger.TEN)));
+        Status status =
+                new Status(
+                        100,
+                        hash,
+                        parentHash,
+                        blockchain.getTotalDifficulty().add(new BlockDifficulty(BigInteger.TEN)));
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
         Channel channel = mock(Channel.class);
         when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final List<Message> messages = new ArrayList<>();
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            messages.add(invocation.getArgument(1));
-            return true;
-        });
+        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any()))
+                .then(
+                        (InvocationOnMock invocation) -> {
+                            messages.add(invocation.getArgument(1));
+                            return true;
+                        });
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager,
-                syncConfiguration, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        channelManager,
+                        syncConfiguration,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getPeersCount());
@@ -196,18 +241,29 @@ public class SyncProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                SyncConfiguration.DEFAULT, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        SyncConfiguration.DEFAULT,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getPeersCount());
@@ -232,22 +288,38 @@ public class SyncProcessorTest {
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 
-        Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(new BlockDifficulty(BigInteger.TEN)));
+        Status status =
+                new Status(
+                        100,
+                        hash,
+                        parentHash,
+                        blockchain.getTotalDifficulty().add(new BlockDifficulty(BigInteger.TEN)));
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         final ChannelManager channelManager = mock(ChannelManager.class);
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager,
-                SyncConfiguration.DEFAULT, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        channelManager,
+                        SyncConfiguration.DEFAULT,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
 
         List<SimpleMessageChannel> senders = new ArrayList<>();
         List<Channel> channels = new ArrayList<>();
@@ -261,10 +333,14 @@ public class SyncProcessorTest {
             messagesByNode.put(sender.getPeerNodeID(), new ArrayList<>());
             when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
             when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
-            when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-                messagesByNode.get(sender.getPeerNodeID()).add(invocation.getArgument(1));
-                return true;
-            });
+            when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any()))
+                    .then(
+                            (InvocationOnMock invocation) -> {
+                                messagesByNode
+                                        .get(sender.getPeerNodeID())
+                                        .add(invocation.getArgument(1));
+                                return true;
+                            });
         }
 
         messagesByNode.values().forEach(m -> Assert.assertTrue(m.isEmpty()));
@@ -289,17 +365,14 @@ public class SyncProcessorTest {
         senders.add(lastSender);
         Assert.assertTrue(ids.contains(lastSender.getPeerNodeID()));
         Assert.assertFalse(messagesByNode.values().stream().allMatch(m -> m.isEmpty()));
-        Assert.assertEquals(1, messagesByNode.values().stream()
-                .mapToInt(List::size)
-                .sum());
+        Assert.assertEquals(1, messagesByNode.values().stream().mapToInt(List::size).sum());
 
-        Message message = messagesByNode.values().stream().filter(m -> !m.isEmpty())
-                .findFirst()
-                .get().get(0);
+        Message message =
+                messagesByNode.values().stream().filter(m -> !m.isEmpty()).findFirst().get().get(0);
 
         Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
-        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
+        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage) message;
 
         Assert.assertEquals(status.getBestBlockHash(), request.getHash());
     }
@@ -308,25 +381,41 @@ public class SyncProcessorTest {
     public void processStatusWithPeerWithSameDifficulty() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(100);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 
-        Status status = new Status(blockchain.getStatus().getBestBlockNumber(), hash, parentHash, blockchain.getStatus().getTotalDifficulty());
+        Status status =
+                new Status(
+                        blockchain.getStatus().getBestBlockNumber(),
+                        hash,
+                        parentHash,
+                        blockchain.getStatus().getTotalDifficulty());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getPeersCount());
@@ -342,26 +431,33 @@ public class SyncProcessorTest {
     @Test
     public void sendSkeletonRequest() {
         Blockchain blockchain = BlockChainBuilder.ofSize(100);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
         Channel channel = mock(Channel.class);
         when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
+        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any()))
+                .then(
+                        (InvocationOnMock invocation) -> {
+                            msg[0] = invocation.getArgument(1);
+                            return true;
+                        });
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), null, RskMockFactory.getPeerScoringManager(), channelManager,
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        null,
+                        RskMockFactory.getPeerScoringManager(),
+                        channelManager,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
 
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         processor.sendSkeletonRequest(sender.getPeerNodeID(), 0);
@@ -371,7 +467,7 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
 
-        SkeletonRequestMessage request = (SkeletonRequestMessage)message;
+        SkeletonRequestMessage request = (SkeletonRequestMessage) message;
 
         Assert.assertNotEquals(0, request.getId());
         Assert.assertEquals(0, request.getStartNumber());
@@ -383,26 +479,33 @@ public class SyncProcessorTest {
     public void sendBlockHashRequest() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
         Channel channel = mock(Channel.class);
         when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
+        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any()))
+                .then(
+                        (InvocationOnMock invocation) -> {
+                            msg[0] = invocation.getArgument(1);
+                            return true;
+                        });
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), null, RskMockFactory.getPeerScoringManager(), channelManager,
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        null,
+                        RskMockFactory.getPeerScoringManager(),
+                        channelManager,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
 
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         Assert.assertFalse(processor.isPeerSyncing(sender.getPeerNodeID()));
@@ -414,7 +517,7 @@ public class SyncProcessorTest {
         Assert.assertNotNull(message);
         Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
 
-        BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+        BlockHashRequestMessage request = (BlockHashRequestMessage) message;
 
         Assert.assertNotEquals(0, request.getId());
         Assert.assertEquals(100, request.getHeight());
@@ -425,42 +528,58 @@ public class SyncProcessorTest {
     @Test(expected = Exception.class)
     public void processBlockHashResponseWithUnknownHash() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
-
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), null, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        null,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.processStatus(sender, new Status(100, null));
     }
 
     @Test
     public void processBlockHeadersResponseWithEmptyList() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                syncConfiguration, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        new BlockStore(),
+                        blockchain,
+                        new BlockNodeInformation(),
+                        syncConfiguration);
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        syncConfiguration,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
 
         List<BlockHeader> headers = new ArrayList<>();
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(new Random().nextLong(), headers);
+        BlockHeadersResponseMessage response =
+                new BlockHeadersResponseMessage(new Random().nextLong(), headers);
         processor.registerExpectedMessage(response);
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertEquals(0, sender.getMessages().size());
@@ -471,25 +590,37 @@ public class SyncProcessorTest {
     public void processBlockHeadersResponseRejectsNonSolicitedMessages() {
         Blockchain blockchain = BlockChainBuilder.ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                syncConfiguration, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        new BlockStore(),
+                        blockchain,
+                        new BlockNodeInformation(),
+                        syncConfiguration);
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        syncConfiguration,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(new Random().nextLong(), headers);
+        BlockHeadersResponseMessage response =
+                new BlockHeadersResponseMessage(new Random().nextLong(), headers);
         processor.registerExpectedMessage(response);
 
         processor.processBlockHeadersResponse(sender, response);
@@ -501,28 +632,39 @@ public class SyncProcessorTest {
     public void processBlockHeadersResponseWithManyHeadersMissingFirstParent() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         Blockchain otherBlockchain = BlockChainBuilder.ofSize(10, true);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                syncConfiguration, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        new BlockStore(),
+                        blockchain,
+                        new BlockNodeInformation(),
+                        syncConfiguration);
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        syncConfiguration,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockHeader> headers = new ArrayList<>();
 
-        for (int k = 10; k >= 2; k--)
-            headers.add(otherBlockchain.getBlockByNumber(k).getHeader());
+        for (int k = 10; k >= 2; k--) headers.add(otherBlockchain.getBlockByNumber(k).getHeader());
 
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(new Random().nextLong(), headers);
+        BlockHeadersResponseMessage response =
+                new BlockHeadersResponseMessage(new Random().nextLong(), headers);
         processor.registerExpectedMessage(response);
 
         processor.processBlockHeadersResponse(sender, response);
@@ -534,25 +676,37 @@ public class SyncProcessorTest {
     public void processBlockHeadersResponseWithOneExistingHeader() {
         Blockchain blockchain = BlockChainBuilder.ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                syncConfiguration, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        new BlockStore(),
+                        blockchain,
+                        new BlockNodeInformation(),
+                        syncConfiguration);
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        syncConfiguration,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(new Random().nextLong(), headers);
+        BlockHeadersResponseMessage response =
+                new BlockHeadersResponseMessage(new Random().nextLong(), headers);
         processor.registerExpectedMessage(response);
 
         processor.processBlockHeadersResponse(sender, response);
@@ -563,20 +717,31 @@ public class SyncProcessorTest {
     @Test
     public void processBodyResponseRejectsNonSolicitedMessages() {
         Blockchain blockchain = BlockChainBuilder.ofSize(3);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                syncConfiguration, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        new BlockStore(),
+                        blockchain,
+                        new BlockNodeInformation(),
+                        syncConfiguration);
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        syncConfiguration,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), null, null);
@@ -591,7 +756,7 @@ public class SyncProcessorTest {
     public void processBodyResponseAddsToBlockchain() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(10);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
@@ -602,17 +767,28 @@ public class SyncProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
@@ -629,8 +805,10 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
-        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+        processor.startDownloadingBodies(
+                headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
+        ((DownloadingBodiesSyncState) processor.getSyncState())
+                .expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
 
@@ -643,7 +821,7 @@ public class SyncProcessorTest {
     public void doesntProcessInvalidBodyResponse() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(10);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
@@ -654,23 +832,39 @@ public class SyncProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         Account senderAccount = createAccount("sender");
         Account receiverAccount = createAccount("receiver");
-        Transaction tx = createTransaction(senderAccount, receiverAccount, BigInteger.valueOf(1000000), BigInteger.ZERO);
+        Transaction tx =
+                createTransaction(
+                        senderAccount,
+                        receiverAccount,
+                        BigInteger.valueOf(1000000),
+                        BigInteger.ZERO);
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
@@ -689,8 +883,10 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
-        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+        processor.startDownloadingBodies(
+                headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
+        ((DownloadingBodiesSyncState) processor.getSyncState())
+                .expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
         processor.processBodyResponse(sender, response);
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
@@ -703,7 +899,7 @@ public class SyncProcessorTest {
     public void doesntProcessUnexpectedBodyResponse() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(10);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
@@ -717,17 +913,28 @@ public class SyncProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
@@ -743,10 +950,13 @@ public class SyncProcessorTest {
         int connectionPoint = 10;
         int step = 192;
         int linkCount = 1;
-        processor.startDownloadingBodies(headers,
-                Collections.singletonMap(sender.getPeerNodeID(),
+        processor.startDownloadingBodies(
+                headers,
+                Collections.singletonMap(
+                        sender.getPeerNodeID(),
                         buildSkeleton(extended, connectionPoint, step, linkCount)));
-//        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+        //
+        // ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
 
@@ -762,37 +972,54 @@ public class SyncProcessorTest {
         Account receiverAccount = createAccount("receiver");
 
         Map<RskAddress, AccountState> accounts = new HashMap<>();
-        accounts.put(senderAccount.getAddress(), new AccountState(BigInteger.ZERO, Coin.valueOf(20000000)));
+        accounts.put(
+                senderAccount.getAddress(),
+                new AccountState(BigInteger.ZERO, Coin.valueOf(20000000)));
         accounts.put(receiverAccount.getAddress(), new AccountState(BigInteger.ZERO, Coin.ZERO));
 
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0, false, accounts);
 
         Block genesis = blockchain.getBestBlock();
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        List<Transaction> txs = Collections.singletonList(
-                createTransaction(senderAccount, receiverAccount, BigInteger.valueOf(1000000), BigInteger.ZERO)
-        );
+        List<Transaction> txs =
+                Collections.singletonList(
+                        createTransaction(
+                                senderAccount,
+                                receiverAccount,
+                                BigInteger.valueOf(1000000),
+                                BigInteger.ZERO));
 
-        Block block = new BlockGenerator().createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
+        Block block =
+                new BlockGenerator()
+                        .createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
 
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
-        BlockExecutor blockExecutor = new BlockExecutor(
-                config.getActivationConfig(),
-                new RepositoryLocator(blockchain.getRepository(), stateRootHandler),
-                stateRootHandler,
-                new TransactionExecutorFactory(
-                        config,
-                        blockchain.getBlockStore(),
-                        null,
-                        blockFactory,
-                        new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()))
-                )
-        );
+        StateRootHandler stateRootHandler =
+                new StateRootHandler(
+                        config.getActivationConfig(),
+                        new TrieConverter(),
+                        new HashMapDB(),
+                        new HashMap<>());
+        BlockExecutor blockExecutor =
+                new BlockExecutor(
+                        config.getActivationConfig(),
+                        new RepositoryLocator(blockchain.getRepository(), stateRootHandler),
+                        stateRootHandler,
+                        new TransactionExecutorFactory(
+                                config,
+                                blockchain.getBlockStore(),
+                                null,
+                                blockFactory,
+                                new ProgramInvokeFactoryImpl(),
+                                new PrecompiledContracts(
+                                        config,
+                                        new RepositoryBtcBlockStoreWithCache.Factory(
+                                                config.getNetworkConstants()
+                                                        .getBridgeConstants()
+                                                        .getBtcParams()))));
         Assert.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis.getHeader());
         Assert.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());
@@ -803,17 +1030,28 @@ public class SyncProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         List<Transaction> transactions = block.getTransactionsList();
         List<BlockHeader> uncles = block.getUncleList();
@@ -830,8 +1068,10 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
-        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+        processor.startDownloadingBodies(
+                headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
+        ((DownloadingBodiesSyncState) processor.getSyncState())
+                .expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
 
@@ -844,7 +1084,7 @@ public class SyncProcessorTest {
     public void processBlockResponseAddsToBlockchain() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(10);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
@@ -855,17 +1095,28 @@ public class SyncProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         BlockResponseMessage response = new BlockResponseMessage(new Random().nextLong(), block);
         processor.registerExpectedMessage(response);
@@ -882,48 +1133,67 @@ public class SyncProcessorTest {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         Blockchain advancedBlockchain = BlockChainBuilder.ofSize(100);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
         Channel channel = mock(Channel.class);
         when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final List<Message> messages = new ArrayList<>();
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            messages.add(invocation.getArgument(1));
-            return true;
-        });
+        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any()))
+                .then(
+                        (InvocationOnMock invocation) -> {
+                            messages.add(invocation.getArgument(1));
+                            return true;
+                        });
 
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager,
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory, new DummyBlockValidationRule(),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        channelManager,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new DummyBlockValidationRule(),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
 
         processor.processStatus(sender, StatusUtils.fromBlockchain(advancedBlockchain));
-        BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage)messages.get(0);
-        processor.processBlockHeadersResponse(sender, new BlockHeadersResponseMessage(requestMessage.getId(), Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
+        BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage) messages.get(0);
+        processor.processBlockHeadersResponse(
+                sender,
+                new BlockHeadersResponseMessage(
+                        requestMessage.getId(),
+                        Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
 
-        long[] expectedHeights = new long[] { 50, 25, 12, 6, 3, 1 };
+        long[] expectedHeights = new long[] {50, 25, 12, 6, 3, 1};
 
         for (int k = 0; k < expectedHeights.length; k++) {
-            Assert.assertEquals( k + 2, messages.size());
+            Assert.assertEquals(k + 2, messages.size());
             Message message = messages.get(k + 1);
             Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
-            BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+            BlockHashRequestMessage request = (BlockHashRequestMessage) message;
             long requestId = request.getId();
             Assert.assertEquals(expectedHeights[k], request.getHeight());
 
             Block block = advancedBlockchain.getBlockByNumber(expectedHeights[k]);
 
-            processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash().getBytes()));
+            processor.processBlockHashResponse(
+                    sender, new BlockHashResponseMessage(requestId, block.getHash().getBytes()));
         }
 
         Assert.assertEquals(expectedHeights.length + 2, messages.size());
@@ -932,7 +1202,7 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
 
-        SkeletonRequestMessage request = (SkeletonRequestMessage)message;
+        SkeletonRequestMessage request = (SkeletonRequestMessage) message;
 
         Assert.assertEquals(0, request.getStartNumber());
         Assert.assertEquals(1, processor.getExpectedResponses().size());
@@ -943,48 +1213,67 @@ public class SyncProcessorTest {
         Blockchain blockchain = BlockChainBuilder.ofSize(30);
         Blockchain advancedBlockchain = BlockChainBuilder.copyAndExtend(blockchain, 70);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
         Channel channel = mock(Channel.class);
         when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final List<Message> messages = new ArrayList<>();
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            messages.add(invocation.getArgument(1));
-            return true;
-        });
+        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any()))
+                .then(
+                        (InvocationOnMock invocation) -> {
+                            messages.add(invocation.getArgument(1));
+                            return true;
+                        });
 
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager,
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory, new DummyBlockValidationRule(),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        channelManager,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new DummyBlockValidationRule(),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
 
         Status status = StatusUtils.fromBlockchain(advancedBlockchain);
         processor.processStatus(sender, status);
-        BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage)messages.get(0);
-        processor.processBlockHeadersResponse(sender, new BlockHeadersResponseMessage(requestMessage.getId(), Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
+        BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage) messages.get(0);
+        processor.processBlockHeadersResponse(
+                sender,
+                new BlockHeadersResponseMessage(
+                        requestMessage.getId(),
+                        Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
 
-        long[] binarySearchHeights = new long[] { 50, 25, 37, 31, 28, 29, 30 };
+        long[] binarySearchHeights = new long[] {50, 25, 37, 31, 28, 29, 30};
         for (int k = 0; k < binarySearchHeights.length; k++) {
             Assert.assertEquals(k + 2, messages.size());
             Message message = messages.get(k + 1);
             Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
-            BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+            BlockHashRequestMessage request = (BlockHashRequestMessage) message;
             long requestId = request.getId();
             Assert.assertEquals(binarySearchHeights[k], request.getHeight());
 
             Block block = advancedBlockchain.getBlockByNumber(binarySearchHeights[k]);
 
-            processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash().getBytes()));
+            processor.processBlockHashResponse(
+                    sender, new BlockHashResponseMessage(requestId, block.getHash().getBytes()));
         }
 
         Assert.assertEquals(binarySearchHeights.length + 2, messages.size());
@@ -993,7 +1282,7 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
 
-        SkeletonRequestMessage request = (SkeletonRequestMessage)message;
+        SkeletonRequestMessage request = (SkeletonRequestMessage) message;
 
         Assert.assertEquals(30, request.getStartNumber());
         Assert.assertEquals(1, processor.getExpectedResponses().size());
@@ -1005,37 +1294,52 @@ public class SyncProcessorTest {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
         Channel channel = mock(Channel.class);
         when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
+        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any()))
+                .then(
+                        (InvocationOnMock invocation) -> {
+                            msg[0] = invocation.getArgument(1);
+                            return true;
+                        });
 
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager,
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        channelManager,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
 
         int connectionPoint = 0;
         int step = 10;
         int linkCount = 9;
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), connectionPoint);
         processor.startDownloadingSkeleton(connectionPoint);
-        List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
+        List<BlockIdentifier> blockIdentifiers =
+                buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
-        SkeletonResponseMessage response = new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
+        SkeletonResponseMessage response =
+                new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
         processor.registerExpectedMessage(response);
         processor.processSkeletonResponse(sender, response);
 
@@ -1043,12 +1347,13 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
-        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
+        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage) message;
 
         Assert.assertArrayEquals(blockIdentifiers.get(1).getHash(), request.getHash());
         Assert.assertEquals(10, request.getCount());
 
-        DownloadingHeadersSyncState syncState = (DownloadingHeadersSyncState) processor.getSyncState();
+        DownloadingHeadersSyncState syncState =
+                (DownloadingHeadersSyncState) processor.getSyncState();
         List<BlockIdentifier> skeleton = syncState.getSkeleton();
 
         Assert.assertEquals(10, skeleton.size());
@@ -1059,24 +1364,37 @@ public class SyncProcessorTest {
     public void processSkeletonResponseWithoutBlockIdentifiers() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), getChannelManager(),
-                syncConfiguration, blockFactory, new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        new BlockStore(),
+                        blockchain,
+                        new BlockNodeInformation(),
+                        syncConfiguration);
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        getChannelManager(),
+                        syncConfiguration,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
 
-        SkeletonResponseMessage response = new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
+        SkeletonResponseMessage response =
+                new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
         processor.registerExpectedMessage(response);
         processor.processSkeletonResponse(sender, response);
 
@@ -1092,36 +1410,51 @@ public class SyncProcessorTest {
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] {0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
         Channel channel = mock(Channel.class);
         when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
-        SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager,
-                SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
-                        new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
-                ),
-                DIFFICULTY_CALCULATOR
-        );
+        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any()))
+                .then(
+                        (InvocationOnMock invocation) -> {
+                            msg[0] = invocation.getArgument(1);
+                            return true;
+                        });
+        SyncProcessor processor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        channelManager,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                        blockFactory,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        DIFFICULTY_CALCULATOR);
 
         int connectionPoint = 25;
         int step = 10;
         int linkCount = 10;
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), connectionPoint);
         processor.startDownloadingSkeleton(connectionPoint);
-        List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
+        List<BlockIdentifier> blockIdentifiers =
+                buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
-        SkeletonResponseMessage response = new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
+        SkeletonResponseMessage response =
+                new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
         processor.registerExpectedMessage(response);
         processor.processSkeletonResponse(sender, response);
 
@@ -1129,14 +1462,15 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
-        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
+        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage) message;
 
         Assert.assertEquals(5, request.getCount());
         Assert.assertArrayEquals(blockIdentifiers.get(1).getHash(), request.getHash());
         Assert.assertEquals(1, processor.getExpectedResponses().size());
     }
 
-    private List<BlockIdentifier> buildSkeleton(Blockchain blockchain, int connectionPoint, int step, int linkCount) {
+    private List<BlockIdentifier> buildSkeleton(
+            Blockchain blockchain, int connectionPoint, int step, int linkCount) {
         List<BlockIdentifier> bids = new ArrayList<>();
         int start = connectionPoint - (connectionPoint % step);
         for (int k = 0; k < linkCount; k++) {
@@ -1145,22 +1479,30 @@ public class SyncProcessorTest {
 
             byte[] hash;
 
-            if (block != null)
-                hash = block.getHash().getBytes();
-            else
-                hash = HashUtil.randomHash();
+            if (block != null) hash = block.getHash().getBytes();
+            else hash = HashUtil.randomHash();
 
             bids.add(new BlockIdentifier(hash, number));
         }
-        BlockIdentifier bid = new BlockIdentifier(blockchain.getBestBlockHash(), blockchain.getBestBlock().getNumber());
+        BlockIdentifier bid =
+                new BlockIdentifier(
+                        blockchain.getBestBlockHash(), blockchain.getBestBlock().getNumber());
         bids.add(bid);
         return bids;
     }
 
-    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
+    private static Transaction createTransaction(
+            Account sender, Account receiver, BigInteger value, BigInteger nonce) {
         String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
+        Transaction tx =
+                new Transaction(
+                        toAddress,
+                        value,
+                        nonce,
+                        BigInteger.ONE,
+                        BigInteger.valueOf(21000),
+                        config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);
         return tx;
     }

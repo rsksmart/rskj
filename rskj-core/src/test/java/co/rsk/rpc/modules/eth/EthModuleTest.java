@@ -18,6 +18,10 @@
 
 package co.rsk.rpc.modules.eth;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.*;
+
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.core.Block;
@@ -26,39 +30,25 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
-
 public class EthModuleTest {
     @Test
     public void callSmokeTest() {
         Web3.CallArguments args = new Web3.CallArguments();
         Block executionBlock = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock("latest"))
-                .thenReturn(executionBlock);
+        when(retriever.getExecutionBlock("latest")).thenReturn(executionBlock);
 
         byte[] hreturn = TypeConverter.stringToByteArray("hello");
         ProgramResult executorResult = mock(ProgramResult.class);
-        when(executorResult.getHReturn())
-                .thenReturn(hreturn);
+        when(executorResult.getHReturn()).thenReturn(hreturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(executionBlock), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransaction(
+                        eq(executionBlock), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
-        EthModule eth = new EthModule(
-                null,
-                null,
-                null,
-                executor,
-                retriever,
-                null,
-                null,
-                null,
-                null,
-                null);
+        EthModule eth =
+                new EthModule(null, null, null, executor, retriever, null, null, null, null, null);
 
         String result = eth.call(args, "latest");
         assertThat(result, is(TypeConverter.toJsonHex(hreturn)));

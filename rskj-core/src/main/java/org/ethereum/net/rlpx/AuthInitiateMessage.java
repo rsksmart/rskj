@@ -19,17 +19,17 @@
 
 package org.ethereum.net.rlpx;
 
-import org.ethereum.crypto.ECKey;
+import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
+import static org.ethereum.util.ByteUtil.merge;
+
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
-
-import static org.ethereum.util.ByteUtil.merge;
-import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
+import org.ethereum.crypto.ECKey;
 
 /**
  * Authentication initiation message, to be wrapped inside
  *
- * Created by devrandom on 2015-04-07.
+ * <p>Created by devrandom on 2015-04-07.
  */
 public class AuthInitiateMessage {
     ECKey.ECDSASignature signature; // 65 bytes
@@ -38,11 +38,10 @@ public class AuthInitiateMessage {
     byte[] nonce; // 32 bytes
     boolean isTokenUsed; // 1 byte - 0x00 or 0x01
 
-    public AuthInitiateMessage() {
-    }
+    public AuthInitiateMessage() {}
 
     public static int getLength() {
-        return 65+32+64+32+1;
+        return 65 + 32 + 64 + 32 + 1;
     }
 
     static AuthInitiateMessage decode(byte[] wire) {
@@ -56,7 +55,7 @@ public class AuthInitiateMessage {
         offset += 32;
         int v = wire[offset] + 27;
         offset += 1;
-        message.signature = ECKey.ECDSASignature.fromComponents(r, s, (byte)v);
+        message.signature = ECKey.ECDSASignature.fromComponents(r, s, (byte) v);
         message.ephemeralPublicHash = new byte[32];
         System.arraycopy(wire, offset, message.ephemeralPublicHash, 0, 32);
         offset += 32;
@@ -87,7 +86,11 @@ public class AuthInitiateMessage {
         byte[] ssig = asUnsignedByteArray(signature.s);
         System.arraycopy(ssig, 0, ssigPad, ssigPad.length - ssig.length, ssig.length);
 
-        byte[] sigBytes = merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.v)});
+        byte[] sigBytes =
+                merge(
+                        rsigPad,
+                        ssigPad,
+                        new byte[] {EncryptionHandshake.recIdFromSignatureV(signature.v)});
 
         byte[] buffer = new byte[getLength()];
         int offset = 0;
@@ -100,7 +103,7 @@ public class AuthInitiateMessage {
         offset += publicBytes.length - 1;
         System.arraycopy(nonce, 0, buffer, offset, nonce.length);
         offset += nonce.length;
-        buffer[offset] = (byte)(isTokenUsed ? 0x01 : 0x00);
+        buffer[offset] = (byte) (isTokenUsed ? 0x01 : 0x00);
         offset += 1;
         return buffer;
     }
@@ -108,14 +111,21 @@ public class AuthInitiateMessage {
     @Override
     public String toString() {
 
-        byte[] sigBytes = merge(asUnsignedByteArray(signature.r),
-                asUnsignedByteArray(signature.s), new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.v)});
+        byte[] sigBytes =
+                merge(
+                        asUnsignedByteArray(signature.r),
+                        asUnsignedByteArray(signature.s),
+                        new byte[] {EncryptionHandshake.recIdFromSignatureV(signature.v)});
 
-        return "AuthInitiateMessage{" +
-                "\n  sigBytes=" + Hex.toHexString(sigBytes) +
-                "\n  ephemeralPublicHash=" + Hex.toHexString(ephemeralPublicHash) +
-                "\n  publicKey=" + Hex.toHexString(publicKey.getEncoded(false)) +
-                "\n  nonce=" + Hex.toHexString(nonce) +
-                "\n}";
+        return "AuthInitiateMessage{"
+                + "\n  sigBytes="
+                + Hex.toHexString(sigBytes)
+                + "\n  ephemeralPublicHash="
+                + Hex.toHexString(ephemeralPublicHash)
+                + "\n  publicKey="
+                + Hex.toHexString(publicKey.getEncoded(false))
+                + "\n  nonce="
+                + Hex.toHexString(nonce)
+                + "\n}";
     }
 }

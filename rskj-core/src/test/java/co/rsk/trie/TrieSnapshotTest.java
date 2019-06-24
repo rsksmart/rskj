@@ -18,17 +18,15 @@
 
 package co.rsk.trie;
 
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.*;
+
 import co.rsk.crypto.Keccak256;
 import org.ethereum.datasource.HashMapDB;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.*;
-
-/**
- * Created by ajlopez on 05/04/2017.
- */
+/** Created by ajlopez on 05/04/2017. */
 public class TrieSnapshotTest {
     @Test
     public void getSnapshotToTrie() {
@@ -54,7 +52,6 @@ public class TrieSnapshotTest {
         Assert.assertNotNull(snapshot.get("foo".getBytes()));
         Assert.assertNull(snapshot.get("bar".getBytes()));
     }
-
 
     @Test
     public void getSnapshotToTrieWithLongValues() {

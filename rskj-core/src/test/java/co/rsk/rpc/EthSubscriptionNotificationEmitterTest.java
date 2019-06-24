@@ -17,6 +17,11 @@
  */
 package co.rsk.rpc;
 
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.*;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.rpc.modules.eth.subscribe.SubscriptionId;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,11 +33,6 @@ import org.ethereum.listener.EthereumListener;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
 
 public class EthSubscriptionNotificationEmitterTest {
     private static final Block TEST_BLOCK = new BlockGenerator().createBlock(12, 0);
@@ -47,7 +47,8 @@ public class EthSubscriptionNotificationEmitterTest {
         serializer = mock(JsonRpcSerializer.class);
         emitter = new EthSubscriptionNotificationEmitter(ethereum, serializer);
 
-        ArgumentCaptor<EthereumListener> listenerCaptor = ArgumentCaptor.forClass(EthereumListener.class);
+        ArgumentCaptor<EthereumListener> listenerCaptor =
+                ArgumentCaptor.forClass(EthereumListener.class);
         verify(ethereum, times(1)).addListener(listenerCaptor.capture());
         listener = listenerCaptor.getValue();
     }
@@ -63,8 +64,7 @@ public class EthSubscriptionNotificationEmitterTest {
     public void ethereumOnBlockEventTriggersMessageToChannel() throws JsonProcessingException {
         Channel channel = mock(Channel.class);
         emitter.subscribe(channel);
-        when(serializer.serializeMessage(any()))
-                .thenReturn("serialized");
+        when(serializer.serializeMessage(any())).thenReturn("serialized");
 
         listener.onBlock(TEST_BLOCK, null);
         verify(channel, times(1)).writeAndFlush(new TextWebSocketFrame("serialized"));

@@ -19,16 +19,13 @@
 
 package org.ethereum.net.rlpx;
 
+import java.io.*;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.p2p.P2pMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.io.*;
-
-/**
- * Created by devrandom on 2015-04-12.
- */
+/** Created by devrandom on 2015-04-12. */
 public class RlpxConnection {
     private static final Logger logger = LoggerFactory.getLogger("discover");
 
@@ -48,7 +45,8 @@ public class RlpxConnection {
     public void sendProtocolHandshake(HandshakeMessage message) throws IOException {
         logger.info("<=== " + message);
         byte[] payload = message.encode();
-        codec.writeFrame(new FrameCodec.Frame(HandshakeMessage.HANDSHAKE_MESSAGE_TYPE, payload), out);
+        codec.writeFrame(
+                new FrameCodec.Frame(HandshakeMessage.HANDSHAKE_MESSAGE_TYPE, payload), out);
     }
 
     public void handleNextMessage() throws IOException {

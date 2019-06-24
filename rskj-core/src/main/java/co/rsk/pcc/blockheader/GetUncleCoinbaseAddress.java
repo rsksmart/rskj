@@ -21,28 +21,28 @@ package co.rsk.pcc.blockheader;
 
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
+import java.math.BigInteger;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.util.ByteUtil;
 
-import java.math.BigInteger;
-import java.util.List;
-
 /**
- * This implements the "getUncleCoinbaseAddress" method
- * that belongs to the BlockHeaderContract native contract.
+ * This implements the "getUncleCoinbaseAddress" method that belongs to the BlockHeaderContract
+ * native contract.
  *
  * @author Diego Masini
  */
 public class GetUncleCoinbaseAddress extends BlockHeaderContractMethod {
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "getUncleCoinbaseAddress",
-            new String[]{"int256", "int256"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature(
+                    "getUncleCoinbaseAddress",
+                    new String[] {"int256", "int256"},
+                    new String[] {"bytes"});
 
-    public GetUncleCoinbaseAddress(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
+    public GetUncleCoinbaseAddress(
+            ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);
     }
 
@@ -66,10 +66,10 @@ public class GetUncleCoinbaseAddress extends BlockHeaderContractMethod {
         }
 
         if (uncleIndex < 0) {
-            throw new NativeContractIllegalArgumentException(String.format(
-                    "Invalid uncle index '%d' (should be a non-negative value)",
-                    uncleIndex
-            ));
+            throw new NativeContractIllegalArgumentException(
+                    String.format(
+                            "Invalid uncle index '%d' (should be a non-negative value)",
+                            uncleIndex));
         }
 
         if (uncleIndex >= uncles.size()) {
@@ -80,4 +80,3 @@ public class GetUncleCoinbaseAddress extends BlockHeaderContractMethod {
         return uncle.getCoinbase().getBytes();
     }
 }
-

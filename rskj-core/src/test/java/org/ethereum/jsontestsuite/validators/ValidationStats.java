@@ -1,8 +1,6 @@
 package org.ethereum.jsontestsuite.validators;
 
-/**
- * Created by Sergio Lerner on 4/24/2019.
- */
+/** Created by Sergio Lerner on 4/24/2019. */
 public class ValidationStats {
     public int accountChecks;
     public int storageChecks;

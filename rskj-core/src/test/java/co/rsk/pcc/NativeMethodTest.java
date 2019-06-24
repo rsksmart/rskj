@@ -19,13 +19,13 @@
 
 package co.rsk.pcc;
 
+import static org.mockito.Mockito.mock;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.mockito.Mockito.mock;
 
 public class NativeMethodTest {
     private ExecutionEnvironment executionEnvironment;
@@ -37,28 +37,30 @@ public class NativeMethodTest {
     public void createMethodAndArguments() {
         executionEnvironment = mock(ExecutionEnvironment.class);
         function = mock(CallTransaction.Function.class);
-        method = new NativeMethod(executionEnvironment) {
-            @Override
-            public CallTransaction.Function getFunction() {
-                return function;
-            }
+        method =
+                new NativeMethod(executionEnvironment) {
+                    @Override
+                    public CallTransaction.Function getFunction() {
+                        return function;
+                    }
 
-            @Override
-            public Object execute(Object[] arguments) {
-                return "execution-result";
-            }
+                    @Override
+                    public Object execute(Object[] arguments) {
+                        return "execution-result";
+                    }
 
-            @Override
-            public boolean isEnabled() {
-                return false;
-            }
+                    @Override
+                    public boolean isEnabled() {
+                        return false;
+                    }
 
-            @Override
-            public boolean onlyAllowsLocalCalls() {
-                return false;
-            }
-        };
-        withArguments = method.new WithArguments(new Object[]{ "arg1", "arg2" }, Hex.decode("aabbcc"));
+                    @Override
+                    public boolean onlyAllowsLocalCalls() {
+                        return false;
+                    }
+                };
+        withArguments =
+                method.new WithArguments(new Object[] {"arg1", "arg2"}, Hex.decode("aabbcc"));
     }
 
     @Test

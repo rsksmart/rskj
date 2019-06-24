@@ -21,14 +21,13 @@ package co.rsk.rpc;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.googlecode.jsonrpc4j.RequestInterceptor;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class JsonRpcMethodFilterTest {
 
@@ -79,7 +78,8 @@ public class JsonRpcMethodFilterTest {
         disabledMethods.add("evm_reset");
         disabledMethods.add("evm_increaseTime");
 
-        ModuleDescription enabledModule = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
+        ModuleDescription enabledModule =
+                new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
 
         List<ModuleDescription> modules = new ArrayList<>();
 

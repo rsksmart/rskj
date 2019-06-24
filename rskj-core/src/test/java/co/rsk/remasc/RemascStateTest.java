@@ -22,9 +22,7 @@ import co.rsk.core.Coin;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 14/04/2017.
- */
+/** Created by ajlopez on 14/04/2017. */
 public class RemascStateTest {
     @Test
     public void serializeAndDeserializeWithNoValues() {

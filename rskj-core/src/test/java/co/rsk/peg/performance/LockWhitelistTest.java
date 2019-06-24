@@ -28,6 +28,8 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.util.MaxSizeHashMap;
+import java.io.IOException;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -35,19 +37,22 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.math.BigInteger;
-
 @Ignore
 public class LockWhitelistTest extends BridgePerformanceTestCase {
     private LockWhitelist lockWhitelist;
 
-    private static final ECKey authorizedWhitelistChanger = ECKey.fromPrivate(Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
+    private static final ECKey authorizedWhitelistChanger =
+            ECKey.fromPrivate(
+                    Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
 
     @Test
     public void getLockWhitelistSize() throws IOException {
         ExecutionStats stats = new ExecutionStats("getLockWhitelistSize");
-        executeTestCase((int executionIndex) -> Bridge.GET_LOCK_WHITELIST_SIZE.encode(), "getLockWhitelistSize", 200, stats);
+        executeTestCase(
+                (int executionIndex) -> Bridge.GET_LOCK_WHITELIST_SIZE.encode(),
+                "getLockWhitelistSize",
+                200,
+                stats);
         BridgePerformanceTest.addStats(stats);
     }
 
@@ -55,7 +60,11 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
     public void getLockWhitelistAddress() throws IOException {
         ExecutionStats stats = new ExecutionStats("getLockWhitelistAddress");
         executeTestCase(
-                (int executionIndex) -> Bridge.GET_LOCK_WHITELIST_ADDRESS.encode(new Object[]{Helper.randomInRange(0, lockWhitelist.getSize()-1)}),
+                (int executionIndex) ->
+                        Bridge.GET_LOCK_WHITELIST_ADDRESS.encode(
+                                new Object[] {
+                                    Helper.randomInRange(0, lockWhitelist.getSize() - 1)
+                                }),
                 "getLockWhitelistAddress",
                 200,
                 stats);
@@ -68,8 +77,9 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
         executeTestCase(
                 (int executionIndex) -> {
                     String address = new BtcECKey().toAddress(networkParameters).toBase58();
-                    BigInteger value = BigInteger.valueOf(Helper.randomCoin(Coin.COIN, 1, 30).getValue());
-                    return Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{address, value});
+                    BigInteger value =
+                            BigInteger.valueOf(Helper.randomCoin(Coin.COIN, 1, 30).getValue());
+                    return Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[] {address, value});
                 },
                 "addLockWhitelistAddress",
                 200,
@@ -82,8 +92,12 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("removeLockWhitelistAddress");
         executeTestCase(
                 (int executionIndex) -> {
-                    String address = lockWhitelist.getAddresses().get(Helper.randomInRange(0, lockWhitelist.getSize()-1)).toBase58();
-                    return Bridge.REMOVE_LOCK_WHITELIST_ADDRESS.encode(new Object[]{address});
+                    String address =
+                            lockWhitelist
+                                    .getAddresses()
+                                    .get(Helper.randomInRange(0, lockWhitelist.getSize() - 1))
+                                    .toBase58();
+                    return Bridge.REMOVE_LOCK_WHITELIST_ADDRESS.encode(new Object[] {address});
                 },
                 "removeLockWhitelistAddress",
                 200,
@@ -96,8 +110,10 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("setLockWhitelistDisableBlockDelay");
         executeTestCase(
                 (int executionIndex) -> {
-                    BigInteger disableBlockDelay = BigInteger.valueOf(Helper.randomInRange(10000, Integer.MAX_VALUE));
-                    return Bridge.SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY.encode(new Object[]{disableBlockDelay});
+                    BigInteger disableBlockDelay =
+                            BigInteger.valueOf(Helper.randomInRange(10000, Integer.MAX_VALUE));
+                    return Bridge.SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY.encode(
+                            new Object[] {disableBlockDelay});
                 },
                 "setLockWhitelistDisableBlockDelay",
                 200,
@@ -105,7 +121,8 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void executeTestCase(ABIEncoder abiEncoder, String name, int times, ExecutionStats stats) {
+    private void executeTestCase(
+            ABIEncoder abiEncoder, String name, int times, ExecutionStats stats) {
         executeAndAverage(
                 name,
                 times,
@@ -113,8 +130,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
                 buildInitializer(),
                 (int executionIndex) -> Helper.buildTx(authorizedWhitelistChanger),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     private BridgeStorageProviderInitializer buildInitializer() {
@@ -124,9 +140,14 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
         final int maxBtcBlocks = 1000;
 
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(),
-                    repository.startTracking(), new MaxSizeHashMap<>(RepositoryBtcBlockStoreWithCache.MAX_SIZE_MAP_STORED_BLOCKS, true),
-                    PrecompiledContracts.BRIDGE_ADDR);
+            BtcBlockStore btcBlockStore =
+                    new RepositoryBtcBlockStoreWithCache(
+                            BridgeRegTestConstants.getInstance().getBtcParams(),
+                            repository.startTracking(),
+                            new MaxSizeHashMap<>(
+                                    RepositoryBtcBlockStoreWithCache.MAX_SIZE_MAP_STORED_BLOCKS,
+                                    true),
+                            PrecompiledContracts.BRIDGE_ADDR);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {

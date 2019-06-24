@@ -25,15 +25,14 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
-import org.ethereum.core.Repository;
-import org.ethereum.crypto.HashUtil;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import org.ethereum.core.Repository;
+import org.ethereum.crypto.HashUtil;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class AddSignatureTest extends BridgePerformanceTestCase {
@@ -43,11 +42,14 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
 
     // Keys for the regtest genesis federation, which
     // we use for benchmarking this
-    private static final List<BtcECKey> federatorKeys = Arrays.asList(
-            BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))),
-            BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8))),
-            BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)))
-    );
+    private static final List<BtcECKey> federatorKeys =
+            Arrays.asList(
+                    BtcECKey.fromPrivate(
+                            HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))),
+                    BtcECKey.fromPrivate(
+                            HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8))),
+                    BtcECKey.fromPrivate(
+                            HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8))));
 
     @Test
     public void addSignature() {
@@ -67,8 +69,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
                 getInitializerFor(0),
                 Helper.getZeroValueValueTxBuilderFromFedMember(),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     private void addSignature_fullySigned(int times, ExecutionStats stats) {
@@ -76,19 +77,21 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
                 "addSignature-fullySigned",
                 times,
                 getABIEncoder(),
-                getInitializerFor(bridgeConstants.getGenesisFederation().getNumberOfSignaturesRequired()-1),
+                getInitializerFor(
+                        bridgeConstants.getGenesisFederation().getNumberOfSignaturesRequired() - 1),
                 Helper.getZeroValueValueTxBuilderFromFedMember(),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     private ABIEncoder getABIEncoder() {
-        return (int executionIndex) -> Bridge.ADD_SIGNATURE.encode(new Object[]{
-                federatorThatSignsKey.getPubKey(),
-                getSignaturesFor(releaseTx, federatorThatSignsKey),
-                rskTxHash.getBytes()
-            });
+        return (int executionIndex) ->
+                Bridge.ADD_SIGNATURE.encode(
+                        new Object[] {
+                            federatorThatSignsKey.getPubKey(),
+                            getSignaturesFor(releaseTx, federatorThatSignsKey),
+                            rskTxHash.getBytes()
+                        });
     }
 
     private BridgeStorageProviderInitializer getInitializerFor(int numSignatures) {
@@ -115,14 +118,16 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
                 inputTx.addOutput(inputAmount, federation.getAddress());
                 releaseTx
                         .addInput(inputTx.getOutput(0))
-                        .setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+                        .setScriptSig(
+                                PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(
+                                        federation));
             }
 
             // Partial signing according to numSignatures asked for
             List<BtcECKey> keysSelection = new ArrayList<>(federatorKeys);
             Collections.shuffle(keysSelection);
             int index = 0;
-            int actualNumSignatures = Math.min(numSignatures, keysSelection.size()-1);
+            int actualNumSignatures = Math.min(numSignatures, keysSelection.size() - 1);
             while (index < actualNumSignatures) {
                 signInputsWith(releaseTx, keysSelection.get(index));
                 index++;
@@ -131,13 +136,17 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
             federatorThatSignsKey = keysSelection.get(index);
 
             // Random tx hash that we then use for the method call
-            rskTxHash = new Keccak256(HashUtil.keccak256(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
+            rskTxHash =
+                    new Keccak256(
+                            HashUtil.keccak256(
+                                    BigInteger.valueOf(new Random().nextLong()).toByteArray()));
 
             // Get the tx into the txs waiting for signatures
             try {
                 provider.getRskTxsWaitingForSignatures().put(rskTxHash, releaseTx);
             } catch (IOException e) {
-                throw new RuntimeException("Exception while trying to gather txs waiting for signatures for storage initialization");
+                throw new RuntimeException(
+                        "Exception while trying to gather txs waiting for signatures for storage initialization");
             }
         };
     }
@@ -151,7 +160,9 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
             List<ScriptChunk> chunks = inputScript.getChunks();
             byte[] program = chunks.get(chunks.size() - 1).data;
             Script redeemScript = new Script(program);
-            Sha256Hash sighash = tx.hashForSignature(inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
+            Sha256Hash sighash =
+                    tx.hashForSignature(
+                            inputIndex, redeemScript, BtcTransaction.SigHash.ALL, false);
             BtcECKey.ECDSASignature sig = key.sign(sighash);
             signatures.add(sig.encodeToDER());
             inputIndex++;
@@ -169,14 +180,16 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
             List<ScriptChunk> chunks = inputScript.getChunks();
             byte[] program = chunks.get(chunks.size() - 1).data;
             Script redeemScript = new Script(program);
-            Sha256Hash sighash = tx.hashForSignature(i, redeemScript, BtcTransaction.SigHash.ALL, false);
+            Sha256Hash sighash =
+                    tx.hashForSignature(i, redeemScript, BtcTransaction.SigHash.ALL, false);
             int sigIndex = inputScript.getSigInsertionIndex(sighash, key);
             BtcECKey.ECDSASignature sig = BtcECKey.ECDSASignature.decodeFromDER(signatures.get(i));
-            TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
-            inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSig.encodeToBitcoin(), sigIndex, 1, 1);
+            TransactionSignature txSig =
+                    new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+            inputScript =
+                    ScriptBuilder.updateScriptWithSignature(
+                            inputScript, txSig.encodeToBitcoin(), sigIndex, 1, 1);
             input.setScriptSig(inputScript);
         }
     }
-
-
 }

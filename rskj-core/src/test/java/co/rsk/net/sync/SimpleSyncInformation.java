@@ -1,15 +1,13 @@
 package co.rsk.net.sync;
 
-
 import co.rsk.net.BlockProcessResult;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-
 import java.time.Duration;
 import java.time.Instant;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 
 public class SimpleSyncInformation implements SyncInformation {
     private boolean hasLowerDifficulty = true;
@@ -36,9 +34,8 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
-    public void reportEvent(String message, EventType eventType, NodeID peerId, Object... arguments) {
-
-    }
+    public void reportEvent(
+            String message, EventType eventType, NodeID peerId, Object... arguments) {}
 
     @Override
     public int getScore(NodeID key) {

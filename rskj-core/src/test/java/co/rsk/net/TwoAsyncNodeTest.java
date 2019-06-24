@@ -25,17 +25,14 @@ import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
 import co.rsk.validators.DummyBlockValidationRule;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.List;
-
-/**
- * Created by ajlopez on 5/14/2016.
- */
+/** Created by ajlopez on 5/14/2016. */
 public class TwoAsyncNodeTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
@@ -47,14 +44,18 @@ public class TwoAsyncNodeTest {
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
 
-        for (Block b: blocks)
-            blockchain.tryToConnect(b);
+        for (Block b : blocks) blockchain.tryToConnect(b);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, new DummyBlockValidationRule());
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config, processor, null, null, null, null, new DummyBlockValidationRule());
 
         return new SimpleAsyncNode(handler);
     }
@@ -64,16 +65,21 @@ public class TwoAsyncNodeTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
-        List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size, 0, true);
+        List<Block> blocks =
+                new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size, 0, true);
 
-        for (Block b: blocks)
-            blockchain.tryToConnect(b);
+        for (Block b : blocks) blockchain.tryToConnect(b);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, new DummyBlockValidationRule());
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config, processor, null, null, null, null, new DummyBlockValidationRule());
 
         return new SimpleAsyncNode(handler);
     }
@@ -84,7 +90,8 @@ public class TwoAsyncNodeTest {
         return world.getBlockChain().getBestBlock();
     }
 
-    @Test @Ignore("This should be reviewed with sync processor or deleted")
+    @Test
+    @Ignore("This should be reviewed with sync processor or deleted")
     public void buildBlockchainAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = createNode(100);
         SimpleAsyncNode node2 = createNode(0);
@@ -103,7 +110,8 @@ public class TwoAsyncNodeTest {
         Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
     }
 
-    @Test @Ignore("This should be reviewed with sync processor or deleted")
+    @Test
+    @Ignore("This should be reviewed with sync processor or deleted")
     public void buildBlockchainWithUnclesAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = createNodeWithUncles(10);
         SimpleAsyncNode node2 = createNode(0);
@@ -128,7 +136,8 @@ public class TwoAsyncNodeTest {
         Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
     }
 
-    @Test @Ignore("This should be reviewed with sync processor or deleted")
+    @Test
+    @Ignore("This should be reviewed with sync processor or deleted")
     public void buildBlockchainPartialAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = createNode(0);
         SimpleAsyncNode node2 = createNode(0);

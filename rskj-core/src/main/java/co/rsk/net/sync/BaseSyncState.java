@@ -4,11 +4,10 @@ import co.rsk.net.MessageChannel;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockIdentifier;
-
 import java.time.Duration;
 import java.util.List;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
 
 public abstract class BaseSyncState implements SyncState {
     protected SyncConfiguration syncConfiguration;
@@ -17,7 +16,10 @@ public abstract class BaseSyncState implements SyncState {
 
     protected Duration timeElapsed;
 
-    public BaseSyncState(SyncInformation syncInformation, SyncEventsHandler syncEventsHandler, SyncConfiguration syncConfiguration) {
+    public BaseSyncState(
+            SyncInformation syncInformation,
+            SyncEventsHandler syncEventsHandler,
+            SyncConfiguration syncConfiguration) {
         this.syncInformation = syncInformation;
         this.syncEventsHandler = syncEventsHandler;
         this.syncConfiguration = syncConfiguration;
@@ -34,35 +36,33 @@ public abstract class BaseSyncState implements SyncState {
         timeElapsed = timeElapsed.plus(duration);
         if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0) {
             syncEventsHandler.onErrorSyncing(
-                    "Timeout waiting requests {} from node {}", EventType.TIMEOUT_MESSAGE,
-                    this.getClass(), syncInformation.getSelectedPeerId());
+                    "Timeout waiting requests {} from node {}",
+                    EventType.TIMEOUT_MESSAGE,
+                    this.getClass(),
+                    syncInformation.getSelectedPeerId());
         }
     }
 
     @Override
-    public void newBlockHeaders(List<BlockHeader> chunk) {
-    }
+    public void newBlockHeaders(List<BlockHeader> chunk) {}
 
     @Override
-    public void newBody(BodyResponseMessage message, MessageChannel peer) {
-    }
+    public void newBody(BodyResponseMessage message, MessageChannel peer) {}
 
     @Override
-    public void newConnectionPointData(byte[] hash) {
-    }
+    public void newConnectionPointData(byte[] hash) {}
 
     @Override
-    public void newPeerStatus() { }
+    public void newPeerStatus() {}
 
     @Override
-    public void newSkeleton(List<BlockIdentifier> skeleton, MessageChannel peer) {
-    }
+    public void newSkeleton(List<BlockIdentifier> skeleton, MessageChannel peer) {}
 
     @Override
-    public void onEnter() { }
+    public void onEnter() {}
 
     @Override
-    public boolean isSyncing(){
+    public boolean isSyncing() {
         return false;
     }
 

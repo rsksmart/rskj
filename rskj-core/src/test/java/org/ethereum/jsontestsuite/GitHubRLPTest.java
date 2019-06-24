@@ -19,25 +19,24 @@
 
 package org.ethereum.jsontestsuite;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import org.json.simple.parser.ParseException;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Ignore
 public class GitHubRLPTest {
 
     private static Logger logger = LoggerFactory.getLogger("rlp");
-    private static HashMap<String , RLPTestCase> TEST_SUITE;
+    private static HashMap<String, RLPTestCase> TEST_SUITE;
 
     @BeforeClass
     public static void init() throws ParseException, IOException {
@@ -47,8 +46,9 @@ public class GitHubRLPTest {
         Assume.assumeFalse("Online test is not available", json.equals(""));
 
         ObjectMapper mapper = new ObjectMapper();
-        JavaType type = mapper.getTypeFactory().
-                constructMapType(HashMap.class, String.class, RLPTestCase.class);
+        JavaType type =
+                mapper.getTypeFactory()
+                        .constructMapType(HashMap.class, String.class, RLPTestCase.class);
 
         TEST_SUITE = mapper.readValue(json, type);
     }
@@ -72,11 +72,10 @@ public class GitHubRLPTest {
         Set<String> excluded = new HashSet<>();
 
         for (String key : TEST_SUITE.keySet()) {
-            if ( excluded.contains(key)) {
+            if (excluded.contains(key)) {
                 logger.info("[X] " + key);
                 continue;
-            }
-            else {
+            } else {
                 logger.info("    " + key);
             }
 

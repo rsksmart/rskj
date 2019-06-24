@@ -33,4 +33,3 @@ public interface Web3DebugModule {
 
     DebugModule getDebugModule();
 }
-

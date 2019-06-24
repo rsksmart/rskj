@@ -21,24 +21,23 @@ package co.rsk.pcc.bto;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 
-import java.math.BigInteger;
-
 /**
- * This implements the "toBase58Check" method
- * that belongs to the HDWalletUtils native contract.
+ * This implements the "toBase58Check" method that belongs to the HDWalletUtils native contract.
  *
  * @author Ariel Mendelzon
  */
 public class ToBase58Check extends NativeMethod {
     /**
-     * This is here since the bitcoinj Address class performs version
-     * validation depending on the actual network passed in,
-     * and the given constructor within VersionedChecksummedBytes is protected.
+     * This is here since the bitcoinj Address class performs version validation depending on the
+     * actual network passed in, and the given constructor within VersionedChecksummedBytes is
+     * protected.
      */
-    private static class ExtendedVersionedChecksummedBytes extends co.rsk.bitcoinj.core.VersionedChecksummedBytes {
+    private static class ExtendedVersionedChecksummedBytes
+            extends co.rsk.bitcoinj.core.VersionedChecksummedBytes {
         private static final long serialVersionUID = 3721215336363685421L;
 
         public ExtendedVersionedChecksummedBytes(int version, byte[] bytes) {
@@ -46,15 +45,15 @@ public class ToBase58Check extends NativeMethod {
         }
     }
 
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "toBase58Check",
-            new String[]{"bytes", "int256"},
-            new String[]{"string"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature(
+                    "toBase58Check", new String[] {"bytes", "int256"}, new String[] {"string"});
 
-    private final static String HASH_NOT_PRESENT = "hash160 must be present";
-    private final static String HASH_INVALID = "Invalid hash160 '%s' (should be 20 bytes and is %d bytes)";
-    private final static String INVALID_VERSION = "version must be a numeric value between 0 and 255";
+    private static final String HASH_NOT_PRESENT = "hash160 must be present";
+    private static final String HASH_INVALID =
+            "Invalid hash160 '%s' (should be 20 bytes and is %d bytes)";
+    private static final String INVALID_VERSION =
+            "version must be a numeric value between 0 and 255";
 
     public ToBase58Check(ExecutionEnvironment executionEnvironment) {
         super(executionEnvironment);
@@ -75,10 +74,8 @@ public class ToBase58Check extends NativeMethod {
             throw new NativeContractIllegalArgumentException(HASH_NOT_PRESENT);
         }
         if (hash.length != 20) {
-            throw new NativeContractIllegalArgumentException(String.format(
-                    HASH_INVALID,
-                    Hex.toHexString(hash), hash.length
-            ));
+            throw new NativeContractIllegalArgumentException(
+                    String.format(HASH_INVALID, Hex.toHexString(hash), hash.length));
         }
 
         int version = ((BigInteger) arguments[1]).intValueExact();

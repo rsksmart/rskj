@@ -1,26 +1,23 @@
 package co.rsk.scoring;
 
-import javax.annotation.CheckForNull;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import javax.annotation.CheckForNull;
 
 /**
- * InetAddressUtils has static methods
- * to perform operations on InetAddress and InetAddressBlock
+ * InetAddressUtils has static methods to perform operations on InetAddress and InetAddressBlock
  * given an String representation
- * <p>
- * Created by ajlopez on 15/07/2017.
+ *
+ * <p>Created by ajlopez on 15/07/2017.
  */
 public final class InetAddressUtils {
     private InetAddressUtils() {}
 
     /**
-     * Returns <tt>true</tt> if the specified texts represent an address with mask
-     * ie "192.168.51.1/16" has a mask
-     *    "192.168.51.1" has no mask
+     * Returns <tt>true</tt> if the specified texts represent an address with mask ie
+     * "192.168.51.1/16" has a mask "192.168.51.1" has no mask
      *
-     * @param   text    the address
-     *
+     * @param text the address
      * @return <tt>true</tt> or <tt>false</tt>
      */
     public static boolean hasMask(String text) {
@@ -34,14 +31,13 @@ public final class InetAddressUtils {
     }
 
     /**
-     * Convert a text representation to an InetAddress
-     * It supports IPV4 and IPV6 formats
+     * Convert a text representation to an InetAddress It supports IPV4 and IPV6 formats
      *
-     * @param   name    the address
-     *
-     * @return  the text converted to an InetAddress
+     * @param name the address
+     * @return the text converted to an InetAddress
      */
-    public static InetAddress getAddressForBan(@CheckForNull String hostname) throws InvalidInetAddressException {
+    public static InetAddress getAddressForBan(@CheckForNull String hostname)
+            throws InvalidInetAddressException {
         if (hostname == null) {
             throw new InvalidInetAddressException("null address", null);
         }
@@ -51,7 +47,7 @@ public final class InetAddressUtils {
             throw new InvalidInetAddressException("empty address", null);
         }
 
-        //TODO(mmarquez): should we validate address format ??
+        // TODO(mmarquez): should we validate address format ??
         try {
             InetAddress address = InetAddress.getByName(name);
 
@@ -60,25 +56,21 @@ public final class InetAddressUtils {
             }
 
             return address;
-        }
-        catch (UnknownHostException ex) {
+        } catch (UnknownHostException ex) {
             throw new InvalidInetAddressException("unknown host: '" + name + "'", ex);
         }
     }
 
     /**
-     * Convert a text representation to an InetAddressBlock
-     * (@see InetAddressBlock)
-     * It supports IPV4 and IPV6 formats
-     * ie "192.168.51.1/16" is a valid text
+     * Convert a text representation to an InetAddressBlock (@see InetAddressBlock) It supports IPV4
+     * and IPV6 formats ie "192.168.51.1/16" is a valid text
      *
-     * @param   text    the address with mask
-     *
-     * @return  the text converted to an InetAddressBlock
-     * @throws  InvalidInetAddressException if the text is invalid
+     * @param text the address with mask
+     * @return the text converted to an InetAddressBlock
+     * @throws InvalidInetAddressException if the text is invalid
      */
     public static InetAddressBlock parse(String text) throws InvalidInetAddressException {
-        //TODO(mmarquez): should we validate address format ??
+        // TODO(mmarquez): should we validate address format ??
         String[] parts = text.split("/");
 
         InetAddress address;
@@ -89,8 +81,7 @@ public final class InetAddressUtils {
 
         try {
             nbits = Integer.parseInt(parts[1]);
-        }
-        catch (NumberFormatException ex) {
+        } catch (NumberFormatException ex) {
             throw new InvalidInetAddressBlockException("Invalid mask", ex);
         }
 

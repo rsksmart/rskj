@@ -18,20 +18,19 @@
 
 package co.rsk.core;
 
+import java.math.BigInteger;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 01/02/2017.
- */
+/** Created by ajlopez on 01/02/2017. */
 public class CallTransactionTest {
     @Test
     public void fromSignature() {
-        CallTransaction.Function func = CallTransaction.Function.fromSignature("func", new String[] { "string" }, new String[] { "int" });
+        CallTransaction.Function func =
+                CallTransaction.Function.fromSignature(
+                        "func", new String[] {"string"}, new String[] {"int"});
 
         Assert.assertNotNull(func);
 
@@ -46,26 +45,28 @@ public class CallTransactionTest {
 
     @Test
     public void tooManyArguments() {
-        CallTransaction.Function func = CallTransaction.Function.fromSignature("func", new String[] { "string" }, new String[] { "int" });
+        CallTransaction.Function func =
+                CallTransaction.Function.fromSignature(
+                        "func", new String[] {"string"}, new String[] {"int"});
 
         try {
             func.encode("first", "second");
             Assert.fail();
-        }
-        catch (CallTransaction.CallTransactionException ex) {
+        } catch (CallTransaction.CallTransactionException ex) {
             Assert.assertTrue(ex.getMessage().startsWith("Too many arguments"));
         }
     }
 
     @Test
     public void tooManyArgumentsUsingParams() {
-        CallTransaction.Function func = CallTransaction.Function.fromSignature("func", new String[] { "string" }, new String[] { "int" });
+        CallTransaction.Function func =
+                CallTransaction.Function.fromSignature(
+                        "func", new String[] {"string"}, new String[] {"int"});
 
         try {
             func.encode(func.inputs, "first", "second");
             Assert.fail();
-        }
-        catch (CallTransaction.CallTransactionException ex) {
+        } catch (CallTransaction.CallTransactionException ex) {
             Assert.assertTrue(ex.getMessage().startsWith("Too many arguments"));
         }
     }
@@ -88,31 +89,41 @@ public class CallTransactionTest {
     public void intTypeEncodeHexadecimalString() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
-        Assert.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("01020304", 16)), type.encode("0x01020304"));
+        Assert.assertArrayEquals(
+                CallTransaction.IntType.encodeInt(new BigInteger("01020304", 16)),
+                type.encode("0x01020304"));
     }
 
     @Test
     public void intTypeEncodeHexadecimalStringWithoutPrefix() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
-        Assert.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("0102030b", 16)), type.encode("0102030b"));
+        Assert.assertArrayEquals(
+                CallTransaction.IntType.encodeInt(new BigInteger("0102030b", 16)),
+                type.encode("0102030b"));
     }
 
     @Test
     public void intTypeEncodeDecimalString() {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
-        Assert.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("01020304", 10)), type.encode("01020304"));
+        Assert.assertArrayEquals(
+                CallTransaction.IntType.encodeInt(new BigInteger("01020304", 10)),
+                type.encode("01020304"));
     }
 
     @Test
     public void decodeString() {
         SolidityType.StringType type = new SolidityType.StringType();
-        byte[] toDecode = new byte[] {
-                // len of string = 5
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,
-                // string
-                104, 101, 108, 108, 111, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        byte[] toDecode =
+                new byte[] {
+                    // len of string = 5
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 5,
+                    // string
+                    104, 101, 108, 108, 111, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0, 0, 0, 0, 0
+                };
 
         Assert.assertEquals("hello", type.decode(toDecode));
     }

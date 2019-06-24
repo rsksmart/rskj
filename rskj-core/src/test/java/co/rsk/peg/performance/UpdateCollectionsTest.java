@@ -26,16 +26,15 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
 import co.rsk.peg.ReleaseTransactionSet;
-import org.ethereum.core.Repository;
-import org.ethereum.crypto.HashUtil;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Random;
 import java.util.SortedMap;
+import org.ethereum.core.Repository;
+import org.ethereum.crypto.HashUtil;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class UpdateCollectionsTest extends BridgePerformanceTestCase {
@@ -53,7 +52,8 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
     private void updateCollections_nothing(ExecutionStats stats, int numCases) throws IOException {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {};
+        BridgeStorageProviderInitializer storageInitializer =
+                (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {};
         final byte[] updateCollectionsEncoded = Bridge.UPDATE_COLLECTIONS.encode();
         ABIEncoder abiEncoder = (int executionIndex) -> updateCollectionsEncoded;
 
@@ -63,11 +63,12 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 abiEncoder,
                 storageInitializer,
                 Helper.getZeroValueValueTxBuilderFromFedMember(),
-                Helper.getRandomHeightProvider(10), stats
-        );
+                Helper.getRandomHeightProvider(10),
+                stats);
     }
 
-    private void updateCollections_buildReleaseTxs(ExecutionStats stats, int numCases) throws IOException {
+    private void updateCollections_buildReleaseTxs(ExecutionStats stats, int numCases)
+            throws IOException {
         final int minUTXOs = 1;
         final int maxUTXOs = 1000;
         final int minMilliBtc = 1;
@@ -78,40 +79,54 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         final int maxMilliReleaseBtc = 2000;
 
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            Random rnd = new Random();
-            List<UTXO> utxos;
-            ReleaseRequestQueue queue;
+        BridgeStorageProviderInitializer storageInitializer =
+                (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+                    Random rnd = new Random();
+                    List<UTXO> utxos;
+                    ReleaseRequestQueue queue;
 
-            try {
-                utxos = provider.getNewFederationBtcUTXOs();
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to gather active federation btc utxos");
-            }
+                    try {
+                        utxos = provider.getNewFederationBtcUTXOs();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to gather active federation btc utxos");
+                    }
 
-            try {
-                queue = provider.getReleaseRequestQueue();
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to gather release request queue");
-            }
+                    try {
+                        queue = provider.getReleaseRequestQueue();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to gather release request queue");
+                    }
 
-            // Generate some utxos
-            int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
+                    // Generate some utxos
+                    int numUTXOs = Helper.randomInRange(minUTXOs, maxUTXOs);
 
-            Script federationScript = BridgeRegTestConstants.getInstance().getGenesisFederation().getP2SHScript();
+                    Script federationScript =
+                            BridgeRegTestConstants.getInstance()
+                                    .getGenesisFederation()
+                                    .getP2SHScript();
 
-            for (int i = 0; i < numUTXOs; i++) {
-                Sha256Hash hash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
-                Coin value = Coin.MILLICOIN.multiply(Helper.randomInRange(minMilliBtc, maxMilliBtc));
-                utxos.add(new UTXO(hash, 0, value, 1, false, federationScript));
-            }
+                    for (int i = 0; i < numUTXOs; i++) {
+                        Sha256Hash hash =
+                                Sha256Hash.wrap(
+                                        HashUtil.sha256(
+                                                BigInteger.valueOf(rnd.nextLong()).toByteArray()));
+                        Coin value =
+                                Coin.MILLICOIN.multiply(
+                                        Helper.randomInRange(minMilliBtc, maxMilliBtc));
+                        utxos.add(new UTXO(hash, 0, value, 1, false, federationScript));
+                    }
 
-            // Generate some release requests to process
-            for (int i = 0; i < Helper.randomInRange(minReleaseRequests, maxReleaseRequests); i++) {
-                Coin value = Coin.MILLICOIN.multiply(Helper.randomInRange(minMilliReleaseBtc, maxMilliReleaseBtc));
-                queue.add(new BtcECKey().toAddress(parameters), value);
-            }
-        };
+                    // Generate some release requests to process
+                    for (int i = 0;
+                            i < Helper.randomInRange(minReleaseRequests, maxReleaseRequests);
+                            i++) {
+                        Coin value =
+                                Coin.MILLICOIN.multiply(
+                                        Helper.randomInRange(
+                                                minMilliReleaseBtc, maxMilliReleaseBtc));
+                        queue.add(new BtcECKey().toAddress(parameters), value);
+                    }
+                };
 
         final byte[] updateCollectionsEncoded = Bridge.UPDATE_COLLECTIONS.encode();
         ABIEncoder abiEncoder = (int executionIndex) -> updateCollectionsEncoded;
@@ -123,11 +138,11 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 storageInitializer,
                 Helper.getZeroValueValueTxBuilderFromFedMember(),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
-    private void updateCollections_confirmTxs(ExecutionStats stats, int numCases) throws IOException {
+    private void updateCollections_confirmTxs(ExecutionStats stats, int numCases)
+            throws IOException {
         final int minTxsWaitingForSigs = 0;
         final int maxTxsWaitingForSigs = 10;
         final int minReleaseTxs = 1;
@@ -140,48 +155,66 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         final int maxCentOutput = 100;
 
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            Random rnd = new Random();
-            SortedMap<Keccak256, BtcTransaction> txsWaitingForSignatures;
-            ReleaseTransactionSet txSet;
+        BridgeStorageProviderInitializer storageInitializer =
+                (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+                    Random rnd = new Random();
+                    SortedMap<Keccak256, BtcTransaction> txsWaitingForSignatures;
+                    ReleaseTransactionSet txSet;
 
-            try {
-                txsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to gather txs waiting for signatures");
-            }
+                    try {
+                        txsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to gather txs waiting for signatures");
+                    }
 
-            try {
-                txSet = provider.getReleaseTransactionSet();
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to gather release tx set");
-            }
+                    try {
+                        txSet = provider.getReleaseTransactionSet();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to gather release tx set");
+                    }
 
-            // Generate some txs waiting for signatures
-            Script genesisFederationScript = bridgeConstants.getGenesisFederation().getP2SHScript();
-            for (int i = 0; i < Helper.randomInRange(minTxsWaitingForSigs, maxTxsWaitingForSigs); i++) {
-                Keccak256 rskHash = new Keccak256(HashUtil.keccak256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
-                BtcTransaction btcTx = new BtcTransaction(networkParameters);
-                Sha256Hash inputHash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
-                btcTx.addInput(inputHash, 0, genesisFederationScript);
-                btcTx.addOutput(Helper.randomCoin(Coin.CENT, minCentOutput, maxCentOutput), new BtcECKey());
-                txsWaitingForSignatures.put(rskHash, btcTx);
-            }
+                    // Generate some txs waiting for signatures
+                    Script genesisFederationScript =
+                            bridgeConstants.getGenesisFederation().getP2SHScript();
+                    for (int i = 0;
+                            i < Helper.randomInRange(minTxsWaitingForSigs, maxTxsWaitingForSigs);
+                            i++) {
+                        Keccak256 rskHash =
+                                new Keccak256(
+                                        HashUtil.keccak256(
+                                                BigInteger.valueOf(rnd.nextLong()).toByteArray()));
+                        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+                        Sha256Hash inputHash =
+                                Sha256Hash.wrap(
+                                        HashUtil.sha256(
+                                                BigInteger.valueOf(rnd.nextLong()).toByteArray()));
+                        btcTx.addInput(inputHash, 0, genesisFederationScript);
+                        btcTx.addOutput(
+                                Helper.randomCoin(Coin.CENT, minCentOutput, maxCentOutput),
+                                new BtcECKey());
+                        txsWaitingForSignatures.put(rskHash, btcTx);
+                    }
 
-            // Generate some txs waiting for confirmations
-            for (int i = 0; i < Helper.randomInRange(minReleaseTxs, maxReleaseTxs); i++) {
-                BtcTransaction btcTx = new BtcTransaction(networkParameters);
-                Sha256Hash inputHash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
-                btcTx.addInput(inputHash, 0, genesisFederationScript);
-                btcTx.addOutput(Helper.randomCoin(Coin.CENT, minCentOutput, maxCentOutput), new BtcECKey());
-                long blockNumber = Helper.randomInRange(minBlockNumber, maxBlockNumber);
-                txSet.add(btcTx, blockNumber);
-            }
-        };
+                    // Generate some txs waiting for confirmations
+                    for (int i = 0; i < Helper.randomInRange(minReleaseTxs, maxReleaseTxs); i++) {
+                        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+                        Sha256Hash inputHash =
+                                Sha256Hash.wrap(
+                                        HashUtil.sha256(
+                                                BigInteger.valueOf(rnd.nextLong()).toByteArray()));
+                        btcTx.addInput(inputHash, 0, genesisFederationScript);
+                        btcTx.addOutput(
+                                Helper.randomCoin(Coin.CENT, minCentOutput, maxCentOutput),
+                                new BtcECKey());
+                        long blockNumber = Helper.randomInRange(minBlockNumber, maxBlockNumber);
+                        txSet.add(btcTx, blockNumber);
+                    }
+                };
 
         final byte[] updateCollectionsEncoded = Bridge.UPDATE_COLLECTIONS.encode();
         ABIEncoder abiEncoder = (int executionIndex) -> updateCollectionsEncoded;
-        HeightProvider heightProvider = (int executionIndex) -> Helper.randomInRange(minHeight, maxHeight);
+        HeightProvider heightProvider =
+                (int executionIndex) -> Helper.randomInRange(minHeight, maxHeight);
 
         executeAndAverage(
                 "updateCollections-releaseTxs",
@@ -190,7 +223,6 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 storageInitializer,
                 Helper.getZeroValueValueTxBuilderFromFedMember(),
                 heightProvider,
-                stats
-        );
+                stats);
     }
 }

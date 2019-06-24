@@ -20,6 +20,7 @@ package co.rsk.validators;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
+import java.math.BigInteger;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -32,11 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
-
-/**
- * Created by sergio on 23/01/17.
- */
+/** Created by sergio on 23/01/17. */
 public class BlockDifficultyValidationRuleTest {
 
     private BlockFactory blockFactory;
@@ -50,52 +47,58 @@ public class BlockDifficultyValidationRuleTest {
         blockFactory = new BlockFactory(activationConfig);
     }
 
-    private BlockHeader getEmptyHeader(BlockDifficulty difficulty, long blockTimestamp, int uCount) {
-        BlockHeader header = blockFactory.newHeader(null, null,
-                TestUtils.randomAddress().getBytes(), null, difficulty.getBytes(), 0,
-                null, 0,
-                blockTimestamp, null, null, uCount);
+    private BlockHeader getEmptyHeader(
+            BlockDifficulty difficulty, long blockTimestamp, int uCount) {
+        BlockHeader header =
+                blockFactory.newHeader(
+                        null,
+                        null,
+                        TestUtils.randomAddress().getBytes(),
+                        null,
+                        difficulty.getBytes(),
+                        0,
+                        null,
+                        0,
+                        blockTimestamp,
+                        null,
+                        null,
+                        uCount);
         return header;
     }
 
     @Test
     public void testDifficulty() {
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
+        DifficultyCalculator difficultyCalculator =
+                new DifficultyCalculator(activationConfig, networkConstants);
         BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator);
 
         Block block = Mockito.mock(Block.class);
-        Block parent= Mockito.mock(Block.class);
+        Block parent = Mockito.mock(Block.class);
         long parentTimestamp = 0;
-        long blockTimeStamp  = 10;
+        long blockTimeStamp = 10;
 
         BlockDifficulty parentDifficulty = new BlockDifficulty(new BigInteger("2048"));
         BlockDifficulty blockDifficulty = new BlockDifficulty(new BigInteger("2049"));
 
-        //blockDifficulty = blockDifficulty.add(AbstractConfig.getConstants().getDifficultyBoundDivisor());
+        // blockDifficulty =
+        // blockDifficulty.add(AbstractConfig.getConstants().getDifficultyBoundDivisor());
 
-        Mockito.when(block.getDifficulty())
-                .thenReturn(blockDifficulty);
+        Mockito.when(block.getDifficulty()).thenReturn(blockDifficulty);
 
-        BlockHeader blockHeader =getEmptyHeader(blockDifficulty, blockTimeStamp ,1);
+        BlockHeader blockHeader = getEmptyHeader(blockDifficulty, blockTimeStamp, 1);
 
         BlockHeader parentHeader = Mockito.mock(BlockHeader.class);
 
-        Mockito.when(parentHeader.getDifficulty())
-                .thenReturn(parentDifficulty);
+        Mockito.when(parentHeader.getDifficulty()).thenReturn(parentDifficulty);
 
-        Mockito.when(block.getHeader())
-                .thenReturn(blockHeader);
+        Mockito.when(block.getHeader()).thenReturn(blockHeader);
 
-        Mockito.when(parent.getHeader())
-                .thenReturn(parentHeader);
+        Mockito.when(parent.getHeader()).thenReturn(parentHeader);
 
-        Mockito.when(parent.getDifficulty())
-                .thenReturn(parentDifficulty);
+        Mockito.when(parent.getDifficulty()).thenReturn(parentDifficulty);
 
-        Mockito.when(parent.getTimestamp())
-                .thenReturn(parentTimestamp);
+        Mockito.when(parent.getTimestamp()).thenReturn(parentTimestamp);
 
-        Assert.assertEquals(validationRule.isValid(block,parent),true);
+        Assert.assertEquals(validationRule.isValid(block, parent), true);
     }
-
 }

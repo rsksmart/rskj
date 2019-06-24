@@ -18,10 +18,16 @@
 
 package co.rsk.core;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThat;
+
 import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import com.google.common.primitives.Bytes;
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
@@ -30,13 +36,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
-
 public class BlockHeaderTest {
     @Test
     public void getHashForMergedMiningWithForkDetectionDataAndIncludedOnAndMergedMiningFields() {
@@ -44,8 +43,9 @@ public class BlockHeaderTest {
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        byte[] coinbase = org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
+        byte[] forkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        byte[] coinbase =
+                org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
 
@@ -66,7 +66,7 @@ public class BlockHeaderTest {
 
     @Test
     public void getHashForMergedMiningWithForkDetectionDataAndIncludedOn() {
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         BlockHeader header = createBlockHeader(forkDetectionData, true);
 
         byte[] hash = header.getHash().getBytes();
@@ -80,7 +80,7 @@ public class BlockHeaderTest {
 
     @Test
     public void getHashForMergedMiningWithForkDetectionDataAndIncludedOff() {
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         BlockHeader header = createBlockHeader(forkDetectionData, false);
 
         byte[] hash = header.getHash().getBytes();
@@ -115,8 +115,9 @@ public class BlockHeaderTest {
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        byte[] coinbase = org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
+        byte[] forkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        byte[] coinbase =
+                org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
         coinbase = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, coinbase);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
@@ -124,15 +125,15 @@ public class BlockHeaderTest {
         assertThat(forkDetectionData, is(header.getMiningForkDetectionData()));
     }
 
-    /**
-     * This case is an error and should never happen in production
-     */
+    /** This case is an error and should never happen in production */
     @Test(expected = IllegalStateException.class)
     public void getMiningForkDetectionDataNoDataCanBeFound() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true);
 
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        byte[] coinbase = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, forkDetectionData);
+        byte[] forkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        byte[] coinbase =
+                org.bouncycastle.util.Arrays.concatenate(
+                        RskMiningConstants.RSK_TAG, forkDetectionData);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
 
@@ -147,8 +148,7 @@ public class BlockHeaderTest {
     }
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
-            byte[] forkDetectionData,
-            boolean includeForkDetectionData){
+            byte[] forkDetectionData, boolean includeForkDetectionData) {
         BlockDifficulty difficulty = new BlockDifficulty(BigInteger.ONE);
         long number = 1;
         BigInteger gasLimit = BigInteger.valueOf(6800000);
@@ -181,36 +181,35 @@ public class BlockHeaderTest {
     }
 
     private BlockHeader createBlockHeader(
-            byte[] forkDetectionData,
-            boolean includeForkDetectionData){
-            BlockDifficulty difficulty = new BlockDifficulty(BigInteger.ONE);
-            long number = 1;
-            BigInteger gasLimit = BigInteger.valueOf(6800000);
-            long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
+            byte[] forkDetectionData, boolean includeForkDetectionData) {
+        BlockDifficulty difficulty = new BlockDifficulty(BigInteger.ONE);
+        long number = 1;
+        BigInteger gasLimit = BigInteger.valueOf(6800000);
+        long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
 
-            return new BlockHeader(
-                    PegTestUtils.createHash3().getBytes(),
-                    HashUtil.keccak256(RLP.encodeList()),
-                    new RskAddress(TestUtils.randomAddress().getBytes()),
-                    HashUtil.EMPTY_TRIE_HASH,
-                    "tx_trie_root".getBytes(),
-                    HashUtil.EMPTY_TRIE_HASH,
-                    new Bloom().getData(),
-                    difficulty,
-                    number,
-                    gasLimit.toByteArray(),
-                    3000000,
-                    timestamp,
-                    new byte[0],
-                    Coin.ZERO,
-                    null,
-                    null,
-                    null,
-                    forkDetectionData,
-                    Coin.valueOf(10L),
-                    0,
-                    true,
-                    true,
-                    includeForkDetectionData);
+        return new BlockHeader(
+                PegTestUtils.createHash3().getBytes(),
+                HashUtil.keccak256(RLP.encodeList()),
+                new RskAddress(TestUtils.randomAddress().getBytes()),
+                HashUtil.EMPTY_TRIE_HASH,
+                "tx_trie_root".getBytes(),
+                HashUtil.EMPTY_TRIE_HASH,
+                new Bloom().getData(),
+                difficulty,
+                number,
+                gasLimit.toByteArray(),
+                3000000,
+                timestamp,
+                new byte[0],
+                Coin.ZERO,
+                null,
+                null,
+                null,
+                forkDetectionData,
+                Coin.valueOf(10L),
+                0,
+                true,
+                true,
+                includeForkDetectionData);
     }
 }

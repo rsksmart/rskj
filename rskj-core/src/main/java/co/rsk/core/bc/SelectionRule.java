@@ -3,12 +3,11 @@ package co.rsk.core.bc;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.remasc.Sibling;
+import java.math.BigInteger;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.FastByteComparisons;
-
-import java.math.BigInteger;
-import java.util.List;
 
 public class SelectionRule {
 
@@ -39,14 +38,16 @@ public class SelectionRule {
             return true;
         }
 
-        Coin blockFeesCriteria = block.getHeader().getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+        Coin blockFeesCriteria =
+                block.getHeader().getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
 
         // As a last resort, choose the block with the lower hash. We ask that
         // the fees are at least bigger than the half of current block.
-        return currentBlock.getHeader().getPaidFees().compareTo(blockFeesCriteria) < 0 &&
-                isThisBlockHashSmaller(block.getHash().getBytes(), currentBlock.getHash().getBytes());
+        return currentBlock.getHeader().getPaidFees().compareTo(blockFeesCriteria) < 0
+                && isThisBlockHashSmaller(
+                        block.getHash().getBytes(), currentBlock.getHash().getBytes());
     }
-    
+
     public static boolean isBrokenSelectionRule(
             BlockHeader processingBlockHeader, List<Sibling> siblings) {
         int maxUncleCount = 0;
@@ -57,8 +58,9 @@ public class SelectionRule {
                 return true;
             }
             Coin blockFeesCriteria = sibling.getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
-            if (processingBlockHeader.getPaidFees().compareTo(blockFeesCriteria) < 0 &&
-                    isThisBlockHashSmaller(sibling.getHash(), processingBlockHeader.getHash().getBytes())) {
+            if (processingBlockHeader.getPaidFees().compareTo(blockFeesCriteria) < 0
+                    && isThisBlockHashSmaller(
+                            sibling.getHash(), processingBlockHeader.getHash().getBytes())) {
                 return true;
             }
         }
@@ -67,7 +69,12 @@ public class SelectionRule {
 
     public static boolean isThisBlockHashSmaller(byte[] thisBlockHash, byte[] compareBlockHash) {
         return FastByteComparisons.compareTo(
-                thisBlockHash, BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH,
-                compareBlockHash, BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH) < 0;
+                        thisBlockHash,
+                        BYTE_ARRAY_OFFSET,
+                        BYTE_ARRAY_LENGTH,
+                        compareBlockHash,
+                        BYTE_ARRAY_OFFSET,
+                        BYTE_ARRAY_LENGTH)
+                < 0;
     }
 }

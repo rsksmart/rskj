@@ -22,9 +22,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 04/12/2017.
- */
+/** Created by ajlopez on 04/12/2017. */
 public class TrieValueTest {
     @Test
     public void noLongValueInEmptyTrie() {
@@ -37,8 +35,8 @@ public class TrieValueTest {
 
     @Test
     public void noLongValueInTrieWithShortValue() {
-        byte[] value = new byte[] { 0x01, 0x02, 0x03 };
-        byte[] key = new byte[] { 0x04, 0x05 };
+        byte[] value = new byte[] {0x01, 0x02, 0x03};
+        byte[] key = new byte[] {0x04, 0x05};
         Trie trie = new Trie().put(key, value);
         byte[] valueHash = Keccak256Helper.keccak256(value);
 
@@ -52,10 +50,9 @@ public class TrieValueTest {
     public void noValueInTrieWith32BytesValue() {
         byte[] value = makeValue(32);
 
-        for (int k = 0; k < value.length; k++)
-            value[k] = (byte)(k + 1);
+        for (int k = 0; k < value.length; k++) value[k] = (byte) (k + 1);
 
-        byte[] key = new byte[] { 0x04, 0x05 };
+        byte[] key = new byte[] {0x04, 0x05};
         Trie trie = new Trie().put(key, value);
 
         Assert.assertFalse(trie.hasLongValue());
@@ -68,10 +65,9 @@ public class TrieValueTest {
     public void longValueInTrieWith33BytesValue() {
         byte[] value = makeValue(33);
 
-        for (int k = 0; k < value.length; k++)
-            value[k] = (byte)(k + 1);
+        for (int k = 0; k < value.length; k++) value[k] = (byte) (k + 1);
 
-        byte[] key = new byte[] { 0x04, 0x05 };
+        byte[] key = new byte[] {0x04, 0x05};
         Trie trie = new Trie().put(key, value);
 
         Assert.assertTrue(trie.hasLongValue());
@@ -84,10 +80,9 @@ public class TrieValueTest {
         byte[] value = new byte[length];
 
         for (int k = 0; k < length; k++) {
-            value[k] = (byte)((k + 1) % 256);
+            value[k] = (byte) ((k + 1) % 256);
         }
 
         return value;
     }
 }
-

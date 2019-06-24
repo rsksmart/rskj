@@ -23,6 +23,10 @@ import co.rsk.rpc.modules.eth.subscribe.EthSubscriptionParams;
 import co.rsk.rpc.modules.eth.subscribe.SubscriptionId;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
@@ -30,28 +34,26 @@ import org.ethereum.listener.EthereumListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * This manages subscriptions and emits events to interested clients.
- * Can only be used with the WebSockets transport.
+ * This manages subscriptions and emits events to interested clients. Can only be used with the
+ * WebSockets transport.
  */
 public class EthSubscriptionNotificationEmitter {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EthSubscriptionNotificationEmitter.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(EthSubscriptionNotificationEmitter.class);
 
     private final Map<SubscriptionId, Channel> subscriptions = new ConcurrentHashMap<>();
     private final JsonRpcSerializer jsonRpcSerializer;
 
-    public EthSubscriptionNotificationEmitter(Ethereum ethereum, JsonRpcSerializer jsonRpcSerializer) {
-        ethereum.addListener(new EthereumListenerAdapter() {
-            @Override
-            public void onBlock(Block block, List<TransactionReceipt> receipts) {
-                emit(block);
-            }
-        });
+    public EthSubscriptionNotificationEmitter(
+            Ethereum ethereum, JsonRpcSerializer jsonRpcSerializer) {
+        ethereum.addListener(
+                new EthereumListenerAdapter() {
+                    @Override
+                    public void onBlock(Block block, List<TransactionReceipt> receipts) {
+                        emit(block);
+                    }
+                });
         this.jsonRpcSerializer = jsonRpcSerializer;
     }
 
@@ -65,16 +67,12 @@ public class EthSubscriptionNotificationEmitter {
         return subscriptionId;
     }
 
-    /**
-     * @return whether the unsubscription succeeded.
-     */
+    /** @return whether the unsubscription succeeded. */
     public boolean unsubscribe(SubscriptionId subscriptionId) {
         return subscriptions.remove(subscriptionId) != null;
     }
 
-    /**
-     * Clear all subscriptions for channel.
-     */
+    /** Clear all subscriptions for channel. */
     public void unsubscribe(Channel channel) {
         subscriptions.values().removeIf(channel::equals);
     }
@@ -82,17 +80,17 @@ public class EthSubscriptionNotificationEmitter {
     private void emit(Block block) {
         BlockHeaderNotification header = new BlockHeaderNotification(block);
 
-        subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            EthSubscriptionNotification request = new EthSubscriptionNotification(
-                    new EthSubscriptionParams(id, header)
-            );
+        subscriptions.forEach(
+                (SubscriptionId id, Channel channel) -> {
+                    EthSubscriptionNotification request =
+                            new EthSubscriptionNotification(new EthSubscriptionParams(id, header));
 
-            try {
-                String msg = jsonRpcSerializer.serializeMessage(request);
-                channel.writeAndFlush(new TextWebSocketFrame(msg));
-            } catch (IOException e) {
-                LOGGER.error("Couldn't serialize block header result for notification", e);
-            }
-        });
+                    try {
+                        String msg = jsonRpcSerializer.serializeMessage(request);
+                        channel.writeAndFlush(new TextWebSocketFrame(msg));
+                    } catch (IOException e) {
+                        LOGGER.error("Couldn't serialize block header result for notification", e);
+                    }
+                });
     }
 }

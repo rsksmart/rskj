@@ -18,16 +18,16 @@
 package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
-import org.ethereum.datasource.KeyValueDataSource;
-
 import java.util.Map;
+import org.ethereum.datasource.KeyValueDataSource;
 
 public class StateRootTranslator {
 
     private KeyValueDataSource stateRootDB;
     private Map<Keccak256, Keccak256> stateRootCache;
 
-    public StateRootTranslator(KeyValueDataSource stateRootDB, Map<Keccak256, Keccak256> stateRootCache) {
+    public StateRootTranslator(
+            KeyValueDataSource stateRootDB, Map<Keccak256, Keccak256> stateRootCache) {
         this.stateRootDB = stateRootDB;
         this.stateRootCache = stateRootCache;
     }

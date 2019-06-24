@@ -18,23 +18,19 @@
 
 package co.rsk.net.eth;
 
-import org.ethereum.net.message.Message;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.ethereum.net.message.Message;
 
-/**
- * Created by ajlopez on 26/04/2017.
- */
+/** Created by ajlopez on 26/04/2017. */
 public class MessageFilter {
     private Set<String> commands;
 
     public MessageFilter(List<String> commands) {
         if (commands != null) {
             this.commands = new HashSet<>(commands);
-        }
-        else {
+        } else {
             this.commands = new HashSet<>();
         }
     }
@@ -54,7 +50,7 @@ public class MessageFilter {
             return false;
         }
 
-        String messageType = String.valueOf(((RskMessage)message).getMessage().getMessageType());
+        String messageType = String.valueOf(((RskMessage) message).getMessage().getMessageType());
 
         for (String cmd : commands) {
             if (!cmd.contains(":")) {

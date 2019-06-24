@@ -36,8 +36,7 @@ public abstract class Message {
     protected byte[] encoded;
     protected byte code;
 
-    public Message() {
-    }
+    public Message() {}
 
     public Message(byte[] encoded) {
         this.encoded = encoded;
@@ -63,7 +62,6 @@ public abstract class Message {
     public abstract Enum getCommand();
 
     public byte getCode() {
-            return code;
+        return code;
     }
-
 }

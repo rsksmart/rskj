@@ -18,21 +18,19 @@
 
 package co.rsk.peg;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-
 public class ABICallSpecTest {
     @Test
     public void argumentsIsCopy() {
-        ABICallSpec spec = new ABICallSpec("a-function", new byte[][]{
-                Hex.decode("aabb"),
-                Hex.decode("ccddee")
-        });
+        ABICallSpec spec =
+                new ABICallSpec(
+                        "a-function", new byte[][] {Hex.decode("aabb"), Hex.decode("ccddee")});
 
         byte[][] arguments = spec.getArguments();
         Assert.assertNotSame(arguments, Whitebox.getInternalState(spec, "arguments"));
@@ -42,16 +40,18 @@ public class ABICallSpecTest {
 
     @Test
     public void getFunction() {
-        ABICallSpec spec = new ABICallSpec("a-function", new byte[][]{});
+        ABICallSpec spec = new ABICallSpec("a-function", new byte[][] {});
         Assert.assertEquals("a-function", spec.getFunction());
     }
 
     @Test
     public void getEncoded() {
-        ABICallSpec spec = new ABICallSpec("a-function", new byte[][]{
-                Hex.decode("1122"),
-                Hex.decode("334455"),
-        });
+        ABICallSpec spec =
+                new ABICallSpec(
+                        "a-function",
+                        new byte[][] {
+                            Hex.decode("1122"), Hex.decode("334455"),
+                        });
 
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append(Hex.toHexString("a-function".getBytes(StandardCharsets.UTF_8)));
@@ -61,29 +61,22 @@ public class ABICallSpecTest {
 
     @Test
     public void testEquals() {
-        ABICallSpec specA = new ABICallSpec("function-a", new byte[][]{
-                Hex.decode("aabb"),
-                Hex.decode("ccddee")
-        });
-        ABICallSpec specB = new ABICallSpec("function-b", new byte[][]{
-                Hex.decode("aabb"),
-                Hex.decode("ccddee")
-        });
-        ABICallSpec specC = new ABICallSpec("function-a", new byte[][]{
-                Hex.decode("ccddee"),
-                Hex.decode("aabb")
-        });
-        ABICallSpec specD = new ABICallSpec("function-a", new byte[][]{
-                Hex.decode("aabb"),
-                Hex.decode("ccdd")
-        });
-        ABICallSpec specE = new ABICallSpec("function-a", new byte[][]{
-                Hex.decode("aabb")
-        });
-        ABICallSpec specF = new ABICallSpec("function-a", new byte[][]{
-                Hex.decode("aabb"),
-                Hex.decode("ccddee")
-        });
+        ABICallSpec specA =
+                new ABICallSpec(
+                        "function-a", new byte[][] {Hex.decode("aabb"), Hex.decode("ccddee")});
+        ABICallSpec specB =
+                new ABICallSpec(
+                        "function-b", new byte[][] {Hex.decode("aabb"), Hex.decode("ccddee")});
+        ABICallSpec specC =
+                new ABICallSpec(
+                        "function-a", new byte[][] {Hex.decode("ccddee"), Hex.decode("aabb")});
+        ABICallSpec specD =
+                new ABICallSpec(
+                        "function-a", new byte[][] {Hex.decode("aabb"), Hex.decode("ccdd")});
+        ABICallSpec specE = new ABICallSpec("function-a", new byte[][] {Hex.decode("aabb")});
+        ABICallSpec specF =
+                new ABICallSpec(
+                        "function-a", new byte[][] {Hex.decode("aabb"), Hex.decode("ccddee")});
 
         Assert.assertEquals(specA, specF);
         Assert.assertNotEquals(specA, specB);

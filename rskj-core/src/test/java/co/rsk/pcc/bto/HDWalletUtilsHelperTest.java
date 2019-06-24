@@ -37,16 +37,14 @@ public class HDWalletUtilsHelperTest {
     public void validateAndExtractNetworkFromExtendedPublicKeyMainnet() {
         Assert.assertEquals(
                 NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
-                helper.validateAndExtractNetworkFromExtendedPublicKey("xpubSomethingSomething")
-        );
+                helper.validateAndExtractNetworkFromExtendedPublicKey("xpubSomethingSomething"));
     }
 
     @Test
     public void validateAndExtractNetworkFromExtendedPublicKeyTestnet() {
         Assert.assertEquals(
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
-                helper.validateAndExtractNetworkFromExtendedPublicKey("tpubSomethingSomething")
-        );
+                helper.validateAndExtractNetworkFromExtendedPublicKey("tpubSomethingSomething"));
     }
 
     @Test(expected = NativeContractIllegalArgumentException.class)

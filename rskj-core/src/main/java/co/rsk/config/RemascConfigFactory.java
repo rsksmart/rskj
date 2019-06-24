@@ -21,14 +21,11 @@ package co.rsk.config;
 import co.rsk.remasc.RemascException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
-
-/**
- * Created by mario on 12/12/16.
- */
+/** Created by mario on 12/12/16. */
 public class RemascConfigFactory {
     private static final Logger logger = LoggerFactory.getLogger("RemascConfigFactory");
 
@@ -43,12 +40,13 @@ public class RemascConfigFactory {
     public RemascConfig createRemascConfig(String config) {
         RemascConfig remascConfig;
 
-        try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(this.configPath)){
+        try (InputStream is =
+                RemascConfigFactory.class.getClassLoader().getResourceAsStream(this.configPath)) {
             JsonNode node = mapper.readTree(is);
             remascConfig = mapper.treeToValue(node.get(config), RemascConfig.class);
         } catch (Exception ex) {
             logger.error("Error reading REMASC configuration[{}]: {}", config, ex);
-            throw new RemascException("Error reading REMASC configuration[" + config +"]: ", ex);
+            throw new RemascException("Error reading REMASC configuration[" + config + "]: ", ex);
         }
 
         return remascConfig;

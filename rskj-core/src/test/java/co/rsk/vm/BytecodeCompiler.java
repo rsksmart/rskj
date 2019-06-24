@@ -18,15 +18,12 @@
 
 package co.rsk.vm;
 
-import org.ethereum.vm.OpCode;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.vm.OpCode;
 
-/**
- * Created by ajlopez on 25/01/2017.
- */
+/** Created by ajlopez on 25/01/2017. */
 public class BytecodeCompiler {
     public byte[] compile(String code) {
         return compile(code.split("\\s+"));
@@ -39,20 +36,16 @@ public class BytecodeCompiler {
         for (int i = 0; i < ntokens; i++) {
             String token = tokens[i].trim().toUpperCase();
 
-            if (token.isEmpty())
-                continue;
+            if (token.isEmpty()) continue;
 
-            if (isHexadecimal(token))
-                compileHexadecimal(token, bytecodes);
-            else
-                bytecodes.add(OpCode.byteVal(token));
+            if (isHexadecimal(token)) compileHexadecimal(token, bytecodes);
+            else bytecodes.add(OpCode.byteVal(token));
         }
 
         int nbytes = bytecodes.size();
         byte[] bytes = new byte[nbytes];
 
-        for (int k = 0; k < nbytes; k++)
-            bytes[k] = bytecodes.get(k).byteValue();
+        for (int k = 0; k < nbytes; k++) bytes[k] = bytecodes.get(k).byteValue();
 
         return bytes;
     }
@@ -64,7 +57,6 @@ public class BytecodeCompiler {
     private static void compileHexadecimal(String token, List<Byte> bytecodes) {
         byte[] bytes = Hex.decode(token.substring(2));
 
-        for (int k = 0; k < bytes.length; k++)
-            bytecodes.add(bytes[k]);
+        for (int k = 0; k < bytes.length; k++) bytecodes.add(bytes[k]);
     }
 }

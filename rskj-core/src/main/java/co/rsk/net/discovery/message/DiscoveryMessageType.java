@@ -18,12 +18,12 @@
 
 package co.rsk.net.discovery.message;
 
-/**
- * Created by mario on 13/02/17.
- */
+/** Created by mario on 13/02/17. */
 public enum DiscoveryMessageType {
-
-    PING(1), PONG(2), FIND_NODE(3), NEIGHBORS(4);
+    PING(1),
+    PONG(2),
+    FIND_NODE(3),
+    NEIGHBORS(4);
 
     private int type;
 
@@ -36,7 +36,7 @@ public enum DiscoveryMessageType {
     }
 
     public static DiscoveryMessageType valueOfType(int type) {
-        for(DiscoveryMessageType t : DiscoveryMessageType.values()) {
+        for (DiscoveryMessageType t : DiscoveryMessageType.values()) {
             if (t.getTypeValue() == type) {
                 return t;
             }
@@ -44,5 +44,4 @@ public enum DiscoveryMessageType {
 
         throw new IllegalArgumentException("Invalid peer discovery message type");
     }
-
 }

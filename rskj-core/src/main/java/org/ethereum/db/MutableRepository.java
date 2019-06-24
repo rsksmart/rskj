@@ -28,6 +28,9 @@ import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
 import com.google.common.annotations.VisibleForTesting;
+import java.math.BigInteger;
+import java.util.*;
+import javax.annotation.Nonnull;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -35,14 +38,10 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import java.math.BigInteger;
-import java.util.*;
-
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
+    private static final byte[] ONE_BYTE_ARRAY = new byte[] {0x01};
 
     private final TrieKeyMapper trieKeyMapper;
     private MutableTrie mutableTrie;
@@ -77,7 +76,8 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized boolean isExist(RskAddress addr) {
         // Here we assume size != 0 means the account exists
-        return mutableTrie.getValueLength(trieKeyMapper.getAccountKey(addr)).compareTo(Uint24.ZERO) > 0;
+        return mutableTrie.getValueLength(trieKeyMapper.getAccountKey(addr)).compareTo(Uint24.ZERO)
+                > 0;
     }
 
     @Override
@@ -106,7 +106,7 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public void setNonce(RskAddress addr,BigInteger nonce) {
+    public void setNonce(RskAddress addr, BigInteger nonce) {
         AccountState account = getAccountStateOrCreateNew(addr);
 
         account.setNonce(nonce);
@@ -155,7 +155,6 @@ public class MutableRepository implements Repository {
         return mutableTrie.getValueLength(key).intValue();
     }
 
-
     @Override
     public synchronized byte[] getCode(RskAddress addr) {
         if (!isExist(addr)) {
@@ -185,7 +184,8 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
-        // This should not happen in production because contracts are created before storage cells are added to them.
+        // This should not happen in production because contracts are created before storage cells
+        // are added to them.
         // But it happens in Repository tests, that create only storage row cells.
         if (!isExist(addr)) {
             createAccount(addr);
@@ -194,9 +194,12 @@ public class MutableRepository implements Repository {
 
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
 
-        // Special case: if the value is an empty vector, we pass "null" which commands the trie to remove the item.
-        // Note that if the call comes from addStorageRow(), this method will already have replaced 0 by null, so the
-        // conversion here only applies if this is called directly. If suppose this only occurs in tests, but it can
+        // Special case: if the value is an empty vector, we pass "null" which commands the trie to
+        // remove the item.
+        // Note that if the call comes from addStorageRow(), this method will already have replaced
+        // 0 by null, so the
+        // conversion here only applies if this is called directly. If suppose this only occurs in
+        // tests, but it can
         // also occur in precompiled contracts that store data directly using this method.
         if (value == null || value.length == 0) {
             mutableTrie.put(triekey, null);
@@ -230,12 +233,14 @@ public class MutableRepository implements Repository {
 
     @Override
     public int getStorageKeysCount(RskAddress addr) {
-        // FIXME(diegoll): I think it's kind of insane to iterate the whole tree looking for storage keys for this address
-        //  I think we can keep a counter for the keys, using the find function for detecting duplicates and so on
+        // FIXME(diegoll): I think it's kind of insane to iterate the whole tree looking for storage
+        // keys for this address
+        //  I think we can keep a counter for the keys, using the find function for detecting
+        // duplicates and so on
         int storageKeysCount = 0;
         Iterator<DataWord> keysIterator = getStorageKeys(addr);
-        for(;keysIterator.hasNext(); keysIterator.next()) {
-            storageKeysCount ++;
+        for (; keysIterator.hasNext(); keysIterator.next()) {
+            storageKeysCount++;
         }
         return storageKeysCount;
     }
@@ -243,7 +248,7 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized Coin getBalance(RskAddress addr) {
         AccountState account = getAccountState(addr);
-        return (account == null) ? Coin.ZERO: account.getBalance();
+        return (account == null) ? Coin.ZERO : account.getBalance();
     }
 
     @Override
@@ -259,15 +264,22 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized Set<RskAddress> getAccountsKeys() {
         Set<RskAddress> result = new HashSet<>();
-        //TODO(diegoll): this is needed when trie is a MutableTrieCache, check if makes sense to commit here
+        // TODO(diegoll): this is needed when trie is a MutableTrieCache, check if makes sense to
+        // commit here
         mutableTrie.commit();
         Trie trie = mutableTrie.getTrie();
         Iterator<Trie.IterationElement> preOrderIterator = trie.getPreOrderIterator();
         while (preOrderIterator.hasNext()) {
             TrieKeySlice nodeKey = preOrderIterator.next().getNodeKey();
             int nodeKeyLength = nodeKey.length();
-            if (nodeKeyLength == (1 + TrieKeyMapper.SECURE_KEY_SIZE + RskAddress.LENGTH_IN_BYTES) * Byte.SIZE) {
-                byte[] address = nodeKey.slice(nodeKeyLength - RskAddress.LENGTH_IN_BYTES * Byte.SIZE, nodeKeyLength).encode();
+            if (nodeKeyLength
+                    == (1 + TrieKeyMapper.SECURE_KEY_SIZE + RskAddress.LENGTH_IN_BYTES)
+                            * Byte.SIZE) {
+                byte[] address =
+                        nodeKey.slice(
+                                        nodeKeyLength - RskAddress.LENGTH_IN_BYTES * Byte.SIZE,
+                                        nodeKeyLength)
+                                .encode();
                 result.add(new RskAddress(address));
             }
         }
@@ -328,10 +340,12 @@ public class MutableRepository implements Repository {
     }
 
     // What's the difference between startTracking() and getSnapshotTo()?
-    // getSnapshotTo() does not create a new cache layer. It just gives you a view of the same Repository under another
+    // getSnapshotTo() does not create a new cache layer. It just gives you a view of the same
+    // Repository under another
     // root. This means that if you save data, that data will pass through.
 
-    // A snapshot is a RepositoryTracker object but it's not a cache, because the repository created is a
+    // A snapshot is a RepositoryTracker object but it's not a cache, because the repository created
+    // is a
     // MutableRepository, and not a RepositoryTrack
     @Override
     public synchronized Repository getSnapshotTo(byte[] root) {
@@ -349,14 +363,17 @@ public class MutableRepository implements Repository {
     public byte[] getStorageStateRoot(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
 
-        // The value should be ONE_BYTE_ARRAY, but we don't need to check nothing else could be there.
+        // The value should be ONE_BYTE_ARRAY, but we don't need to check nothing else could be
+        // there.
         Trie storageRootNode = mutableTrie.getTrie().find(prefix);
         if (storageRootNode == null) {
             return HashUtil.EMPTY_TRIE_HASH;
         }
 
-        // Now it's a bit tricky what to return: if I return the storageRootNode hash then it's counting the "0x01"
-        // value, so the try one gets will never match the trie one gets if creating the trie without any other data.
+        // Now it's a bit tricky what to return: if I return the storageRootNode hash then it's
+        // counting the "0x01"
+        // value, so the try one gets will never match the trie one gets if creating the trie
+        // without any other data.
         // Unless the PDV trie is used. The best we can do is to return storageRootNode hash
         return storageRootNode.getHash().getBytes();
     }

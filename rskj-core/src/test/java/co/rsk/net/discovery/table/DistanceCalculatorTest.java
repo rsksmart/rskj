@@ -18,19 +18,17 @@
 
 package co.rsk.net.discovery.table;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
-/**
- * Created by mario on 21/02/17.
- */
+/** Created by mario on 21/02/17. */
 public class DistanceCalculatorTest {
 
-    private static final String NODE_ID_1 = "826fbe97bc03c7c09d7b7d05b871282d8ac93d4446d44b55566333b240dd06260a9505f0fd3247e63d84d557f79bb63691710e40d4d9fc39f3bfd5397bcea065";
-private static final String NODE_ID_2 = "01";
-
+    private static final String NODE_ID_1 =
+            "826fbe97bc03c7c09d7b7d05b871282d8ac93d4446d44b55566333b240dd06260a9505f0fd3247e63d84d557f79bb63691710e40d4d9fc39f3bfd5397bcea065";
+    private static final String NODE_ID_2 = "01";
 
     @Test
     public void distance() {
@@ -41,6 +39,8 @@ private static final String NODE_ID_2 = "01";
 
         Assert.assertEquals(0, calculator.calculateDistance(node1.getId(), node1.getId()));
 
-        Assert.assertEquals(calculator.calculateDistance(node1.getId(), node2.getId()), calculator.calculateDistance(node2.getId(), node1.getId()));
+        Assert.assertEquals(
+                calculator.calculateDistance(node1.getId(), node2.getId()),
+                calculator.calculateDistance(node2.getId(), node1.getId()));
     }
 }

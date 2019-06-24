@@ -20,8 +20,8 @@ package co.rsk.jsonrpc;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * This is the base class for JSON-RPC results and errors.
- * It can generate a response with the correct result or error response type.
+ * This is the base class for JSON-RPC results and errors. It can generate a response with the
+ * correct result or error response type.
  */
 public interface JsonRpcResultOrError {
     /**

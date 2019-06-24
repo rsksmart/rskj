@@ -27,30 +27,33 @@ import org.ethereum.vm.PrecompiledContracts;
 
 /**
  * Tx that invokes Remasc's processMinersFees method.
+ *
  * @author Oscar Guindzberg
  */
 public class RemascTransaction extends Transaction {
-    private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
+    private static final byte[] ZERO_BYTE_ARRAY = new byte[] {0};
 
     /**
-     * The Remasc transaction is not signed so it has no sender.
-     * Due to a bug in the implementation before mainnet release, this address has a special encoding.
-     * Instead of the empty array, it is encoded as the array with just one zero.
-     * This instance should not be used for any other reason.
+     * The Remasc transaction is not signed so it has no sender. Due to a bug in the implementation
+     * before mainnet release, this address has a special encoding. Instead of the empty array, it
+     * is encoded as the array with just one zero. This instance should not be used for any other
+     * reason.
      */
-    public static final RskAddress REMASC_ADDRESS = new RskAddress(new byte[20]) {
-        @Override
-        public byte[] getBytes() {
-            return ZERO_BYTE_ARRAY;
-        }
-    };
+    public static final RskAddress REMASC_ADDRESS =
+            new RskAddress(new byte[20]) {
+                @Override
+                public byte[] getBytes() {
+                    return ZERO_BYTE_ARRAY;
+                }
+            };
 
     public RemascTransaction(byte[] rawData) {
         super(rawData);
     }
 
     public RemascTransaction(long blockNumber) {
-        super(ByteUtil.longToBytesNoLeadZeroes(blockNumber - 1),
+        super(
+                ByteUtil.longToBytesNoLeadZeroes(blockNumber - 1),
                 ZERO_BYTE_ARRAY,
                 ZERO_BYTE_ARRAY,
                 PrecompiledContracts.REMASC_ADDR.getBytes(),

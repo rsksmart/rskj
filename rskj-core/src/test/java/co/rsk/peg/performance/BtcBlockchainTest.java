@@ -26,46 +26,79 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.HashMap;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.HashMap;
-
 @Ignore
 public class BtcBlockchainTest extends BridgePerformanceTestCase {
     @Test
     public void getBtcBlockchainBestChainHeight() throws IOException {
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.encode();
+        ABIEncoder abiEncoder =
+                (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.encode();
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainBestChainHeight");
-        executeAndAverage("getBtcBlockchainBestChainHeight", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "getBtcBlockchainBestChainHeight",
+                200,
+                abiEncoder,
+                buildInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10),
+                stats);
         BridgePerformanceTest.addStats(stats);
     }
 
     @Test
     public void getBtcBlockchainInitialBlockHeight() throws IOException {
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT.encode();
+        ABIEncoder abiEncoder =
+                (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT.encode();
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainInitialBlockHeight");
-        executeAndAverage("getBtcBlockchainInitialBlockHeight", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "getBtcBlockchainInitialBlockHeight",
+                200,
+                abiEncoder,
+                buildInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10),
+                stats);
         BridgePerformanceTest.addStats(stats);
     }
 
     @Test
     public void getBtcBlockchainBlockHashAtDepth() throws IOException {
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH.encode(new Object[]{BigInteger.ZERO});
+        ABIEncoder abiEncoder =
+                (int executionIndex) ->
+                        Bridge.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH.encode(
+                                new Object[] {BigInteger.ZERO});
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainBlockHashAtDepth");
-        executeAndAverage("getBtcBlockchainBlockHashAtDepth", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "getBtcBlockchainBlockHashAtDepth",
+                200,
+                abiEncoder,
+                buildInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10),
+                stats);
         BridgePerformanceTest.addStats(stats);
     }
 
     @Test
     public void getBtcBlockchainBlockLocator() throws IOException {
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.encode();
+        ABIEncoder abiEncoder =
+                (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.encode();
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainBlockLocator");
-        executeAndAverage("getBtcBlockchainBlockLocator", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "getBtcBlockchainBlockLocator",
+                200,
+                abiEncoder,
+                buildInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10),
+                stats);
         BridgePerformanceTest.addStats(stats);
     }
 
@@ -74,8 +107,12 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
         final int maxBtcBlocks = 2000;
 
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(), repository,
-                    new HashMap<>(), PrecompiledContracts.BRIDGE_ADDR);
+            BtcBlockStore btcBlockStore =
+                    new RepositoryBtcBlockStoreWithCache(
+                            BridgeRegTestConstants.getInstance().getBtcParams(),
+                            repository,
+                            new HashMap<>(),
+                            PrecompiledContracts.BRIDGE_ADDR);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
@@ -88,6 +125,4 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
             Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
         };
     }
-
-
 }

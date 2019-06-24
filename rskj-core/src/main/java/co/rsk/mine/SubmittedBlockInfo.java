@@ -22,8 +22,8 @@ import org.ethereum.core.ImportResult;
 import org.ethereum.rpc.TypeConverter;
 
 /**
- * Holds information about block mining operation result.
- * It knows how to transform the input data to expected output format (hex).
+ * Holds information about block mining operation result. It knows how to transform the input data
+ * to expected output format (hex).
  *
  * @author martin.medina
  */
@@ -33,8 +33,11 @@ public class SubmittedBlockInfo {
     private final String blockHash;
     private final String blockIncludedHeight;
 
-    SubmittedBlockInfo(ImportResult blockImportedResult, byte[] blockHash, long blockIncludedHeight) {
-        this.blockImportedResult = TypeConverter.toJsonHex(TypeConverter.stringToByteArray(blockImportedResult.toString()));
+    SubmittedBlockInfo(
+            ImportResult blockImportedResult, byte[] blockHash, long blockIncludedHeight) {
+        this.blockImportedResult =
+                TypeConverter.toJsonHex(
+                        TypeConverter.stringToByteArray(blockImportedResult.toString()));
         this.blockHash = TypeConverter.toJsonHex(blockHash);
         this.blockIncludedHeight = TypeConverter.toJsonHex(blockIncludedHeight);
     }

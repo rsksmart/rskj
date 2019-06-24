@@ -18,30 +18,32 @@
 
 package co.rsk.vm;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
+import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import co.rsk.pcc.bto.HDWalletUtils;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class PrecompiledContractTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts =
+            new PrecompiledContracts(config, null);
 
     @Test
     public void getBridgeContract() {
         DataWord bridgeAddress = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
-        PrecompiledContract bridge = precompiledContracts.getContractForAddress(null, bridgeAddress);
+        PrecompiledContract bridge =
+                precompiledContracts.getContractForAddress(null, bridgeAddress);
 
         Assert.assertNotNull(bridge);
         Assert.assertEquals(Bridge.class, bridge.getClass());
@@ -50,8 +52,10 @@ public class PrecompiledContractTest {
     @Test
     public void getBridgeContractTwice() {
         DataWord bridgeAddress = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
-        PrecompiledContract bridge1 = precompiledContracts.getContractForAddress(null, bridgeAddress);
-        PrecompiledContract bridge2 = precompiledContracts.getContractForAddress(null, bridgeAddress);
+        PrecompiledContract bridge1 =
+                precompiledContracts.getContractForAddress(null, bridgeAddress);
+        PrecompiledContract bridge2 =
+                precompiledContracts.getContractForAddress(null, bridgeAddress);
 
         Assert.assertNotNull(bridge1);
         Assert.assertNotNull(bridge2);
@@ -62,8 +66,10 @@ public class PrecompiledContractTest {
     public void getBlockHeaderContractBeforeRskip119() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(false);
-        DataWord blockHeaderContractAddress = DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
-        PrecompiledContract blockHeaderContract = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
+        DataWord blockHeaderContractAddress =
+                DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
+        PrecompiledContract blockHeaderContract =
+                precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
 
         Assert.assertNull(blockHeaderContract);
     }
@@ -72,9 +78,12 @@ public class PrecompiledContractTest {
     public void getBlockHeaderContractAfterRskip119() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP119)).thenReturn(true);
-        DataWord blockHeaderContractAddress = DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
-        PrecompiledContract blockHeaderContract1 = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
-        PrecompiledContract blockHeaderContract2 = precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
+        DataWord blockHeaderContractAddress =
+                DataWord.valueOf(PrecompiledContracts.BLOCK_HEADER_ADDR.getBytes());
+        PrecompiledContract blockHeaderContract1 =
+                precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
+        PrecompiledContract blockHeaderContract2 =
+                precompiledContracts.getContractForAddress(activations, blockHeaderContractAddress);
 
         Assert.assertNotNull(blockHeaderContract1);
         Assert.assertNotNull(blockHeaderContract2);
@@ -87,8 +96,10 @@ public class PrecompiledContractTest {
     public void getHdWalletUtilsBeforeRskip106() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP106)).thenReturn(false);
-        DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
-        PrecompiledContract btoUtils = precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
+        DataWord btoUtilsAddress =
+                DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
+        PrecompiledContract btoUtils =
+                precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
 
         Assert.assertNull(btoUtils);
     }
@@ -97,9 +108,12 @@ public class PrecompiledContractTest {
     public void getHdWalletUtilsAfterRskip106() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP106)).thenReturn(true);
-        DataWord btoUtilsAddress = DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
-        PrecompiledContract btoUtils1 = precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
-        PrecompiledContract btoUtils2 = precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
+        DataWord btoUtilsAddress =
+                DataWord.valueOf(PrecompiledContracts.HD_WALLET_UTILS_ADDR.getBytes());
+        PrecompiledContract btoUtils1 =
+                precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
+        PrecompiledContract btoUtils2 =
+                precompiledContracts.getContractForAddress(activations, btoUtilsAddress);
 
         Assert.assertNotNull(btoUtils1);
         Assert.assertNotNull(btoUtils2);

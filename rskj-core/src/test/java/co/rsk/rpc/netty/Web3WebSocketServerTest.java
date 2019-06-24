@@ -17,6 +17,11 @@
  */
 package co.rsk.rpc.netty;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.*;
+
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.ModuleDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,12 +32,6 @@ import com.squareup.okhttp.*;
 import com.squareup.okhttp.ws.WebSocket;
 import com.squareup.okhttp.ws.WebSocketCall;
 import com.squareup.okhttp.ws.WebSocketListener;
-import okio.Buffer;
-import org.ethereum.rpc.Web3;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Collections;
@@ -44,11 +43,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
+import okio.Buffer;
+import org.ethereum.rpc.Web3;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class Web3WebSocketServerTest {
 
@@ -68,62 +67,76 @@ public class Web3WebSocketServerTest {
         String mockResult = "output";
         when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
 
-        int randomPort = 9998;//new ServerSocket(0).getLocalPort();
+        int randomPort = 9998; // new ServerSocket(0).getLocalPort();
 
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
+        List<ModuleDescription> filteredModules =
+                Collections.singletonList(
+                        new ModuleDescription(
+                                "web3",
+                                "1.0",
+                                true,
+                                Collections.emptyList(),
+                                Collections.emptyList()));
         RskJsonRpcHandler handler = new RskJsonRpcHandler(null, new JacksonBasedRpcSerializer());
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
+        JsonRpcWeb3ServerHandler serverHandler =
+                new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
 
-        Web3WebSocketServer websocketServer = new Web3WebSocketServer(InetAddress.getLoopbackAddress(), randomPort, handler, serverHandler);
+        Web3WebSocketServer websocketServer =
+                new Web3WebSocketServer(
+                        InetAddress.getLoopbackAddress(), randomPort, handler, serverHandler);
         websocketServer.start();
 
         OkHttpClient wsClient = new OkHttpClient();
-        Request wsRequest = new Request.Builder().url("ws://localhost:"+randomPort+"/websocket").build();
+        Request wsRequest =
+                new Request.Builder().url("ws://localhost:" + randomPort + "/websocket").build();
         WebSocketCall wsCall = WebSocketCall.create(wsClient, wsRequest);
 
         CountDownLatch wsAsyncResultLatch = new CountDownLatch(1);
         CountDownLatch wsAsyncCloseLatch = new CountDownLatch(1);
         AtomicReference<Exception> failureReference = new AtomicReference<>();
-        wsCall.enqueue(new WebSocketListener() {
+        wsCall.enqueue(
+                new WebSocketListener() {
 
-            private WebSocket webSocket;
+                    private WebSocket webSocket;
 
-            @Override
-            public void onOpen(WebSocket webSocket, Response response) {
-                wsExecutor.submit(() -> {
-                    RequestBody body = RequestBody.create(WebSocket.TEXT, getJsonRpcDummyMessage());
-                    try {
-                        this.webSocket = webSocket;
-                        this.webSocket.sendMessage(body);
-                        this.webSocket.close(1000, null);
-                    } catch (IOException e) {
+                    @Override
+                    public void onOpen(WebSocket webSocket, Response response) {
+                        wsExecutor.submit(
+                                () -> {
+                                    RequestBody body =
+                                            RequestBody.create(
+                                                    WebSocket.TEXT, getJsonRpcDummyMessage());
+                                    try {
+                                        this.webSocket = webSocket;
+                                        this.webSocket.sendMessage(body);
+                                        this.webSocket.close(1000, null);
+                                    } catch (IOException e) {
+                                        failureReference.set(e);
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void onFailure(IOException e, Response response) {
                         failureReference.set(e);
                     }
+
+                    @Override
+                    public void onMessage(ResponseBody message) throws IOException {
+                        JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(message.bytes());
+                        assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
+                        message.close();
+                        wsAsyncResultLatch.countDown();
+                    }
+
+                    @Override
+                    public void onPong(Buffer payload) {}
+
+                    @Override
+                    public void onClose(int code, String reason) {
+                        wsAsyncCloseLatch.countDown();
+                    }
                 });
-            }
-
-            @Override
-            public void onFailure(IOException e, Response response) {
-                failureReference.set(e);
-            }
-
-            @Override
-            public void onMessage(ResponseBody message) throws IOException {
-                JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(message.bytes());
-                assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
-                message.close();
-                wsAsyncResultLatch.countDown();
-            }
-
-            @Override
-            public void onPong(Buffer payload) {
-            }
-
-            @Override
-            public void onClose(int code, String reason) {
-                wsAsyncCloseLatch.countDown();
-            }
-        });
 
         if (!wsAsyncResultLatch.await(10, TimeUnit.SECONDS)) {
             fail("Result timed out");
@@ -156,12 +169,14 @@ public class Web3WebSocketServerTest {
 
         byte[] request = new byte[0];
         try {
-            request = OBJECT_MAPPER.writeValueAsBytes(OBJECT_MAPPER.treeToValue(
-                    JSON_NODE_FACTORY.objectNode().setAll(jsonRpcRequestProperties), Object.class));
+            request =
+                    OBJECT_MAPPER.writeValueAsBytes(
+                            OBJECT_MAPPER.treeToValue(
+                                    JSON_NODE_FACTORY.objectNode().setAll(jsonRpcRequestProperties),
+                                    Object.class));
         } catch (JsonProcessingException e) {
             fail(e.getMessage());
         }
         return request;
-
     }
 }

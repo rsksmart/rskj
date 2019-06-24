@@ -19,8 +19,16 @@
 
 package org.ethereum.vm;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.vm.OpCode.CALL;
+
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -32,49 +40,35 @@ import org.ethereum.vm.program.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.vm.OpCode.CALL;
-
-
 /**
- * The Ethereum Virtual Machine (EVM) is responsible for initialization
- * and executing a transaction on a contract.
+ * The Ethereum Virtual Machine (EVM) is responsible for initialization and executing a transaction
+ * on a contract.
  *
- * It is a quasi-Turing-complete machine; the quasi qualification
- * comes from the fact that the computation is intrinsically bounded
- * through a parameter, gas, which limits the total amount of computation done.
+ * <p>It is a quasi-Turing-complete machine; the quasi qualification comes from the fact that the
+ * computation is intrinsically bounded through a parameter, gas, which limits the total amount of
+ * computation done.
  *
- * The EVM is a simple stack-based architecture. The word size of the machine
- * (and thus size of stack item) is 256-bit. This was chosen to facilitate
- * the SHA3-256 hash scheme and  elliptic-curve computations. The memory model
- * is a simple word-addressed byte array. The stack has an unlimited size.
- * The machine also has an independent storage model; this is similar in concept
- * to the memory but rather than a byte array, it is a word-addressable word array.
+ * <p>The EVM is a simple stack-based architecture. The word size of the machine (and thus size of
+ * stack item) is 256-bit. This was chosen to facilitate the SHA3-256 hash scheme and elliptic-curve
+ * computations. The memory model is a simple word-addressed byte array. The stack has an unlimited
+ * size. The machine also has an independent storage model; this is similar in concept to the memory
+ * but rather than a byte array, it is a word-addressable word array.
  *
- * Unlike memory, which is volatile, storage is non volatile and is
- * maintained as part of the system state. All locations in both storage
- * and memory are well-defined initially as zero.
+ * <p>Unlike memory, which is volatile, storage is non volatile and is maintained as part of the
+ * system state. All locations in both storage and memory are well-defined initially as zero.
  *
- * The machine does not follow the standard von Neumann architecture.
- * Rather than storing program code in generally-accessible memory or storage,
- * it is stored separately in a virtual ROM interactable only though
- * a specialised instruction.
+ * <p>The machine does not follow the standard von Neumann architecture. Rather than storing program
+ * code in generally-accessible memory or storage, it is stored separately in a virtual ROM
+ * interactable only though a specialised instruction.
  *
- * The machine can have exceptional execution for several reasons,
- * including stack underflows and invalid instructions. These unambiguously
- * and validly result in immediate halting of the machine with all state changes
- * left intact. The one piece of exceptional execution that does not leave
+ * <p>The machine can have exceptional execution for several reasons, including stack underflows and
+ * invalid instructions. These unambiguously and validly result in immediate halting of the machine
+ * with all state changes left intact. The one piece of exceptional execution that does not leave
  * state changes intact is the out-of-gas (OOG) exception.
  *
- * Here, the machine halts immediately and reports the issue to
- * the execution agent (either the transaction processor or, recursively,
- * the spawning execution environment) and which will deal with it separately.
+ * <p>Here, the machine halts immediately and reports the issue to the execution agent (either the
+ * transaction processor or, recursively, the spawning execution environment) and which will deal
+ * with it separately.
  *
  * @author Roman Mandeleil
  * @since 01.06.2014
@@ -98,9 +92,9 @@ public class VM {
     private Program program;
     private Stack stack;
     private OpCode op;
-    private long oldMemSize ;
+    private long oldMemSize;
 
-    private String hint ;
+    private String hint;
 
     private long memWords; // parameters for logging
     private long gasCost;
@@ -115,12 +109,13 @@ public class VM {
 
     private void checkSizeArgument(long size) {
         if (size > Program.MAX_MEMORY)
-            // Force exception
+        // Force exception
         {
-            throw Program.ExceptionHelper.notEnoughOpGas(op, Long.MAX_VALUE, program.getRemainingGas());
+            throw Program.ExceptionHelper.notEnoughOpGas(
+                    op, Long.MAX_VALUE, program.getRemainingGas());
         }
-
     }
+
     private long calcMemGas(long oldMemSize, long newMemSize, long copySize) {
         long currentGasCost = 0;
 
@@ -133,15 +128,16 @@ public class VM {
 
         // This comparison assumes (oldMemSize % 32 == 0)
         if (newMemSize > oldMemSize) { // optimization to avoid div/mul
-            long memoryUsage = (newMemSize+31) / 32 * 32; // rounds up
+            long memoryUsage = (newMemSize + 31) / 32 * 32; // rounds up
             if (memoryUsage > oldMemSize) {
                 memWords = (memoryUsage / 32); // 25 sig digits
                 long memWordsOld = (oldMemSize / 32);
                 long memGas;
 
-                 // MemWords*MemWords has 50 sig digits, so this cannot overflow
-                 memGas = (GasCost.MEMORY * memWords + memWords * memWords / 512)
-                        - (GasCost.MEMORY * memWordsOld + memWordsOld * memWordsOld / 512);
+                // MemWords*MemWords has 50 sig digits, so this cannot overflow
+                memGas =
+                        (GasCost.MEMORY * memWords + memWords * memWords / 512)
+                                - (GasCost.MEMORY * memWordsOld + memWordsOld * memWordsOld / 512);
 
                 currentGasCost += memGas;
             }
@@ -156,9 +152,8 @@ public class VM {
         return currentGasCost;
     }
 
-
     public void step(Program aprogram) {
-        steps(aprogram,1);
+        steps(aprogram, 1);
     }
 
     public int getVmCounter() { // for profiling only
@@ -166,7 +161,7 @@ public class VM {
     }
 
     public void resetVmCounter() { // for profiling only
-        vmCounter =0;
+        vmCounter = 0;
     }
 
     protected void checkOpcode() {
@@ -176,9 +171,7 @@ public class VM {
         if (op.scriptVersion() > program.getScriptVersion()) {
             throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
         }
-
     }
-
 
     public static long limitedAddToMaxLong(long left, long right) {
         try {
@@ -194,7 +187,6 @@ public class VM {
         }
         program.spendGas(gasCost, op.name());
     }
-
 
     protected void doSTOP() {
         if (computeGas) {
@@ -218,7 +210,6 @@ public class VM {
 
         program.stackPush(word1.add(word2));
         program.step();
-
     }
 
     protected void doMUL() {
@@ -249,7 +240,7 @@ public class VM {
         program.step();
     }
 
-    protected void doDIV()  {
+    protected void doDIV() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -309,7 +300,7 @@ public class VM {
         if (computeGas) {
             DataWord exp = stack.get(stack.size() - 2);
             int bytesOccupied = exp.bytesOccupied();
-            gasCost = (long)GasCost.EXP_GAS + GasCost.EXP_BYTE_GAS * bytesOccupied;
+            gasCost = (long) GasCost.EXP_GAS + GasCost.EXP_BYTE_GAS * bytesOccupied;
         }
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -324,13 +315,13 @@ public class VM {
         program.step();
     }
 
-    protected void doSIGNEXTEND()  {
+    protected void doSIGNEXTEND() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
         long k = Program.limitToMaxLong(word1);
 
-        if (k<32) {
+        if (k < 32) {
             DataWord word2 = program.stackPop();
             if (isLogEnabled) {
                 hint = word1 + "  " + word2.value();
@@ -366,7 +357,8 @@ public class VM {
             hint = word1.value() + " < " + word2.value();
         }
 
-        // TODO: We should compare the performance of BigInteger comparison with DataWord comparison:
+        // TODO: We should compare the performance of BigInteger comparison with DataWord
+        // comparison:
         if (word1.compareTo(word2) < 0) {
             program.stackPush(DataWord.ONE);
         } else {
@@ -452,7 +444,7 @@ public class VM {
         program.step();
     }
 
-    protected void  doISZERO() {
+    protected void doISZERO() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -467,7 +459,7 @@ public class VM {
         program.step();
     }
 
-    protected void doAND(){
+    protected void doAND() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -481,7 +473,7 @@ public class VM {
         program.step();
     }
 
-    protected void doOR(){
+    protected void doOR() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -495,7 +487,7 @@ public class VM {
         program.step();
     }
 
-    protected void doXOR(){
+    protected void doXOR() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord word1 = program.stackPop();
@@ -516,7 +508,7 @@ public class VM {
         DataWord word2 = program.stackPop();
         final DataWord result;
         long wvalue = Program.limitToMaxLong(word1);
-        if (wvalue<32) {
+        if (wvalue < 32) {
             byte tmp = word2.getData()[(int) wvalue];
             byte[] newdata = new byte[32];
             newdata[31] = tmp;
@@ -545,7 +537,6 @@ public class VM {
 
         program.stackPush(word2.shiftLeft(word1));
         program.step();
-
     }
 
     protected void doSHR() {
@@ -560,7 +551,6 @@ public class VM {
 
         program.stackPush(word2.shiftRight(word1));
         program.step();
-
     }
 
     protected void doSAR() {
@@ -575,7 +565,6 @@ public class VM {
 
         program.stackPush(word2.shiftRightSigned(word1));
         program.step();
-
     }
 
     protected void doADDMOD() {
@@ -601,7 +590,7 @@ public class VM {
     protected void doSHA3() {
         DataWord size;
         long sizeLong;
-        long newMemSize ;
+        long newMemSize;
         if (computeGas) {
             gasCost = GasCost.SHA3;
             size = stack.get(stack.size() - 2);
@@ -653,16 +642,18 @@ public class VM {
         DataWord balance = program.getBalance(address); // TODO: should not allocate
 
         if (isLogEnabled) {
-            hint = "address: "
-                    + Hex.toHexString(address.getLast20Bytes())
-                    + " balance: " + balance.toString();
+            hint =
+                    "address: "
+                            + Hex.toHexString(address.getLast20Bytes())
+                            + " balance: "
+                            + balance.toString();
         }
 
         program.stackPush(balance);
         program.step();
     }
 
-    protected void doORIGIN(){
+    protected void doORIGIN() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord originAddress = program.getOriginAddress();
@@ -675,7 +666,7 @@ public class VM {
         program.step();
     }
 
-    protected void doCALLER()  {
+    protected void doCALLER() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord callerAddress = program.getCallerAddress();
@@ -701,7 +692,7 @@ public class VM {
         program.step();
     }
 
-    protected void  doCALLDATALOAD() {
+    protected void doCALLDATALOAD() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord dataOffs = program.stackPop();
@@ -773,9 +764,11 @@ public class VM {
             codeLength = DataWord.valueOf(program.getCodeLengthAt(address));
             ActivationConfig.ForBlock activations = program.getActivations();
             if (activations.isActive(RSKIP90)) {
-                PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, address);
+                PrecompiledContracts.PrecompiledContract precompiledContract =
+                        precompiledContracts.getContractForAddress(activations, address);
                 if (precompiledContract != null) {
-                    codeLength = DataWord.valueOf(BigIntegers.asUnsignedByteArray(DataWord.MAX_VALUE));
+                    codeLength =
+                            DataWord.valueOf(BigIntegers.asUnsignedByteArray(DataWord.MAX_VALUE));
                 }
             }
         }
@@ -791,7 +784,7 @@ public class VM {
 
     protected void doCODECOPY() {
         DataWord size;
-        long newMemSize ;
+        long newMemSize;
         long copySize;
         if (computeGas) {
 
@@ -831,7 +824,7 @@ public class VM {
 
         // Here size/offsets fit in ints are assumed: this is consistent with
         // maximum memory size, which is 1 GB (program.MAX_MEMORY)
-        int memOffset = memOffsetDW .intValueSafe();
+        int memOffset = memOffsetDW.intValueSafe();
         int codeOffset = codeOffsetDW.intValueSafe(); // where to start reading
         int lengthData = lengthDataDW.intValueSafe(); // amount of bytes to copy
 
@@ -839,16 +832,16 @@ public class VM {
         if ((long) codeOffset + lengthData > fullCode.length) {
             // if user wants to read more info from code what actual code has then..
             // if all code that users wants lies after code has ended..
-            if (codeOffset >=fullCode.length) {
-                sizeToBeCopied=0; // do not copy anything
+            if (codeOffset >= fullCode.length) {
+                sizeToBeCopied = 0; // do not copy anything
             } else {
                 sizeToBeCopied = fullCode.length - codeOffset; // copy only the remaining
             }
 
         } else
-           // Code is longer, so limit by user length value
+        // Code is longer, so limit by user length value
         {
-            sizeToBeCopied =lengthData;
+            sizeToBeCopied = lengthData;
         }
 
         // The part not copied must be filled with zeros, so here we allocate
@@ -864,7 +857,8 @@ public class VM {
         }
 
         // TODO: an optimization to avoid double-copying would be to override programSave
-        // to receive a byte[] buffer and a length, and to create another method memoryZero(offset,length)
+        // to receive a byte[] buffer and a length, and to create another method
+        // memoryZero(offset,length)
         // to fill the gap.
         program.memorySave(memOffset, codeCopy);
 
@@ -891,13 +885,17 @@ public class VM {
         DataWord dataOffsetData = program.stackPop();
         DataWord lengthData = program.stackPop();
 
-        byte[] msgData = program.getReturnDataBufferData(dataOffsetData, lengthData)
-                .orElseThrow(() -> {
-                    long returnDataSize = program.getReturnDataBufferSize().longValueSafe();
-                    return new RuntimeException(String.format(
-                            "Illegal RETURNDATACOPY arguments: offset (%s) + size (%s) > RETURNDATASIZE (%d)",
-                            dataOffsetData, lengthData, returnDataSize));
-                });
+        byte[] msgData =
+                program.getReturnDataBufferData(dataOffsetData, lengthData)
+                        .orElseThrow(
+                                () -> {
+                                    long returnDataSize =
+                                            program.getReturnDataBufferSize().longValueSafe();
+                                    return new RuntimeException(
+                                            String.format(
+                                                    "Illegal RETURNDATACOPY arguments: offset (%s) + size (%s) > RETURNDATASIZE (%d)",
+                                                    dataOffsetData, lengthData, returnDataSize));
+                                });
 
         if (isLogEnabled) {
             hint = "data: " + Hex.toHexString(msgData);
@@ -907,7 +905,7 @@ public class VM {
         program.step();
     }
 
-    protected void doGASPRICE(){
+    protected void doGASPRICE() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord gasPrice = program.getGasPrice();
@@ -976,7 +974,7 @@ public class VM {
         program.step();
     }
 
-    protected void doNUMBER(){
+    protected void doNUMBER() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord number = program.getNumber();
@@ -1015,7 +1013,7 @@ public class VM {
         program.step();
     }
 
-    protected void doPOP(){
+    protected void doPOP() {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.stackPop();
@@ -1046,7 +1044,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSWAP(){
+    protected void doSWAP() {
         spendOpCodeGas();
         // EXECUTION PHASE
         int n = op.val() - OpCode.SWAP1.val() + 2;
@@ -1055,7 +1053,7 @@ public class VM {
         program.step();
     }
 
-    protected void doSWAPN(){
+    protected void doSWAPN() {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
@@ -1069,14 +1067,14 @@ public class VM {
         program.step();
     }
 
-    protected void doLOG(){
+    protected void doLOG() {
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
             throw Program.ExceptionHelper.modificationException();
         }
 
         DataWord size;
         long sizeLong;
-        long newMemSize ;
+        long newMemSize;
         int nTopics = op.val() - OpCode.LOG0.val();
 
         if (computeGas) {
@@ -1088,12 +1086,11 @@ public class VM {
             long dataCost = Program.multiplyLimitToMaxLong(sizeLong, GasCost.LOG_DATA_GAS);
 
             if (dataCost > Program.MAX_GAS) {
-                throw Program.ExceptionHelper.notEnoughOpGas(op, dataCost, program.getRemainingGas());
+                throw Program.ExceptionHelper.notEnoughOpGas(
+                        op, dataCost, program.getRemainingGas());
             }
 
-            gasCost = GasCost.LOG_GAS +
-                    GasCost.LOG_TOPIC_GAS * nTopics +
-                    dataCost;
+            gasCost = GasCost.LOG_GAS + GasCost.LOG_TOPIC_GAS * nTopics + dataCost;
 
             gasCost += calcMemGas(oldMemSize, newMemSize, 0);
 
@@ -1114,8 +1111,7 @@ public class VM {
         // Int32 address values guaranteed by previous MAX_MEMORY checks
         byte[] data = program.memoryChunk(memStart.intValue(), memOffset.intValue());
 
-        LogInfo logInfo =
-                new LogInfo(address.getLast20Bytes(), topics, data);
+        LogInfo logInfo = new LogInfo(address.getLast20Bytes(), topics, data);
 
         if (isLogEnabled) {
             hint = logInfo.toString();
@@ -1126,8 +1122,8 @@ public class VM {
         program.step();
     }
 
-    protected void doMLOAD(){
-        long newMemSize ;
+    protected void doMLOAD() {
+        long newMemSize;
 
         if (computeGas) {
             newMemSize = memNeeded(stack.peek(), 32);
@@ -1147,7 +1143,7 @@ public class VM {
     }
 
     protected void doMSTORE() {
-        long newMemSize ;
+        long newMemSize;
 
         if (computeGas) {
             newMemSize = memNeeded(stack.peek(), 32);
@@ -1166,8 +1162,8 @@ public class VM {
         program.step();
     }
 
-    protected void doMSTORE8(){
-        long newMemSize ;
+    protected void doMSTORE8() {
+        long newMemSize;
 
         if (computeGas) {
             newMemSize = memNeeded(stack.peek(), 1);
@@ -1179,7 +1175,7 @@ public class VM {
         DataWord addr = program.stackPop();
         DataWord value = program.stackPop();
         byte[] byteVal = {value.getData()[31]};
-        //TODO: non-standard single byte memory storage, this should be documented
+        // TODO: non-standard single byte memory storage, this should be documented
         program.memorySave(addr.intValue(), byteVal);
         program.step();
     }
@@ -1221,7 +1217,7 @@ public class VM {
                 gasCost = GasCost.SET_SSTORE;
             }
 
-                // from non-zero to zero
+            // from non-zero to zero
             else if (oldValue != null && newValue.isZero()) {
                 // todo: GASREFUND counter policyn
 
@@ -1229,7 +1225,7 @@ public class VM {
                 program.futureRefundGas(GasCost.REFUND_SSTORE);
                 gasCost = GasCost.CLEAR_SSTORE;
             } else
-                // from zero to zero, or from non-zero to non-zero
+            // from zero to zero, or from non-zero to non-zero
             {
                 gasCost = GasCost.RESET_SSTORE;
             }
@@ -1241,14 +1237,20 @@ public class VM {
         DataWord value = program.stackPop();
 
         if (isLogEnabled) {
-            hint = "[" + program.getOwnerAddress().toPrefixString() + "] key: " + addr + " value: " + value;
+            hint =
+                    "["
+                            + program.getOwnerAddress().toPrefixString()
+                            + "] key: "
+                            + addr
+                            + " value: "
+                            + value;
         }
 
         program.storageSave(addr, value);
         program.step();
     }
 
-    protected void doJUMP(){
+    protected void doJUMP() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord pos = program.stackPop();
@@ -1261,7 +1263,7 @@ public class VM {
         program.setPC(nextPC);
     }
 
-    protected void doJUMPI(){
+    protected void doJUMPI() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord pos = program.stackPop();
@@ -1281,7 +1283,7 @@ public class VM {
         }
     }
 
-    protected void doPC(){
+    protected void doPC() {
         spendOpCodeGas();
         // EXECUTION PHASE
         int pc = program.getPC();
@@ -1295,7 +1297,7 @@ public class VM {
         program.step();
     }
 
-    protected void doMSIZE(){
+    protected void doMSIZE() {
         spendOpCodeGas();
         // EXECUTION PHASE
         int memSize = program.getMemSize();
@@ -1309,7 +1311,7 @@ public class VM {
         program.step();
     }
 
-    protected void doGAS(){
+    protected void doGAS() {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord gas = DataWord.valueOf(program.getRemainingGas());
@@ -1322,7 +1324,7 @@ public class VM {
         program.step();
     }
 
-    protected void doPUSH(){
+    protected void doPUSH() {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
@@ -1337,21 +1339,20 @@ public class VM {
         program.stackPush(data);
     }
 
-    protected void doJUMPDEST()
-    {
+    protected void doJUMPDEST() {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
     }
 
-    protected void doCREATE(){
+    protected void doCREATE() {
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
             throw Program.ExceptionHelper.modificationException();
         }
 
         DataWord size;
         long sizeLong;
-        long newMemSize ;
+        long newMemSize;
 
         if (computeGas) {
             gasCost = GasCost.CREATE;
@@ -1369,26 +1370,31 @@ public class VM {
         DataWord inSize = program.stackPop();
 
         if (isLogEnabled) {
-            logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
+            logger.info(
+                    logString,
+                    String.format("%5s", "[" + program.getPC() + "]"),
                     String.format("%-12s", op.name()),
                     program.getRemainingGas(),
-                    program.getCallDeep(), hint);
+                    program.getCallDeep(),
+                    hint);
         }
 
         program.createContract(value, inOffset, inSize);
         program.step();
     }
 
-    protected void doCREATE2(){
+    protected void doCREATE2() {
         if (program.isStaticCall()) {
             throw Program.ExceptionHelper.modificationException();
         }
 
-        if (computeGas){
+        if (computeGas) {
             Long codeSize = stack.get(stack.size() - 3).longValueSafe();
-            gasCost = GasCost.CREATE +
-                    calcMemGas(oldMemSize, memNeeded(stack.get(stack.size() - 2), codeSize), 0) +
-                    (codeSize+31)/32 * GasCost.SHA3_WORD;
+            gasCost =
+                    GasCost.CREATE
+                            + calcMemGas(
+                                    oldMemSize, memNeeded(stack.get(stack.size() - 2), codeSize), 0)
+                            + (codeSize + 31) / 32 * GasCost.SHA3_WORD;
             spendOpCodeGas();
         }
 
@@ -1398,10 +1404,13 @@ public class VM {
         DataWord salt = program.stackPop();
 
         if (logger.isInfoEnabled()) {
-            logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
+            logger.info(
+                    logString,
+                    String.format("%5s", "[" + program.getPC() + "]"),
                     String.format("%-12s", op.name()),
                     program.getRemainingGas(),
-                    program.getCallDeep(), hint);
+                    program.getCallDeep(),
+                    hint);
         }
 
         program.createContract2(value, inOffset, inSize, salt);
@@ -1409,7 +1418,7 @@ public class VM {
         program.step();
     }
 
-    protected void doCALL(){
+    protected void doCALL() {
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
@@ -1419,7 +1428,10 @@ public class VM {
 
         if (activations.isActive(RSKIP103)) {
             // value is always zero in a DELEGATECALL or STATICCALL operation
-            value = op == OpCode.DELEGATECALL || op == OpCode.STATICCALL ? DataWord.ZERO : program.stackPop();
+            value =
+                    op == OpCode.DELEGATECALL || op == OpCode.STATICCALL
+                            ? DataWord.ZERO
+                            : program.stackPop();
         } else {
             // value is always zero in a DELEGATECALL operation
             value = op == OpCode.DELEGATECALL ? DataWord.ZERO : program.stackPop();
@@ -1436,7 +1448,9 @@ public class VM {
         DataWord outDataSize = program.stackPop();
 
         if (computeGas) {
-            gasCost = computeCallGas(codeAddress, value, inDataOffs, inDataSize, outDataOffs, outDataSize);
+            gasCost =
+                    computeCallGas(
+                            codeAddress, value, inDataOffs, inDataSize, outDataOffs, outDataSize);
         }
 
         // gasCost doesn't include the calleeGas at this point
@@ -1444,7 +1458,8 @@ public class VM {
         long requiredGas = gasCost;
         long remainingGas = program.getRemainingGas() - requiredGas;
         if (remainingGas < 0) {
-            throw Program.ExceptionHelper.gasOverflow(BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
+            throw Program.ExceptionHelper.gasOverflow(
+                    BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
         }
 
         // We give the callee a basic stipend whenever we transfer value,
@@ -1454,12 +1469,14 @@ public class VM {
             minimumTransferGas += GasCost.STIPEND_CALL;
 
             if (remainingGas < minimumTransferGas) {
-                throw Program.ExceptionHelper.notEnoughSpendingGas(op.name(), minimumTransferGas, program);
+                throw Program.ExceptionHelper.notEnoughSpendingGas(
+                        op.name(), minimumTransferGas, program);
             }
         }
 
         // If specified gas is higher than available gas then move all remaining gas to callee.
-        // This will have one possibly undesired behavior: if the specified gas is higher than the remaining gas,
+        // This will have one possibly undesired behavior: if the specified gas is higher than the
+        // remaining gas,
         // the callee will receive less gas than the parent expected.
         long userSpecifiedGas = Program.limitToMaxLong(gas);
         long calleeGas = Math.min(remainingGas, userSpecifiedGas + minimumTransferGas);
@@ -1470,22 +1487,36 @@ public class VM {
         }
 
         if (isLogEnabled) {
-            hint = "addr: " + Hex.toHexString(codeAddress.getLast20Bytes())
-                    + " gas: " + calleeGas
-                    + " inOff: " + inDataOffs.shortHex()
-                    + " inSize: " + inDataSize.shortHex();
-            logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
+            hint =
+                    "addr: "
+                            + Hex.toHexString(codeAddress.getLast20Bytes())
+                            + " gas: "
+                            + calleeGas
+                            + " inOff: "
+                            + inDataOffs.shortHex()
+                            + " inSize: "
+                            + inDataSize.shortHex();
+            logger.info(
+                    logString,
+                    String.format("%5s", "[" + program.getPC() + "]"),
                     String.format("%-12s", op.name()),
                     program.getRemainingGas(),
-                    program.getCallDeep(), hint);
+                    program.getCallDeep(),
+                    hint);
         }
 
         program.memoryExpand(outDataOffs, outDataSize);
 
-        MessageCall msg = new MessageCall(
-                MsgType.fromOpcode(op),
-                DataWord.valueOf(calleeGas), codeAddress, value, inDataOffs, inDataSize,
-                outDataOffs, outDataSize);
+        MessageCall msg =
+                new MessageCall(
+                        MsgType.fromOpcode(op),
+                        DataWord.valueOf(calleeGas),
+                        codeAddress,
+                        value,
+                        inDataOffs,
+                        inDataSize,
+                        outDataOffs,
+                        outDataSize);
 
         callToAddress(codeAddress, msg);
 
@@ -1494,7 +1525,8 @@ public class VM {
 
     private void callToAddress(DataWord codeAddress, MessageCall msg) {
         ActivationConfig.ForBlock activations = program.getActivations();
-        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, codeAddress);
+        PrecompiledContracts.PrecompiledContract contract =
+                precompiledContracts.getContractForAddress(activations, codeAddress);
 
         if (contract != null) {
             program.callToPrecompiledAddress(msg, contract);
@@ -1503,20 +1535,22 @@ public class VM {
         }
     }
 
-    private long computeCallGas(DataWord codeAddress,
-                                DataWord value,
-                                DataWord inDataOffs,
-                                DataWord inDataSize,
-                                DataWord outDataOffs,
-                                DataWord outDataSize) {
+    private long computeCallGas(
+            DataWord codeAddress,
+            DataWord value,
+            DataWord inDataOffs,
+            DataWord inDataSize,
+            DataWord outDataOffs,
+            DataWord outDataSize) {
         long callGas = GasCost.CALL;
 
-        //check to see if account does not exist and is not a precompiled contract
+        // check to see if account does not exist and is not a precompiled contract
         if (op == OpCode.CALL && !program.getStorage().isExist(new RskAddress(codeAddress))) {
             callGas += GasCost.NEW_ACCT_CALL;
         }
 
-        // RSKIP103: we don't need to check static call nor delegate call since value will always be zero
+        // RSKIP103: we don't need to check static call nor delegate call since value will always be
+        // zero
         if (!value.isZero()) {
             callGas += GasCost.VT_CALL;
         }
@@ -1531,15 +1565,15 @@ public class VM {
         return callGas;
     }
 
-    protected void doREVERT(){
+    protected void doREVERT() {
         doRETURN();
         program.getResult().setRevert();
     }
 
-    protected void doRETURN(){
+    protected void doRETURN() {
         DataWord size;
         long sizeLong;
-        long newMemSize ;
+        long newMemSize;
 
         size = stack.get(stack.size() - 2);
 
@@ -1560,16 +1594,20 @@ public class VM {
         program.setHReturn(hReturn);
 
         if (isLogEnabled) {
-            hint = "data: " + Hex.toHexString(hReturn)
-                    + " offset: " + offset.value()
-                    + " size: " + size.value();
+            hint =
+                    "data: "
+                            + Hex.toHexString(hReturn)
+                            + " offset: "
+                            + offset.value()
+                            + " size: "
+                            + size.value();
         }
 
         program.step();
         program.stop();
     }
 
-    protected void doSUICIDE(){
+    protected void doSUICIDE() {
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
             throw Program.ExceptionHelper.modificationException();
         }
@@ -1597,7 +1635,7 @@ public class VM {
 
         DataWord size;
         long newCodeSizeLong;
-        long newMemSize ;
+        long newMemSize;
         if (computeGas) {
             gasCost = GasCost.CODEREPLACE;
             size = stack.get(stack.size() - 2);
@@ -1611,7 +1649,8 @@ public class VM {
             // then the meaning of codereplace is less clear. It's better to disallow it.
             long storedLength = program.getCodeAt(program.getOwnerAddress()).length;
             if (storedLength == 0) { // rise OOG, but a specific exception would be better
-                throw Program.ExceptionHelper.notEnoughOpGas(op, Long.MAX_VALUE, program.getRemainingGas());
+                throw Program.ExceptionHelper.notEnoughOpGas(
+                        op, Long.MAX_VALUE, program.getRemainingGas());
             }
 
             // every byte replaced pays REPLACE_DATA
@@ -1620,7 +1659,7 @@ public class VM {
                 gasCost += GasCost.REPLACE_DATA * newCodeSizeLong; // max 38 bits
             } else {
                 gasCost += GasCost.REPLACE_DATA * oldCodeSize;
-                gasCost += GasCost.CREATE_DATA * (newCodeSizeLong-oldCodeSize);
+                gasCost += GasCost.CREATE_DATA * (newCodeSizeLong - oldCodeSize);
             }
 
             spendOpCodeGas();
@@ -1645,133 +1684,168 @@ public class VM {
         // Execute operation
         ActivationConfig.ForBlock activations = program.getActivations();
         switch (op.val()) {
-            /**
-             * Stop and Arithmetic Operations
-             */
-            case OpCodes.OP_STOP: doSTOP();
-            break;
-            case OpCodes.OP_ADD: doADD();
-            break;
-            case OpCodes.OP_MUL: doMUL();
-            break;
-            case OpCodes.OP_SUB: doSUB();
-            break;
-            case OpCodes.OP_DIV: doDIV();
-            break;
-            case OpCodes.OP_SDIV: doSDIV();
-            break;
-            case OpCodes.OP_MOD: doMOD();
-            break;
-            case OpCodes.OP_SMOD: doSMOD();
-            break;
-            case OpCodes.OP_EXP: doEXP();
-            break;
-            case OpCodes.OP_SIGNEXTEND: doSIGNEXTEND();
-            break;
-            case OpCodes.OP_NOT: doNOT();
-            break;
-            case OpCodes.OP_LT: doLT();
-            break;
-            case OpCodes.OP_SLT: doSLT();
-            break;
-            case OpCodes.OP_SGT: doSGT();
-            break;
-            case OpCodes.OP_GT: doGT();
-            break;
-            case OpCodes.OP_EQ: doEQ();
-            break;
-            case OpCodes.OP_ISZERO: doISZERO();
-            break;
-            /**
-             * Bitwise Logic Operations
-             */
-            case OpCodes.OP_AND: doAND();
-            break;
-            case OpCodes.OP_OR: doOR();
-            break;
-            case OpCodes.OP_XOR: doXOR();
-            break;
-            case OpCodes.OP_BYTE: doBYTE();
-            break;
-            case OpCodes.OP_ADDMOD: doADDMOD();
-            break;
-            case OpCodes.OP_MULMOD: doMULMOD();
-            break;
+                /** Stop and Arithmetic Operations */
+            case OpCodes.OP_STOP:
+                doSTOP();
+                break;
+            case OpCodes.OP_ADD:
+                doADD();
+                break;
+            case OpCodes.OP_MUL:
+                doMUL();
+                break;
+            case OpCodes.OP_SUB:
+                doSUB();
+                break;
+            case OpCodes.OP_DIV:
+                doDIV();
+                break;
+            case OpCodes.OP_SDIV:
+                doSDIV();
+                break;
+            case OpCodes.OP_MOD:
+                doMOD();
+                break;
+            case OpCodes.OP_SMOD:
+                doSMOD();
+                break;
+            case OpCodes.OP_EXP:
+                doEXP();
+                break;
+            case OpCodes.OP_SIGNEXTEND:
+                doSIGNEXTEND();
+                break;
+            case OpCodes.OP_NOT:
+                doNOT();
+                break;
+            case OpCodes.OP_LT:
+                doLT();
+                break;
+            case OpCodes.OP_SLT:
+                doSLT();
+                break;
+            case OpCodes.OP_SGT:
+                doSGT();
+                break;
+            case OpCodes.OP_GT:
+                doGT();
+                break;
+            case OpCodes.OP_EQ:
+                doEQ();
+                break;
+            case OpCodes.OP_ISZERO:
+                doISZERO();
+                break;
+                /** Bitwise Logic Operations */
+            case OpCodes.OP_AND:
+                doAND();
+                break;
+            case OpCodes.OP_OR:
+                doOR();
+                break;
+            case OpCodes.OP_XOR:
+                doXOR();
+                break;
+            case OpCodes.OP_BYTE:
+                doBYTE();
+                break;
+            case OpCodes.OP_ADDMOD:
+                doADDMOD();
+                break;
+            case OpCodes.OP_MULMOD:
+                doMULMOD();
+                break;
             case OpCodes.OP_SHL:
                 if (!activations.isActive(RSKIP120)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doSHL();
-            break;
+                break;
             case OpCodes.OP_SHR:
                 if (!activations.isActive(RSKIP120)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doSHR();
-            break;
+                break;
             case OpCodes.OP_SAR:
                 if (!activations.isActive(RSKIP120)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doSAR();
-            break;
-            /**
-             * SHA3
-             */
-            case OpCodes.OP_SHA_3: doSHA3();
-            break;
+                break;
+                /** SHA3 */
+            case OpCodes.OP_SHA_3:
+                doSHA3();
+                break;
 
-            /**
-             * Environmental Information
-             */
-            case OpCodes.OP_ADDRESS: doADDRESS();
-            break;
-            case OpCodes.OP_BALANCE: doBALANCE();
-            break;
-            case OpCodes.OP_ORIGIN: doORIGIN();
-            break;
-            case OpCodes.OP_CALLER: doCALLER();
-            break;
-            case OpCodes.OP_CALLVALUE: doCALLVALUE();
-            break;
-            case OpCodes.OP_CALLDATALOAD: doCALLDATALOAD();
-            break;
-            case OpCodes.OP_CALLDATASIZE: doCALLDATASIZE();
-            break;
-            case OpCodes.OP_CALLDATACOPY: doCALLDATACOPY();
-            break;
+                /** Environmental Information */
+            case OpCodes.OP_ADDRESS:
+                doADDRESS();
+                break;
+            case OpCodes.OP_BALANCE:
+                doBALANCE();
+                break;
+            case OpCodes.OP_ORIGIN:
+                doORIGIN();
+                break;
+            case OpCodes.OP_CALLER:
+                doCALLER();
+                break;
+            case OpCodes.OP_CALLVALUE:
+                doCALLVALUE();
+                break;
+            case OpCodes.OP_CALLDATALOAD:
+                doCALLDATALOAD();
+                break;
+            case OpCodes.OP_CALLDATASIZE:
+                doCALLDATASIZE();
+                break;
+            case OpCodes.OP_CALLDATACOPY:
+                doCALLDATACOPY();
+                break;
             case OpCodes.OP_CODESIZE:
-            case OpCodes.OP_EXTCODESIZE: doCODESIZE();
+            case OpCodes.OP_EXTCODESIZE:
+                doCODESIZE();
                 break;
             case OpCodes.OP_CODECOPY:
-            case OpCodes.OP_EXTCODECOPY: doCODECOPY();
-            break;
-            case OpCodes.OP_RETURNDATASIZE: doRETURNDATASIZE();
-            break;
-            case OpCodes.OP_RETURNDATACOPY: doRETURNDATACOPY();
-            break;
-            case OpCodes.OP_GASPRICE: doGASPRICE();
-            break;
+            case OpCodes.OP_EXTCODECOPY:
+                doCODECOPY();
+                break;
+            case OpCodes.OP_RETURNDATASIZE:
+                doRETURNDATASIZE();
+                break;
+            case OpCodes.OP_RETURNDATACOPY:
+                doRETURNDATACOPY();
+                break;
+            case OpCodes.OP_GASPRICE:
+                doGASPRICE();
+                break;
 
-            /**
-             * Block Information
-             */
-            case OpCodes.OP_BLOCKHASH: doBLOCKHASH();
-            break;
-            case OpCodes.OP_COINBASE: doCOINBASE();
-            break;
-            case OpCodes.OP_TIMESTAMP: doTIMESTAMP();
-            break;
-            case OpCodes.OP_NUMBER: doNUMBER();
-            break;
-            case OpCodes.OP_DIFFICULTY: doDIFFICULTY();
-            break;
-            case OpCodes.OP_GASLIMIT: doGASLIMIT();
-            break;
-            case OpCodes.OP_TXINDEX: doTXINDEX();
-            break;
-            case OpCodes.OP_POP: doPOP();
-            break;
+                /** Block Information */
+            case OpCodes.OP_BLOCKHASH:
+                doBLOCKHASH();
+                break;
+            case OpCodes.OP_COINBASE:
+                doCOINBASE();
+                break;
+            case OpCodes.OP_TIMESTAMP:
+                doTIMESTAMP();
+                break;
+            case OpCodes.OP_NUMBER:
+                doNUMBER();
+                break;
+            case OpCodes.OP_DIFFICULTY:
+                doDIFFICULTY();
+                break;
+            case OpCodes.OP_GASLIMIT:
+                doGASLIMIT();
+                break;
+            case OpCodes.OP_TXINDEX:
+                doTXINDEX();
+                break;
+            case OpCodes.OP_POP:
+                doPOP();
+                break;
             case OpCodes.OP_DUP_1:
             case OpCodes.OP_DUP_2:
             case OpCodes.OP_DUP_3:
@@ -1787,8 +1861,9 @@ public class VM {
             case OpCodes.OP_DUP_13:
             case OpCodes.OP_DUP_14:
             case OpCodes.OP_DUP_15:
-            case OpCodes.OP_DUP_16: doDUP();
-            break;
+            case OpCodes.OP_DUP_16:
+                doDUP();
+                break;
             case OpCodes.OP_SWAP_1:
             case OpCodes.OP_SWAP_2:
             case OpCodes.OP_SWAP_3:
@@ -1804,36 +1879,49 @@ public class VM {
             case OpCodes.OP_SWAP_13:
             case OpCodes.OP_SWAP_14:
             case OpCodes.OP_SWAP_15:
-            case OpCodes.OP_SWAP_16: doSWAP();
-            break;
-            case OpCodes.OP_SWAPN: doSWAPN();
+            case OpCodes.OP_SWAP_16:
+                doSWAP();
+                break;
+            case OpCodes.OP_SWAPN:
+                doSWAPN();
                 break;
             case OpCodes.OP_LOG_0:
             case OpCodes.OP_LOG_1:
             case OpCodes.OP_LOG_2:
             case OpCodes.OP_LOG_3:
-            case OpCodes.OP_LOG_4: doLOG();
-            break;
-            case OpCodes.OP_MLOAD: doMLOAD();
-            break;
-            case OpCodes.OP_MSTORE: doMSTORE();
-            break;
-            case OpCodes.OP_MSTORE_8: doMSTORE8();
-            break;
-            case OpCodes.OP_SLOAD: doSLOAD();
-            break;
-            case OpCodes.OP_SSTORE: doSSTORE();
-            break;
-            case OpCodes.OP_JUMP: doJUMP();
-            break;
-            case OpCodes.OP_JUMPI: doJUMPI();
+            case OpCodes.OP_LOG_4:
+                doLOG();
                 break;
-            case OpCodes.OP_PC: doPC();
-            break;
-            case OpCodes.OP_MSIZE: doMSIZE();
-            break;
-            case OpCodes.OP_GAS: doGAS();
-            break;
+            case OpCodes.OP_MLOAD:
+                doMLOAD();
+                break;
+            case OpCodes.OP_MSTORE:
+                doMSTORE();
+                break;
+            case OpCodes.OP_MSTORE_8:
+                doMSTORE8();
+                break;
+            case OpCodes.OP_SLOAD:
+                doSLOAD();
+                break;
+            case OpCodes.OP_SSTORE:
+                doSSTORE();
+                break;
+            case OpCodes.OP_JUMP:
+                doJUMP();
+                break;
+            case OpCodes.OP_JUMPI:
+                doJUMPI();
+                break;
+            case OpCodes.OP_PC:
+                doPC();
+                break;
+            case OpCodes.OP_MSIZE:
+                doMSIZE();
+                break;
+            case OpCodes.OP_GAS:
+                doGAS();
+                break;
 
             case OpCodes.OP_PUSH_1:
             case OpCodes.OP_PUSH_2:
@@ -1866,45 +1954,52 @@ public class VM {
             case OpCodes.OP_PUSH_29:
             case OpCodes.OP_PUSH_30:
             case OpCodes.OP_PUSH_31:
-            case OpCodes.OP_PUSH_32: doPUSH();
-            break;
-            case OpCodes.OP_JUMPDEST: doJUMPDEST();
-            break;
-            case OpCodes.OP_CREATE: doCREATE();
-            break;
+            case OpCodes.OP_PUSH_32:
+                doPUSH();
+                break;
+            case OpCodes.OP_JUMPDEST:
+                doJUMPDEST();
+                break;
+            case OpCodes.OP_CREATE:
+                doCREATE();
+                break;
             case OpCodes.OP_CREATE2:
                 if (!activations.isActive(RSKIP125)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doCREATE2();
-            break;
+                break;
             case OpCodes.OP_CALL:
             case OpCodes.OP_CALLCODE:
             case OpCodes.OP_DELEGATECALL:
                 doCALL();
-            break;
+                break;
             case OpCodes.OP_STATICCALL:
                 if (!activations.isActive(RSKIP91)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doCALL();
-            break;
-            case OpCodes.OP_RETURN: doRETURN();
-            break;
-            case OpCodes.OP_REVERT: doREVERT();
-            break;
-            case OpCodes.OP_SUICIDE: doSUICIDE();
-            break;
+                break;
+            case OpCodes.OP_RETURN:
+                doRETURN();
+                break;
+            case OpCodes.OP_REVERT:
+                doREVERT();
+                break;
+            case OpCodes.OP_SUICIDE:
+                doSUICIDE();
+                break;
             case OpCodes.OP_CODEREPLACE:
                 if (activations.isActive(RSKIP94)) {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doCODEREPLACE();
-            break;
-            case OpCodes.OP_DUPN: doDUPN();
+                break;
+            case OpCodes.OP_DUPN:
+                doDUPN();
                 break;
             case OpCodes.OP_HEADER:
-                //fallthrough to default case until implementation's ready
+                // fallthrough to default case until implementation's ready
             default:
                 // It should never execute this line.
                 // We rise an exception to prevent DoS attacks that halt the node, in case of a bug.
@@ -1913,13 +2008,17 @@ public class VM {
     }
 
     protected void logOpCode() {
-        if (isLogEnabled && !op.equals(OpCode.CALL)
+        if (isLogEnabled
+                && !op.equals(OpCode.CALL)
                 && !op.equals(OpCode.CALLCODE)
                 && !op.equals(OpCode.CREATE)) {
-            logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
-                    String.format("%-12s",
-                            op.name()), program.getRemainingGas(),
-                    program.getCallDeep(), hint);
+            logger.info(
+                    logString,
+                    String.format("%5s", "[" + program.getPC() + "]"),
+                    String.format("%-12s", op.name()),
+                    program.getRemainingGas(),
+                    program.getCallDeep(),
+                    hint);
         }
     }
 
@@ -1929,7 +2028,7 @@ public class VM {
 
         try {
 
-            for(long s=0;s<steps;s++) {
+            for (long s = 0; s < steps; s++) {
                 if (program.isStopped()) {
                     break;
                 }
@@ -1943,13 +2042,13 @@ public class VM {
                 checkOpcode();
                 program.setLastOp(op.val());
                 program.verifyStackSize(op.require());
-                program.verifyStackOverflow(op.require(), op.ret()); //Check not exceeding stack limits
+                program.verifyStackOverflow(
+                        op.require(), op.ret()); // Check not exceeding stack limits
 
-                //TODO: There is no need to compute oldMemSize for arithmetic opcodes.
-                //But this three initializations and memory computations could be done
-                //in opcodes requiring memory access only.
+                // TODO: There is no need to compute oldMemSize for arithmetic opcodes.
+                // But this three initializations and memory computations could be done
+                // in opcodes requiring memory access only.
                 oldMemSize = program.getMemSize();
-
 
                 if (isLogEnabled) {
                     hint = "";
@@ -1963,8 +2062,9 @@ public class VM {
                 }
 
                 // Log debugging line for VM
-                if (vmConfig.dumpBlock() >= 0 && program.getNumber().intValue() == vmConfig.dumpBlock()) {
-                    this.dumpLine(op, gasBefore, gasCost , memWords, program);
+                if (vmConfig.dumpBlock() >= 0
+                        && program.getNumber().intValue() == vmConfig.dumpBlock()) {
+                    this.dumpLine(op, gasBefore, gasCost, memWords, program);
                 }
 
                 if (vmHook != null) {
@@ -1980,11 +2080,11 @@ public class VM {
                 vmCounter++;
             } // for
         } catch (RuntimeException e) {
-                logger.error("VM halted", e);
-                program.spendAllGas();
-                program.resetFutureRefund();
-                program.stop();
-                throw e;
+            logger.error("VM halted", e);
+            program.spendAllGas();
+            program.resetFutureRefund();
+            program.stop();
+            throw e;
         } finally {
             if (isLogEnabled) // this must be prevented because it's slow!
             {
@@ -2005,7 +2105,7 @@ public class VM {
             }
 
             initDebugData();
-            this.steps(program,Long.MAX_VALUE);
+            this.steps(program, Long.MAX_VALUE);
 
             if (vmHook != null) {
                 vmHook.stopPlay(program);
@@ -2021,26 +2121,25 @@ public class VM {
     }
 
     /**
-     * Utility to calculate new total memory size needed for an operation.
-     * <br/> Basically just offset + size, unless size is 0, in which case the result is also 0.
+     * Utility to calculate new total memory size needed for an operation. <br>
+     * Basically just offset + size, unless size is 0, in which case the result is also 0.
      *
      * @param offset starting position of the memory
      * @param size number of bytes needed
      * @return offset + size, unless size is 0. In that case memNeeded is also 0.
      */
-
     private static long memNeeded(DataWord offset, long size) {
-        return (size==0)? 0 : limitedAddToMaxLong(Program.limitToMaxLong(offset.value()),size);
+        return (size == 0) ? 0 : limitedAddToMaxLong(Program.limitToMaxLong(offset.value()), size);
     }
 
     /*
-     * Dumping the VM state at the current operation in various styles
-     *  - standard  Not Yet Implemented
-     *  - standard+ (owner address, program counter, operation, gas left)
-     *  - pretty (stack, memory, storage, level, contract,
-     *              vmCounter, internalSteps, operation
-                    gasBefore, gasCost, memWords)
-     */
+    * Dumping the VM state at the current operation in various styles
+    *  - standard  Not Yet Implemented
+    *  - standard+ (owner address, program counter, operation, gas left)
+    *  - pretty (stack, memory, storage, level, contract,
+    *              vmCounter, internalSteps, operation
+                   gasBefore, gasCost, memWords)
+    */
     private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
         Repository storage = program.getStorage();
         RskAddress ownerAddress = new RskAddress(program.getOwnerAddress());
@@ -2053,7 +2152,8 @@ public class VM {
                     while (keysIterator.hasNext()) {
                         DataWord key = keysIterator.next();
                         DataWord value = storage.getStorageValue(ownerAddress, key);
-                        dumpLogger.trace("{} {}",
+                        dumpLogger.trace(
+                                "{} {}",
                                 Hex.toHexString(key.getNoLeadZeroesData()),
                                 Hex.toHexString(value.getNoLeadZeroesData()));
                     }
@@ -2062,13 +2162,15 @@ public class VM {
                     break;
             }
             String addressString = Hex.toHexString(program.getOwnerAddress().getLast20Bytes());
-            String pcString = Hex.toHexString(DataWord.valueOf(program.getPC()).getNoLeadZeroesData());
-            String opString = Hex.toHexString(new byte[]{op.val()});
+            String pcString =
+                    Hex.toHexString(DataWord.valueOf(program.getPC()).getNoLeadZeroesData());
+            String opString = Hex.toHexString(new byte[] {op.val()});
             String gasString = Long.toHexString(program.getRemainingGas());
 
             dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);
         } else if ("pretty".equals(vmConfig.dumpStyle())) {
-            dumpLogger.trace("-------------------------------------------------------------------------");
+            dumpLogger.trace(
+                    "-------------------------------------------------------------------------");
             dumpLogger.trace("    STACK");
             program.getStack().forEach(item -> dumpLogger.trace("{}", item));
             dumpLogger.trace("    MEMORY");
@@ -2082,17 +2184,25 @@ public class VM {
             while (keysIterator.hasNext()) {
                 DataWord key = keysIterator.next();
                 DataWord value = storage.getStorageValue(ownerAddress, key);
-                dumpLogger.trace("{}: {}",
-                        key.shortHex(),
-                        value.shortHex());
+                dumpLogger.trace("{}: {}", key.shortHex(), value.shortHex());
             }
 
             int level = program.getCallDeep();
             String contract = Hex.toHexString(program.getOwnerAddress().getLast20Bytes());
-            String internalSteps = String.format("%4s", Integer.toHexString(program.getPC())).replace(' ', '0').toUpperCase();
-            dumpLogger.trace("{} | {} | #{} | {} : {} | {} | -{} | {}x32",
-                    level, contract, vmCounter, internalSteps, op,
-                    gasBefore, gasCost, memWords);
+            String internalSteps =
+                    String.format("%4s", Integer.toHexString(program.getPC()))
+                            .replace(' ', '0')
+                            .toUpperCase();
+            dumpLogger.trace(
+                    "{} | {} | #{} | {} : {} | {} | -{} | {}x32",
+                    level,
+                    contract,
+                    vmCounter,
+                    internalSteps,
+                    op,
+                    gasBefore,
+                    gasCost,
+                    memWords);
         }
     }
 }

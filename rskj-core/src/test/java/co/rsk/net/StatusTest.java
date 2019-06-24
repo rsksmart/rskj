@@ -1,15 +1,12 @@
 package co.rsk.net;
 
 import co.rsk.core.BlockDifficulty;
+import java.math.BigInteger;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 26/08/2017.
- */
+/** Created by ajlopez on 26/08/2017. */
 public class StatusTest {
     @Test
     public void createWithOriginalArguments() {

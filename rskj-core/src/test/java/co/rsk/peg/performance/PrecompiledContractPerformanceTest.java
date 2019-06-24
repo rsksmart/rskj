@@ -19,11 +19,10 @@
 package co.rsk.peg.performance;
 
 import co.rsk.vm.VMPerformanceTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 public class PrecompiledContractPerformanceTest {
     private static List<ExecutionStats> statsList;
@@ -39,20 +38,22 @@ public class PrecompiledContractPerformanceTest {
     public static void estimateReferenceCost() {
         // Run VM tests and average
         averageNanosecondsPerGasUnit = new Mean();
-        VMPerformanceTest.ResultLogger resultLogger = (String name, VMPerformanceTest.PerfRes result) -> {
-            long nanosecondsPerGasUnit = result.deltaTime_nS / result.gas;
-            averageNanosecondsPerGasUnit.add(nanosecondsPerGasUnit);
-        };
+        VMPerformanceTest.ResultLogger resultLogger =
+                (String name, VMPerformanceTest.PerfRes result) -> {
+                    long nanosecondsPerGasUnit = result.deltaTime_nS / result.gas;
+                    averageNanosecondsPerGasUnit.add(nanosecondsPerGasUnit);
+                };
         VMPerformanceTest.runWithLogging(resultLogger);
-        // Set reference cost on stats (getMax(), getMean() or getMin() can be used depending on the desired
+        // Set reference cost on stats (getMax(), getMean() or getMin() can be used depending on the
+        // desired
         // reference value).
         ExecutionStats.nanosecondsPerGasUnit = averageNanosecondsPerGasUnit.getMean();
-        System.out.println(String.format(
-                "Reference cost: %d ns/gas (min: %d ns/gas, max: %d ns/gas)",
-                ExecutionStats.nanosecondsPerGasUnit,
-                averageNanosecondsPerGasUnit.getMin(),
-                averageNanosecondsPerGasUnit.getMax()
-        ));
+        System.out.println(
+                String.format(
+                        "Reference cost: %d ns/gas (min: %d ns/gas, max: %d ns/gas)",
+                        ExecutionStats.nanosecondsPerGasUnit,
+                        averageNanosecondsPerGasUnit.getMin(),
+                        averageNanosecondsPerGasUnit.getMax()));
     }
 
     @AfterClass

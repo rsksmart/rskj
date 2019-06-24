@@ -18,11 +18,14 @@
 
 package co.rsk.core;
 
-
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.remasc.RemascTransaction;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -34,11 +37,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 public class BlockTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
@@ -48,45 +46,64 @@ public class BlockTest {
     public void testParseRemascTransaction() {
         List<Transaction> txs = new ArrayList<>();
 
-        Transaction txNotToRemasc = new Transaction(
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.ONE.toByteArray(),
-                BigInteger.valueOf(21000).toByteArray(),
-                new ECKey().getAddress() ,
-                BigInteger.valueOf(1000).toByteArray(),
-                null);
+        Transaction txNotToRemasc =
+                new Transaction(
+                        BigInteger.ZERO.toByteArray(),
+                        BigInteger.ONE.toByteArray(),
+                        BigInteger.valueOf(21000).toByteArray(),
+                        new ECKey().getAddress(),
+                        BigInteger.valueOf(1000).toByteArray(),
+                        null);
         txNotToRemasc.sign(new ECKey().getPrivKeyBytes());
         txs.add(txNotToRemasc);
 
-        Transaction txToRemascThatIsNotTheLatestTx = new Transaction(
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.ONE.toByteArray(),
-                BigInteger.valueOf(21000).toByteArray(),
-                PrecompiledContracts.REMASC_ADDR.getBytes(),
-                BigInteger.valueOf(1000).toByteArray(),
-                null);
+        Transaction txToRemascThatIsNotTheLatestTx =
+                new Transaction(
+                        BigInteger.ZERO.toByteArray(),
+                        BigInteger.ONE.toByteArray(),
+                        BigInteger.valueOf(21000).toByteArray(),
+                        PrecompiledContracts.REMASC_ADDR.getBytes(),
+                        BigInteger.valueOf(1000).toByteArray(),
+                        null);
         txToRemascThatIsNotTheLatestTx.sign(new ECKey().getPrivKeyBytes());
         txs.add(txToRemascThatIsNotTheLatestTx);
 
         Transaction remascTx = new RemascTransaction(1);
         txs.add(remascTx);
 
-        Block block = blockFactory.newBlock(
-                blockFactory.newHeader(
-                        PegTestUtils.createHash3().getBytes(), EMPTY_LIST_HASH, TestUtils.randomAddress().getBytes(),
-                        HashUtil.EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, true),
-                        HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), BigInteger.ONE.toByteArray(), 1,
-                        BigInteger.valueOf(4000000).toByteArray(), 3000000, 100, new byte[0], Coin.ZERO,
-                        null, null, null, new byte[12], BigInteger.TEN.toByteArray(), 0
-                ),
-                txs,
-                Collections.emptyList()
-        );
+        Block block =
+                blockFactory.newBlock(
+                        blockFactory.newHeader(
+                                PegTestUtils.createHash3().getBytes(),
+                                EMPTY_LIST_HASH,
+                                TestUtils.randomAddress().getBytes(),
+                                HashUtil.EMPTY_TRIE_HASH,
+                                BlockHashesHelper.getTxTrieRoot(txs, true),
+                                HashUtil.EMPTY_TRIE_HASH,
+                                new Bloom().getData(),
+                                BigInteger.ONE.toByteArray(),
+                                1,
+                                BigInteger.valueOf(4000000).toByteArray(),
+                                3000000,
+                                100,
+                                new byte[0],
+                                Coin.ZERO,
+                                null,
+                                null,
+                                null,
+                                new byte[12],
+                                BigInteger.TEN.toByteArray(),
+                                0),
+                        txs,
+                        Collections.emptyList());
 
         Block parsedBlock = blockFactory.decodeBlock(block.getEncoded());
-        Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(0).getClass());
-        Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(1).getClass());
-        Assert.assertEquals(RemascTransaction.class, parsedBlock.getTransactionsList().get(2).getClass());
+        Assert.assertEquals(
+                ImmutableTransaction.class, parsedBlock.getTransactionsList().get(0).getClass());
+        Assert.assertEquals(
+                ImmutableTransaction.class, parsedBlock.getTransactionsList().get(1).getClass());
+        Assert.assertEquals(
+                RemascTransaction.class, parsedBlock.getTransactionsList().get(2).getClass());
     }
 
     @Test
@@ -107,8 +124,7 @@ public class BlockTest {
         try {
             block.setStateRoot(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockException ex) {
+        } catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter state root", ex.getMessage());
         }
     }
@@ -122,8 +138,7 @@ public class BlockTest {
         try {
             block.setTransactionsList(Collections.emptyList());
             Assert.fail();
-        }
-        catch (SealedBlockException ex) {
+        } catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter transaction list", ex.getMessage());
         }
     }
@@ -137,9 +152,10 @@ public class BlockTest {
         try {
             block.setBitcoinMergedMiningCoinbaseTransaction(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
+        } catch (SealedBlockException ex) {
+            Assert.assertEquals(
+                    "Sealed block: trying to alter bitcoin merged mining coinbase transaction",
+                    ex.getMessage());
         }
     }
 
@@ -152,9 +168,9 @@ public class BlockTest {
         try {
             block.setBitcoinMergedMiningHeader(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining header", ex.getMessage());
+        } catch (SealedBlockException ex) {
+            Assert.assertEquals(
+                    "Sealed block: trying to alter bitcoin merged mining header", ex.getMessage());
         }
     }
 
@@ -167,9 +183,10 @@ public class BlockTest {
         try {
             block.setBitcoinMergedMiningMerkleProof(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockException ex) {
-            Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining Merkle proof", ex.getMessage());
+        } catch (SealedBlockException ex) {
+            Assert.assertEquals(
+                    "Sealed block: trying to alter bitcoin merged mining Merkle proof",
+                    ex.getMessage());
         }
     }
 
@@ -182,8 +199,7 @@ public class BlockTest {
         try {
             block.getHeader().setStateRoot(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
+        } catch (SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter state root", ex.getMessage());
         }
     }
@@ -197,9 +213,9 @@ public class BlockTest {
         try {
             block.getHeader().setReceiptsRoot(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter receipts root", ex.getMessage());
+        } catch (SealedBlockHeaderException ex) {
+            Assert.assertEquals(
+                    "Sealed block header: trying to alter receipts root", ex.getMessage());
         }
     }
 
@@ -212,9 +228,9 @@ public class BlockTest {
         try {
             block.getHeader().setTransactionsRoot(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter transactions root", ex.getMessage());
+        } catch (SealedBlockHeaderException ex) {
+            Assert.assertEquals(
+                    "Sealed block header: trying to alter transactions root", ex.getMessage());
         }
     }
 
@@ -227,8 +243,7 @@ public class BlockTest {
         try {
             block.getHeader().setDifficulty(RLP.parseBlockDifficulty(new byte[32]));
             Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
+        } catch (SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter difficulty", ex.getMessage());
         }
     }
@@ -242,8 +257,7 @@ public class BlockTest {
         try {
             block.getHeader().setPaidFees(Coin.valueOf(10L));
             Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
+        } catch (SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter paid fees", ex.getMessage());
         }
     }
@@ -257,8 +271,7 @@ public class BlockTest {
         try {
             block.getHeader().setGasUsed(10);
             Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
+        } catch (SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter gas used", ex.getMessage());
         }
     }
@@ -272,8 +285,7 @@ public class BlockTest {
         try {
             block.getHeader().setLogsBloom(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
+        } catch (SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter logs bloom", ex.getMessage());
         }
     }
@@ -287,9 +299,10 @@ public class BlockTest {
         try {
             block.getHeader().setBitcoinMergedMiningHeader(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter bitcoin merged mining header", ex.getMessage());
+        } catch (SealedBlockHeaderException ex) {
+            Assert.assertEquals(
+                    "Sealed block header: trying to alter bitcoin merged mining header",
+                    ex.getMessage());
         }
     }
 
@@ -302,9 +315,10 @@ public class BlockTest {
         try {
             block.getHeader().setBitcoinMergedMiningMerkleProof(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter bitcoin merged mining merkle proof", ex.getMessage());
+        } catch (SealedBlockHeaderException ex) {
+            Assert.assertEquals(
+                    "Sealed block header: trying to alter bitcoin merged mining merkle proof",
+                    ex.getMessage());
         }
     }
 
@@ -317,9 +331,10 @@ public class BlockTest {
         try {
             block.getHeader().setBitcoinMergedMiningCoinbaseTransaction(new byte[32]);
             Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
+        } catch (SealedBlockHeaderException ex) {
+            Assert.assertEquals(
+                    "Sealed block header: trying to alter bitcoin merged mining coinbase transaction",
+                    ex.getMessage());
         }
     }
 

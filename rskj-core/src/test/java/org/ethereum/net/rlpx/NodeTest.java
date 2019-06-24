@@ -19,29 +19,27 @@
 
 package org.ethereum.net.rlpx;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.nio.charset.Charset;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.nio.charset.Charset;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-/**
- * Created by mario on 01/08/2016.
- */
+/** Created by mario on 01/08/2016. */
 public class NodeTest {
 
     private Logger logger = LoggerFactory.getLogger(NodeTest.class);
 
-    private static final byte[] NODE_ID_1 = HashUtil.keccak256("+++".getBytes(Charset.forName("UTF-8")));
+    private static final byte[] NODE_ID_1 =
+            HashUtil.keccak256("+++".getBytes(Charset.forName("UTF-8")));
 
     private static final String NODE_HOST_1 = "85.65.19.231";
     private static final String GOOGLE = "www.google.com";
@@ -49,11 +47,11 @@ public class NodeTest {
     private static final Integer NODE_PORT_1 = 30303;
     private static final Integer GOOGLE_PORT = 80;
 
-    private static final String IP_ADDRESS_PATTERN = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-                                                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-                                                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-                                                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
-
+    private static final String IP_ADDRESS_PATTERN =
+            "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
     @Test
     public void nodeSerialization() {
@@ -86,7 +84,5 @@ public class NodeTest {
         address = node.getAddressAsString();
         Assert.assertTrue(StringUtils.isNotBlank(address));
         Assert.assertTrue(address.startsWith(NODE_HOST_1));
-
     }
-
 }

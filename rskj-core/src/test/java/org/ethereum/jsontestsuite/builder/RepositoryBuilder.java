@@ -19,11 +19,15 @@
 
 package org.ethereum.jsontestsuite.builder;
 
+import static org.ethereum.json.Utils.parseData;
+import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import java.util.Map;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
@@ -31,27 +35,26 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.jsontestsuite.model.AccountTck;
 import org.ethereum.vm.DataWord;
 
-import java.util.Map;
-
-import static org.ethereum.json.Utils.parseData;
-import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
-
 public class RepositoryBuilder {
 
-    public static Repository build(Map<String, AccountTck> accounts){
-        Repository repositoryDummy = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+    public static Repository build(Map<String, AccountTck> accounts) {
+        Repository repositoryDummy =
+                new MutableRepository(
+                        new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         Repository track = repositoryDummy.startTracking();
         for (String address : accounts.keySet()) {
             RskAddress addr = new RskAddress(address);
             AccountTck accountTCK = accounts.get(address);
 
-            AccountState state = new AccountState(
-                    unifiedNumericToBigInteger(accountTCK.getNonce()),
-                    new Coin(unifiedNumericToBigInteger(accountTCK.getBalance()))
-            );
+            AccountState state =
+                    new AccountState(
+                            unifiedNumericToBigInteger(accountTCK.getNonce()),
+                            new Coin(unifiedNumericToBigInteger(accountTCK.getBalance())));
             track.updateAccountState(addr, state);
             byte[] code = parseData(accountTCK.getCode());
-            if (accountTCK.isForcedContract() || code.length > 0 || !accountTCK.getStorage().isEmpty()) {
+            if (accountTCK.isForcedContract()
+                    || code.length > 0
+                    || !accountTCK.getStorage().isEmpty()) {
                 track.setupContract(addr);
                 track.saveCode(addr, code);
                 saveStorageValues(track, addr, accountTCK.getStorage());
@@ -63,7 +66,8 @@ public class RepositoryBuilder {
         return repositoryDummy;
     }
 
-    private static void saveStorageValues(Repository track, RskAddress addr, Map<String, String> storageTck) {
+    private static void saveStorageValues(
+            Repository track, RskAddress addr, Map<String, String> storageTck) {
         for (String keyTck : storageTck.keySet()) {
             String valueTck = storageTck.get(keyTck);
 

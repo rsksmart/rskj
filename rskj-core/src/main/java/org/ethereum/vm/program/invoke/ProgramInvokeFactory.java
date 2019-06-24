@@ -33,12 +33,19 @@ import org.ethereum.vm.program.Program;
  */
 public interface ProgramInvokeFactory {
 
-    ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block,
-                                      Repository repository, BlockStore blockStore);
+    ProgramInvoke createProgramInvoke(
+            Transaction tx, int txindex, Block block, Repository repository, BlockStore blockStore);
 
-    ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
-                                      DataWord inValue, long inGas,
-                                      Coin balanceInt, byte[] dataIn,
-                                      Repository repository, BlockStore blockStore,
-                                      boolean isStaticCall, boolean byTestingSuite);
+    ProgramInvoke createProgramInvoke(
+            Program program,
+            DataWord toAddress,
+            DataWord callerAddress,
+            DataWord inValue,
+            long inGas,
+            Coin balanceInt,
+            byte[] dataIn,
+            Repository repository,
+            BlockStore blockStore,
+            boolean isStaticCall,
+            boolean byTestingSuite);
 }

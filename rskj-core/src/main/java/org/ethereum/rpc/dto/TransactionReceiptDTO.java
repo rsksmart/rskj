@@ -18,6 +18,8 @@
 
 package org.ethereum.rpc.dto;
 
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
+
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
@@ -25,12 +27,7 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.vm.LogInfo;
 
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
-
-
-/**
- * Created by Ruben on 5/1/2016.
- */
+/** Created by Ruben on 5/1/2016. */
 public class TransactionReceiptDTO {
 
     // hash of the transaction.
@@ -54,7 +51,7 @@ public class TransactionReceiptDTO {
     public String root;
     public String status;
 
-    public  TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
+    public TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
 
         TransactionReceipt receipt = txInfo.getReceipt();
 
@@ -74,8 +71,13 @@ public class TransactionReceiptDTO {
         logs = new LogFilterElement[receipt.getLogInfoList().size()];
         for (int i = 0; i < logs.length; i++) {
             LogInfo logInfo = receipt.getLogInfoList().get(i);
-            logs[i] = new LogFilterElement(logInfo, block, txInfo.getIndex(),
-                    txInfo.getReceipt().getTransaction(), i);
+            logs[i] =
+                    new LogFilterElement(
+                            logInfo,
+                            block,
+                            txInfo.getIndex(),
+                            txInfo.getReceipt().getTransaction(),
+                            i);
         }
 
         root = toJsonHex(receipt.getPostTxState());

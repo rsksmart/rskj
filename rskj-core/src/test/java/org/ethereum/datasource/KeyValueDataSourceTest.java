@@ -1,20 +1,19 @@
 package org.ethereum.datasource;
 
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import org.ethereum.TestUtils;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
-
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class KeyValueDataSourceTest {
@@ -24,7 +23,8 @@ public class KeyValueDataSourceTest {
     private final KeyValueDataSource keyValueDataSource;
     private final boolean withFlush;
 
-    public KeyValueDataSourceTest(KeyValueDataSource keyValueDataSource, String testName, boolean withFlush) {
+    public KeyValueDataSourceTest(
+            KeyValueDataSource keyValueDataSource, String testName, boolean withFlush) {
         this.keyValueDataSource = keyValueDataSource;
         this.withFlush = withFlush;
     }
@@ -32,16 +32,51 @@ public class KeyValueDataSourceTest {
     @Parameterized.Parameters(name = "{1}, flush = {2}")
     public static Collection<Object[]> data() throws IOException {
         Path tmpDir = Files.createTempDirectory("rskj");
-        return Arrays.asList(new Object[][] {
-            { new HashMapDB(), HashMapDB.class.getSimpleName(), true},
-            { new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true },
-            { new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true },
-            { new DataSourceWithCache(new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", LevelDbDataSource.class.getSimpleName()), true },
-            { new HashMapDB(), HashMapDB.class.getSimpleName(), false },
-            { new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), false },
-            { new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false },
-            { new DataSourceWithCache(new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", LevelDbDataSource.class.getSimpleName()), false }
-        });
+        return Arrays.asList(
+                new Object[][] {
+                    {new HashMapDB(), HashMapDB.class.getSimpleName(), true},
+                    {
+                        new LevelDbDataSource(
+                                "test", Files.createTempDirectory(tmpDir, "default").toString()),
+                        LevelDbDataSource.class.getSimpleName(),
+                        true
+                    },
+                    {
+                        new DataSourceWithCache(new HashMapDB(), CACHE_SIZE),
+                        String.format("Cache with %s", HashMapDB.class.getSimpleName()),
+                        true
+                    },
+                    {
+                        new DataSourceWithCache(
+                                new LevelDbDataSource(
+                                        "test",
+                                        Files.createTempDirectory(tmpDir, "default").toString()),
+                                CACHE_SIZE),
+                        String.format("Cache with %s", LevelDbDataSource.class.getSimpleName()),
+                        true
+                    },
+                    {new HashMapDB(), HashMapDB.class.getSimpleName(), false},
+                    {
+                        new LevelDbDataSource(
+                                "test", Files.createTempDirectory(tmpDir, "default").toString()),
+                        LevelDbDataSource.class.getSimpleName(),
+                        false
+                    },
+                    {
+                        new DataSourceWithCache(new HashMapDB(), CACHE_SIZE),
+                        String.format("Cache with %s", HashMapDB.class.getSimpleName()),
+                        false
+                    },
+                    {
+                        new DataSourceWithCache(
+                                new LevelDbDataSource(
+                                        "test",
+                                        Files.createTempDirectory(tmpDir, "default").toString()),
+                                CACHE_SIZE),
+                        String.format("Cache with %s", LevelDbDataSource.class.getSimpleName()),
+                        false
+                    }
+                });
     }
 
     @Before
@@ -89,7 +124,9 @@ public class KeyValueDataSourceTest {
             keyValueDataSource.flush();
         }
         for (Map.Entry<ByteArrayWrapper, byte[]> updatedValue : updatedValues.entrySet()) {
-            assertThat(keyValueDataSource.get(updatedValue.getKey().getData()), is(updatedValue.getValue()));
+            assertThat(
+                    keyValueDataSource.get(updatedValue.getKey().getData()),
+                    is(updatedValue.getValue()));
         }
     }
 

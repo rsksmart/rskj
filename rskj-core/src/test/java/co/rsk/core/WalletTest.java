@@ -18,17 +18,14 @@
 
 package co.rsk.core;
 
+import java.util.List;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.List;
-
-/**
- * Created by ajlopez on 15/09/2016.
- */
+/** Created by ajlopez on 15/09/2016. */
 public class WalletTest {
     @Test
     public void getEmptyAccountList() {
@@ -48,7 +45,8 @@ public class WalletTest {
 
         Assert.assertNotNull(address);
 
-        byte[] calculatedAddress = ECKey.fromPrivate(Keccak256Helper.keccak256("seed".getBytes())).getAddress();
+        byte[] calculatedAddress =
+                ECKey.fromPrivate(Keccak256Helper.keccak256("seed".getBytes())).getAddress();
 
         Assert.assertArrayEquals(calculatedAddress, address);
 
@@ -304,7 +302,8 @@ public class WalletTest {
 
         Assert.assertNotNull(address);
 
-        byte[] calculatedAddress = ECKey.fromPrivate(Keccak256Helper.keccak256("seed".getBytes())).getAddress();
+        byte[] calculatedAddress =
+                ECKey.fromPrivate(Keccak256Helper.keccak256("seed".getBytes())).getAddress();
 
         Assert.assertArrayEquals(calculatedAddress, address);
 

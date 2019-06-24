@@ -20,9 +20,7 @@ package org.ethereum.rpc.dto;
 
 import org.ethereum.core.CallTransaction;
 
-/**
- * Created by martin.medina on 9/7/2016.
- */
+/** Created by martin.medina on 9/7/2016. */
 public class CompilationInfoDTO {
 
     public String source;
@@ -91,14 +89,27 @@ public class CompilationInfoDTO {
 
     @Override
     public String toString() {
-        return "CompilationInfo{" +
-                "source='" + source + '\'' +
-                ", language='" + language + '\'' +
-                ", languageVersion='" + languageVersion + '\'' +
-                ", compilerVersion='" + compilerVersion + '\'' +
-                ", abiDefinition=" + abiDefinition +
-                ", userDoc='" + userDoc + '\'' +
-                ", developerDoc='" + developerDoc + '\'' +
-                '}';
+        return "CompilationInfo{"
+                + "source='"
+                + source
+                + '\''
+                + ", language='"
+                + language
+                + '\''
+                + ", languageVersion='"
+                + languageVersion
+                + '\''
+                + ", compilerVersion='"
+                + compilerVersion
+                + '\''
+                + ", abiDefinition="
+                + abiDefinition
+                + ", userDoc='"
+                + userDoc
+                + '\''
+                + ", developerDoc='"
+                + developerDoc
+                + '\''
+                + '}';
     }
 }

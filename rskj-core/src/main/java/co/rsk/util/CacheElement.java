@@ -18,9 +18,7 @@
 
 package co.rsk.util;
 
-/**
- * Created by mario on 09/09/2016.
- */
+/** Created by mario on 09/09/2016. */
 public class CacheElement<T> {
 
     private T value;

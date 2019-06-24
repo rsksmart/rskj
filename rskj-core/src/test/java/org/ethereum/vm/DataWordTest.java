@@ -19,15 +19,13 @@
 
 package org.ethereum.vm;
 
-import org.junit.Test;
-
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import java.math.BigInteger;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Test;
 
 public class DataWordTest {
 
@@ -92,9 +90,13 @@ public class DataWordTest {
         assertArrayEquals(xdata, x.getData());
         assertArrayEquals(ydata, y.getData());
         assertEquals(32, y.getData().length);
-        assertEquals("0000000000000000000000010000000000000000000000000000000000000000", Hex.toHexString(y.getData()));
+        assertEquals(
+                "0000000000000000000000010000000000000000000000000000000000000000",
+                Hex.toHexString(y.getData()));
         assertEquals(32, result.getData().length);
-        assertEquals("0000000000000000000000010000000000000000000000000000000000000000", Hex.toHexString(result.getData()));
+        assertEquals(
+                "0000000000000000000000010000000000000000000000000000000000000000",
+                Hex.toHexString(result.getData()));
     }
 
     @Test
@@ -115,9 +117,13 @@ public class DataWordTest {
         assertArrayEquals(xdata, x.getData());
         assertArrayEquals(ydata, y.getData());
         assertEquals(32, y.getData().length);
-        assertEquals("0100000000000000000000000000000000000000000000000000000000000000", Hex.toHexString(y.getData()));
+        assertEquals(
+                "0100000000000000000000000000000000000000000000000000000000000000",
+                Hex.toHexString(y.getData()));
         assertEquals(32, result.getData().length);
-        assertEquals("0000000000000000000000000000000000000000000000000000000000000000", Hex.toHexString(result.getData()));
+        assertEquals(
+                "0000000000000000000000000000000000000000000000000000000000000000",
+                Hex.toHexString(result.getData()));
     }
 
     @Test
@@ -134,12 +140,14 @@ public class DataWordTest {
         byte[] xdata = x.getData();
         byte[] ydata = y.getData();
 
-        DataWord result =x.div(y);
+        DataWord result = x.div(y);
 
         assertArrayEquals(xdata, x.getData());
         assertArrayEquals(ydata, y.getData());
         assertEquals(32, result.getData().length);
-        assertEquals("0000000000000000000000000000000000000000000000000000000000000014", Hex.toHexString(result.getData()));
+        assertEquals(
+                "0000000000000000000000000000000000000000000000000000000000000014",
+                Hex.toHexString(result.getData()));
     }
 
     @Test
@@ -180,7 +188,9 @@ public class DataWordTest {
         assertArrayEquals(xdata, x.getData());
         assertArrayEquals(ydata, y.getData());
         assertEquals(32, result.getData().length);
-        assertEquals("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffec", result.toString());
+        assertEquals(
+                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffec",
+                result.toString());
     }
 
     @Test
@@ -299,7 +309,10 @@ public class DataWordTest {
     public void testSignExtend8() {
         byte k = 30;
 
-        DataWord x = DataWord.valueOf(Hex.decode("ff34567882345678823456788234567882345678823456788234567882345678"));
+        DataWord x =
+                DataWord.valueOf(
+                        Hex.decode(
+                                "ff34567882345678823456788234567882345678823456788234567882345678"));
         byte[] xdata = x.getData();
 
         String expected = "0034567882345678823456788234567882345678823456788234567882345678";
@@ -321,7 +334,7 @@ public class DataWordTest {
 
     @Test
     public void testLongValue1() {
-        byte[] negative = new byte[]{-1, -1, -1, -1,-1,-1,-1,-1};
+        byte[] negative = new byte[] {-1, -1, -1, -1, -1, -1, -1, -1};
 
         DataWord x = DataWord.valueOf(negative);
 
@@ -343,15 +356,17 @@ public class DataWordTest {
         // I'm using a 32 bytes string to avoid the preceding blanks
         DataWord parsed = DataWord.fromString("01234567890123456789012345678901");
 
-        assertEquals(new String(parsed.getData()),"01234567890123456789012345678901");
+        assertEquals(new String(parsed.getData()), "01234567890123456789012345678901");
     }
 
     @Test
     public void testAddModOverflow() {
-        testAddMod("9999999999999999999999999999999999999999999999999999999999999999",
+        testAddMod(
+                "9999999999999999999999999999999999999999999999999999999999999999",
                 "8888888888888888888888888888888888888888888888888888888888888888",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        testAddMod("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        testAddMod(
+                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
     }
@@ -382,9 +397,15 @@ public class DataWordTest {
 
     @Test
     public void testMulMod1() {
-        DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
+        DataWord wr =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "9999999999999999999999999999999999999999999999999999999999999999"));
         DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("01"));
-        DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999998"));
+        DataWord w2 =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "9999999999999999999999999999999999999999999999999999999999999998"));
 
         byte[] datawr = wr.getData();
         byte[] dataw1 = w1.getData();
@@ -396,14 +417,22 @@ public class DataWordTest {
         assertArrayEquals(dataw1, w1.getData());
         assertArrayEquals(dataw2, w2.getData());
         assertEquals(32, result.getData().length);
-        assertEquals("0000000000000000000000000000000000000000000000000000000000000001", org.spongycastle.util.encoders.Hex.toHexString(result.getData()));
+        assertEquals(
+                "0000000000000000000000000000000000000000000000000000000000000001",
+                org.spongycastle.util.encoders.Hex.toHexString(result.getData()));
     }
 
     @Test
     public void testMulMod2() {
-        DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
+        DataWord wr =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "9999999999999999999999999999999999999999999999999999999999999999"));
         DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("01"));
-        DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
+        DataWord w2 =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "9999999999999999999999999999999999999999999999999999999999999999"));
 
         byte[] datawr = wr.getData();
         byte[] dataw1 = w1.getData();
@@ -421,8 +450,14 @@ public class DataWordTest {
     @Test
     public void testMulModZero() {
         DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("00"));
-        DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
-        DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+        DataWord w1 =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "9999999999999999999999999999999999999999999999999999999999999999"));
+        DataWord w2 =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
         byte[] datawr = wr.getData();
         byte[] dataw1 = w1.getData();
@@ -439,9 +474,15 @@ public class DataWordTest {
 
     @Test
     public void testMulModZeroWord1() {
-        DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
+        DataWord wr =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "9999999999999999999999999999999999999999999999999999999999999999"));
         DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("00"));
-        DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+        DataWord w2 =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
         byte[] datawr = wr.getData();
         byte[] dataw1 = w1.getData();
@@ -458,8 +499,14 @@ public class DataWordTest {
 
     @Test
     public void testMulModZeroWord2() {
-        DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("9999999999999999999999999999999999999999999999999999999999999999"));
-        DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+        DataWord wr =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "9999999999999999999999999999999999999999999999999999999999999999"));
+        DataWord w1 =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
         DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("00"));
 
         byte[] datawr = wr.getData();
@@ -477,9 +524,18 @@ public class DataWordTest {
 
     @Test
     public void testMulModOverflow() {
-        DataWord wr = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-        DataWord w1 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-        DataWord w2 = DataWord.valueOf(org.spongycastle.util.encoders.Hex.decode("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+        DataWord wr =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+        DataWord w1 =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+        DataWord w2 =
+                DataWord.valueOf(
+                        org.spongycastle.util.encoders.Hex.decode(
+                                "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
         byte[] datawr = wr.getData();
         byte[] dataw1 = w1.getData();
@@ -495,8 +551,7 @@ public class DataWordTest {
     }
 
     public static BigInteger pow(BigInteger x, BigInteger y) {
-        if (y.compareTo(BigInteger.ZERO) < 0)
-            throw new IllegalArgumentException();
+        if (y.compareTo(BigInteger.ZERO) < 0) throw new IllegalArgumentException();
         BigInteger z = x; // z will successively become x^2, x^4, x^8, x^16,
         // x^32...
         BigInteger result = BigInteger.ONE;
@@ -504,16 +559,13 @@ public class DataWordTest {
         for (int i = bytes.length - 1; i >= 0; i--) {
             byte bits = bytes[i];
             for (int j = 0; j < 8; j++) {
-                if ((bits & 1) != 0)
-                    result = result.multiply(z);
+                if ((bits & 1) != 0) result = result.multiply(z);
                 // short cut out if there are no more bits to handle:
-                if ((bits >>= 1) == 0 && i == 0)
-                    return result;
+                if ((bits >>= 1) == 0 && i == 0) return result;
                 z = z.multiply(z);
             }
         }
 
         return result;
     }
-
 }

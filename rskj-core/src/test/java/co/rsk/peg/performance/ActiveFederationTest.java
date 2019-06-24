@@ -23,18 +23,16 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class ActiveFederationTest extends BridgePerformanceTestCase {
@@ -76,32 +74,40 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
     @Test
     public void getFederatorPublicKey() throws IOException {
         ExecutionStats stats = new ExecutionStats("getFederatorPublicKey");
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, federation.getBtcPublicKeys().size()-1)});
-        executeTestCaseSection(abiEncoder, "getFederatorPublicKey", true,50, stats);
-        executeTestCaseSection(abiEncoder, "getFederatorPublicKey", false,500, stats);
+        ABIEncoder abiEncoder =
+                (int executionIndex) ->
+                        Bridge.GET_FEDERATOR_PUBLIC_KEY.encode(
+                                new Object[] {
+                                    Helper.randomInRange(
+                                            0, federation.getBtcPublicKeys().size() - 1)
+                                });
+        executeTestCaseSection(abiEncoder, "getFederatorPublicKey", true, 50, stats);
+        executeTestCaseSection(abiEncoder, "getFederatorPublicKey", false, 500, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
     private void executeTestCase(CallTransaction.Function fn) {
         ExecutionStats stats = new ExecutionStats(fn.name);
-        executeTestCaseSection(fn,true,50, stats);
-        executeTestCaseSection(fn,false,500, stats);
+        executeTestCaseSection(fn, true, 50, stats);
+        executeTestCaseSection(fn, false, 500, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) {
+    private void executeTestCaseSection(
+            CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) {
         executeTestCaseSection((int executionIndex) -> fn.encode(), fn.name, genesis, times, stats);
     }
 
-    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) {
+    private void executeTestCaseSection(
+            ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) {
         executeAndAverage(
                 String.format("%s-%s", name, genesis ? "genesis" : "non-genesis"),
-                times, abiEncoder,
+                times,
+                abiEncoder,
                 buildInitializer(genesis),
                 Helper.getZeroValueRandomSenderTxBuilder(),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     private BridgeStorageProviderInitializer buildInitializer(boolean genesis) {
@@ -113,12 +119,12 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
                 List<FederationMember> members = getNRandomFederationMembers(numFederators);
 
-                federation = new Federation(
-                        members,
-                        Instant.ofEpochMilli(new Random().nextLong()),
-                        Helper.randomInRange(1, 10),
-                        networkParameters
-                );
+                federation =
+                        new Federation(
+                                members,
+                                Instant.ofEpochMilli(new Random().nextLong()),
+                                Helper.randomInRange(1, 10),
+                                networkParameters);
                 provider.setNewFederation(federation);
             } else {
                 federation = bridgeConstants.getGenesisFederation();

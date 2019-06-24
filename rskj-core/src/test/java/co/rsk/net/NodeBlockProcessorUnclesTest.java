@@ -24,18 +24,15 @@ import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 16/08/2016.
- */
+/** Created by ajlopez on 16/08/2016. */
 public class NodeBlockProcessorUnclesTest {
     @Test
     public void addBlockWithoutUncles() {
@@ -48,7 +45,8 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(null, block1);
 
         Assert.assertEquals(1, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block1.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertArrayEquals(
+                block1.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
     }
 
     @Test
@@ -78,7 +76,8 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(sender, block2);
 
         Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block2.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertArrayEquals(
+                block2.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
         Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
     }
 
@@ -107,7 +106,8 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(sender, block2);
 
         Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block2.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertArrayEquals(
+                block2.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
 
         Assert.assertEquals(0, sender.getGetBlockMessages().size());
     }
@@ -133,7 +133,8 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(sender, block2);
 
         Assert.assertEquals(0, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(genesis.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertArrayEquals(
+                genesis.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
         Assert.assertEquals(1, sender.getGetBlockMessages().size());
         Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(block1.getHash()));
     }
@@ -143,8 +144,11 @@ public class NodeBlockProcessorUnclesTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
 
         return processor;
     }

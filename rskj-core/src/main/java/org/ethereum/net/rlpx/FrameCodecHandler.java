@@ -22,18 +22,17 @@ package org.ethereum.net.rlpx;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
+import java.io.IOException;
+import java.util.List;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.List;
-
 /**
- * The Netty handler responsible for decrypting/encrypting RLPx frames
- * with the FrameCodec crated during HandshakeHandler initial work
+ * The Netty handler responsible for decrypting/encrypting RLPx frames with the FrameCodec crated
+ * during HandshakeHandler initial work
  *
- * Created by Anton Nashatyrev on 15.10.2015.
+ * <p>Created by Anton Nashatyrev on 15.10.2015.
  */
 public class FrameCodecHandler extends ByteToMessageCodec<FrameCodec.Frame> {
     private static final Logger loggerWire = LoggerFactory.getLogger("wire");
@@ -47,7 +46,8 @@ public class FrameCodecHandler extends ByteToMessageCodec<FrameCodec.Frame> {
         this.channel = channel;
     }
 
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws IOException {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out)
+            throws IOException {
         if (in.readableBytes() == 0) {
             loggerWire.trace("in.readableBytes() == 0");
             return;
@@ -55,7 +55,6 @@ public class FrameCodecHandler extends ByteToMessageCodec<FrameCodec.Frame> {
 
         loggerWire.trace("Decoding frame ({} bytes)", in.readableBytes());
         List<FrameCodec.Frame> frames = frameCodec.readFrames(in);
-
 
         // Check if a full frame was available.  If not, we'll try later when more bytes come in.
         if (frames == null || frames.isEmpty()) {
@@ -71,7 +70,8 @@ public class FrameCodecHandler extends ByteToMessageCodec<FrameCodec.Frame> {
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, FrameCodec.Frame frame, ByteBuf out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, FrameCodec.Frame frame, ByteBuf out)
+            throws Exception {
 
         frameCodec.writeFrame(frame, out);
 

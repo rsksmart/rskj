@@ -18,25 +18,22 @@
 
 package co.rsk.core;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.MinerServer;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
+import java.util.List;
 import org.ethereum.core.*;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
-
-/**
- * Created by ajlopez on 15/04/2017.
- */
+/** Created by ajlopez on 15/04/2017. */
 public class SnapshotManagerTest {
 
     private Blockchain blockchain;
@@ -140,8 +137,7 @@ public class SnapshotManagerTest {
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
         Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
 
-        for (int k = 11; k <= 30; k++)
-            Assert.assertTrue(blockchain.getBlocksByNumber(k).isEmpty());
+        for (int k = 11; k <= 30; k++) Assert.assertTrue(blockchain.getBlocksByNumber(k).isEmpty());
     }
 
     @Test
@@ -180,8 +176,7 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(1, manager.getSnapshots().size());
 
-        for (int k = 11; k <= 30; k++)
-            Assert.assertTrue(blockchain.getBlocksByNumber(k).isEmpty());
+        for (int k = 11; k <= 30; k++) Assert.assertTrue(blockchain.getBlocksByNumber(k).isEmpty());
     }
 
     @Test
@@ -220,21 +215,19 @@ public class SnapshotManagerTest {
 
         Assert.assertTrue(manager.getSnapshots().isEmpty());
 
-        for (int k = 1; k <= 10; k++)
-            Assert.assertTrue(blockchain.getBlocksByNumber(k).isEmpty());
+        for (int k = 1; k <= 10; k++) Assert.assertTrue(blockchain.getBlocksByNumber(k).isEmpty());
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
 
-        for (Block block : blocks)
-            blockchain.tryToConnect(block);
+        for (Block block : blocks) blockchain.tryToConnect(block);
     }
 
     private void setUpSampleAccounts() {
         Repository track = repository.startTracking();
 
-        for (String name : new String[]{"sender", "receiver"}) {
+        for (String name : new String[] {"sender", "receiver"}) {
             Account account = new AccountBuilder().name(name).build();
             track.createAccount(account.getAddress());
             track.addBalance(account.getAddress(), Coin.valueOf(5000000));
@@ -247,12 +240,13 @@ public class SnapshotManagerTest {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .gasPrice(BigInteger.valueOf(200))
-                .value(BigInteger.TEN)
-                .build();
+        Transaction tx =
+                new TransactionBuilder()
+                        .sender(sender)
+                        .receiver(receiver)
+                        .gasPrice(BigInteger.valueOf(200))
+                        .value(BigInteger.TEN)
+                        .build();
 
         return tx;
     }

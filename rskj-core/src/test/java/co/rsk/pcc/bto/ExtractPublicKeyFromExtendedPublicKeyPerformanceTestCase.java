@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.crypto.HDKeyDerivation;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
+import java.util.Random;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
@@ -32,46 +33,55 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-import java.util.Random;
-
 @Ignore
-public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
+public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase
+        extends PrecompiledContractPerformanceTestCase {
     private CallTransaction.Function function;
 
     @Test
     public void extractPublicKeyFromExtendedPublicKey() {
         function = new ExtractPublicKeyFromExtendedPublicKey(null, null).getFunction();
 
-        EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
-            HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
-            contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
+        EnvironmentBuilder environmentBuilder =
+                (int executionIndex, TxBuilder txBuilder, int height) -> {
+                    HDWalletUtils contract =
+                            new HDWalletUtils(
+                                    new TestSystemProperties().getActivationConfig(),
+                                    PrecompiledContracts.HD_WALLET_UTILS_ADDR);
+                    contract.init(
+                            txBuilder.build(executionIndex),
+                            Helper.getMockBlock(1),
+                            null,
+                            null,
+                            null,
+                            null);
 
-            return EnvironmentBuilder.Environment.withContract(contract);
-        };
+                    return EnvironmentBuilder.Environment.withContract(contract);
+                };
 
-        HDWalletUtilsPerformanceTest.addStats(estimateExtractPublicKeyFromExtendedPublicKey(500, environmentBuilder));
+        HDWalletUtilsPerformanceTest.addStats(
+                estimateExtractPublicKeyFromExtendedPublicKey(500, environmentBuilder));
     }
 
-    private ExecutionStats estimateExtractPublicKeyFromExtendedPublicKey(int times, EnvironmentBuilder environmentBuilder) {
+    private ExecutionStats estimateExtractPublicKeyFromExtendedPublicKey(
+            int times, EnvironmentBuilder environmentBuilder) {
         ExecutionStats stats = new ExecutionStats(function.name);
         Random rnd = new Random();
         byte[] chainCode = new byte[32];
-        NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+        NetworkParameters networkParameters =
+                NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
         byte[] publicKey = new ECKey().getPubKey(true);
         String expectedHexPublicKey = Hex.toHexString(publicKey);
 
-        ABIEncoder abiEncoder = (int executionIndex) -> {
-            rnd.nextBytes(chainCode);
-            DeterministicKey key = HDKeyDerivation.createMasterPubKeyFromBytes(
-                    publicKey,
-                    chainCode
-            );
+        ABIEncoder abiEncoder =
+                (int executionIndex) -> {
+                    rnd.nextBytes(chainCode);
+                    DeterministicKey key =
+                            HDKeyDerivation.createMasterPubKeyFromBytes(publicKey, chainCode);
 
-            return function.encode(new Object[] {
-                    key.serializePubB58(networkParameters)
-            });
-        };
+                    return function.encode(new Object[] {key.serializePubB58(networkParameters)});
+                };
 
         executeAndAverage(
                 function.name,
@@ -86,8 +96,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
                     Assert.assertEquals(byte[].class, decodedResult[0].getClass());
                     String hexPublicKey = Hex.toHexString((byte[]) decodedResult[0]);
                     Assert.assertEquals(expectedHexPublicKey, hexPublicKey);
-                }
-        );
+                });
 
         return stats;
     }

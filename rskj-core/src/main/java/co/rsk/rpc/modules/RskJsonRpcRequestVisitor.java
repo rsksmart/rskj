@@ -17,13 +17,14 @@
  */
 package co.rsk.rpc.modules;
 
+import co.rsk.jsonrpc.JsonRpcResultOrError;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeRequest;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeRequest;
-import co.rsk.jsonrpc.JsonRpcResultOrError;
 import io.netty.channel.ChannelHandlerContext;
 
 /**
- * Classes implementing this interface know how to handle JSON-RPC requests on a specific Netty channel.
+ * Classes implementing this interface know how to handle JSON-RPC requests on a specific Netty
+ * channel.
  */
 public interface RskJsonRpcRequestVisitor {
     JsonRpcResultOrError visit(EthUnsubscribeRequest request, ChannelHandlerContext ctx);

@@ -21,6 +21,8 @@ package co.rsk.validators;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.mine.ForkDetectionDataCalculator;
 import co.rsk.panic.PanicProcessor;
+import java.util.Arrays;
+import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -29,12 +31,7 @@ import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
-
-/**
- * Created by martin.medina on 14/05/19.
- */
+/** Created by martin.medina on 14/05/19. */
 public class ForkDetectionDataRule implements BlockValidationRule, BlockHeaderValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
@@ -55,7 +52,8 @@ public class ForkDetectionDataRule implements BlockValidationRule, BlockHeaderVa
         this.activationConfig = activationConfig;
         this.mainchainView = mainchainView;
         this.forkDetectionDataCalculator = forkDetectionDataCalculator;
-        this.requiredBlocksForForkDetectionDataCalculation = requiredBlocksForForkDetectionDataCalculation;
+        this.requiredBlocksForForkDetectionDataCalculation =
+                requiredBlocksForForkDetectionDataCalculation;
     }
 
     @Override
@@ -65,17 +63,16 @@ public class ForkDetectionDataRule implements BlockValidationRule, BlockHeaderVa
 
     @Override
     public boolean isValid(BlockHeader header) {
-        if(activationConfig.isActive(ConsensusRule.RSKIP110, header.getNumber()) )
-        {
-            if (hasForkDetectionDataWhereItShouldNotHave(header)){
+        if (activationConfig.isActive(ConsensusRule.RSKIP110, header.getNumber())) {
+            if (hasForkDetectionDataWhereItShouldNotHave(header)) {
                 return false;
             }
 
-            if(requiredBlocksForForkDetectionDataCalculation < header.getNumber()) {
-                List<BlockHeader> headersView = mainchainView.get(
-                        header.getParentHash(),
-                        requiredBlocksForForkDetectionDataCalculation
-                );
+            if (requiredBlocksForForkDetectionDataCalculation < header.getNumber()) {
+                List<BlockHeader> headersView =
+                        mainchainView.get(
+                                header.getParentHash(),
+                                requiredBlocksForForkDetectionDataCalculation);
                 if (!hasEnoughBlocksToCalculateForkDetectionData(header, headersView)) {
                     return false;
                 }
@@ -88,43 +85,42 @@ public class ForkDetectionDataRule implements BlockValidationRule, BlockHeaderVa
     }
 
     private boolean hasForkDetectionDataWhereItShouldNotHave(BlockHeader header) {
-        if(header.getNumber() < requiredBlocksForForkDetectionDataCalculation
+        if (header.getNumber() < requiredBlocksForForkDetectionDataCalculation
                 && header.getMiningForkDetectionData().length > 0) {
-            logger.warn("Header for block number {} includes fork detection data but it should not.",
+            logger.warn(
+                    "Header for block number {} includes fork detection data but it should not.",
                     header.getNumber());
             panicProcessor.panic(
-                    PANIC_LOGGING_TOPIC,
-                    "Header includes fork detection data but it should not."
-            );
+                    PANIC_LOGGING_TOPIC, "Header includes fork detection data but it should not.");
             return true;
         }
         return false;
     }
 
     private boolean isForkDetectionDataEqual(BlockHeader header, List<BlockHeader> headersView) {
-        byte[] expectedForkDetectionData = forkDetectionDataCalculator.calculateWithBlockHeaders(headersView);
+        byte[] expectedForkDetectionData =
+                forkDetectionDataCalculator.calculateWithBlockHeaders(headersView);
         if (!Arrays.equals(expectedForkDetectionData, header.getMiningForkDetectionData())) {
-            logger.warn("Fork detection data does not match. Expected {} Actual: {}",
+            logger.warn(
+                    "Fork detection data does not match. Expected {} Actual: {}",
                     ByteUtil.toHexString(expectedForkDetectionData),
-                    ByteUtil.toHexString(header.getMiningForkDetectionData())
-            );
+                    ByteUtil.toHexString(header.getMiningForkDetectionData()));
             panicProcessor.panic(
-                    PANIC_LOGGING_TOPIC,
-                    "Block hash for merged mining does not match."
-            );
+                    PANIC_LOGGING_TOPIC, "Block hash for merged mining does not match.");
             return false;
         }
 
         return true;
     }
 
-    private boolean hasEnoughBlocksToCalculateForkDetectionData(BlockHeader header, List<BlockHeader> headersView) {
+    private boolean hasEnoughBlocksToCalculateForkDetectionData(
+            BlockHeader header, List<BlockHeader> headersView) {
         if (headersView.size() != requiredBlocksForForkDetectionDataCalculation) {
-            logger.error("Missing blocks to calculate fork detection data. Block hash {} ", header.getShortHash());
+            logger.error(
+                    "Missing blocks to calculate fork detection data. Block hash {} ",
+                    header.getShortHash());
             panicProcessor.panic(
-                    PANIC_LOGGING_TOPIC,
-                    "Missing blocks to calculate fork detection data."
-            );
+                    PANIC_LOGGING_TOPIC, "Missing blocks to calculate fork detection data.");
             return false;
         }
 

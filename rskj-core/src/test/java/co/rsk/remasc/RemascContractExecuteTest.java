@@ -18,6 +18,8 @@
 
 package co.rsk.remasc;
 
+import static org.junit.Assert.fail;
+
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import org.ethereum.config.Constants;
@@ -27,38 +29,37 @@ import org.ethereum.vm.program.Program;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.fail;
-
 public class RemascContractExecuteTest {
 
-    private static RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
+    private static RemascConfig remascConfig =
+            new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 
     private RemascContract remasc;
 
     @Before
     public void setUp() throws Exception {
-        remasc = new RemascContract(
-                PrecompiledContracts.REMASC_ADDR,
-                remascConfig,
-                Constants.regtest(),
-                ActivationConfigsForTest.all()
-        );
+        remasc =
+                new RemascContract(
+                        PrecompiledContracts.REMASC_ADDR,
+                        remascConfig,
+                        Constants.regtest(),
+                        ActivationConfigsForTest.all());
     }
 
     @Test(expected = Program.OutOfGasException.class)
-    public void executeWithFunctionSignatureLengthTooShort() throws Exception{
+    public void executeWithFunctionSignatureLengthTooShort() throws Exception {
         remasc.execute(new byte[3]);
         fail("Expected OutOfGasException");
     }
 
     @Test(expected = Program.OutOfGasException.class)
-    public void executeWithInexistentFunction() throws Exception{
+    public void executeWithInexistentFunction() throws Exception {
         remasc.execute(new byte[4]);
         fail("Expected OutOfGasException");
     }
 
     @Test(expected = Program.OutOfGasException.class)
-    public void executeWithDataLengthTooLong() throws Exception{
+    public void executeWithDataLengthTooLong() throws Exception {
         remasc.execute(new byte[6]);
         fail("Expected OutOfGasException");
     }

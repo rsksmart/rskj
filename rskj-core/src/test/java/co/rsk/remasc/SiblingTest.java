@@ -23,9 +23,7 @@ import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 13/04/2017.
- */
+/** Created by ajlopez on 13/04/2017. */
 public class SiblingTest {
     @Test
     public void siblingSerializeWithGenesis() {

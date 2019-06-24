@@ -18,17 +18,13 @@
 
 package org.ethereum.rpc;
 
-import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.ethereum.core.Block;
+import org.ethereum.core.Transaction;
 
-/**
- * Created by ajlopez on 17/01/2018.
- */
-
+/** Created by ajlopez on 17/01/2018. */
 public class Filter {
     abstract static class FilterEvent {
         public abstract Object getJsonEventObject();
@@ -47,7 +43,12 @@ public class Filter {
     public synchronized Object[] getNewEvents() {
         this.accessTime = System.currentTimeMillis();
 
-        Object[] ret = events.stream().skip(processedEvents).map(fe -> fe.getJsonEventObject()).collect(Collectors.toList()).toArray();
+        Object[] ret =
+                events.stream()
+                        .skip(processedEvents)
+                        .map(fe -> fe.getJsonEventObject())
+                        .collect(Collectors.toList())
+                        .toArray();
 
         processedEvents = events.size();
 
@@ -64,15 +65,17 @@ public class Filter {
     public synchronized Object[] getEvents() {
         this.accessTime = System.currentTimeMillis();
 
-        return events.stream().map(fe -> fe.getJsonEventObject()).collect(Collectors.toList()).toArray();
+        return events.stream()
+                .map(fe -> fe.getJsonEventObject())
+                .collect(Collectors.toList())
+                .toArray();
     }
 
     protected synchronized void add(FilterEvent evt) {
         events.add(evt);
     }
 
-    public void newBlockReceived(Block b) {
-    }
+    public void newBlockReceived(Block b) {}
 
     public void newPendingTx(Transaction tx) {
         // add TransactionReceipt for PendingTx

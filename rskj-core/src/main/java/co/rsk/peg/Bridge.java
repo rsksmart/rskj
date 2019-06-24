@@ -29,6 +29,14 @@ import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -46,18 +54,10 @@ import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 /**
- * Precompiled contract that manages the 2 way peg between bitcoin and RSK.
- * This class is just a wrapper, actual functionality is found in BridgeSupport.
+ * Precompiled contract that manages the 2 way peg between bitcoin and RSK. This class is just a
+ * wrapper, actual functionality is found in BridgeSupport.
+ *
  * @author Oscar Guindzberg
  */
 public class Bridge extends PrecompiledContracts.PrecompiledContract {
@@ -66,121 +66,178 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     // No parameters
-    public static final CallTransaction.Function UPDATE_COLLECTIONS = BridgeMethods.UPDATE_COLLECTIONS.getFunction();
+    public static final CallTransaction.Function UPDATE_COLLECTIONS =
+            BridgeMethods.UPDATE_COLLECTIONS.getFunction();
     // Parameters: an array of bitcoin blocks serialized with the bitcoin wire protocol format
-    public static final CallTransaction.Function RECEIVE_HEADERS = BridgeMethods.RECEIVE_HEADERS.getFunction();
+    public static final CallTransaction.Function RECEIVE_HEADERS =
+            BridgeMethods.RECEIVE_HEADERS.getFunction();
     // Parameters:
     // - A bitcoin tx, serialized with the bitcoin wire protocol format
     // - The bitcoin block height that contains the tx
-    // - A merkle tree that shows the tx is included in that block, serialized with the bitcoin wire protocol format.
-    public static final CallTransaction.Function REGISTER_BTC_TRANSACTION = BridgeMethods.REGISTER_BTC_TRANSACTION.getFunction();
+    // - A merkle tree that shows the tx is included in that block, serialized with the bitcoin wire
+    // protocol format.
+    public static final CallTransaction.Function REGISTER_BTC_TRANSACTION =
+            BridgeMethods.REGISTER_BTC_TRANSACTION.getFunction();
     // No parameters, the current rsk tx is used as input.
-    public static final CallTransaction.Function RELEASE_BTC = BridgeMethods.RELEASE_BTC.getFunction();
+    public static final CallTransaction.Function RELEASE_BTC =
+            BridgeMethods.RELEASE_BTC.getFunction();
     // Parameters:
     // Federator public key.
     // Transaction signature array, one for each btc tx input.
     // Rsk tx hash of the tx that required the release of funds.
-    public static final CallTransaction.Function ADD_SIGNATURE = BridgeMethods.ADD_SIGNATURE.getFunction();
+    public static final CallTransaction.Function ADD_SIGNATURE =
+            BridgeMethods.ADD_SIGNATURE.getFunction();
     // Returns a StateForFederator encoded in RLP
-    public static final CallTransaction.Function GET_STATE_FOR_BTC_RELEASE_CLIENT = BridgeMethods.GET_STATE_FOR_BTC_RELEASE_CLIENT.getFunction();
+    public static final CallTransaction.Function GET_STATE_FOR_BTC_RELEASE_CLIENT =
+            BridgeMethods.GET_STATE_FOR_BTC_RELEASE_CLIENT.getFunction();
     // Returns a BridgeState encoded in RLP
-    public static final CallTransaction.Function GET_STATE_FOR_DEBUGGING = BridgeMethods.GET_STATE_FOR_DEBUGGING.getFunction();
+    public static final CallTransaction.Function GET_STATE_FOR_DEBUGGING =
+            BridgeMethods.GET_STATE_FOR_DEBUGGING.getFunction();
     // Return the bitcoin blockchain best chain height know by the bridge contract
-    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT = BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.getFunction();
-    // Returns an array of block hashes known by the bridge contract. Federators can use this to find what is the latest block in the mainchain the bridge has.
+    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT =
+            BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.getFunction();
+    // Returns an array of block hashes known by the bridge contract. Federators can use this to
+    // find what is the latest block in the mainchain the bridge has.
     // The goal of this function is to help synchronize bridge and federators blockchains.
-    // Protocol inspired by bitcoin sync protocol, see block locator in https://en.bitcoin.it/wiki/Protocol_documentation#getheaders
-    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR = BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.getFunction();
+    // Protocol inspired by bitcoin sync protocol, see block locator in
+    // https://en.bitcoin.it/wiki/Protocol_documentation#getheaders
+    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR =
+            BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.getFunction();
     // Return the height of the initial block stored in the bridge's bitcoin blockchain
-    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT = BridgeMethods.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT.getFunction();
-    // Returns the block hash of the bridge contract's best chain at the given depth, meaning depth zero will
-    // yield the best chain head hash and depth one will yield its parent hash, and so on and so forth.
+    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT =
+            BridgeMethods.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT.getFunction();
+    // Returns the block hash of the bridge contract's best chain at the given depth, meaning depth
+    // zero will
+    // yield the best chain head hash and depth one will yield its parent hash, and so on and so
+    // forth.
     // Federators use this to find what is the latest block in the mainchain the bridge has
     // (replacing the need for getBtcBlockchainBlockLocator).
     // The goal of this function is to help synchronize bridge and federators blockchains.
-    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH = BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH.getFunction();
-    // Returns the confirmations number of the block for the given transaction. If its not valid or its not part of the main chain it returns a negative number
+    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH =
+            BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH.getFunction();
+    // Returns the confirmations number of the block for the given transaction. If its not valid or
+    // its not part of the main chain it returns a negative number
     // The goal of this function is to help contracts can use this to validate BTC transactions
-    public static final CallTransaction.Function GET_BTC_TRANSACTION_CONFIRMATIONS = BridgeMethods.GET_BTC_TRANSACTION_CONFIRMATIONS.getFunction();
+    public static final CallTransaction.Function GET_BTC_TRANSACTION_CONFIRMATIONS =
+            BridgeMethods.GET_BTC_TRANSACTION_CONFIRMATIONS.getFunction();
     // Returns the minimum amount of satoshis a user should send to the federation.
-    public static final CallTransaction.Function GET_MINIMUM_LOCK_TX_VALUE = BridgeMethods.GET_MINIMUM_LOCK_TX_VALUE.getFunction();
+    public static final CallTransaction.Function GET_MINIMUM_LOCK_TX_VALUE =
+            BridgeMethods.GET_MINIMUM_LOCK_TX_VALUE.getFunction();
 
     // Returns whether a given btc tx hash was already processed by the bridge
-    public static final CallTransaction.Function IS_BTC_TX_HASH_ALREADY_PROCESSED = BridgeMethods.IS_BTC_TX_HASH_ALREADY_PROCESSED.getFunction();
+    public static final CallTransaction.Function IS_BTC_TX_HASH_ALREADY_PROCESSED =
+            BridgeMethods.IS_BTC_TX_HASH_ALREADY_PROCESSED.getFunction();
     // Returns whether a given btc tx hash was already processed by the bridge
-    public static final CallTransaction.Function GET_BTC_TX_HASH_PROCESSED_HEIGHT = BridgeMethods.GET_BTC_TX_HASH_PROCESSED_HEIGHT.getFunction();
+    public static final CallTransaction.Function GET_BTC_TX_HASH_PROCESSED_HEIGHT =
+            BridgeMethods.GET_BTC_TX_HASH_PROCESSED_HEIGHT.getFunction();
 
     // Returns the federation bitcoin address
-    public static final CallTransaction.Function GET_FEDERATION_ADDRESS = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction();
+    public static final CallTransaction.Function GET_FEDERATION_ADDRESS =
+            BridgeMethods.GET_FEDERATION_ADDRESS.getFunction();
     // Returns the number of federates in the currently active federation
-    public static final CallTransaction.Function GET_FEDERATION_SIZE = BridgeMethods.GET_FEDERATION_SIZE.getFunction();
+    public static final CallTransaction.Function GET_FEDERATION_SIZE =
+            BridgeMethods.GET_FEDERATION_SIZE.getFunction();
     // Returns the number of minimum required signatures from the currently active federation
-    public static final CallTransaction.Function GET_FEDERATION_THRESHOLD = BridgeMethods.GET_FEDERATION_THRESHOLD.getFunction();
+    public static final CallTransaction.Function GET_FEDERATION_THRESHOLD =
+            BridgeMethods.GET_FEDERATION_THRESHOLD.getFunction();
     // Returns the public key of the federator at the specified index
-    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = BridgeMethods.GET_FEDERATOR_PUBLIC_KEY.getFunction();
+    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY =
+            BridgeMethods.GET_FEDERATOR_PUBLIC_KEY.getFunction();
     // Returns the public key of given type of the federator at the specified index
-    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
+    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY_OF_TYPE =
+            BridgeMethods.GET_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
     // Returns the creation time of the federation
-    public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME = BridgeMethods.GET_FEDERATION_CREATION_TIME.getFunction();
+    public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME =
+            BridgeMethods.GET_FEDERATION_CREATION_TIME.getFunction();
     // Returns the block number of the creation of the federation
-    public static final CallTransaction.Function GET_FEDERATION_CREATION_BLOCK_NUMBER = BridgeMethods.GET_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
+    public static final CallTransaction.Function GET_FEDERATION_CREATION_BLOCK_NUMBER =
+            BridgeMethods.GET_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
 
     // Returns the retiring federation bitcoin address
-    public static final CallTransaction.Function GET_RETIRING_FEDERATION_ADDRESS = BridgeMethods.GET_RETIRING_FEDERATION_ADDRESS.getFunction();
+    public static final CallTransaction.Function GET_RETIRING_FEDERATION_ADDRESS =
+            BridgeMethods.GET_RETIRING_FEDERATION_ADDRESS.getFunction();
     // Returns the number of federates in the retiring federation
-    public static final CallTransaction.Function GET_RETIRING_FEDERATION_SIZE = BridgeMethods.GET_RETIRING_FEDERATION_SIZE.getFunction();
+    public static final CallTransaction.Function GET_RETIRING_FEDERATION_SIZE =
+            BridgeMethods.GET_RETIRING_FEDERATION_SIZE.getFunction();
     // Returns the number of minimum required signatures from the retiring federation
-    public static final CallTransaction.Function GET_RETIRING_FEDERATION_THRESHOLD = BridgeMethods.GET_RETIRING_FEDERATION_THRESHOLD.getFunction();
+    public static final CallTransaction.Function GET_RETIRING_FEDERATION_THRESHOLD =
+            BridgeMethods.GET_RETIRING_FEDERATION_THRESHOLD.getFunction();
     // Returns the public key of the retiring federation's federator at the specified index
-    public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction();
-    // Returns the public key of given type of the retiring federation's federator at the specified index
-    public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
+    public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY =
+            BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Returns the public key of given type of the retiring federation's federator at the specified
+    // index
+    public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE =
+            BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
     // Returns the creation time of the retiring federation
-    public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_TIME = BridgeMethods.GET_RETIRING_FEDERATION_CREATION_TIME.getFunction();
+    public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_TIME =
+            BridgeMethods.GET_RETIRING_FEDERATION_CREATION_TIME.getFunction();
     // Returns the block number of the creation of the retiring federation
-    public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER = BridgeMethods.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
+    public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER =
+            BridgeMethods.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER.getFunction();
 
     // Creates a new pending federation and returns its id
-    public static final CallTransaction.Function CREATE_FEDERATION = BridgeMethods.CREATE_FEDERATION.getFunction();
+    public static final CallTransaction.Function CREATE_FEDERATION =
+            BridgeMethods.CREATE_FEDERATION.getFunction();
     // Adds the given key to the current pending federation
-    public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY = BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY.getFunction();
+    public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY =
+            BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY.getFunction();
     // Adds the given key to the current pending federation (multiple-key version)
-    public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY = BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY.getFunction();
+    public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY =
+            BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY_MULTIKEY.getFunction();
     // Commits the currently pending federation
-    public static final CallTransaction.Function COMMIT_FEDERATION = BridgeMethods.COMMIT_FEDERATION.getFunction();
+    public static final CallTransaction.Function COMMIT_FEDERATION =
+            BridgeMethods.COMMIT_FEDERATION.getFunction();
     // Rolls back the currently pending federation
-    public static final CallTransaction.Function ROLLBACK_FEDERATION = BridgeMethods.ROLLBACK_FEDERATION.getFunction();
+    public static final CallTransaction.Function ROLLBACK_FEDERATION =
+            BridgeMethods.ROLLBACK_FEDERATION.getFunction();
 
     // Returns the current pending federation's hash
-    public static final CallTransaction.Function GET_PENDING_FEDERATION_HASH = BridgeMethods.GET_PENDING_FEDERATION_HASH.getFunction();
+    public static final CallTransaction.Function GET_PENDING_FEDERATION_HASH =
+            BridgeMethods.GET_PENDING_FEDERATION_HASH.getFunction();
     // Returns the number of federates in the current pending federation
-    public static final CallTransaction.Function GET_PENDING_FEDERATION_SIZE = BridgeMethods.GET_PENDING_FEDERATION_SIZE.getFunction();
-    // Returns the public key of the federator at the specified index for the current pending federation
-    public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY = BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction();
-    // Returns the public key of given type the federator at the specified index for the current pending federation
-    public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE = BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
+    public static final CallTransaction.Function GET_PENDING_FEDERATION_SIZE =
+            BridgeMethods.GET_PENDING_FEDERATION_SIZE.getFunction();
+    // Returns the public key of the federator at the specified index for the current pending
+    // federation
+    public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY =
+            BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY.getFunction();
+    // Returns the public key of given type the federator at the specified index for the current
+    // pending federation
+    public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE =
+            BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY_OF_TYPE.getFunction();
 
     // Returns the lock whitelist size
-    public static final CallTransaction.Function GET_LOCK_WHITELIST_SIZE = BridgeMethods.GET_LOCK_WHITELIST_SIZE.getFunction();
+    public static final CallTransaction.Function GET_LOCK_WHITELIST_SIZE =
+            BridgeMethods.GET_LOCK_WHITELIST_SIZE.getFunction();
     // Returns the lock whitelist address stored at the specified index
-    public static final CallTransaction.Function GET_LOCK_WHITELIST_ADDRESS = BridgeMethods.GET_LOCK_WHITELIST_ADDRESS.getFunction();
+    public static final CallTransaction.Function GET_LOCK_WHITELIST_ADDRESS =
+            BridgeMethods.GET_LOCK_WHITELIST_ADDRESS.getFunction();
     // Returns the lock whitelist entry stored at the specified address
-    public static final CallTransaction.Function GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS = BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.getFunction();
+    public static final CallTransaction.Function GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS =
+            BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.getFunction();
     // Adds the given address to the lock whitelist
-    public static final CallTransaction.Function ADD_LOCK_WHITELIST_ADDRESS = BridgeMethods.ADD_LOCK_WHITELIST_ADDRESS.getFunction();
+    public static final CallTransaction.Function ADD_LOCK_WHITELIST_ADDRESS =
+            BridgeMethods.ADD_LOCK_WHITELIST_ADDRESS.getFunction();
     // Adds the given address to the lock whitelist in "one-off" mode
-    public static final CallTransaction.Function ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS = BridgeMethods.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.getFunction();
+    public static final CallTransaction.Function ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS =
+            BridgeMethods.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.getFunction();
     // Adds the given address to the lock whitelist in "unlimited" mode
-    public static final CallTransaction.Function ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS = BridgeMethods.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.getFunction();
+    public static final CallTransaction.Function ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS =
+            BridgeMethods.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.getFunction();
     // Adds the given address to the lock whitelist
-    public static final CallTransaction.Function REMOVE_LOCK_WHITELIST_ADDRESS = BridgeMethods.REMOVE_LOCK_WHITELIST_ADDRESS.getFunction();
+    public static final CallTransaction.Function REMOVE_LOCK_WHITELIST_ADDRESS =
+            BridgeMethods.REMOVE_LOCK_WHITELIST_ADDRESS.getFunction();
 
-    public static final CallTransaction.Function SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY = BridgeMethods.SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY.getFunction();
+    public static final CallTransaction.Function SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY =
+            BridgeMethods.SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY.getFunction();
 
     // Returns the current fee per kb
-    public static final CallTransaction.Function GET_FEE_PER_KB = BridgeMethods.GET_FEE_PER_KB.getFunction();
+    public static final CallTransaction.Function GET_FEE_PER_KB =
+            BridgeMethods.GET_FEE_PER_KB.getFunction();
     // Adds the given key to the current pending federation
-    public static final CallTransaction.Function VOTE_FEE_PER_KB = BridgeMethods.VOTE_FEE_PER_KB.getFunction();
+    public static final CallTransaction.Function VOTE_FEE_PER_KB =
+            BridgeMethods.VOTE_FEE_PER_KB.getFunction();
 
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
@@ -188,9 +245,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     // Log topics used by Bridge Contract
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
-    public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
+    public static final DataWord UPDATE_COLLECTIONS_TOPIC =
+            DataWord.fromString("update_collections_topic");
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
-    public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
+    public static final DataWord COMMIT_FEDERATION_TOPIC =
+            DataWord.fromString("commit_federation_topic");
 
     private final Constants constants;
     private final BridgeConstants bridgeConstants;
@@ -205,7 +264,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private BridgeSupport bridgeSupport;
     private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
 
-    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig, BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
+    public Bridge(
+            RskAddress contractAddress,
+            Constants constants,
+            ActivationConfig activationConfig,
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
         this.contractAddress = contractAddress;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
@@ -232,7 +295,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             functionCost = BridgeMethods.RELEASE_BTC.getCost(this, activations, new Object[0]);
             totalCost = functionCost;
         } else {
-            functionCost = bridgeParsedData.bridgeMethod.getCost(this, activations, bridgeParsedData.args);
+            functionCost =
+                    bridgeParsedData.bridgeMethod.getCost(this, activations, bridgeParsedData.args);
             int dataCost = data == null ? 0 : data.length * 2;
 
             totalCost = functionCost + dataCost;
@@ -252,10 +316,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (data == null || data.length == 0) {
             bridgeParsedData.bridgeMethod = BridgeMethods.RELEASE_BTC;
-            bridgeParsedData.args = new Object[]{};
+            bridgeParsedData.args = new Object[] {};
         } else {
             byte[] functionSignature = Arrays.copyOfRange(data, 0, 4);
-            Optional<BridgeMethods> invokedMethod = BridgeMethods.findBySignature(functionSignature);
+            Optional<BridgeMethods> invokedMethod =
+                    BridgeMethods.findBySignature(functionSignature);
             if (!invokedMethod.isPresent()) {
                 logger.warn("Invalid function signature {}.", Hex.toHexString(functionSignature));
                 return null;
@@ -264,13 +329,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             try {
                 bridgeParsedData.args = bridgeParsedData.bridgeMethod.getFunction().decode(data);
             } catch (Exception e) {
-                logger.warn("Invalid function arguments {} for function {}.", Hex.toHexString(data), Hex.toHexString(functionSignature));
+                logger.warn(
+                        "Invalid function arguments {} for function {}.",
+                        Hex.toHexString(data),
+                        Hex.toHexString(functionSignature));
                 return null;
             }
         }
 
         if (!bridgeParsedData.bridgeMethod.isEnabled(activations)) {
-            logger.warn("'{}' is not enabled to run",bridgeParsedData.bridgeMethod.name());
+            logger.warn("'{}' is not enabled to run", bridgeParsedData.bridgeMethod.name());
             return null;
         }
 
@@ -284,7 +352,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     @Override
-    public void init(Transaction rskTx, Block rskExecutionBlock, Repository repository, BlockStore rskBlockStore, ReceiptStore rskReceiptStore, List<LogInfo> logs) {
+    public void init(
+            Transaction rskTx,
+            Block rskExecutionBlock,
+            Repository repository,
+            BlockStore rskBlockStore,
+            ReceiptStore rskReceiptStore,
+            List<LogInfo> logs) {
         this.activations = activationConfig.forBlock(rskExecutionBlock.getNumber());
         this.rskTx = rskTx;
         this.rskExecutionBlock = rskExecutionBlock;
@@ -296,8 +370,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public byte[] execute(byte[] data) {
-        try
-        {
+        try {
             // Preliminary validation: the transaction on which we execute cannot be null
             if (rskTx == null) {
                 throw new RuntimeException("Rsk Transaction is null");
@@ -307,7 +380,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             // Function parsing from data returned null => invalid function selected, halt!
             if (bridgeParsedData == null) {
-                String errorMessage = String.format("Invalid data given: %s.", Hex.toHexString(data));
+                String errorMessage =
+                        String.format("Invalid data given: %s.", Hex.toHexString(data));
                 logger.info(errorMessage);
                 if (activations.isActive(ConsensusRule.RSKIP88)) {
                     throw new BridgeIllegalArgumentException(errorMessage);
@@ -318,19 +392,30 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             // If this is not a local call, then first check whether the function
             // allows for non-local calls
-            if (activations.isActive(ConsensusRule.RSKIP88) && !isLocalCall() && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
-                String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
+            if (activations.isActive(ConsensusRule.RSKIP88)
+                    && !isLocalCall()
+                    && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
+                String errorMessage =
+                        String.format(
+                                "Non-local-call to %s. Returning without execution.",
+                                bridgeParsedData.bridgeMethod.getFunction().name);
                 logger.info(errorMessage);
                 throw new BridgeIllegalArgumentException(errorMessage);
             }
 
             Optional<?> result;
             try {
-                // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
+                // bridgeParsedData.function should be one of the CallTransaction.Function declared
+                // above.
                 // If the user tries to call an non-existent function, parseData() will return null.
-                result = bridgeParsedData.bridgeMethod.getExecutor().execute(this, bridgeParsedData.args);
+                result =
+                        bridgeParsedData
+                                .bridgeMethod
+                                .getExecutor()
+                                .execute(this, bridgeParsedData.args);
             } catch (BridgeIllegalArgumentException ex) {
-                String errorMessage = String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
+                String errorMessage =
+                        String.format("Error executing: %s", bridgeParsedData.bridgeMethod);
                 logger.warn(errorMessage, ex);
                 if (activations.isActive(ConsensusRule.RSKIP88)) {
                     throw new BridgeIllegalArgumentException(errorMessage);
@@ -341,12 +426,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             teardown();
 
-            return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(null);
-        }
-        catch(Exception ex) {
+            return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs)
+                    .orElse(null);
+        } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("bridgeexecute", ex.getMessage());
-            throw new RuntimeException(String.format("Exception executing bridge: %s", ex.getMessage()), ex);
+            throw new RuntimeException(
+                    String.format("Exception executing bridge: %s", ex.getMessage()), ex);
         }
     }
 
@@ -357,22 +443,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                         repository,
                         contractAddress,
                         bridgeConstants,
-                        BridgeStorageConfiguration.fromBlockchainConfig(activations)
-                ),
+                        BridgeStorageConfiguration.fromBlockchainConfig(activations)),
                 new BridgeEventLoggerImpl(bridgeConstants, logs),
                 repository,
                 rskExecutionBlock,
                 btcBlockStoreFactory,
-                null
-        );
+                null);
     }
 
     private void teardown() throws IOException {
         bridgeSupport.save();
     }
 
-    public void updateCollections(Object[] args)
-    {
+    public void updateCollections(Object[] args) {
         logger.trace("updateCollections");
 
         try {
@@ -408,8 +491,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return BASE_COST + (numberOfHeaders - 1) * 1650;
     }
 
-    public void receiveHeaders(Object[] args)
-    {
+    public void receiveHeaders(Object[] args) {
         logger.trace("receiveHeaders");
 
         Object[] btcBlockSerializedArray = (Object[]) args[0];
@@ -417,21 +499,35 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         // Before going and actually deserializing and calling the underlying function,
         // check that all block headers passed in are actually block headers doing
         // a simple size check. If this check fails, just fail.
-        if (Arrays.stream(btcBlockSerializedArray).anyMatch(bytes -> !BtcTransactionFormatUtils.isBlockHeaderSize(((byte[])bytes).length, activations))) {
+        if (Arrays.stream(btcBlockSerializedArray)
+                .anyMatch(
+                        bytes ->
+                                !BtcTransactionFormatUtils.isBlockHeaderSize(
+                                        ((byte[]) bytes).length, activations))) {
             // This exception type bypasses bridge teardown, signalling no work done
             // and preventing the overhead of saving bridge storage
             logger.warn("Unexpected BTC header(s) received (size mismatch). Aborting processing.");
-            throw new BridgeIllegalArgumentException("Unexpected BTC header(s) received (size mismatch). Aborting processing.");
+            throw new BridgeIllegalArgumentException(
+                    "Unexpected BTC header(s) received (size mismatch). Aborting processing.");
         }
 
         BtcBlock[] btcBlockArray = new BtcBlock[btcBlockSerializedArray.length];
         for (int i = 0; i < btcBlockSerializedArray.length; i++) {
             byte[] btcBlockSerialized = (byte[]) btcBlockSerializedArray[i];
             try {
-                BtcBlock header = bridgeConstants.getBtcParams().getDefaultSerializer().makeBlock(btcBlockSerialized);
+                BtcBlock header =
+                        bridgeConstants
+                                .getBtcParams()
+                                .getDefaultSerializer()
+                                .makeBlock(btcBlockSerialized);
                 btcBlockArray[i] = header;
             } catch (ProtocolException e) {
-                throw new BridgeIllegalArgumentException("Block " + i + " could not be parsed " + Hex.toHexString(btcBlockSerialized), e);
+                throw new BridgeIllegalArgumentException(
+                        "Block "
+                                + i
+                                + " could not be parsed "
+                                + Hex.toHexString(btcBlockSerialized),
+                        e);
             }
         }
         try {
@@ -446,7 +542,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("registerBtcTransaction");
 
         byte[] btcTxSerialized = (byte[]) args[0];
-        int height = ((BigInteger)args[1]).intValue();
+        int height = ((BigInteger) args[1]).intValue();
 
         byte[] pmtSerialized = (byte[]) args[2];
         try {
@@ -457,8 +553,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public void releaseBtc(Object[] args)
-    {
+    public void releaseBtc(Object[] args) {
         logger.trace("releaseBtc");
 
         try {
@@ -471,8 +566,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public void addSignature(Object[] args)
-    {
+    public void addSignature(Object[] args) {
         logger.trace("addSignature");
 
         byte[] federatorPublicKeySerialized = (byte[]) args[0];
@@ -480,7 +574,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             federatorPublicKey = BtcECKey.fromPublicOnly(federatorPublicKeySerialized);
         } catch (Exception e) {
-            throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(federatorPublicKeySerialized), e);
+            throw new BridgeIllegalArgumentException(
+                    "Public key could not be parsed "
+                            + Hex.toHexString(federatorPublicKeySerialized),
+                    e);
         }
         Object[] signaturesObjectArray = (Object[]) args[1];
         if (signaturesObjectArray.length == 0) {
@@ -488,17 +585,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
         List<byte[]> signatures = new ArrayList<>();
         for (Object signatureObject : signaturesObjectArray) {
-            byte[] signatureByteArray = (byte[])signatureObject;
+            byte[] signatureByteArray = (byte[]) signatureObject;
             try {
-                BtcECKey.ECDSASignature.decodeFromDER((byte[])signatureObject);
+                BtcECKey.ECDSASignature.decodeFromDER((byte[]) signatureObject);
             } catch (Exception e) {
-                throw new BridgeIllegalArgumentException("Signature could not be parsed " + Hex.toHexString(signatureByteArray), e);
+                throw new BridgeIllegalArgumentException(
+                        "Signature could not be parsed " + Hex.toHexString(signatureByteArray), e);
             }
             signatures.add(signatureByteArray);
         }
         byte[] rskTxHash = (byte[]) args[2];
-        if (rskTxHash.length!=32) {
-            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Hex.toHexString(rskTxHash));
+        if (rskTxHash.length != 32) {
+            throw new BridgeIllegalArgumentException(
+                    "Invalid rsk tx hash " + Hex.toHexString(rskTxHash));
         }
         try {
             bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);
@@ -510,8 +609,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public byte[] getStateForBtcReleaseClient(Object[] args)
-    {
+    public byte[] getStateForBtcReleaseClient(Object[] args) {
         logger.trace("getStateForBtcReleaseClient");
 
         try {
@@ -522,8 +620,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public byte[] getStateForDebugging(Object[] args)
-    {
+    public byte[] getStateForDebugging(Object[] args) {
         logger.trace("getStateForDebugging");
 
         try {
@@ -534,8 +631,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public Integer getBtcBlockchainBestChainHeight(Object[] args)
-    {
+    public Integer getBtcBlockchainBestChainHeight(Object[] args) {
         logger.trace("getBtcBlockchainBestChainHeight");
 
         try {
@@ -546,8 +642,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public Integer getBtcBlockchainInitialBlockHeight(Object[] args)
-    {
+    public Integer getBtcBlockchainInitialBlockHeight(Object[] args) {
         logger.trace("getBtcBlockchainInitialBlockHeight");
 
         try {
@@ -564,15 +659,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
      * @return
      */
     @Deprecated
-    public Object[] getBtcBlockchainBlockLocator(Object[] args)
-    {
+    public Object[] getBtcBlockchainBlockLocator(Object[] args) {
         logger.trace("getBtcBlockchainBlockLocator");
 
         try {
             List<Sha256Hash> blockLocatorList = bridgeSupport.getBtcBlockchainBlockLocator();
             Object[] blockLocatorArray = new Object[blockLocatorList.size()];
             int i = 0;
-            for (Sha256Hash blockHash: blockLocatorList) {
+            for (Sha256Hash blockHash : blockLocatorList) {
                 blockLocatorArray[i] = blockHash.toString();
                 i++;
             }
@@ -583,8 +677,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public byte[] getBtcBlockchainBlockHashAtDepth(Object[] args)
-    {
+    public byte[] getBtcBlockchainBlockHashAtDepth(Object[] args) {
         logger.trace("getBtcBlockchainBlockHashAtDepth");
 
         int depth = ((BigInteger) args[0]).intValue();
@@ -603,8 +696,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
     }
 
-    public int getBtcTransactionConfirmations(Object[] args)
-    {
+    public int getBtcTransactionConfirmations(Object[] args) {
         logger.trace("getBtcTransactionConfirmations");
         try {
             Sha256Hash btcTxHash = Sha256Hash.wrap((byte[]) args[0]);
@@ -613,26 +705,27 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             int merkleBranchPath = ((BigInteger) args[2]).intValue();
 
             Object[] merkleBranchHashesArray = (Object[]) args[3];
-            List<Sha256Hash> merkleBranchHashes = Arrays.stream(merkleBranchHashesArray)
-                    .map(hash -> Sha256Hash.wrap((byte[]) hash)).collect(Collectors.toList());
+            List<Sha256Hash> merkleBranchHashes =
+                    Arrays.stream(merkleBranchHashesArray)
+                            .map(hash -> Sha256Hash.wrap((byte[]) hash))
+                            .collect(Collectors.toList());
 
             MerkleBranch merkleBranch = new MerkleBranch(merkleBranchHashes, merkleBranchPath);
 
-            return bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, merkleBranch);
+            return bridgeSupport.getBtcTransactionConfirmations(
+                    btcTxHash, btcBlockHash, merkleBranch);
         } catch (Exception e) {
             logger.warn("Exception in getBtcTransactionConfirmations", e);
             throw new RuntimeException("Exception in getBtcTransactionConfirmations", e);
         }
     }
 
-    public Long getMinimumLockTxValue(Object[] args)
-    {
+    public Long getMinimumLockTxValue(Object[] args) {
         logger.trace("getMinimumLockTxValue");
         return bridgeSupport.getMinimumLockTxValue().getValue();
     }
 
-    public Boolean isBtcTxHashAlreadyProcessed(Object[] args)
-    {
+    public Boolean isBtcTxHashAlreadyProcessed(Object[] args) {
         logger.trace("isBtcTxHashAlreadyProcessed");
 
         try {
@@ -644,8 +737,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public Long getBtcTxHashProcessedHeight(Object[] args)
-    {
+    public Long getBtcTxHashProcessedHeight(Object[] args) {
         logger.trace("getBtcTxHashProcessedHeight");
 
         try {
@@ -657,37 +749,32 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public String getFederationAddress(Object[] args)
-    {
+    public String getFederationAddress(Object[] args) {
         logger.trace("getFederationAddress");
 
         return bridgeSupport.getFederationAddress().toBase58();
     }
 
-    public Integer getFederationSize(Object[] args)
-    {
+    public Integer getFederationSize(Object[] args) {
         logger.trace("getFederationSize");
 
         return bridgeSupport.getFederationSize();
     }
 
-    public Integer getFederationThreshold(Object[] args)
-    {
+    public Integer getFederationThreshold(Object[] args) {
         logger.trace("getFederationThreshold");
 
         return bridgeSupport.getFederationThreshold();
     }
 
-    public byte[] getFederatorPublicKey(Object[] args)
-    {
+    public byte[] getFederatorPublicKey(Object[] args) {
         logger.trace("getFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
         return bridgeSupport.getFederatorPublicKey(index);
     }
 
-    public byte[] getFederatorPublicKeyOfType(Object[] args)
-    {
+    public byte[] getFederatorPublicKeyOfType(Object[] args) {
         logger.trace("getFederatorPublicKeyOfType");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -703,8 +790,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFederatorPublicKeyOfType(index, keyType);
     }
 
-    public Long getFederationCreationTime(Object[] args)
-    {
+    public Long getFederationCreationTime(Object[] args) {
         logger.trace("getFederationCreationTime");
 
         // Return the creation time in milliseconds from the epoch
@@ -716,8 +802,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFederationCreationBlockNumber();
     }
 
-    public String getRetiringFederationAddress(Object[] args)
-    {
+    public String getRetiringFederationAddress(Object[] args) {
         logger.trace("getRetiringFederationAddress");
 
         Address address = bridgeSupport.getRetiringFederationAddress();
@@ -730,37 +815,34 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return address.toBase58();
     }
 
-    public Integer getRetiringFederationSize(Object[] args)
-    {
+    public Integer getRetiringFederationSize(Object[] args) {
         logger.trace("getRetiringFederationSize");
 
         return bridgeSupport.getRetiringFederationSize();
     }
 
-    public Integer getRetiringFederationThreshold(Object[] args)
-    {
+    public Integer getRetiringFederationThreshold(Object[] args) {
         logger.trace("getRetiringFederationThreshold");
 
         return bridgeSupport.getRetiringFederationThreshold();
     }
 
-    public byte[] getRetiringFederatorPublicKey(Object[] args)
-    {
+    public byte[] getRetiringFederatorPublicKey(Object[] args) {
         logger.trace("getRetiringFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
         byte[] publicKey = bridgeSupport.getRetiringFederatorPublicKey(index);
 
         if (publicKey == null) {
-            // Empty array is returned when public key is not found or there's no retiring federation
-            return new byte[]{};
+            // Empty array is returned when public key is not found or there's no retiring
+            // federation
+            return new byte[] {};
         }
 
         return publicKey;
     }
 
-    public byte[] getRetiringFederatorPublicKeyOfType(Object[] args)
-    {
+    public byte[] getRetiringFederatorPublicKeyOfType(Object[] args) {
         logger.trace("getRetiringFederatorPublicKeyOfType");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -776,15 +858,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         byte[] publicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
 
         if (publicKey == null) {
-            // Empty array is returned when public key is not found or there's no retiring federation
-            return new byte[]{};
+            // Empty array is returned when public key is not found or there's no retiring
+            // federation
+            return new byte[] {};
         }
 
         return publicKey;
     }
 
-    public Long getRetiringFederationCreationTime(Object[] args)
-    {
+    public Long getRetiringFederationCreationTime(Object[] args) {
         logger.trace("getRetiringFederationCreationTime");
 
         Instant creationTime = bridgeSupport.getRetiringFederationCreationTime();
@@ -803,18 +885,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getRetiringFederationCreationBlockNumber();
     }
 
-    public Integer createFederation(Object[] args)
-    {
+    public Integer createFederation(Object[] args) {
         logger.trace("createFederation");
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("create", new byte[][]{})
-        );
+                rskTx, new ABICallSpec("create", new byte[][] {}));
     }
 
-    public Integer addFederatorPublicKey(Object[] args)
-    {
+    public Integer addFederatorPublicKey(Object[] args) {
         logger.trace("addFederatorPublicKey");
 
         byte[] publicKeyBytes;
@@ -826,13 +904,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("add", new byte[][]{ publicKeyBytes })
-        );
+                rskTx, new ABICallSpec("add", new byte[][] {publicKeyBytes}));
     }
 
-    public Integer addFederatorPublicKeyMultikey(Object[] args)
-    {
+    public Integer addFederatorPublicKeyMultikey(Object[] args) {
         logger.trace("addFederatorPublicKeyMultikey");
 
         byte[] btcPublicKeyBytes = (byte[]) args[0];
@@ -841,12 +916,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         return bridgeSupport.voteFederationChange(
                 rskTx,
-                new ABICallSpec("add-multi", new byte[][]{ btcPublicKeyBytes, rskPublicKeyBytes, mstPublicKeyBytes })
-        );
+                new ABICallSpec(
+                        "add-multi",
+                        new byte[][] {btcPublicKeyBytes, rskPublicKeyBytes, mstPublicKeyBytes}));
     }
 
-    public Integer commitFederation(Object[] args)
-    {
+    public Integer commitFederation(Object[] args) {
         logger.trace("commitFederation");
 
         byte[] hash;
@@ -858,44 +933,36 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("commit", new byte[][]{ hash })
-        );
+                rskTx, new ABICallSpec("commit", new byte[][] {hash}));
     }
 
-    public Integer rollbackFederation(Object[] args)
-    {
+    public Integer rollbackFederation(Object[] args) {
         logger.trace("rollbackFederation");
 
         return bridgeSupport.voteFederationChange(
-                rskTx,
-                new ABICallSpec("rollback", new byte[][]{})
-        );
+                rskTx, new ABICallSpec("rollback", new byte[][] {}));
     }
 
-    public byte[] getPendingFederationHash(Object[] args)
-    {
+    public byte[] getPendingFederationHash(Object[] args) {
         logger.trace("getPendingFederationHash");
 
         byte[] hash = bridgeSupport.getPendingFederationHash();
 
         if (hash == null) {
             // Empty array is returned when pending federation is not present
-            return new byte[]{};
+            return new byte[] {};
         }
 
         return hash;
     }
 
-    public Integer getPendingFederationSize(Object[] args)
-    {
+    public Integer getPendingFederationSize(Object[] args) {
         logger.trace("getPendingFederationSize");
 
         return bridgeSupport.getPendingFederationSize();
     }
 
-    public byte[] getPendingFederatorPublicKey(Object[] args)
-    {
+    public byte[] getPendingFederatorPublicKey(Object[] args) {
         logger.trace("getPendingFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -903,14 +970,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found
-            return new byte[]{};
+            return new byte[] {};
         }
 
         return publicKey;
     }
 
-    public byte[] getPendingFederatorPublicKeyOfType(Object[] args)
-    {
+    public byte[] getPendingFederatorPublicKeyOfType(Object[] args) {
         logger.trace("getPendingFederatorPublicKeyOfType");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -927,21 +993,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         if (publicKey == null) {
             // Empty array is returned when public key is not found
-            return new byte[]{};
+            return new byte[] {};
         }
 
         return publicKey;
     }
 
-    public Integer getLockWhitelistSize(Object[] args)
-    {
+    public Integer getLockWhitelistSize(Object[] args) {
         logger.trace("getLockWhitelistSize");
 
         return bridgeSupport.getLockWhitelistSize();
     }
 
-    public String getLockWhitelistAddress(Object[] args)
-    {
+    public String getLockWhitelistAddress(Object[] args) {
         logger.trace("getLockWhitelistAddress");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -955,8 +1019,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return entry.address().toBase58();
     }
 
-    public long getLockWhitelistEntryByAddress(Object[] args)
-    {
+    public long getLockWhitelistEntryByAddress(Object[] args) {
         logger.trace("getLockWhitelistEntryByAddress");
 
         String addressBase58;
@@ -974,13 +1037,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE;
         }
 
-        return entry.getClass() == OneOffWhiteListEntry.class ?
-                ((OneOffWhiteListEntry)entry).maxTransferValue().getValue() :
-                LOCK_WHITELIST_UNLIMITED_MODE_CODE;
+        return entry.getClass() == OneOffWhiteListEntry.class
+                ? ((OneOffWhiteListEntry) entry).maxTransferValue().getValue()
+                : LOCK_WHITELIST_UNLIMITED_MODE_CODE;
     }
 
-    public Integer addOneOffLockWhitelistAddress(Object[] args)
-    {
+    public Integer addOneOffLockWhitelistAddress(Object[] args) {
         logger.trace("addOneOffLockWhitelistAddress");
 
         String addressBase58;
@@ -996,8 +1058,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.addOneOffLockWhitelistAddress(rskTx, addressBase58, maxTransferValue);
     }
 
-    public Integer addUnlimitedLockWhitelistAddress(Object[] args)
-    {
+    public Integer addUnlimitedLockWhitelistAddress(Object[] args) {
         logger.trace("addUnlimitedLockWhitelistAddress");
 
         String addressBase58;
@@ -1011,8 +1072,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.addUnlimitedLockWhitelistAddress(rskTx, addressBase58);
     }
 
-    public Integer removeLockWhitelistAddress(Object[] args)
-    {
+    public Integer removeLockWhitelistAddress(Object[] args) {
         logger.trace("removeLockWhitelistAddress");
 
         String addressBase58;
@@ -1026,14 +1086,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.removeLockWhitelistAddress(rskTx, addressBase58);
     }
 
-    public Integer setLockWhitelistDisableBlockDelay(Object[] args) throws IOException, BlockStoreException {
+    public Integer setLockWhitelistDisableBlockDelay(Object[] args)
+            throws IOException, BlockStoreException {
         logger.trace("setLockWhitelistDisableBlockDelay");
         BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
-        return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);
+        return bridgeSupport.setLockWhitelistDisableBlockDelay(
+                rskTx, lockWhitelistDisableBlockDelay);
     }
 
-    public Integer voteFeePerKbChange(Object[] args)
-    {
+    public Integer voteFeePerKbChange(Object[] args) {
         logger.trace("voteFeePerKbChange");
 
         Coin feePerKb;
@@ -1047,20 +1108,27 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.voteFeePerKbChange(rskTx, feePerKb);
     }
 
-    public long getFeePerKb(Object[] args)
-    {
+    public long getFeePerKb(Object[] args) {
         logger.trace("getFeePerKb");
 
         return bridgeSupport.getFeePerKb().getValue();
     }
 
-    public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
+    public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(
+            BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
 
-            if (!BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation())
-                    && ( retiringFederation == null || (retiringFederation != null && !BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation)))) {
-                String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);
+            if (!BridgeUtils.isFromFederateMember(
+                            self.rskTx, self.bridgeSupport.getActiveFederation())
+                    && (retiringFederation == null
+                            || (retiringFederation != null
+                                    && !BridgeUtils.isFromFederateMember(
+                                            self.rskTx, retiringFederation)))) {
+                String errorMessage =
+                        String.format(
+                                "Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",
+                                funcName);
                 logger.warn(errorMessage);
                 throw new RuntimeException(errorMessage);
             }
@@ -1081,7 +1149,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             }
         };
     }
-
 
     private boolean isLocalCall() {
         return rskTx.isLocalCallTransaction();

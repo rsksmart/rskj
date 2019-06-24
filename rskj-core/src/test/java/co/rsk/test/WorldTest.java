@@ -26,9 +26,7 @@ import org.ethereum.util.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 8/7/2016.
- */
+/** Created by ajlopez on 8/7/2016. */
 public class WorldTest {
     @Test
     public void getUnknownBlockByName() {

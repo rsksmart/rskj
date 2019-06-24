@@ -22,17 +22,14 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import java.math.BigInteger;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 8/7/2016.
- */
+/** Created by ajlopez on 8/7/2016. */
 public class WorldDslProcessorTest {
     @Test
     public void createProcessorWithWorld() {
@@ -129,7 +126,8 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("block_chain g00 b01 b02\nblock_connect b01 b02\nassert_best b02");
+        DslParser parser =
+                new DslParser("block_chain g00 b01 b02\nblock_connect b01 b02\nassert_best b02");
 
         processor.processCommands(parser);
 
@@ -148,13 +146,13 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("block_chain g00 b01 b02\nblock_connect b01 b02\nassert_best b01");
+        DslParser parser =
+                new DslParser("block_chain g00 b01 b02\nblock_connect b01 b02\nassert_best b01");
 
         try {
             processor.processCommands(parser);
             Assert.fail();
-        }
-        catch (DslProcessorException ex) {
+        } catch (DslProcessorException ex) {
             Assert.assertEquals("Expected best block 'b01'", ex.getMessage());
         }
     }
@@ -165,8 +163,10 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("block_chain g00 b01 b02\nblock_chain b01 c02 c03\nblock_connect b01 b02\n" +
-                "block_connect c02 c03");
+        DslParser parser =
+                new DslParser(
+                        "block_chain g00 b01 b02\nblock_chain b01 c02 c03\nblock_connect b01 b02\n"
+                                + "block_connect c02 c03");
 
         processor.processCommands(parser);
 
@@ -185,7 +185,9 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("block_chain g00 b01 b02\nblock_connect b02\nassert_connect no_parent");
+        DslParser parser =
+                new DslParser(
+                        "block_chain g00 b01 b02\nblock_connect b02\nassert_connect no_parent");
 
         processor.processCommands(parser);
 
@@ -200,7 +202,9 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("block_chain g00 b01 b02\nblock_connect b01 b02\nassert_connect best");
+        DslParser parser =
+                new DslParser(
+                        "block_chain g00 b01 b02\nblock_connect b01 b02\nassert_connect best");
 
         processor.processCommands(parser);
 
@@ -215,8 +219,10 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("block_chain g00 b01 b02\nblock_chain g00 c01\nblock_connect b01 b02\n" +
-                "block_connect c01\nassert_connect not_best");
+        DslParser parser =
+                new DslParser(
+                        "block_chain g00 b01 b02\nblock_chain g00 c01\nblock_connect b01 b02\n"
+                                + "block_connect c01\nassert_connect not_best");
 
         processor.processCommands(parser);
 
@@ -252,7 +258,9 @@ public class WorldDslProcessorTest {
         Account account = world.getAccountByName("acc1");
 
         Assert.assertNotNull(account);
-        Assert.assertEquals(BigInteger.ZERO, world.getRepository().getBalance(account.getAddress()).asBigInteger());
+        Assert.assertEquals(
+                BigInteger.ZERO,
+                world.getRepository().getBalance(account.getAddress()).asBigInteger());
     }
 
     @Test
@@ -268,7 +276,9 @@ public class WorldDslProcessorTest {
         Account account = world.getAccountByName("acc1");
 
         Assert.assertNotNull(account);
-        Assert.assertEquals(new BigInteger("1000000"), world.getRepository().getBalance(account.getAddress()).asBigInteger());
+        Assert.assertEquals(
+                new BigInteger("1000000"),
+                world.getRepository().getBalance(account.getAddress()).asBigInteger());
     }
 
     @Test
@@ -278,8 +288,7 @@ public class WorldDslProcessorTest {
         try {
             processor.processCommands(new DslParser("foo"));
             Assert.fail();
-        }
-        catch (DslProcessorException ex) {
+        } catch (DslProcessorException ex) {
             Assert.assertEquals("Unknown command 'foo'", ex.getMessage());
         }
     }
@@ -305,7 +314,9 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("block_chain g00 b01\nblock_chain g00 u01\nblock_chain g00 u02\nblock_build b02\nparent b01\nuncles u01 u02\nbuild");
+        DslParser parser =
+                new DslParser(
+                        "block_chain g00 b01\nblock_chain g00 u01\nblock_chain g00 u02\nblock_build b02\nparent b01\nuncles u01 u02\nbuild");
 
         processor.processCommands(parser);
 
@@ -316,8 +327,10 @@ public class WorldDslProcessorTest {
         Assert.assertFalse(block.getUncleList().isEmpty());
         Assert.assertEquals(2, block.getUncleList().size());
 
-        Assert.assertEquals(world.getBlockByName("u01").getHash(), block.getUncleList().get(0).getHash());
-        Assert.assertEquals(world.getBlockByName("u02").getHash(), block.getUncleList().get(1).getHash());
+        Assert.assertEquals(
+                world.getBlockByName("u01").getHash(), block.getUncleList().get(0).getHash());
+        Assert.assertEquals(
+                world.getBlockByName("u02").getHash(), block.getUncleList().get(1).getHash());
     }
 
     @Test
@@ -326,7 +339,9 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("account_new acc1\naccount_new acc2\ntransaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\nbuild");
+        DslParser parser =
+                new DslParser(
+                        "account_new acc1\naccount_new acc2\ntransaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\nbuild");
 
         processor.processCommands(parser);
 
@@ -353,7 +368,9 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("account_new acc1\naccount_new acc2\ntransaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\ndata 01020304\nbuild");
+        DslParser parser =
+                new DslParser(
+                        "account_new acc1\naccount_new acc2\ntransaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\ndata 01020304\nbuild");
 
         processor.processCommands(parser);
 
@@ -371,7 +388,7 @@ public class WorldDslProcessorTest {
         Assert.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
         Assert.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assert.assertNotNull(tx01.getData());
-        Assert.assertArrayEquals(new byte[] { 0x01, 0x02, 0x03, 0x04 }, tx01.getData());
+        Assert.assertArrayEquals(new byte[] {0x01, 0x02, 0x03, 0x04}, tx01.getData());
     }
 
     @Test
@@ -380,7 +397,9 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("account_new acc1\naccount_new acc2\ntransaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\ngas 1200000\ngasPrice 2\nbuild");
+        DslParser parser =
+                new DslParser(
+                        "account_new acc1\naccount_new acc2\ntransaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\ngas 1200000\ngasPrice 2\nbuild");
 
         processor.processCommands(parser);
 
@@ -409,7 +428,9 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("account_new acc1\naccount_new acc2\ntransaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\nnonce 10\nbuild");
+        DslParser parser =
+                new DslParser(
+                        "account_new acc1\naccount_new acc2\ntransaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\nnonce 10\nbuild");
 
         processor.processCommands(parser);
 
@@ -437,10 +458,12 @@ public class WorldDslProcessorTest {
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
-        DslParser parser = new DslParser("account_new acc1\naccount_new acc2\n" +
-                "transaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\nbuild\n" +
-                "transaction_build tx02\nsender acc1\nreceiver acc2\nvalue 1000\nbuild\n" +
-                "block_build b01\nparent g00\ntransactions tx01 tx02\nbuild\n");
+        DslParser parser =
+                new DslParser(
+                        "account_new acc1\naccount_new acc2\n"
+                                + "transaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\nbuild\n"
+                                + "transaction_build tx02\nsender acc1\nreceiver acc2\nvalue 1000\nbuild\n"
+                                + "block_build b01\nparent g00\ntransactions tx01 tx02\nbuild\n");
 
         processor.processCommands(parser);
 

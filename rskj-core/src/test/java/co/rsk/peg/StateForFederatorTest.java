@@ -22,25 +22,27 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.crypto.Keccak256;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
-/**
- * Created by mario on 20/04/17.
- */
+/** Created by mario on 20/04/17. */
 public class StateForFederatorTest {
 
-    private static final String SHA3_1 = "1111111111111111111111111111111111111111111111111111111111111111";
-    private static final String SHA3_2 = "2222222222222222222222222222222222222222222222222222222222222222";
-    private static final String SHA3_3 = "3333333333333333333333333333333333333333333333333333333333333333";
-    private static final String SHA3_4 = "4444444444444444444444444444444444444444444444444444444444444444";
+    private static final String SHA3_1 =
+            "1111111111111111111111111111111111111111111111111111111111111111";
+    private static final String SHA3_2 =
+            "2222222222222222222222222222222222222222222222222222222222222222";
+    private static final String SHA3_3 =
+            "3333333333333333333333333333333333333333333333333333333333333333";
+    private static final String SHA3_4 =
+            "4444444444444444444444444444444444444444444444444444444444444444";
 
-    private static final NetworkParameters NETWORK_PARAMETERS = BridgeRegTestConstants.getInstance().getBtcParams();
+    private static final NetworkParameters NETWORK_PARAMETERS =
+            BridgeRegTestConstants.getInstance().getBtcParams();
 
     @Test
     public void serialize() {
@@ -58,7 +60,8 @@ public class StateForFederatorTest {
         rskTxsWaitingForSignatures.put(hash1, tx1);
         rskTxsWaitingForSignatures.put(hash2, tx2);
 
-        SortedMap<Keccak256, Pair<BtcTransaction, Long>> rskTxsWaitingForBroadcasting = new TreeMap<>();
+        SortedMap<Keccak256, Pair<BtcTransaction, Long>> rskTxsWaitingForBroadcasting =
+                new TreeMap<>();
         rskTxsWaitingForBroadcasting.put(hash3, Pair.of(tx3, 3L));
         rskTxsWaitingForBroadcasting.put(hash4, Pair.of(tx4, 4L));
 
@@ -76,13 +79,12 @@ public class StateForFederatorTest {
         Assert.assertEquals(tx1, reverseResult.getRskTxsWaitingForSignatures().get(hash1));
         Assert.assertEquals(tx2, reverseResult.getRskTxsWaitingForSignatures().get(hash2));
 
-        Assert.assertTrue(checkKeys(reverseResult.getRskTxsWaitingForSignatures().keySet(), hash1, hash2));
+        Assert.assertTrue(
+                checkKeys(reverseResult.getRskTxsWaitingForSignatures().keySet(), hash1, hash2));
     }
 
     private boolean checkKeys(Set<Keccak256> keccak256s, Keccak256... keys) {
-        for(Keccak256 sha3 : keys)
-            if(!keccak256s.contains(sha3))
-                return false;
+        for (Keccak256 sha3 : keys) if (!keccak256s.contains(sha3)) return false;
         return true;
     }
 }

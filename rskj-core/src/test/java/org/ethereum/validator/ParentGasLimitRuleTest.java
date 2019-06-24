@@ -18,6 +18,9 @@
 
 package org.ethereum.validator;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import co.rsk.core.BlockDifficulty;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -25,9 +28,6 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Angel J Lopez
@@ -78,7 +78,6 @@ public class ParentGasLimitRuleTest {
         assertFalse(rule.validate(headerLBad, parent));
     }
 
-
     // Used also by GasLimitCalculatorTest
     public BlockHeader getHeader(long gasLimitValue) {
         return getHeader(blockFactory, gasLimitValue);
@@ -88,9 +87,20 @@ public class ParentGasLimitRuleTest {
     public static BlockHeader getHeader(BlockFactory blockFactory, long gasLimitValue) {
         byte[] gasLimit = DataWord.valueOf(gasLimitValue).getData();
 
-        BlockHeader header = blockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(),
-                null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
-                0, null, null, 0);
+        BlockHeader header =
+                blockFactory.newHeader(
+                        null,
+                        null,
+                        TestUtils.randomAddress().getBytes(),
+                        null,
+                        BlockDifficulty.ZERO.getBytes(),
+                        0,
+                        gasLimit,
+                        0,
+                        0,
+                        null,
+                        null,
+                        0);
 
         return header;
     }

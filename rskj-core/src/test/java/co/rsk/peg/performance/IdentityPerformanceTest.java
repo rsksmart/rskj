@@ -24,8 +24,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        IdentityPerformanceTestCase.class,
+    IdentityPerformanceTestCase.class,
 })
 @Ignore
-public class IdentityPerformanceTest extends PrecompiledContractPerformanceTest {
-}
+public class IdentityPerformanceTest extends PrecompiledContractPerformanceTest {}

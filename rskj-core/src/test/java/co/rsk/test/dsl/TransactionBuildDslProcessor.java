@@ -20,14 +20,11 @@ package co.rsk.test.dsl;
 
 import co.rsk.test.World;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 8/16/2016.
- */
+/** Created by ajlopez on 8/16/2016. */
 public class TransactionBuildDslProcessor {
     private World world;
     private String name;
@@ -41,8 +38,7 @@ public class TransactionBuildDslProcessor {
     public void processCommands(DslParser parser) throws DslProcessorException {
         for (DslCommand cmd = parser.nextCommand(); cmd != null; cmd = parser.nextCommand()) {
             processCommand(cmd);
-            if (cmd.isCommand("build"))
-                return;
+            if (cmd.isCommand("build")) return;
         }
     }
 
@@ -51,27 +47,24 @@ public class TransactionBuildDslProcessor {
             this.builder.sender(this.world.getAccountByName(cmd.getArgument(0)));
         else if (cmd.isCommand("receiver"))
             this.builder.receiver(this.world.getAccountByName(cmd.getArgument(0)));
-        else if (cmd.isCommand("nonce"))
-            this.builder.nonce(Long.parseLong(cmd.getArgument(0)));
+        else if (cmd.isCommand("nonce")) this.builder.nonce(Long.parseLong(cmd.getArgument(0)));
         else if (cmd.isCommand("contract"))
-            this.builder.receiverAddress(this.world.getTransactionByName(cmd.getArgument(0)).getContractAddress().getBytes());
+            this.builder.receiverAddress(
+                    this.world
+                            .getTransactionByName(cmd.getArgument(0))
+                            .getContractAddress()
+                            .getBytes());
         else if (cmd.isCommand("receiverAddress"))
             if (cmd.getArgument(0).equals("0") || cmd.getArgument(0).equals("00"))
                 this.builder.receiverAddress(ByteUtil.EMPTY_BYTE_ARRAY);
-            else
-                this.builder.receiverAddress(Hex.decode(cmd.getArgument(0)));
-        else if (cmd.isCommand("value"))
-            this.builder.value(new BigInteger(cmd.getArgument(0)));
-        else if (cmd.isCommand("gas"))
-            this.builder.gasLimit(new BigInteger(cmd.getArgument(0)));
+            else this.builder.receiverAddress(Hex.decode(cmd.getArgument(0)));
+        else if (cmd.isCommand("value")) this.builder.value(new BigInteger(cmd.getArgument(0)));
+        else if (cmd.isCommand("gas")) this.builder.gasLimit(new BigInteger(cmd.getArgument(0)));
         else if (cmd.isCommand("gasPrice"))
             this.builder.gasPrice(new BigInteger(cmd.getArgument(0)));
-        else if (cmd.isCommand("data"))
-            this.builder.data(cmd.getArgument(0));
+        else if (cmd.isCommand("data")) this.builder.data(cmd.getArgument(0));
         else if (cmd.isCommand("build"))
             this.world.saveTransaction(this.name, this.builder.build());
-        else
-            throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
+        else throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
     }
 }
-

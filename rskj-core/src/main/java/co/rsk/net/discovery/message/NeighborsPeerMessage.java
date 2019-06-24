@@ -18,7 +18,15 @@
 
 package co.rsk.net.discovery.message;
 
+import static org.ethereum.util.ByteUtil.intToBytes;
+import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
+
 import co.rsk.net.discovery.PeerDiscoveryException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.OptionalInt;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
@@ -26,31 +34,20 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.OptionalInt;
-
-import static org.ethereum.util.ByteUtil.intToBytes;
-import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
-
-/**
- * Created by mario on 16/02/17.
- */
+/** Created by mario on 16/02/17. */
 public class NeighborsPeerMessage extends PeerDiscoveryMessage {
     public static final String MORE_DATA = "NeighborsPeerMessage needs more data";
     private List<Node> nodes;
     private String messageId;
 
-    public NeighborsPeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
+    public NeighborsPeerMessage(
+            byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         super(wire, mdc, signature, type, data);
         this.nodes = new ArrayList<>();
         this.parse(data);
     }
 
-    private NeighborsPeerMessage() {
-    }
+    private NeighborsPeerMessage() {}
 
     @Override
     public final void parse(byte[] data) {
@@ -72,10 +69,11 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
 
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
 
-        this.setNetworkIdWithRLP(list.size()>2?list.get(2):null);
+        this.setNetworkIdWithRLP(list.size() > 2 ? list.get(2) : null);
     }
 
-    public static NeighborsPeerMessage create(List<Node> nodes, String check, ECKey privKey, Integer networkId) {
+    public static NeighborsPeerMessage create(
+            List<Node> nodes, String check, ECKey privKey, Integer networkId) {
         byte[][] nodeRLPs = null;
 
         if (nodes != null) {
@@ -90,7 +88,7 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
         byte[] rlpListNodes = RLP.encodeList(nodeRLPs);
         byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
 
-        byte[] type = new byte[]{(byte) DiscoveryMessageType.NEIGHBORS.getTypeValue()};
+        byte[] type = new byte[] {(byte) DiscoveryMessageType.NEIGHBORS.getTypeValue()};
         byte[] data;
         byte[] tmpNetworkId = intToBytes(networkId);
         byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(tmpNetworkId));
@@ -127,7 +125,7 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
         return new ToStringBuilder(this)
                 .append(this.nodes)
                 .append(this.messageId)
-                .append(this.getNetworkId()).toString();
+                .append(this.getNetworkId())
+                .toString();
     }
-
 }

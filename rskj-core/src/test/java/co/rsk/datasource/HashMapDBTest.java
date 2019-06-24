@@ -23,16 +23,14 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 3/1/2016.
- */
+/** Created by ajlopez on 3/1/2016. */
 public class HashMapDBTest {
     @Test
     public void putKeyValue() {
         KeyValueDataSource ds = new HashMapDB();
 
-        byte[] key = new byte[] { 0x01, 0x02 };
-        byte[] value = new byte[] { 0x03, 0x03 };
+        byte[] key = new byte[] {0x01, 0x02};
+        byte[] value = new byte[] {0x03, 0x03};
 
         byte[] result = ds.put(key, value);
 
@@ -43,7 +41,7 @@ public class HashMapDBTest {
     public void getUnknownKeyValue() {
         KeyValueDataSource ds = new HashMapDB();
 
-        byte[] key = new byte[] { 0x01, 0x02 };
+        byte[] key = new byte[] {0x01, 0x02};
 
         byte[] result = ds.get(key);
 
@@ -54,8 +52,8 @@ public class HashMapDBTest {
     public void putAndGetKeyValue() {
         KeyValueDataSource ds = new HashMapDB();
 
-        byte[] key = new byte[] { 0x01, 0x02 };
-        byte[] value = new byte[] { 0x03, 0x03 };
+        byte[] key = new byte[] {0x01, 0x02};
+        byte[] value = new byte[] {0x03, 0x03};
 
         ds.put(key, value);
         byte[] result = ds.get(key);
@@ -68,8 +66,8 @@ public class HashMapDBTest {
     public void putAndDeleteKeyValue() {
         KeyValueDataSource ds = new HashMapDB();
 
-        byte[] key = new byte[] { 0x01, 0x02 };
-        byte[] value = new byte[] { 0x03, 0x03 };
+        byte[] key = new byte[] {0x01, 0x02};
+        byte[] value = new byte[] {0x03, 0x03};
 
         ds.put(key, value);
         ds.delete(key);

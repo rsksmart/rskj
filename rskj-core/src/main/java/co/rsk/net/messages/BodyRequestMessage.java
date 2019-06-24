@@ -2,9 +2,7 @@ package co.rsk.net.messages;
 
 import org.ethereum.util.RLP;
 
-/**
- * Created by ajlopez on 24/08/2017.
- */
+/** Created by ajlopez on 24/08/2017. */
 public class BodyRequestMessage extends MessageWithId {
     private long id;
     private byte[] hash;

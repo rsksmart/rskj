@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Rule to check that extra data length is less than the maximum accepted size for it.
  *
- * Created by martin.medina on 07/02/17.
+ * <p>Created by martin.medina on 07/02/17.
  */
 public class ExtraDataRule implements BlockValidationRule {
 
@@ -41,9 +41,13 @@ public class ExtraDataRule implements BlockValidationRule {
 
     @Override
     public boolean isValid(Block block) {
-        if (block.getHeader().getExtraData() != null && block.getHeader().getExtraData().length > this.maximumExtraDataSize) {
+        if (block.getHeader().getExtraData() != null
+                && block.getHeader().getExtraData().length > this.maximumExtraDataSize) {
 
-            String logMessage = String.format("#%d: header.getExtraData().length > MAXIMUM_EXTRA_DATA_SIZE", block.getHeader().getNumber());
+            String logMessage =
+                    String.format(
+                            "#%d: header.getExtraData().length > MAXIMUM_EXTRA_DATA_SIZE",
+                            block.getHeader().getNumber());
             logger.warn(logMessage);
             panicProcessor.panic("invalidExtraData", logMessage);
 

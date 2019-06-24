@@ -20,11 +20,10 @@
 package org.ethereum.core;
 
 import co.rsk.core.Coin;
+import java.math.BigInteger;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-
-import java.math.BigInteger;
 
 public class AccountState {
 
@@ -38,7 +37,6 @@ public class AccountState {
 
     /* A scalar value equalBytes to the number of Wei owned by this address */
     private Coin balance;
-
 
     /* Account state flags*/
     private int stateFlags;
@@ -58,8 +56,10 @@ public class AccountState {
         this.rlpEncoded = rlpData;
 
         RLPList items = (RLPList) RLP.decode2(rlpEncoded).get(0);
-        this.nonce = items.get(0).getRLPData() == null ? BigInteger.ZERO
-                : new BigInteger(1, items.get(0).getRLPData());
+        this.nonce =
+                items.get(0).getRLPData() == null
+                        ? BigInteger.ZERO
+                        : new BigInteger(1, items.get(0).getRLPData());
         this.balance = RLP.parseSignedCoinNonNullZero(items.get(1).getRLPData());
 
         if (items.size() > 2) {
@@ -77,8 +77,6 @@ public class AccountState {
         rlpEncoded = null;
         this.nonce = nonce;
     }
-
-
 
     public void incrementNonce() {
         rlpEncoded = null;
@@ -107,7 +105,7 @@ public class AccountState {
                 byte[] astateFlags = RLP.encodeInt(this.stateFlags);
                 this.rlpEncoded = RLP.encodeList(anonce, abalance, astateFlags);
             } else
-                // do not serialize if zero to keep compatibility
+            // do not serialize if zero to keep compatibility
             {
                 this.rlpEncoded = RLP.encodeList(anonce, abalance);
             }
@@ -130,9 +128,15 @@ public class AccountState {
     }
 
     public String toString() {
-        String ret = "  Nonce: " + this.getNonce().toString() + "\n" +
-                "  Balance: " + getBalance().asBigInteger() + "\n" +
-                "  StateFlags: " + getStateFlags();
+        String ret =
+                "  Nonce: "
+                        + this.getNonce().toString()
+                        + "\n"
+                        + "  Balance: "
+                        + getBalance().asBigInteger()
+                        + "\n"
+                        + "  StateFlags: "
+                        + getStateFlags();
         return ret;
     }
 

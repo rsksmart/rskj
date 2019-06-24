@@ -19,13 +19,13 @@
 
 package org.ethereum.net.eth.message;
 
+import static org.ethereum.net.eth.EthVersion.V62;
+
 import co.rsk.net.eth.RskMessage;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.net.message.Message;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-
-import static org.ethereum.net.eth.EthVersion.V62;
 
 /**
  * @author Mikhail Kalinin
@@ -47,7 +47,9 @@ public class Eth62MessageFactory {
                 return new StatusMessage(encoded);
             case RSK_MESSAGE:
                 RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
-                return new RskMessage(co.rsk.net.messages.Message.create(blockFactory, (RLPList) paramsList.get(0)));
+                return new RskMessage(
+                        co.rsk.net.messages.Message.create(
+                                blockFactory, (RLPList) paramsList.get(0)));
             default:
                 throw new IllegalArgumentException("No such message");
         }

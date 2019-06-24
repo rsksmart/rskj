@@ -21,9 +21,8 @@ package co.rsk.pcc.blockheader;
 
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
-import org.ethereum.core.Block;
-
 import java.util.Optional;
+import org.ethereum.core.Block;
 
 /**
  * Helper class to provide Block access to the BlockHeaderContract native methods.
@@ -39,22 +38,30 @@ public class BlockAccessor {
 
     public Optional<Block> getBlock(short blockDepth, ExecutionEnvironment environment) {
         if (blockDepth < 0) {
-            throw new NativeContractIllegalArgumentException(String.format(
-                    "Invalid block depth '%d' (should be a non-negative value)",
-                    blockDepth
-            ));
+            throw new NativeContractIllegalArgumentException(
+                    String.format(
+                            "Invalid block depth '%d' (should be a non-negative value)",
+                            blockDepth));
         }
 
-        // If blockDepth is bigger or equal to the max depth, return an empty optional instead of throwing an exception
-        // to allow users of this method to decide if they want to throw an exception or return a default
+        // If blockDepth is bigger or equal to the max depth, return an empty optional instead of
+        // throwing an exception
+        // to allow users of this method to decide if they want to throw an exception or return a
+        // default
         // (probably empty) value (e.g. an empty byte array).
         if (blockDepth >= maximumBlockDepth) {
             return Optional.empty();
         }
 
-        // If block is null, return an empty optional instead of throwing an exception to allow users of this method to
-        // decide if they want to throw an exception or return a default (probably empty) value (e.g. an empty byte array).
-        Block block = environment.getBlockStore().getBlockAtDepthStartingAt(blockDepth, environment.getBlock().getParentHash().getBytes());
+        // If block is null, return an empty optional instead of throwing an exception to allow
+        // users of this method to
+        // decide if they want to throw an exception or return a default (probably empty) value
+        // (e.g. an empty byte array).
+        Block block =
+                environment
+                        .getBlockStore()
+                        .getBlockAtDepthStartingAt(
+                                blockDepth, environment.getBlock().getParentHash().getBytes());
         if (block == null) {
             return Optional.empty();
         }

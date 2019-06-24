@@ -18,20 +18,16 @@
 
 package co.rsk.asm;
 
+import static org.ethereum.vm.OpCode.PUSH1;
+
 import co.rsk.lll.asm.CodeBlock;
 import co.rsk.lll.asm.EVMAssemblerHelper;
-import org.ethereum.vm.OpCode;
-
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.StringTokenizer;
+import org.ethereum.vm.OpCode;
 
-import static org.ethereum.vm.OpCode.PUSH1;
-
-/**
- * Created by Sergio on 02/07/2016.
- */
+/** Created by Sergio on 02/07/2016. */
 public class EVMAssembler {
     CodeBlock block;
     EVMAssemblerHelper helper;
@@ -73,7 +69,7 @@ public class EVMAssembler {
     }
 
     public byte[] assemble(String text) {
-        StringTokenizer tokens = new StringTokenizer(text," \n\t",false);
+        StringTokenizer tokens = new StringTokenizer(text, " \n\t", false);
         int errorToken = 0;
         block = new CodeBlock(null);
         block.startWrite();
@@ -81,33 +77,29 @@ public class EVMAssembler {
         try {
             while (tokens.hasMoreTokens()) {
                 String tok = tokens.nextToken();
-                assembleToken(block,tok);
+                assembleToken(block, tok);
                 errorToken++;
             }
             block.endWrite();
-            if (!helper.performFixUp(block))
-                return null;
+            if (!helper.performFixUp(block)) return null;
 
             return block.getCode();
         } catch (Exception e) {
             return null;
         }
-
     }
 
-    public void assembleToken(CodeBlock block,String tok) throws Exception {
+    public void assembleToken(CodeBlock block, String tok) throws Exception {
         try {
             if (tok.endsWith(":")) { // label
                 String label = tok.substring(0, tok.length() - 1);
                 int id = helper.findLabel(label);
-                if (id < 0)
-                    id = helper.getNewLabel(label);
+                if (id < 0) id = helper.getNewLabel(label);
                 helper.setLabelPosition(id, block, block.writeOffset());
             } else if (tok.startsWith("@")) { // ref
                 String label = tok.substring(1);
                 int id = helper.findLabel(label);
-                if (id == -1)
-                    id = helper.getNewLabel(label);
+                if (id == -1) id = helper.getNewLabel(label);
 
                 int pushOpcode = 4 + PUSH1.val() - 1; // four bytes ref
                 block.writer().write(pushOpcode);
@@ -138,9 +130,9 @@ public class EVMAssembler {
         } catch (NumberFormatException e) {
             byte opcode = OpCode.byteVal(tok);
             block.writer().write(opcode);
-                /*if ((code>=PUSH1.val()) && (code<=PUSH32.val())) {
-                    int nPush = code - PUSH1.val() + 1;
-                }*/
+            /*if ((code>=PUSH1.val()) && (code<=PUSH32.val())) {
+                int nPush = code - PUSH1.val() + 1;
+            }*/
         }
     }
 }

@@ -18,47 +18,49 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueFactory;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
 public class ActivationConfigTest {
-    private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
-            "hardforkActivationHeights: {",
-            "    genesis: 0",
-            "    afterBridgeSync: 0,",
-            "    orchid: 0,",
-            "    orchid060: 0,",
-            "    wasabi100: 0",
-            "},",
-            "consensusRules: {",
-            "    areBridgeTxsPaid: afterBridgeSync,",
-            "    rskip85: orchid,",
-            "    rskip87: orchid,",
-            "    rskip88: orchid,",
-            "    rskip89: orchid,",
-            "    rskip90: orchid,",
-            "    rskip91: orchid,",
-            "    rskip92: orchid,",
-            "    rskip94: orchid,",
-            "    rskip97: orchid,",
-            "    rskip98: orchid,",
-            "    rskip103: orchid060,",
-            "    rskip110: wasabi100,",
-            "    rskip119: wasabi100,",
-            "    rskip106: wasabi100,",
-            "    rskip120: wasabi100,",
-            "    rskip122: wasabi100,",
-            "    rskip123: wasabi100,",
-            "    rskip124: wasabi100,",
-            "    rskip125: wasabi100",
-            "    rskip126: wasabi100",
-            "}"
-    ));
+    private static final Config BASE_CONFIG =
+            ConfigFactory.parseString(
+                    String.join(
+                            "\n",
+                            "hardforkActivationHeights: {",
+                            "    genesis: 0",
+                            "    afterBridgeSync: 0,",
+                            "    orchid: 0,",
+                            "    orchid060: 0,",
+                            "    wasabi100: 0",
+                            "},",
+                            "consensusRules: {",
+                            "    areBridgeTxsPaid: afterBridgeSync,",
+                            "    rskip85: orchid,",
+                            "    rskip87: orchid,",
+                            "    rskip88: orchid,",
+                            "    rskip89: orchid,",
+                            "    rskip90: orchid,",
+                            "    rskip91: orchid,",
+                            "    rskip92: orchid,",
+                            "    rskip94: orchid,",
+                            "    rskip97: orchid,",
+                            "    rskip98: orchid,",
+                            "    rskip103: orchid060,",
+                            "    rskip110: wasabi100,",
+                            "    rskip119: wasabi100,",
+                            "    rskip106: wasabi100,",
+                            "    rskip120: wasabi100,",
+                            "    rskip122: wasabi100,",
+                            "    rskip123: wasabi100,",
+                            "    rskip124: wasabi100,",
+                            "    rskip125: wasabi100",
+                            "    rskip126: wasabi100",
+                            "}"));
 
     @Test
     public void readBaseConfig() {
@@ -71,10 +73,15 @@ public class ActivationConfigTest {
 
     @Test
     public void readWithTwoUpgradesInOrchid060() {
-        ActivationConfig config = ActivationConfig.read(BASE_CONFIG
-                .withValue("hardforkActivationHeights.orchid060", ConfigValueFactory.fromAnyRef(200))
-                .withValue("consensusRules.rskip98", ConfigValueFactory.fromAnyRef("orchid060"))
-        );
+        ActivationConfig config =
+                ActivationConfig.read(
+                        BASE_CONFIG
+                                .withValue(
+                                        "hardforkActivationHeights.orchid060",
+                                        ConfigValueFactory.fromAnyRef(200))
+                                .withValue(
+                                        "consensusRules.rskip98",
+                                        ConfigValueFactory.fromAnyRef("orchid060")));
 
         for (ConsensusRule value : ConsensusRule.values()) {
             if (value == ConsensusRule.RSKIP98 || value == ConsensusRule.RSKIP103) {
@@ -87,9 +94,10 @@ public class ActivationConfigTest {
 
     @Test
     public void readWithOneHardcodedActivationNumber() {
-        ActivationConfig config = ActivationConfig.read(BASE_CONFIG
-                .withValue("consensusRules.rskip85", ConfigValueFactory.fromAnyRef(200))
-        );
+        ActivationConfig config =
+                ActivationConfig.read(
+                        BASE_CONFIG.withValue(
+                                "consensusRules.rskip85", ConfigValueFactory.fromAnyRef(200)));
 
         for (ConsensusRule value : ConsensusRule.values()) {
             if (value == ConsensusRule.RSKIP85) {
@@ -102,29 +110,25 @@ public class ActivationConfigTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void failsReadingWithMissingNetworkUpgrade() {
-        ActivationConfig.read(BASE_CONFIG
-                .withoutPath("consensusRules.rskip85")
-        );
+        ActivationConfig.read(BASE_CONFIG.withoutPath("consensusRules.rskip85"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void failsReadingWithMissingHardFork() {
-        ActivationConfig.read(BASE_CONFIG
-                .withoutPath("hardforkActivationHeights.orchid")
-        );
+        ActivationConfig.read(BASE_CONFIG.withoutPath("hardforkActivationHeights.orchid"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void failsReadingWithUnknownForkConfiguration() {
-        ActivationConfig.read(BASE_CONFIG
-                .withValue("hardforkActivationHeights.orkid", ConfigValueFactory.fromAnyRef(200))
-        );
+        ActivationConfig.read(
+                BASE_CONFIG.withValue(
+                        "hardforkActivationHeights.orkid", ConfigValueFactory.fromAnyRef(200)));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void failsReadingWithUnknownUpgradeConfiguration() {
-        ActivationConfig.read(BASE_CONFIG
-                .withValue("consensusRules.rskip420", ConfigValueFactory.fromAnyRef("orchid"))
-        );
+        ActivationConfig.read(
+                BASE_CONFIG.withValue(
+                        "consensusRules.rskip420", ConfigValueFactory.fromAnyRef("orchid")));
     }
 }

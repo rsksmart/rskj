@@ -18,20 +18,17 @@
 
 package co.rsk.trie;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.core.Coin;
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-
-/**
- * This class holds the Orchid account state encoding logic
- */
+/** This class holds the Orchid account state encoding logic */
 // this class is left for TrieConverter, we don't need to copy the byte[] arguments
 @SuppressWarnings("squid:S2384")
 public class OrchidAccountState {
@@ -46,8 +43,10 @@ public class OrchidAccountState {
 
     public OrchidAccountState(byte[] rlpData) {
         RLPList items = (RLPList) RLP.decode2(rlpData).get(0);
-        this.nonce = items.get(0).getRLPData() == null ? BigInteger.ZERO
-                : new BigInteger(1, items.get(0).getRLPData());
+        this.nonce =
+                items.get(0).getRLPData() == null
+                        ? BigInteger.ZERO
+                        : new BigInteger(1, items.get(0).getRLPData());
         this.balance = RLP.parseCoin(items.get(1).getRLPData());
         this.stateRoot = items.get(2).getRLPData();
         this.codeHash = items.get(3).getRLPData();

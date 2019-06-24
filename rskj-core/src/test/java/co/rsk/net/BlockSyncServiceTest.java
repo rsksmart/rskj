@@ -22,13 +22,12 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.util.Collections;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Collections;
-import java.util.List;
 
 public class BlockSyncServiceTest {
     @Test
@@ -38,10 +37,17 @@ public class BlockSyncServiceTest {
             BlockStore store = new BlockStore();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             TestSystemProperties config = new TestSystemProperties();
-            BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+            BlockSyncService blockSyncService =
+                    new BlockSyncService(
+                            config,
+                            store,
+                            blockchain,
+                            nodeInformation,
+                            SyncConfiguration.IMMEDIATE_FOR_TESTING);
             Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
 
-            List<Block> extendedChain = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), i);
+            List<Block> extendedChain =
+                    new BlockGenerator().getBlockChain(blockchain.getBestBlock(), i);
             for (Block block : extendedChain) {
                 blockSyncService.processBlock(block, null, false);
                 Assert.assertEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
@@ -57,18 +63,27 @@ public class BlockSyncServiceTest {
             BlockStore store = new BlockStore();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             TestSystemProperties config = new TestSystemProperties();
-            BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+            BlockSyncService blockSyncService =
+                    new BlockSyncService(
+                            config,
+                            store,
+                            blockchain,
+                            nodeInformation,
+                            SyncConfiguration.IMMEDIATE_FOR_TESTING);
             Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
 
             Block initialBestBlock = blockchain.getBestBlock();
-            List<Block> extendedChain = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), i);
+            List<Block> extendedChain =
+                    new BlockGenerator().getBlockChain(blockchain.getBestBlock(), i);
             Collections.reverse(extendedChain);
             for (int j = 0; j < extendedChain.size() - 1; j++) {
                 Block block = extendedChain.get(j);
                 blockSyncService.processBlock(block, null, false);
                 // we don't have all the parents, so we wait to update the best chain
-                Assert.assertEquals(initialBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
-                Assert.assertEquals(initialBestBlock.getHash(), blockchain.getBestBlock().getHash());
+                Assert.assertEquals(
+                        initialBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
+                Assert.assertEquals(
+                        initialBestBlock.getHash(), blockchain.getBestBlock().getHash());
             }
 
             // the chain is complete, we have a new best block
@@ -86,7 +101,13 @@ public class BlockSyncServiceTest {
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(
+                        config,
+                        store,
+                        blockchain,
+                        nodeInformation,
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         Block initialBestBlock = blockchain.getBestBlock();
         Assert.assertEquals(10, initialBestBlock.getNumber());

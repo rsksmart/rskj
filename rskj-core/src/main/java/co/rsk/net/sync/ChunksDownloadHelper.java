@@ -1,13 +1,10 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.BlockIdentifier;
-
-import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
+import org.ethereum.core.BlockIdentifier;
 
 public class ChunksDownloadHelper {
     private SyncConfiguration syncConfiguration;
@@ -17,7 +14,10 @@ public class ChunksDownloadHelper {
     private long connectionPoint;
     private int lastRequestedLinkIndex;
 
-    public ChunksDownloadHelper(@Nonnull SyncConfiguration syncConfiguration, List<BlockIdentifier> skeleton, long connectionPoint) {
+    public ChunksDownloadHelper(
+            @Nonnull SyncConfiguration syncConfiguration,
+            List<BlockIdentifier> skeleton,
+            long connectionPoint) {
         this.syncConfiguration = syncConfiguration;
         this.connectionPoint = connectionPoint;
         this.lastRequestedLinkIndex = 0;
@@ -45,7 +45,7 @@ public class ChunksDownloadHelper {
 
         long lastHeight = skeleton.get(linkIndex - 1).getNumber();
         long previousKnownHeight = Math.max(lastHeight, connectionPoint);
-        int count = (int)(height - previousKnownHeight);
+        int count = (int) (height - previousKnownHeight);
         this.lastRequestedLinkIndex = linkIndex;
 
         return new ChunkDescriptor(hash, count);

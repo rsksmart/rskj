@@ -18,28 +18,26 @@
 
 package co.rsk.mine;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.MessageSerializer;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.crypto.Keccak256;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 
 public class ForkDataDetectionCalculatorTest {
     private static final int MAX_UNCLES = 10;
@@ -63,27 +61,48 @@ public class ForkDataDetectionCalculatorTest {
 
         assertThat(forkDetectionData.length, is(12));
 
-        assertThat(forkDetectionData[0],
-                is(getBtcBlockHashLeastSignificantByte(lastBlockchainBlocks.get(0).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[1],
-                is(getBtcBlockHashLeastSignificantByte(lastBlockchainBlocks.get(64).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[2],
-                is(getBtcBlockHashLeastSignificantByte(lastBlockchainBlocks.get(128).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[3],
-                is(getBtcBlockHashLeastSignificantByte(lastBlockchainBlocks.get(192).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[4],
-                is(getBtcBlockHashLeastSignificantByte(lastBlockchainBlocks.get(256).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[5],
-                is(getBtcBlockHashLeastSignificantByte(lastBlockchainBlocks.get(320).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[6],
-                is(getBtcBlockHashLeastSignificantByte(lastBlockchainBlocks.get(384).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[0],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                lastBlockchainBlocks.get(0).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[1],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                lastBlockchainBlocks.get(64).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[2],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                lastBlockchainBlocks.get(128).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[3],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                lastBlockchainBlocks.get(192).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[4],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                lastBlockchainBlocks.get(256).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[5],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                lastBlockchainBlocks.get(320).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[6],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                lastBlockchainBlocks.get(384).getBitcoinMergedMiningHeader())));
 
-        assertThat(forkDetectionData[7], is((byte)0));
+        assertThat(forkDetectionData[7], is((byte) 0));
 
-        assertThat(forkDetectionData[8], is((byte)0));
-        assertThat(forkDetectionData[9], is((byte)0));
-        assertThat(forkDetectionData[10], is((byte)1));
-        assertThat(forkDetectionData[11], is((byte)193));
+        assertThat(forkDetectionData[8], is((byte) 0));
+        assertThat(forkDetectionData[9], is((byte) 0));
+        assertThat(forkDetectionData[10], is((byte) 1));
+        assertThat(forkDetectionData[11], is((byte) 193));
     }
 
     @Test
@@ -108,27 +127,48 @@ public class ForkDataDetectionCalculatorTest {
 
         assertThat(forkDetectionData.length, is(12));
 
-        assertThat(forkDetectionData[0],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(63).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[1],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(127).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[2],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(191).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[3],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(255).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[4],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(319).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[5],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(383).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[6],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(446).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[0],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(63).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[1],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(127).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[2],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(191).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[3],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(255).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[4],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(319).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[5],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(383).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[6],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(446).getBitcoinMergedMiningHeader())));
 
-        assertThat(forkDetectionData[7], is((byte)0));
+        assertThat(forkDetectionData[7], is((byte) 0));
 
-        assertThat(forkDetectionData[8], is((byte)0));
-        assertThat(forkDetectionData[9], is((byte)0));
-        assertThat(forkDetectionData[10], is((byte)2));
-        assertThat(forkDetectionData[11], is((byte)0));
+        assertThat(forkDetectionData[8], is((byte) 0));
+        assertThat(forkDetectionData[9], is((byte) 0));
+        assertThat(forkDetectionData[10], is((byte) 2));
+        assertThat(forkDetectionData[11], is((byte) 0));
     }
 
     @Test
@@ -142,27 +182,48 @@ public class ForkDataDetectionCalculatorTest {
 
         assertThat(forkDetectionData.length, is(12));
 
-        assertThat(forkDetectionData[0],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(63).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[1],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(127).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[2],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(191).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[3],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(255).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[4],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(319).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[5],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(383).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[6],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(446).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[0],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(63).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[1],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(127).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[2],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(191).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[3],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(255).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[4],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(319).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[5],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(383).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[6],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(446).getBitcoinMergedMiningHeader())));
 
-        assertThat(forkDetectionData[7], is((byte)-120));
+        assertThat(forkDetectionData[7], is((byte) -120));
 
-        assertThat(forkDetectionData[8], is((byte)0));
-        assertThat(forkDetectionData[9], is((byte)0));
-        assertThat(forkDetectionData[10], is((byte)2));
-        assertThat(forkDetectionData[11], is((byte)0));
+        assertThat(forkDetectionData[8], is((byte) 0));
+        assertThat(forkDetectionData[9], is((byte) 0));
+        assertThat(forkDetectionData[10], is((byte) 2));
+        assertThat(forkDetectionData[11], is((byte) 0));
     }
 
     @Test
@@ -176,27 +237,48 @@ public class ForkDataDetectionCalculatorTest {
 
         assertThat(forkDetectionData.length, is(12));
 
-        assertThat(forkDetectionData[0],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(52).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[1],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(116).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[2],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(180).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[3],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(244).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[4],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(308).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[5],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(372).getBitcoinMergedMiningHeader())));
-        assertThat(forkDetectionData[6],
-                is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(436).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[0],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(52).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[1],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(116).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[2],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(180).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[3],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(244).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[4],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(308).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[5],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(372).getBitcoinMergedMiningHeader())));
+        assertThat(
+                forkDetectionData[6],
+                is(
+                        getBtcBlockHashLeastSignificantByte(
+                                trimmedBlocks.get(436).getBitcoinMergedMiningHeader())));
 
-        assertThat(forkDetectionData[7], is((byte)-1));
+        assertThat(forkDetectionData[7], is((byte) -1));
 
-        assertThat(forkDetectionData[8], is((byte)0));
-        assertThat(forkDetectionData[9], is((byte)0));
-        assertThat(forkDetectionData[10], is((byte)2));
-        assertThat(forkDetectionData[11], is((byte)52));
+        assertThat(forkDetectionData[8], is((byte) 0));
+        assertThat(forkDetectionData[9], is((byte) 0));
+        assertThat(forkDetectionData[10], is((byte) 2));
+        assertThat(forkDetectionData[11], is((byte) 52));
     }
 
     private List<Block> createBlockchainWithMaxUnclesAsList(int height) {
@@ -206,8 +288,9 @@ public class ForkDataDetectionCalculatorTest {
     private List<Block> createBlockchainWithUnclesAsList(int height, boolean maxUncles) {
         List<Block> blocksUncles = createBlockchainAsList(height);
         int i = 0;
-        for(Block block : blocksUncles) {
-            when(block.getHeader().getUncleCount()).thenReturn(maxUncles ? MAX_UNCLES : i % MAX_UNCLES);
+        for (Block block : blocksUncles) {
+            when(block.getHeader().getUncleCount())
+                    .thenReturn(maxUncles ? MAX_UNCLES : i % MAX_UNCLES);
             i++;
         }
 
@@ -221,12 +304,12 @@ public class ForkDataDetectionCalculatorTest {
         blockchainAsList.add(previousBlock);
 
         long bitcoinBlockTime = 1557185216L;
-        for(long i = 1; i < height; i++) {
+        for (long i = 1; i < height; i++) {
             Block block = createBlock(i, previousBlock.getHash(), bitcoinBlockTime);
             blockchainAsList.add(block);
 
             // There are 20 RSK blocks per BTC block
-            if(i % 20 == 0) {
+            if (i % 20 == 0) {
                 bitcoinBlockTime++;
             }
 
@@ -238,8 +321,8 @@ public class ForkDataDetectionCalculatorTest {
         return blockchainAsList;
     }
 
-    private Block createGenesisBlock(){
-        BlockHeader header =  mock(BlockHeader.class);
+    private Block createGenesisBlock() {
+        BlockHeader header = mock(BlockHeader.class);
         when(header.isGenesis()).thenReturn(Boolean.TRUE);
         when(header.getNumber()).thenReturn(Long.valueOf(0));
         byte[] rawBlockHash = getRandomHash();
@@ -255,8 +338,8 @@ public class ForkDataDetectionCalculatorTest {
         return block;
     }
 
-    private Block createBlock(long number, Keccak256 parentHash, long bitcoinBlockTime){
-        BlockHeader header =  mock(BlockHeader.class);
+    private Block createBlock(long number, Keccak256 parentHash, long bitcoinBlockTime) {
+        BlockHeader header = mock(BlockHeader.class);
         when(header.getNumber()).thenReturn(number);
         byte[] rawBlockHash = getRandomHash();
         Keccak256 blockHash = new Keccak256(rawBlockHash);
@@ -282,8 +365,9 @@ public class ForkDataDetectionCalculatorTest {
 
     private BtcBlock getBtcBlock(long blockTime) {
         // Use a BTC mainnet header as template for creating BTC blocks
-        String bitcoinBlockHeaderHex = "0000002031dfbd80218f575b9155c7dabe7245519e7f308fb61f0e0000000000000000003b" +
-                "feed041498b5ea8227871ddee7a19a0bba806a2fe755d48a1fa48b6a04dc89c0c2d05c38ff29172ca971f7";
+        String bitcoinBlockHeaderHex =
+                "0000002031dfbd80218f575b9155c7dabe7245519e7f308fb61f0e0000000000000000003b"
+                        + "feed041498b5ea8227871ddee7a19a0bba806a2fe755d48a1fa48b6a04dc89c0c2d05c38ff29172ca971f7";
         byte[] bitcoinBlockByteArray = Hex.decode(bitcoinBlockHeaderHex);
 
         BtcBlock bitcoinBlock = serializer.makeBlock(bitcoinBlockByteArray);

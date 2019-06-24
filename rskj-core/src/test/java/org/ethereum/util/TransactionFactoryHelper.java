@@ -2,14 +2,11 @@ package org.ethereum.util;
 
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 28/02/2018.
- */
+/** Created by ajlopez on 28/02/2018. */
 public class TransactionFactoryHelper {
     public static Account createAccount(int naccount) {
         return new AccountBuilder().name("account" + naccount).build();
@@ -28,7 +25,8 @@ public class TransactionFactoryHelper {
         return tx;
     }
 
-    private static TransactionBuilder getBuilder(Account sender, Account receiver, long nonce, long value) {
+    private static TransactionBuilder getBuilder(
+            Account sender, Account receiver, long nonce, long value) {
         return new TransactionBuilder()
                 .sender(sender)
                 .receiver(receiver)
@@ -45,24 +43,25 @@ public class TransactionFactoryHelper {
         return tx;
     }
 
-    public static Transaction createSampleTransaction(int from, int to, long value, int nonce, BigInteger gasLimit) {
+    public static Transaction createSampleTransaction(
+            int from, int to, long value, int nonce, BigInteger gasLimit) {
         Account sender = createAccount(from);
         Account receiver = createAccount(to);
 
-        Transaction tx = getBuilder(sender, receiver, nonce, value)
-                .gasLimit(gasLimit)
-                .build();
+        Transaction tx = getBuilder(sender, receiver, nonce, value).gasLimit(gasLimit).build();
 
         return tx;
     }
 
-    public static Transaction createSampleTransactionWithGasPrice(int from, int to, long value, int nonce, long gasPrice) {
+    public static Transaction createSampleTransactionWithGasPrice(
+            int from, int to, long value, int nonce, long gasPrice) {
         Account sender = createAccount(from);
         Account receiver = createAccount(to);
 
-        Transaction tx = getBuilder(sender, receiver, nonce, value)
-                .gasPrice(BigInteger.valueOf(gasPrice))
-                .build();
+        Transaction tx =
+                getBuilder(sender, receiver, nonce, value)
+                        .gasPrice(BigInteger.valueOf(gasPrice))
+                        .build();
 
         return tx;
     }
@@ -70,13 +69,14 @@ public class TransactionFactoryHelper {
     public static Transaction createSampleTransactionWithData(int from, int nonce, String data) {
         Account sender = createAccount(from);
 
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiverAddress(new byte[0])
-                .nonce(nonce)
-                .data(data)
-                .gasLimit(BigInteger.valueOf(1000000))
-                .build();
+        Transaction tx =
+                new TransactionBuilder()
+                        .sender(sender)
+                        .receiverAddress(new byte[0])
+                        .nonce(nonce)
+                        .data(data)
+                        .gasLimit(BigInteger.valueOf(1000000))
+                        .build();
 
         return tx;
     }

@@ -18,11 +18,10 @@
 
 package co.rsk.rpc.modules.eth;
 
+import java.util.Arrays;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
 
 public class EthModuleWalletDisabled implements EthModuleWallet {
 

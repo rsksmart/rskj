@@ -22,16 +22,13 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.test.World;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 5/14/2016.
- */
+/** Created by ajlopez on 5/14/2016. */
 public class OneNodeTest {
     private static Block getGenesis() {
         final World world = new World();
@@ -45,8 +42,7 @@ public class OneNodeTest {
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
 
-        for (Block block : blocks)
-            node.receiveMessageFrom(null, new BlockMessage(block));
+        for (Block block : blocks) node.receiveMessageFrom(null, new BlockMessage(block));
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
         Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
@@ -59,11 +55,9 @@ public class OneNodeTest {
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
         List<Block> reverse = new ArrayList<>();
 
-        for (Block block : blocks)
-            reverse.add(0, block);
+        for (Block block : blocks) reverse.add(0, block);
 
-        for (Block block : reverse)
-            node.receiveMessageFrom(null, new BlockMessage(block));
+        for (Block block : reverse) node.receiveMessageFrom(null, new BlockMessage(block));
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
         Assert.assertEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());

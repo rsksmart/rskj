@@ -27,19 +27,16 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.test.World;
 import co.rsk.trie.TrieConverter;
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.List;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
-import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-
-/**
- * Created by ajlopez on 8/6/2016.
- */
+/** Created by ajlopez on 8/6/2016. */
 public class BlockBuilder {
     private Blockchain blockChain;
     private final BlockGenerator blockGenerator;
@@ -97,33 +94,37 @@ public class BlockBuilder {
         return this;
     }
 
-    /**
-     * This has to be called after .parent() in order to have any effect
-     */
+    /** This has to be called after .parent() in order to have any effect */
     public BlockBuilder gasLimit(BigInteger gasLimit) {
         this.gasLimit = BigIntegers.asUnsignedByteArray(gasLimit);
         return this;
     }
 
     public Block build() {
-        Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
+        Block block =
+                blockGenerator.createChildBlock(
+                        parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
         if (blockChain != null) {
             final TestSystemProperties config = new TestSystemProperties();
-            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
-            BlockExecutor executor = new BlockExecutor(
-                    config.getActivationConfig(),
-                    new RepositoryLocator(blockChain.getRepository(), stateRootHandler),
-                    stateRootHandler,
-                    new TransactionExecutorFactory(
-                            config,
-                            blockChain.getBlockStore(),
-                            null,
-                            new BlockFactory(config.getActivationConfig()),
-                            new ProgramInvokeFactoryImpl(),
-                            new PrecompiledContracts(config, btcBlockStoreFactory)
-                    )
-            );
+            StateRootHandler stateRootHandler =
+                    new StateRootHandler(
+                            config.getActivationConfig(),
+                            new TrieConverter(),
+                            new HashMapDB(),
+                            new HashMap<>());
+            BlockExecutor executor =
+                    new BlockExecutor(
+                            config.getActivationConfig(),
+                            new RepositoryLocator(blockChain.getRepository(), stateRootHandler),
+                            stateRootHandler,
+                            new TransactionExecutorFactory(
+                                    config,
+                                    blockChain.getBlockStore(),
+                                    null,
+                                    new BlockFactory(config.getActivationConfig()),
+                                    new ProgramInvokeFactoryImpl(),
+                                    new PrecompiledContracts(config, btcBlockStoreFactory)));
             executor.executeAndFill(block, parent.getHeader());
         }
 

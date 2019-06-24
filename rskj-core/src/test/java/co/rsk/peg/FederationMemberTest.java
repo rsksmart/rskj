@@ -19,29 +19,11 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
+import java.util.Arrays;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.spongycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.mockito.Matchers.any;
 
 public class FederationMemberTest {
     private BtcECKey btcKey;
@@ -83,17 +65,17 @@ public class FederationMemberTest {
 
     @Test
     public void testEquals_sameKeysDifferentCompression() {
-        FederationMember uncompressedMember = new FederationMember(
-                BtcECKey.fromPublicOnly(btcKey.getPubKeyPoint().getEncoded(false)),
-                ECKey.fromPublicOnly(rskKey.getPubKey(false)),
-                ECKey.fromPublicOnly(mstKey.getPubKey(false))
-        );
+        FederationMember uncompressedMember =
+                new FederationMember(
+                        BtcECKey.fromPublicOnly(btcKey.getPubKeyPoint().getEncoded(false)),
+                        ECKey.fromPublicOnly(rskKey.getPubKey(false)),
+                        ECKey.fromPublicOnly(mstKey.getPubKey(false)));
 
-        FederationMember compressedMember = new FederationMember(
-                BtcECKey.fromPublicOnly(btcKey.getPubKeyPoint().getEncoded(true)),
-                ECKey.fromPublicOnly(rskKey.getPubKey(true)),
-                ECKey.fromPublicOnly(mstKey.getPubKey(true))
-        );
+        FederationMember compressedMember =
+                new FederationMember(
+                        BtcECKey.fromPublicOnly(btcKey.getPubKeyPoint().getEncoded(true)),
+                        ECKey.fromPublicOnly(rskKey.getPubKey(true)),
+                        ECKey.fromPublicOnly(mstKey.getPubKey(true)));
 
         Assert.assertTrue(compressedMember.equals(uncompressedMember));
         Assert.assertTrue(uncompressedMember.equals(compressedMember));
@@ -132,6 +114,7 @@ public class FederationMemberTest {
         try {
             FederationMember.KeyType.byValue("whatever");
             Assert.fail();
-        } catch (IllegalArgumentException e) {}
+        } catch (IllegalArgumentException e) {
+        }
     }
 }

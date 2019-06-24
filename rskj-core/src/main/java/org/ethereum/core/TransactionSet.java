@@ -20,7 +20,6 @@ package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,10 +32,14 @@ public class TransactionSet {
     }
 
     public TransactionSet(TransactionSet transactionSet) {
-        this(new HashMap<>(transactionSet.transactionsByHash), new HashMap<>(transactionSet.transactionsByAddress));
+        this(
+                new HashMap<>(transactionSet.transactionsByHash),
+                new HashMap<>(transactionSet.transactionsByAddress));
     }
 
-    public TransactionSet(Map<Keccak256, Transaction> transactionsByHash, Map<RskAddress, List<Transaction>> transactionsByAddress) {
+    public TransactionSet(
+            Map<Keccak256, Transaction> transactionsByHash,
+            Map<RskAddress, List<Transaction>> transactionsByAddress) {
         this.transactionsByHash = transactionsByHash;
         this.transactionsByAddress = transactionsByAddress;
     }
@@ -58,9 +61,13 @@ public class TransactionSet {
             txs = new ArrayList<>();
             this.transactionsByAddress.put(senderAddress, txs);
         } else {
-            Optional<Transaction> optTxToRemove = txs.stream()
-                    .filter(tx -> tx.getNonceAsInteger().equals(transaction.getNonceAsInteger()))
-                    .findFirst();
+            Optional<Transaction> optTxToRemove =
+                    txs.stream()
+                            .filter(
+                                    tx ->
+                                            tx.getNonceAsInteger()
+                                                    .equals(transaction.getNonceAsInteger()))
+                            .findFirst();
 
             if (optTxToRemove.isPresent()) {
                 Transaction txToRemove = optTxToRemove.get();
@@ -99,7 +106,9 @@ public class TransactionSet {
 
     public List<Transaction> getTransactions() {
         return transactionsByHash.values().stream()
-                .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                .collect(
+                        Collectors.collectingAndThen(
+                                Collectors.toList(), Collections::unmodifiableList));
     }
 
     public List<Transaction> getTransactionsWithSender(RskAddress senderAddress) {

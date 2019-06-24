@@ -18,6 +18,8 @@
 
 package co.rsk.net;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
@@ -30,6 +32,8 @@ import co.rsk.validators.BlockCompositeRule;
 import co.rsk.validators.BlockRootValidationRule;
 import co.rsk.validators.BlockUnclesHashValidationRule;
 import co.rsk.validators.DummyBlockValidationRule;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
@@ -38,14 +42,7 @@ import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
-
-/**
- * Created by ajlopez on 5/14/2016.
- */
+/** Created by ajlopez on 5/14/2016. */
 public class OneAsyncNodeTest {
     private static SimpleAsyncNode createNode() {
         final World world = new World();
@@ -55,17 +52,36 @@ public class OneAsyncNodeTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         SimpleChannelManager channelManager = new SimpleChannelManager();
-        SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), channelManager, syncConfiguration,
-                new BlockFactory(config.getActivationConfig()),
-                new DummyBlockValidationRule(),
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants())
-        );
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
+        SyncProcessor syncProcessor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        channelManager,
+                        syncConfiguration,
+                        new BlockFactory(config.getActivationConfig()),
+                        new DummyBlockValidationRule(),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        new DifficultyCalculator(
+                                config.getActivationConfig(), config.getNetworkConstants()));
+        NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        processor,
+                        syncProcessor,
+                        channelManager,
+                        null,
+                        RskMockFactory.getPeerScoringManager(),
+                        new DummyBlockValidationRule());
 
         return new SimpleAsyncNode(handler, syncProcessor, channelManager);
     }
@@ -82,8 +98,7 @@ public class OneAsyncNodeTest {
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
 
-        for (Block block : blocks)
-            node.receiveMessageFrom(null, new BlockMessage(block));
+        for (Block block : blocks) node.receiveMessageFrom(null, new BlockMessage(block));
 
         node.waitExactlyNTasksWithTimeout(10);
         node.joinWithTimeout();
@@ -100,11 +115,9 @@ public class OneAsyncNodeTest {
 
         List<Block> reverse = new ArrayList<>();
 
-        for (Block block : blocks)
-            reverse.add(0, block);
+        for (Block block : blocks) reverse.add(0, block);
 
-        for (Block block : reverse)
-            node.receiveMessageFrom(null, new BlockMessage(block));
+        for (Block block : reverse) node.receiveMessageFrom(null, new BlockMessage(block));
 
         node.waitExactlyNTasksWithTimeout(10);
         node.joinWithTimeout();

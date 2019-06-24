@@ -20,6 +20,13 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
@@ -29,14 +36,6 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-
 public class JSONReader {
 
     private static final TestSystemProperties config = new TestSystemProperties();
@@ -45,7 +44,9 @@ public class JSONReader {
     public static String loadJSON(String filename) {
         String json = "";
         if (!config.vmTestLoadLocal())
-            json = getFromUrl("https://raw.githubusercontent.com/ethereum/tests/develop/" + filename);
+            json =
+                    getFromUrl(
+                            "https://raw.githubusercontent.com/ethereum/tests/develop/" + filename);
         return json.isEmpty() ? getFromLocal(filename) : json;
     }
 
@@ -63,7 +64,12 @@ public class JSONReader {
     public static String loadJSONFromCommit(String filename, String shacommit) {
         String json = "";
         if (!config.vmTestLoadLocal())
-            json = getFromUrl("https://raw.githubusercontent.com/ethereum/tests/" + shacommit + "/" + filename);
+            json =
+                    getFromUrl(
+                            "https://raw.githubusercontent.com/ethereum/tests/"
+                                    + shacommit
+                                    + "/"
+                                    + filename);
         if (!json.isEmpty()) json = json.replaceAll("//", "data");
         return json.isEmpty() ? getFromLocal(filename) : json;
     }
@@ -72,8 +78,8 @@ public class JSONReader {
         System.out.println("Loading local file: " + filename);
         try {
             File vmTestFile = new File(filename);
-            if (!vmTestFile.exists()){
-                System.out.println(" Error: no file: " +filename);
+            if (!vmTestFile.exists()) {
+                System.out.println(" Error: no file: " + filename);
                 System.exit(1);
             }
             return new String(Files.readAllBytes(vmTestFile.toPath()));
@@ -109,9 +115,10 @@ public class JSONReader {
         return result.toString();
     }
 
-    public static String getTestBlobForTreeSha(String shacommit, String testcase){
+    public static String getTestBlobForTreeSha(String shacommit, String testcase) {
 
-        String result = getFromUrl("https://api.github.com/repos/ethereum/tests/git/trees/" + shacommit);
+        String result =
+                getFromUrl("https://api.github.com/repos/ethereum/tests/git/trees/" + shacommit);
 
         JSONParser parser = new JSONParser();
         JSONObject testSuiteObj = null;
@@ -119,27 +126,29 @@ public class JSONReader {
         List<String> fileNames = new ArrayList<String>();
         try {
             testSuiteObj = (JSONObject) parser.parse(result);
-            JSONArray tree = (JSONArray)testSuiteObj.get("tree");
+            JSONArray tree = (JSONArray) testSuiteObj.get("tree");
 
             for (Object oEntry : tree) {
                 JSONObject entry = (JSONObject) oEntry;
                 String testName = (String) entry.get("path");
-                if ( testName.equals(testcase) ) {
-                    String blobresult = getFromUrl( (String) entry.get("url") );
+                if (testName.equals(testcase)) {
+                    String blobresult = getFromUrl((String) entry.get("url"));
 
                     testSuiteObj = (JSONObject) parser.parse(blobresult);
-                    String blob  = (String) testSuiteObj.get("content");
-                    byte[] valueDecoded= Base64.decodeBase64(blob.getBytes() );
-                    //System.out.println("Decoded value is " + new String(valueDecoded));
+                    String blob = (String) testSuiteObj.get("content");
+                    byte[] valueDecoded = Base64.decodeBase64(blob.getBytes());
+                    // System.out.println("Decoded value is " + new String(valueDecoded));
                     return new String(valueDecoded);
                 }
             }
-        } catch (ParseException e) {e.printStackTrace();}
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
 
         return "";
     }
 
-    public static List<String> getFileNamesForTreeSha(String sha){
+    public static List<String> getFileNamesForTreeSha(String sha) {
 
         String result = getFromUrl("https://api.github.com/repos/ethereum/tests/git/trees/" + sha);
 
@@ -149,14 +158,16 @@ public class JSONReader {
         List<String> fileNames = new ArrayList<String>();
         try {
             testSuiteObj = (JSONObject) parser.parse(result);
-            JSONArray tree = (JSONArray)testSuiteObj.get("tree");
+            JSONArray tree = (JSONArray) testSuiteObj.get("tree");
 
             for (Object oEntry : tree) {
                 JSONObject entry = (JSONObject) oEntry;
                 String testName = (String) entry.get("path");
                 fileNames.add(testName);
             }
-        } catch (ParseException e) {e.printStackTrace();}
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
 
         return fileNames;
     }

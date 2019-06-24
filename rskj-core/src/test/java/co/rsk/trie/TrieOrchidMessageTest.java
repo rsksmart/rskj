@@ -22,9 +22,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 11/01/2017.
- */
+/** Created by ajlopez on 11/01/2017. */
 public class TrieOrchidMessageTest {
     @Test
     public void emptyTrieToMessage() {
@@ -44,7 +42,7 @@ public class TrieOrchidMessageTest {
 
     @Test
     public void trieWithValueToMessage() {
-        Trie trie = new Trie().put(new byte[0], new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(new byte[0], new byte[] {1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -86,7 +84,7 @@ public class TrieOrchidMessageTest {
 
     @Test
     public void trieWithSubtrieAndNoValueToMessage() {
-        Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(new byte[] {0x2}, new byte[] {1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -110,8 +108,10 @@ public class TrieOrchidMessageTest {
 
     @Test
     public void trieWithSubtriesAndNoValueToMessage() {
-        Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
-                .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
+        Trie trie =
+                new Trie()
+                        .put(new byte[] {0x2}, new byte[] {1, 2, 3, 4})
+                        .put(new byte[] {0x12}, new byte[] {1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -147,7 +147,7 @@ public class TrieOrchidMessageTest {
         byte[] oldKey = new byte[0];
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
-        Trie trie = new Trie().put(key, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(key, new byte[] {1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(true);
 
@@ -160,8 +160,7 @@ public class TrieOrchidMessageTest {
         Assert.assertEquals(1, message[4]);
         Assert.assertEquals(0, message[5]);
 
-        for (int k = 0; k < key.length; k++)
-            Assert.assertEquals(key[k], message[6 + k]);
+        for (int k = 0; k < key.length; k++) Assert.assertEquals(key[k], message[6 + k]);
 
         Assert.assertEquals(1, message[34 + 4]);
         Assert.assertEquals(2, message[34 + 5]);
@@ -187,8 +186,7 @@ public class TrieOrchidMessageTest {
         Assert.assertEquals(1, message[4]);
         Assert.assertEquals(0, message[5]);
 
-        for (int k = 0; k < key.length; k++)
-            Assert.assertEquals(key[k], message[6 + k]);
+        for (int k = 0; k < key.length; k++) Assert.assertEquals(key[k], message[6 + k]);
 
         byte[] valueHash = trie.getValueHash().getBytes();
 
@@ -199,10 +197,10 @@ public class TrieOrchidMessageTest {
 
     @Test
     public void trieWithSubtrieAndNoValueToMessageSecure() {
-        byte[] oldKey = new byte[] { 0x02 };
+        byte[] oldKey = new byte[] {0x02};
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
-        Trie trie = new Trie().put(key, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(key, new byte[] {1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(true);
 
@@ -215,8 +213,7 @@ public class TrieOrchidMessageTest {
         Assert.assertEquals(1, message[4]);
         Assert.assertEquals(0, message[5]);
 
-        for (int k = 0; k < key.length; k++)
-            Assert.assertEquals(key[k], message[6 + k]);
+        for (int k = 0; k < key.length; k++) Assert.assertEquals(key[k], message[6 + k]);
 
         Assert.assertEquals(1, message[34 + 4]);
         Assert.assertEquals(2, message[34 + 5]);
@@ -226,9 +223,10 @@ public class TrieOrchidMessageTest {
 
     @Test
     public void trieWithSubtriesAndNoValueToMessageSecure() {
-        Trie trie = new Trie()
-                .put(Keccak256Helper.keccak256(new byte[] { 0x2 }), new byte[] { 1, 2, 3, 4 })
-                .put(Keccak256Helper.keccak256(new byte[] { 0x12 }), new byte[] { 1, 2, 3, 4 });
+        Trie trie =
+                new Trie()
+                        .put(Keccak256Helper.keccak256(new byte[] {0x2}), new byte[] {1, 2, 3, 4})
+                        .put(Keccak256Helper.keccak256(new byte[] {0x12}), new byte[] {1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(true);
 
