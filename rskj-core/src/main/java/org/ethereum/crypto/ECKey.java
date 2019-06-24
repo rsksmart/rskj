@@ -779,7 +779,8 @@ public class ECKey {
         //
         // More concisely, what these points mean is to use X as a compressed public key.
         ECCurve.Fp curve = (ECCurve.Fp) CURVE.getCurve();
-        BigInteger prime = curve.getQ();  // Bouncy Castle is not consistent about the letter it uses for the prime.
+        // Bouncy Castle is not consistent about the letter it uses for the prime.
+        BigInteger prime = curve.getQ();
         if (x.compareTo(prime) >= 0) {
             // Cannot have point co-ordinates larger than this as everything takes place modulo Q.
             return null;

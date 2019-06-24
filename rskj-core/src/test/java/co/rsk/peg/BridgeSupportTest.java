@@ -167,7 +167,8 @@ public class BridgeSupportTest {
 
         InputStream checkpointsStream = bridgeSupport.getCheckPoints();
         CheckpointManager manager = new CheckpointManager(bridgeConstants.getBtcParams(), checkpointsStream);
-        long time = bridgeSupport.getActiveFederation().getCreationTime().toEpochMilli() - 604800L; // The magic number is a substraction CheckpointManager does when getting the checkpoints.
+        // The magic number is a substraction CheckpointManager does when getting the checkpoints.
+        long time = bridgeSupport.getActiveFederation().getCreationTime().toEpochMilli() - 604800L;
         StoredBlock checkpoint = manager.getCheckpointBefore(time);
 
         Assert.assertEquals(checkpoint.getHeight(), bridgeSupport.getBtcBlockchainBestChainHeight());

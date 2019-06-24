@@ -1151,7 +1151,8 @@ public class BridgeStorageProviderTest {
         });
 
         Assert.assertSame(electionMock, storageProvider.getFederationElection(authorizerMock));
-        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        Assert.assertEquals(2, calls.size());
     }
 
     @Test
@@ -1180,7 +1181,8 @@ public class BridgeStorageProviderTest {
         ABICallElection result = storageProvider.getFederationElection(authorizerMock);
         Assert.assertSame(authorizerMock, Whitebox.getInternalState(result, "authorizer"));
         Assert.assertEquals(0, result.getVotes().size());
-        Assert.assertEquals(1, calls.size()); // getStorageBytes is the only one called (can't be the other way around)
+        // getStorageBytes is the only one called (can't be the other way around)
+        Assert.assertEquals(1, calls.size());
     }
 
     @Test
@@ -1282,7 +1284,9 @@ public class BridgeStorageProviderTest {
                 });
 
         Assert.assertEquals(whitelistMock.getAll(), storageProvider.getLockWhitelist().getAll());
-        Assert.assertEquals(4, calls.size()); // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes (we call getStorageBytes twice)
+        // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes (we call
+        // getStorageBytes twice)
+        Assert.assertEquals(4, calls.size());
     }
 
     @Test
@@ -1320,7 +1324,8 @@ public class BridgeStorageProviderTest {
         LockWhitelist result = storageProvider.getLockWhitelist();
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.getSize().intValue());
-        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        Assert.assertEquals(2, calls.size());
     }
 
     @Test
@@ -1460,7 +1465,8 @@ public class BridgeStorageProviderTest {
         });
 
         Assert.assertSame(requestQueueMock, storageProvider.getReleaseRequestQueue());
-        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        Assert.assertEquals(2, calls.size());
     }
 
     @Test
@@ -1491,7 +1497,8 @@ public class BridgeStorageProviderTest {
         });
 
         Assert.assertSame(transactionSetMock, storageProvider.getReleaseTransactionSet());
-        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        Assert.assertEquals(2, calls.size());
     }
 
     @Test

@@ -595,8 +595,8 @@ public class OpCodes {
     /**
      * (cxf1) Message-call into an account
      */
-    static final byte OP_CALL =(byte)0xf1  ;     //       [out_data_size] [out_data_start] [in_data_size] [in_data_start] [value] [to_addr]
-    // [gas] CALL
+    // [out_data_size] [out_data_start] [in_data_size] [in_data_start] [value] [to_addr] [gas] CALL
+    static final byte OP_CALL =(byte)0xf1  ;
     /**
      * (0xf2) Calls self but grabbing the code from the
      * TO argument instead of from one's own address

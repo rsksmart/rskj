@@ -178,9 +178,11 @@ public class BridgeSerializationUtilsTest {
         sampleBuilder.append("02"); // Length of first element
         sampleBuilder.append("02"); // Length of second element
         sampleBuilder.append("cd"); // Length of third element
-        sampleBuilder.append("1388"); // First element (creation date -> 5000 milliseconds from epoch)
+        // First element (creation date -> 5000 milliseconds from epoch)
+        sampleBuilder.append("1388");
         sampleBuilder.append("002a"); // Second element block number 42
-        sampleBuilder.append("06212121212121"); // third element (inner list, public keys). 6 elements of 33 bytes (0x21 bytes) each.
+        // third element (inner list, public keys). 6 elements of 33 bytes (0x21 bytes) each.
+        sampleBuilder.append("06212121212121");
         for (int i = 0; i < publicKeyBytes.length; i++) {
             sampleBuilder.append(Hex.toHexString(publicKeyBytes[i]));
         }
@@ -209,7 +211,8 @@ public class BridgeSerializationUtilsTest {
         sampleBuilder.append("01"); // Length of second element
         sampleBuilder.append("01"); // Length of third element
         sampleBuilder.append("04"); // Length of fourth element
-        sampleBuilder.append("1388"); // First element (creation date -> 5000 milliseconds from epoch)
+        // First element (creation date -> 5000 milliseconds from epoch)
+        sampleBuilder.append("1388");
         sampleBuilder.append("03"); // Second element (# of signatures required - 3)
         sampleBuilder.append("03"); // Third element
         sampleBuilder.append("aabbccdd"); // Fourth element
@@ -638,7 +641,8 @@ public class BridgeSerializationUtilsTest {
         sampleBuilder.append("07");
         sampleBuilder.append("01");
 
-        sampleBuilder.append("03010101aabbcc"); // Invalid call spec, should have exactly two elements
+        // Invalid call spec, should have exactly two elements
+        sampleBuilder.append("03010101aabbcc");
         sampleBuilder.append("aa"); // Doesn't matter
 
         byte[] sample = Hex.decode(sampleBuilder.toString());
@@ -704,7 +708,9 @@ public class BridgeSerializationUtilsTest {
                 .toArray(byte[][]::new);
 
         StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("09140314031403140302"); // 9 elements: 8 of 20 bytes (0x14 bytes) and 3 bytes interleaved plus one more element of 2 bytes
+        // 9 elements: 8 of 20 bytes (0x14 bytes) and 3 bytes interleaved plus one more element of 2
+        // bytes
+        sampleBuilder.append("09140314031403140302");
         for (int i = 0; i < addressesBytes.length; i++) {
             sampleBuilder.append(Hex.toHexString(addressesBytes[i]));
             sampleBuilder.append("0186a0"); // Coin.MILLICOIN

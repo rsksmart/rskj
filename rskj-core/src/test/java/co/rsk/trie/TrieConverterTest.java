@@ -37,41 +37,42 @@ import java.util.Arrays;
 import static org.hamcrest.Matchers.is;
 
 /**
- * This tests take serialized Orchid tries coming from that version of the Repository and check if the state root is the
- * expected. These serializations where performed on top of the ORCHID-0.6.1 codebase replicating the same operations.
- * This is an example for generating {@link SERIALIZED_ORCHID_TRIESTORE_SIMPLE}:
+ * This tests take serialized Orchid tries coming from that version of the Repository and check if
+ * the state root is the expected. These serializations where performed on top of the ORCHID-0.6.1
+ * codebase replicating the same operations. This is an example for generating {@link
+ * SERIALIZED_ORCHID_TRIESTORE_SIMPLE}:
  *
- * {@code
- *     public void test1Simple() {
- *         Random random = new Random(0);
- *         Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
- *              new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
- *         Repository track = repository.startTracking();
+ * <pre>{@code
+ * public void test1Simple() {
+ *     Random random = new Random(0);
+ *     Repository repository = new RepositoryImpl(new TrieImpl(new TrieStoreImpl(new HashMapDB()), true),
+ *          new HashMapDB(), new TrieStorePoolOnMemory(), config.detailsInMemoryStorageLimit());
+ *     Repository track = repository.startTracking();
  *
- *         int maxAccounts = 10;
- *         int maxStorageRows = 5;
- *         for (int i = 0; i < maxAccounts; i++) {
- *             RskAddress addr = new RskAddress(randomBytes(random, 20));;
- *             track.createAccount(addr);
- *             AccountState a = track.getAccountState(addr);
- *             a.setNonce(new BigInteger(4 * 8,random));
- *             a.addToBalance(new Coin(BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(random.nextInt(1000)))));
- *             track.updateAccountState(addr, a);
- *             if (i >= maxAccounts / 2) {
- *                 // half of them are contracts
- *                 for (int s = 0; s < maxStorageRows; s++) {
- *                     track.addStorageBytes(addr, new DataWord(randomBytes(random, 32)), randomBytes(random, random.nextInt(40) + 1));
- *                 }
- *                 track.saveCode(addr, randomCode(random, 60));
+ *     int maxAccounts = 10;
+ *     int maxStorageRows = 5;
+ *     for (int i = 0; i < maxAccounts; i++) {
+ *         RskAddress addr = new RskAddress(randomBytes(random, 20));;
+ *         track.createAccount(addr);
+ *         AccountState a = track.getAccountState(addr);
+ *         a.setNonce(new BigInteger(4 * 8,random));
+ *         a.addToBalance(new Coin(BigInteger.TEN.pow(18).multiply(BigInteger.valueOf(random.nextInt(1000)))));
+ *         track.updateAccountState(addr, a);
+ *         if (i >= maxAccounts / 2) {
+ *             // half of them are contracts
+ *             for (int s = 0; s < maxStorageRows; s++) {
+ *                 track.addStorageBytes(addr, new DataWord(randomBytes(random, 32)), randomBytes(random, random.nextInt(40) + 1));
  *             }
+ *             track.saveCode(addr, randomCode(random, 60));
  *         }
- *
- *         track.commit();
- *         repository.flush();
- *
- *         System.out.println(Hex.toHexString(repository.getRoot()));
  *     }
+ *
+ *     track.commit();
+ *     repository.flush();
+ *
+ *     System.out.println(Hex.toHexString(repository.getRoot()));
  * }
+ * }</pre>
  */
 public class TrieConverterTest {
     // This is only to easily identify codes while debugging the trie.

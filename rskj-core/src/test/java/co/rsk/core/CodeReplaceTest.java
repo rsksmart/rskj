@@ -66,15 +66,24 @@ public class CodeReplaceTest {
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
 
-        String asm ="0x14 0x0C 0x00 CODECOPY " + // (7b) Extract real code into address 0, skip first 12 bytes, copy 20 bytes
-                "0x14 0x00  RETURN " + // (5b) offset 0, size 0x14, now return the first code
-                "HEADER !0x01 !0x01 !0x00 "+ // (4b) header script v1
-                "0x00 CALLDATALOAD " + // (3b) store at offset 0, read data from offset 0. Transfer 32 bytes
-                "0x00 MSTORE " + // (3b) store the data at address 0
-                // We replace TWO TIMES to make sure that only the last replacement takes place
-                "0x01 0x00 CODEREPLACE " + // (5b) set new code: offset 0, size 1 bytes.
-                // This is the good one.
-                "0x10 0x00 CODEREPLACE"; // (5b) set new code: offset 0, size 16 bytes.
+        String asm =
+                // (7b) Extract real code into address 0, skip first 12 bytes, copy 20 bytes
+                "0x14 0x0C 0x00 CODECOPY "
+                        // (5b) offset 0, size 0x14, now return the first code
+                        + "0x14 0x00  RETURN "
+                        // (4b) header script v1
+                        + "HEADER !0x01 !0x01 !0x00 "
+                        // (3b) store at offset 0, read data from offset 0. Transfer 32 bytes
+                        + "0x00 CALLDATALOAD "
+                        // (3b) store the data at address 0
+                        + "0x00 MSTORE "
+                        // We replace TWO TIMES to make sure that only the last replacement takes
+                        // place
+                        // (5b) set new code: offset 0, size 1 bytes.
+                        + "0x01 0x00 CODEREPLACE "
+                        // This is the good one.
+                        // (5b) set new code: offset 0, size 16 bytes.
+                        + "0x10 0x00 CODEREPLACE";
 
         EVMAssembler assembler = new EVMAssembler();
         byte[] code = assembler.assemble(asm);
@@ -91,10 +100,13 @@ public class CodeReplaceTest {
 
         // Note that this code does not have a header, then its version == 0
         String asm2 =
-                    "0xFF 0x00 MSTORE "+ // (5b) Store at address 0x00, the value 0xFF
-                    "0x01 0x1F RETURN " + // (5b) And return such value 0xFF, at offset 0x1F
-                    // fill with nops to make it 16 bytes in length
-                    "STOP STOP STOP STOP STOP STOP"; // 16
+                // (5b) Store at address 0x00, the value 0xFF
+                "0xFF 0x00 MSTORE "
+                        // (5b) And return such value 0xFF, at offset 0x1F fill with nops to make it
+                        // 16 bytes in length
+                        + "0x01 0x1F RETURN "
+                        // 16
+                        + "STOP STOP STOP STOP STOP STOP";
 
         byte[] code2 = assembler.assemble(asm2);
 
@@ -130,11 +142,17 @@ public class CodeReplaceTest {
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
 
         String asm =
-                "HEADER !0x01 !0x01 !0x00 "+ // (4b) header script v1
-                "0x01 0x00 CODEREPLACE "+ // (5b) we attempt to replace the code
-                "0x01 0x15 0x00 CODECOPY " + // (7b) Extract real code into address 0, skip first 12 bytes, copy 1 bytes
-                "0x01 0x00  RETURN " + // (5b) offset 0, size 0x01, now return the first code
-                "STOP "; // (1b) REAL code to install
+                // (4b) header script v1
+                "HEADER !0x01 !0x01 !0x00 "
+                        // (5b) we attempt to replace the code
+                        + "0x01 0x00 CODEREPLACE "
+                        // (7b) Extract real code into address 0, skip first 12 bytes, copy 1
+                        // bytes
+                        + "0x01 0x15 0x00 CODECOPY "
+                        // (5b) offset 0, size 0x01, now return the first code
+                        + "0x01 0x00  RETURN "
+                        // (1b) REAL code to install
+                        + "STOP ";
 
         EVMAssembler assembler = new EVMAssembler();
         byte[] code = assembler.assemble(asm);
@@ -162,15 +180,24 @@ public class CodeReplaceTest {
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
 
-        String asm ="0x14 0x0C 0x00 CODECOPY " + // (7b) Extract real code into address 0, skip first 12 bytes, copy 20 bytes
-                "0x14 0x00  RETURN " + // (5b) offset 0, size 0x14, now return the first code
-                "HEADER !0x01 !0x01 !0x00 "+ // (4b) header script v1
-                "0x00 CALLDATALOAD " + // (3b) store at offset 0, read data from offset 0. Transfer 32 bytes
-                "0x00 MSTORE " + // (3b) store the data at address 0
-                // We replace TWO TIMES to make sure that only the last replacement takes place
-                "0x01 0x00 CODEREPLACE " + // (5b) set new code: offset 0, size 1 bytes.
-                // This is the good one.
-                "0x10 0x00 CODEREPLACE"; // (5b) set new code: offset 0, size 16 bytes.
+        String asm =
+                // (7b) Extract real code into address 0, skip first 12 bytes, copy 20 bytes
+                "0x14 0x0C 0x00 CODECOPY "
+                        // (5b) offset 0, size 0x14, now return the first code
+                        + "0x14 0x00  RETURN "
+                        // (4b) header script v1
+                        + "HEADER !0x01 !0x01 !0x00 "
+                        // (3b) store at offset 0, read data from offset 0. Transfer 32 bytes
+                        + "0x00 CALLDATALOAD "
+                        // (3b) store the data at address 0
+                        + "0x00 MSTORE "
+                        // We replace TWO TIMES to make sure that only the last replacement takes
+                        // place
+                        // (5b) set new code: offset 0, size 1 bytes.
+                        + "0x01 0x00 CODEREPLACE "
+                        // This is the good one.
+                        // (5b) set new code: offset 0, size 16 bytes.
+                        + "0x10 0x00 CODEREPLACE";
 
         EVMAssembler assembler = new EVMAssembler();
         byte[] code = assembler.assemble(asm);
@@ -186,10 +213,13 @@ public class CodeReplaceTest {
         Assert.assertTrue(Arrays.equals(expectedCode, installedCode));
 
         String asm2 =
-                "0xFF 0x00 MSTORE "+ // (5b) Store at address 0x00, the value 0xFF
-                        "0x01 0x1F RETURN " + // (5b) And return such value 0xFF, at offset 0x1F
-                        // fill with nops to make it 16 bytes in length
-                        "STOP STOP STOP STOP STOP STOP"; // 16
+                // (5b) Store at address 0x00, the value 0xFF
+                "0xFF 0x00 MSTORE "
+                        // (5b) And return such value 0xFF, at offset 0x1F fill with nops to make it
+                        // 16 bytes in length
+                        + "0x01 0x1F RETURN "
+                        // 16
+                        + "STOP STOP STOP STOP STOP STOP";
 
         byte[] code2 = assembler.assemble(asm2);
 
@@ -197,7 +227,8 @@ public class CodeReplaceTest {
         TransactionExecutor executor2 = executeTransaction(blockchain, tx2);
         // code remains the same
         Assert.assertTrue(Arrays.equals(code2, code2));
-        Assert.assertEquals(0, executor2.getResult().getCodeChanges().size()); // there is no code change
+        // there is no code change
+        Assert.assertEquals(0, executor2.getResult().getCodeChanges().size());
         // invalid opcode exception
         Assert.assertNotNull(executor2.getResult().getException());
 

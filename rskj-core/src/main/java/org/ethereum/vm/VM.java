@@ -766,7 +766,8 @@ public class VM {
         // EXECUTION PHASE
         DataWord codeLength;
         if (op == OpCode.CODESIZE) {
-            codeLength = DataWord.valueOf(program.getCode().length); // during initialization it will return the initialization code size
+            // during initialization it will return the initialization code size
+            codeLength = DataWord.valueOf(program.getCode().length);
         } else {
             DataWord address = program.stackPop();
             codeLength = DataWord.valueOf(program.getCodeLengthAt(address));

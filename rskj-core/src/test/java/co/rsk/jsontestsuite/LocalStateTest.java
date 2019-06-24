@@ -374,7 +374,8 @@ public class LocalStateTest {
         //  PUSH 0
         //  PUSH MSIZE
         //  SSTORE (Stores MSIZE at persistent cell 0)
-        excluded.add("mload32bitBound_Msize"); // Tries to store something in address 4294967295. This causes OOG in RSK
+        // Tries to store something in address 4294967295. This causes OOG in RSK
+        excluded.add("mload32bitBound_Msize");
 
         String json = getJSON("stMemoryStressTest");
 

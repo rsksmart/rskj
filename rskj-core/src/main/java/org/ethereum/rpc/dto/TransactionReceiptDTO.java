@@ -33,14 +33,22 @@ import static org.ethereum.rpc.TypeConverter.toJsonHex;
  */
 public class TransactionReceiptDTO {
 
-    public String transactionHash;      // hash of the transaction.
-    public String transactionIndex;     // integer of the transactions index position in the block.
-    public String blockHash;            // hash of the block where this transaction was in.
-    public String blockNumber;          // block number where this transaction was in.
-    public String cumulativeGasUsed;    // The total amount of gas used when this transaction was executed in the block.
-    public String gasUsed;              //The amount of gas used by this specific transaction alone.
-    public String contractAddress;      // The contract address created, if the transaction was a contract creation, otherwise  null .
-    public LogFilterElement[] logs;  // Array of log objects, which this transaction generated.
+    // hash of the transaction.
+    public String transactionHash;
+    // integer of the transactions index position in the block.
+    public String transactionIndex;
+    // hash of the block where this transaction was in.
+    public String blockHash;
+    // block number where this transaction was in.
+    public String blockNumber;
+    // The total amount of gas used when this transaction was executed in the block.
+    public String cumulativeGasUsed;
+    // The amount of gas used by this specific transaction alone.
+    public String gasUsed;
+    // The contract address created, if the transaction was a contract creation, otherwise null.
+    public String contractAddress;
+    // Array of log objects, which this transaction generated.
+    public LogFilterElement[] logs;
     public String from;
     public String to;
     public String root;

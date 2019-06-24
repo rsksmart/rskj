@@ -616,8 +616,8 @@ public enum OpCode {
     /**
      * (cxf1) Message-call into an account
      */
-    CALL(0xf1, 7, 1, SPECIAL_TIER),     //       [out_data_size] [out_data_start] [in_data_size] [in_data_start] [value] [to_addr]
-    // [gas] CALL
+    // [out_data_size] [out_data_start] [in_data_size] [in_data_start] [value] [to_addr] [gas] CALL
+    CALL(0xf1, 7, 1, SPECIAL_TIER),
     /**
      * (0xf2) Calls self, but grabbing the code from the
      * TO argument instead of from one's own address

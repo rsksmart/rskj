@@ -32,7 +32,8 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 /**
  * This class holds the Orchid account state encoding logic
  */
-@SuppressWarnings("squid:S2384") // this class is left for TrieConverter, we don't need to copy the byte[] arguments
+// this class is left for TrieConverter, we don't need to copy the byte[] arguments
+@SuppressWarnings("squid:S2384")
 public class OrchidAccountState {
     private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 

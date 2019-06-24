@@ -65,20 +65,27 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
         public String hash; // DATA, 32 Bytes - hash of the block. null when its pending block.
         public String parentHash; // DATA, 32 Bytes - hash of the parent block.
         public String sha3Uncles; // DATA, 32 Bytes - SHA3 of the uncles data in the block.
-        public String logsBloom; // DATA, 256 Bytes - the bloom filter for the logs of the block. null when its pending block.
-        public String transactionsRoot; // DATA, 32 Bytes - the root of the transaction trie of the block.
+        // DATA, 256 Bytes - the bloom filter for the logs of the block. null when its pending
+        // block.
+        public String logsBloom;
+        // DATA, 32 Bytes - the root of the transaction trie of the block.
+        public String transactionsRoot;
         public String stateRoot; // DATA, 32 Bytes - the root of the final state trie of the block.
         public String receiptsRoot; // DATA, 32 Bytes - the root of the receipts trie of the block.
-        public String miner; // DATA, 20 Bytes - the address of the beneficiary to whom the mining rewards were given.
+        // DATA, 20 Bytes - the address of the beneficiary to whom the mining rewards were given.
+        public String miner;
         public String difficulty; // QUANTITY - integer of the difficulty for this block.
-        public String totalDifficulty; // QUANTITY - integer of the total difficulty of the chain until this block.
+        // QUANTITY - integer of the total difficulty of the chain until this block.
+        public String totalDifficulty;
         public String extraData; // DATA - the "extra data" field of this block
-        public String size;//QUANTITY - integer the size of this block in bytes.
-        public String gasLimit;//: QUANTITY - the maximum gas allowed in this block.
+        public String size; // QUANTITY - integer the size of this block in bytes.
+        public String gasLimit; // : QUANTITY - the maximum gas allowed in this block.
         public String gasUsed; // QUANTITY - the total used gas by all transactions in this block.
-        public String timestamp; //: QUANTITY - the unix timestamp for when the block was collated.
-        public Object[] transactions; //: Array - Array of transaction objects, or 32 Bytes transaction hashes depending on the last given parameter.
-        public String[] uncles; //: Array - Array of uncle hashes.
+        public String timestamp; // : QUANTITY - the unix timestamp for when the block was collated.
+        // : Array - Array of transaction objects, or 32 Bytes transaction hashes depending on the
+        // last given parameter.
+        public Object[] transactions;
+        public String[] uncles; // : Array - Array of uncle hashes.
         public String minimumGasPrice;
 
         @Override

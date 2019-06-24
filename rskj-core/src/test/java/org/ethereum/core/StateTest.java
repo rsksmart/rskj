@@ -80,7 +80,8 @@ public class StateTest {
         byte[] codeData = Hex.decode("61778e600054");
         AccountState account_2 = new AccountState(BigInteger.ZERO, Coin.valueOf(1000));
 
-        byte[] contractAddress = Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051"); // generated based on sender + nonce
+        // generated based on sender + nonce
+        byte[] contractAddress = Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051");
         trie = trie.put(contractAddress, account_2.getEncoded());
 
 //        this is saved in the db

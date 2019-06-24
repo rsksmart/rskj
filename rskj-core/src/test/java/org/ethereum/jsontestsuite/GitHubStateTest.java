@@ -148,9 +148,12 @@ public class GitHubStateTest {
     @Test
     public void stMemoryStressTest() throws ParseException, IOException {
         Set<String> excluded = new HashSet<>();
-        excluded.add("mload32bitBound_return2");// The test extends memory to 4Gb which can't be handled with Java arrays
-        excluded.add("mload32bitBound_return"); // The test extends memory to 4Gb which can't be handled with Java arrays
-        excluded.add("mload32bitBound_Msize"); // The test extends memory to 4Gb which can't be handled with Java arrays
+        // The test extends memory to 4Gb which can't be handled with Java arrays
+        excluded.add("mload32bitBound_return2");
+        // The test extends memory to 4Gb which can't be handled with Java arrays
+        excluded.add("mload32bitBound_return");
+        // The test extends memory to 4Gb which can't be handled with Java arrays
+        excluded.add("mload32bitBound_Msize");
         String json = JSONReader.loadJSONFromCommit("StateTests/stMemoryStressTest.json", shacommit);
         GitHubJSONTestSuite.runStateTest(json, excluded);
 

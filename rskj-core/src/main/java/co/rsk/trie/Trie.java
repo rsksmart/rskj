@@ -1184,7 +1184,8 @@ public class Trie {
          * return the leftmost node that has not yet been visited that node is normally on top of the stack
          */
         @Override
-        @SuppressWarnings("squid:S2272") // NoSuchElementException is thrown by {@link Deque#pop()} when it's empty
+        // NoSuchElementException is thrown by {@link Deque#pop()} when it's empty
+        @SuppressWarnings("squid:S2272")
         public IterationElement next() {
             IterationElement visitingElement = visiting.pop();
             Trie node = visitingElement.getNode();
@@ -1235,7 +1236,8 @@ public class Trie {
         }
 
         @Override
-        @SuppressWarnings("squid:S2272") // NoSuchElementException is thrown by {@link Deque#pop()} when it's empty
+        // NoSuchElementException is thrown by {@link Deque#pop()} when it's empty
+        @SuppressWarnings("squid:S2272")
         public IterationElement next() {
             IterationElement visitingElement = visiting.pop();
             Trie node = visitingElement.getNode();
@@ -1285,12 +1287,14 @@ public class Trie {
         }
 
         @Override
-        @SuppressWarnings("squid:S2272") // NoSuchElementException is thrown by {@link Deque#element()} when it's empty
+        // NoSuchElementException is thrown by {@link Deque#element()} when it's empty
+        @SuppressWarnings("squid:S2272")
         public IterationElement next() {
             IterationElement visitingElement = visiting.element();
             Trie node = visitingElement.getNode();
             Trie rightNode = node.retrieveNode((byte) 0x01);
-            if (rightNode == null || visitingRightChild.peek()) { // no right subtree, or right subtree already visited
+            // no right subtree, or right subtree already visited
+            if (rightNode == null || visitingRightChild.peek()) {
                 // already visited right child, time to visit the node on top
                 visiting.removeFirst(); // it was already picked
                 visitingRightChild.removeFirst(); // it was already picked
