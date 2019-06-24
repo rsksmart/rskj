@@ -1,5 +1,6 @@
 plugins {
     id "org.sonarqube" version "2.7.1"
+    id 'com.diffplug.gradle.spotless' version '3.23.1'
 }
 
 subprojects {
