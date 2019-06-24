@@ -14,7 +14,8 @@ jobs:
       - run: gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
       - run: ./configure.sh
       - run: ./gradlew --no-daemon dependencies
-      - run: ./gradlew --no-daemon --stacktrace build
+      - run: ./gradlew --no-daemon assemble
+      - run: ./gradlew --no-daemon check
       - run:
           name: Run SonarQube analysis
           # https://community.sonarsource.com/t/no-code-or-issue-found-in-pull-request-decorations-github-circleci/8496
