@@ -20,14 +20,11 @@ package co.rsk.rpc.modules.eth.subscribe;
 import co.rsk.jsonrpc.JsonRpcResult;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.ethereum.rpc.TypeConverter;
-
 import java.security.SecureRandom;
 import java.util.Arrays;
+import org.ethereum.rpc.TypeConverter;
 
-/**
- * The subscription id DTO for JSON serialization purposes.
- */
+/** The subscription id DTO for JSON serialization purposes. */
 public class SubscriptionId extends JsonRpcResult {
     private final byte[] id;
 

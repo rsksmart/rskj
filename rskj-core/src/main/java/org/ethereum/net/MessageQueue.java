@@ -19,9 +19,14 @@
 
 package org.ethereum.net;
 
+import static org.ethereum.net.message.StaticMessages.DISCONNECT_MESSAGE;
+
+import co.rsk.panic.PanicProcessor;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import co.rsk.panic.PanicProcessor;
+import java.util.Queue;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.message.ReasonCode;
@@ -31,24 +36,13 @@ import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Queue;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.ethereum.net.message.StaticMessages.DISCONNECT_MESSAGE;
-
 /**
  * This class contains the logic for sending messages in a queue
  *
- * Messages open by send and answered by receive of appropriate message
- *      PING by PONG
- *      GET_PEERS by PEERS
- *      GET_TRANSACTIONS by TRANSACTIONS
- *      GET_BLOCK_HASHES by BLOCK_HASHES
- *      GET_BLOCKS by BLOCKS
+ * <p>Messages open by send and answered by receive of appropriate message PING by PONG GET_PEERS by
+ * PEERS GET_TRANSACTIONS by TRANSACTIONS GET_BLOCK_HASHES by BLOCK_HASHES GET_BLOCKS by BLOCKS
  *
- * The following messages will not be answered:
- *      PONG, PEERS, HELLO, STATUS, TRANSACTIONS, BLOCKS
+ * <p>The following messages will not be answered: PONG, PEERS, HELLO, STATUS, TRANSACTIONS, BLOCKS
  *
  * @author Roman Mandeleil
  */
@@ -57,13 +51,16 @@ public class MessageQueue {
     private static final Logger logger = LoggerFactory.getLogger("net");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private static final ScheduledExecutorService timer = Executors.newScheduledThreadPool(4, new ThreadFactory() {
-        private AtomicInteger cnt = new AtomicInteger(0);
+    private static final ScheduledExecutorService timer =
+            Executors.newScheduledThreadPool(
+                    4,
+                    new ThreadFactory() {
+                        private AtomicInteger cnt = new AtomicInteger(0);
 
-        public Thread newThread(Runnable r) {
-            return new Thread(r, "MessageQueueTimer-" + cnt.getAndIncrement());
-        }
-    });
+                        public Thread newThread(Runnable r) {
+                            return new Thread(r, "MessageQueueTimer-" + cnt.getAndIncrement());
+                        }
+                    });
 
     private Queue<MessageRoundtrip> requestQueue = new LinkedBlockingQueue<>();
     private Queue<MessageRoundtrip> respondQueue = new LinkedBlockingQueue<>();
@@ -73,21 +70,27 @@ public class MessageQueue {
     private ScheduledFuture<?> timerTask;
     private Channel channel;
 
-    public MessageQueue() {
-    }
+    public MessageQueue() {}
 
     public void activate(ChannelHandlerContext ctx) {
         this.ctx = ctx;
-        timerTask = timer.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                try {
-                    nudgeQueue();
-                } catch (Throwable t) {
-                    logger.error("Unhandled exception", t);
-                    panicProcessor.panic("messagequeue", String.format("Unhandled exception %s", t.toString()));
-                }
-            }
-        }, 10, 10, TimeUnit.MILLISECONDS);
+        timerTask =
+                timer.scheduleAtFixedRate(
+                        new Runnable() {
+                            public void run() {
+                                try {
+                                    nudgeQueue();
+                                } catch (Throwable t) {
+                                    logger.error("Unhandled exception", t);
+                                    panicProcessor.panic(
+                                            "messagequeue",
+                                            String.format("Unhandled exception %s", t.toString()));
+                                }
+                            }
+                        },
+                        10,
+                        10,
+                        TimeUnit.MILLISECONDS);
     }
 
     public void setChannel(Channel channel) {
@@ -103,7 +106,8 @@ public class MessageQueue {
             hasPing = true;
         }
 
-        Queue<MessageRoundtrip> queue = msg.getAnswerMessage() != null ? requestQueue : respondQueue;
+        Queue<MessageRoundtrip> queue =
+                msg.getAnswerMessage() != null ? requestQueue : respondQueue;
         queue.add(new MessageRoundtrip(msg));
     }
 
@@ -136,8 +140,8 @@ public class MessageQueue {
                 if (waitingMessage instanceof EthMessage) {
                     channel.getPeerStats().pong(messageRoundtrip.lastTimestamp);
                 }
-                logger.trace("Message round trip covered: [{}] ",
-                        messageRoundtrip.getMsg().getClass());
+                logger.trace(
+                        "Message round trip covered: [{}] ", messageRoundtrip.getMsg().getClass());
             }
         }
     }

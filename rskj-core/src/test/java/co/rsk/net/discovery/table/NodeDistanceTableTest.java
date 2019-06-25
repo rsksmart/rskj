@@ -19,21 +19,21 @@
 package co.rsk.net.discovery.table;
 
 import co.rsk.net.NodeID;
+import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.util.List;
-
-/**
- * Created by mario on 21/02/17.
- */
+/** Created by mario on 21/02/17. */
 public class NodeDistanceTableTest {
 
-    private static final String NODE_ID_1 = "826fbe97bc03c7c09d7b7d05b871282d8ac93d4446d44b55566333b240dd06260a9505f0fd3247e63d84d557f79bb63691710e40d4d9fc39f3bfd5397bcea065";
-    private static final String NODE_ID_2 = "3c7931f323989425a1e56164043af0dff567f33df8c67d4c6918647535f88798d54bc864b936d8c77d4096e8b8485b6061b0d0d2b708cd9154e6dcf981533261";
-    private static final String NODE_ID_3 = "e229918d45c131e130c91c4ea51c97ab4f66cfbd0437b35c92392b5c2b3d44b28ea15b84a262459437c955f6cc7f10ad1290132d3fc866bfaf4115eac0e8e860";
+    private static final String NODE_ID_1 =
+            "826fbe97bc03c7c09d7b7d05b871282d8ac93d4446d44b55566333b240dd06260a9505f0fd3247e63d84d557f79bb63691710e40d4d9fc39f3bfd5397bcea065";
+    private static final String NODE_ID_2 =
+            "3c7931f323989425a1e56164043af0dff567f33df8c67d4c6918647535f88798d54bc864b936d8c77d4096e8b8485b6061b0d0d2b708cd9154e6dcf981533261";
+    private static final String NODE_ID_3 =
+            "e229918d45c131e130c91c4ea51c97ab4f66cfbd0437b35c92392b5c2b3d44b28ea15b84a262459437c955f6cc7f10ad1290132d3fc866bfaf4115eac0e8e860";
     private static final NodeID EMPTY_NODE_ID = new NodeID(new byte[0]);
 
     private static final String HOST = "localhost";
@@ -44,11 +44,11 @@ public class NodeDistanceTableTest {
     @Test
     public void creation() {
         Node localNode = new Node(Hex.decode(NODE_ID_1), HOST, PORT_1);
-        NodeDistanceTable table = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
+        NodeDistanceTable table =
+                new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
         Assert.assertTrue(table != null);
         Assert.assertEquals(0, table.getClosestNodes(EMPTY_NODE_ID).size());
     }
-
 
     @Test
     public void addNode() {
@@ -56,7 +56,8 @@ public class NodeDistanceTableTest {
         Node node2 = new Node(Hex.decode(NODE_ID_2), HOST, PORT_2);
         Node node3 = new Node(Hex.decode(NODE_ID_3), HOST, PORT_3);
 
-        NodeDistanceTable table = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
+        NodeDistanceTable table =
+                new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
 
         OperationResult result = table.addNode(node3);
         Assert.assertTrue(result.isSuccess());
@@ -72,7 +73,8 @@ public class NodeDistanceTableTest {
 
         NodeDistanceTable smallerTable = new NodeDistanceTable(KademliaOptions.BINS, 1, localNode);
 
-        //If a bucket is full, the operations fails (returns false) and we get a candidate for eviction
+        // If a bucket is full, the operations fails (returns false) and we get a candidate for
+        // eviction
         result = smallerTable.addNode(node3);
         Assert.assertTrue(result.isSuccess());
         Node sameDistanceNode = new Node(Hex.decode("00"), HOST, PORT_3);
@@ -87,19 +89,20 @@ public class NodeDistanceTableTest {
         Node node2 = new Node(Hex.decode(NODE_ID_2), HOST, PORT_2);
         Node node3 = new Node(Hex.decode(NODE_ID_3), HOST, PORT_3);
 
-        NodeDistanceTable table = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
+        NodeDistanceTable table =
+                new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
 
         OperationResult result = table.addNode(node2);
         Assert.assertTrue(result.isSuccess());
 
         Assert.assertEquals(1, table.getClosestNodes(EMPTY_NODE_ID).size());
 
-        //Try to remove a node that was never added
+        // Try to remove a node that was never added
         result = table.removeNode(node3);
         Assert.assertFalse(result.isSuccess());
         Assert.assertEquals(1, table.getClosestNodes(EMPTY_NODE_ID).size());
 
-        //Add and remove node
+        // Add and remove node
         result = table.addNode(node3);
         Assert.assertTrue(result.isSuccess());
         Assert.assertEquals(2, table.getClosestNodes(EMPTY_NODE_ID).size());
@@ -107,7 +110,7 @@ public class NodeDistanceTableTest {
         Assert.assertTrue(result.isSuccess());
         Assert.assertEquals(1, table.getClosestNodes(EMPTY_NODE_ID).size());
 
-        //Leave the table empty
+        // Leave the table empty
         result = table.removeNode(node2);
         Assert.assertTrue(result.isSuccess());
         Assert.assertEquals(0, table.getClosestNodes(EMPTY_NODE_ID).size());
@@ -119,7 +122,8 @@ public class NodeDistanceTableTest {
         Node node2 = new Node(Hex.decode(NODE_ID_2), HOST, PORT_2);
         Node node3 = new Node(Hex.decode(NODE_ID_3), HOST, PORT_3);
 
-        NodeDistanceTable table = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node1);
+        NodeDistanceTable table =
+                new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node1);
 
         Assert.assertTrue(table.addNode(node1).isSuccess());
         Assert.assertTrue(table.addNode(node2).isSuccess());
@@ -138,5 +142,4 @@ public class NodeDistanceTableTest {
         Assert.assertTrue(d1 <= d2);
         Assert.assertTrue(d2 <= d3);
     }
-
 }

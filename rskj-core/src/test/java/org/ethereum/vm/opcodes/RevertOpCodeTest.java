@@ -4,10 +4,9 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import java.io.FileNotFoundException;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.FileNotFoundException;
 
 public class RevertOpCodeTest {
     /*
@@ -43,7 +42,8 @@ public class RevertOpCodeTest {
     */
 
     @Test
-    public void runFullContractThenRunAndRevert() throws FileNotFoundException, DslProcessorException {
+    public void runFullContractThenRunAndRevert()
+            throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/opcode_revert1.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -56,7 +56,8 @@ public class RevertOpCodeTest {
     }
 
     @Test
-    public void runAndRevertThenRunFullContract() throws FileNotFoundException, DslProcessorException {
+    public void runAndRevertThenRunFullContract()
+            throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/opcode_revert2.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -67,5 +68,4 @@ public class RevertOpCodeTest {
         Assert.assertTrue(!world.getTransactionByName("tx02").isContractCreation());
         Assert.assertTrue(!world.getTransactionByName("tx03").isContractCreation());
     }
-
 }

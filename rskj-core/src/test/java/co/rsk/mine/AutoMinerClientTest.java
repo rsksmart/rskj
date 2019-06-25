@@ -18,13 +18,13 @@
 
 package co.rsk.mine;
 
-import co.rsk.bitcoinj.core.BtcBlock;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
+
+import co.rsk.bitcoinj.core.BtcBlock;
+import org.junit.Before;
+import org.junit.Test;
 
 public class AutoMinerClientTest {
 
@@ -46,13 +46,15 @@ public class AutoMinerClientTest {
     public void minesBlock() {
         MinerWork work = mock(MinerWork.class);
         when(work.getBlockHashForMergedMining()).thenReturn("0x404142");
-        when(work.getTarget()).thenReturn("0x10000000000000000000000000000000000000000000000000000000000000");
+        when(work.getTarget())
+                .thenReturn("0x10000000000000000000000000000000000000000000000000000000000000");
         when(minerServer.getWork()).thenReturn(work);
         autoMinerClient.start();
 
         assertThat(autoMinerClient.isMining(), is(true));
         assertThat(autoMinerClient.mineBlock(), is(true));
-        verify(minerServer, times(1)).submitBitcoinBlock(eq(work.getBlockHashForMergedMining()), any(BtcBlock.class));
+        verify(minerServer, times(1))
+                .submitBitcoinBlock(eq(work.getBlockHashForMergedMining()), any(BtcBlock.class));
     }
 
     @Test

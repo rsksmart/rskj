@@ -18,14 +18,11 @@
 
 package co.rsk.net.discovery.table;
 
-import org.ethereum.net.rlpx.Node;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import org.ethereum.net.rlpx.Node;
 
-/**
- * Created by mario on 21/02/17.
- */
+/** Created by mario on 21/02/17. */
 public class Bucket {
     private Map<String, BucketEntry> entries;
     private final int bucketSize;

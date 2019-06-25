@@ -24,14 +24,13 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import co.rsk.peg.PegTestUtils;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.*;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.*;
 
 @Ignore
 public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
@@ -46,8 +45,7 @@ public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                 getInitializer(),
                 Helper.getZeroValueRandomSenderTxBuilder(),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
 
         BridgePerformanceTest.addStats(stats);
     }
@@ -64,7 +62,8 @@ public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
             try {
                 txsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
             } catch (IOException e) {
-                throw new RuntimeException("Exception while trying to gather txs waiting for signatures for storage initialization");
+                throw new RuntimeException(
+                        "Exception while trying to gather txs waiting for signatures for storage initialization");
             }
 
             int numTxs = Helper.randomInRange(minNumTxs, maxNumTxs);
@@ -87,11 +86,15 @@ public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                     inputTx.addOutput(inputAmount, federation.getAddress());
                     releaseTx
                             .addInput(inputTx.getOutput(0))
-                            .setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+                            .setScriptSig(
+                                    PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(
+                                            federation));
                 }
 
-
-                Keccak256 rskTxHash = new Keccak256(HashUtil.keccak256(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
+                Keccak256 rskTxHash =
+                        new Keccak256(
+                                HashUtil.keccak256(
+                                        BigInteger.valueOf(new Random().nextLong()).toByteArray()));
                 txsWaitingForSignatures.put(rskTxHash, releaseTx);
             }
         };

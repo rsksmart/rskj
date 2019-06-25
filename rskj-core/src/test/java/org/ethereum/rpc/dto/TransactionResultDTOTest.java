@@ -18,23 +18,23 @@
 
 package org.ethereum.rpc.dto;
 
-import co.rsk.remasc.RemascTransaction;
-import org.ethereum.core.Block;
-import org.junit.Test;
-
-import java.util.Random;
-
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+
+import co.rsk.remasc.RemascTransaction;
+import java.util.Random;
+import org.ethereum.core.Block;
+import org.junit.Test;
 
 public class TransactionResultDTOTest {
     @Test
     public void remascAddressSerialization() {
         RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
 
-        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction);
+        TransactionResultDTO dto =
+                new TransactionResultDTO(mock(Block.class), 42, remascTransaction);
         assertThat(dto.from, is("0x0000000000000000000000000000000000000000"));
         assertThat(dto.r, is(nullValue()));
         assertThat(dto.s, is(nullValue()));

@@ -1,10 +1,8 @@
 package org.ethereum.solidity;
 
+import java.math.BigInteger;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.security.InvalidParameterException;
 
 public class SolidityTypeTest {
 
@@ -23,7 +21,8 @@ public class SolidityTypeTest {
             // Only acceptable exception
         }
 
-        // Enough room for the length of the array (32b), the length of the first element (32b) and 2 bytes for the actual string ("hi")
+        // Enough room for the length of the array (32b), the length of the first element (32b) and
+        // 2 bytes for the actual string ("hi")
         input = new byte[98];
 
         // how many elements has the array
@@ -66,8 +65,6 @@ public class SolidityTypeTest {
         } catch (IllegalArgumentException e) {
             // Only acceptable exception
         }
-
-
     }
 
     @Test
@@ -79,25 +76,25 @@ public class SolidityTypeTest {
         // how many elements has the array
         input[31] = 0x03;
         // the size of the first element of the array
-        input[63] = (byte)0x60; // how many bytes I have to offset
+        input[63] = (byte) 0x60; // how many bytes I have to offset
         input[159] = 0x02; // indicating we have 2 characters should work
         // the actual data
         input[160] = 0x68;
         input[161] = 0x69;
         // the size of the second element of the array
-        input[95] = (byte)0x83; // how many bytes I have to offset
+        input[95] = (byte) 0x83; // how many bytes I have to offset
         input[194] = 0x02; // indicating we have 2 characters should work
         // the actual data
         input[195] = 0x69;
         input[196] = 0x68;
         // the size of the third element of the array
-        input[127] = (byte)0xA5; // how many bytes I have to offset
+        input[127] = (byte) 0xA5; // how many bytes I have to offset
         input[228] = 0x02; // indicating we have 2 characters should work
         // the actual data
         input[229] = 0x68;
         input[230] = 0x75;
 
-        Object[] ret = (Object[])dat.decode(input, 0);
+        Object[] ret = (Object[]) dat.decode(input, 0);
         Assert.assertTrue(ret.length == 3);
         Assert.assertTrue(ret[0].toString().contains("hi"));
         Assert.assertTrue(ret[1].toString().contains("ih"));
@@ -117,8 +114,7 @@ public class SolidityTypeTest {
             input[33] = 0x69;
             dat.decode(input, 0);
             Assert.fail("should have failed");
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             // Only acceptable exception
         }
         try {
@@ -131,8 +127,7 @@ public class SolidityTypeTest {
             input[33] = 0x69;
             dat.decode(input, 0);
             Assert.fail("should have failed");
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             // Only acceptable exception
         }
     }
@@ -189,10 +184,8 @@ public class SolidityTypeTest {
         try {
             Math.addExact(Integer.MAX_VALUE, 1);
             Assert.fail("should have failed");
-        }
-        catch (ArithmeticException e) {
+        } catch (ArithmeticException e) {
             // This is the only exception that this method should throw
         }
     }
-
 }

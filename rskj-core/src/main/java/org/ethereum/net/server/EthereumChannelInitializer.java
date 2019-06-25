@@ -28,6 +28,8 @@ import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.socket.SocketChannelConfig;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import java.net.InetAddress;
+import java.util.concurrent.TimeUnit;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
@@ -40,9 +42,6 @@ import org.ethereum.net.rlpx.HandshakeHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.InetAddress;
-import java.util.concurrent.TimeUnit;
 
 public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChannel> {
 
@@ -85,30 +84,53 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
     @Override
     public void initChannel(NioSocketChannel ch) {
         try {
-            logger.info("Open {} connection, channel: {}", isInbound() ? "inbound" : "outbound", ch);
+            logger.info(
+                    "Open {} connection, channel: {}", isInbound() ? "inbound" : "outbound", ch);
 
             if (isInbound()) {
                 InetAddress address = ch.remoteAddress().getAddress();
                 if (channelManager.isRecentlyDisconnected(address)) {
                     // avoid too frequent connection attempts
-                    logger.info("Drop connection - the same IP was disconnected recently, channel: {}", ch);
+                    logger.info(
+                            "Drop connection - the same IP was disconnected recently, channel: {}",
+                            ch);
                     ch.disconnect();
                     return;
                 } else if (!channelManager.isAddressBlockAvailable(address)) {
                     // avoid too many connection from same block address
-                    logger.info("IP range is full, IP {} is not accepted for new connection", address);
+                    logger.info(
+                            "IP range is full, IP {} is not accepted for new connection", address);
                     ch.disconnect();
                     return;
                 }
             }
 
             MessageQueue messageQueue = new MessageQueue();
-            P2pHandler p2pHandler = new P2pHandler(ethereumListener, messageQueue, config.getPeerP2PPingInterval());
+            P2pHandler p2pHandler =
+                    new P2pHandler(ethereumListener, messageQueue, config.getPeerP2PPingInterval());
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
-            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
-            Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId);
+            HandshakeHandler handshakeHandler =
+                    new HandshakeHandler(
+                            config,
+                            peerScoringManager,
+                            p2pHandler,
+                            messageCodec,
+                            configCapabilities);
+            Channel channel =
+                    new Channel(
+                            messageQueue,
+                            messageCodec,
+                            nodeManager,
+                            rskWireProtocolFactory,
+                            eth62MessageFactory,
+                            staticMessages,
+                            remoteId);
 
-            ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
+            ch.pipeline()
+                    .addLast(
+                            "readTimeoutHandler",
+                            new ReadTimeoutHandler(
+                                    config.peerChannelReadTimeout(), TimeUnit.SECONDS));
             ch.pipeline().addLast("handshakeHandler", handshakeHandler);
 
             handshakeHandler.setRemoteId(remoteId, channel);

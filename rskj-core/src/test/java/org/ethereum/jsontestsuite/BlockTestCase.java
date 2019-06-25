@@ -19,12 +19,11 @@
 
 package org.ethereum.jsontestsuite;
 
+import java.util.List;
+import java.util.Map;
 import org.ethereum.jsontestsuite.model.AccountTck;
 import org.ethereum.jsontestsuite.model.BlockHeaderTck;
 import org.ethereum.jsontestsuite.model.BlockTck;
-
-import java.util.List;
-import java.util.Map;
 
 public class BlockTestCase {
 
@@ -36,8 +35,7 @@ public class BlockTestCase {
     private String lastblockhash;
     private int noBlockChainHistory;
 
-    public BlockTestCase() {
-    }
+    public BlockTestCase() {}
 
     public String getLastblockhash() {
         return lastblockhash;
@@ -93,10 +91,13 @@ public class BlockTestCase {
 
     @Override
     public String toString() {
-        return "BlockTestCase{" +
-                "blocks=" + blocks +
-                ", genesisBlockHeader=" + genesisBlockHeader +
-                ", pre=" + pre +
-                '}';
+        return "BlockTestCase{"
+                + "blocks="
+                + blocks
+                + ", genesisBlockHeader="
+                + genesisBlockHeader
+                + ", pre="
+                + pre
+                + '}';
     }
 }

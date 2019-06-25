@@ -18,17 +18,14 @@
 
 package org.ethereum.rpc;
 
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
+
+import java.util.Arrays;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.LogInfo;
 
-import java.util.Arrays;
-
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
-
-/**
- * Created by ajlopez on 5/4/2016.
- */
+/** Created by ajlopez on 5/4/2016. */
 public class LogFilterElement {
     public String logIndex;
     public String blockNumber;
@@ -55,15 +52,30 @@ public class LogFilterElement {
 
     @Override
     public String toString() {
-        return "LogFilterElement{" +
-                "logIndex='" + logIndex + '\'' +
-                ", blockNumber='" + blockNumber + '\'' +
-                ", blockHash='" + blockHash + '\'' +
-                ", transactionHash='" + transactionHash + '\'' +
-                ", transactionIndex='" + transactionIndex + '\'' +
-                ", address='" + address + '\'' +
-                ", data='" + data + '\'' +
-                ", topics=" + Arrays.toString(topics) +
-                '}';
+        return "LogFilterElement{"
+                + "logIndex='"
+                + logIndex
+                + '\''
+                + ", blockNumber='"
+                + blockNumber
+                + '\''
+                + ", blockHash='"
+                + blockHash
+                + '\''
+                + ", transactionHash='"
+                + transactionHash
+                + '\''
+                + ", transactionIndex='"
+                + transactionIndex
+                + '\''
+                + ", address='"
+                + address
+                + '\''
+                + ", data='"
+                + data
+                + '\''
+                + ", topics="
+                + Arrays.toString(topics)
+                + '}';
     }
 }

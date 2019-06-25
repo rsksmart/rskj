@@ -20,32 +20,31 @@ package co.rsk.test.builderstest;
 
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 08/08/2016.
- */
+/** Created by ajlopez on 08/08/2016. */
 public class TransactionBuilderTest {
     @Test
     public void buildTransaction() {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .value(BigInteger.TEN)
-                .nonce(2)
-                .build();
+        Transaction tx =
+                new TransactionBuilder()
+                        .sender(sender)
+                        .receiver(receiver)
+                        .value(BigInteger.TEN)
+                        .nonce(2)
+                        .build();
 
         Assert.assertNotNull(tx);
         Assert.assertArrayEquals(sender.getAddress().getBytes(), tx.getSender().getBytes());
-        Assert.assertArrayEquals(receiver.getAddress().getBytes(), tx.getReceiveAddress().getBytes());
+        Assert.assertArrayEquals(
+                receiver.getAddress().getBytes(), tx.getReceiveAddress().getBytes());
         Assert.assertEquals(BigInteger.TEN, tx.getValue().asBigInteger());
         Assert.assertEquals(BigInteger.ONE, tx.getGasPrice().asBigInteger());
         Assert.assertEquals(BigInteger.valueOf(2), new BigInteger(1, tx.getNonce()));

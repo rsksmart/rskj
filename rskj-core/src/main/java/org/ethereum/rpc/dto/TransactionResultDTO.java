@@ -21,17 +21,14 @@ package org.ethereum.rpc.dto;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
+import java.util.Arrays;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 
-import java.util.Arrays;
-
-/**
- * Created by Ruben on 8/1/2016.
- */
+/** Created by Ruben on 8/1/2016. */
 public class TransactionResultDTO {
 
     public String hash;
@@ -65,7 +62,8 @@ public class TransactionResultDTO {
         transactionIndex = index != null ? TypeConverter.toJsonHex(index) : null;
         from = addressToJsonHex(tx.getSender());
         to = addressToJsonHex(tx.getReceiveAddress());
-        gas = TypeConverter.toJsonHex(tx.getGasLimit()); // Todo: unclear if it's the gas limit or gas consumed what is asked
+        // Todo: unclear if it's the gas limit or gas consumed what is asked
+        gas = TypeConverter.toJsonHex(tx.getGasLimit());
 
         gasPrice = TypeConverter.toJsonHex(tx.getGasPrice().getBytes());
 

@@ -32,7 +32,8 @@ public class UnlimitedWhiteListEntry implements LockWhitelistEntry {
     }
 
     public void consume() {
-        // Unlimited whitelisting means that the entries are never fully consumed so nothing to do here
+        // Unlimited whitelisting means that the entries are never fully consumed so nothing to do
+        // here
     }
 
     public boolean isConsumed() {

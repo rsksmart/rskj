@@ -18,7 +18,8 @@
 package co.rsk;
 
 /**
- * The entry interface of an RSK node. Think of full node, federate node, and maybe others in the future.
+ * The entry interface of an RSK node. Think of full node, federate node, and maybe others in the
+ * future.
  */
 public interface NodeRunner {
     void run() throws Exception;

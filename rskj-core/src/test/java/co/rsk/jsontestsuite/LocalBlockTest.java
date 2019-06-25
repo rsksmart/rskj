@@ -19,6 +19,8 @@
 package co.rsk.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
+import java.io.IOException;
+import java.util.Collections;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
@@ -27,9 +29,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import java.io.IOException;
-import java.util.Collections;
 
 /**
  * @author Angel J Lopez
@@ -46,7 +45,10 @@ public class LocalBlockTest {
     }
 
     private void run(String name) throws IOException, ParseException {
-        String json = JSONReader.loadJSONFromResource("json/BlockchainTests/" + name + ".json", LocalBlockTest.class.getClassLoader());
+        String json =
+                JSONReader.loadJSONFromResource(
+                        "json/BlockchainTests/" + name + ".json",
+                        LocalBlockTest.class.getClassLoader());
         GitHubJSONTestSuite.runGitHubJsonBlockTest(json, Collections.EMPTY_SET);
     }
 
@@ -55,7 +57,9 @@ public class LocalBlockTest {
     public void runSingleTest() throws ParseException, IOException {
         config.setGenesisInfo("frontier.json");
 
-        String json = JSONReader.loadJSONFromResource("json/BlockchainTests/bcValidBlockTest.json", loader);
+        String json =
+                JSONReader.loadJSONFromResource(
+                        "json/BlockchainTests/bcValidBlockTest.json", loader);
         GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(json, "RecallSuicidedContractInOneBlock");
     }
 

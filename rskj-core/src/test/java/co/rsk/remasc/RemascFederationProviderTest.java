@@ -9,9 +9,7 @@ import org.ethereum.core.Genesis;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 14/11/2017.
- */
+/** Created by ajlopez on 14/11/2017. */
 public class RemascFederationProviderTest {
     @Test
     public void getDefaultFederationSize() {
@@ -31,14 +29,14 @@ public class RemascFederationProviderTest {
 
     private static RemascFederationProvider getRemascFederationProvider() {
         Genesis genesisBlock = new BlockGenerator().getGenesisBlock();
-        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
+        BlockChainBuilder builder =
+                new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
         Blockchain blockchain = builder.build();
 
         return new RemascFederationProvider(
                 ActivationConfigsForTest.all(),
                 BridgeRegTestConstants.getInstance(),
                 blockchain.getRepository(),
-                blockchain.getBestBlock()
-        );
+                blockchain.getBestBlock());
     }
 }

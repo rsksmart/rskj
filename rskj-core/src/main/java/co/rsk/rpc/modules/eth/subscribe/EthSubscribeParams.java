@@ -21,18 +21,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
 import java.util.Objects;
 
-@JsonFormat(shape=JsonFormat.Shape.ARRAY)
+@JsonFormat(shape = JsonFormat.Shape.ARRAY)
 @JsonPropertyOrder({"subscription"})
 public class EthSubscribeParams {
 
     private final EthSubscribeTypes subscription;
 
     @JsonCreator
-    public EthSubscribeParams(
-            @JsonProperty("subscription") EthSubscribeTypes subscription) {
+    public EthSubscribeParams(@JsonProperty("subscription") EthSubscribeTypes subscription) {
         this.subscription = Objects.requireNonNull(subscription);
     }
 

@@ -16,17 +16,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package co.rsk.net.discovery.message;
+
+import static org.ethereum.crypto.HashUtil.keccak256;
 
 import co.rsk.net.discovery.PeerDiscoveryException;
 import org.ethereum.util.FastByteComparisons;
 
-import static org.ethereum.crypto.HashUtil.keccak256;
-
-/**
- * Created by mario on 13/02/17.
- */
+/** Created by mario on 13/02/17. */
 public class MessageDecoder {
 
     public static final String MDC_CHECK_FAILED = "MDC check failed";
@@ -58,17 +55,11 @@ public class MessageDecoder {
         }
 
         return PeerDiscoveryMessageFactory.createMessage(wire, mdc, signature, type, data);
-  }
+    }
 
-  public static int check(byte[] wire, byte[] mdc) {
-      byte[] mdcCheck = keccak256(wire, 32, wire.length - 32);
+    public static int check(byte[] wire, byte[] mdc) {
+        byte[] mdcCheck = keccak256(wire, 32, wire.length - 32);
 
-      return FastByteComparisons.compareTo(
-              mdc,
-              0,
-              mdc.length,
-              mdcCheck,
-              0,
-              mdcCheck.length);
-  }
+        return FastByteComparisons.compareTo(mdc, 0, mdc.length, mdcCheck, 0, mdcCheck.length);
+    }
 }

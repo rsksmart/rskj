@@ -28,70 +28,46 @@ import org.ethereum.sync.SyncStatistics;
  * Describes interface required by Eth peer clients
  *
  * @see org.ethereum.net.server.Channel
- *
  * @author Mikhail Kalinin
  * @since 20.08.2015
  */
 public interface Eth {
 
-    /**
-     * @return true if StatusMessage was processed, false otherwise
-     */
+    /** @return true if StatusMessage was processed, false otherwise */
     boolean hasStatusPassed();
 
-    /**
-     * @return true if Status has succeeded
-     */
+    /** @return true if Status has succeeded */
     boolean hasStatusSucceeded();
 
-    /**
-     * Executes cleanups required to be done
-     * during shutdown, e.g. disconnect
-     */
+    /** Executes cleanups required to be done during shutdown, e.g. disconnect */
     void onShutdown();
 
-    /**
-     * @return true if syncState is IDLE, false otherwise
-     */
+    /** @return true if syncState is IDLE, false otherwise */
     boolean isIdle();
 
-    /**
-     * @return sync statistics
-     */
+    /** @return sync statistics */
     SyncStatistics getStats();
 
-    /**
-     * Disables pending transaction processing
-     */
+    /** Disables pending transaction processing */
     void disableTransactions();
 
-    /**
-     * Enables pending transaction processing
-     */
+    /** Enables pending transaction processing */
     void enableTransactions();
 
-    /**
-     * @return protocol version
-     */
+    /** @return protocol version */
     EthVersion getVersion();
 
     /**
      * Fires inner logic related to long sync done or undone event
      *
-     * @param done true notifies that long sync is finished,
-     *             false notifies that it's enabled again
+     * @param done true notifies that long sync is finished, false notifies that it's enabled again
      */
     void onSyncDone(boolean done);
 
-    /**
-     * Sends {@link EthMessageCodes#STATUS} message
-     */
+    /** Sends {@link EthMessageCodes#STATUS} message */
     void sendStatus();
 
-    /**
-     * Drops connection with remote peer.
-     * It should be called when peer don't behave
-     */
+    /** Drops connection with remote peer. It should be called when peer don't behave */
     void dropConnection();
 
     // Send eth message directly

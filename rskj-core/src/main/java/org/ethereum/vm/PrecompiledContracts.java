@@ -18,6 +18,7 @@ package org.ethereum.vm;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import static org.ethereum.util.ByteUtil.*;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
@@ -28,6 +29,10 @@ import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.remasc.RemascContract;
+import java.math.BigInteger;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -39,15 +44,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
-
-import java.math.BigInteger;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.ethereum.util.ByteUtil.*;
-
-
 
 /**
  * @author Roman Mandeleil
@@ -62,18 +58,22 @@ public class PrecompiledContracts {
     public static final String BIG_INT_MODEXP_ADDR_STR = "0000000000000000000000000000000000000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
-    public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
+    public static final String HD_WALLET_UTILS_ADDR_STR =
+            "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
 
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
     public static final DataWord RIPEMPD160_ADDR_DW = DataWord.valueFromHex(RIPEMPD160_ADDR_STR);
     public static final DataWord IDENTITY_ADDR_DW = DataWord.valueFromHex(IDENTITY_ADDR_STR);
-    public static final DataWord BIG_INT_MODEXP_ADDR_DW = DataWord.valueFromHex(BIG_INT_MODEXP_ADDR_STR);
+    public static final DataWord BIG_INT_MODEXP_ADDR_DW =
+            DataWord.valueFromHex(BIG_INT_MODEXP_ADDR_STR);
     public static final DataWord BRIDGE_ADDR_DW = DataWord.valueFromHex(BRIDGE_ADDR_STR);
     public static final DataWord REMASC_ADDR_DW = DataWord.valueFromHex(REMASC_ADDR_STR);
-    public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
-    public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueFromHex(BLOCK_HEADER_ADDR_STR);
+    public static final DataWord HD_WALLET_UTILS_ADDR_DW =
+            DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
+    public static final DataWord BLOCK_HEADER_ADDR_DW =
+            DataWord.valueFromHex(BLOCK_HEADER_ADDR_STR);
 
     public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
     public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
@@ -85,23 +85,26 @@ public class PrecompiledContracts {
     public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
     public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
 
-    public static final List<RskAddress> GENESIS_ADDRESSES = Collections.unmodifiableList(Arrays.asList(
-            ECRECOVER_ADDR,
-            SHA256_ADDR,
-            RIPEMPD160_ADDR,
-            IDENTITY_ADDR,
-            BIG_INT_MODEXP_ADDR,
-            BRIDGE_ADDR,
-            REMASC_ADDR
-    ));
+    public static final List<RskAddress> GENESIS_ADDRESSES =
+            Collections.unmodifiableList(
+                    Arrays.asList(
+                            ECRECOVER_ADDR,
+                            SHA256_ADDR,
+                            RIPEMPD160_ADDR,
+                            IDENTITY_ADDR,
+                            BIG_INT_MODEXP_ADDR,
+                            BRIDGE_ADDR,
+                            REMASC_ADDR));
 
     // this maps needs to be updated by hand any time a new pcc is added
-    public static final Map<RskAddress, ConsensusRule> CONSENSUS_ENABLED_ADDRESSES = Collections.unmodifiableMap(
-        Stream.of(
-            new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
-            new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119)
-        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-    );
+    public static final Map<RskAddress, ConsensusRule> CONSENSUS_ENABLED_ADDRESSES =
+            Collections.unmodifiableMap(
+                    Stream.of(
+                                    new AbstractMap.SimpleEntry<>(
+                                            HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
+                                    new AbstractMap.SimpleEntry<>(
+                                            BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
     private static ECRecover ecRecover = new ECRecover();
     private static Sha256 sha256 = new Sha256();
@@ -111,13 +114,14 @@ public class PrecompiledContracts {
     private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     private final RskSystemProperties config;
 
-    public PrecompiledContracts(RskSystemProperties config, BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
+    public PrecompiledContracts(
+            RskSystemProperties config, BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
         this.config = config;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
     }
 
-
-    public PrecompiledContract getContractForAddress(ActivationConfig.ForBlock activations, DataWord address) {
+    public PrecompiledContract getContractForAddress(
+            ActivationConfig.ForBlock activations, DataWord address) {
 
         if (address == null) {
             return identity;
@@ -135,14 +139,24 @@ public class PrecompiledContracts {
             return identity;
         }
         if (address.equals(BRIDGE_ADDR_DW)) {
-            return new Bridge(BRIDGE_ADDR, config.getNetworkConstants(), config.getActivationConfig(), btcBlockStoreFactory);
+            return new Bridge(
+                    BRIDGE_ADDR,
+                    config.getNetworkConstants(),
+                    config.getActivationConfig(),
+                    btcBlockStoreFactory);
         }
         if (address.equals(BIG_INT_MODEXP_ADDR_DW)) {
             return bigIntegerModexp;
         }
         if (address.equals(REMASC_ADDR_DW)) {
-            RemascConfig remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName());
-            return new RemascContract(REMASC_ADDR, remascConfig, config.getNetworkConstants(), config.getActivationConfig());
+            RemascConfig remascConfig =
+                    new RemascConfigFactory(RemascContract.REMASC_CONFIG)
+                            .createRemascConfig(config.netName());
+            return new RemascContract(
+                    REMASC_ADDR,
+                    remascConfig,
+                    config.getNetworkConstants(),
+                    config.getActivationConfig());
         }
 
         // TODO(mc) reuse CONSENSUS_ENABLED_ADDRESSES
@@ -150,7 +164,8 @@ public class PrecompiledContracts {
             return new BlockHeaderContract(config.getActivationConfig(), BLOCK_HEADER_ADDR);
         }
 
-        if (activations.isActive(ConsensusRule.RSKIP106) && address.equals(HD_WALLET_UTILS_ADDR_DW)) {
+        if (activations.isActive(ConsensusRule.RSKIP106)
+                && address.equals(HD_WALLET_UTILS_ADDR_DW)) {
             return new HDWalletUtils(config.getActivationConfig(), HD_WALLET_UTILS_ADDR);
         }
 
@@ -162,15 +177,20 @@ public class PrecompiledContracts {
 
         public abstract long getGasForData(byte[] data);
 
-        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {}
+        public void init(
+                Transaction tx,
+                Block executionBlock,
+                Repository repository,
+                BlockStore blockStore,
+                ReceiptStore receiptStore,
+                List<LogInfo> logs) {}
 
         public abstract byte[] execute(byte[] data);
     }
 
     public static class Identity extends PrecompiledContract {
 
-        public Identity() {
-        }
+        public Identity() {}
 
         @Override
         public long getGasForData(byte[] data) {
@@ -190,7 +210,6 @@ public class PrecompiledContracts {
     }
 
     public static class Sha256 extends PrecompiledContract {
-
 
         @Override
         public long getGasForData(byte[] data) {
@@ -213,9 +232,7 @@ public class PrecompiledContracts {
         }
     }
 
-
     public static class Ripempd160 extends PrecompiledContract {
-
 
         @Override
         public long getGasForData(byte[] data) {
@@ -235,15 +252,13 @@ public class PrecompiledContracts {
             byte[] result = null;
             if (data == null) {
                 result = HashUtil.ripemd160(ByteUtil.EMPTY_BYTE_ARRAY);
-            }
-            else {
+            } else {
                 result = HashUtil.ripemd160(data);
             }
 
             return DataWord.valueOf(result).getData();
         }
     }
-
 
     public static class ECRecover extends PrecompiledContract {
 
@@ -271,7 +286,8 @@ public class PrecompiledContracts {
                 System.arraycopy(data, 96, s, 0, sLength);
 
                 if (isValid(r, s, v)) {
-                    ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[31]);
+                    ECKey.ECDSASignature signature =
+                            ECKey.ECDSASignature.fromComponents(r, s, v[31]);
 
                     ECKey key = ECKey.signatureToKey(h, signature);
                     out = DataWord.valueOf(key.getAddress());
@@ -299,12 +315,11 @@ public class PrecompiledContracts {
     /**
      * Computes modular exponentiation on big numbers
      *
-     * format of data[] array:
-     * [length_of_BASE] [length_of_EXPONENT] [length_of_MODULUS] [BASE] [EXPONENT] [MODULUS]
-     * where every length is a 32-byte left-padded integer representing the number of bytes.
-     * Call data is assumed to be infinitely right-padded with zero bytes.
+     * <p>format of data[] array: [length_of_BASE] [length_of_EXPONENT] [length_of_MODULUS] [BASE]
+     * [EXPONENT] [MODULUS] where every length is a 32-byte left-padded integer representing the
+     * number of bytes. Call data is assumed to be infinitely right-padded with zero bytes.
      *
-     * Returns an output as a byte array with the same length as the modulus
+     * <p>Returns an output as a byte array with the same length as the modulus
      */
     public static class BigIntegerModexp extends PrecompiledContract {
 
@@ -318,7 +333,7 @@ public class PrecompiledContracts {
 
         @Override
         public long getGasForData(byte[] data) {
-            byte[] safeData = data==null?EMPTY_BYTE_ARRAY:data;
+            byte[] safeData = data == null ? EMPTY_BYTE_ARRAY : data;
 
             int baseLen = parseLen(safeData, BASE);
             int expLen = parseLen(safeData, EXPONENT);
@@ -330,18 +345,17 @@ public class PrecompiledContracts {
             try {
                 int offset = Math.addExact(ARGS_OFFSET, baseLen);
                 expHighBytes = parseBytes(safeData, offset, Math.min(expLen, 32));
-            }
-            catch (ArithmeticException e) {
+            } catch (ArithmeticException e) {
                 expHighBytes = ByteUtil.EMPTY_BYTE_ARRAY;
             }
 
             long adjExpLen = getAdjustedExponentLength(expHighBytes, expLen);
 
             // use big numbers to stay safe in case of overflow
-            BigInteger gas = BigInteger.valueOf(multComplexity)
-                    .multiply(BigInteger.valueOf(Math.max(adjExpLen, 1)))
-                    .divide(GQUAD_DIVISOR);
-
+            BigInteger gas =
+                    BigInteger.valueOf(multComplexity)
+                            .multiply(BigInteger.valueOf(Math.max(adjExpLen, 1)))
+                            .divide(GQUAD_DIVISOR);
 
             return gas.min(BigInteger.valueOf(Long.MAX_VALUE)).longValueExact();
         }
@@ -418,7 +432,5 @@ public class PrecompiledContracts {
             byte[] bytes = parseBytes(data, offset, len);
             return BIUtil.toBI(bytes);
         }
-
     }
-
 }

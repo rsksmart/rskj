@@ -18,19 +18,18 @@
 
 package co.rsk;
 
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
+import static org.powermock.api.mockito.PowerMockito.*;
+
 import co.rsk.config.NodeCliFlags;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import org.ethereum.util.RskTestContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(RskContext.class)
@@ -44,7 +43,7 @@ public class RskContextTest {
 
     @Test
     public void getCliArgsSmokeTest() {
-        RskTestContext rskContext = new RskTestContext(new String[] { "--devnet" });
+        RskTestContext rskContext = new RskTestContext(new String[] {"--devnet"});
         assertThat(rskContext.getCliArgs(), notNullValue());
         assertThat(rskContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
     }
@@ -52,7 +51,8 @@ public class RskContextTest {
     @Test
     public void getBuildInfoSmokeTest() {
         RskTestContext rskContext = new RskTestContext(new String[0]);
-        mockBuildInfoResource(new ByteArrayInputStream("build.hash=c0ffee\nbuild.branch=HEAD".getBytes()));
+        mockBuildInfoResource(
+                new ByteArrayInputStream("build.hash=c0ffee\nbuild.branch=HEAD".getBytes()));
         assertThat(rskContext.getBuildInfo(), notNullValue());
         assertThat(rskContext.getBuildInfo().getBuildHash(), is("c0ffee"));
     }

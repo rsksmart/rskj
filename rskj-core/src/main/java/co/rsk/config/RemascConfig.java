@@ -20,9 +20,7 @@ package co.rsk.config;
 
 import co.rsk.core.RskAddress;
 
-/**
- * Created by mario on 12/12/16.
- */
+/** Created by mario on 12/12/16. */
 public class RemascConfig {
     // Number of blocks until mining fees are processed
     private long maturity;
@@ -41,10 +39,12 @@ public class RemascConfig {
     // Federation cut. Available reward / rskFederationDivisor is what Federation gets.
     private long federationDivisor = 100;
 
-    // Punishment in case of broken selection rule. The punishment applied is available reward / punishmentDivisor.
+    // Punishment in case of broken selection rule. The punishment applied is available reward /
+    // punishmentDivisor.
     private long punishmentDivisor = 10;
 
-    // Reward to block miners who included uncles in their blocks. Available reward / publishersDivisor is the total reward.
+    // Reward to block miners who included uncles in their blocks. Available reward /
+    // publishersDivisor is the total reward.
     private long publishersDivisor = 10;
 
     private long lateUncleInclusionPunishmentDivisor = 20;
@@ -53,9 +53,13 @@ public class RemascConfig {
     private long paidFeesMultiplier = 2;
     private long paidFeesDivisor = 1;
 
-    public long getPaidFeesMultiplier() { return paidFeesMultiplier; }
+    public long getPaidFeesMultiplier() {
+        return paidFeesMultiplier;
+    }
 
-    public long getPaidFeesDivisor() { return paidFeesDivisor; }
+    public long getPaidFeesDivisor() {
+        return paidFeesDivisor;
+    }
 
     public long getMaturity() {
         return maturity;
@@ -81,10 +85,11 @@ public class RemascConfig {
         return punishmentDivisor;
     }
 
-    public long getLateUncleInclusionPunishmentDivisor() { return this.lateUncleInclusionPunishmentDivisor; }
+    public long getLateUncleInclusionPunishmentDivisor() {
+        return this.lateUncleInclusionPunishmentDivisor;
+    }
 
     public long getPublishersDivisor() {
         return publishersDivisor;
     }
-
 }

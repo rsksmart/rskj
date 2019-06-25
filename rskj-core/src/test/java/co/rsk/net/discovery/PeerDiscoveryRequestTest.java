@@ -22,16 +22,13 @@ import co.rsk.net.discovery.message.DiscoveryMessageType;
 import co.rsk.net.discovery.message.PingPeerMessage;
 import co.rsk.net.discovery.message.PongPeerMessage;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
+import java.net.InetSocketAddress;
+import java.util.UUID;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.net.InetSocketAddress;
-import java.util.UUID;
-
-/**
- * Created by mario on 20/02/17.
- */
+/** Created by mario on 20/02/17. */
 public class PeerDiscoveryRequestTest {
 
     public static final int NETWORK_ID = 1;
@@ -40,13 +37,21 @@ public class PeerDiscoveryRequestTest {
     public void create() {
         ECKey key = new ECKey();
         String check = UUID.randomUUID().toString();
-        PingPeerMessage pingPeerMessage = PingPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
-        PongPeerMessage pongPeerMessage = PongPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
+        PingPeerMessage pingPeerMessage =
+                PingPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
+        PongPeerMessage pongPeerMessage =
+                PongPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
         InetSocketAddress address = new InetSocketAddress("localhost", 8080);
 
-        PeerDiscoveryRequest request = PeerDiscoveryRequestBuilder.builder().messageId(check)
-                .message(pingPeerMessage).address(address).expectedResponse(DiscoveryMessageType.PONG)
-                .expirationPeriod(1000).attemptNumber(1).build();
+        PeerDiscoveryRequest request =
+                PeerDiscoveryRequestBuilder.builder()
+                        .messageId(check)
+                        .message(pingPeerMessage)
+                        .address(address)
+                        .expectedResponse(DiscoveryMessageType.PONG)
+                        .expirationPeriod(1000)
+                        .attemptNumber(1)
+                        .build();
 
         Assert.assertNotNull(request);
         Assert.assertTrue(request.validateMessageResponse(address, pongPeerMessage));

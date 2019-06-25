@@ -18,6 +18,13 @@
 
 package co.rsk.mine;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.*;
+
 import co.rsk.config.GasLimitConfig;
 import co.rsk.config.MiningConfig;
 import co.rsk.core.BlockDifficulty;
@@ -29,6 +36,8 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidationRule;
+import java.util.ArrayList;
+import java.util.Collections;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -41,16 +50,6 @@ import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.util.ArrayList;
-import java.util.Collections;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({FamilyUtils.class})
@@ -70,29 +69,30 @@ public class BlockToMineBuilderTest {
         MinimumGasPriceCalculator minimumGasPriceCalculator = mock(MinimumGasPriceCalculator.class);
         MinerUtils minerUtils = mock(MinerUtils.class);
 
-        blockBuilder = new BlockToMineBuilder(
-                mock(ActivationConfig.class),
-                miningConfig,
-                repositoryLocator,
-                mock(BlockStore.class),
-                mock(TransactionPool.class),
-                difficultyCalculator,
-                new GasLimitCalculator(Constants.mainnet()),
-                new ForkDetectionDataCalculator(),
-                validationRules,
-                mock(MinerClock.class),
-                new BlockFactory(ActivationConfigsForTest.all()),
-                mock(BlockExecutor.class),
-                minimumGasPriceCalculator,
-                minerUtils
-        );
+        blockBuilder =
+                new BlockToMineBuilder(
+                        mock(ActivationConfig.class),
+                        miningConfig,
+                        repositoryLocator,
+                        mock(BlockStore.class),
+                        mock(TransactionPool.class),
+                        difficultyCalculator,
+                        new GasLimitCalculator(Constants.mainnet()),
+                        new ForkDetectionDataCalculator(),
+                        validationRules,
+                        mock(MinerClock.class),
+                        new BlockFactory(ActivationConfigsForTest.all()),
+                        mock(BlockExecutor.class),
+                        minimumGasPriceCalculator,
+                        minerUtils);
 
         BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
         Repository snapshot = mock(Repository.class);
-        GasLimitConfig gasLimitConfig = new GasLimitConfig(0,0,false);
+        GasLimitConfig gasLimitConfig = new GasLimitConfig(0, 0, false);
 
         when(minerUtils.getAllTransactions(any())).thenReturn(new ArrayList<>());
-        when(minerUtils.filterTransactions(any(), any(), any(), any(), any())).thenReturn(new ArrayList<>());
+        when(minerUtils.filterTransactions(any(), any(), any(), any(), any()))
+                .thenReturn(new ArrayList<>());
         when(repositoryLocator.snapshotAt(any())).thenReturn(snapshot);
         when(minimumGasPriceCalculator.calculate(any())).thenReturn(mock(Coin.class));
         when(stateRootHandler.translate(any())).thenReturn(TestUtils.randomHash());
@@ -108,7 +108,8 @@ public class BlockToMineBuilderTest {
 
         when(validationRules.isValid(any())).thenReturn(false);
 
-        Block nextBLock = blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
+        Block nextBLock =
+                blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
 
         assertThat(nextBLock.getUncleList(), empty());
     }
@@ -119,7 +120,8 @@ public class BlockToMineBuilderTest {
 
         when(validationRules.isValid(any())).thenReturn(true);
 
-        Block nextBLock = blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
+        Block nextBLock =
+                blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
 
         assertThat(nextBLock.getUncleList(), hasSize(1));
     }
@@ -140,18 +142,36 @@ public class BlockToMineBuilderTest {
 
     private void mockBlockFamily(long blockNumber, Keccak256 blockHash, BlockHeader relative) {
         PowerMockito.mockStatic(FamilyUtils.class);
-        PowerMockito.when(FamilyUtils.getUnclesHeaders(any(), eq(blockNumber + 1L), eq(blockHash), anyInt()))
+        PowerMockito.when(
+                        FamilyUtils.getUnclesHeaders(
+                                any(), eq(blockNumber + 1L), eq(blockHash), anyInt()))
                 .thenReturn(Collections.singletonList(relative));
     }
 
     private BlockHeader createBlockHeader() {
         return new BlockHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress(),
-                EMPTY_TRIE_HASH, null, EMPTY_TRIE_HASH,
-                new Bloom().getData(), BlockDifficulty.ZERO, 1L,
-                EMPTY_BYTE_ARRAY, 0L, 0L, EMPTY_BYTE_ARRAY, Coin.ZERO,
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
-                Coin.ZERO, 0, false, true, false
-        );
+                EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY,
+                TestUtils.randomAddress(),
+                EMPTY_TRIE_HASH,
+                null,
+                EMPTY_TRIE_HASH,
+                new Bloom().getData(),
+                BlockDifficulty.ZERO,
+                1L,
+                EMPTY_BYTE_ARRAY,
+                0L,
+                0L,
+                EMPTY_BYTE_ARRAY,
+                Coin.ZERO,
+                EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY,
+                Coin.ZERO,
+                0,
+                false,
+                true,
+                false);
     }
 }

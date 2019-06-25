@@ -19,15 +19,14 @@
 
 package org.ethereum.vm.trace;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import org.ethereum.vm.DataWord;
+import static org.ethereum.util.ByteUtil.toHexString;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.ethereum.util.ByteUtil.toHexString;
+import org.ethereum.vm.DataWord;
 
 public class OpActions {
 
@@ -117,19 +116,15 @@ public class OpActions {
     }
 
     public Action addStackPush(DataWord value) {
-        return addAction(stack, Action.Name.PUSH)
-                .addParam("value", value);
+        return addAction(stack, Action.Name.PUSH).addParam("value", value);
     }
 
     public Action addStackSwap(int from, int to) {
-        return addAction(stack, Action.Name.SWAP)
-                .addParam("from", from)
-                .addParam("to", to);
+        return addAction(stack, Action.Name.SWAP).addParam("from", from).addParam("to", to);
     }
 
     public Action addMemoryExtend(long delta) {
-        return addAction(memory, Action.Name.EXTEND)
-                .addParam("delta", delta);
+        return addAction(memory, Action.Name.EXTEND).addParam("delta", delta);
     }
 
     public Action addMemoryWrite(int address, byte[] data, int size) {
@@ -139,14 +134,11 @@ public class OpActions {
     }
 
     public Action addStoragePut(DataWord key, DataWord value) {
-        return addAction(storage, Action.Name.PUT)
-                .addParam("key", key)
-                .addParam("value", value);
+        return addAction(storage, Action.Name.PUT).addParam("key", key).addParam("value", value);
     }
 
     public Action addStorageRemove(DataWord key) {
-        return addAction(storage, Action.Name.REMOVE)
-                .addParam("key", key);
+        return addAction(storage, Action.Name.REMOVE).addParam("key", key);
     }
 
     public Action addStorageClear() {

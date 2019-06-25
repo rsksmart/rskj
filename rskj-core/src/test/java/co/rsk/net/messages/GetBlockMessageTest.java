@@ -22,9 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+/** Created by ajlopez on 5/11/2016. */
 public class GetBlockMessageTest {
     @Test
     public void createWithBlockHash() {

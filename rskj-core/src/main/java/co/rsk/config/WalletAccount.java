@@ -18,9 +18,7 @@
 
 package co.rsk.config;
 
-/**
- * Created by ajlopez on 4/4/2016.
- */
+/** Created by ajlopez on 4/4/2016. */
 public class WalletAccount {
     private String privateKey;
 
@@ -32,4 +30,3 @@ public class WalletAccount {
         return this.privateKey;
     }
 }
-

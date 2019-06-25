@@ -24,17 +24,14 @@ import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 
 /**
- * This implements the "getGasLimit" method
- * that belongs to the BlockHeaderContract native contract.
+ * This implements the "getGasLimit" method that belongs to the BlockHeaderContract native contract.
  *
  * @author Diego Masini
  */
 public class GetGasLimit extends BlockHeaderContractMethod {
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "getGasLimit",
-            new String[]{"int256"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature(
+                    "getGasLimit", new String[] {"int256"}, new String[] {"bytes"});
 
     public GetGasLimit(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);
@@ -50,4 +47,3 @@ public class GetGasLimit extends BlockHeaderContractMethod {
         return block.getGasLimit();
     }
 }
-

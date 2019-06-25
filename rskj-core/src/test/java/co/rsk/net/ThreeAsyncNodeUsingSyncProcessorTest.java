@@ -24,20 +24,19 @@ import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.SyncUtils;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.util.Random;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Random;
-
 public class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void synchronizeNewNodesInAChain() throws InterruptedException {
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(100,false, false);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);
-        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(100, false, false);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, false);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, false);
 
         Assert.assertEquals(100, node1.getBestBlock().getNumber());
         Assert.assertEquals(0, node2.getBestBlock().getNumber());
@@ -45,7 +44,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node2);
         // sync setup
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(100, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node2.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(100, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 100 new blocks from node 1
         node2.waitExactlyNTasksWithTimeout(100);
 
@@ -58,7 +58,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node2.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(100, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(100, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 100 new blocks from node 2
         node3.waitExactlyNTasksWithTimeout(100);
 
@@ -87,9 +88,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void synchronizeNewNodeWithBestChain() throws InterruptedException {
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(30,false, false);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(50,false, false);
-        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(30, false, false);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(50, false, false);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, false);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(50, node2.getBestBlock().getNumber());
@@ -97,7 +98,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 30 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(30);
 
@@ -111,7 +113,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node2.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(50, 30, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(50, 30, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 50 new blocks from node 2
         node3.waitExactlyNTasksWithTimeout(20);
 
@@ -142,8 +145,10 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Blockchain b1 = BlockChainBuilder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, false);
 
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node1 =
+                SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node2 =
+                SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
@@ -152,7 +157,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 30 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(30);
 
@@ -166,7 +172,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node2.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(73, 30, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(73, 30, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 43 new blocks from node 2
         node3.waitExactlyNTasksWithTimeout(43);
 
@@ -199,7 +206,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b1);
         SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b1);
-        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,1,1,20,192);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(2, 1, 1, 1, 20, 192);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b2, syncConfiguration);
 
         Assert.assertEquals(50, node1.getBestBlock().getNumber());
@@ -210,7 +217,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.sendFullStatusTo(node3);
 
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(50, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(50, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 50 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(50 + 2);
 
@@ -243,7 +251,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b1);
         SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b1);
-        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,1,1,20,192);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(2, 1, 1, 1, 20, 192);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b2, syncConfiguration);
 
         Assert.assertEquals(200, node1.getBestBlock().getNumber());
@@ -254,7 +262,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.sendFullStatusTo(node3);
 
         // sync setup
-        int setupRequests = SyncUtils.syncSetupRequests(200, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        int setupRequests =
+                SyncUtils.syncSetupRequests(200, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING);
         node3.waitUntilNTasksWithTimeout(setupRequests);
         node3.waitExactlyNTasksWithTimeout(200 + setupRequests - 10);
 
@@ -287,7 +296,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b1);
         SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b1);
-        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,0,1,20,192);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(2, 1, 0, 1, 20, 192);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b2, syncConfiguration);
 
         Assert.assertEquals(200, node1.getBestBlock().getNumber());
@@ -298,7 +307,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.sendFullStatusTo(node3);
 
         // sync setup
-        int setupRequests = SyncUtils.syncSetupRequests(200, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        int setupRequests =
+                SyncUtils.syncSetupRequests(200, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING);
         node3.waitUntilNTasksWithTimeout(setupRequests);
         node3.waitUntilNTasksWithTimeout(5);
         // synchronize 200 (extra tasks are from old sync protocol messages)
@@ -332,12 +342,12 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     @Ignore
     public void synchronizeNewNodeWithTwoPeers200Different() {
         Blockchain b1 = BlockChainBuilder.ofSize(193, false);
-        Blockchain b2 = BlockChainBuilder.copyAndExtend(b1,7);
+        Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 7);
         Blockchain b3 = BlockChainBuilder.ofSize(0, false);
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b1);
         SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b2);
-        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,1,1,20,192);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(2, 1, 1, 1, 20, 192);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b3, syncConfiguration);
 
         Assert.assertEquals(193, node1.getBestBlock().getNumber());
@@ -379,12 +389,12 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     public void synchronizeNewNodeWithThreePeers400Different() {
         Blockchain b1 = BlockChainBuilder.ofSize(0, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 200);
-        Blockchain b3 = BlockChainBuilder.copyAndExtend(b2,200);
+        Blockchain b3 = BlockChainBuilder.copyAndExtend(b2, 200);
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b2);
         SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b2);
         SimpleAsyncNode node3 = SimpleAsyncNode.createDefaultNode(b3);
-        SyncConfiguration syncConfiguration = new SyncConfiguration(3,1,10,100,20,192);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(3, 1, 10, 100, 20, 192);
         SimpleAsyncNode node4 = SimpleAsyncNode.createNode(b1, syncConfiguration);
 
         Assert.assertEquals(200, node1.getBestBlock().getNumber());
@@ -426,8 +436,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     @Ignore
     public void dontSynchronizeNodeWithShorterChain() throws InterruptedException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(50, false, false);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(30,false, false);
-        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(30, false, false);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, false);
 
         Assert.assertEquals(50, node1.getBestBlock().getNumber());
         Assert.assertEquals(30, node2.getBestBlock().getNumber());
@@ -435,7 +445,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(50, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(50, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 50 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(50);
 
@@ -472,14 +483,18 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Ignore
-    public void dontSynchronizeNodeWithShorterChainAndThenSynchronizeWithNewPeer() throws InterruptedException {
+    public void dontSynchronizeNodeWithShorterChainAndThenSynchronizeWithNewPeer()
+            throws InterruptedException {
         Blockchain b1 = BlockChainBuilder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, false);
         Blockchain b3 = BlockChainBuilder.copyAndExtend(b2, 7, false);
 
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
-        SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b3, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node1 =
+                SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node2 =
+                SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node3 =
+                SimpleAsyncNode.createNode(b3, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(73, node2.getBestBlock().getNumber());
@@ -498,7 +513,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node3.sendFullStatusTo(node2);
         // sync setup
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(80, 73, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node2.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(80, 73, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 7 new blocks from node 3
         node2.waitExactlyNTasksWithTimeout(7);
 
@@ -528,8 +544,10 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Blockchain b1 = BlockChainBuilder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 1, false);
 
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node1 =
+                SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node2 =
+                SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
@@ -539,11 +557,13 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node1.sendFullStatusTo(node3);
         // receive the hash of a better block than node1's best
         // while it's syncing with node1
-        node3.receiveMessageFrom(node2, new NewBlockHashMessage(node2.getBestBlock().getHash().getBytes()));
+        node3.receiveMessageFrom(
+                node2, new NewBlockHashMessage(node2.getBestBlock().getHash().getBytes()));
         // receive and ignore NewBlockHashMessage
         node3.waitUntilNTasksWithTimeout(1);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 30 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(30);
 
@@ -572,8 +592,10 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Blockchain b1 = BlockChainBuilder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 1, false);
 
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node1 =
+                SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node2 =
+                SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
@@ -582,7 +604,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(
+                SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 30 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(30);
 
@@ -592,7 +615,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         // receive the hash of a better block than node1's best
         // after syncing with node1
-        node3.receiveMessageFrom(node2, new NewBlockHashMessage(node2.getBestBlock().getHash().getBytes()));
+        node3.receiveMessageFrom(
+                node2, new NewBlockHashMessage(node2.getBestBlock().getHash().getBytes()));
         // receive block hash, then receive block
         node3.waitExactlyNTasksWithTimeout(2);
 

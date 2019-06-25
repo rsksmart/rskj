@@ -20,6 +20,10 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -29,18 +33,12 @@ import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-/**
- * Created by ajlopez on 09/08/2016.
- */
+/** Created by ajlopez on 09/08/2016. */
 public class BlockForkTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
-    private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+    private static final BlockFactory blockFactory =
+            new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
     public void calculateParentChild() {
@@ -78,7 +76,7 @@ public class BlockForkTest {
 
         BlockFork fork = new BlockFork();
 
-        fork.calculate(oldBranch.get(1), newBranch.get(1) , store);
+        fork.calculate(oldBranch.get(1), newBranch.get(1), store);
 
         Assert.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
 
@@ -108,7 +106,7 @@ public class BlockForkTest {
 
         BlockFork fork = new BlockFork();
 
-        fork.calculate(oldBranch.get(1), newBranch.get(2) , store);
+        fork.calculate(oldBranch.get(1), newBranch.get(2), store);
 
         Assert.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
 
@@ -139,7 +137,7 @@ public class BlockForkTest {
 
         BlockFork fork = new BlockFork();
 
-        fork.calculate(oldBranch.get(2), newBranch.get(1) , store);
+        fork.calculate(oldBranch.get(2), newBranch.get(1), store);
 
         Assert.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
 
@@ -155,7 +153,8 @@ public class BlockForkTest {
         Assert.assertEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
     }
 
-    private static List<Block> makeChain(Block parent, int length, BlockStore store, BlockGenerator blockGenerator) {
+    private static List<Block> makeChain(
+            Block parent, int length, BlockStore store, BlockGenerator blockGenerator) {
         List<Block> blocks = new ArrayList<>();
 
         for (int k = 0; k < length; k++) {

@@ -19,12 +19,9 @@
 package co.rsk.util;
 
 import co.rsk.core.BlockDifficulty;
-
 import java.math.BigInteger;
 
-/**
- * Created by martin.medina on 4/8/16.
- */
+/** Created by martin.medina on 4/8/16. */
 public class DifficultyUtils {
 
     public static final BigInteger MAX = BigInteger.valueOf(2).pow(256);

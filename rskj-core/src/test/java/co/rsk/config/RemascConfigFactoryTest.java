@@ -23,9 +23,7 @@ import co.rsk.remasc.RemascException;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by mario on 12/12/16.
- */
+/** Created by mario on 12/12/16. */
 public class RemascConfigFactoryTest {
     private static final String REMASC_FILE = "remasc.json";
 
@@ -45,7 +43,6 @@ public class RemascConfigFactoryTest {
         Assert.assertNotNull(remascConfig.getRskLabsDivisor());
         Assert.assertNotNull(remascConfig.getSyntheticSpan());
         Assert.assertNotNull(remascConfig.getLateUncleInclusionPunishmentDivisor());
-
 
         remascConfig = factory.createRemascConfig("regtest");
         Assert.assertNotNull(remascConfig);

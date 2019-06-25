@@ -42,6 +42,7 @@ public enum NetworkUpgrade {
             }
         }
 
-        throw new IllegalArgumentException(String.format("Unknown network upgrade %s", networkUpgradeName));
+        throw new IllegalArgumentException(
+                String.format("Unknown network upgrade %s", networkUpgradeName));
     }
 }

@@ -18,10 +18,8 @@
 
 package co.rsk.remasc;
 
-/**
- * Created by mario on 12/12/16.
- */
-public class RemascException extends RuntimeException{
+/** Created by mario on 12/12/16. */
+public class RemascException extends RuntimeException {
 
     public RemascException(String message, Throwable cause) {
         super(message, cause);

@@ -18,8 +18,10 @@
 
 package co.rsk.jsontestsuite;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.HashMap;
 import org.ethereum.jsontestsuite.CryptoTestCase;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
@@ -27,17 +29,12 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import java.io.IOException;
-import java.util.HashMap;
-
 /**
  * @author Angel J Lopez
  * @since 02.24.2016
  */
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalCryptoTest {
-
 
     @Test
     public void testAllInCryptoSute() throws ParseException, IOException {
@@ -45,23 +42,23 @@ public class LocalCryptoTest {
         String json = getJSON("crypto");
 
         ObjectMapper mapper = new ObjectMapper();
-        JavaType type = mapper.getTypeFactory().
-                constructMapType(HashMap.class, String.class, CryptoTestCase.class);
+        JavaType type =
+                mapper.getTypeFactory()
+                        .constructMapType(HashMap.class, String.class, CryptoTestCase.class);
 
+        HashMap<String, CryptoTestCase> testSuite = mapper.readValue(json, type);
 
-        HashMap<String , CryptoTestCase> testSuite =
-                mapper.readValue(json, type);
-
-        for (String key : testSuite.keySet()){
+        for (String key : testSuite.keySet()) {
 
             System.out.println("executing: " + key);
             testSuite.get(key).execute();
-
         }
     }
 
     private static String getJSON(String name) {
-        String json = JSONReader.loadJSONFromResource("json/BasicTests/" + name + ".json", LocalVMTest.class.getClassLoader());
+        String json =
+                JSONReader.loadJSONFromResource(
+                        "json/BasicTests/" + name + ".json", LocalVMTest.class.getClassLoader());
         return json;
     }
 }

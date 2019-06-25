@@ -20,9 +20,7 @@ package co.rsk.validators;
 
 import org.ethereum.core.Block;
 
-/**
- * Created by mario on 26/12/16.
- */
+/** Created by mario on 26/12/16. */
 @FunctionalInterface
 public interface BlockValidationRule {
 

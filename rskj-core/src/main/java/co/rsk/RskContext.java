@@ -18,6 +18,8 @@
 
 package co.rsk;
 
+import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
+
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.cli.CliArgs;
 import co.rsk.config.*;
@@ -68,6 +70,15 @@ import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
+import java.io.*;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.time.Clock;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -106,26 +117,13 @@ import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.time.Clock;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
-
-
 /**
  * Creates the initial object graph without a DI framework.
  *
- * When an object construction has to be tweaked, create a buildXXX method and call it from getXXX.
- * This way derived classes don't have to store their own instances.
+ * <p>When an object construction has to be tweaked, create a buildXXX method and call it from
+ * getXXX. This way derived classes don't have to store their own instances.
  *
- * Note that many methods are public to allow the fed node overriding.
+ * <p>Note that many methods are public to allow the fed node overriding.
  */
 public class RskContext implements NodeBootstrapper {
     private static Logger logger = LoggerFactory.getLogger(RskContext.class);
@@ -215,10 +213,7 @@ public class RskContext implements NodeBootstrapper {
     private PrecompiledContracts precompiledContracts;
 
     public RskContext(String[] args) {
-        this(new CliArgs.Parser<>(
-                NodeCliOptions.class,
-                NodeCliFlags.class
-        ).parse(args));
+        this(new CliArgs.Parser<>(NodeCliOptions.class, NodeCliFlags.class).parse(args));
     }
 
     private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
@@ -244,14 +239,17 @@ public class RskContext implements NodeBootstrapper {
 
     public MiningMainchainView getMiningMainchainView() {
         if (miningMainchainView == null) {
-            miningMainchainView = new MiningMainchainViewImpl(
-                    // One would expect getBlockStore to be used here. However, when the BlockStore is created,
-                    // it does not have any blocks, resulting in a NullPointerException when trying to initially
-                    // fill the mainchain view. Hence why we wait for the blockchain to perform its required
-                    // initialization tasks and then we ask for the store
-                    getBlockchain().getBlockStore(),
-                    MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION
-            );
+            miningMainchainView =
+                    new MiningMainchainViewImpl(
+                            // One would expect getBlockStore to be used here. However, when the
+                            // BlockStore is created,
+                            // it does not have any blocks, resulting in a NullPointerException when
+                            // trying to initially
+                            // fill the mainchain view. Hence why we wait for the blockchain to
+                            // perform its required
+                            // initialization tasks and then we ask for the store
+                            getBlockchain().getBlockStore(),
+                            MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION);
         }
 
         return miningMainchainView;
@@ -259,7 +257,8 @@ public class RskContext implements NodeBootstrapper {
 
     public ConsensusValidationMainchainView getConsensusValidationMainchainView() {
         if (consensusValidationMainchainView == null) {
-            consensusValidationMainchainView = new ConsensusValidationMainchainViewImpl(getBlockStore());
+            consensusValidationMainchainView =
+                    new ConsensusValidationMainchainViewImpl(getBlockStore());
         }
 
         return consensusValidationMainchainView;
@@ -276,16 +275,16 @@ public class RskContext implements NodeBootstrapper {
     public TransactionPool getTransactionPool() {
         if (transactionPool == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            transactionPool = new TransactionPoolImpl(
-                    rskSystemProperties,
-                    getRepository(),
-                    getBlockStore(),
-                    getBlockFactory(),
-                    getCompositeEthereumListener(),
-                    getTransactionExecutorFactory(),
-                    rskSystemProperties.txOutdatedThreshold(),
-                    rskSystemProperties.txOutdatedTimeout()
-            );
+            transactionPool =
+                    new TransactionPoolImpl(
+                            rskSystemProperties,
+                            getRepository(),
+                            getBlockStore(),
+                            getBlockFactory(),
+                            getCompositeEthereumListener(),
+                            getTransactionExecutorFactory(),
+                            rskSystemProperties.txOutdatedThreshold(),
+                            rskSystemProperties.txOutdatedTimeout());
         }
 
         return transactionPool;
@@ -333,12 +332,12 @@ public class RskContext implements NodeBootstrapper {
 
     public BlockExecutor getBlockExecutor() {
         if (blockExecutor == null) {
-            blockExecutor = new BlockExecutor(
-                    getRskSystemProperties().getActivationConfig(),
-                    getRepositoryLocator(),
-                    getStateRootHandler(),
-                    getTransactionExecutorFactory()
-            );
+            blockExecutor =
+                    new BlockExecutor(
+                            getRskSystemProperties().getActivationConfig(),
+                            getRepositoryLocator(),
+                            getStateRootHandler(),
+                            getTransactionExecutorFactory());
         }
 
         return blockExecutor;
@@ -346,16 +345,20 @@ public class RskContext implements NodeBootstrapper {
 
     public PrecompiledContracts getPrecompiledContracts() {
         if (precompiledContracts == null) {
-            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBtcBlockStoreFactory());
+            precompiledContracts =
+                    new PrecompiledContracts(getRskSystemProperties(), getBtcBlockStoreFactory());
         }
 
         return precompiledContracts;
     }
 
-
     public BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
         if (btcBlockStoreFactory == null) {
-            NetworkParameters btcParams = getRskSystemProperties().getNetworkConstants().getBridgeConstants().getBtcParams();
+            NetworkParameters btcParams =
+                    getRskSystemProperties()
+                            .getNetworkConstants()
+                            .getBridgeConstants()
+                            .getBtcParams();
             btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcParams);
         }
 
@@ -372,13 +375,13 @@ public class RskContext implements NodeBootstrapper {
 
     public Rsk getRsk() {
         if (rsk == null) {
-            rsk = new RskImpl(
-                    getChannelManager(),
-                    getTransactionPool(),
-                    getCompositeEthereumListener(),
-                    getNodeBlockProcessor(),
-                    getBlockchain()
-            );
+            rsk =
+                    new RskImpl(
+                            getChannelManager(),
+                            getTransactionPool(),
+                            getCompositeEthereumListener(),
+                            getNodeBlockProcessor(),
+                            getBlockchain());
         }
 
         return rsk;
@@ -386,10 +389,9 @@ public class RskContext implements NodeBootstrapper {
 
     public ReversibleTransactionExecutor getReversibleTransactionExecutor() {
         if (reversibleTransactionExecutor == null) {
-            reversibleTransactionExecutor = new ReversibleTransactionExecutor(
-                    getRepositoryLocator(),
-                    getTransactionExecutorFactory()
-            );
+            reversibleTransactionExecutor =
+                    new ReversibleTransactionExecutor(
+                            getRepositoryLocator(), getTransactionExecutorFactory());
         }
 
         return reversibleTransactionExecutor;
@@ -397,14 +399,14 @@ public class RskContext implements NodeBootstrapper {
 
     public TransactionExecutorFactory getTransactionExecutorFactory() {
         if (transactionExecutorFactory == null) {
-            transactionExecutorFactory = new TransactionExecutorFactory(
-                    getRskSystemProperties(),
-                    getBlockStore(),
-                    getReceiptStore(),
-                    getBlockFactory(),
-                    getProgramInvokeFactory(),
-                    getPrecompiledContracts()
-            );
+            transactionExecutorFactory =
+                    new TransactionExecutorFactory(
+                            getRskSystemProperties(),
+                            getBlockStore(),
+                            getReceiptStore(),
+                            getBlockFactory(),
+                            getProgramInvokeFactory(),
+                            getPrecompiledContracts());
         }
 
         return transactionExecutorFactory;
@@ -412,13 +414,13 @@ public class RskContext implements NodeBootstrapper {
 
     public NodeBlockProcessor getNodeBlockProcessor() {
         if (nodeBlockProcessor == null) {
-            nodeBlockProcessor = new NodeBlockProcessor(
-                    getNetBlockStore(),
-                    getBlockchain(),
-                    getBlockNodeInformation(),
-                    getBlockSyncService(),
-                    getSyncConfiguration()
-            );
+            nodeBlockProcessor =
+                    new NodeBlockProcessor(
+                            getNetBlockStore(),
+                            getBlockchain(),
+                            getBlockNodeInformation(),
+                            getBlockSyncService(),
+                            getSyncConfiguration());
         }
 
         return nodeBlockProcessor;
@@ -435,20 +437,19 @@ public class RskContext implements NodeBootstrapper {
     public PeerScoringManager getPeerScoringManager() {
         if (peerScoringManager == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            peerScoringManager = new PeerScoringManager(
-                    () -> new PeerScoring(rskSystemProperties.scoringPunishmentEnabled()),
-                    rskSystemProperties.scoringNumberOfNodes(),
-                    new PunishmentParameters(
-                            rskSystemProperties.scoringNodesPunishmentDuration(),
-                            rskSystemProperties.scoringNodesPunishmentIncrement(),
-                            rskSystemProperties.scoringNodesPunishmentMaximumDuration()
-                    ),
-                    new PunishmentParameters(
-                            rskSystemProperties.scoringAddressesPunishmentDuration(),
-                            rskSystemProperties.scoringAddressesPunishmentIncrement(),
-                            rskSystemProperties.scoringAddressesPunishmentMaximumDuration()
-                    )
-            );
+            peerScoringManager =
+                    new PeerScoringManager(
+                            () -> new PeerScoring(rskSystemProperties.scoringPunishmentEnabled()),
+                            rskSystemProperties.scoringNumberOfNodes(),
+                            new PunishmentParameters(
+                                    rskSystemProperties.scoringNodesPunishmentDuration(),
+                                    rskSystemProperties.scoringNodesPunishmentIncrement(),
+                                    rskSystemProperties.scoringNodesPunishmentMaximumDuration()),
+                            new PunishmentParameters(
+                                    rskSystemProperties.scoringAddressesPunishmentDuration(),
+                                    rskSystemProperties.scoringAddressesPunishmentIncrement(),
+                                    rskSystemProperties
+                                            .scoringAddressesPunishmentMaximumDuration()));
         }
 
         return peerScoringManager;
@@ -470,18 +471,18 @@ public class RskContext implements NodeBootstrapper {
 
     public EthModule getEthModule() {
         if (ethModule == null) {
-            ethModule = new EthModule(
-                    getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
-                    getRskSystemProperties().getActivationConfig(),
-                    getBlockchain(),
-                    getReversibleTransactionExecutor(),
-                    getExecutionBlockRetriever(),
-                    getRepositoryLocator(),
-                    getEthModuleSolidity(),
-                    getEthModuleWallet(),
-                    getEthModuleTransaction(),
-                    getBtcBlockStoreFactory()
-            );
+            ethModule =
+                    new EthModule(
+                            getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
+                            getRskSystemProperties().getActivationConfig(),
+                            getBlockchain(),
+                            getReversibleTransactionExecutor(),
+                            getExecutionBlockRetriever(),
+                            getRepositoryLocator(),
+                            getEthModuleSolidity(),
+                            getEthModuleWallet(),
+                            getEthModuleTransaction(),
+                            getBtcBlockStoreFactory());
         }
 
         return ethModule;
@@ -489,13 +490,13 @@ public class RskContext implements NodeBootstrapper {
 
     public EvmModule getEvmModule() {
         if (evmModule == null) {
-            evmModule = new EvmModuleImpl(
-                    getMinerServer(),
-                    getMinerClient(),
-                    getMinerClock(),
-                    getBlockchain(),
-                    getTransactionPool()
-            );
+            evmModule =
+                    new EvmModuleImpl(
+                            getMinerServer(),
+                            getMinerClient(),
+                            getMinerClock(),
+                            getBlockchain(),
+                            getTransactionPool());
         }
 
         return evmModule;
@@ -503,11 +504,11 @@ public class RskContext implements NodeBootstrapper {
 
     public PeerServer getPeerServer() {
         if (peerServer == null) {
-            peerServer = new PeerServerImpl(
-                    getRskSystemProperties(),
-                    getCompositeEthereumListener(),
-                    getEthereumChannelInitializerFactory()
-            );
+            peerServer =
+                    new PeerServerImpl(
+                            getRskSystemProperties(),
+                            getCompositeEthereumListener(),
+                            getEthereumChannelInitializerFactory());
         }
 
         return peerServer;
@@ -519,12 +520,9 @@ public class RskContext implements NodeBootstrapper {
             if (wallet == null) {
                 personalModule = new PersonalModuleWalletDisabled();
             } else {
-                personalModule = new PersonalModuleWalletEnabled(
-                        getRskSystemProperties(),
-                        getRsk(),
-                        wallet,
-                        getTransactionPool()
-                );
+                personalModule =
+                        new PersonalModuleWalletEnabled(
+                                getRskSystemProperties(), getRsk(), wallet, getTransactionPool());
             }
         }
 
@@ -539,9 +537,14 @@ public class RskContext implements NodeBootstrapper {
         if (buildInfo == null) {
             try {
                 Properties props = new Properties();
-                InputStream buildInfoFile = RskContext.class.getClassLoader().getResourceAsStream("build-info.properties");
+                InputStream buildInfoFile =
+                        RskContext.class
+                                .getClassLoader()
+                                .getResourceAsStream("build-info.properties");
                 props.load(buildInfoFile);
-                buildInfo = new BuildInfo(props.getProperty("build.hash"), props.getProperty("build.branch"));
+                buildInfo =
+                        new BuildInfo(
+                                props.getProperty("build.hash"), props.getProperty("build.branch"));
             } catch (IOException | NullPointerException e) {
                 logger.trace("Can't find build info class, using dev configuration", e);
                 buildInfo = new BuildInfo("dev", "dev");
@@ -569,12 +572,12 @@ public class RskContext implements NodeBootstrapper {
 
     public DebugModule getDebugModule() {
         if (debugModule == null) {
-            debugModule = new DebugModuleImpl(
-                    getBlockStore(),
-                    getReceiptStore(),
-                    getNodeMessageHandler(),
-                    getBlockExecutor()
-            );
+            debugModule =
+                    new DebugModuleImpl(
+                            getBlockStore(),
+                            getReceiptStore(),
+                            getNodeMessageHandler(),
+                            getBlockExecutor());
         }
 
         return debugModule;
@@ -610,12 +613,12 @@ public class RskContext implements NodeBootstrapper {
             if (rskSystemProperties.minerClientAutoMine()) {
                 minerClient = new AutoMinerClient(getMinerServer());
             } else {
-                minerClient = new MinerClientImpl(
-                        getRsk(),
-                        getMinerServer(),
-                        rskSystemProperties.minerClientDelayBetweenBlocks(),
-                        rskSystemProperties.minerClientDelayBetweenRefreshes()
-                );
+                minerClient =
+                        new MinerClientImpl(
+                                getRsk(),
+                                getMinerServer(),
+                                rskSystemProperties.minerClientDelayBetweenBlocks(),
+                                rskSystemProperties.minerClientDelayBetweenRefreshes());
             }
         }
 
@@ -624,17 +627,17 @@ public class RskContext implements NodeBootstrapper {
 
     public MinerServer getMinerServer() {
         if (minerServer == null) {
-            minerServer = new MinerServerImpl(
-                    getRskSystemProperties(),
-                    getRsk(),
-                    getMiningMainchainView(),
-                    getNodeBlockProcessor(),
-                    getProofOfWorkRule(),
-                    getBlockToMineBuilder(),
-                    getMinerClock(),
-                    getBlockFactory(),
-                    getMiningConfig()
-            );
+            minerServer =
+                    new MinerServerImpl(
+                            getRskSystemProperties(),
+                            getRsk(),
+                            getMiningMainchainView(),
+                            getNodeBlockProcessor(),
+                            getProofOfWorkRule(),
+                            getBlockToMineBuilder(),
+                            getMinerClock(),
+                            getBlockFactory(),
+                            getMiningConfig());
         }
 
         return minerServer;
@@ -684,8 +687,7 @@ public class RskContext implements NodeBootstrapper {
                 getPeerServer(),
                 getPeerClientFactory(),
                 getTransactionGateway(),
-                getBuildInfo()
-        );
+                getBuildInfo());
     }
 
     protected SolidityCompiler buildSolidityCompiler() {
@@ -717,8 +719,7 @@ public class RskContext implements NodeBootstrapper {
                 getHashRateCalculator(),
                 getConfigCapabilities(),
                 getBuildInfo(),
-                getBlocksBloomStore()
-        );
+                getBlocksBloomStore());
     }
 
     protected ReceiptStore buildReceiptStore() {
@@ -728,22 +729,19 @@ public class RskContext implements NodeBootstrapper {
 
     protected BlockValidator buildBlockValidator() {
         return new BlockValidatorImpl(
-                getBlockStore(),
-                getBlockParentDependantValidationRule(),
-                getBlockValidationRule()
-        );
+                getBlockStore(), getBlockParentDependantValidationRule(), getBlockValidationRule());
     }
 
     protected Genesis buildGenesis() {
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        ActivationConfig.ForBlock genesisActivations = rskSystemProperties.getActivationConfig().forBlock(0L);
+        ActivationConfig.ForBlock genesisActivations =
+                rskSystemProperties.getActivationConfig().forBlock(0L);
         return GenesisLoader.loadGenesis(
                 rskSystemProperties.genesisInfo(),
                 rskSystemProperties.getNetworkConstants().getInitialNonce(),
                 true,
                 genesisActivations.isActive(ConsensusRule.RSKIP92),
-                genesisActivations.isActive(ConsensusRule.RSKIP126)
-        );
+                genesisActivations.isActive(ConsensusRule.RSKIP126));
     }
 
     protected Repository buildRepository() {
@@ -760,7 +758,8 @@ public class RskContext implements NodeBootstrapper {
             ds = new DataSourceWithCache(ds, statesCacheSize);
         }
 
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(new TrieStoreImpl(ds)))));
+        return new MutableRepository(
+                new MutableTrieCache(new MutableTrieImpl(new Trie(new TrieStoreImpl(ds)))));
     }
 
     protected org.ethereum.db.BlockStore buildBlockStore() {
@@ -779,13 +778,17 @@ public class RskContext implements NodeBootstrapper {
                 rskSystemProperties.getTimeoutWaitingRequest(),
                 rskSystemProperties.getExpirationTimePeerStatus(),
                 rskSystemProperties.getMaxSkeletonChunks(),
-                rskSystemProperties.getChunkSize()
-        );
+                rskSystemProperties.getChunkSize());
     }
 
     protected StateRootHandler buildStateRootHandler() {
-        KeyValueDataSource stateRootsDB = makeDataSource("stateRoots", getRskSystemProperties().databaseDir());
-        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB, new HashMap<>());
+        KeyValueDataSource stateRootsDB =
+                makeDataSource("stateRoots", getRskSystemProperties().databaseDir());
+        return new StateRootHandler(
+                getRskSystemProperties().getActivationConfig(),
+                getTrieConverter(),
+                stateRootsDB,
+                new HashMap<>());
     }
 
     protected CompositeEthereumListener buildCompositeEthereumListener() {
@@ -796,11 +799,11 @@ public class RskContext implements NodeBootstrapper {
         if (peerExplorer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             ECKey key = rskSystemProperties.getMyKey();
-            Node localNode = new Node(
-                    key.getNodeId(),
-                    rskSystemProperties.getPublicIp(),
-                    rskSystemProperties.getPeerPort()
-            );
+            Node localNode =
+                    new Node(
+                            key.getNodeId(),
+                            rskSystemProperties.getPublicIp(),
+                            rskSystemProperties.getPeerPort());
             List<String> initialBootNodes = rskSystemProperties.peerDiscoveryIPList();
             List<Node> activePeers = rskSystemProperties.peerActive();
             if (activePeers != null) {
@@ -809,16 +812,17 @@ public class RskContext implements NodeBootstrapper {
                     initialBootNodes.add(address.getHostName() + ":" + address.getPort());
                 }
             }
-            peerExplorer = new PeerExplorer(
-                    initialBootNodes,
-                    localNode,
-                    new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode),
-                    key,
-                    rskSystemProperties.peerDiscoveryMessageTimeOut(),
-                    rskSystemProperties.peerDiscoveryRefreshPeriod(),
-                    rskSystemProperties.peerDiscoveryCleanPeriod(),
-                    rskSystemProperties.networkId()
-            );
+            peerExplorer =
+                    new PeerExplorer(
+                            initialBootNodes,
+                            localNode,
+                            new NodeDistanceTable(
+                                    KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode),
+                            key,
+                            rskSystemProperties.peerDiscoveryMessageTimeOut(),
+                            rskSystemProperties.peerDiscoveryRefreshPeriod(),
+                            rskSystemProperties.peerDiscoveryCleanPeriod(),
+                            rskSystemProperties.networkId());
         }
 
         return peerExplorer;
@@ -844,18 +848,18 @@ public class RskContext implements NodeBootstrapper {
 
     private BlockChainLoader getBlockChainLoader() {
         if (blockChainLoader == null) {
-            blockChainLoader = new BlockChainLoader(
-                    getRskSystemProperties(),
-                    getRepository(),
-                    getBlockStore(),
-                    getReceiptStore(),
-                    getTransactionPool(),
-                    getCompositeEthereumListener(),
-                    getBlockValidator(),
-                    getBlockExecutor(),
-                    getGenesis(),
-                    getStateRootHandler()
-            );
+            blockChainLoader =
+                    new BlockChainLoader(
+                            getRskSystemProperties(),
+                            getRepository(),
+                            getBlockStore(),
+                            getReceiptStore(),
+                            getTransactionPool(),
+                            getCompositeEthereumListener(),
+                            getBlockValidator(),
+                            getBlockExecutor(),
+                            getGenesis(),
+                            getStateRootHandler());
         }
 
         return blockChainLoader;
@@ -879,13 +883,13 @@ public class RskContext implements NodeBootstrapper {
 
     private BlockSyncService getBlockSyncService() {
         if (blockSyncService == null) {
-            blockSyncService = new BlockSyncService(
-                    getRskSystemProperties(),
-                    getNetBlockStore(),
-                    getBlockchain(),
-                    getBlockNodeInformation(),
-                    getSyncConfiguration()
-            );
+            blockSyncService =
+                    new BlockSyncService(
+                            getRskSystemProperties(),
+                            getNetBlockStore(),
+                            getBlockchain(),
+                            getBlockNodeInformation(),
+                            getSyncConfiguration());
         }
 
         return blockSyncService;
@@ -901,11 +905,12 @@ public class RskContext implements NodeBootstrapper {
 
     private SyncPool.PeerClientFactory getPeerClientFactory() {
         if (peerClientFactory == null) {
-            peerClientFactory = () -> new PeerClient(
-                    getRskSystemProperties(),
-                    getCompositeEthereumListener(),
-                    getEthereumChannelInitializerFactory()
-            );
+            peerClientFactory =
+                    () ->
+                            new PeerClient(
+                                    getRskSystemProperties(),
+                                    getCompositeEthereumListener(),
+                                    getEthereumChannelInitializerFactory());
         }
 
         return peerClientFactory;
@@ -913,18 +918,19 @@ public class RskContext implements NodeBootstrapper {
 
     private EthereumChannelInitializerFactory getEthereumChannelInitializerFactory() {
         if (ethereumChannelInitializerFactory == null) {
-            ethereumChannelInitializerFactory = remoteId -> new EthereumChannelInitializer(
-                    remoteId,
-                    getRskSystemProperties(),
-                    getChannelManager(),
-                    getCompositeEthereumListener(),
-                    getConfigCapabilities(),
-                    getNodeManager(),
-                    getRskWireProtocolFactory(),
-                    getEth62MessageFactory(),
-                    getStaticMessages(),
-                    getPeerScoringManager()
-            );
+            ethereumChannelInitializerFactory =
+                    remoteId ->
+                            new EthereumChannelInitializer(
+                                    remoteId,
+                                    getRskSystemProperties(),
+                                    getChannelManager(),
+                                    getCompositeEthereumListener(),
+                                    getConfigCapabilities(),
+                                    getNodeManager(),
+                                    getRskWireProtocolFactory(),
+                                    getEth62MessageFactory(),
+                                    getStaticMessages(),
+                                    getPeerScoringManager());
         }
 
         return ethereumChannelInitializerFactory;
@@ -942,35 +948,33 @@ public class RskContext implements NodeBootstrapper {
         if (blockValidationRule == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             Constants commonConstants = rskSystemProperties.getNetworkConstants();
-            BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
-                    commonConstants.getNewBlockMaxSecondsInTheFuture()
-            );
-            blockValidationRule = new BlockCompositeRule(
-                    new TxsMinGasPriceRule(),
-                    new BlockUnclesValidationRule(
-                            getBlockStore(),
-                            commonConstants.getUncleListLimit(),
-                            commonConstants.getUncleGenerationLimit(),
-                            new BlockHeaderCompositeRule(
-                                    getProofOfWorkRule(),
-                                    getForkDetectionDataRule(),
-                                    blockTimeStampValidationRule,
-                                    new ValidGasUsedRule()
-                            ),
-                            new BlockHeaderParentCompositeRule(
-                                    new PrevMinGasPriceRule(),
-                                    new BlockParentNumberRule(),
-                                    blockTimeStampValidationRule,
-                                    new BlockDifficultyRule(getDifficultyCalculator()),
-                                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
-                            )
-                    ),
-                    new BlockRootValidationRule(rskSystemProperties.getActivationConfig()),
-                    new RemascValidationRule(),
-                    blockTimeStampValidationRule,
-                    new GasLimitRule(commonConstants.getMinGasLimit()),
-                    new ExtraDataRule(commonConstants.getMaximumExtraDataSize())
-            );
+            BlockTimeStampValidationRule blockTimeStampValidationRule =
+                    new BlockTimeStampValidationRule(
+                            commonConstants.getNewBlockMaxSecondsInTheFuture());
+            blockValidationRule =
+                    new BlockCompositeRule(
+                            new TxsMinGasPriceRule(),
+                            new BlockUnclesValidationRule(
+                                    getBlockStore(),
+                                    commonConstants.getUncleListLimit(),
+                                    commonConstants.getUncleGenerationLimit(),
+                                    new BlockHeaderCompositeRule(
+                                            getProofOfWorkRule(),
+                                            getForkDetectionDataRule(),
+                                            blockTimeStampValidationRule,
+                                            new ValidGasUsedRule()),
+                                    new BlockHeaderParentCompositeRule(
+                                            new PrevMinGasPriceRule(),
+                                            new BlockParentNumberRule(),
+                                            blockTimeStampValidationRule,
+                                            new BlockDifficultyRule(getDifficultyCalculator()),
+                                            new BlockParentGasLimitRule(
+                                                    commonConstants.getGasLimitBoundDivisor()))),
+                            new BlockRootValidationRule(rskSystemProperties.getActivationConfig()),
+                            new RemascValidationRule(),
+                            blockTimeStampValidationRule,
+                            new GasLimitRule(commonConstants.getMinGasLimit()),
+                            new ExtraDataRule(commonConstants.getMaximumExtraDataSize()));
         }
 
         return blockValidationRule;
@@ -980,22 +984,22 @@ public class RskContext implements NodeBootstrapper {
         if (minerServerBlockValidationRule == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             Constants commonConstants = rskSystemProperties.getNetworkConstants();
-            minerServerBlockValidationRule = new BlockUnclesValidationRule(
-                    getBlockStore(),
-                    commonConstants.getUncleListLimit(),
-                    commonConstants.getUncleGenerationLimit(),
-                    new BlockHeaderCompositeRule(
-                            getProofOfWorkRule(),
-                            new BlockTimeStampValidationRule(commonConstants.getNewBlockMaxSecondsInTheFuture()),
-                            new ValidGasUsedRule()
-                    ),
-                    new BlockHeaderParentCompositeRule(
-                            new PrevMinGasPriceRule(),
-                            new BlockParentNumberRule(),
-                            new BlockDifficultyRule(getDifficultyCalculator()),
-                            new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
-                    )
-            );
+            minerServerBlockValidationRule =
+                    new BlockUnclesValidationRule(
+                            getBlockStore(),
+                            commonConstants.getUncleListLimit(),
+                            commonConstants.getUncleGenerationLimit(),
+                            new BlockHeaderCompositeRule(
+                                    getProofOfWorkRule(),
+                                    new BlockTimeStampValidationRule(
+                                            commonConstants.getNewBlockMaxSecondsInTheFuture()),
+                                    new ValidGasUsedRule()),
+                            new BlockHeaderParentCompositeRule(
+                                    new PrevMinGasPriceRule(),
+                                    new BlockParentNumberRule(),
+                                    new BlockDifficultyRule(getDifficultyCalculator()),
+                                    new BlockParentGasLimitRule(
+                                            commonConstants.getGasLimitBoundDivisor())));
         }
 
         return minerServerBlockValidationRule;
@@ -1004,11 +1008,11 @@ public class RskContext implements NodeBootstrapper {
     private UDPServer getUdpServer() {
         if (udpServer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            udpServer = new UDPServer(
-                    rskSystemProperties.getBindAddress().getHostAddress(),
-                    rskSystemProperties.getPeerPort(),
-                    getPeerExplorer()
-            );
+            udpServer =
+                    new UDPServer(
+                            rskSystemProperties.getBindAddress().getHostAddress(),
+                            rskSystemProperties.getPeerPort(),
+                            getPeerExplorer());
         }
 
         return udpServer;
@@ -1017,14 +1021,14 @@ public class RskContext implements NodeBootstrapper {
     public BlockParentDependantValidationRule getBlockParentDependantValidationRule() {
         if (blockParentDependantValidationRule == null) {
             Constants commonConstants = getRskSystemProperties().getNetworkConstants();
-            blockParentDependantValidationRule = new BlockParentCompositeRule(
-                    new BlockTxsFieldsValidationRule(),
-                    new BlockTxsValidationRule(getRepositoryLocator()),
-                    new PrevMinGasPriceRule(),
-                    new BlockParentNumberRule(),
-                    new BlockDifficultyRule(getDifficultyCalculator()),
-                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
-            );
+            blockParentDependantValidationRule =
+                    new BlockParentCompositeRule(
+                            new BlockTxsFieldsValidationRule(),
+                            new BlockTxsValidationRule(getRepositoryLocator()),
+                            new PrevMinGasPriceRule(),
+                            new BlockParentNumberRule(),
+                            new BlockDifficultyRule(getDifficultyCalculator()),
+                            new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor()));
         }
 
         return blockParentDependantValidationRule;
@@ -1048,12 +1052,12 @@ public class RskContext implements NodeBootstrapper {
 
     private ForkDetectionDataRule getForkDetectionDataRule() {
         if (forkDetectionDataRule == null) {
-            forkDetectionDataRule = new ForkDetectionDataRule(
-                    getRskSystemProperties().getActivationConfig(),
-                    getConsensusValidationMainchainView(),
-                    getForkDetectionDataCalculator(),
-                    MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION
-            );
+            forkDetectionDataRule =
+                    new ForkDetectionDataRule(
+                            getRskSystemProperties().getActivationConfig(),
+                            getConsensusValidationMainchainView(),
+                            getForkDetectionDataCalculator(),
+                            MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION);
         }
 
         return forkDetectionDataRule;
@@ -1062,10 +1066,10 @@ public class RskContext implements NodeBootstrapper {
     private DifficultyCalculator getDifficultyCalculator() {
         if (difficultyCalculator == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            difficultyCalculator = new DifficultyCalculator(
-                    rskSystemProperties.getActivationConfig(),
-                    rskSystemProperties.getNetworkConstants()
-            );
+            difficultyCalculator =
+                    new DifficultyCalculator(
+                            rskSystemProperties.getActivationConfig(),
+                            rskSystemProperties.getNetworkConstants());
         }
 
         return difficultyCalculator;
@@ -1073,22 +1077,23 @@ public class RskContext implements NodeBootstrapper {
 
     private BlockToMineBuilder getBlockToMineBuilder() {
         if (blockToMineBuilder == null) {
-            blockToMineBuilder = new BlockToMineBuilder(
-                    getRskSystemProperties().getActivationConfig(),
-                    getMiningConfig(),
-                    getRepositoryLocator(),
-                    getBlockStore(),
-                    getTransactionPool(),
-                    getDifficultyCalculator(),
-                    getGasLimitCalculator(),
-                    getForkDetectionDataCalculator(),
-                    getMinerServerBlockValidationRule(),
-                    getMinerClock(),
-                    getBlockFactory(),
-                    getBlockExecutor(),
-                    new MinimumGasPriceCalculator(Coin.valueOf(getMiningConfig().getMinGasPriceTarget())),
-                    new MinerUtils()
-            );
+            blockToMineBuilder =
+                    new BlockToMineBuilder(
+                            getRskSystemProperties().getActivationConfig(),
+                            getMiningConfig(),
+                            getRepositoryLocator(),
+                            getBlockStore(),
+                            getTransactionPool(),
+                            getDifficultyCalculator(),
+                            getGasLimitCalculator(),
+                            getForkDetectionDataCalculator(),
+                            getMinerServerBlockValidationRule(),
+                            getMinerClock(),
+                            getBlockFactory(),
+                            getBlockExecutor(),
+                            new MinimumGasPriceCalculator(
+                                    Coin.valueOf(getMiningConfig().getMinGasPriceTarget())),
+                            new MinerUtils());
         }
 
         return blockToMineBuilder;
@@ -1109,18 +1114,22 @@ public class RskContext implements NodeBootstrapper {
                 return null;
             }
 
-            Path filePath = FileUtil.getDatabaseDirectoryPath(rskSystemProperties.databaseDir(), "messages");
+            Path filePath =
+                    FileUtil.getDatabaseDirectoryPath(
+                            rskSystemProperties.databaseDir(), "messages");
 
             String fullFilename = filePath.toString();
-            MessageFilter filter = new MessageFilter(rskSystemProperties.getMessageRecorderCommands());
+            MessageFilter filter =
+                    new MessageFilter(rskSystemProperties.getMessageRecorderCommands());
 
             try {
-                writerMessageRecorder = new WriterMessageRecorder(
-                        new BufferedWriter(
-                                new OutputStreamWriter(new FileOutputStream(fullFilename), StandardCharsets.UTF_8)
-                        ),
-                        filter
-                );
+                writerMessageRecorder =
+                        new WriterMessageRecorder(
+                                new BufferedWriter(
+                                        new OutputStreamWriter(
+                                                new FileOutputStream(fullFilename),
+                                                StandardCharsets.UTF_8)),
+                                filter);
             } catch (IOException ex) {
                 throw new IllegalArgumentException("Can't use this path to record messages", ex);
             }
@@ -1147,7 +1156,8 @@ public class RskContext implements NodeBootstrapper {
             try {
                 ethModuleSolidity = new EthModuleSolidityEnabled(getSolidityCompiler());
             } catch (RuntimeException e) {
-                logger.trace("Can't find find Solidity compiler, disabling Solidity support in Web3", e);
+                logger.trace(
+                        "Can't find find Solidity compiler, disabling Solidity support in Web3", e);
                 ethModuleSolidity = new EthModuleSolidityDisabled();
             }
         }
@@ -1172,16 +1182,17 @@ public class RskContext implements NodeBootstrapper {
             if (wallet == null) {
                 ethModuleTransaction = new EthModuleTransactionDisabled(constants, transactionPool);
             } else if (rskSystemProperties.minerClientAutoMine()) {
-                ethModuleTransaction = new EthModuleTransactionInstant(
-                        constants,
-                        wallet,
-                        transactionPool,
-                        getMinerServer(),
-                        getMinerClient(),
-                        getBlockchain()
-                );
+                ethModuleTransaction =
+                        new EthModuleTransactionInstant(
+                                constants,
+                                wallet,
+                                transactionPool,
+                                getMinerServer(),
+                                getMinerClient(),
+                                getBlockchain());
             } else {
-                ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool);
+                ethModuleTransaction =
+                        new EthModuleTransactionBase(constants, wallet, transactionPool);
             }
         }
 
@@ -1190,21 +1201,21 @@ public class RskContext implements NodeBootstrapper {
 
     private SyncProcessor getSyncProcessor() {
         if (syncProcessor == null) {
-            syncProcessor = new SyncProcessor(
-                    getBlockchain(),
-                    getConsensusValidationMainchainView(),
-                    getBlockSyncService(),
-                    getPeerScoringManager(),
-                    getChannelManager(),
-                    getSyncConfiguration(),
-                    getBlockFactory(),
-                    getProofOfWorkRule(),
-                    new BlockCompositeRule(
-                            new BlockUnclesHashValidationRule(),
-                            new BlockRootValidationRule(getRskSystemProperties().getActivationConfig())
-                    ),
-                    getDifficultyCalculator()
-            );
+            syncProcessor =
+                    new SyncProcessor(
+                            getBlockchain(),
+                            getConsensusValidationMainchainView(),
+                            getBlockSyncService(),
+                            getPeerScoringManager(),
+                            getChannelManager(),
+                            getSyncConfiguration(),
+                            getBlockFactory(),
+                            getProofOfWorkRule(),
+                            new BlockCompositeRule(
+                                    new BlockUnclesHashValidationRule(),
+                                    new BlockRootValidationRule(
+                                            getRskSystemProperties().getActivationConfig())),
+                            getDifficultyCalculator());
         }
 
         return syncProcessor;
@@ -1212,12 +1223,12 @@ public class RskContext implements NodeBootstrapper {
 
     private SyncPool getSyncPool() {
         if (syncPool == null) {
-            syncPool = new SyncPool(
-                    getCompositeEthereumListener(),
-                    getBlockchain(),
-                    getRskSystemProperties(),
-                    getNodeManager()
-            );
+            syncPool =
+                    new SyncPool(
+                            getCompositeEthereumListener(),
+                            getBlockchain(),
+                            getRskSystemProperties(),
+                            getNodeManager());
         }
 
         return syncPool;
@@ -1234,11 +1245,11 @@ public class RskContext implements NodeBootstrapper {
     private JsonRpcWeb3FilterHandler getJsonRpcWeb3FilterHandler() {
         if (jsonRpcWeb3FilterHandler == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            jsonRpcWeb3FilterHandler = new JsonRpcWeb3FilterHandler(
-                    rskSystemProperties.corsDomains(),
-                    rskSystemProperties.rpcHttpBindAddress(),
-                    rskSystemProperties.rpcHttpHost()
-            );
+            jsonRpcWeb3FilterHandler =
+                    new JsonRpcWeb3FilterHandler(
+                            rskSystemProperties.corsDomains(),
+                            rskSystemProperties.rpcHttpBindAddress(),
+                            rskSystemProperties.rpcHttpHost());
         }
 
         return jsonRpcWeb3FilterHandler;
@@ -1246,10 +1257,9 @@ public class RskContext implements NodeBootstrapper {
 
     private JsonRpcWeb3ServerHandler getJsonRpcWeb3ServerHandler() {
         if (jsonRpcWeb3ServerHandler == null) {
-            jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(
-                    getWeb3(),
-                    getRskSystemProperties().getRpcModules()
-            );
+            jsonRpcWeb3ServerHandler =
+                    new JsonRpcWeb3ServerHandler(
+                            getWeb3(), getRskSystemProperties().getRpcModules());
         }
 
         return jsonRpcWeb3ServerHandler;
@@ -1259,17 +1269,15 @@ public class RskContext implements NodeBootstrapper {
         if (web3WebSocketServer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             JsonRpcSerializer jsonRpcSerializer = getJsonRpcSerializer();
-            EthSubscriptionNotificationEmitter emitter = new EthSubscriptionNotificationEmitter(
-                    getRsk(),
-                    jsonRpcSerializer
-            );
+            EthSubscriptionNotificationEmitter emitter =
+                    new EthSubscriptionNotificationEmitter(getRsk(), jsonRpcSerializer);
             RskJsonRpcHandler jsonRpcHandler = new RskJsonRpcHandler(emitter, jsonRpcSerializer);
-            web3WebSocketServer = new Web3WebSocketServer(
-                    rskSystemProperties.rpcWebSocketBindAddress(),
-                    rskSystemProperties.rpcWebSocketPort(),
-                    jsonRpcHandler,
-                    getJsonRpcWeb3ServerHandler()
-            );
+            web3WebSocketServer =
+                    new Web3WebSocketServer(
+                            rskSystemProperties.rpcWebSocketBindAddress(),
+                            rskSystemProperties.rpcWebSocketPort(),
+                            jsonRpcHandler,
+                            getJsonRpcWeb3ServerHandler());
         }
 
         return web3WebSocketServer;
@@ -1278,15 +1286,15 @@ public class RskContext implements NodeBootstrapper {
     private Web3HttpServer getWeb3HttpServer() {
         if (web3HttpServer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            web3HttpServer = new Web3HttpServer(
-                    rskSystemProperties.rpcHttpBindAddress(),
-                    rskSystemProperties.rpcHttpPort(),
-                    rskSystemProperties.soLingerTime(),
-                    true,
-                    new CorsConfiguration(rskSystemProperties.corsDomains()),
-                    getJsonRpcWeb3FilterHandler(),
-                    getJsonRpcWeb3ServerHandler()
-            );
+            web3HttpServer =
+                    new Web3HttpServer(
+                            rskSystemProperties.rpcHttpBindAddress(),
+                            rskSystemProperties.rpcHttpPort(),
+                            rskSystemProperties.soLingerTime(),
+                            true,
+                            new CorsConfiguration(rskSystemProperties.corsDomains()),
+                            getJsonRpcWeb3FilterHandler(),
+                            getJsonRpcWeb3ServerHandler());
         }
 
         return web3HttpServer;
@@ -1310,11 +1318,11 @@ public class RskContext implements NodeBootstrapper {
 
     private TransactionGateway getTransactionGateway() {
         if (transactionGateway == null) {
-            transactionGateway = new TransactionGateway(
-                    getChannelManager(),
-                    getTransactionPool(),
-                    getCompositeEthereumListener()
-            );
+            transactionGateway =
+                    new TransactionGateway(
+                            getChannelManager(),
+                            getTransactionPool(),
+                            getCompositeEthereumListener());
         }
 
         return transactionGateway;
@@ -1322,15 +1330,15 @@ public class RskContext implements NodeBootstrapper {
 
     private NodeMessageHandler getNodeMessageHandler() {
         if (nodeMessageHandler == null) {
-            nodeMessageHandler = new NodeMessageHandler(
-                    getRskSystemProperties(),
-                    getNodeBlockProcessor(),
-                    getSyncProcessor(),
-                    getChannelManager(),
-                    getTransactionGateway(),
-                    getPeerScoringManager(),
-                    getBlockValidationRule()
-            );
+            nodeMessageHandler =
+                    new NodeMessageHandler(
+                            getRskSystemProperties(),
+                            getNodeBlockProcessor(),
+                            getSyncProcessor(),
+                            getChannelManager(),
+                            getTransactionGateway(),
+                            getPeerScoringManager(),
+                            getBlockValidationRule());
         }
 
         return nodeMessageHandler;
@@ -1338,14 +1346,16 @@ public class RskContext implements NodeBootstrapper {
 
     private RskWireProtocol.Factory getRskWireProtocolFactory() {
         if (rskWireProtocolFactory == null) {
-            rskWireProtocolFactory = () -> new RskWireProtocol(
-                    getRskSystemProperties(),
-                    getPeerScoringManager(),
-                    getNodeMessageHandler(),
-                    getBlockchain(),
-                    getCompositeEthereumListener(),
-                    getGenesis(),
-                    getMessageRecorder());
+            rskWireProtocolFactory =
+                    () ->
+                            new RskWireProtocol(
+                                    getRskSystemProperties(),
+                                    getPeerScoringManager(),
+                                    getNodeMessageHandler(),
+                                    getBlockchain(),
+                                    getCompositeEthereumListener(),
+                                    getGenesis(),
+                                    getMessageRecorder());
         }
 
         return rskWireProtocolFactory;
@@ -1354,20 +1364,19 @@ public class RskContext implements NodeBootstrapper {
     private MiningConfig getMiningConfig() {
         if (miningConfig == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            miningConfig = new MiningConfig(
-                    rskSystemProperties.coinbaseAddress(),
-                    rskSystemProperties.minerMinFeesNotifyInDollars(),
-                    rskSystemProperties.minerGasUnitInDollars(),
-                    rskSystemProperties.minerMinGasPrice(),
-                    rskSystemProperties.getNetworkConstants().getUncleListLimit(),
-                    rskSystemProperties.getNetworkConstants().getUncleGenerationLimit(),
-                    new GasLimitConfig(
-                            rskSystemProperties.getNetworkConstants().getMinGasLimit(),
-                            rskSystemProperties.getTargetGasLimit(),
-                            rskSystemProperties.getForceTargetGasLimit()
-                    ),
-                    rskSystemProperties.isMinerServerFixedClock()
-            );
+            miningConfig =
+                    new MiningConfig(
+                            rskSystemProperties.coinbaseAddress(),
+                            rskSystemProperties.minerMinFeesNotifyInDollars(),
+                            rskSystemProperties.minerGasUnitInDollars(),
+                            rskSystemProperties.minerMinGasPrice(),
+                            rskSystemProperties.getNetworkConstants().getUncleListLimit(),
+                            rskSystemProperties.getNetworkConstants().getUncleGenerationLimit(),
+                            new GasLimitConfig(
+                                    rskSystemProperties.getNetworkConstants().getMinGasLimit(),
+                                    rskSystemProperties.getTargetGasLimit(),
+                                    rskSystemProperties.getForceTargetGasLimit()),
+                            rskSystemProperties.isMinerServerFixedClock());
         }
 
         return miningConfig;
@@ -1375,7 +1384,8 @@ public class RskContext implements NodeBootstrapper {
 
     private GasLimitCalculator getGasLimitCalculator() {
         if (gasLimitCalculator == null) {
-            gasLimitCalculator = new GasLimitCalculator(getRskSystemProperties().getNetworkConstants());
+            gasLimitCalculator =
+                    new GasLimitCalculator(getRskSystemProperties().getNetworkConstants());
         }
 
         return gasLimitCalculator;
@@ -1383,12 +1393,12 @@ public class RskContext implements NodeBootstrapper {
 
     private ExecutionBlockRetriever getExecutionBlockRetriever() {
         if (executionBlockRetriever == null) {
-            executionBlockRetriever = new ExecutionBlockRetriever(
-                    getMiningMainchainView(),
-                    getBlockchain(),
-                    getMinerServer(),
-                    getBlockToMineBuilder()
-            );
+            executionBlockRetriever =
+                    new ExecutionBlockRetriever(
+                            getMiningMainchainView(),
+                            getBlockchain(),
+                            getMinerServer(),
+                            getBlockToMineBuilder());
         }
 
         return executionBlockRetriever;
@@ -1418,27 +1428,27 @@ public class RskContext implements NodeBootstrapper {
         return minerClock;
     }
 
-    public static org.ethereum.db.BlockStore buildBlockStore(BlockFactory blockFactory, String databaseDir) {
+    public static org.ethereum.db.BlockStore buildBlockStore(
+            BlockFactory blockFactory, String databaseDir) {
         File blockIndexDirectory = new File(databaseDir + "/blocks/");
         File dbFile = new File(blockIndexDirectory, "index");
         if (!blockIndexDirectory.exists()) {
             boolean mkdirsSuccess = blockIndexDirectory.mkdirs();
             if (!mkdirsSuccess) {
-                throw new IllegalArgumentException(String.format(
-                        "Unable to create blocks directory: %s", blockIndexDirectory
-                ));
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Unable to create blocks directory: %s", blockIndexDirectory));
             }
         }
 
-        DB indexDB = DBMaker.fileDB(dbFile)
-                .closeOnJvmShutdown()
-                .make();
+        DB indexDB = DBMaker.fileDB(dbFile).closeOnJvmShutdown().make();
 
-        Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = indexDB.hashMapCreate("index")
-                .keySerializer(Serializer.LONG)
-                .valueSerializer(BLOCK_INFO_SERIALIZER)
-                .counterEnable()
-                .makeOrGet();
+        Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap =
+                indexDB.hashMapCreate("index")
+                        .keySerializer(Serializer.LONG)
+                        .valueSerializer(BLOCK_INFO_SERIALIZER)
+                        .counterEnable()
+                        .makeOrGet();
 
         KeyValueDataSource blocksDB = makeDataSource("blocks", databaseDir);
 

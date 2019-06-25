@@ -19,15 +19,12 @@
 package co.rsk.test.dsltest;
 
 import co.rsk.test.dsl.DslCommand;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 8/6/2016.
- */
+/** Created by ajlopez on 8/6/2016. */
 public class DslCommandTest {
     @Test
     public void createCommandWithVerbAndTwoArguments() {

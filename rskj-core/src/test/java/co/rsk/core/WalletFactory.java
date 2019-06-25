@@ -35,5 +35,4 @@ public class WalletFactory {
     public static Wallet createWallet() {
         return new Wallet(new HashMapDB());
     }
-
 }

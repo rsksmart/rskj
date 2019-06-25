@@ -18,23 +18,19 @@
 
 package co.rsk.config;
 
-import com.typesafe.config.ConfigFactory;
-import org.junit.Assert;
-import org.junit.Test;
-import org.mockito.Mockito;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.*;
 
+import com.typesafe.config.ConfigFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.Assert;
+import org.junit.Test;
 
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.*;
-
-/**
- * Created by ajlopez on 3/16/2016.
- */
+/** Created by ajlopez on 3/16/2016. */
 public class RskSystemPropertiesTest {
 
     private final TestSystemProperties config = new TestSystemProperties();

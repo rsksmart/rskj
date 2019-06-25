@@ -18,20 +18,22 @@
 
 package org.ethereum.rpc;
 
+import org.bouncycastle.util.encoders.DecoderException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.DecoderException;
 
-/**
- * Created by ajlopez on 18/01/2018.
- */
+/** Created by ajlopez on 18/01/2018. */
 public class TopicTest {
     @Test
     public void testEquals() {
-        Topic topicA = new Topic("0000000000000000000000000000000000000000000000000000000000000001");
-        Topic topicB = new Topic("0000000000000000000000000000000000000000000000000000000000000001");
-        Topic topicC = new Topic("0000000000000000000000000000000000000000000000000000000000000002");
-        Topic topicD = new Topic("0x0000000000000000000000000000000000000000000000000000000000000003");
+        Topic topicA =
+                new Topic("0000000000000000000000000000000000000000000000000000000000000001");
+        Topic topicB =
+                new Topic("0000000000000000000000000000000000000000000000000000000000000001");
+        Topic topicC =
+                new Topic("0000000000000000000000000000000000000000000000000000000000000002");
+        Topic topicD =
+                new Topic("0x0000000000000000000000000000000000000000000000000000000000000003");
 
         Assert.assertEquals(topicA, topicB);
         Assert.assertNotEquals(topicA, topicC);
@@ -51,7 +53,8 @@ public class TopicTest {
     @Test
     public void oddLengthAddressPaddedWithOneZero() {
         Topic topicA = new Topic("000000000000000000000000000000000000000000000000000000000000001");
-        Topic topicB = new Topic("0000000000000000000000000000000000000000000000000000000000000001");
+        Topic topicB =
+                new Topic("0000000000000000000000000000000000000000000000000000000000000001");
 
         Assert.assertEquals(topicA, topicB);
     }

@@ -18,9 +18,7 @@
 
 package co.rsk.remasc;
 
-/**
- * Thrown when Remasc was invoked with invalid parameters / out of place
- */
+/** Thrown when Remasc was invoked with invalid parameters / out of place */
 class RemascInvalidInvocationException extends RuntimeException {
 
     public RemascInvalidInvocationException(String s) {

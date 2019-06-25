@@ -18,6 +18,8 @@
 
 package co.rsk.net;
 
+import static org.mockito.Mockito.*;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
@@ -35,6 +37,12 @@ import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.UnknownHostException;
+import java.util.*;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.Channel;
@@ -47,18 +55,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 
-import javax.annotation.Nonnull;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.net.UnknownHostException;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.mockito.Mockito.*;
-
-/**
- * Created by ajlopez on 5/10/2016.
- */
+/** Created by ajlopez on 5/10/2016. */
 public class NodeMessageHandlerTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
@@ -69,7 +66,15 @@ public class NodeMessageHandlerTest {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor =
+                new NodeMessageHandler(
+                        config,
+                        sbp,
+                        null,
+                        null,
+                        null,
+                        scoring,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -101,7 +106,9 @@ public class NodeMessageHandlerTest {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, new DummyBlockValidationRule());
+        NodeMessageHandler processor =
+                new NodeMessageHandler(
+                        config, sbp, null, null, null, scoring, new DummyBlockValidationRule());
         Block block = new BlockGenerator().getGenesisBlock();
         Message message = new BlockMessage(block);
 
@@ -123,7 +130,9 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         sbp.setBlockGap(100000);
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, new DummyBlockValidationRule());
+        NodeMessageHandler processor =
+                new NodeMessageHandler(
+                        config, sbp, null, null, null, scoring, new DummyBlockValidationRule());
         Block block = new BlockGenerator().createBlock(200000, 0);
         Message message = new BlockMessage(block);
 
@@ -144,8 +153,15 @@ public class NodeMessageHandlerTest {
         MessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor =
+                new NodeMessageHandler(
+                        config,
+                        sbp,
+                        null,
+                        null,
+                        null,
+                        scoring,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -163,8 +179,15 @@ public class NodeMessageHandlerTest {
     @Test
     public void postBlockMessageUsingProcessor() throws InterruptedException, UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor =
+                new NodeMessageHandler(
+                        config,
+                        sbp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -180,18 +203,26 @@ public class NodeMessageHandlerTest {
         Assert.assertSame(block, sbp.getBlocks().get(0));
     }
 
-    // TODO: Difficulty in RegTest is so small that this test will sometimes pass and other times fail
+    // TODO: Difficulty in RegTest is so small that this test will sometimes pass and other times
+    // fail
     // This should be executed in a special mode where difficulty is high.
     @Ignore
     public void processInvalidPoWMessageUsingProcessor() throws UnknownHostException {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor =
+                new NodeMessageHandler(
+                        config,
+                        sbp,
+                        null,
+                        null,
+                        null,
+                        scoring,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         byte[] mergedMiningHeader = block.getBitcoinMergedMiningHeader();
-        mergedMiningHeader[76] += 3; //change merged mining nonce.
+        mergedMiningHeader[76] += 3; // change merged mining nonce.
         Message message = new BlockMessage(block);
 
         processor.processMessage(sender, message);
@@ -214,7 +245,9 @@ public class NodeMessageHandlerTest {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, new DummyBlockValidationRule());
+        NodeMessageHandler processor =
+                new NodeMessageHandler(
+                        config, sbp, null, null, null, scoring, new DummyBlockValidationRule());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block = blockGenerator.getGenesisBlock();
 
@@ -242,8 +275,15 @@ public class NodeMessageHandlerTest {
     @Test
     public void processFutureBlockMessageUsingProcessor() throws UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor =
+                new NodeMessageHandler(
+                        config,
+                        sbp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         Block block = new BlockGenerator().getGenesisBlock();
         Message message = new BlockMessage(block);
         SimpleMessageChannel sender = new SimpleMessageChannel();
@@ -253,18 +293,29 @@ public class NodeMessageHandlerTest {
         Assert.assertEquals(0, sbp.getBlocks().size());
     }
 
-    @Test @Ignore("This should be reviewed with sync processor or deleted")
+    @Test
+    @Ignore("This should be reviewed with sync processor or deleted")
     public void processStatusMessageUsingNodeBlockProcessor() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor bp =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        bp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
@@ -294,15 +345,24 @@ public class NodeMessageHandlerTest {
         when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
-        final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
+        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any()))
+                .then(
+                        (InvocationOnMock invocation) -> {
+                            msg[0] = invocation.getArgument(1);
+                            return true;
+                        });
+        final NodeMessageHandler handler =
+                NodeMessageHandlerUtil.createHandlerWithSyncProcessor(
+                        SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
-        final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
+        final Status status =
+                new Status(
+                        block.getNumber(),
+                        block.getHash().getBytes(),
+                        block.getParentHash().getBytes(),
+                        new BlockDifficulty(BigInteger.TEN));
         final Message message = new StatusMessage(status);
         handler.processMessage(sender, message);
 
@@ -318,18 +378,44 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor bp =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final SyncProcessor syncProcessor = new SyncProcessor(blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, RskMockFactory.getPeerScoringManager(), RskMockFactory.getChannelManager(), syncConfiguration, blockFactory, new DummyBlockValidationRule(),
-                                                              new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                                                              null);
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, syncProcessor, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final SyncProcessor syncProcessor =
+                new SyncProcessor(
+                        blockchain,
+                        mock(ConsensusValidationMainchainView.class),
+                        blockSyncService,
+                        RskMockFactory.getPeerScoringManager(),
+                        RskMockFactory.getChannelManager(),
+                        syncConfiguration,
+                        blockFactory,
+                        new DummyBlockValidationRule(),
+                        new BlockCompositeRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
+                        null);
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        bp,
+                        syncProcessor,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
-        final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), blockchain.getTotalDifficulty());
+        final Status status =
+                new Status(
+                        block.getNumber(),
+                        block.getHash().getBytes(),
+                        block.getParentHash().getBytes(),
+                        blockchain.getTotalDifficulty());
         final Message message = new StatusMessage(status);
 
         store.saveBlock(block);
@@ -346,16 +432,25 @@ public class NodeMessageHandlerTest {
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore store = new BlockStore();
 
-
         store.saveBlock(block);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor bp =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null,
-                null, new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        bp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -381,16 +476,25 @@ public class NodeMessageHandlerTest {
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 10);
 
-        for (Block b: blocks)
-            blockchain.tryToConnect(b);
+        for (Block b : blocks) blockchain.tryToConnect(b);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor bp =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        bp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -418,10 +522,15 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor bp =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, new DummyBlockValidationRule());
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config, bp, null, null, null, null, new DummyBlockValidationRule());
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -442,15 +551,26 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor bp =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        bp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        handler.processMessage(sender, new BlockHeadersRequestMessage(1,block.getHash().getBytes(), 1));
+        handler.processMessage(
+                sender, new BlockHeadersRequestMessage(1, block.getHash().getBytes(), 1));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -465,27 +585,38 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processBlockHeaderRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
+    public void processBlockHeaderRequestMessageUsingBlockInBlockchain()
+            throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore store = new BlockStore();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 10);
 
-        for (Block b: blocks)
-            blockchain.tryToConnect(b);
+        for (Block b : blocks) blockchain.tryToConnect(b);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor bp =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        bp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        handler.processMessage(sender, new BlockHeadersRequestMessage(1, blocks.get(4).getHash().getBytes(), 1));
+        handler.processMessage(
+                sender, new BlockHeadersRequestMessage(1, blocks.get(4).getHash().getBytes(), 1));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -505,77 +636,86 @@ public class NodeMessageHandlerTest {
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore store = new BlockStore();
 
-        final List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 15);
+        final List<Block> blocks =
+                new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 15);
         final List<Block> bcBlocks = blocks.subList(0, 10);
 
-        for (Block b: bcBlocks)
-            blockchain.tryToConnect(b);
+        for (Block b : bcBlocks) blockchain.tryToConnect(b);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor bp =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        bp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         class TestCase {
             protected final NewBlockHashesMessage message;
             protected final List<Block> expected;
 
-            public TestCase(@Nonnull final NewBlockHashesMessage message, final List<Block> expected) {
+            public TestCase(
+                    @Nonnull final NewBlockHashesMessage message, final List<Block> expected) {
                 this.message = message;
                 this.expected = expected;
             }
         }
 
         TestCase[] testCases = {
-                new TestCase(
-                        new NewBlockHashesMessage(new LinkedList<>()),
-                        null
-                ),
-                new TestCase(
-                        new NewBlockHashesMessage(
-                                Arrays.asList(
-                                        new BlockIdentifier(blocks.get(5).getHash().getBytes(), blocks.get(5).getNumber())
-                                )
-                        ),
-                        null
-                ),
-                new TestCase(
-                        new NewBlockHashesMessage(
-                                Arrays.asList(
-                                        new BlockIdentifier(blocks.get(11).getHash().getBytes(), blocks.get(5).getNumber())
-                                )
-                        ),
-                        Arrays.asList(blocks.get(11))
-                ),
-                new TestCase(
-                        new NewBlockHashesMessage(
-                                Arrays.asList(
-                                        new BlockIdentifier(blocks.get(11).getHash().getBytes(), blocks.get(5).getNumber()),
-                                        new BlockIdentifier(blocks.get(5).getHash().getBytes(), blocks.get(5).getNumber())
-                                )
-                        ),
-                        Arrays.asList(blocks.get(11))
-                ),
-                new TestCase(
-                        new NewBlockHashesMessage(
-                                Arrays.asList(
-                                        new BlockIdentifier(blocks.get(11).getHash().getBytes(), blocks.get(5).getNumber()),
-                                        new BlockIdentifier(blocks.get(12).getHash().getBytes(), blocks.get(5).getNumber())
-                                )
-                        ),
-                        Arrays.asList(blocks.get(11), blocks.get(12))
-                ),
-                new TestCase(
-                        new NewBlockHashesMessage(
-                                Arrays.asList(
-                                        new BlockIdentifier(blocks.get(11).getHash().getBytes(), blocks.get(5).getNumber()),
-                                        new BlockIdentifier(blocks.get(11).getHash().getBytes(), blocks.get(5).getNumber())
-                                )
-                        ),
-                        Arrays.asList(blocks.get(11))
-                )
+            new TestCase(new NewBlockHashesMessage(new LinkedList<>()), null),
+            new TestCase(
+                    new NewBlockHashesMessage(
+                            Arrays.asList(
+                                    new BlockIdentifier(
+                                            blocks.get(5).getHash().getBytes(),
+                                            blocks.get(5).getNumber()))),
+                    null),
+            new TestCase(
+                    new NewBlockHashesMessage(
+                            Arrays.asList(
+                                    new BlockIdentifier(
+                                            blocks.get(11).getHash().getBytes(),
+                                            blocks.get(5).getNumber()))),
+                    Arrays.asList(blocks.get(11))),
+            new TestCase(
+                    new NewBlockHashesMessage(
+                            Arrays.asList(
+                                    new BlockIdentifier(
+                                            blocks.get(11).getHash().getBytes(),
+                                            blocks.get(5).getNumber()),
+                                    new BlockIdentifier(
+                                            blocks.get(5).getHash().getBytes(),
+                                            blocks.get(5).getNumber()))),
+                    Arrays.asList(blocks.get(11))),
+            new TestCase(
+                    new NewBlockHashesMessage(
+                            Arrays.asList(
+                                    new BlockIdentifier(
+                                            blocks.get(11).getHash().getBytes(),
+                                            blocks.get(5).getNumber()),
+                                    new BlockIdentifier(
+                                            blocks.get(12).getHash().getBytes(),
+                                            blocks.get(5).getNumber()))),
+                    Arrays.asList(blocks.get(11), blocks.get(12))),
+            new TestCase(
+                    new NewBlockHashesMessage(
+                            Arrays.asList(
+                                    new BlockIdentifier(
+                                            blocks.get(11).getHash().getBytes(),
+                                            blocks.get(5).getNumber()),
+                                    new BlockIdentifier(
+                                            blocks.get(11).getHash().getBytes(),
+                                            blocks.get(5).getNumber()))),
+                    Arrays.asList(blocks.get(11)))
         };
 
         for (int i = 0; i < testCases.length; i += 1) {
@@ -591,31 +731,30 @@ public class NodeMessageHandlerTest {
 
             Assert.assertEquals(testCase.expected.size(), sender.getMessages().size());
 
-            Assert.assertTrue(sender.getMessages().stream().allMatch(m -> m.getMessageType() == MessageType.GET_BLOCK_MESSAGE));
+            Assert.assertTrue(
+                    sender.getMessages().stream()
+                            .allMatch(m -> m.getMessageType() == MessageType.GET_BLOCK_MESSAGE));
 
-            List<Keccak256> msgs = sender.getMessages().stream()
-                    .map(m -> (GetBlockMessage) m)
-                    .map(m -> m.getBlockHash())
-                    .map(h -> new Keccak256(h))
-                    .collect(Collectors.toList());
+            List<Keccak256> msgs =
+                    sender.getMessages().stream()
+                            .map(m -> (GetBlockMessage) m)
+                            .map(m -> m.getBlockHash())
+                            .map(h -> new Keccak256(h))
+                            .collect(Collectors.toList());
 
-            Set<Keccak256> expected = testCase.expected.stream()
-                    .map(b -> b.getHash().getBytes())
-                    .map(h -> new Keccak256(h))
-                    .collect(Collectors.toSet());
+            Set<Keccak256> expected =
+                    testCase.expected.stream()
+                            .map(b -> b.getHash().getBytes())
+                            .map(h -> new Keccak256(h))
+                            .collect(Collectors.toSet());
 
             for (Keccak256 h : msgs) {
                 Assert.assertTrue(expected.contains(h));
             }
 
             for (Keccak256 h : expected) {
-                Assert.assertTrue(
-                        msgs.stream()
-                                .filter(h1 -> h.equals(h1))
-                                .count() == 1
-                );
+                Assert.assertTrue(msgs.stream().filter(h1 -> h.equals(h1)).count() == 1);
             }
-
         }
     }
 
@@ -624,8 +763,15 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        blockProcessor,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         Message message = mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.NEW_BLOCK_HASHES);
@@ -635,26 +781,37 @@ public class NodeMessageHandlerTest {
         verify(blockProcessor, never()).processNewBlockHashesMessage(any(), any());
     }
 
-    @Test @Ignore("Block headers message is deprecated must be rewrited or deleted")
+    @Test
+    @Ignore("Block headers message is deprecated must be rewrited or deleted")
     public void processGetBlockHeadersMessage() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore store = new BlockStore();
 
-        final List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 10);
+        final List<Block> blocks =
+                new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 10);
 
-        for (Block b: blocks) {
+        for (Block b : blocks) {
             ImportResult result = blockchain.tryToConnect(b);
             System.out.println(result);
         }
 
-
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor bp =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        bp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         int baseBlock = 9;
 
@@ -666,59 +823,50 @@ public class NodeMessageHandlerTest {
             protected final GetBlockHeadersMessage gbhMessage;
             protected final List<BlockHeader> expected;
 
-            public TestCase(@Nonnull final GetBlockHeadersMessage gbhMessage, final List<BlockHeader> expected) {
+            public TestCase(
+                    @Nonnull final GetBlockHeadersMessage gbhMessage,
+                    final List<BlockHeader> expected) {
                 this.gbhMessage = gbhMessage;
                 this.expected = expected;
             }
         }
 
         TestCase[] testCases = {
-                new TestCase(
-                        new GetBlockHeadersMessage(blocks.get(baseBlock).getHash().getBytes(), 0),
-                        null
-                ),
-                new TestCase(
-                        new GetBlockHeadersMessage(blocks.get(baseBlock).getHash().getBytes(), 1),
-                        Arrays.asList(
-                                blocks.get(baseBlock).getHeader()
-                        )
-                ),
-                new TestCase(
-                        new GetBlockHeadersMessage(blocks.get(baseBlock).getHash().getBytes(), 5),
-                        Arrays.asList(
-                                blocks.get(baseBlock).getHeader(),
-                                blocks.get(baseBlock - 1).getHeader(),
-                                blocks.get(baseBlock - 2).getHeader(),
-                                blocks.get(baseBlock - 3).getHeader(),
-                                blocks.get(baseBlock - 4).getHeader()
-                        )
-                ),
-                new TestCase(
-                        new GetBlockHeadersMessage(0, blocks.get(baseBlock).getHash().getBytes(), 5, 1, false),
-                        Arrays.asList(
-                                blocks.get(baseBlock).getHeader(),
-                                blocks.get(baseBlock - 2).getHeader(),
-                                blocks.get(baseBlock - 4).getHeader(),
-                                blocks.get(baseBlock - 6).getHeader(),
-                                blocks.get(baseBlock - 8).getHeader()
-                        )
-                ),
-                new TestCase(
-                        new GetBlockHeadersMessage(blocks.get(baseBlock).getNumber(), 1),
-                        Arrays.asList(
-                                blocks.get(baseBlock).getHeader()
-                        )
-                ),
-                new TestCase(
-                        new GetBlockHeadersMessage(blocks.get(baseBlock).getNumber(), null, 5, 1, false),
-                        Arrays.asList(
-                                blocks.get(baseBlock).getHeader(),
-                                blocks.get(baseBlock - 2).getHeader(),
-                                blocks.get(baseBlock - 4).getHeader(),
-                                blocks.get(baseBlock - 6).getHeader(),
-                                blocks.get(baseBlock - 8).getHeader()
-                        )
-                )
+            new TestCase(
+                    new GetBlockHeadersMessage(blocks.get(baseBlock).getHash().getBytes(), 0),
+                    null),
+            new TestCase(
+                    new GetBlockHeadersMessage(blocks.get(baseBlock).getHash().getBytes(), 1),
+                    Arrays.asList(blocks.get(baseBlock).getHeader())),
+            new TestCase(
+                    new GetBlockHeadersMessage(blocks.get(baseBlock).getHash().getBytes(), 5),
+                    Arrays.asList(
+                            blocks.get(baseBlock).getHeader(),
+                            blocks.get(baseBlock - 1).getHeader(),
+                            blocks.get(baseBlock - 2).getHeader(),
+                            blocks.get(baseBlock - 3).getHeader(),
+                            blocks.get(baseBlock - 4).getHeader())),
+            new TestCase(
+                    new GetBlockHeadersMessage(
+                            0, blocks.get(baseBlock).getHash().getBytes(), 5, 1, false),
+                    Arrays.asList(
+                            blocks.get(baseBlock).getHeader(),
+                            blocks.get(baseBlock - 2).getHeader(),
+                            blocks.get(baseBlock - 4).getHeader(),
+                            blocks.get(baseBlock - 6).getHeader(),
+                            blocks.get(baseBlock - 8).getHeader())),
+            new TestCase(
+                    new GetBlockHeadersMessage(blocks.get(baseBlock).getNumber(), 1),
+                    Arrays.asList(blocks.get(baseBlock).getHeader())),
+            new TestCase(
+                    new GetBlockHeadersMessage(
+                            blocks.get(baseBlock).getNumber(), null, 5, 1, false),
+                    Arrays.asList(
+                            blocks.get(baseBlock).getHeader(),
+                            blocks.get(baseBlock - 2).getHeader(),
+                            blocks.get(baseBlock - 4).getHeader(),
+                            blocks.get(baseBlock - 6).getHeader(),
+                            blocks.get(baseBlock - 8).getHeader()))
         };
 
         for (int i = 0; i < testCases.length; i += 1) {
@@ -745,10 +893,15 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor bp =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, new DummyBlockValidationRule());
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config, bp, null, null, null, null, new DummyBlockValidationRule());
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -764,8 +917,15 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, scoring,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        blockProcessor,
+                        null,
+                        null,
+                        transactionGateway,
+                        scoring,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         sender.setPeerNodeID(new NodeID(new byte[] {1}));
@@ -777,11 +937,13 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, message);
 
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender.getPeerNodeID());
+        Mockito.verify(transactionGateway, times(1))
+                .receiveTransactionsFrom(txs, sender.getPeerNodeID());
 
         handler.processMessage(sender2, message);
 
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender2.getPeerNodeID());
+        Mockito.verify(transactionGateway, times(1))
+                .receiveTransactionsFrom(txs, sender2.getPeerNodeID());
 
         Assert.assertFalse(scoring.isEmpty());
 
@@ -808,8 +970,15 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionGateway, scoring,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        blockProcessor,
+                        null,
+                        channelManager,
+                        transactionGateway,
+                        scoring,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -839,8 +1008,15 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionGateway, scoring,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        blockProcessor,
+                        null,
+                        channelManager,
+                        transactionGateway,
+                        scoring,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -848,9 +1024,16 @@ public class NodeMessageHandlerTest {
         BigInteger value = BigInteger.ONE;
         BigInteger nonce = BigInteger.ZERO;
         BigInteger gasPrice = BigInteger.ONE;
-        BigInteger gasLimit = BigDecimal.valueOf(Math.pow(2, 60)).add(BigDecimal.ONE).toBigInteger();
-        txs.add(TransactionUtils.createTransaction(TransactionUtils.getPrivateKeyBytes(),
-                TransactionUtils.getAddress(), value, nonce, gasPrice, gasLimit));
+        BigInteger gasLimit =
+                BigDecimal.valueOf(Math.pow(2, 60)).add(BigDecimal.ONE).toBigInteger();
+        txs.add(
+                TransactionUtils.createTransaction(
+                        TransactionUtils.getPrivateKeyBytes(),
+                        TransactionUtils.getAddress(),
+                        value,
+                        nonce,
+                        gasPrice,
+                        gasLimit));
         final TransactionsMessage message = new TransactionsMessage(txs);
 
         handler.processMessage(sender, message);
@@ -875,8 +1058,15 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler =
+                new NodeMessageHandler(
+                        config,
+                        blockProcessor,
+                        null,
+                        null,
+                        transactionGateway,
+                        RskMockFactory.getPeerScoringManager(),
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         sender.setPeerNodeID(new NodeID(new byte[] {1}));
@@ -888,18 +1078,27 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, message);
 
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender.getPeerNodeID());
+        Mockito.verify(transactionGateway, times(1))
+                .receiveTransactionsFrom(txs, sender.getPeerNodeID());
 
         handler.processMessage(sender2, message);
 
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender2.getPeerNodeID());
+        Mockito.verify(transactionGateway, times(1))
+                .receiveTransactionsFrom(txs, sender2.getPeerNodeID());
     }
 
     @Test
     public void processBlockByHashRequestMessageUsingProcessor() throws UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor =
+                new NodeMessageHandler(
+                        config,
+                        sbp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockRequestMessage(100, block.getHash().getBytes());
 
@@ -913,8 +1112,15 @@ public class NodeMessageHandlerTest {
     public void processBlockHeadersRequestMessageUsingProcessor() throws UnknownHostException {
         byte[] hash = HashUtil.randomHash();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor =
+                new NodeMessageHandler(
+                        config,
+                        sbp,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         Message message = new BlockHeadersRequestMessage(100, hash, 50);
 
         processor.processMessage(new SimpleMessageChannel(), message);
@@ -928,8 +1134,6 @@ public class NodeMessageHandlerTest {
                 PeerScoring::new,
                 1000,
                 new PunishmentParameters(600000, 10, 10000000),
-                new PunishmentParameters(600000, 10, 10000000)
-        );
+                new PunishmentParameters(600000, 10, 10000000));
     }
 }
-

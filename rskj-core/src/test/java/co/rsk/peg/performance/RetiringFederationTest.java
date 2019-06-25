@@ -18,23 +18,16 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
-import co.rsk.peg.FederationMember;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Repository;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class RetiringFederationTest extends BridgePerformanceTestCase {
@@ -69,33 +62,44 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
     public void getRetiringFederatorPublicKey() throws IOException {
         ExecutionStats stats = new ExecutionStats("getRetiringFederatorPublicKey");
         ABIEncoder abiEncoder;
-        abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, retiringFederation.getBtcPublicKeys().size()-1)});
-        executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", true,50, stats);
-        abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, 10)});
-        executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", false,500, stats);
+        abiEncoder =
+                (int executionIndex) ->
+                        Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(
+                                new Object[] {
+                                    Helper.randomInRange(
+                                            0, retiringFederation.getBtcPublicKeys().size() - 1)
+                                });
+        executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", true, 50, stats);
+        abiEncoder =
+                (int executionIndex) ->
+                        Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(
+                                new Object[] {Helper.randomInRange(0, 10)});
+        executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", false, 500, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
     private void executeTestCase(CallTransaction.Function fn) {
         ExecutionStats stats = new ExecutionStats(fn.name);
-        executeTestCaseSection(fn,true,50, stats);
-        executeTestCaseSection(fn,false,500, stats);
+        executeTestCaseSection(fn, true, 50, stats);
+        executeTestCaseSection(fn, false, 500, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) {
+    private void executeTestCaseSection(
+            CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) {
         executeTestCaseSection((int executionIndex) -> fn.encode(), fn.name, genesis, times, stats);
     }
 
-    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean present, int times, ExecutionStats stats) {
+    private void executeTestCaseSection(
+            ABIEncoder abiEncoder, String name, boolean present, int times, ExecutionStats stats) {
         executeAndAverage(
                 String.format("%s-%s", name, present ? "present" : "not-present"),
-                times, abiEncoder,
+                times,
+                abiEncoder,
                 buildInitializer(present),
                 Helper.getZeroValueRandomSenderTxBuilder(),
                 Helper.getRandomHeightProvider(11, 15),
-                stats
-        );
+                stats);
     }
 
     private BridgeStorageProviderInitializer buildInitializer(boolean present) {
@@ -105,12 +109,12 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             if (present) {
                 int numFederators = Helper.randomInRange(minFederators, maxFederators);
-                retiringFederation = new Federation(
-                        ActiveFederationTest.getNRandomFederationMembers(numFederators),
-                        Instant.ofEpochMilli(new Random().nextLong()),
-                        Helper.randomInRange(1, 10),
-                        networkParameters
-                );
+                retiringFederation =
+                        new Federation(
+                                ActiveFederationTest.getNRandomFederationMembers(numFederators),
+                                Instant.ofEpochMilli(new Random().nextLong()),
+                                Helper.randomInRange(1, 10),
+                                networkParameters);
                 provider.setNewFederation(bridgeConstants.getGenesisFederation());
                 provider.setOldFederation(retiringFederation);
             } else {
@@ -118,6 +122,4 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
             }
         };
     }
-
-
 }

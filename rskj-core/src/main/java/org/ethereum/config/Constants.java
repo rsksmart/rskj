@@ -22,26 +22,29 @@ package org.ethereum.config;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.*;
 import co.rsk.core.BlockDifficulty;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
 
-/**
- * Describes different constants specific for a blockchain
- */
+/** Describes different constants specific for a blockchain */
 public class Constants {
     public static final byte MAINNET_CHAIN_ID = (byte) 30;
     public static final byte TESTNET_CHAIN_ID = (byte) 31;
     public static final byte DEVNET_CHAIN_ID = (byte) 32;
     public static final byte REGTEST_CHAIN_ID = (byte) 33;
 
-    private static final byte[] FALLBACKMINING_PUBKEY_0 = Hex.decode("041e2b148c024770e19c4f31db2233cac791583df95b4d14a5e9fd4b38dc8254b3048f937f169446b19d2eca40db1dd93fab34c0cd8a310afd6e6211f9a89e4bca");
-    private static final byte[] FALLBACKMINING_PUBKEY_1 = Hex.decode("04b55031870df5de88bdb84f65bd1c6f8331c633e759caa5ac7cad3fa4f8a36791e995804bba1558ddcf330a67ff5bfa253fa1d8789735f97a97e849686527976e");
-    private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
-    private static final BigInteger TRANSACTION_GAS_CAP = BigDecimal.valueOf(Math.pow(2, 60)).toBigInteger();
+    private static final byte[] FALLBACKMINING_PUBKEY_0 =
+            Hex.decode(
+                    "041e2b148c024770e19c4f31db2233cac791583df95b4d14a5e9fd4b38dc8254b3048f937f169446b19d2eca40db1dd93fab34c0cd8a310afd6e6211f9a89e4bca");
+    private static final byte[] FALLBACKMINING_PUBKEY_1 =
+            Hex.decode(
+                    "04b55031870df5de88bdb84f65bd1c6f8331c633e759caa5ac7cad3fa4f8a36791e995804bba1558ddcf330a67ff5bfa253fa1d8789735f97a97e849686527976e");
+    private static final BigInteger SECP256K1N =
+            new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
+    private static final BigInteger TRANSACTION_GAS_CAP =
+            BigDecimal.valueOf(Math.pow(2, 60)).toBigInteger();
 
     private final byte chainId;
     private final boolean seedCowAccounts;
@@ -92,9 +95,7 @@ public class Constants {
         return difficultyBoundDivisor;
     }
 
-    /**
-     * EIP155: https://github.com/ethereum/EIPs/issues/155
-     */
+    /** EIP155: https://github.com/ethereum/EIPs/issues/155 */
     public byte getChainId() {
         return chainId;
     }
@@ -180,8 +181,7 @@ public class Constants {
                 new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
                 BigInteger.valueOf(50),
                 60,
-                BridgeMainNetConstants.getInstance()
-        );
+                BridgeMainNetConstants.getInstance());
     }
 
     public static Constants devnetWithFederation(List<BtcECKey> federationPublicKeys) {
@@ -193,8 +193,7 @@ public class Constants {
                 new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
                 BigInteger.valueOf(50),
                 540,
-                new BridgeDevNetConstants(federationPublicKeys)
-        );
+                new BridgeDevNetConstants(federationPublicKeys));
     }
 
     public static Constants testnet() {
@@ -206,8 +205,7 @@ public class Constants {
                 new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
                 BigInteger.valueOf(50),
                 540,
-                BridgeTestNetConstants.getInstance()
-        );
+                BridgeTestNetConstants.getInstance());
     }
 
     public static Constants regtest() {
@@ -219,8 +217,7 @@ public class Constants {
                 BlockDifficulty.ZERO,
                 BigInteger.valueOf(2048),
                 0,
-                BridgeRegTestConstants.getInstance()
-        );
+                BridgeRegTestConstants.getInstance());
     }
 
     public static Constants regtestWithFederation(List<BtcECKey> genesisFederationPublicKeys) {
@@ -232,7 +229,6 @@ public class Constants {
                 BlockDifficulty.ZERO,
                 BigInteger.valueOf(2048),
                 0,
-                new BridgeRegTestConstants(genesisFederationPublicKeys)
-        );
+                new BridgeRegTestConstants(genesisFederationPublicKeys));
     }
 }

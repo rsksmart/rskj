@@ -23,15 +23,14 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import java.util.HashMap;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
 
-import java.util.HashMap;
-
 /**
- * This context overrides every persistent database access with a non-persistent one.
- * It is the closest to a production context that one can use for testing.
+ * This context overrides every persistent database access with a non-persistent one. It is the
+ * closest to a production context that one can use for testing.
  */
 public class RskTestContext extends RskContext {
     public RskTestContext(String[] args) {
@@ -50,12 +49,17 @@ public class RskTestContext extends RskContext {
 
     @Override
     protected Repository buildRepository() {
-        return new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+        return new MutableRepository(
+                new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
     }
 
     @Override
     protected StateRootHandler buildStateRootHandler() {
-        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), new HashMapDB(), new HashMap<>());
+        return new StateRootHandler(
+                getRskSystemProperties().getActivationConfig(),
+                getTrieConverter(),
+                new HashMapDB(),
+                new HashMap<>());
     }
 
     @Override

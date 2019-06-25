@@ -19,13 +19,10 @@
 package co.rsk.metrics;
 
 import co.rsk.core.BlockDifficulty;
+import java.util.Objects;
 import org.ethereum.core.BlockHeader;
 
-import java.util.Objects;
-
-/**
- * Created by mario on 09/09/2016.
- */
+/** Created by mario on 09/09/2016. */
 public class BlockHeaderElement {
 
     private final BlockHeader blockHeader;
@@ -53,11 +50,11 @@ public class BlockHeaderElement {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        
+
         BlockHeaderElement that = (BlockHeaderElement) o;
 
-        return Objects.equals(blockHeader, that.blockHeader) &&
-                Objects.equals(difficulty, that.difficulty);
+        return Objects.equals(blockHeader, that.blockHeader)
+                && Objects.equals(difficulty, that.difficulty);
     }
 
     @Override

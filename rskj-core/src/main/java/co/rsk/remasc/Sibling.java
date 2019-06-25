@@ -20,18 +20,18 @@ package co.rsk.remasc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.util.BigIntegers;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
 
 /**
- * Siblings are part of the remasc contract state
- * Sibling information is added to contract state as blocks are processed and removed when no longer needed.
+ * Siblings are part of the remasc contract state Sibling information is added to contract state as
+ * blocks are processed and removed when no longer needed.
+ *
  * @author Oscar Guindzberg
  */
 public class Sibling {
@@ -49,9 +49,9 @@ public class Sibling {
     // Number of uncles
     private final int uncleCount;
 
-
-    public Sibling(BlockHeader blockHeader, RskAddress includedBlockCoinbase, long includedHeight){
-        this(blockHeader.getHash().getBytes(),
+    public Sibling(BlockHeader blockHeader, RskAddress includedBlockCoinbase, long includedHeight) {
+        this(
+                blockHeader.getHash().getBytes(),
                 blockHeader.getCoinbase(),
                 includedBlockCoinbase,
                 blockHeader.getPaidFees(),
@@ -59,7 +59,13 @@ public class Sibling {
                 blockHeader.getUncleCount());
     }
 
-    private Sibling(byte[] hash, RskAddress coinbase, RskAddress includedBlockCoinbase, Coin paidFees, long includedHeight, int uncleCount) {
+    private Sibling(
+            byte[] hash,
+            RskAddress coinbase,
+            RskAddress includedBlockCoinbase,
+            Coin paidFees,
+            long includedHeight,
+            int uncleCount) {
         this.hash = hash;
         this.coinbase = coinbase;
         this.paidFees = paidFees;
@@ -88,7 +94,9 @@ public class Sibling {
         return includedHeight;
     }
 
-    public int getUncleCount() { return uncleCount; }
+    public int getUncleCount() {
+        return uncleCount;
+    }
 
     public byte[] getEncoded() {
         byte[] rlpHash = RLP.encodeElement(this.hash);
@@ -99,7 +107,13 @@ public class Sibling {
         byte[] rlpIncludedHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.includedHeight));
         byte[] rlpUncleCount = RLP.encodeBigInteger(BigInteger.valueOf((this.uncleCount)));
 
-        return RLP.encodeList(rlpHash, rlpCoinbase, rlpIncludedBlockCoinbase, rlpPaidFees, rlpIncludedHeight, rlpUncleCount);
+        return RLP.encodeList(
+                rlpHash,
+                rlpCoinbase,
+                rlpIncludedBlockCoinbase,
+                rlpPaidFees,
+                rlpIncludedHeight,
+                rlpUncleCount);
     }
 
     public static Sibling create(byte[] data) {
@@ -114,11 +128,18 @@ public class Sibling {
         byte[] bytesIncludedHeight = sibling.get(4).getRLPData();
 
         RLPElement uncleCountElement = sibling.get(5);
-        byte[] bytesUncleCount = uncleCountElement != null? uncleCountElement.getRLPData():null;
+        byte[] bytesUncleCount = uncleCountElement != null ? uncleCountElement.getRLPData() : null;
 
-        long includedHeight = bytesIncludedHeight == null ? 0 : BigIntegers.fromUnsignedByteArray(bytesIncludedHeight).longValue();
-        int uncleCount = bytesUncleCount == null ? 0 : BigIntegers.fromUnsignedByteArray(bytesUncleCount).intValue();
+        long includedHeight =
+                bytesIncludedHeight == null
+                        ? 0
+                        : BigIntegers.fromUnsignedByteArray(bytesIncludedHeight).longValue();
+        int uncleCount =
+                bytesUncleCount == null
+                        ? 0
+                        : BigIntegers.fromUnsignedByteArray(bytesUncleCount).intValue();
 
-        return new Sibling(hash, coinbase, includedBlockCoinbase, paidFees, includedHeight, uncleCount);
+        return new Sibling(
+                hash, coinbase, includedBlockCoinbase, paidFees, includedHeight, uncleCount);
     }
 }

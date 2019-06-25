@@ -19,9 +19,7 @@
 
 package co.rsk.net.discovery.table;
 
-/**
- * Created by kest on 5/25/15.
- */
+/** Created by kest on 5/25/15. */
 public abstract class KademliaOptions {
     public static final int BUCKET_SIZE = 16;
     public static final int BINS = 256;

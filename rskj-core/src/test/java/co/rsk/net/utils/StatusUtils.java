@@ -9,8 +9,7 @@ public class StatusUtils {
                 blockchain.getBestBlock().getNumber(),
                 blockchain.getBestBlockHash(),
                 blockchain.getBestBlock().getParentHash().getBytes(),
-                blockchain.getTotalDifficulty()
-        );
+                blockchain.getTotalDifficulty());
     }
 
     public static Status getFakeStatus() {

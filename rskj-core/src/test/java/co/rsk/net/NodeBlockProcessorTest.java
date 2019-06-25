@@ -26,6 +26,9 @@ import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
+import java.math.BigInteger;
+import java.net.UnknownHostException;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
@@ -34,13 +37,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.net.UnknownHostException;
-import java.util.List;
-
-/**
- * Created by ajlopez on 5/11/2016.
- */
+/** Created by ajlopez on 5/11/2016. */
 public class NodeBlockProcessorTest {
     @Test
     public void processBlockSavingInStore() throws UnknownHostException {
@@ -55,11 +52,16 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         processor.processBlock(sender, orphan);
-        Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(orphan.getHash().getBytes()).size() == 1);
+        Assert.assertTrue(
+                processor.getNodeInformation().getNodesByBlock(orphan.getHash().getBytes()).size()
+                        == 1);
 
         Assert.assertTrue(store.hasBlock(orphan));
         Assert.assertEquals(1, store.size());
@@ -76,12 +78,17 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         processor.processBlock(sender, orphan);
 
-        Assert.assertFalse(processor.getNodeInformation().getNodesByBlock(orphan.getHash().getBytes()).size() == 1);
+        Assert.assertFalse(
+                processor.getNodeInformation().getNodesByBlock(orphan.getHash().getBytes()).size()
+                        == 1);
         Assert.assertFalse(store.hasBlock(orphan));
         Assert.assertEquals(0, store.size());
     }
@@ -95,11 +102,17 @@ public class NodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
 
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        final long advancedBlockNumber = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks() + blockchain.getBestBlock().getNumber() + 1;
+        final long advancedBlockNumber =
+                syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks()
+                        + blockchain.getBestBlock().getNumber()
+                        + 1;
 
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         Assert.assertTrue(processor.isAdvancedBlock(advancedBlockNumber));
         Assert.assertFalse(processor.isAdvancedBlock(advancedBlockNumber - 1));
@@ -116,10 +129,14 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = BlockChainBuilder.ofSize(15);
         final TestSystemProperties config = new TestSystemProperties();
         int uncleGenerationLimit = config.getNetworkConstants().getUncleGenerationLimit();
-        final long blockNumberThatCanBeIgnored = blockchain.getBestBlock().getNumber() - 1 - uncleGenerationLimit;
+        final long blockNumberThatCanBeIgnored =
+                blockchain.getBestBlock().getNumber() - 1 - uncleGenerationLimit;
 
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         Assert.assertTrue(processor.canBeIgnoredForUnclesRewards(blockNumberThatCanBeIgnored));
         Assert.assertFalse(processor.canBeIgnoredForUnclesRewards(blockNumberThatCanBeIgnored + 1));
@@ -142,8 +159,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         processor.processBlock(null, block);
 
@@ -164,14 +184,16 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         processor.processBlock(null, genesis);
         Assert.assertEquals(0, store.size());
 
-        for (Block b : blocks)
-            processor.processBlock(null, b);
+        for (Block b : blocks) processor.processBlock(null, b);
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(0, store.size());
@@ -189,16 +211,17 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         processor.processBlock(null, genesis);
         Assert.assertEquals(0, store.size());
 
-        for (Block b : blocks)
-            processor.processBlock(null, b);
-        for (Block b : blocks2)
-            processor.processBlock(null, b);
+        for (Block b : blocks) processor.processBlock(null, b);
+        for (Block b : blocks2) processor.processBlock(null, b);
 
         Assert.assertEquals(20, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(0, store.size());
@@ -217,16 +240,17 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         processor.processBlock(null, genesis);
         Assert.assertEquals(0, store.size());
 
-        for (Block b : blocks)
-            processor.processBlock(null, b);
-        for (Block b : blocks2)
-            processor.processBlock(null, b);
+        for (Block b : blocks) processor.processBlock(null, b);
+        for (Block b : blocks2) processor.processBlock(null, b);
 
         Assert.assertEquals(25, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(0, store.size());
@@ -240,13 +264,17 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
     }
 
-    @Test @Ignore("Ignored when Process status deleted on block processor")
+    @Test
+    @Ignore("Ignored when Process status deleted on block processor")
     public void noSyncingWithEmptyBlockchainAndLowBestBlock() {
         BlockStore store = new BlockStore();
         Block block = new BlockGenerator().createBlock(10, 0);
@@ -255,18 +283,22 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
 
         Status status = new Status(block.getNumber(), block.getHash().getBytes());
-//        processor.processStatus(new SimpleNodeChannel(null, null), status);
+        //        processor.processStatus(new SimpleNodeChannel(null, null), status);
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
     }
 
-    @Test @Ignore("Ignored when Process status deleted on block processor")
+    @Test
+    @Ignore("Ignored when Process status deleted on block processor")
     public void syncingWithEmptyBlockchainAndHighBestBlock() {
         BlockStore store = new BlockStore();
         Block block = new BlockGenerator().createBlock(30, 0);
@@ -275,18 +307,22 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
 
-//        Status status = new Status(block.getNumber(), block.getHash());
-//        processor.processStatus(new SimpleNodeChannel(null, null), status);
+        //        Status status = new Status(block.getNumber(), block.getHash());
+        //        processor.processStatus(new SimpleNodeChannel(null, null), status);
 
         Assert.assertTrue(processor.hasBetterBlockToSync());
     }
 
-    @Test @Ignore("Ignored when Process status deleted on block processor")
+    @Test
+    @Ignore("Ignored when Process status deleted on block processor")
     public void syncingThenNoSyncing() {
         BlockStore store = new BlockStore();
         Block block = new BlockGenerator().createBlock(30, 0);
@@ -295,13 +331,16 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
 
-//        Status status = new Status(block.getNumber(), block.getHash());
-//        processor.processStatus(new SimpleNodeChannel(null, null), status);
+        //        Status status = new Status(block.getNumber(), block.getHash());
+        //        processor.processStatus(new SimpleNodeChannel(null, null), status);
 
         Assert.assertTrue(processor.hasBetterBlockToSync());
         Assert.assertTrue(processor.hasBetterBlockToSync());
@@ -312,8 +351,8 @@ public class NodeBlockProcessorTest {
         Assert.assertFalse(processor.hasBetterBlockToSync());
 
         Block block2 = new BlockGenerator().createBlock(60, 0);
-//        Status status2 = new Status(block2.getNumber(), block2.getHash());
-//        processor.processStatus(new SimpleNodeChannel(null, null), status2);
+        //        Status status2 = new Status(block2.getNumber(), block2.getHash());
+        //        processor.processStatus(new SimpleNodeChannel(null, null), status2);
 
         Assert.assertTrue(processor.hasBetterBlockToSync());
         Assert.assertFalse(processor.hasBetterBlockToSync());
@@ -329,11 +368,13 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        for (Block b : blocks)
-            processor.processBlock(null, b);
+        for (Block b : blocks) processor.processBlock(null, b);
 
         processor.processBlock(null, genesis);
 
@@ -351,11 +392,13 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        for (int k = 0; k < 10; k++)
-            processor.processBlock(null, blocks.get(9 - k));
+        for (int k = 0; k < 10; k++) processor.processBlock(null, blocks.get(9 - k));
 
         processor.processBlock(null, genesis);
 
@@ -373,12 +416,13 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        for (int k = 0; k < 10; k++)
-            if (k != 5)
-                processor.processBlock(null, blocks.get(9 - k));
+        for (int k = 0; k < 10; k++) if (k != 5) processor.processBlock(null, blocks.get(9 - k));
 
         processor.processBlock(null, genesis);
         processor.processBlock(null, blocks.get(4));
@@ -404,8 +448,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         processor.processBlock(null, block);
 
@@ -430,8 +477,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -441,7 +491,9 @@ public class NodeBlockProcessorTest {
 
         processor.processBlock(sender, block);
 
-        Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size() == 1);
+        Assert.assertTrue(
+                processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size()
+                        == 1);
         Assert.assertTrue(store.hasBlock(block));
         Assert.assertEquals(1, sender.getMessages().size());
         Assert.assertEquals(1, store.size());
@@ -456,7 +508,8 @@ public class NodeBlockProcessorTest {
         Assert.assertArrayEquals(block.getParentHash().getBytes(), gbMessage.getBlockHash());
     }
 
-    @Test @Ignore("Ignored when Process status deleted on block processor")
+    @Test
+    @Ignore("Ignored when Process status deleted on block processor")
     public void processStatusRetrievingBestBlockUsingSender() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
@@ -464,17 +517,22 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block genesis = blockGenerator.getGenesisBlock();
         final Block block = blockGenerator.createChildBlock(genesis);
-//        final Status status = new Status(block.getNumber(), block.getHash());
+        //        final Status status = new Status(block.getNumber(), block.getHash());
 
-//        processor.processStatus(sender, status);
-        Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size() == 1);
+        //        processor.processStatus(sender, status);
+        Assert.assertTrue(
+                processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size()
+                        == 1);
 
         Assert.assertEquals(1, sender.getGetBlockMessages().size());
 
@@ -489,15 +547,19 @@ public class NodeBlockProcessorTest {
         Assert.assertEquals(0, store.size());
     }
 
-    @Test @Ignore("Ignored when Process status deleted on block processor")
+    @Test
+    @Ignore("Ignored when Process status deleted on block processor")
     public void processStatusHavingBestBlockInStore() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -505,47 +567,60 @@ public class NodeBlockProcessorTest {
         final Block block = blockGenerator.createChildBlock(genesis);
 
         store.saveBlock(block);
-//        final Status status = new Status(block.getNumber(), block.getHash());
+        //        final Status status = new Status(block.getNumber(), block.getHash());
 
-//        processor.processStatus(sender, status);
-        Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size() == 1);
+        //        processor.processStatus(sender, status);
+        Assert.assertTrue(
+                processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size()
+                        == 1);
         Assert.assertEquals(1, store.size());
     }
 
-    @Test @Ignore("Ignored when Process status deleted on block processor")
+    @Test
+    @Ignore("Ignored when Process status deleted on block processor")
     public void processStatusHavingBestBlockAsBestBlockInBlockchain() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(2);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final Block block = blockchain.getBestBlock();
         final Keccak256 blockHash = block.getHash();
 
-//        final Status status = new Status(block.getNumber(), block.getHash());
+        //        final Status status = new Status(block.getNumber(), block.getHash());
 
-//        processor.processStatus(sender, status);
-        Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size() == 1);
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        //        processor.processStatus(sender, status);
+        Assert.assertTrue(
+                processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size()
+                        == 1);
+        Assert.assertTrue(
+                nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
 
         Assert.assertEquals(0, sender.getGetBlockMessages().size());
         Assert.assertEquals(0, store.size());
     }
 
-    @Test @Ignore("Ignored when Process status deleted on block processor")
+    @Test
+    @Ignore("Ignored when Process status deleted on block processor")
     public void processStatusHavingBestBlockInBlockchainStore() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(2);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -553,12 +628,13 @@ public class NodeBlockProcessorTest {
         final Keccak256 blockHash = block.getHash();
 
         store.saveBlock(block);
-//        final Status status = new Status(block.getNumber(), block.getHash());
+        //        final Status status = new Status(block.getNumber(), block.getHash());
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
-//        processor.processStatus(sender, status);
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        //        processor.processStatus(sender, status);
+        Assert.assertTrue(
+                nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
 
         Assert.assertEquals(0, sender.getGetBlockMessages().size());
     }
@@ -574,8 +650,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -590,7 +669,8 @@ public class NodeBlockProcessorTest {
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assert.assertEquals(
+                block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -602,8 +682,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -625,8 +708,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -641,7 +727,8 @@ public class NodeBlockProcessorTest {
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assert.assertEquals(
+                block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -656,8 +743,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -665,7 +755,8 @@ public class NodeBlockProcessorTest {
 
         processor.processGetBlock(sender, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(
+                nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -688,8 +779,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -712,8 +806,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -721,7 +818,8 @@ public class NodeBlockProcessorTest {
 
         processor.processGetBlock(sender, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(
+                nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -747,8 +845,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -756,7 +857,8 @@ public class NodeBlockProcessorTest {
 
         processor.processBlockRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(
+                nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -779,8 +881,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -810,8 +915,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -819,7 +927,8 @@ public class NodeBlockProcessorTest {
 
         processor.processBlockRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertFalse(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertFalse(
+                nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
 
         Assert.assertTrue(sender.getMessages().isEmpty());
     }
@@ -834,8 +943,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -843,7 +955,8 @@ public class NodeBlockProcessorTest {
 
         processor.processBlockRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(
+                nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -865,8 +978,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -876,7 +992,8 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHeadersRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
+    public void processBlockHeadersRequestMessageUsingBlockInBlockchain()
+            throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(100);
         final Block block = blockchain.getBlockByNumber(60);
         final BlockStore store = new BlockStore();
@@ -884,8 +1001,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -905,7 +1025,9 @@ public class NodeBlockProcessorTest {
         Assert.assertEquals(20, response.getBlockHeaders().size());
 
         for (int k = 0; k < 20; k++)
-            Assert.assertEquals(blockchain.getBlockByNumber(60 - k).getHash(), response.getBlockHeaders().get(k).getHash());
+            Assert.assertEquals(
+                    blockchain.getBlockByNumber(60 - k).getHash(),
+                    response.getBlockHeaders().get(k).getHash());
     }
 
     @Test
@@ -916,8 +1038,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -927,7 +1052,8 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processSkeletonRequestWithGenesisPlusBestBlockInSkeleton() throws UnknownHostException {
+    public void processSkeletonRequestWithGenesisPlusBestBlockInSkeleton()
+            throws UnknownHostException {
         int skeletonStep = 192;
         final Blockchain blockchain = BlockChainBuilder.ofSize(skeletonStep / 2);
         final Block blockStart = blockchain.getBlockByNumber(5);
@@ -937,8 +1063,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -958,8 +1087,8 @@ public class NodeBlockProcessorTest {
         Block genesis = blockchain.getBlockByNumber(0);
         Block bestBlock = blockchain.getBestBlock();
         BlockIdentifier[] expected = {
-                new BlockIdentifier(genesis.getHash().getBytes(), genesis.getNumber()),
-                new BlockIdentifier(bestBlock.getHash().getBytes(), bestBlock.getNumber()),
+            new BlockIdentifier(genesis.getHash().getBytes(), genesis.getNumber()),
+            new BlockIdentifier(bestBlock.getHash().getBytes(), bestBlock.getNumber()),
         };
         assertBlockIdentifiers(expected, bMessage.getBlockIdentifiers());
     }
@@ -973,8 +1102,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -995,9 +1127,9 @@ public class NodeBlockProcessorTest {
         Block b2 = blockchain.getBlockByNumber(skeletonStep);
         Block b3 = blockchain.getBestBlock();
         BlockIdentifier[] expected = {
-                new BlockIdentifier(b1.getHash().getBytes(), b1.getNumber()),
-                new BlockIdentifier(b2.getHash().getBytes(), b2.getNumber()),
-                new BlockIdentifier(b3.getHash().getBytes(), b3.getNumber()),
+            new BlockIdentifier(b1.getHash().getBytes(), b1.getNumber()),
+            new BlockIdentifier(b2.getHash().getBytes(), b2.getNumber()),
+            new BlockIdentifier(b3.getHash().getBytes(), b3.getNumber()),
         };
         assertBlockIdentifiers(expected, bMessage.getBlockIdentifiers());
     }
@@ -1011,8 +1143,11 @@ public class NodeBlockProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor =
+                new NodeBlockProcessor(
+                        store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -1033,14 +1168,15 @@ public class NodeBlockProcessorTest {
         Block b2 = blockchain.getBlockByNumber(2 * skeletonStep);
         Block b3 = blockchain.getBestBlock();
         BlockIdentifier[] expected = {
-                new BlockIdentifier(b1.getHash().getBytes(), b1.getNumber()),
-                new BlockIdentifier(b2.getHash().getBytes(), b2.getNumber()),
-                new BlockIdentifier(b3.getHash().getBytes(), b3.getNumber()),
+            new BlockIdentifier(b1.getHash().getBytes(), b1.getNumber()),
+            new BlockIdentifier(b2.getHash().getBytes(), b2.getNumber()),
+            new BlockIdentifier(b3.getHash().getBytes(), b3.getNumber()),
         };
         assertBlockIdentifiers(expected, bMessage.getBlockIdentifiers());
     }
 
-    private static void assertBlockIdentifiers(BlockIdentifier[] expected, List<BlockIdentifier> actual) {
+    private static void assertBlockIdentifiers(
+            BlockIdentifier[] expected, List<BlockIdentifier> actual) {
         Assert.assertEquals(expected.length, actual.size());
 
         for (int i = 0; i < expected.length; i++) {

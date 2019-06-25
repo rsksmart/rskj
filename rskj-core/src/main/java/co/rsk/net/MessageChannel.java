@@ -19,7 +19,6 @@
 package co.rsk.net;
 
 import co.rsk.net.messages.Message;
-
 import java.net.InetAddress;
 
 public interface MessageChannel {

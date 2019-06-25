@@ -20,16 +20,13 @@ package org.ethereum.rpc;
 
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 17/01/2018.
- */
+/** Created by ajlopez on 17/01/2018. */
 public class PendingTransactionFilterTest {
     @Test
     public void noEvents() {
@@ -48,11 +45,12 @@ public class PendingTransactionFilterTest {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .value(BigInteger.TEN)
-                .build();
+        Transaction tx =
+                new TransactionBuilder()
+                        .sender(sender)
+                        .receiver(receiver)
+                        .value(BigInteger.TEN)
+                        .build();
 
         filter.newPendingTx(tx);
 
@@ -70,17 +68,19 @@ public class PendingTransactionFilterTest {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
-        Transaction tx1 = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .value(BigInteger.TEN)
-                .build();
+        Transaction tx1 =
+                new TransactionBuilder()
+                        .sender(sender)
+                        .receiver(receiver)
+                        .value(BigInteger.TEN)
+                        .build();
 
-        Transaction tx2 = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .value(BigInteger.ONE)
-                .build();
+        Transaction tx2 =
+                new TransactionBuilder()
+                        .sender(sender)
+                        .receiver(receiver)
+                        .value(BigInteger.ONE)
+                        .build();
 
         filter.newPendingTx(tx1);
         filter.newPendingTx(tx2);

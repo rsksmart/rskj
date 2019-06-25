@@ -21,9 +21,7 @@ package org.ethereum.core.genesis;
 
 import java.util.Map;
 
-/**
- * Used by AllocatedAccount to model the initial state of a contract
- */
+/** Used by AllocatedAccount to model the initial state of a contract */
 public class Contract {
     private String code;
     private Map<String, String> data;

@@ -20,9 +20,7 @@ package co.rsk.config;
 
 import co.rsk.core.RskAddress;
 
-/**
- * Wraps configuration for Mining, which is usually derived from configuration files.
- */
+/** Wraps configuration for Mining, which is usually derived from configuration files. */
 public class MiningConfig {
     public static final int REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION = 449;
 
@@ -35,11 +33,19 @@ public class MiningConfig {
     private final GasLimitConfig gasLimit;
     private final boolean isFixedClock;
 
-    public MiningConfig(RskAddress coinbaseAddress, double minFeesNotifyInDollars, double minerGasUnitInDollars, long minGasPriceTarget, int uncleListLimit, int uncleGenerationLimit, GasLimitConfig gasLimit, boolean isFixedClock) {
+    public MiningConfig(
+            RskAddress coinbaseAddress,
+            double minFeesNotifyInDollars,
+            double minerGasUnitInDollars,
+            long minGasPriceTarget,
+            int uncleListLimit,
+            int uncleGenerationLimit,
+            GasLimitConfig gasLimit,
+            boolean isFixedClock) {
         this.coinbaseAddress = coinbaseAddress;
         this.minFeesNotifyInDollars = minFeesNotifyInDollars;
         this.minerGasUnitInDollars = minerGasUnitInDollars;
-        this.minGasPriceTarget= minGasPriceTarget;
+        this.minGasPriceTarget = minGasPriceTarget;
         this.uncleListLimit = uncleListLimit;
         this.uncleGenerationLimit = uncleGenerationLimit;
         this.gasLimit = gasLimit;

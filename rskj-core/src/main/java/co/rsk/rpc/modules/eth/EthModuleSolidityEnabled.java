@@ -18,16 +18,15 @@
 
 package co.rsk.rpc.modules.eth;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.rpc.dto.CompilationInfoDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 
 public class EthModuleSolidityEnabled implements EthModuleSolidity {
 
@@ -43,12 +42,19 @@ public class EthModuleSolidityEnabled implements EthModuleSolidity {
     public Map<String, CompilationResultDTO> compileSolidity(String contract) throws Exception {
         Map<String, CompilationResultDTO> compilationResultDTOMap = new HashMap<>();
         try {
-            SolidityCompiler.Result res = solidityCompiler.compile(contract.getBytes(StandardCharsets.UTF_8), true, SolidityCompiler.Options.ABI, SolidityCompiler.Options.BIN);
+            SolidityCompiler.Result res =
+                    solidityCompiler.compile(
+                            contract.getBytes(StandardCharsets.UTF_8),
+                            true,
+                            SolidityCompiler.Options.ABI,
+                            SolidityCompiler.Options.BIN);
             if (!res.errors.isEmpty()) {
                 throw new RuntimeException("Compilation error: " + res.errors);
             }
-            org.ethereum.solidity.compiler.CompilationResult result = org.ethereum.solidity.compiler.CompilationResult.parse(res.output);
-            org.ethereum.solidity.compiler.CompilationResult.ContractMetadata contractMetadata = result.contracts.values().iterator().next();
+            org.ethereum.solidity.compiler.CompilationResult result =
+                    org.ethereum.solidity.compiler.CompilationResult.parse(res.output);
+            org.ethereum.solidity.compiler.CompilationResult.ContractMetadata contractMetadata =
+                    result.contracts.values().iterator().next();
 
             CompilationInfoDTO compilationInfo = new CompilationInfoDTO();
             compilationInfo.setSource(contract);
@@ -57,8 +63,9 @@ public class EthModuleSolidityEnabled implements EthModuleSolidity {
             compilationInfo.setCompilerVersion(result.version);
             compilationInfo.setAbiDefinition(new CallTransaction.Contract(contractMetadata.abi));
 
-            CompilationResultDTO compilationResult = new CompilationResultDTO(contractMetadata, compilationInfo);
-            String contractName = (String)result.contracts.keySet().toArray()[0];
+            CompilationResultDTO compilationResult =
+                    new CompilationResultDTO(contractMetadata, compilationInfo);
+            String contractName = (String) result.contracts.keySet().toArray()[0];
 
             compilationResultDTOMap.put(contractName, compilationResult);
 

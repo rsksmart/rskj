@@ -1,19 +1,17 @@
 package co.rsk.scoring;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * PeerScoring records the events associated with a peer
- * identified by node id or IP address (@see PeerScoringManager)
- * An integer score value is calculated based on recorded events.
- * Also, a good reputation flag is calculated.
- * The number of punishment is recorded, as well the initial punishment time and its duration.
- * When the punishment expires, the good reputation is restored and most counters are reset to zero
- * <p>
- * Created by ajlopez on 27/06/2017.
+ * PeerScoring records the events associated with a peer identified by node id or IP address (@see
+ * PeerScoringManager) An integer score value is calculated based on recorded events. Also, a good
+ * reputation flag is calculated. The number of punishment is recorded, as well the initial
+ * punishment time and its duration. When the punishment expires, the good reputation is restored
+ * and most counters are reset to zero
+ *
+ * <p>Created by ajlopez on 27/06/2017.
  */
 public class PeerScoring {
     private final boolean punishmentEnabled;
@@ -35,13 +33,11 @@ public class PeerScoring {
     }
 
     /**
-     * Records an event.
-     * Current implementation has a counter by event type.
-     * The score is incremented or decremented, acoording to the kind of the event.
-     * Some negative events alters the score to a negative level, without
-     * taking into account its previous positive value
+     * Records an event. Current implementation has a counter by event type. The score is
+     * incremented or decremented, acoording to the kind of the event. Some negative events alters
+     * the score to a negative level, without taking into account its previous positive value
      *
-     * @param evt       An event type @see EventType
+     * @param evt An event type @see EventType
      */
     public void recordEvent(EventType evt) {
         try {
@@ -56,7 +52,7 @@ public class PeerScoring {
                 case INVALID_MESSAGE:
                 case INVALID_HEADER:
                     // TODO(lsebrie): review how to handle timeouts properly
-                    //case TIMEOUT_MESSAGE:
+                    // case TIMEOUT_MESSAGE:
                     if (score > 0) {
                         score = 0;
                     }
@@ -80,11 +76,11 @@ public class PeerScoring {
     }
 
     /**
-     * Returns the current computed score.
-     * The score is calculated based on previous event recording.
+     * Returns the current computed score. The score is calculated based on previous event
+     * recording.
      *
-     * @return  An integer number, the level of score. Positive value is associated
-     *          with a good reputation. Negative values indicates a possible punishment.
+     * @return An integer number, the level of score. Positive value is associated with a good
+     *     reputation. Negative values indicates a possible punishment.
      */
     public int getScore() {
         try {
@@ -98,9 +94,8 @@ public class PeerScoring {
     /**
      * Returns the count of events given a event type.
      *
-     * @param evt       Event Type (@see EventType)
-     *
-     * @return  The count of events of the specefied type
+     * @param evt Event Type (@see EventType)
+     * @return The count of events of the specefied type
      */
     public int getEventCounter(EventType evt) {
         try {
@@ -114,7 +109,7 @@ public class PeerScoring {
     /**
      * Returns the count of all events
      *
-     * @return  The total count of events
+     * @return The total count of events
      */
     public int getTotalEventCounter() {
         try {
@@ -146,8 +141,7 @@ public class PeerScoring {
     }
 
     /**
-     * Returns <tt>true</tt> if the peer has good reputation.
-     * Returns <tt>false</tt> if not.
+     * Returns <tt>true</tt> if the peer has good reputation. Returns <tt>false</tt> if not.
      *
      * @return <tt>true</tt> or <tt>false</tt>
      */
@@ -158,8 +152,10 @@ public class PeerScoring {
                 return true;
             }
 
-            if (this.punishmentTime > 0 && this.timeLostGoodReputation > 0
-                    && this.punishmentTime + this.timeLostGoodReputation <= System.currentTimeMillis()) {
+            if (this.punishmentTime > 0
+                    && this.timeLostGoodReputation > 0
+                    && this.punishmentTime + this.timeLostGoodReputation
+                            <= System.currentTimeMillis()) {
                 this.endPunishment();
             }
 
@@ -170,11 +166,10 @@ public class PeerScoring {
     }
 
     /**
-     * Starts the punishment, with specified duration
-     * Changes the reputation to not good
-     * Increments the punishment counter
+     * Starts the punishment, with specified duration Changes the reputation to not good Increments
+     * the punishment counter
      *
-     * @param   expirationTime  punishment duration in milliseconds
+     * @param expirationTime punishment duration in milliseconds
      */
     @VisibleForTesting
     public void startPunishment(long expirationTime) {
@@ -193,17 +188,13 @@ public class PeerScoring {
         }
     }
 
-    /**
-     * Ends the punishment
-     * Clear the event counters
-     *
-     */
+    /** Ends the punishment Clear the event counters */
     private void endPunishment() {
         if (!punishmentEnabled) {
             return;
         }
 
-        //Check locks before doing this function public
+        // Check locks before doing this function public
         for (int i = 0; i < counters.length; i++) {
             this.counters[i] = 0;
         }
@@ -220,7 +211,7 @@ public class PeerScoring {
     /**
      * Returns the number of punishment suffered by this peer.
      *
-     * @return      the counter of punishments
+     * @return the counter of punishments
      */
     public int getPunishmentCounter() {
         return this.punishmentCounter;

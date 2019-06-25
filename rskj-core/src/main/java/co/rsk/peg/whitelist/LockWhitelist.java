@@ -21,22 +21,19 @@ package co.rsk.peg.whitelist;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
 import com.google.common.primitives.UnsignedBytes;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Represents a lock whitelist
- * for btc lock transactions.
- * It's basically a list of btc addresses
+ * Represents a lock whitelist for btc lock transactions. It's basically a list of btc addresses
  * with operations to manipulate and query it.
  *
  * @author Ariel Mendelzon
  */
 public class LockWhitelist {
 
-    private static final Comparator<Address> LEXICOGRAPHICAL_COMPARATOR
-        = Comparator.comparing(Address::getHash160, UnsignedBytes.lexicographicalComparator());
+    private static final Comparator<Address> LEXICOGRAPHICAL_COMPARATOR =
+            Comparator.comparing(Address::getHash160, UnsignedBytes.lexicographicalComparator());
 
     private SortedMap<Address, LockWhitelistEntry> whitelistedAddresses;
     private int disableBlockHeight;
@@ -45,9 +42,11 @@ public class LockWhitelist {
         this(whitelistedAddresses, Integer.MAX_VALUE);
     }
 
-    public LockWhitelist(Map<Address, LockWhitelistEntry> whitelistedAddresses, int disableBlockHeight) {
+    public LockWhitelist(
+            Map<Address, LockWhitelistEntry> whitelistedAddresses, int disableBlockHeight) {
         // Save a copy so that this can't be modified from the outside
-        SortedMap<Address, LockWhitelistEntry> sortedWhitelistedAddresses = new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
+        SortedMap<Address, LockWhitelistEntry> sortedWhitelistedAddresses =
+                new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
         sortedWhitelistedAddresses.putAll(whitelistedAddresses);
         this.whitelistedAddresses = sortedWhitelistedAddresses;
         this.disableBlockHeight = disableBlockHeight;
@@ -112,7 +111,9 @@ public class LockWhitelist {
     }
 
     /**
-     * Marks the whitelisted address as consumed. This will reduce the number of usages, and if it gets down to zero remaining usages it will remove the address
+     * Marks the whitelisted address as consumed. This will reduce the number of usages, and if it
+     * gets down to zero remaining usages it will remove the address
+     *
      * @param address
      */
     public void consume(Address address) {

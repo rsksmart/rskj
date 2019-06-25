@@ -18,10 +18,12 @@
 
 package co.rsk.metrics;
 
-import co.rsk.core.RskAddress;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.RskCustomCache;
+import java.math.BigInteger;
+import java.time.Duration;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -31,21 +33,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
-import java.time.Duration;
-
-/**
- * Created by mario on 05/08/2016.
- */
+/** Created by mario on 05/08/2016. */
 public class HashRateCalculatorTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
     private final byte[] FAKE_GENERIC_HASH = TestUtils.randomBytes(32);
-    private final byte[] OHTER_FAKE_GENERIC_HASH = TestUtils.randomBytes(32)        ;
+    private final byte[] OHTER_FAKE_GENERIC_HASH = TestUtils.randomBytes(32);
     private final RskAddress FAKE_COINBASE = TestUtils.randomAddress();
     private final RskAddress NOT_MY_COINBASE = TestUtils.randomAddress();
-
-
 
     private BlockStore blockStore;
     private Block block;
@@ -59,15 +54,19 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
         Mockito.when(block.getHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH));
-        Mockito.when(blockHeader.getParentHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH))
+        Mockito.when(blockHeader.getParentHash())
+                .thenReturn(new Keccak256(FAKE_GENERIC_HASH))
                 .thenReturn(new Keccak256(OHTER_FAKE_GENERIC_HASH))
                 .thenReturn(new Keccak256(FAKE_GENERIC_HASH))
                 .thenReturn(null);
 
         Mockito.when(blockHeader.getHash()).thenReturn(new Keccak256(FAKE_GENERIC_HASH));
 
-        Mockito.when(blockStore.getBlockByHash(Mockito.any())).thenReturn(block)
-                .thenReturn(block).thenReturn(block).thenReturn(null);
+        Mockito.when(blockStore.getBlockByHash(Mockito.any()))
+                .thenReturn(block)
+                .thenReturn(block)
+                .thenReturn(block)
+                .thenReturn(null);
 
         Mockito.when(blockStore.getBestBlock()).thenReturn(block);
         Mockito.when(blockStore.getBlockByHash(Mockito.any())).thenReturn(block);
@@ -86,7 +85,9 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(TEST_DIFFICULTY);
 
-        HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
+        HashRateCalculator hashRateCalculator =
+                new HashRateCalculatorMining(
+                        blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(new BigInteger("+2"), hashRate);
@@ -105,7 +106,8 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(TEST_DIFFICULTY);
 
-        HashRateCalculator hashRateCalculator = new HashRateCalculatorNonMining(blockStore, new RskCustomCache<>(1000L));
+        HashRateCalculator hashRateCalculator =
+                new HashRateCalculatorNonMining(blockStore, new RskCustomCache<>(1000L));
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(BigInteger.ZERO, hashRate);
@@ -114,14 +116,15 @@ public class HashRateCalculatorTest {
     @Test
     public void calculateNodeHashRateOldBlock() {
         long ts = System.currentTimeMillis() / 1000L;
-        Mockito.when(blockHeader.getTimestamp())
-                .thenReturn(ts - 10000L);
+        Mockito.when(blockHeader.getTimestamp()).thenReturn(ts - 10000L);
 
         Mockito.when(blockHeader.getCoinbase()).thenReturn(FAKE_COINBASE);
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(TEST_DIFFICULTY);
 
-        HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
+        HashRateCalculator hashRateCalculator =
+                new HashRateCalculatorMining(
+                        blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(hashRate, BigInteger.ZERO);
@@ -140,7 +143,9 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(TEST_DIFFICULTY);
 
-        HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
+        HashRateCalculator hashRateCalculator =
+                new HashRateCalculatorMining(
+                        blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(hashRate, new BigInteger("+4"));
@@ -149,17 +154,17 @@ public class HashRateCalculatorTest {
     @Test
     public void calculateNetHashRateOldBlock() {
         long ts = System.currentTimeMillis() / 1000L;
-        Mockito.when(blockHeader.getTimestamp())
-                .thenReturn(ts - 10000L);
+        Mockito.when(blockHeader.getTimestamp()).thenReturn(ts - 10000L);
 
         Mockito.when(blockHeader.getCoinbase()).thenReturn(FAKE_COINBASE);
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(TEST_DIFFICULTY);
 
-        HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
+        HashRateCalculator hashRateCalculator =
+                new HashRateCalculatorMining(
+                        blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(hashRate, BigInteger.ZERO);
     }
-
 }

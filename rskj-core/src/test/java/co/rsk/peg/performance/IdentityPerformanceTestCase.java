@@ -18,12 +18,11 @@
 
 package co.rsk.peg.performance;
 
+import java.io.IOException;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
 
 @Ignore
 public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
@@ -31,16 +30,20 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
     public void identity() throws IOException {
         ExecutionStats stats = new ExecutionStats("identity");
 
-        EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) ->
-                EnvironmentBuilder.Environment.withContract(new PrecompiledContracts.Identity());
+        EnvironmentBuilder environmentBuilder =
+                (int executionIndex, TxBuilder txBuilder, int height) ->
+                        EnvironmentBuilder.Environment.withContract(
+                                new PrecompiledContracts.Identity());
 
         doIdentity(environmentBuilder, stats, 2000);
 
         IdentityPerformanceTest.addStats(stats);
     }
 
-    private void doIdentity(EnvironmentBuilder environmentBuilder, ExecutionStats stats, int numCases) throws IOException {
-        ABIEncoder abiEncoder = (int executionIndex) -> new byte[]{};
+    private void doIdentity(
+            EnvironmentBuilder environmentBuilder, ExecutionStats stats, int numCases)
+            throws IOException {
+        ABIEncoder abiEncoder = (int executionIndex) -> new byte[] {};
 
         executeAndAverage(
                 "identity",
@@ -50,7 +53,6 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
                 Helper.getZeroValueTxBuilder(new ECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
-                null
-        );
+                null);
     }
 }

@@ -20,15 +20,12 @@ package co.rsk.test.builderstest;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.builders.BlockBuilder;
+import java.math.BigInteger;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 8/6/2016.
- */
+/** Created by ajlopez on 8/6/2016. */
 public class BlockBuilderTest {
     @Test
     public void buildBlockWithGenesisAsParent() {
@@ -36,13 +33,12 @@ public class BlockBuilderTest {
 
         BlockBuilder builder = new BlockBuilder();
 
-        Block block = builder
-                .parent(genesis)
-                .build();
+        Block block = builder.parent(genesis).build();
 
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
-        // Assert.assertTrue(genesis.getCumulativeDifficulty().compareTo(block.getDifficultyBI()) < 0);
+        // Assert.assertTrue(genesis.getCumulativeDifficulty().compareTo(block.getDifficultyBI()) <
+        // 0);
         Assert.assertEquals(genesis.getHash(), block.getParentHash());
     }
 
@@ -52,10 +48,7 @@ public class BlockBuilderTest {
 
         BlockBuilder builder = new BlockBuilder();
 
-        Block block = builder
-                .parent(genesis)
-                .difficulty(1)
-                .build();
+        Block block = builder.parent(genesis).difficulty(1).build();
 
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());

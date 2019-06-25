@@ -19,9 +19,9 @@
 
 package org.ethereum.jsontestsuite;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.json.simple.JSONObject;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * @author Roman Mandeleil
@@ -41,19 +41,19 @@ public class Exec {
     private final byte[] value;
 
     /*
-     e.g:
-            "address" : "0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6",
-            "caller" : "cd1722f3947def4cf144679da39c4c32bdc35681",
-            "data" : [
-            ],
+      e.g:
+             "address" : "0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6",
+             "caller" : "cd1722f3947def4cf144679da39c4c32bdc35681",
+             "data" : [
+             ],
 
-            "code" : [ 96,0,96,0,96,0,96,0,96,74,51,96,200,92,3,241 ],
+             "code" : [ 96,0,96,0,96,0,96,0,96,74,51,96,200,92,3,241 ],
 
-            "gas" : 10000,
-            "gasPrice" : 100000000000000,
-            "origin" : "cd1722f3947def4cf144679da39c4c32bdc35681",
-            "value" : 1000000000000000000
-   */
+             "gas" : 10000,
+             "gasPrice" : 100000000000000,
+             "origin" : "cd1722f3947def4cf144679da39c4c32bdc35681",
+             "value" : 1000000000000000000
+    */
     public Exec(JSONObject exec) {
 
         String address = exec.get("address").toString();
@@ -71,15 +71,11 @@ public class Exec {
         this.address = Hex.decode(address);
         this.caller = Hex.decode(caller);
 
-        if (code != null && code.length() > 2)
-            this.code = Hex.decode(code.substring(2));
-        else
-            this.code = ByteUtil.EMPTY_BYTE_ARRAY;
+        if (code != null && code.length() > 2) this.code = Hex.decode(code.substring(2));
+        else this.code = ByteUtil.EMPTY_BYTE_ARRAY;
 
-        if (data != null && data.length() > 2)
-            this.data = Hex.decode(data.substring(2));
-        else
-            this.data = ByteUtil.EMPTY_BYTE_ARRAY;
+        if (data != null && data.length() > 2) this.data = Hex.decode(data.substring(2));
+        else this.data = ByteUtil.EMPTY_BYTE_ARRAY;
 
         this.gas = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(gas));
         this.gasPrice = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(gasPrice));
@@ -87,7 +83,6 @@ public class Exec {
         this.origin = Hex.decode(origin);
         this.value = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(value));
     }
-
 
     public byte[] getAddress() {
         return address;
@@ -121,18 +116,25 @@ public class Exec {
         return value;
     }
 
-
     @Override
     public String toString() {
-        return "Exec{" +
-                "address=" + Hex.toHexString(address) +
-                ", caller=" + Hex.toHexString(caller) +
-                ", data=" + Hex.toHexString(data) +
-                ", code=" + Hex.toHexString(data) +
-                ", gas=" + Hex.toHexString(gas) +
-                ", gasPrice=" + Hex.toHexString(gasPrice) +
-                ", origin=" + Hex.toHexString(origin) +
-                ", value=" + Hex.toHexString(value) +
-                '}';
+        return "Exec{"
+                + "address="
+                + Hex.toHexString(address)
+                + ", caller="
+                + Hex.toHexString(caller)
+                + ", data="
+                + Hex.toHexString(data)
+                + ", code="
+                + Hex.toHexString(data)
+                + ", gas="
+                + Hex.toHexString(gas)
+                + ", gasPrice="
+                + Hex.toHexString(gasPrice)
+                + ", origin="
+                + Hex.toHexString(origin)
+                + ", value="
+                + Hex.toHexString(value)
+                + '}';
     }
 }

@@ -18,18 +18,17 @@
 
 package co.rsk.peg;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.core.RskAddress;
+import java.util.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.*;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ABICallElectionTest {
     private ABICallSpec spec_fna, spec_fnb;
@@ -39,29 +38,22 @@ public class ABICallElectionTest {
 
     @Before
     public void createVotesAuthorizerAndElection() {
-        authorizer = new AddressBasedAuthorizer(Arrays.asList(
-                createMockKeyForAddress("aa"),
-                createMockKeyForAddress("bb"),
-                createMockKeyForAddress("cc"),
-                createMockKeyForAddress("dd"),
-                createMockKeyForAddress("ee")
-        ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
+        authorizer =
+                new AddressBasedAuthorizer(
+                        Arrays.asList(
+                                createMockKeyForAddress("aa"),
+                                createMockKeyForAddress("bb"),
+                                createMockKeyForAddress("cc"),
+                                createMockKeyForAddress("dd"),
+                                createMockKeyForAddress("ee")),
+                        AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
-        spec_fna = new ABICallSpec("fn-a", new byte[][]{});
-        spec_fnb = new ABICallSpec("fn-b", new byte[][]{ Hex.decode("11"), Hex.decode("2233") });
+        spec_fna = new ABICallSpec("fn-a", new byte[][] {});
+        spec_fnb = new ABICallSpec("fn-b", new byte[][] {Hex.decode("11"), Hex.decode("2233")});
 
         votes = new HashMap<>();
-        votes.put(
-                spec_fna,
-                new ArrayList<>(Collections.emptyList())
-        );
-        votes.put(
-                spec_fnb,
-                new ArrayList<>(Arrays.asList(
-                        createVoter("aa"),
-                        createVoter("bb")
-                ))
-        );
+        votes.put(spec_fna, new ArrayList<>(Collections.emptyList()));
+        votes.put(spec_fnb, new ArrayList<>(Arrays.asList(createVoter("aa"), createVoter("bb"))));
 
         election = new ABICallElection(authorizer, votes);
     }
@@ -85,7 +77,7 @@ public class ABICallElectionTest {
 
     @Test
     public void vote_unauthorized() {
-        ABICallSpec spec_fnc = new ABICallSpec("fn-c", new byte[][]{});
+        ABICallSpec spec_fnc = new ABICallSpec("fn-c", new byte[][] {});
         Assert.assertFalse(election.vote(spec_fnc, createVoter("112233")));
         Assert.assertEquals(2, election.getVotes().size());
         Assert.assertEquals(0, election.getVotes().get(spec_fna).size());
@@ -104,13 +96,15 @@ public class ABICallElectionTest {
 
     @Test
     public void vote_newFn() {
-        ABICallSpec spec_fnc = new ABICallSpec("fn-c", new byte[][]{ Hex.decode("44") });
+        ABICallSpec spec_fnc = new ABICallSpec("fn-c", new byte[][] {Hex.decode("44")});
         Assert.assertTrue(election.vote(spec_fnc, createVoter("dd")));
         Assert.assertTrue(election.vote(spec_fnc, createVoter("ee")));
         Assert.assertEquals(3, election.getVotes().size());
         Assert.assertEquals(0, election.getVotes().get(spec_fna).size());
         Assert.assertEquals(2, election.getVotes().get(spec_fnb).size());
-        Assert.assertEquals(Arrays.asList(createVoter("dd"), createVoter("ee")), election.getVotes().get(spec_fnc));
+        Assert.assertEquals(
+                Arrays.asList(createVoter("dd"), createVoter("ee")),
+                election.getVotes().get(spec_fnc));
     }
 
     @Test
@@ -120,8 +114,12 @@ public class ABICallElectionTest {
         Assert.assertEquals(2, election.getVotes().size());
         Assert.assertEquals(2, election.getVotes().get(spec_fna).size());
         Assert.assertEquals(2, election.getVotes().get(spec_fnb).size());
-        Assert.assertEquals(Arrays.asList(createVoter("cc"), createVoter("dd")), election.getVotes().get(spec_fna));
-        Assert.assertEquals(Arrays.asList(createVoter("aa"), createVoter("bb")), election.getVotes().get(spec_fnb));
+        Assert.assertEquals(
+                Arrays.asList(createVoter("cc"), createVoter("dd")),
+                election.getVotes().get(spec_fna));
+        Assert.assertEquals(
+                Arrays.asList(createVoter("aa"), createVoter("bb")),
+                election.getVotes().get(spec_fnb));
     }
 
     @Test
@@ -139,7 +137,7 @@ public class ABICallElectionTest {
 
     @Test
     public void getWinnerAndClearWinners_newFn() {
-        ABICallSpec spec_fnc = new ABICallSpec("fn-c", new byte[][]{ Hex.decode("44") });
+        ABICallSpec spec_fnc = new ABICallSpec("fn-c", new byte[][] {Hex.decode("44")});
         Assert.assertNull(election.getWinner());
         Assert.assertTrue(election.vote(spec_fnc, createVoter("ee")));
         Assert.assertNull(election.getWinner());
@@ -153,7 +151,9 @@ public class ABICallElectionTest {
         Assert.assertNull(election.getWinner());
         Assert.assertEquals(2, election.getVotes().size());
         Assert.assertEquals(Collections.emptyList(), election.getVotes().get(spec_fna));
-        Assert.assertEquals(Arrays.asList(createVoter("aa"), createVoter("bb")), election.getVotes().get(spec_fnb));
+        Assert.assertEquals(
+                Arrays.asList(createVoter("aa"), createVoter("bb")),
+                election.getVotes().get(spec_fnb));
     }
 
     private RskAddress createVoter(String hex) {

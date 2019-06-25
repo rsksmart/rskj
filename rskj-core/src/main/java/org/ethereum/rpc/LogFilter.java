@@ -18,20 +18,17 @@
 
 package org.ethereum.rpc;
 
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+
 import co.rsk.core.RskAddress;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
+import java.util.Collection;
 import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.LogInfo;
 
-import java.util.Collection;
-
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
-
-/**
- * Created by ajlopez on 17/01/2018.
- */
+/** Created by ajlopez on 17/01/2018. */
 public class LogFilter extends Filter {
     class LogFilterEvent extends FilterEvent {
         private final LogFilterElement el;
@@ -51,7 +48,11 @@ public class LogFilter extends Filter {
     private boolean toLatestBlock;
     private final Blockchain blockchain;
 
-    public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock) {
+    public LogFilter(
+            AddressesTopicsFilter addressesTopicsFilter,
+            Blockchain blockchain,
+            boolean fromLatestBlock,
+            boolean toLatestBlock) {
         this.addressesTopicsFilter = addressesTopicsFilter;
         this.blockchain = blockchain;
         this.fromLatestBlock = fromLatestBlock;
@@ -93,18 +94,19 @@ public class LogFilter extends Filter {
         if (this.fromLatestBlock) {
             this.clearEvents();
             onBlock(b);
-        }
-        else if (this.toLatestBlock) {
+        } else if (this.toLatestBlock) {
             onBlock(b);
         }
     }
 
     @Override
     public void newPendingTx(Transaction tx) {
-        //empty method
+        // empty method
     }
 
-    public static LogFilter fromFilterRequest(Web3.FilterRequest fr, Blockchain blockchain, BlocksBloomStore blocksBloomStore) throws Exception {
+    public static LogFilter fromFilterRequest(
+            Web3.FilterRequest fr, Blockchain blockchain, BlocksBloomStore blocksBloomStore)
+            throws Exception {
         RskAddress[] addresses;
 
         // Now, there is an array of array of topics
@@ -114,18 +116,19 @@ public class LogFilter extends Filter {
         Topic[][] topics;
 
         if (fr.address instanceof String) {
-            addresses = new RskAddress[] { new RskAddress(stringHexToByteArray((String) fr.address)) };
+            addresses =
+                    new RskAddress[] {new RskAddress(stringHexToByteArray((String) fr.address))};
         } else if (fr.address instanceof Collection<?>) {
-            Collection<?> iterable = (Collection<?>)fr.address;
+            Collection<?> iterable = (Collection<?>) fr.address;
 
-            addresses = iterable.stream()
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .map(TypeConverter::stringHexToByteArray)
-                    .map(RskAddress::new)
-                    .toArray(RskAddress[]::new);
-        }
-        else {
+            addresses =
+                    iterable.stream()
+                            .filter(String.class::isInstance)
+                            .map(String.class::cast)
+                            .map(TypeConverter::stringHexToByteArray)
+                            .map(RskAddress::new)
+                            .toArray(RskAddress[]::new);
+        } else {
             addresses = new RskAddress[0];
         }
 
@@ -138,22 +141,22 @@ public class LogFilter extends Filter {
                 if (topic == null) {
                     topics[nt] = new Topic[0];
                 } else if (topic instanceof String) {
-                    topics[nt] = new Topic[] { new Topic((String) topic) };
+                    topics[nt] = new Topic[] {new Topic((String) topic)};
                 } else if (topic instanceof Collection<?>) {
                     // TODO list of topics as topic with OR logic
 
-                    Collection<?> iterable = (Collection<?>)topic;
+                    Collection<?> iterable = (Collection<?>) topic;
 
-                    topics[nt] = iterable.stream()
-                            .filter(String.class::isInstance)
-                            .map(String.class::cast)
-                            .map(TypeConverter::stringHexToByteArray)
-                            .map(Topic::new)
-                            .toArray(Topic[]::new);
+                    topics[nt] =
+                            iterable.stream()
+                                    .filter(String.class::isInstance)
+                                    .map(String.class::cast)
+                                    .map(TypeConverter::stringHexToByteArray)
+                                    .map(Topic::new)
+                                    .toArray(Topic[]::new);
                 }
             }
-        }
-        else {
+        } else {
             topics = null;
         }
 
@@ -175,16 +178,28 @@ public class LogFilter extends Filter {
         boolean fromLatestBlock = "latest".equalsIgnoreCase(fr.fromBlock);
         boolean toLatestBlock = "latest".equalsIgnoreCase(fr.toBlock);
 
-        LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock);
+        LogFilter filter =
+                new LogFilter(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock);
 
         retrieveHistoricalData(fr, blockchain, filter, blocksBloomStore);
 
         return filter;
     }
 
-    private static void retrieveHistoricalData(Web3.FilterRequest fr, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) throws Exception {
-        Block blockFrom = isBlockWord(fr.fromBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.fromBlock, blockchain);
-        Block blockTo = isBlockWord(fr.toBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.toBlock, blockchain);
+    private static void retrieveHistoricalData(
+            Web3.FilterRequest fr,
+            Blockchain blockchain,
+            LogFilter filter,
+            BlocksBloomStore blocksBloomStore)
+            throws Exception {
+        Block blockFrom =
+                isBlockWord(fr.fromBlock)
+                        ? null
+                        : Web3Impl.getBlockByNumberOrStr(fr.fromBlock, blockchain);
+        Block blockTo =
+                isBlockWord(fr.toBlock)
+                        ? null
+                        : Web3Impl.getBlockByNumberOrStr(fr.toBlock, blockchain);
 
         if (blockFrom == null && "earliest".equalsIgnoreCase(fr.fromBlock)) {
             blockFrom = blockchain.getBlockByNumber(0);
@@ -194,19 +209,29 @@ public class LogFilter extends Filter {
             // need to add historical data
             blockTo = blockTo == null ? blockchain.getBestBlock() : blockTo;
 
-            processBlocks(blockFrom.getNumber(), blockTo.getNumber(), filter, blockchain, blocksBloomStore);
-        }
-        else if ("latest".equalsIgnoreCase(fr.fromBlock)) {
+            processBlocks(
+                    blockFrom.getNumber(),
+                    blockTo.getNumber(),
+                    filter,
+                    blockchain,
+                    blocksBloomStore);
+        } else if ("latest".equalsIgnoreCase(fr.fromBlock)) {
             filter.onBlock(blockchain.getBestBlock());
         }
     }
 
-    private static void processBlocks(long fromBlockNumber, long toBlockNumber, LogFilter filter, Blockchain blockchain, BlocksBloomStore blocksBloomStore) {
+    private static void processBlocks(
+            long fromBlockNumber,
+            long toBlockNumber,
+            LogFilter filter,
+            Blockchain blockchain,
+            BlocksBloomStore blocksBloomStore) {
         BlocksBloom auxiliaryBlocksBloom = null;
         long bestBlockNumber = blockchain.getBestBlock().getNumber();
 
         for (long blockNum = fromBlockNumber; blockNum <= toBlockNumber; blockNum++) {
-            boolean isConfirmedBlock = blockNum <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
+            boolean isConfirmedBlock =
+                    blockNum <= bestBlockNumber - blocksBloomStore.getNoConfirmations();
 
             if (isConfirmedBlock) {
                 if (blocksBloomStore.firstNumberInRange(blockNum) == blockNum) {
@@ -228,19 +253,21 @@ public class LogFilter extends Filter {
                     auxiliaryBlocksBloom.addBlockBloom(blockNum, new Bloom(block.getLogBloom()));
                 }
 
-                if (auxiliaryBlocksBloom != null && blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
+                if (auxiliaryBlocksBloom != null
+                        && blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
                     blocksBloomStore.setBlocksBloom(auxiliaryBlocksBloom);
                 }
 
                 filter.onBlock(block);
-            }
-            else {
+            } else {
                 filter.onBlock(blockchain.getBlockByNumber(blockNum));
             }
         }
     }
 
     private static boolean isBlockWord(String id) {
-        return "latest".equalsIgnoreCase(id) || "pending".equalsIgnoreCase(id) || "earliest".equalsIgnoreCase(id);
+        return "latest".equalsIgnoreCase(id)
+                || "pending".equalsIgnoreCase(id)
+                || "earliest".equalsIgnoreCase(id);
     }
 }

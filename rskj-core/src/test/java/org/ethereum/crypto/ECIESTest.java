@@ -19,11 +19,13 @@
 
 package org.ethereum.crypto;
 
-import org.ethereum.ConcatKDFBytesGenerator;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.assertArrayEquals;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.*;
@@ -36,23 +38,22 @@ import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.security.Security;
-
-import static org.junit.Assert.assertArrayEquals;
+import org.ethereum.ConcatKDFBytesGenerator;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ECIESTest {
     public static final int KEY_SIZE = 128;
     static Logger log = LoggerFactory.getLogger("test");
     private static ECDomainParameters curve;
-    private static final String CIPHERTEXT1 = "042a851331790adacf6e64fcb19d0872fcdf1285a899a12cdc897da941816b0ea6485402aaf6c2e0a5d98ae3af1b05c68b307d1e0eb7a426a46f1617ba5b94f90b606eee3b5e9d2b527a9ee52cfa377bcd118b9390ed27ffe7d48e8155004375cae209012c3e057bb13a478a64a201d79ad4ae83";
+    private static final String CIPHERTEXT1 =
+            "042a851331790adacf6e64fcb19d0872fcdf1285a899a12cdc897da941816b0ea6485402aaf6c2e0a5d98ae3af1b05c68b307d1e0eb7a426a46f1617ba5b94f90b606eee3b5e9d2b527a9ee52cfa377bcd118b9390ed27ffe7d48e8155004375cae209012c3e057bb13a478a64a201d79ad4ae83";
     private static final X9ECParameters IES_CURVE_PARAM = SECNamedCurves.getByName("secp256r1");
-    private static final BigInteger PRIVATE_KEY1 = new BigInteger("51134539186617376248226283012294527978458758538121566045626095875284492680246");
+    private static final BigInteger PRIVATE_KEY1 =
+            new BigInteger(
+                    "51134539186617376248226283012294527978458758538121566045626095875284492680246");
 
     private static ECPoint pub(BigInteger d) {
         return curve.getG().multiply(d);
@@ -60,7 +61,12 @@ public class ECIESTest {
 
     @BeforeClass
     public static void beforeAll() {
-        curve = new ECDomainParameters(IES_CURVE_PARAM.getCurve(), IES_CURVE_PARAM.getG(), IES_CURVE_PARAM.getN(), IES_CURVE_PARAM.getH());
+        curve =
+                new ECDomainParameters(
+                        IES_CURVE_PARAM.getCurve(),
+                        IES_CURVE_PARAM.getG(),
+                        IES_CURVE_PARAM.getN(),
+                        IES_CURVE_PARAM.getH());
     }
 
     @Test
@@ -69,7 +75,7 @@ public class ECIESTest {
         kdf.init(new KDFParameters("Hello".getBytes(), new byte[0]));
         byte[] bytes = new byte[2];
         kdf.generateBytes(bytes, 0, bytes.length);
-        assertArrayEquals(new byte[]{-66, -89}, bytes);
+        assertArrayEquals(new byte[] {-66, -89}, bytes);
     }
 
     @Test
@@ -77,7 +83,7 @@ public class ECIESTest {
         ECPoint pub1 = pub(PRIVATE_KEY1);
         byte[] ciphertext = Hex.decode(CIPHERTEXT1);
         byte[] plaintext = decrypt(PRIVATE_KEY1, ciphertext);
-        assertArrayEquals(new byte[]{1,1,1}, plaintext);
+        assertArrayEquals(new byte[] {1, 1, 1}, plaintext);
     }
 
     @Test
@@ -89,12 +95,13 @@ public class ECIESTest {
         assertArrayEquals(plaintext, plaintext1);
     }
 
-    public static byte[] decrypt(BigInteger prv, byte[] cipher) throws InvalidCipherTextException, IOException {
+    public static byte[] decrypt(BigInteger prv, byte[] cipher)
+            throws InvalidCipherTextException, IOException {
         ByteArrayInputStream is = new ByteArrayInputStream(cipher);
-        byte[] ephemBytes = new byte[2*((curve.getCurve().getFieldSize()+7)/8) + 1];
+        byte[] ephemBytes = new byte[2 * ((curve.getCurve().getFieldSize() + 7) / 8) + 1];
         is.read(ephemBytes);
         ECPoint ephem = curve.getCurve().decodePoint(ephemBytes);
-        byte[] IV = new byte[KEY_SIZE /8];
+        byte[] IV = new byte[KEY_SIZE / 8];
         is.read(IV);
         byte[] cipherBody = new byte[is.available()];
         is.read(cipherBody);
@@ -105,7 +112,8 @@ public class ECIESTest {
         return message;
     }
 
-    public static byte[] encrypt(ECPoint toPub, byte[] plaintext) throws InvalidCipherTextException, IOException {
+    public static byte[] encrypt(ECPoint toPub, byte[] plaintext)
+            throws InvalidCipherTextException, IOException {
 
         ECKeyPairGenerator eGen = new ECKeyPairGenerator();
         SecureRandom random = new SecureRandom();
@@ -113,14 +121,13 @@ public class ECIESTest {
 
         eGen.init(gParam);
 
-        byte[] IV = new byte[KEY_SIZE/8];
+        byte[] IV = new byte[KEY_SIZE / 8];
         new SecureRandom().nextBytes(IV);
 
         AsymmetricCipherKeyPair ephemPair = eGen.generateKeyPair();
-        BigInteger prv = ((ECPrivateKeyParameters)ephemPair.getPrivate()).getD();
-        ECPoint pub = ((ECPublicKeyParameters)ephemPair.getPublic()).getQ();
+        BigInteger prv = ((ECPrivateKeyParameters) ephemPair.getPrivate()).getD();
+        ECPoint pub = ((ECPublicKeyParameters) ephemPair.getPublic()).getQ();
         EthereumIESEngine iesEngine = makeIESEngine(true, toPub, prv, IV);
-
 
         ECKeyGenerationParameters keygenParams = new ECKeyGenerationParameters(curve, random);
         ECKeyPairGenerator generator = new ECKeyPairGenerator();
@@ -137,25 +144,29 @@ public class ECIESTest {
         return bos.toByteArray();
     }
 
-    private static EthereumIESEngine makeIESEngine(boolean isEncrypt, ECPoint pub, BigInteger prv, byte[] IV) {
+    private static EthereumIESEngine makeIESEngine(
+            boolean isEncrypt, ECPoint pub, BigInteger prv, byte[] IV) {
         AESEngine aesEngine = new AESEngine();
 
-        EthereumIESEngine iesEngine = new EthereumIESEngine(
-                new ECDHBasicAgreement(),
-                new ConcatKDFBytesGenerator(new SHA256Digest()),
-                new HMac(new SHA256Digest()),
-                new SHA256Digest(),
-                new BufferedBlockCipher(new SICBlockCipher(aesEngine)));
+        EthereumIESEngine iesEngine =
+                new EthereumIESEngine(
+                        new ECDHBasicAgreement(),
+                        new ConcatKDFBytesGenerator(new SHA256Digest()),
+                        new HMac(new SHA256Digest()),
+                        new SHA256Digest(),
+                        new BufferedBlockCipher(new SICBlockCipher(aesEngine)));
 
-
-        byte[]         d = new byte[] {};
-        byte[]         e = new byte[] {};
+        byte[] d = new byte[] {};
+        byte[] e = new byte[] {};
 
         IESParameters p = new IESWithCipherParameters(d, e, KEY_SIZE, KEY_SIZE);
         ParametersWithIV parametersWithIV = new ParametersWithIV(p, IV);
 
-        iesEngine.init(isEncrypt, new ECPrivateKeyParameters(prv, curve), new ECPublicKeyParameters(pub, curve), parametersWithIV);
+        iesEngine.init(
+                isEncrypt,
+                new ECPrivateKeyParameters(prv, curve),
+                new ECPublicKeyParameters(pub, curve),
+                parametersWithIV);
         return iesEngine;
     }
-
 }

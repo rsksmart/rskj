@@ -24,12 +24,11 @@ import org.junit.Test;
 public class RemascTransactionTest {
 
     @Test
-    public void serializationTest() throws Exception{
+    public void serializationTest() throws Exception {
         RemascTransaction tx = new RemascTransaction(10);
         byte[] encoded = tx.getEncoded();
         RemascTransaction tx2 = new RemascTransaction(encoded);
         Assert.assertEquals(tx, tx2);
         Assert.assertEquals(tx.getHash(), tx2.getHash());
     }
-
 }

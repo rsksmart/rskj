@@ -18,16 +18,13 @@
 
 package co.rsk.validators;
 
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
-/**
- * Created by SDL on 12/4/2017.
- */
+/** Created by SDL on 12/4/2017. */
 public class BlockTxsFieldsValidationRule implements BlockParentDependantValidationRule {
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 

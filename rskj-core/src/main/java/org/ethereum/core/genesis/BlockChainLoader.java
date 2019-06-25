@@ -28,6 +28,8 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
+import java.util.ArrayList;
+import java.util.Map;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -40,12 +42,7 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Map;
-
-/**
- * Created by mario on 13/01/17.
- */
+/** Created by mario on 13/01/17. */
 public class BlockChainLoader {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
@@ -85,18 +82,18 @@ public class BlockChainLoader {
     }
 
     public BlockChainImpl loadBlockchain() {
-        BlockChainImpl blockchain = new BlockChainImpl(
-                repository,
-                blockStore,
-                receiptStore,
-                transactionPool,
-                listener,
-                blockValidator,
-                config.isFlushEnabled(),
-                config.flushNumberOfBlocks(),
-                blockExecutor,
-                stateRootHandler
-        );
+        BlockChainImpl blockchain =
+                new BlockChainImpl(
+                        repository,
+                        blockStore,
+                        receiptStore,
+                        transactionPool,
+                        listener,
+                        blockValidator,
+                        config.isFlushEnabled(),
+                        config.flushNumberOfBlocks(),
+                        blockExecutor,
+                        stateRootHandler);
 
         Block bestBlock = blockStore.getBestBlock();
         if (bestBlock == null) {
@@ -107,11 +104,12 @@ public class BlockChainLoader {
             blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
             blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
 
-            listener.onBlock(genesis, new ArrayList<>() );
+            listener.onBlock(genesis, new ArrayList<>());
 
             logger.info("Genesis block loaded");
         } else {
-            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
+            BlockDifficulty totalDifficulty =
+                    blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
             blockchain.setStatus(bestBlock, totalDifficulty);
 
             // we need to do this because when bestBlock == null we touch the genesis' state root
@@ -119,7 +117,8 @@ public class BlockChainLoader {
             loadRepository(genesisRepo);
             updateGenesis(genesisRepo);
 
-            logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
+            logger.info(
+                    "*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     blockchain.getBestBlock().getNumber(),
                     blockchain.getTotalDifficulty(),
                     Hex.toHexString(blockchain.getBestBlock().getStateRoot()));
@@ -137,7 +136,10 @@ public class BlockChainLoader {
     }
 
     private void updateGenesis(Repository repository) {
-        genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), repository.getMutableTrie().getTrie()).getBytes());
+        genesis.setStateRoot(
+                stateRootHandler
+                        .convert(genesis.getHeader(), repository.getMutableTrie().getTrie())
+                        .getBytes());
         genesis.flushRLP();
         stateRootHandler.register(genesis.getHeader(), repository.getMutableTrie().getTrie());
     }
@@ -148,18 +150,21 @@ public class BlockChainLoader {
             repository.createAccount(accounts);
         }
 
-        // second we create contracts whom only have code modifying the preexisting ContractDetails instance
+        // second we create contracts whom only have code modifying the preexisting ContractDetails
+        // instance
         for (Map.Entry<RskAddress, byte[]> codeEntry : genesis.getCodes().entrySet()) {
             RskAddress contractAddress = codeEntry.getKey();
             repository.setupContract(contractAddress);
             repository.saveCode(contractAddress, codeEntry.getValue());
             Map<DataWord, byte[]> contractStorage = genesis.getStorages().get(contractAddress);
             for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
-                repository.addStorageBytes(contractAddress, storageEntry.getKey(), storageEntry.getValue());
+                repository.addStorageBytes(
+                        contractAddress, storageEntry.getKey(), storageEntry.getValue());
             }
         }
 
-        // given the accounts had the proper storage root set from the genesis construction we update the account state
+        // given the accounts had the proper storage root set from the genesis construction we
+        // update the account state
         for (Map.Entry<RskAddress, AccountState> accountEntry : genesis.getAccounts().entrySet()) {
             repository.updateAccountState(accountEntry.getKey(), accountEntry.getValue());
         }
@@ -171,8 +176,8 @@ public class BlockChainLoader {
     }
 
     /**
-     * When created, contracts are marked in storage for consistency.
-     * Here, we apply this logic to precompiled contracts depending on consensus rules
+     * When created, contracts are marked in storage for consistency. Here, we apply this logic to
+     * precompiled contracts depending on consensus rules
      */
     private void setupPrecompiledContractsStorage(Repository repository) {
         ActivationConfig.ForBlock genesisActivations = config.getActivationConfig().forBlock(0);

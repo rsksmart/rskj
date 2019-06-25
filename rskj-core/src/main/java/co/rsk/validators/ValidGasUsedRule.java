@@ -19,16 +19,13 @@
 package co.rsk.validators;
 
 import co.rsk.panic.PanicProcessor;
+import java.math.BigInteger;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-
-/**
- * Created by martin.medina on 07/02/17.
- */
+/** Created by martin.medina on 07/02/17. */
 public class ValidGasUsedRule implements BlockValidationRule, BlockHeaderValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
@@ -44,9 +41,11 @@ public class ValidGasUsedRule implements BlockValidationRule, BlockHeaderValidat
         long gasUsed = header.getGasUsed();
         long gasLimit = new BigInteger(1, header.getGasLimit()).longValue();
 
-        if(gasUsed < 0 || gasUsed > gasLimit) {
+        if (gasUsed < 0 || gasUsed > gasLimit) {
             logger.warn("Block gas used is less than 0 or more than the gas limit of the block");
-            panicProcessor.panic("invalidGasValue", "Block gas used is less than 0 or more than the gas limit of the block");
+            panicProcessor.panic(
+                    "invalidGasValue",
+                    "Block gas used is less than 0 or more than the gas limit of the block");
             return false;
         }
 

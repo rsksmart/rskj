@@ -26,6 +26,5 @@ public class HttpUtilsTest {
         headers.set(contentType, NORMAL_CONTENT_TYPE);
         Assert.assertEquals("text/html", HttpUtils.getMimeType(headers.get(contentType)));
         Assert.assertEquals("text/html", HttpUtils.getMimeType(NORMAL_CONTENT_TYPE));
-
     }
 }

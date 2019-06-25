@@ -20,11 +20,11 @@ package org.ethereum.rpc;
 
 import co.rsk.rpc.*;
 import co.rsk.scoring.PeerScoringInformation;
-
 import java.util.Arrays;
 import java.util.Map;
 
-public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule {
+public interface Web3
+        extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule {
     class SyncingResult {
         public String startingBlock;
         public String currentBlock;
@@ -42,15 +42,29 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
 
         @Override
         public String toString() {
-            return "CallArguments{" +
-                    "from='" + from + '\'' +
-                    ", to='" + to + '\'' +
-                    ", gasLimit='" + gas + '\'' +
-                    ", gasPrice='" + gasPrice + '\'' +
-                    ", value='" + value + '\'' +
-                    ", data='" + data + '\'' +
-                    ", nonce='" + nonce + '\'' +
-                    '}';
+            return "CallArguments{"
+                    + "from='"
+                    + from
+                    + '\''
+                    + ", to='"
+                    + to
+                    + '\''
+                    + ", gasLimit='"
+                    + gas
+                    + '\''
+                    + ", gasPrice='"
+                    + gasPrice
+                    + '\''
+                    + ", value='"
+                    + value
+                    + '\''
+                    + ", data='"
+                    + data
+                    + '\''
+                    + ", nonce='"
+                    + nonce
+                    + '\''
+                    + '}';
         }
     }
 
@@ -65,45 +79,88 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
         public String hash; // DATA, 32 Bytes - hash of the block. null when its pending block.
         public String parentHash; // DATA, 32 Bytes - hash of the parent block.
         public String sha3Uncles; // DATA, 32 Bytes - SHA3 of the uncles data in the block.
-        public String logsBloom; // DATA, 256 Bytes - the bloom filter for the logs of the block. null when its pending block.
-        public String transactionsRoot; // DATA, 32 Bytes - the root of the transaction trie of the block.
+        // DATA, 256 Bytes - the bloom filter for the logs of the block. null when its pending
+        // block.
+        public String logsBloom;
+        // DATA, 32 Bytes - the root of the transaction trie of the block.
+        public String transactionsRoot;
         public String stateRoot; // DATA, 32 Bytes - the root of the final state trie of the block.
         public String receiptsRoot; // DATA, 32 Bytes - the root of the receipts trie of the block.
-        public String miner; // DATA, 20 Bytes - the address of the beneficiary to whom the mining rewards were given.
+        // DATA, 20 Bytes - the address of the beneficiary to whom the mining rewards were given.
+        public String miner;
         public String difficulty; // QUANTITY - integer of the difficulty for this block.
-        public String totalDifficulty; // QUANTITY - integer of the total difficulty of the chain until this block.
+        // QUANTITY - integer of the total difficulty of the chain until this block.
+        public String totalDifficulty;
         public String extraData; // DATA - the "extra data" field of this block
-        public String size;//QUANTITY - integer the size of this block in bytes.
-        public String gasLimit;//: QUANTITY - the maximum gas allowed in this block.
+        public String size; // QUANTITY - integer the size of this block in bytes.
+        public String gasLimit; // : QUANTITY - the maximum gas allowed in this block.
         public String gasUsed; // QUANTITY - the total used gas by all transactions in this block.
-        public String timestamp; //: QUANTITY - the unix timestamp for when the block was collated.
-        public Object[] transactions; //: Array - Array of transaction objects, or 32 Bytes transaction hashes depending on the last given parameter.
-        public String[] uncles; //: Array - Array of uncle hashes.
+        public String timestamp; // : QUANTITY - the unix timestamp for when the block was collated.
+        // : Array - Array of transaction objects, or 32 Bytes transaction hashes depending on the
+        // last given parameter.
+        public Object[] transactions;
+        public String[] uncles; // : Array - Array of uncle hashes.
         public String minimumGasPrice;
 
         @Override
         public String toString() {
-            return "BlockResult{" +
-                    "number='" + number + '\'' +
-                    ", hash='" + hash + '\'' +
-                    ", parentHash='" + parentHash + '\'' +
-                    ", sha3Uncles='" + sha3Uncles + '\'' +
-                    ", logsBloom='" + logsBloom + '\'' +
-                    ", transactionsRoot='" + transactionsRoot + '\'' +
-                    ", stateRoot='" + stateRoot + '\'' +
-                    ", receiptsRoot='" + receiptsRoot + '\'' +
-                    ", miner='" + miner + '\'' +
-                    ", difficulty='" + difficulty + '\'' +
-                    ", totalDifficulty='" + totalDifficulty + '\'' +
-                    ", extraData='" + extraData + '\'' +
-                    ", size='" + size + '\'' +
-                    ", gasLimit='" + gasLimit + '\'' +
-                    ", minimumGasPrice='" + minimumGasPrice + '\'' +
-                    ", gasUsed='" + gasUsed + '\'' +
-                    ", timestamp='" + timestamp + '\'' +
-                    ", transactions=" + Arrays.toString(transactions) +
-                    ", uncles=" + Arrays.toString(uncles) +
-                    '}';
+            return "BlockResult{"
+                    + "number='"
+                    + number
+                    + '\''
+                    + ", hash='"
+                    + hash
+                    + '\''
+                    + ", parentHash='"
+                    + parentHash
+                    + '\''
+                    + ", sha3Uncles='"
+                    + sha3Uncles
+                    + '\''
+                    + ", logsBloom='"
+                    + logsBloom
+                    + '\''
+                    + ", transactionsRoot='"
+                    + transactionsRoot
+                    + '\''
+                    + ", stateRoot='"
+                    + stateRoot
+                    + '\''
+                    + ", receiptsRoot='"
+                    + receiptsRoot
+                    + '\''
+                    + ", miner='"
+                    + miner
+                    + '\''
+                    + ", difficulty='"
+                    + difficulty
+                    + '\''
+                    + ", totalDifficulty='"
+                    + totalDifficulty
+                    + '\''
+                    + ", extraData='"
+                    + extraData
+                    + '\''
+                    + ", size='"
+                    + size
+                    + '\''
+                    + ", gasLimit='"
+                    + gasLimit
+                    + '\''
+                    + ", minimumGasPrice='"
+                    + minimumGasPrice
+                    + '\''
+                    + ", gasUsed='"
+                    + gasUsed
+                    + '\''
+                    + ", timestamp='"
+                    + timestamp
+                    + '\''
+                    + ", transactions="
+                    + Arrays.toString(transactions)
+                    + ", uncles="
+                    + Arrays.toString(uncles)
+                    + '}';
         }
     }
 
@@ -115,12 +172,18 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
 
         @Override
         public String toString() {
-            return "FilterRequest{" +
-                    "fromBlock='" + fromBlock + '\'' +
-                    ", toBlock='" + toBlock + '\'' +
-                    ", address=" + address +
-                    ", topics=" + Arrays.toString(topics) +
-                    '}';
+            return "FilterRequest{"
+                    + "fromBlock='"
+                    + fromBlock
+                    + '\''
+                    + ", toBlock='"
+                    + toBlock
+                    + '\''
+                    + ", address="
+                    + address
+                    + ", topics="
+                    + Arrays.toString(topics)
+                    + '}';
         }
     }
 
@@ -129,33 +192,52 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
     void stop();
 
     String web3_clientVersion();
+
     String web3_sha3(String data) throws Exception;
+
     String net_version();
+
     String net_peerCount();
+
     boolean net_listening();
+
     String[] net_peerList();
+
     String rsk_protocolVersion();
 
     // methods required by dev environments
     Map<String, String> rpc_modules();
 
     void db_putString();
+
     void db_getString();
 
     void db_putHex();
+
     void db_getHex();
 
     String personal_newAccountWithSeed(String seed);
+
     String personal_newAccount(String passphrase);
+
     String[] personal_listAccounts();
+
     String personal_importRawKey(String key, String passphrase);
-    String personal_sendTransaction(CallArguments transactionArgs, String passphrase) throws Exception;
+
+    String personal_sendTransaction(CallArguments transactionArgs, String passphrase)
+            throws Exception;
+
     boolean personal_unlockAccount(String key, String passphrase, String duration);
+
     boolean personal_lockAccount(String key);
+
     String personal_dumpRawKey(String address) throws Exception;
 
     void sco_banAddress(String address);
+
     void sco_unbanAddress(String address);
+
     PeerScoringInformation[] sco_peerList();
+
     String[] sco_bannedAddresses();
 }

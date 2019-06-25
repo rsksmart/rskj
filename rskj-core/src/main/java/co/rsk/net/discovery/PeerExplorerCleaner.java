@@ -22,9 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by mario on 22/02/17.
- */
+/** Created by mario on 22/02/17. */
 public class PeerExplorerCleaner {
 
     private PeerExplorer peerExplorer;
@@ -37,8 +35,11 @@ public class PeerExplorerCleaner {
         this.peerExplorer = peerExplorer;
         this.updatePeriod = updatePeriod;
         this.cleanPeriod = cleanPeriod;
-        // it should stay on a single thread since there are two tasks that could interfere with each other running here
-        this.updateTask = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PeerExplorerCleaner"));
+        // it should stay on a single thread since there are two tasks that could interfere with
+        // each other running here
+        this.updateTask =
+                Executors.newSingleThreadScheduledExecutor(
+                        r -> new Thread(r, "PeerExplorerCleaner"));
     }
 
     public void run() {
@@ -49,9 +50,9 @@ public class PeerExplorerCleaner {
     }
 
     private void startUpdateTask() {
-        updateTask.scheduleAtFixedRate(() -> peerExplorer.clean(), cleanPeriod, cleanPeriod, TimeUnit.MILLISECONDS);
-        updateTask.scheduleAtFixedRate(() -> peerExplorer.update(), updatePeriod, updatePeriod, TimeUnit.MILLISECONDS);
+        updateTask.scheduleAtFixedRate(
+                () -> peerExplorer.clean(), cleanPeriod, cleanPeriod, TimeUnit.MILLISECONDS);
+        updateTask.scheduleAtFixedRate(
+                () -> peerExplorer.update(), updatePeriod, updatePeriod, TimeUnit.MILLISECONDS);
     }
-
-
 }

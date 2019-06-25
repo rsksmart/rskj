@@ -21,18 +21,14 @@ package co.rsk.net.discovery;
 import co.rsk.net.discovery.message.PingPeerMessage;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import java.net.InetSocketAddress;
+import java.util.UUID;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.net.InetSocketAddress;
-import java.util.OptionalInt;
-import java.util.UUID;
-
-/**
- * Created by mario on 15/02/17.
- */
+/** Created by mario on 15/02/17. */
 public class UDPChannelTest {
 
     private static final int NETWORK_ID = 1;
@@ -62,7 +58,8 @@ public class UDPChannelTest {
     public void write() {
         String check = UUID.randomUUID().toString();
         ECKey key = new ECKey();
-        PingPeerMessage nodeMessage = PingPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
+        PingPeerMessage nodeMessage =
+                PingPeerMessage.create("localhost", 80, check, key, NETWORK_ID);
 
         Channel channel = Mockito.mock(Channel.class);
         PeerExplorer peerExplorer = Mockito.mock(PeerExplorer.class);
@@ -84,5 +81,4 @@ public class UDPChannelTest {
         udpChannel.channelActive(ctx);
         Mockito.verify(peerExplorer, Mockito.times(1)).start();
     }
-
 }

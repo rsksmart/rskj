@@ -19,9 +19,8 @@
 
 package org.ethereum.net.p2p;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Wrapper around an Ethereum GetPeers message on the network
@@ -30,9 +29,7 @@ import java.util.Arrays;
  */
 public class GetPeersMessage extends P2pMessage {
 
-    /**
-     * GetPeers message is always a the same single command payload
-     */
+    /** GetPeers message is always a the same single command payload */
     private static final byte[] FIXED_PAYLOAD = Hex.decode("C104");
 
     @Override

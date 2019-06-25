@@ -22,9 +22,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 11/01/2017.
- */
+/** Created by ajlopez on 11/01/2017. */
 public class TrieSaveRetrieveTest {
     @Test
     public void updateSaveRetrieveAndGetOneThousandKeyValues() {
@@ -33,8 +31,7 @@ public class TrieSaveRetrieveTest {
 
         Trie trie = new Trie(store);
 
-        for (int k = 0; k < 1000; k++)
-            trie = trie.put(k + "", (k + "").getBytes());
+        for (int k = 0; k < 1000; k++) trie = trie.put(k + "", (k + "").getBytes());
 
         trie.save();
 
@@ -58,8 +55,7 @@ public class TrieSaveRetrieveTest {
 
         Trie trie = new Trie(store);
 
-        for (int k = 0; k < 1000; k++)
-            trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
+        for (int k = 0; k < 1000; k++) trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
         trie.save();
 
@@ -83,8 +79,7 @@ public class TrieSaveRetrieveTest {
 
         Trie trie = new Trie(store);
 
-        for (int k = 0; k < 1000; k++)
-            trie = trie.put(k + "", (k + "").getBytes());
+        for (int k = 0; k < 1000; k++) trie = trie.put(k + "", (k + "").getBytes());
 
         trie.save();
 
@@ -108,8 +103,7 @@ public class TrieSaveRetrieveTest {
 
         Trie trie = new Trie(store);
 
-        for (int k = 0; k < 1000; k++)
-            trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
+        for (int k = 0; k < 1000; k++) trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
         trie.save();
 
@@ -133,8 +127,7 @@ public class TrieSaveRetrieveTest {
 
         Trie trie = new Trie(store);
 
-        for (int k = 1000; k > 0; k--)
-            trie = trie.put(k + "", (k + "").getBytes());
+        for (int k = 1000; k > 0; k--) trie = trie.put(k + "", (k + "").getBytes());
 
         trie.save();
 
@@ -158,8 +151,7 @@ public class TrieSaveRetrieveTest {
 
         Trie trie = new Trie(store);
 
-        for (int k = 1000; k > 0; k--)
-            trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
+        for (int k = 1000; k > 0; k--) trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
         trie.save();
 
@@ -183,8 +175,7 @@ public class TrieSaveRetrieveTest {
 
         Trie trie = new Trie(store);
 
-        for (int k = 1000; k > 0; k--)
-            trie = trie.put(k + "", (k + "").getBytes());
+        for (int k = 1000; k > 0; k--) trie = trie.put(k + "", (k + "").getBytes());
 
         trie.save();
 
@@ -208,8 +199,7 @@ public class TrieSaveRetrieveTest {
 
         Trie trie = new Trie(store);
 
-        for (int k = 1000; k > 0; k--)
-            trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
+        for (int k = 1000; k > 0; k--) trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
         trie.save();
 
@@ -231,9 +221,11 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store).put("foo", "bar".getBytes())
-                .put("bar", "baz".getBytes())
-                .put("answer", "42".getBytes());
+        Trie trie =
+                new Trie(store)
+                        .put("foo", "bar".getBytes())
+                        .put("bar", "baz".getBytes())
+                        .put("answer", "42".getBytes());
 
         trie.save();
 
@@ -247,9 +239,11 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store).put("foo", "bar".getBytes())
-                .put("bar", TrieValueTest.makeValue(100))
-                .put("answer", TrieValueTest.makeValue(200));
+        Trie trie =
+                new Trie(store)
+                        .put("foo", "bar".getBytes())
+                        .put("bar", TrieValueTest.makeValue(100))
+                        .put("answer", TrieValueTest.makeValue(200));
 
         trie.save();
 
@@ -264,9 +258,11 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store).put("foo", "bar".getBytes())
-                .put("bar", "baz".getBytes())
-                .put("answer", "42".getBytes());
+        Trie trie =
+                new Trie(store)
+                        .put("foo", "bar".getBytes())
+                        .put("bar", "baz".getBytes())
+                        .put("answer", "42".getBytes());
 
         trie.save();
 
@@ -286,9 +282,11 @@ public class TrieSaveRetrieveTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new Trie(store).put("foo", "bar".getBytes())
-                .put("bar", TrieValueTest.makeValue(100))
-                .put("answer", TrieValueTest.makeValue(200));
+        Trie trie =
+                new Trie(store)
+                        .put("foo", "bar".getBytes())
+                        .put("bar", TrieValueTest.makeValue(100))
+                        .put("answer", TrieValueTest.makeValue(200));
 
         trie.save();
 

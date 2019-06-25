@@ -21,13 +21,10 @@ package co.rsk.net.discovery.table;
 import co.rsk.net.discovery.PeerDiscoveryRequest;
 import co.rsk.net.discovery.message.DiscoveryMessageType;
 import co.rsk.net.discovery.message.PeerDiscoveryMessage;
+import java.net.InetSocketAddress;
 import org.ethereum.net.rlpx.Node;
 
-import java.net.InetSocketAddress;
-
-/**
- * Created by mario on 22/02/17.
- */
+/** Created by mario on 22/02/17. */
 public class PeerDiscoveryRequestBuilder {
     private String messageId;
     private PeerDiscoveryMessage message;
@@ -37,8 +34,7 @@ public class PeerDiscoveryRequestBuilder {
     private int attemptNumber;
     private Node relatedNode;
 
-    private PeerDiscoveryRequestBuilder() {
-    }
+    private PeerDiscoveryRequestBuilder() {}
 
     public static PeerDiscoveryRequestBuilder builder() {
         return new PeerDiscoveryRequestBuilder();
@@ -80,8 +76,13 @@ public class PeerDiscoveryRequestBuilder {
     }
 
     public PeerDiscoveryRequest build() {
-        return new PeerDiscoveryRequest(this.messageId, this.message, this.address, this.expectedResponse, this.expirationPeriod, this.attemptNumber, this.relatedNode);
+        return new PeerDiscoveryRequest(
+                this.messageId,
+                this.message,
+                this.address,
+                this.expectedResponse,
+                this.expirationPeriod,
+                this.attemptNumber,
+                this.relatedNode);
     }
-
-
 }

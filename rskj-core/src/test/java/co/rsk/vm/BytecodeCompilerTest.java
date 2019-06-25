@@ -21,11 +21,7 @@ package co.rsk.vm;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
-
-/**
- * Created by ajlopez on 25/01/2017.
- */
+/** Created by ajlopez on 25/01/2017. */
 public class BytecodeCompilerTest {
     @Test
     public void compileSimpleOpcode() {

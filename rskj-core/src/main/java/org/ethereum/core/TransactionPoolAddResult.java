@@ -33,9 +33,7 @@ public class TransactionPoolAddResult {
         return transactionWasAdded;
     }
 
-    /**
-     * This is mainly used to throw exceptions on the RPC avoiding the use of getters
-     */
+    /** This is mainly used to throw exceptions on the RPC avoiding the use of getters */
     public void ifTransactionWasNotAdded(Consumer<String> errorConsumer) {
         if (!transactionWasAdded) {
             errorConsumer.accept(errorMessage);

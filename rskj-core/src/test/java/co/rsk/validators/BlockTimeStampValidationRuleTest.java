@@ -24,9 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-/**
- * Created by mario on 23/01/17.
- */
+/** Created by mario on 23/01/17. */
 public class BlockTimeStampValidationRuleTest {
 
     @Test
@@ -37,8 +35,7 @@ public class BlockTimeStampValidationRuleTest {
         BlockHeader header = Mockito.mock(BlockHeader.class);
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
-        Mockito.when(header.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) - 1000);
+        Mockito.when(header.getTimestamp()).thenReturn((System.currentTimeMillis() / 1000) - 1000);
 
         Assert.assertTrue(validationRule.isValid(header));
     }
@@ -66,7 +63,7 @@ public class BlockTimeStampValidationRuleTest {
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getHeader()).thenReturn(header);
         Mockito.when(header.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) + 2*validPeriod);
+                .thenReturn((System.currentTimeMillis() / 1000) + 2 * validPeriod);
 
         Assert.assertFalse(validationRule.isValid(header));
     }
@@ -81,11 +78,9 @@ public class BlockTimeStampValidationRuleTest {
         Mockito.when(block.getHeader()).thenReturn(header);
         Block parent = Mockito.mock(Block.class);
 
-        Mockito.when(header.getTimestamp())
-                .thenReturn(System.currentTimeMillis() / 1000);
+        Mockito.when(header.getTimestamp()).thenReturn(System.currentTimeMillis() / 1000);
 
-        Mockito.when(parent.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) + 1000);
+        Mockito.when(parent.getTimestamp()).thenReturn((System.currentTimeMillis() / 1000) + 1000);
 
         Assert.assertFalse(validationRule.isValid(header, parent));
     }
@@ -100,11 +95,9 @@ public class BlockTimeStampValidationRuleTest {
         Mockito.when(block.getHeader()).thenReturn(header);
         Block parent = Mockito.mock(Block.class);
 
-        Mockito.when(header.getTimestamp())
-                .thenReturn(System.currentTimeMillis() / 1000);
+        Mockito.when(header.getTimestamp()).thenReturn(System.currentTimeMillis() / 1000);
 
-        Mockito.when(parent.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) - 1000);
+        Mockito.when(parent.getTimestamp()).thenReturn((System.currentTimeMillis() / 1000) - 1000);
 
         Assert.assertTrue(validationRule.isValid(header, parent));
     }
@@ -119,11 +112,9 @@ public class BlockTimeStampValidationRuleTest {
         Mockito.when(block.getHeader()).thenReturn(header);
         Block parent = Mockito.mock(Block.class);
 
-        Mockito.when(header.getTimestamp())
-                .thenReturn(System.currentTimeMillis() / 1000);
+        Mockito.when(header.getTimestamp()).thenReturn(System.currentTimeMillis() / 1000);
 
-        Mockito.when(parent.getTimestamp())
-                .thenReturn(System.currentTimeMillis() / 1000);
+        Mockito.when(parent.getTimestamp()).thenReturn(System.currentTimeMillis() / 1000);
 
         Assert.assertFalse(validationRule.isValid(header, parent));
     }

@@ -18,17 +18,14 @@
 
 package co.rsk.net;
 
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
 import co.rsk.crypto.Keccak256;
-
-import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+/** Created by ajlopez on 5/11/2016. */
 public class BlockStore {
     private Map<Keccak256, Block> blocks = new HashMap<>();
     private Map<Long, Set<Block>> blocksbynumber = new HashMap<>();
@@ -89,7 +86,7 @@ public class BlockStore {
                 }
             }
 
-            if (toremove != null){
+            if (toremove != null) {
                 byparent.remove(toremove);
 
                 if (byparent.isEmpty()) {

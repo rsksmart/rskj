@@ -19,14 +19,14 @@
 
 package org.ethereum.net;
 
-import org.ethereum.net.rlpx.Node;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.net.rlpx.Node;
 
 /**
- * The instance of this class responsible for discovery messages exchange with the specified Node
- * It also manages itself regarding inclusion/eviction from Kademlia table
+ * The instance of this class responsible for discovery messages exchange with the specified Node It
+ * also manages itself regarding inclusion/eviction from Kademlia table
  *
- * Created by Anton Nashatyrev on 14.07.2015.
+ * <p>Created by Anton Nashatyrev on 14.07.2015.
  */
 public class NodeHandler {
 
@@ -50,9 +50,14 @@ public class NodeHandler {
 
     @Override
     public String toString() {
-        return "NodeHandler[node: " + node.getHost() + ":" + node.getPort() + ", id="
-                + (node.getId().getID().length > 0 ? Hex.toHexString(node.getId().getID(), 0, 4) : "empty") + "]";
+        return "NodeHandler[node: "
+                + node.getHost()
+                + ":"
+                + node.getPort()
+                + ", id="
+                + (node.getId().getID().length > 0
+                        ? Hex.toHexString(node.getId().getID(), 0, 4)
+                        : "empty")
+                + "]";
     }
-
-
 }

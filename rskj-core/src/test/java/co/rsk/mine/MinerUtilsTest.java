@@ -23,16 +23,15 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.core.TransactionPool;
+import java.math.BigInteger;
+import java.util.*;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
-import java.util.*;
 
 public class MinerUtilsTest {
 
@@ -51,12 +50,14 @@ public class MinerUtilsTest {
         s1[0] = 0;
         s2[0] = 1;
 
-        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        byte[] addressBytes =
+                ByteUtil.leftPadBytes(
+                        BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
 
         Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
         Mockito.when(tx2.getHash()).thenReturn(new Keccak256(s2));
-        Mockito.when(tx1.getNonce()).thenReturn(ByteUtil.cloneBytes( BigInteger.ZERO.toByteArray()));
-        Mockito.when(tx2.getNonce()).thenReturn(ByteUtil.cloneBytes( BigInteger.TEN.toByteArray()));
+        Mockito.when(tx1.getNonce()).thenReturn(ByteUtil.cloneBytes(BigInteger.ZERO.toByteArray()));
+        Mockito.when(tx2.getNonce()).thenReturn(ByteUtil.cloneBytes(BigInteger.TEN.toByteArray()));
         Mockito.when(tx1.getGasPrice()).thenReturn(Coin.valueOf(1));
         Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(1));
         Mockito.when(tx1.getSender()).thenReturn(new RskAddress(addressBytes));
@@ -77,7 +78,7 @@ public class MinerUtilsTest {
     @Test
     public void validTransactionRepositoryNonceTest() {
         Transaction tx = Tx.create(config, 0, 50000, 5, 0, 0, 0);
-        //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
+        // Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
@@ -85,14 +86,17 @@ public class MinerUtilsTest {
         Mockito.when(repository.getNonce(tx.getSender())).thenReturn(BigInteger.valueOf(0));
         Coin minGasPrice = Coin.valueOf(1L);
 
-        List<Transaction> res = new MinerUtils().filterTransactions(new LinkedList<>(), txs, accountNounces, repository, minGasPrice);
+        List<Transaction> res =
+                new MinerUtils()
+                        .filterTransactions(
+                                new LinkedList<>(), txs, accountNounces, repository, minGasPrice);
         Assert.assertEquals(1, res.size());
     }
 
     @Test
     public void validTransactionAccWrapNonceTest() {
         Transaction tx = Tx.create(config, 0, 50000, 5, 1, 0, 0);
-        //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
+        // Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
@@ -100,7 +104,10 @@ public class MinerUtilsTest {
         Repository repository = Mockito.mock(Repository.class);
         Coin minGasPrice = Coin.valueOf(1L);
 
-        List<Transaction> res = new MinerUtils().filterTransactions(new LinkedList<>(), txs, accountNounces, repository, minGasPrice);
+        List<Transaction> res =
+                new MinerUtils()
+                        .filterTransactions(
+                                new LinkedList<>(), txs, accountNounces, repository, minGasPrice);
         Assert.assertEquals(1, res.size());
     }
 
@@ -115,7 +122,10 @@ public class MinerUtilsTest {
         Coin minGasPrice = Coin.valueOf(1L);
 
         List<Transaction> txsToRemove = new LinkedList<>();
-        List<Transaction> res = new MinerUtils().filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice);
+        List<Transaction> res =
+                new MinerUtils()
+                        .filterTransactions(
+                                txsToRemove, txs, accountNounces, repository, minGasPrice);
         Assert.assertEquals(0, res.size());
         Assert.assertEquals(0, txsToRemove.size());
     }
@@ -126,13 +136,18 @@ public class MinerUtilsTest {
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
-        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        byte[] addressBytes =
+                ByteUtil.leftPadBytes(
+                        BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
         accountNounces.put(new RskAddress(addressBytes), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         Coin minGasPrice = Coin.valueOf(2L);
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
-        List<Transaction> res = new MinerUtils().filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice);
+        List<Transaction> res =
+                new MinerUtils()
+                        .filterTransactions(
+                                txsToRemove, txs, accountNounces, repository, minGasPrice);
         Assert.assertEquals(0, res.size());
         Assert.assertEquals(1, txsToRemove.size());
     }
@@ -144,13 +159,18 @@ public class MinerUtilsTest {
         txs.add(tx);
         Mockito.when(tx.getGasPrice()).thenReturn(null);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
-        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        byte[] addressBytes =
+                ByteUtil.leftPadBytes(
+                        BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
         accountNounces.put(new RskAddress(addressBytes), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         Coin minGasPrice = Coin.valueOf(2L);
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
-        List<Transaction> res = new MinerUtils().filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice);
+        List<Transaction> res =
+                new MinerUtils()
+                        .filterTransactions(
+                                txsToRemove, txs, accountNounces, repository, minGasPrice);
         Assert.assertEquals(0, res.size());
         Assert.assertEquals(1, txsToRemove.size());
     }
@@ -164,11 +184,13 @@ public class MinerUtilsTest {
         Transaction tx2 = Mockito.mock(Transaction.class);
         Transaction tx3 = Mockito.mock(Transaction.class);
 
-        byte[] nonce0 = ByteUtil.cloneBytes( BigInteger.valueOf(0).toByteArray());
-        byte[] nonce1 = ByteUtil.cloneBytes( BigInteger.valueOf(1).toByteArray());
-        byte[] nonce2 = ByteUtil.cloneBytes( BigInteger.valueOf(2).toByteArray());
+        byte[] nonce0 = ByteUtil.cloneBytes(BigInteger.valueOf(0).toByteArray());
+        byte[] nonce1 = ByteUtil.cloneBytes(BigInteger.valueOf(1).toByteArray());
+        byte[] nonce2 = ByteUtil.cloneBytes(BigInteger.valueOf(2).toByteArray());
 
-        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        byte[] addressBytes =
+                ByteUtil.leftPadBytes(
+                        BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
         Mockito.when(tx0.getSender()).thenReturn(new RskAddress(addressBytes));
         Mockito.when(tx0.getNonce()).thenReturn(ByteUtil.cloneBytes(nonce0));
         Mockito.when(tx0.getGasPrice()).thenReturn(Coin.valueOf(10));
@@ -187,7 +209,7 @@ public class MinerUtilsTest {
 
         List<Transaction> txs = new LinkedList<>();
 
-        //Test order with same nonce different price
+        // Test order with same nonce different price
         txs.add(tx0);
         txs.add(tx1);
 
@@ -199,7 +221,7 @@ public class MinerUtilsTest {
         Assert.assertEquals(res.get(0).getGasPrice(), Coin.valueOf(10));
         Assert.assertEquals(res.get(1).getGasPrice(), Coin.valueOf(1));
 
-        //Test order with same sender, different nonce, different price
+        // Test order with same sender, different nonce, different price
         txs = new LinkedList<>();
         txs.add(tx3);
         txs.add(tx1);
@@ -222,7 +244,9 @@ public class MinerUtilsTest {
         Transaction tx5 = Mockito.mock(Transaction.class);
         Transaction tx6 = Mockito.mock(Transaction.class);
 
-        byte[] addressBytes2 = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(100).nextLong()).toByteArray(), 20);
+        byte[] addressBytes2 =
+                ByteUtil.leftPadBytes(
+                        BigInteger.valueOf(new Random(100).nextLong()).toByteArray(), 20);
         Mockito.when(tx4.getSender()).thenReturn(new RskAddress(addressBytes2));
         Mockito.when(tx4.getNonce()).thenReturn(ByteUtil.cloneBytes(nonce0));
         Mockito.when(tx4.getGasPrice()).thenReturn(Coin.valueOf(50));
@@ -256,7 +280,9 @@ public class MinerUtilsTest {
         Transaction tx8 = Mockito.mock(Transaction.class);
         Transaction tx9 = Mockito.mock(Transaction.class);
 
-        byte[] addressBytes3 = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(1000).nextLong()).toByteArray(), 20);
+        byte[] addressBytes3 =
+                ByteUtil.leftPadBytes(
+                        BigInteger.valueOf(new Random(1000).nextLong()).toByteArray(), 20);
         Mockito.when(tx7.getSender()).thenReturn(new RskAddress(addressBytes3));
         Mockito.when(tx7.getNonce()).thenReturn(ByteUtil.cloneBytes(nonce0));
         Mockito.when(tx7.getGasPrice()).thenReturn(Coin.valueOf(500));

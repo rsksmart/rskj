@@ -19,6 +19,7 @@
 
 package org.ethereum.listener;
 
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
@@ -28,8 +29,6 @@ import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
-
-import java.util.List;
 
 /**
  * @author Roman Mandeleil
@@ -57,9 +56,7 @@ public interface EthereumListener {
 
     void onTransactionPoolChanged(TransactionPool transactionPool);
 
-    /**
-     * @deprecated Check Rsk.hasBetterBlockToSync() and isPlayingBlocks()
-     */
+    /** @deprecated Check Rsk.hasBetterBlockToSync() and isPlayingBlocks() */
     @Deprecated
     void onSyncDone();
 

@@ -19,11 +19,11 @@
 
 package org.ethereum.net.p2p;
 
+import static org.ethereum.net.message.ReasonCode.REQUESTED;
+
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-
-import static org.ethereum.net.message.ReasonCode.REQUESTED;
 
 /**
  * Wrapper around an Ethereum Disconnect message on the network

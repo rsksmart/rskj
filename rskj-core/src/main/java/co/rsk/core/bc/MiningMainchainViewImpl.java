@@ -19,16 +19,15 @@
 package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.concurrent.GuardedBy;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.concurrent.GuardedBy;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class MiningMainchainViewImpl implements MiningMainchainView {
     private static final Logger logger = LoggerFactory.getLogger("miningmainchainview");
@@ -48,8 +47,7 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
     @GuardedBy("internalBlockStoreReadWriteLock")
     private List<BlockHeader> mainchain;
 
-    public MiningMainchainViewImpl(BlockStore blockStore,
-                                   int height) {
+    public MiningMainchainViewImpl(BlockStore blockStore, int height) {
         this.height = height;
         this.blockStore = blockStore;
         this.blocksByHash = new HashMap<>();
@@ -64,7 +62,8 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         synchronized (internalBlockStoreReadWriteLock) {
             addHeaderToMaps(bestHeader);
 
-            // try to avoid recalculating the whole chain if the new header's parent already exists in the chain
+            // try to avoid recalculating the whole chain if the new header's parent already exists
+            // in the chain
             OptionalInt parentIndex = findParentIndex(bestHeader);
             if (parentIndex.isPresent()) {
                 addBestAndRebuildFromParent(bestHeader, parentIndex.getAsInt());
@@ -84,29 +83,27 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
     }
 
     /**
-     * Given a new best header and the index of its parent rebuild the mainchain using the index as the pivot point
-     * by discarding all headers subsequent to the it, setting the new header as the tip and refilling with as many
-     * are needed to complete the desired height
+     * Given a new best header and the index of its parent rebuild the mainchain using the index as
+     * the pivot point by discarding all headers subsequent to the it, setting the new header as the
+     * tip and refilling with as many are needed to complete the desired height
      *
      * @param bestHeader The best header to be on top of the chain
      * @param parentIndex List index of the best header's parent
      */
     private void addBestAndRebuildFromParent(BlockHeader bestHeader, int parentIndex) {
-        List<BlockHeader> commonAncestorChain = mainchain.stream()
-                .skip(parentIndex)
-                .collect(Collectors.toList());
+        List<BlockHeader> commonAncestorChain =
+                mainchain.stream().skip(parentIndex).collect(Collectors.toList());
 
-        List<BlockHeader> newMainchain = Stream.concat(
-                Arrays.asList(bestHeader).stream(),
-                commonAncestorChain.stream())
-                .collect(Collectors.toList());
+        List<BlockHeader> newMainchain =
+                Stream.concat(Arrays.asList(bestHeader).stream(), commonAncestorChain.stream())
+                        .collect(Collectors.toList());
 
         buildMainchainFromList(newMainchain);
     }
 
     /**
-     * Given a source list take it as the new mainchain and refill it with as many block headers are needed or trim it
-     * to reach the desired depth/height
+     * Given a source list take it as the new mainchain and refill it with as many block headers are
+     * needed or trim it to reach the desired depth/height
      *
      * @param sourceList
      */
@@ -118,32 +115,32 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         }
 
         if (height < sourceSize) {
-            mainchain = sourceList.stream()
-                    .limit(height)
-                    .collect(Collectors.toList());
+            mainchain = sourceList.stream().limit(height).collect(Collectors.toList());
 
             return;
         }
 
         BlockHeader lastHeader = sourceList.get(sourceSize - 1);
 
-        List<BlockHeader> missingHeaders = retrieveAncestorsForHeader(lastHeader, height - sourceSize);
+        List<BlockHeader> missingHeaders =
+                retrieveAncestorsForHeader(lastHeader, height - sourceSize);
 
         for (BlockHeader header : missingHeaders) {
-            if(!blocksByHash.containsKey(header.getHash())) {
+            if (!blocksByHash.containsKey(header.getHash())) {
                 addHeaderToMaps(header);
             }
         }
 
-        mainchain = Stream.concat(sourceList.stream(), missingHeaders.stream())
-                .collect(Collectors.toList());
+        mainchain =
+                Stream.concat(sourceList.stream(), missingHeaders.stream())
+                        .collect(Collectors.toList());
     }
 
     /**
      * Given a start block header and a chain length, retrieve a List of said length consisting of
      * the start header's ancestors
      *
-     * The returned list DOES NOT include the start header
+     * <p>The returned list DOES NOT include the start header
      *
      * @param header The block header to look the ancestors for
      * @param chainLength The max length of the returned ancestor chain
@@ -152,16 +149,18 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         List<BlockHeader> missingHeaders = new ArrayList<>(chainLength);
 
         BlockHeader currentHeader = header;
-        for(int i = 0; i < chainLength; i++) {
+        for (int i = 0; i < chainLength; i++) {
 
             // genesis has no parent
-            if(currentHeader.isGenesis()) {
+            if (currentHeader.isGenesis()) {
                 break;
             }
 
             Block nextBlock = blockStore.getBlockByHash(currentHeader.getParentHash().getBytes());
             if (nextBlock == null) {
-                logger.error("Missing parent for block %s, number %d", currentHeader.getShortHash(), currentHeader.getNumber());
+                logger.error(
+                        "Missing parent for block %s, number %d",
+                        currentHeader.getShortHash(), currentHeader.getNumber());
                 break;
             }
             currentHeader = nextBlock.getHeader();
@@ -182,14 +181,18 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
         if (blockHashesByNumber.containsKey(blockNumber)) {
             blockHashesByNumber.get(blockNumber).add(headerToAdd.getHash());
         } else {
-            blockHashesByNumber.put(headerToAdd.getNumber(), new ArrayList<>(Collections.singletonList(headerToAdd.getHash())));
+            blockHashesByNumber.put(
+                    headerToAdd.getNumber(),
+                    new ArrayList<>(Collections.singletonList(headerToAdd.getHash())));
         }
     }
 
     private void deleteEntriesOutOfBoundaries(long bestBlockNumber) {
         long blocksHeightToDelete = bestBlockNumber - height;
-        if(blocksHeightToDelete >= 0 && blockHashesByNumber.containsKey(blocksHeightToDelete)) {
-            blockHashesByNumber.get(blocksHeightToDelete).forEach(blockHashToDelete -> blocksByHash.remove(blockHashToDelete));
+        if (blocksHeightToDelete >= 0 && blockHashesByNumber.containsKey(blocksHeightToDelete)) {
+            blockHashesByNumber
+                    .get(blocksHeightToDelete)
+                    .forEach(blockHashToDelete -> blocksByHash.remove(blockHashToDelete));
             blockHashesByNumber.remove(blocksHeightToDelete);
         }
     }

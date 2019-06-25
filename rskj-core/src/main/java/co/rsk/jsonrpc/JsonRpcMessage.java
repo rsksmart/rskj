@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 /**
  * The basic JSON-RPC 2.0 message.
  *
- * It defines the version property, which should always be '2.0'.
+ * <p>It defines the version property, which should always be '2.0'.
  */
 @JsonPropertyOrder({"jsonrpc", "id", "method", "result", "params", "error"})
 public abstract class JsonRpcMessage {
@@ -43,8 +43,9 @@ public abstract class JsonRpcMessage {
     private static JsonRpcVersion verifyVersion(JsonRpcVersion version) {
         if (version != JsonRpcVersion.V2_0) {
             throw new IllegalArgumentException(
-                    String.format("JSON-RPC version should always be %s, but was %s.", JsonRpcVersion.V2_0, version)
-            );
+                    String.format(
+                            "JSON-RPC version should always be %s, but was %s.",
+                            JsonRpcVersion.V2_0, version));
         }
 
         return version;

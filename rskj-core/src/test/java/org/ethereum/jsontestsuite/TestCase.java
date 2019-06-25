@@ -20,18 +20,17 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.core.RskAddress;
-import org.ethereum.util.ByteUtil;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.ParseException;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 
 /**
  * @author Roman Mandeleil
@@ -79,7 +78,8 @@ public class TestCase {
             JSONObject execJSON = (JSONObject) testCaseJSONObj.get("exec");
             JSONObject preJSON = (JSONObject) testCaseJSONObj.get("pre");
             JSONObject postJSON = new JSONObject();
-            if (testCaseJSONObj.containsKey("post")) // in cases where there is no post dictionary (when testing for
+            if (testCaseJSONObj.containsKey(
+                    "post")) // in cases where there is no post dictionary (when testing for
                 // exceptions for example)
                 postJSON = (JSONObject) testCaseJSONObj.get("post");
             JSONArray callCreates = new JSONArray();
@@ -101,14 +101,12 @@ public class TestCase {
                 outString = testCaseJSONObj.get("out").toString();
             if (outString != null && outString.length() > 2)
                 this.out = Hex.decode(outString.substring(2));
-            else
-                this.out = ByteUtil.EMPTY_BYTE_ARRAY;
+            else this.out = ByteUtil.EMPTY_BYTE_ARRAY;
 
             for (Object key : preJSON.keySet()) {
 
                 RskAddress addr = new RskAddress(key.toString());
-                AccountState accountState =
-                        new AccountState(addr, (JSONObject) preJSON.get(key));
+                AccountState accountState = new AccountState(addr, (JSONObject) preJSON.get(key));
 
                 pre.put(addr, accountState);
             }
@@ -116,8 +114,7 @@ public class TestCase {
             for (Object key : postJSON.keySet()) {
 
                 RskAddress addr = new RskAddress(key.toString());
-                AccountState accountState =
-                        new AccountState(addr, (JSONObject) postJSON.get(key));
+                AccountState accountState = new AccountState(addr, (JSONObject) postJSON.get(key));
 
                 post.put(addr, accountState);
             }
@@ -128,11 +125,9 @@ public class TestCase {
                 this.callCreateList.add(cc);
             }
 
-            if (testCaseJSONObj.containsKey("env"))
-              this.env = new Env(envJSON);
+            if (testCaseJSONObj.containsKey("env")) this.env = new Env(envJSON);
 
-            if (testCaseJSONObj.containsKey("exec"))
-              this.exec = new Exec(execJSON);
+            if (testCaseJSONObj.containsKey("exec")) this.exec = new Exec(execJSON);
 
         } catch (Throwable e) {
             e.printStackTrace();
@@ -187,14 +182,21 @@ public class TestCase {
 
     @Override
     public String toString() {
-        return "TestCase{" +
-                "" + env +
-                ", " + exec +
-                ", gas=" + Hex.toHexString(gas) +
-                ", out=" + Hex.toHexString(out) +
-                ", pre=" + pre +
-                ", post=" + post +
-                ", callcreates=" + callCreateList +
-                '}';
+        return "TestCase{"
+                + ""
+                + env
+                + ", "
+                + exec
+                + ", gas="
+                + Hex.toHexString(gas)
+                + ", out="
+                + Hex.toHexString(out)
+                + ", pre="
+                + pre
+                + ", post="
+                + post
+                + ", callcreates="
+                + callCreateList
+                + '}';
     }
 }

@@ -25,6 +25,9 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.peg.performance.CombinedExecutionStats;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.stream.Collectors;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
@@ -32,12 +35,9 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Random;
-import java.util.stream.Collectors;
-
 @Ignore
-public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
+public class DeriveExtendedPublicKeyPerformanceTestCase
+        extends PrecompiledContractPerformanceTestCase {
     private static final int MAX_CHILD = (2 << 30) - 1;
 
     private CallTransaction.Function function;
@@ -46,12 +46,22 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
     public void deriveExtendedPublicKey() {
         function = new DeriveExtendedPublicKey(null, null).getFunction();
 
-        EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
-            HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
-            contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
+        EnvironmentBuilder environmentBuilder =
+                (int executionIndex, TxBuilder txBuilder, int height) -> {
+                    HDWalletUtils contract =
+                            new HDWalletUtils(
+                                    new TestSystemProperties().getActivationConfig(),
+                                    PrecompiledContracts.HD_WALLET_UTILS_ADDR);
+                    contract.init(
+                            txBuilder.build(executionIndex),
+                            Helper.getMockBlock(1),
+                            null,
+                            null,
+                            null,
+                            null);
 
-            return EnvironmentBuilder.Environment.withContract(contract);
-        };
+                    return EnvironmentBuilder.Environment.withContract(contract);
+                };
 
         // Get rid of outliers by executing some cases beforehand
         setQuietMode(true);
@@ -70,30 +80,35 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
         HDWalletUtilsPerformanceTest.addStats(stats);
     }
 
-    private ExecutionStats estimateDeriveExtendedPublicKey(int times, int pathLength, EnvironmentBuilder environmentBuilder) {
+    private ExecutionStats estimateDeriveExtendedPublicKey(
+            int times, int pathLength, EnvironmentBuilder environmentBuilder) {
         String name = String.format("%s-%d", function.name, pathLength);
         ExecutionStats stats = new ExecutionStats(name);
         Random rnd = new Random();
         byte[] chainCode = new byte[32];
-        NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+        NetworkParameters networkParameters =
+                NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
-        ABIEncoder abiEncoder = (int executionIndex) -> {
-            rnd.nextBytes(chainCode);
-            DeterministicKey key = HDKeyDerivation.createMasterPubKeyFromBytes(
-                    new ECKey().getPubKey(true),
-                    chainCode
-            );
-            int[] pathParts = new int[pathLength];
-            for (int i = 0; i < pathLength; i++) {
-                pathParts[i] = rnd.nextInt(MAX_CHILD);
-            }
-            String path = String.join("/", Arrays.stream(pathParts)
-                    .mapToObj(i -> String.format("%d", i)).collect(Collectors.toList()));
+        ABIEncoder abiEncoder =
+                (int executionIndex) -> {
+                    rnd.nextBytes(chainCode);
+                    DeterministicKey key =
+                            HDKeyDerivation.createMasterPubKeyFromBytes(
+                                    new ECKey().getPubKey(true), chainCode);
+                    int[] pathParts = new int[pathLength];
+                    for (int i = 0; i < pathLength; i++) {
+                        pathParts[i] = rnd.nextInt(MAX_CHILD);
+                    }
+                    String path =
+                            String.join(
+                                    "/",
+                                    Arrays.stream(pathParts)
+                                            .mapToObj(i -> String.format("%d", i))
+                                            .collect(Collectors.toList()));
 
-            return function.encode(new Object[] {
-                    key.serializePubB58(networkParameters), path
-            });
-        };
+                    return function.encode(
+                            new Object[] {key.serializePubB58(networkParameters), path});
+                };
 
         executeAndAverage(
                 name,
@@ -108,8 +123,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
                     Assert.assertEquals(String.class, decodedResult[0].getClass());
                     String address = (String) decodedResult[0];
                     Assert.assertTrue(address.startsWith("xpub"));
-                }
-        );
+                });
 
         return stats;
     }

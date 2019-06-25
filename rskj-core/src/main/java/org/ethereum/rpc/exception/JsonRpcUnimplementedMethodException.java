@@ -1,6 +1,6 @@
 package org.ethereum.rpc.exception;
 
-public class JsonRpcUnimplementedMethodException extends RskJsonRpcRequestException{
+public class JsonRpcUnimplementedMethodException extends RskJsonRpcRequestException {
 
     public static final Integer ERROR_CODE = -32201;
 

@@ -17,13 +17,12 @@
  */
 package co.rsk.jsonrpc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
-
-import java.io.IOException;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import org.junit.Test;
 
 public class JsonRpcErrorTest {
     private ObjectMapper serializer = new ObjectMapper();
@@ -31,11 +30,6 @@ public class JsonRpcErrorTest {
     @Test
     public void serializeErrorWithCodeAndMessage() throws IOException {
         String message = "{\"code\":-230,\"message\":\"a message\"}";
-        assertThat(
-                serializer.writeValueAsString(
-                        new JsonRpcError(-230, "a message")
-                ),
-                is(message)
-        );
+        assertThat(serializer.writeValueAsString(new JsonRpcError(-230, "a message")), is(message));
     }
 }

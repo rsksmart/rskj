@@ -19,42 +19,41 @@
 package org.ethereum.rpc.converters;
 
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by martin.medina on 3/7/17.
- */
+/** Created by martin.medina on 3/7/17. */
 public class TypeConverterTest {
 
     @Test
     public void stringToByteArray() {
-        Assert.assertArrayEquals(new byte[] { 116, 105, 110, 99, 104, 111 }, TypeConverter.stringToByteArray("tincho"));
+        Assert.assertArrayEquals(
+                new byte[] {116, 105, 110, 99, 104, 111},
+                TypeConverter.stringToByteArray("tincho"));
     }
 
     @Test
     public void stringHexToByteArrayStartsWithZeroX() {
-        Assert.assertArrayEquals(new byte[] { 32 }, TypeConverter.stringHexToByteArray("0x20"));
+        Assert.assertArrayEquals(new byte[] {32}, TypeConverter.stringHexToByteArray("0x20"));
     }
 
     @Test
     public void stringHexToByteArrayLengthNotModTwo() {
-        Assert.assertArrayEquals(new byte[] { 2 }, TypeConverter.stringHexToByteArray("0x2"));
+        Assert.assertArrayEquals(new byte[] {2}, TypeConverter.stringHexToByteArray("0x2"));
     }
 
     @Test
     public void stringHexToByteArray() {
-        Assert.assertArrayEquals(new byte[] { 32 }, TypeConverter.stringHexToByteArray("20"));
+        Assert.assertArrayEquals(new byte[] {32}, TypeConverter.stringHexToByteArray("20"));
     }
 
     @Test
     public void toJsonHex() {
-        Assert.assertEquals("0x20", TypeConverter.toJsonHex(new byte[] { 32 }));
+        Assert.assertEquals("0x20", TypeConverter.toJsonHex(new byte[] {32}));
     }
 
     @Test
     public void toJsonHexNullInput() {
-        Assert.assertEquals("0x00", TypeConverter.toJsonHex((byte[])null));
+        Assert.assertEquals("0x00", TypeConverter.toJsonHex((byte[]) null));
     }
 }

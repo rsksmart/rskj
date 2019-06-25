@@ -19,15 +19,14 @@
 
 package org.ethereum.jsontestsuite;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
 import co.rsk.core.BlockDifficulty;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.math.BigInteger;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-
-import java.math.BigInteger;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * @author Mikhail Kalinin
@@ -35,8 +34,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class DifficultyTestCase {
 
-    @JsonIgnore
-    private String name;
+    @JsonIgnore private String name;
 
     // Test data
     private String parentTimestamp;
@@ -95,19 +93,34 @@ public class DifficultyTestCase {
 
     public BlockHeader getCurrent(BlockFactory blockFactory) {
         return blockFactory.newHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY, null,
-                org.ethereum.json.Utils.parseLong(currentBlockNumber), new byte[] {0}, 0,
+                EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY,
+                TestUtils.randomAddress().getBytes(),
+                EMPTY_BYTE_ARRAY,
+                null,
+                org.ethereum.json.Utils.parseLong(currentBlockNumber),
+                new byte[] {0},
+                0,
                 org.ethereum.json.Utils.parseLong(currentTimestamp),
-                EMPTY_BYTE_ARRAY, null, 0);
+                EMPTY_BYTE_ARRAY,
+                null,
+                0);
     }
 
     public BlockHeader getParent(BlockFactory blockFactory) {
         return blockFactory.newHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY,
+                EMPTY_BYTE_ARRAY,
+                TestUtils.randomAddress().getBytes(),
+                EMPTY_BYTE_ARRAY,
                 parseDifficulty(parentDifficulty).toByteArray(),
-                org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1, new byte[] {0}, 0,
+                org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1,
+                new byte[] {0},
+                0,
                 org.ethereum.json.Utils.parseLong(parentTimestamp),
-                EMPTY_BYTE_ARRAY, null, 0);
+                EMPTY_BYTE_ARRAY,
+                null,
+                0);
     }
 
     public BlockDifficulty getExpectedDifficulty() {
@@ -120,13 +133,25 @@ public class DifficultyTestCase {
 
     @Override
     public String toString() {
-        return "DifficultyTestCase{" +
-                "name='" + name + '\'' +
-                ", parentTimestamp='" + parentTimestamp + '\'' +
-                ", parentDifficulty='" + parentDifficulty + '\'' +
-                ", currentTimestamp='" + currentTimestamp + '\'' +
-                ", currentBlockNumber='" + currentBlockNumber + '\'' +
-                ", currentDifficulty='" + currentDifficulty + '\'' +
-                '}';
+        return "DifficultyTestCase{"
+                + "name='"
+                + name
+                + '\''
+                + ", parentTimestamp='"
+                + parentTimestamp
+                + '\''
+                + ", parentDifficulty='"
+                + parentDifficulty
+                + '\''
+                + ", currentTimestamp='"
+                + currentTimestamp
+                + '\''
+                + ", currentBlockNumber='"
+                + currentBlockNumber
+                + '\''
+                + ", currentDifficulty='"
+                + currentDifficulty
+                + '\''
+                + '}';
     }
 }

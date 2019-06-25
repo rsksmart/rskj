@@ -18,8 +18,11 @@
 
 package co.rsk.rpc.modules.eth;
 
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
@@ -31,10 +34,6 @@ import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
-
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
     protected static final Logger LOGGER = LoggerFactory.getLogger("web3");
@@ -43,7 +42,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     private final TransactionPool transactionPool;
     private final Constants constants;
 
-    public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool) {
+    public EthModuleTransactionBase(
+            Constants constants, Wallet wallet, TransactionPool transactionPool) {
         this.wallet = wallet;
         this.transactionPool = transactionPool;
         this.constants = constants;
@@ -54,22 +54,47 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
         Account account = this.wallet.getAccount(new RskAddress(args.from));
         String s = null;
         try {
-            String toAddress = args.to != null ? Hex.toHexString(stringHexToByteArray(args.to)) : null;
+            String toAddress =
+                    args.to != null ? Hex.toHexString(stringHexToByteArray(args.to)) : null;
 
-            BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
-            BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
-            BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
+            BigInteger value =
+                    args.value != null
+                            ? TypeConverter.stringNumberAsBigInt(args.value)
+                            : BigInteger.ZERO;
+            BigInteger gasPrice =
+                    args.gasPrice != null
+                            ? TypeConverter.stringNumberAsBigInt(args.gasPrice)
+                            : BigInteger.ZERO;
+            BigInteger gasLimit =
+                    args.gas != null
+                            ? TypeConverter.stringNumberAsBigInt(args.gas)
+                            : BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 
             if (args.data != null && args.data.startsWith("0x")) {
                 args.data = args.data.substring(2);
             }
 
             synchronized (transactionPool) {
-                BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
-                Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, constants.getChainId());
+                BigInteger accountNonce =
+                        args.nonce != null
+                                ? TypeConverter.stringNumberAsBigInt(args.nonce)
+                                : transactionPool.getPendingState().getNonce(account.getAddress());
+                Transaction tx =
+                        new Transaction(
+                                toAddress,
+                                value,
+                                accountNonce,
+                                gasPrice,
+                                gasLimit,
+                                args.data,
+                                constants.getChainId());
                 tx.sign(account.getEcKey().getPrivKeyBytes());
-                transactionPool.addTransaction(tx.toImmutableTransaction())
-                        .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
+                transactionPool
+                        .addTransaction(tx.toImmutableTransaction())
+                        .ifTransactionWasNotAdded(
+                                message -> {
+                                    throw RskJsonRpcRequestException.transactionError(message);
+                                });
                 s = tx.getHash().toJsonString();
             }
 
@@ -86,14 +111,16 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
         try {
             Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
 
-            if (null == tx.getGasLimit()
-                    || null == tx.getGasPrice()
-                    || null == tx.getValue()) {
+            if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
                 throw new JsonRpcInvalidParamException("Missing parameter, gasPrice, gas or value");
             }
 
-            transactionPool.addTransaction(tx)
-                    .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
+            transactionPool
+                    .addTransaction(tx)
+                    .ifTransactionWasNotAdded(
+                            message -> {
+                                throw RskJsonRpcRequestException.transactionError(message);
+                            });
 
             return s = tx.getHash().toJsonString();
         } finally {

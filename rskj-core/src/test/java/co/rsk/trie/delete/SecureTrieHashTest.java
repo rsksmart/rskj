@@ -19,29 +19,37 @@
 package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
+import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
-
-/**
- * Created by martin.medina on 03/04/2017.
- */
+/** Created by martin.medina on 03/04/2017. */
 public class SecureTrieHashTest {
 
     @Test
     public void removeOrNeverInsertShouldBringSameHashWithSecureTrie() {
-        Trie trie1 = new Trie()
-                .put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
-                .put("roosevelt", "the only thing we have to fear is... fear itself ".getBytes())
-                .put("roosevilt", "42".getBytes())
-                .delete("roosevelt");
+        Trie trie1 =
+                new Trie()
+                        .put(
+                                "roosevalt",
+                                "So, first of all, let me assert my firm belief that".getBytes())
+                        .put(
+                                "roosevelt",
+                                "the only thing we have to fear is... fear itself ".getBytes())
+                        .put("roosevilt", "42".getBytes())
+                        .delete("roosevelt");
 
-        Trie trie2 = new Trie()
-                .put("roosevalt", "So, first of all, let me assert my firm belief that".getBytes())
-                .put("roosevilt", "42".getBytes());
+        Trie trie2 =
+                new Trie()
+                        .put(
+                                "roosevalt",
+                                "So, first of all, let me assert my firm belief that".getBytes())
+                        .put("roosevilt", "42".getBytes());
 
-        Assert.assertTrue(Arrays.equals(trie1.get("roosevalt"), "So, first of all, let me assert my firm belief that".getBytes()));
+        Assert.assertTrue(
+                Arrays.equals(
+                        trie1.get("roosevalt"),
+                        "So, first of all, let me assert my firm belief that".getBytes()));
         Assert.assertTrue(Arrays.equals(trie1.get("roosevilt"), "42".getBytes()));
         Assert.assertNull(trie1.get("roosevelt"));
         Assert.assertEquals(trie1.getHash(), trie2.getHash());

@@ -22,13 +22,12 @@ package org.ethereum.db;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.Sibling;
-import org.ethereum.core.Block;
-import org.ethereum.crypto.HashUtil;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.ethereum.core.Block;
+import org.ethereum.crypto.HashUtil;
 
 /**
  * @author Roman Mandeleil
@@ -73,9 +72,7 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain) {
-
-    }
+    public void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain) {}
 
     @Override
     public void removeBlock(Block block) {
@@ -88,19 +85,15 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public void flush() {
-    }
+    public void flush() {}
 
     @Override
     public long getMaxNumber() {
         return 0;
     }
 
-
     @Override
-    public void reBranch(Block forkBlock) {
-
-    }
+    public void reBranch(Block forkBlock) {}
 
     @Override
     public BlockDifficulty getTotalDifficultyForHash(byte[] hash) {
@@ -113,7 +106,9 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
+    public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) {
+        return null;
+    }
 
     @Override
     public Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {

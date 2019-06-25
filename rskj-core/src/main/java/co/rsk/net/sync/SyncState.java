@@ -2,11 +2,10 @@ package co.rsk.net.sync;
 
 import co.rsk.net.MessageChannel;
 import co.rsk.net.messages.BodyResponseMessage;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockIdentifier;
-
 import java.time.Duration;
 import java.util.List;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
 
 public interface SyncState {
     void newBlockHeaders(List<BlockHeader> chunk);
@@ -16,9 +15,7 @@ public interface SyncState {
 
     void newConnectionPointData(byte[] hash);
 
-    /**
-     * should only be called when a new peer arrives
-     */
+    /** should only be called when a new peer arrives */
     void newPeerStatus();
 
     void newSkeleton(List<BlockIdentifier> skeletonChunk, MessageChannel peer);

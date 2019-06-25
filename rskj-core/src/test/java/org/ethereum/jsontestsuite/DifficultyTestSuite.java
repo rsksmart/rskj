@@ -19,9 +19,8 @@
 
 package org.ethereum.jsontestsuite;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.*;
 
@@ -35,8 +34,9 @@ public class DifficultyTestSuite {
 
     public DifficultyTestSuite(String json) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        JavaType type = mapper.getTypeFactory().
-                constructMapType(HashMap.class, String.class, DifficultyTestCase.class);
+        JavaType type =
+                mapper.getTypeFactory()
+                        .constructMapType(HashMap.class, String.class, DifficultyTestCase.class);
 
         Map<String, DifficultyTestCase> caseMap = new ObjectMapper().readValue(json, type);
 
@@ -45,12 +45,14 @@ public class DifficultyTestSuite {
             testCases.add(e.getValue());
         }
 
-        Collections.sort(testCases, new Comparator<DifficultyTestCase>() {
-            @Override
-            public int compare(DifficultyTestCase t1, DifficultyTestCase t2) {
-                return t1.getName().compareTo(t2.getName());
-            }
-        });
+        Collections.sort(
+                testCases,
+                new Comparator<DifficultyTestCase>() {
+                    @Override
+                    public int compare(DifficultyTestCase t1, DifficultyTestCase t2) {
+                        return t1.getName().compareTo(t2.getName());
+                    }
+                });
     }
 
     public List<DifficultyTestCase> getTestCases() {
@@ -59,8 +61,6 @@ public class DifficultyTestSuite {
 
     @Override
     public String toString() {
-        return "DifficultyTestSuite{" +
-                "testCases=" + testCases +
-                '}';
+        return "DifficultyTestSuite{" + "testCases=" + testCases + '}';
     }
 }

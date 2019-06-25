@@ -5,11 +5,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.List;
 
-/**
- * Created by SerAdmin on 10/22/2018.
- */
+/** Created by SerAdmin on 10/22/2018. */
 public class PerformanceTestHelper {
-
 
     long deltaTime; // in nanoseconds
     long deltaRealTimeMillis;
@@ -47,9 +44,8 @@ public class PerformanceTestHelper {
         Boolean oldMode;
         startTime = 0;
         thread = ManagementFactory.getThreadMXBean();
-        if (thread.isThreadCpuTimeSupported())
+        if (thread.isThreadCpuTimeSupported()) {
 
-        {
             oldMode = thread.isThreadCpuTimeEnabled();
             thread.setThreadCpuTimeEnabled(true);
             startTime = thread.getCurrentThreadCpuTime(); // in nanoseconds.
@@ -71,7 +67,7 @@ public class PerformanceTestHelper {
         return String.format("%1$8s", Long.toString(v));
     }
 
-    public static final int nsToUs = 1000 ;
+    public static final int nsToUs = 1000;
     public static final int nsToMs = 1000 * 1000;
     public static final int nsToS = 1000 * 1000 * 1000;
 
@@ -89,17 +85,29 @@ public class PerformanceTestHelper {
         if (startTime != 0) {
             long endTime = thread.getCurrentThreadCpuTime();
             deltaTime = (endTime - startTime); // nano
-            System.out.println("Time elapsed [ms]:     " + padLeft(deltaTime/nsToMs)+" [s]:"+ padLeft(deltaTime/nsToS));
+            System.out.println(
+                    "Time elapsed [ms]:     "
+                            + padLeft(deltaTime / nsToMs)
+                            + " [s]:"
+                            + padLeft(deltaTime / nsToS));
         }
 
-        if (startRealTime!=0) {
-            long endRealTime =System.currentTimeMillis();
+        if (startRealTime != 0) {
+            long endRealTime = System.currentTimeMillis();
             deltaRealTimeMillis = (endRealTime - startRealTime);
-            System.out.println("RealTime elapsed [ms]: " + padLeft(deltaRealTimeMillis)+" [s]:"+ padLeft(deltaRealTimeMillis /1000));
+            System.out.println(
+                    "RealTime elapsed [ms]: "
+                            + padLeft(deltaRealTimeMillis)
+                            + " [s]:"
+                            + padLeft(deltaRealTimeMillis / 1000));
         }
         long endGCTime = getGarbageCollectorTimeMillis();
         deltaGCTime = (endGCTime - startGCTime);
-        System.out.println("GCTime elapsed [ms]:   " + padLeft(deltaGCTime)+" [s]:"+ padLeft(deltaGCTime/1000));
+        System.out.println(
+                "GCTime elapsed [ms]:   "
+                        + padLeft(deltaGCTime)
+                        + " [s]:"
+                        + padLeft(deltaGCTime / 1000));
         line();
     }
 }

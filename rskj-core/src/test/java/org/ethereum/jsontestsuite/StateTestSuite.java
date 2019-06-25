@@ -19,14 +19,13 @@
 
 package org.ethereum.jsontestsuite;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StateTestSuite {
 
@@ -37,8 +36,9 @@ public class StateTestSuite {
     public StateTestSuite(String json) throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
-        JavaType type = mapper.getTypeFactory().
-                constructMapType(HashMap.class, String.class, StateTestCase.class);
+        JavaType type =
+                mapper.getTypeFactory()
+                        .constructMapType(HashMap.class, String.class, StateTestCase.class);
 
         testCases = new ObjectMapper().readValue(json, type);
     }
@@ -49,8 +49,6 @@ public class StateTestSuite {
 
     @Override
     public String toString() {
-        return "StateTestSuite{" +
-                "testCases=" + testCases +
-                '}';
+        return "StateTestSuite{" + "testCases=" + testCases + '}';
     }
 }

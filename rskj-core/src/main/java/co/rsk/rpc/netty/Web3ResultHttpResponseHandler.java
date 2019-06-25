@@ -29,11 +29,14 @@ public class Web3ResultHttpResponseHandler extends SimpleChannelInboundHandler<W
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Web3Result msg) {
-        ctx.write(new DefaultFullHttpResponse(
-            HttpVersion.HTTP_1_1,
-            HttpResponseStatus.valueOf(DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(msg.getCode())),
-            msg.getContent()
-        )).addListener(ChannelFutureListener.CLOSE);
+        ctx.write(
+                        new DefaultFullHttpResponse(
+                                HttpVersion.HTTP_1_1,
+                                HttpResponseStatus.valueOf(
+                                        DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(
+                                                msg.getCode())),
+                                msg.getContent()))
+                .addListener(ChannelFutureListener.CLOSE);
     }
 
     @Override

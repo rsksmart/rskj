@@ -35,18 +35,15 @@ import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
+import java.util.HashMap;
+import java.util.Map;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
-import java.util.HashMap;
-import java.util.Map;
-
-/**
- * Created by ajlopez on 8/7/2016.
- */
+/** Created by ajlopez on 8/7/2016. */
 public class World {
     private BlockChainImpl blockChain;
     private NodeBlockProcessor blockProcessor;
@@ -56,6 +53,7 @@ public class World {
     private Map<String, Transaction> transactions = new HashMap<>();
     private StateRootHandler stateRootHandler;
     private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+
     public World() {
         this(new BlockChainBuilder().build());
     }
@@ -85,32 +83,43 @@ public class World {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
-        this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
-        this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        BlockSyncService blockSyncService =
+                new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
+        this.blockProcessor =
+                new NodeBlockProcessor(
+                        store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
+        this.stateRootHandler =
+                new StateRootHandler(
+                        config.getActivationConfig(),
+                        new TrieConverter(),
+                        new HashMapDB(),
+                        new HashMap<>());
 
-        this.btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
+        this.btcBlockStoreFactory =
+                new RepositoryBtcBlockStoreWithCache.Factory(
+                        config.getNetworkConstants().getBridgeConstants().getBtcParams());
     }
 
-    public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
+    public NodeBlockProcessor getBlockProcessor() {
+        return this.blockProcessor;
+    }
 
     public BlockExecutor getBlockExecutor() {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         final TestSystemProperties config = new TestSystemProperties();
         if (this.blockExecutor == null) {
-            this.blockExecutor = new BlockExecutor(
-                    config.getActivationConfig(),
-                    new RepositoryLocator(this.getRepository(), stateRootHandler),
-                    stateRootHandler,
-                    new TransactionExecutorFactory(
-                            config,
-                            this.getBlockChain().getBlockStore(),
-                            null,
-                            new BlockFactory(config.getActivationConfig()),
-                            programInvokeFactory,
-                            new PrecompiledContracts(config, btcBlockStoreFactory)
-                    )
-            );
+            this.blockExecutor =
+                    new BlockExecutor(
+                            config.getActivationConfig(),
+                            new RepositoryLocator(this.getRepository(), stateRootHandler),
+                            stateRootHandler,
+                            new TransactionExecutorFactory(
+                                    config,
+                                    this.getBlockChain().getBlockStore(),
+                                    null,
+                                    new BlockFactory(config.getActivationConfig()),
+                                    programInvokeFactory,
+                                    new PrecompiledContracts(config, btcBlockStoreFactory)));
         }
 
         return this.blockExecutor;
@@ -120,7 +129,9 @@ public class World {
         return this.stateRootHandler;
     }
 
-    public BlockChainImpl getBlockChain() { return this.blockChain; }
+    public BlockChainImpl getBlockChain() {
+        return this.blockChain;
+    }
 
     public Block getBlockByName(String name) {
         return blocks.get(name);
@@ -140,13 +151,21 @@ public class World {
         blocks.put(name, block);
     }
 
-    public Account getAccountByName(String name) { return accounts.get(name); }
+    public Account getAccountByName(String name) {
+        return accounts.get(name);
+    }
 
-    public void saveAccount(String name, Account account) { accounts.put(name, account); }
+    public void saveAccount(String name, Account account) {
+        accounts.put(name, account);
+    }
 
-    public Transaction getTransactionByName(String name) { return transactions.get(name); }
+    public Transaction getTransactionByName(String name) {
+        return transactions.get(name);
+    }
 
-    public void saveTransaction(String name, Transaction transaction) { transactions.put(name, transaction); }
+    public void saveTransaction(String name, Transaction transaction) {
+        transactions.put(name, transaction);
+    }
 
     public Repository getRepository() {
         return this.blockChain.getRepository();

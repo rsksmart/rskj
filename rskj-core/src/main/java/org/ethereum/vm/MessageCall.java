@@ -17,12 +17,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package org.ethereum.vm;
 
 /**
- * A wrapper for a message call from a contract to another account.
- * This can either be a normal CALL, CALLCODE, DELEGATECALL or POST call.
+ * A wrapper for a message call from a contract to another account. This can either be a normal
+ * CALL, CALLCODE, DELEGATECALL or POST call.
  */
 public class MessageCall {
 
@@ -33,61 +32,52 @@ public class MessageCall {
         STATICCALL,
         POST;
 
-        /**
-         *  Indicates that the code is executed in the context of the caller
-         */
+        /** Indicates that the code is executed in the context of the caller */
         public boolean isStateless() {
             return this == CALLCODE || this == DELEGATECALL;
         }
 
         public static MsgType fromOpcode(OpCode opCode) {
             switch (opCode) {
-                case CALL: return CALL;
-                case CALLCODE: return CALLCODE;
-                case DELEGATECALL: return DELEGATECALL;
-                case STATICCALL: return STATICCALL;
+                case CALL:
+                    return CALL;
+                case CALLCODE:
+                    return CALLCODE;
+                case DELEGATECALL:
+                    return DELEGATECALL;
+                case STATICCALL:
+                    return STATICCALL;
                 default:
                     throw new RuntimeException("Invalid call opcode: " + opCode);
             }
         }
     }
 
-    /**
-     * Type of internal call. Either CALL, CALLCODE or POST
-     */
+    /** Type of internal call. Either CALL, CALLCODE or POST */
     private final MsgType type;
 
-    /**
-     * gas to pay for the call, remaining gas will be refunded to the caller
-     */
+    /** gas to pay for the call, remaining gas will be refunded to the caller */
     private final DataWord gas;
-    /**
-     * address of account which code to call
-     */
+    /** address of account which code to call */
     private final DataWord codeAddress;
-    /**
-     * the value that can be transfer along with the code execution
-     */
+    /** the value that can be transfer along with the code execution */
     private final DataWord endowment;
-    /**
-     * start of memory to be input data to the call
-     */
+    /** start of memory to be input data to the call */
     private final DataWord inDataOffs;
-    /**
-     * size of memory to be input data to the call
-     */
+    /** size of memory to be input data to the call */
     private final DataWord inDataSize;
-    /**
-     * start of memory to be output of the call
-     */
+    /** start of memory to be output of the call */
     private DataWord outDataOffs;
-    /**
-     * size of memory to be output data to the call
-     */
+    /** size of memory to be output data to the call */
     private DataWord outDataSize;
 
-    public MessageCall(MsgType type, DataWord gas, DataWord codeAddress,
-                       DataWord endowment, DataWord inDataOffs, DataWord inDataSize) {
+    public MessageCall(
+            MsgType type,
+            DataWord gas,
+            DataWord codeAddress,
+            DataWord endowment,
+            DataWord inDataOffs,
+            DataWord inDataSize) {
         this.type = type;
         this.gas = gas;
         this.codeAddress = codeAddress;
@@ -96,9 +86,15 @@ public class MessageCall {
         this.inDataSize = inDataSize;
     }
 
-    public MessageCall(MsgType type, DataWord gas, DataWord codeAddress,
-                       DataWord endowment, DataWord inDataOffs, DataWord inDataSize,
-                       DataWord outDataOffs, DataWord outDataSize) {
+    public MessageCall(
+            MsgType type,
+            DataWord gas,
+            DataWord codeAddress,
+            DataWord endowment,
+            DataWord inDataOffs,
+            DataWord inDataSize,
+            DataWord outDataOffs,
+            DataWord outDataSize) {
         this(type, gas, codeAddress, endowment, inDataOffs, inDataSize);
         this.outDataOffs = outDataOffs;
         this.outDataSize = outDataSize;

@@ -19,16 +19,13 @@
 package co.rsk.net.messages;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
-import java.util.ArrayList;
-
-/**
- * Created by ajlopez on 5/10/2016.
- */
+/** Created by ajlopez on 5/10/2016. */
 public abstract class Message {
 
     public abstract MessageType getMessageType();
@@ -54,15 +51,12 @@ public abstract class Message {
             MessageType messageType = MessageType.valueOfType(type);
             RLPList list = (RLPList) RLP.decode2(body).get(0);
             return messageType.createMessage(blockFactory, list);
-
         }
         return null;
     }
 
     @Override
     public String toString() {
-        return "Message{" +
-                "type=" + getMessageType() +
-                '}';
+        return "Message{" + "type=" + getMessageType() + '}';
     }
 }

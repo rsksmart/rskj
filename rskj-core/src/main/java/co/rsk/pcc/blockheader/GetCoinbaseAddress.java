@@ -24,19 +24,18 @@ import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 
 /**
- * This implements the "getCoinbaseAddress" method
- * that belongs to the BlockHeaderContract native contract.
+ * This implements the "getCoinbaseAddress" method that belongs to the BlockHeaderContract native
+ * contract.
  *
  * @author Diego Masini
  */
 public class GetCoinbaseAddress extends BlockHeaderContractMethod {
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "getCoinbaseAddress",
-            new String[]{"int256"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature(
+                    "getCoinbaseAddress", new String[] {"int256"}, new String[] {"bytes"});
 
-    public GetCoinbaseAddress(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
+    public GetCoinbaseAddress(
+            ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);
     }
 

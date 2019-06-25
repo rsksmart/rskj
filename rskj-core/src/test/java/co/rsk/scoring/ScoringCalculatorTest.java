@@ -3,9 +3,7 @@ package co.rsk.scoring;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 30/06/2017.
- */
+/** Created by ajlopez on 30/06/2017. */
 public class ScoringCalculatorTest {
     @Test
     public void emptyScoringHasGoodReputation() {

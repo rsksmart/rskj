@@ -19,23 +19,23 @@
 
 package co.rsk.net;
 
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.when;
+
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.when;
-
 public class BlockCacheTest {
 
-    private static final byte[] HASH_1 = HashUtil.sha256(new byte[]{1});
-    private static final byte[] HASH_2 = HashUtil.sha256(new byte[]{2});
-    private static final byte[] HASH_3 = HashUtil.sha256(new byte[]{3});
-    private static final byte[] HASH_4 = HashUtil.sha256(new byte[]{4});
-    private static final byte[] HASH_5 = HashUtil.sha256(new byte[]{5});
+    private static final byte[] HASH_1 = HashUtil.sha256(new byte[] {1});
+    private static final byte[] HASH_2 = HashUtil.sha256(new byte[] {2});
+    private static final byte[] HASH_3 = HashUtil.sha256(new byte[] {3});
+    private static final byte[] HASH_4 = HashUtil.sha256(new byte[] {4});
+    private static final byte[] HASH_5 = HashUtil.sha256(new byte[] {5});
 
     @Test
     public void getUnknownBlockAsNull() {
@@ -109,7 +109,6 @@ public class BlockCacheTest {
     private BlockCache getSubject() {
         return new BlockCache(4);
     }
-
 
     private static Block blockWithHash(Keccak256 hash) {
         Block mock = Mockito.mock(Block.class);

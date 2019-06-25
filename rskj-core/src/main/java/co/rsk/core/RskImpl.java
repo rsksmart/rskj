@@ -35,12 +35,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
             CompositeEthereumListener compositeEthereumListener,
             NodeBlockProcessor nodeBlockProcessor,
             Blockchain blockchain) {
-        super(
-                channelManager,
-                transactionPool,
-                compositeEthereumListener,
-                blockchain
-        );
+        super(channelManager, transactionPool, compositeEthereumListener, blockchain);
         this.nodeBlockProcessor = nodeBlockProcessor;
     }
 

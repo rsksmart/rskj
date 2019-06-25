@@ -25,17 +25,15 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-/**
- * Created by mario on 09/09/2016.
- */
+/** Created by mario on 09/09/2016. */
 public class RskCustomCacheTest {
 
     private static Long TIME_TO_LIVE = 2000L;
     private static Long WAIT_PERIOD = 1000L;
 
-    private static ByteArrayWrapper KEY = new ByteArrayWrapper(new byte[]{12, 12, 12, 121, 12});
-    private static ByteArrayWrapper OTHER_KEY = new ByteArrayWrapper(new byte[]{11, 11, 11, 111, 11});
-
+    private static ByteArrayWrapper KEY = new ByteArrayWrapper(new byte[] {12, 12, 12, 121, 12});
+    private static ByteArrayWrapper OTHER_KEY =
+            new ByteArrayWrapper(new byte[] {11, 11, 11, 111, 11});
 
     @Test
     public void createBlockHeaderCache() {
@@ -66,7 +64,7 @@ public class RskCustomCacheTest {
 
     @Test
     @Ignore
-    public void elementExpiration() throws InterruptedException{
+    public void elementExpiration() throws InterruptedException {
         RskCustomCache cache = new RskCustomCache(800L);
 
         BlockHeader header1 = Mockito.mock(BlockHeader.class);
@@ -81,16 +79,12 @@ public class RskCustomCacheTest {
         Assert.assertEquals(header2, cache.get(OTHER_KEY));
         Thread.sleep(400);
 
-        //header2 should not be removed, it was accessed
+        // header2 should not be removed, it was accessed
         Assert.assertNotNull(cache.get(OTHER_KEY));
         Assert.assertNull(cache.get(KEY));
 
-        Thread.sleep(2*WAIT_PERIOD);
-        //header2 should be removed, it was not accessed
+        Thread.sleep(2 * WAIT_PERIOD);
+        // header2 should be removed, it was not accessed
         Assert.assertNull(cache.get(OTHER_KEY));
     }
-
-
-
-
 }

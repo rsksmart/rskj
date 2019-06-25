@@ -21,11 +21,10 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
-
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * @author ajlopez
@@ -42,16 +41,25 @@ public class BridgeBtcWallet extends Wallet {
     }
 
     /*
-     Method is overridden because implementation in parent is kind of buggy: does not check watched scripts
-     */
+    Method is overridden because implementation in parent is kind of buggy: does not check watched scripts
+    */
     @Nullable
     @Override
     public RedeemData findRedeemDataFromScriptHash(byte[] payToScriptHash) {
         Context.propagate(this.btcContext);
-        Optional<Federation> destinationFederation = federations.stream().filter(federation -> Arrays.equals(federation.getP2SHScript().getPubKeyHash(), payToScriptHash)).findFirst();
+        Optional<Federation> destinationFederation =
+                federations.stream()
+                        .filter(
+                                federation ->
+                                        Arrays.equals(
+                                                federation.getP2SHScript().getPubKeyHash(),
+                                                payToScriptHash))
+                        .findFirst();
         if (!destinationFederation.isPresent()) {
             return null;
         }
-        return RedeemData.of(destinationFederation.get().getBtcPublicKeys(), destinationFederation.get().getRedeemScript());
+        return RedeemData.of(
+                destinationFederation.get().getBtcPublicKeys(),
+                destinationFederation.get().getRedeemScript());
     }
 }

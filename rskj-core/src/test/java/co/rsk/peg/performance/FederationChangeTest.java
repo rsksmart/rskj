@@ -21,12 +21,6 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
-import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -34,17 +28,26 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class FederationChangeTest extends BridgePerformanceTestCase {
     // regtest constants
-    private static final List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
-            "auth-a",
-            "auth-b",
-            "auth-c",
-            "auth-d",
-            "auth-e",
-    }).map(generator -> ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)))).collect(Collectors.toList());
+    private static final List<ECKey> federationChangeAuthorizedKeys =
+            Arrays.stream(
+                            new String[] {
+                                "auth-a", "auth-b", "auth-c", "auth-d", "auth-e",
+                            })
+                    .map(
+                            generator ->
+                                    ECKey.fromPrivate(
+                                            HashUtil.keccak256(
+                                                    generator.getBytes(StandardCharsets.UTF_8))))
+                    .collect(Collectors.toList());
 
     private ECKey winnerKeyToTry;
     private PendingFederation pendingFederation;
@@ -64,10 +67,10 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
                 times,
                 (int executionIndex) -> Bridge.CREATE_FEDERATION.encode(),
                 Helper.buildNoopInitializer(),
-                (int executionIndex) -> Helper.buildSendValueTx(getRandomFederationChangeKey(), BigInteger.ZERO),
+                (int executionIndex) ->
+                        Helper.buildSendValueTx(getRandomFederationChangeKey(), BigInteger.ZERO),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     private void createFederation_winner(int times, ExecutionStats stats) {
@@ -75,11 +78,10 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
                 "createFederation-winner",
                 times,
                 (int executionIndex) -> Bridge.CREATE_FEDERATION.encode(),
-                buildInitializer(false, () -> new ABICallSpec("create", new byte[][]{})),
+                buildInitializer(false, () -> new ABICallSpec("create", new byte[][] {})),
                 (int executionIndex) -> Helper.buildSendValueTx(winnerKeyToTry, BigInteger.ZERO),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     @Test
@@ -94,27 +96,33 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         executeAndAverage(
                 "addFederatorPublicKey-noWinner",
                 times,
-                (int executionIndex) -> Bridge.ADD_FEDERATOR_PUBLIC_KEY.encode(new Object[]{ new BtcECKey().getPubKey() }),
+                (int executionIndex) ->
+                        Bridge.ADD_FEDERATOR_PUBLIC_KEY.encode(
+                                new Object[] {new BtcECKey().getPubKey()}),
                 buildInitializer(true, null),
-                (int executionIndex) -> Helper.buildSendValueTx(getRandomFederationChangeKey(), BigInteger.ZERO),
+                (int executionIndex) ->
+                        Helper.buildSendValueTx(getRandomFederationChangeKey(), BigInteger.ZERO),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     private void addFederatorPublicKey_winner(int times, ExecutionStats stats) {
         executeAndAverage(
                 "addFederatorPublicKey-winner",
                 times,
-                (int executionIndex) -> Bridge.ADD_FEDERATOR_PUBLIC_KEY.encode(new Object[]{ votedFederatorPublicKey.getPubKey() }),
-                buildInitializer(true, () -> {
-                    votedFederatorPublicKey = new BtcECKey();
-                    return new ABICallSpec("add", new byte[][]{ votedFederatorPublicKey.getPubKey() });
-                }),
+                (int executionIndex) ->
+                        Bridge.ADD_FEDERATOR_PUBLIC_KEY.encode(
+                                new Object[] {votedFederatorPublicKey.getPubKey()}),
+                buildInitializer(
+                        true,
+                        () -> {
+                            votedFederatorPublicKey = new BtcECKey();
+                            return new ABICallSpec(
+                                    "add", new byte[][] {votedFederatorPublicKey.getPubKey()});
+                        }),
                 (int executionIndex) -> Helper.buildSendValueTx(winnerKeyToTry, BigInteger.ZERO),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     @Test
@@ -129,24 +137,32 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         executeAndAverage(
                 "commitFederation-noWinner",
                 times,
-                (int executionIndex) -> Bridge.COMMIT_FEDERATION.encode(new Object[]{ pendingFederation.getHash().getBytes() }),
+                (int executionIndex) ->
+                        Bridge.COMMIT_FEDERATION.encode(
+                                new Object[] {pendingFederation.getHash().getBytes()}),
                 buildInitializer(true, null),
-                (int executionIndex) -> Helper.buildSendValueTx(getRandomFederationChangeKey(), BigInteger.ZERO),
+                (int executionIndex) ->
+                        Helper.buildSendValueTx(getRandomFederationChangeKey(), BigInteger.ZERO),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     private void commitFederation_winner(int times, ExecutionStats stats) {
         executeAndAverage(
                 "commitFederation-winner",
                 times,
-                (int executionIndex) -> Bridge.COMMIT_FEDERATION.encode(new Object[]{ pendingFederation.getHash().getBytes() }),
-                buildInitializer(true, () -> new ABICallSpec("commit", new byte[][]{ pendingFederation.getHash().getBytes() })),
+                (int executionIndex) ->
+                        Bridge.COMMIT_FEDERATION.encode(
+                                new Object[] {pendingFederation.getHash().getBytes()}),
+                buildInitializer(
+                        true,
+                        () ->
+                                new ABICallSpec(
+                                        "commit",
+                                        new byte[][] {pendingFederation.getHash().getBytes()})),
                 (int executionIndex) -> Helper.buildSendValueTx(winnerKeyToTry, BigInteger.ZERO),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     @Test
@@ -161,31 +177,31 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         executeAndAverage(
                 "rollbackFederation-noWinner",
                 times,
-                (int executionIndex) -> Bridge.ROLLBACK_FEDERATION.encode(new Object[]{}),
+                (int executionIndex) -> Bridge.ROLLBACK_FEDERATION.encode(new Object[] {}),
                 buildInitializer(true, null),
-                (int executionIndex) -> Helper.buildSendValueTx(getRandomFederationChangeKey(), BigInteger.ZERO),
+                (int executionIndex) ->
+                        Helper.buildSendValueTx(getRandomFederationChangeKey(), BigInteger.ZERO),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     private void rollbackFederation_winner(int times, ExecutionStats stats) {
         executeAndAverage(
                 "rollbackFederation-winner",
                 times,
-                (int executionIndex) -> Bridge.ROLLBACK_FEDERATION.encode(new Object[]{}),
-                buildInitializer(true, () -> new ABICallSpec("rollback", new byte[][]{})),
+                (int executionIndex) -> Bridge.ROLLBACK_FEDERATION.encode(new Object[] {}),
+                buildInitializer(true, () -> new ABICallSpec("rollback", new byte[][] {})),
                 (int executionIndex) -> Helper.buildSendValueTx(winnerKeyToTry, BigInteger.ZERO),
                 Helper.getRandomHeightProvider(10),
-                stats
-        );
+                stats);
     }
 
     private interface ABICallSpecGenerator {
         ABICallSpec generate();
     }
 
-    private BridgeStorageProviderInitializer buildInitializer(boolean generatePendingFederation, ABICallSpecGenerator specToVoteGenerator) {
+    private BridgeStorageProviderInitializer buildInitializer(
+            boolean generatePendingFederation, ABICallSpecGenerator specToVoteGenerator) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             if (generatePendingFederation) {
                 final int minKeys = 10;
@@ -194,15 +210,18 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
 
                 List<FederationMember> pendingFederationMembers = new ArrayList<>();
                 for (int i = 0; i < numKeys; i++) {
-                    pendingFederationMembers.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
+                    pendingFederationMembers.add(
+                            new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
                 }
                 pendingFederation = new PendingFederation(pendingFederationMembers);
                 provider.setPendingFederation(pendingFederation);
             }
 
-            ABICallElection election = provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer());
+            ABICallElection election =
+                    provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer());
 
-            List<ECKey> shuffledKeys = federationChangeAuthorizedKeys.stream().limit(3).collect(Collectors.toList());
+            List<ECKey> shuffledKeys =
+                    federationChangeAuthorizedKeys.stream().limit(3).collect(Collectors.toList());
             Collections.shuffle(shuffledKeys);
 
             int votes = 2;
@@ -219,6 +238,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     private ECKey getRandomFederationChangeKey() {
-        return federationChangeAuthorizedKeys.get(Helper.randomInRange(0, federationChangeAuthorizedKeys.size()-1));
+        return federationChangeAuthorizedKeys.get(
+                Helper.randomInRange(0, federationChangeAuthorizedKeys.size() - 1));
     }
 }

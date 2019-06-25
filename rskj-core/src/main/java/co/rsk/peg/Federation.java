@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,8 +31,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Immutable representation of an RSK Federation in the context of
- * a specific BTC network.
+ * Immutable representation of an RSK Federation in the context of a specific BTC network.
  *
  * @author Ariel Mendelzon
  */
@@ -47,11 +45,20 @@ public final class Federation {
     private Script p2shScript;
     private Address address;
 
-    public Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber,  NetworkParameters btcParams) {
+    public Federation(
+            List<FederationMember> members,
+            Instant creationTime,
+            long creationBlockNumber,
+            NetworkParameters btcParams) {
         // Sorting members ensures same order of federation members for same members
-        // Immutability provides protection against unwanted modification, thus making the Federation instance
+        // Immutability provides protection against unwanted modification, thus making the
+        // Federation instance
         // effectively immutable
-        this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
+        this.members =
+                Collections.unmodifiableList(
+                        members.stream()
+                                .sorted(FederationMember.BTC_RSK_MST_PUBKEYS_COMPARATOR)
+                                .collect(Collectors.toList()));
 
         this.creationTime = creationTime;
         this.creationBlockNumber = creationBlockNumber;
@@ -96,7 +103,9 @@ public final class Federation {
 
     public Script getRedeemScript() {
         if (redeemScript == null) {
-            redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
+            redeemScript =
+                    ScriptBuilder.createRedeemScript(
+                            getNumberOfSignaturesRequired(), getBtcPublicKeys());
         }
 
         return redeemScript;
@@ -104,7 +113,9 @@ public final class Federation {
 
     public Script getP2SHScript() {
         if (p2shScript == null) {
-            p2shScript = ScriptBuilder.createP2SHOutputScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
+            p2shScript =
+                    ScriptBuilder.createP2SHOutputScript(
+                            getNumberOfSignaturesRequired(), getBtcPublicKeys());
         }
 
         return p2shScript;
@@ -145,7 +156,8 @@ public final class Federation {
 
     @Override
     public String toString() {
-        return String.format("%d of %d signatures federation", getNumberOfSignaturesRequired(), members.size());
+        return String.format(
+                "%d of %d signatures federation", getNumberOfSignaturesRequired(), members.size());
     }
 
     @Override
@@ -160,12 +172,13 @@ public final class Federation {
 
         Federation otherFederation = (Federation) other;
 
-        return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
-                this.getSize() == otherFederation.getSize() &&
-                this.getCreationTime().equals(otherFederation.getCreationTime()) &&
-                this.creationBlockNumber == otherFederation.creationBlockNumber &&
-                this.btcParams.equals(otherFederation.btcParams) &&
-                this.members.equals(otherFederation.members);
+        return this.getNumberOfSignaturesRequired()
+                        == otherFederation.getNumberOfSignaturesRequired()
+                && this.getSize() == otherFederation.getSize()
+                && this.getCreationTime().equals(otherFederation.getCreationTime())
+                && this.creationBlockNumber == otherFederation.creationBlockNumber
+                && this.btcParams.equals(otherFederation.btcParams)
+                && this.members.equals(otherFederation.members);
     }
 
     @Override
@@ -176,7 +189,6 @@ public final class Federation {
                 getCreationTime(),
                 this.creationBlockNumber,
                 getNumberOfSignaturesRequired(),
-                getBtcPublicKeys()
-        );
+                getBtcPublicKeys());
     }
 }

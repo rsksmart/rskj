@@ -26,9 +26,7 @@ import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 17/01/2018.
- */
+/** Created by ajlopez on 17/01/2018. */
 public class LogFilterTest {
     @Test
     public void noEvents() {

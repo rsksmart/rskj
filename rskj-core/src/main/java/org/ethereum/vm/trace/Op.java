@@ -19,15 +19,14 @@
 
 package org.ethereum.vm.trace;
 
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.vm.OpCode;
-import org.ethereum.vm.program.Memory;
-import org.ethereum.vm.program.Stack;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.vm.OpCode;
+import org.ethereum.vm.program.Memory;
+import org.ethereum.vm.program.Stack;
 
 public class Op {
 
@@ -65,7 +64,9 @@ public class Op {
         this.gas = gas;
     }
 
-    public void setGasCost(long gasCost) { this.gasCost = gasCost; }
+    public void setGasCost(long gasCost) {
+        this.gasCost = gasCost;
+    }
 
     public void setMemory(Memory memory) {
         int size = memory.size();

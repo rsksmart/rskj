@@ -25,10 +25,8 @@ public class Mean {
     private long max;
 
     public void add(long value) {
-        if (samples == 0 || value < min)
-            min = value;
-        if (samples == 0 || value > max)
-            max = value;
+        if (samples == 0 || value < min) min = value;
+        if (samples == 0 || value > max) max = value;
         total += value;
         samples++;
     }

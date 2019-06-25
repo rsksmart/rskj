@@ -19,9 +19,7 @@
 
 package org.ethereum.core;
 
-/**
- * Created by ajlopez on 09/03/2017.
- */
+/** Created by ajlopez on 09/03/2017. */
 public class TransactionException extends RuntimeException {
     public TransactionException(String msg) {
         super(msg);

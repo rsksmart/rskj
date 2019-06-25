@@ -22,22 +22,19 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.test.World;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.List;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.List;
-
-/**
- * Created by ajlopez on 4/20/2016.
- */
+/** Created by ajlopez on 4/20/2016. */
 public class BlockchainVMTest {
-    private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
+    private static final byte[] ZERO_BYTE_ARRAY = new byte[] {0};
 
     @Test
     public void genesisTest() {
@@ -52,7 +49,8 @@ public class BlockchainVMTest {
         public ECKey faucetKey;
         public Repository repository;
     }
-    static long addrCounter =1;
+
+    static long addrCounter = 1;
 
     byte[] randomAddress() {
         byte[] ret = ByteBuffer.allocate(20).putLong(addrCounter).array();
@@ -65,20 +63,25 @@ public class BlockchainVMTest {
         NewBlockChainInfo binfo = createNewBlockchain();
         Blockchain blockchain = binfo.blockchain;
         BlockGenerator blockGenerator = new BlockGenerator();
-        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), Collections.emptyList(), binfo.repository.getRoot());
+        Block block1 =
+                blockGenerator.createChildBlock(
+                        blockchain.getBestBlock(),
+                        Collections.emptyList(),
+                        binfo.repository.getRoot());
         Coin transferAmount = Coin.valueOf(100L);
         // Add a single transaction paying to a new address
         byte[] dstAddress = randomAddress();
         BigInteger transactionGasLimit = new BigInteger("21000");
         Coin transactionGasPrice = Coin.valueOf(1);
-        Transaction t = new Transaction(
-                ZERO_BYTE_ARRAY,
-                transactionGasPrice.getBytes(),
-                transactionGasLimit.toByteArray(),
-                dstAddress ,
-                transferAmount.getBytes(),
-                null,
-                Constants.REGTEST_CHAIN_ID);
+        Transaction t =
+                new Transaction(
+                        ZERO_BYTE_ARRAY,
+                        transactionGasPrice.getBytes(),
+                        transactionGasLimit.toByteArray(),
+                        dstAddress,
+                        transferAmount.getBytes(),
+                        null,
+                        Constants.REGTEST_CHAIN_ID);
 
         t.sign(binfo.faucetKey.getPrivKeyBytes());
         List<Transaction> txs = Collections.singletonList(t);
@@ -86,8 +89,7 @@ public class BlockchainVMTest {
         Block block2 = blockGenerator.createChildBlock(block1, txs, binfo.repository.getRoot());
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
 
-        MinerHelper mh = new MinerHelper(
-                binfo.repository, binfo.blockchain);
+        MinerHelper mh = new MinerHelper(binfo.repository, binfo.blockchain);
 
         mh.completeBlock(block2, block1);
 
@@ -105,8 +107,7 @@ public class BlockchainVMTest {
                 srcAmount);
 
         Assert.assertEquals(
-                binfo.repository.getBalance(new RskAddress(dstAddress)),
-                transferAmount);
+                binfo.repository.getBalance(new RskAddress(dstAddress)), transferAmount);
     }
 
     private static NewBlockChainInfo createNewBlockchain() {
@@ -120,7 +121,8 @@ public class BlockchainVMTest {
     }
 
     private static ECKey createFaucetAccount(World world) {
-        co.rsk.test.builders.AccountBuilder builder = new co.rsk.test.builders.AccountBuilder(world);
+        co.rsk.test.builders.AccountBuilder builder =
+                new co.rsk.test.builders.AccountBuilder(world);
         builder.name("faucet");
 
         builder.balance(faucetAmount);
@@ -131,5 +133,4 @@ public class BlockchainVMTest {
 
         return account.getEcKey();
     }
-
 }

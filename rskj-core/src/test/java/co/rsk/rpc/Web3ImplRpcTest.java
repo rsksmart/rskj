@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
+import java.util.Map;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.Ethereum;
@@ -30,11 +31,7 @@ import org.ethereum.rpc.Web3Mocks;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Map;
-
-/**
- * Created by ajlopez on 20/04/2017.
- */
+/** Created by ajlopez on 20/04/2017. */
 public class Web3ImplRpcTest {
     @Test
     public void getRpcModules() {
@@ -43,13 +40,32 @@ public class Web3ImplRpcTest {
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModule pm = new PersonalModuleWalletDisabled();
         RepositoryLocator repositoryLocator = Web3Mocks.getMockRepositoryLocator();
-        Web3Impl web3 = new Web3RskImpl(eth, blockchain, transactionPool,
-                            new TestSystemProperties(), null, null, pm,
-                            null, null, null, null,
-                            null, null, repositoryLocator, null,
-                            null, null, null, null, null,
-                            null, null, null, null
-        );
+        Web3Impl web3 =
+                new Web3RskImpl(
+                        eth,
+                        blockchain,
+                        transactionPool,
+                        new TestSystemProperties(),
+                        null,
+                        null,
+                        pm,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        repositoryLocator,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
 
         Map<String, String> result = web3.rpc_modules();
 

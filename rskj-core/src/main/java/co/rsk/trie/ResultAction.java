@@ -18,9 +18,7 @@
 
 package co.rsk.trie;
 
-/**
- * Created by martin.medina on 4/24/17.
- */
+/** Created by martin.medina on 4/24/17. */
 public enum ResultAction {
     PUT,
     DELETE,

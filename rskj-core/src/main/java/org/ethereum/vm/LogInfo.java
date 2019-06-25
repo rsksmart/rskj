@@ -18,7 +18,9 @@ package org.ethereum.vm;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+import java.util.ArrayList;
+import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -26,20 +28,15 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author Roman Mandeleil
  * @since 19.11.2014
  */
 public class LogInfo {
 
-    byte[] address = new byte[]{};
+    byte[] address = new byte[] {};
     List<DataWord> topics = new ArrayList<>();
-    byte[] data = new byte[]{};
+    byte[] data = new byte[] {};
     private boolean rejected = false;
 
     /* Log info in encoded form */
@@ -54,8 +51,8 @@ public class LogInfo {
         RLPList topics = (RLPList) logInfo.get(1);
         RLPItem data = (RLPItem) logInfo.get(2);
 
-        this.address = address.getRLPData() != null ? address.getRLPData() : new byte[]{};
-        this.data = data.getRLPData() != null ? data.getRLPData() : new byte[]{};
+        this.address = address.getRLPData() != null ? address.getRLPData() : new byte[] {};
+        this.data = data.getRLPData() != null ? data.getRLPData() : new byte[] {};
 
         for (RLPElement topic1 : topics) {
             byte[] topic = topic1.getRLPData();
@@ -66,9 +63,9 @@ public class LogInfo {
     }
 
     public LogInfo(byte[] address, List<DataWord> topics, byte[] data) {
-        this.address = (address != null) ? address : new byte[]{};
+        this.address = (address != null) ? address : new byte[] {};
         this.topics = (topics != null) ? topics : new ArrayList<DataWord>();
-        this.data = (data != null) ? data : new byte[]{};
+        this.data = (data != null) ? data : new byte[] {};
     }
 
     public byte[] getAddress() {
@@ -132,13 +129,13 @@ public class LogInfo {
         }
         topicsStr.append("]");
 
-
-        return "LogInfo{" +
-                "address=" + Hex.toHexString(address) +
-                ", topics=" + topicsStr +
-                ", data=" + Hex.toHexString(data) +
-                '}';
+        return "LogInfo{"
+                + "address="
+                + Hex.toHexString(address)
+                + ", topics="
+                + topicsStr
+                + ", data="
+                + Hex.toHexString(data)
+                + '}';
     }
-
-
 }

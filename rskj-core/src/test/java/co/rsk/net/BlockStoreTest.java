@@ -20,6 +20,9 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import com.google.common.collect.Lists;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
@@ -29,15 +32,10 @@ import org.ethereum.core.Bloom;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 5/11/2016.
- */
+/** Created by ajlopez on 5/11/2016. */
 public class BlockStoreTest {
-    private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+    private static final BlockFactory blockFactory =
+            new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
     public void getUnknownBlockAsNull() {
@@ -90,7 +88,13 @@ public class BlockStoreTest {
         Block parent = blockGenerator.getGenesisBlock();
         Block son1 = blockGenerator.createChildBlock(parent);
         Block son2 = blockGenerator.createChildBlock(parent);
-        Block grandson = blockGenerator.createChildBlock(son1, new ArrayList<>(), Lists.newArrayList(son2.getHeader()), 1, BigInteger.ONE);
+        Block grandson =
+                blockGenerator.createChildBlock(
+                        son1,
+                        new ArrayList<>(),
+                        Lists.newArrayList(son2.getHeader()),
+                        1,
+                        BigInteger.ONE);
 
         store.saveBlock(son1);
         store.saveBlock(son2);
@@ -178,10 +182,8 @@ public class BlockStoreTest {
         List<Block> blocks1 = generator.getBlockChain(genesis, 1000);
         List<Block> blocks2 = generator.getBlockChain(genesis, 1000);
 
-        for (Block b : blocks1)
-            store.saveBlock(b);
-        for (Block b : blocks2)
-            store.saveBlock(b);
+        for (Block b : blocks1) store.saveBlock(b);
+        for (Block b : blocks2) store.saveBlock(b);
 
         Assert.assertEquals(2000, store.size());
 
@@ -221,23 +223,24 @@ public class BlockStoreTest {
     @Test
     public void saveHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = blockFactory.newHeader(new byte[]{},
-                new byte[]{},
-                TestUtils.randomAddress().getBytes(),
-                new Bloom().getData(),
-                null,
-                1,
-                new byte[]{},
-                0,
-                0,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{0},
-                0
-        );
+        BlockHeader blockHeader =
+                blockFactory.newHeader(
+                        new byte[] {},
+                        new byte[] {},
+                        TestUtils.randomAddress().getBytes(),
+                        new Bloom().getData(),
+                        null,
+                        1,
+                        new byte[] {},
+                        0,
+                        0,
+                        new byte[] {},
+                        new byte[] {},
+                        new byte[] {},
+                        new byte[] {},
+                        new byte[] {},
+                        new byte[] {0},
+                        0);
 
         store.saveHeader(blockHeader);
         Assert.assertTrue(store.hasHeader(blockHeader.getHash()));
@@ -246,27 +249,27 @@ public class BlockStoreTest {
     @Test
     public void removeHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = blockFactory.newHeader(new byte[]{},
-                new byte[]{},
-                TestUtils.randomAddress().getBytes(),
-                new Bloom().getData(),
-                null,
-                1,
-                new byte[]{},
-                0,
-                0,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{0},
-                0
-        );
+        BlockHeader blockHeader =
+                blockFactory.newHeader(
+                        new byte[] {},
+                        new byte[] {},
+                        TestUtils.randomAddress().getBytes(),
+                        new Bloom().getData(),
+                        null,
+                        1,
+                        new byte[] {},
+                        0,
+                        0,
+                        new byte[] {},
+                        new byte[] {},
+                        new byte[] {},
+                        new byte[] {},
+                        new byte[] {},
+                        new byte[] {0},
+                        0);
 
         store.saveHeader(blockHeader);
         store.removeHeader(blockHeader);
         Assert.assertFalse(store.hasHeader(blockHeader.getHash()));
     }
 }
-

@@ -19,37 +19,36 @@
 
 package org.ethereum.core;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-
 /**
- * The genesis block is the first block in the chain and has fixed values according to
- * the protocol specification. The genesis block is 13 items, and is specified thus:
- * <p>
- * ( zerohash_256 , SHA3 RLP () , zerohash_160 , stateRoot, 0, 2^22 , 0, 0, 1000000, 0, 0, 0, SHA3 (42) , (), () )
- * <p>
- * - Where zerohash_256 refers to the parent hash, a 256-bit hash which is all zeroes;
- * - zerohash_160 refers to the coinbase address, a 160-bit hash which is all zeroes;
- * - 2^22 refers to the difficulty;
- * - 0 refers to the timestamp (the Unix epoch);
- * - the transaction trie root and extradata are both 0, being equivalent to the empty byte array.
- * - The sequences of both uncles and transactions are empty and represented by ().
- * - SHA3 (42) refers to the SHA3 hash of a byte array of length one whose first and only byte is of value 42.
- * - SHA3 RLP () value refers to the hash of the uncle lists in RLP, both empty lists.
- * <p>
- * See Yellow Paper: http://www.gavwood.com/Paper.pdf (Appendix I. Genesis Block)
+ * The genesis block is the first block in the chain and has fixed values according to the protocol
+ * specification. The genesis block is 13 items, and is specified thus:
+ *
+ * <p>( zerohash_256 , SHA3 RLP () , zerohash_160 , stateRoot, 0, 2^22 , 0, 0, 1000000, 0, 0, 0,
+ * SHA3 (42) , (), () )
+ *
+ * <p>- Where zerohash_256 refers to the parent hash, a 256-bit hash which is all zeroes; -
+ * zerohash_160 refers to the coinbase address, a 160-bit hash which is all zeroes; - 2^22 refers to
+ * the difficulty; - 0 refers to the timestamp (the Unix epoch); - the transaction trie root and
+ * extradata are both 0, being equivalent to the empty byte array. - The sequences of both uncles
+ * and transactions are empty and represented by (). - SHA3 (42) refers to the SHA3 hash of a byte
+ * array of length one whose first and only byte is of value 42. - SHA3 RLP () value refers to the
+ * hash of the uncle lists in RLP, both empty lists.
+ *
+ * <p>See Yellow Paper: http://www.gavwood.com/Paper.pdf (Appendix I. Genesis Block)
  */
 public class Genesis extends Block {
 
@@ -60,25 +59,51 @@ public class Genesis extends Block {
     private static final byte[] ZERO_HASH_2048 = new byte[256];
     protected static final long NUMBER = 0;
 
-    public Genesis(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                   byte[] difficulty, long number, long gasLimit,
-                   long gasUsed, long timestamp,
-                   byte[] extraData,
-                   byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                   byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] minimumGasPrice,
-                   boolean useRskip92Encoding, boolean isRskip126Enabled,
-                   Map<RskAddress, AccountState> initialAccounts,
-                   Map<RskAddress, byte[]> initialCodes,
-                   Map<RskAddress, Map<DataWord, byte[]>> initialStorages){
+    public Genesis(
+            byte[] parentHash,
+            byte[] unclesHash,
+            byte[] coinbase,
+            byte[] logsBloom,
+            byte[] difficulty,
+            long number,
+            long gasLimit,
+            long gasUsed,
+            long timestamp,
+            byte[] extraData,
+            byte[] bitcoinMergedMiningHeader,
+            byte[] bitcoinMergedMiningMerkleProof,
+            byte[] bitcoinMergedMiningCoinbaseTransaction,
+            byte[] minimumGasPrice,
+            boolean useRskip92Encoding,
+            boolean isRskip126Enabled,
+            Map<RskAddress, AccountState> initialAccounts,
+            Map<RskAddress, byte[]> initialCodes,
+            Map<RskAddress, Map<DataWord, byte[]>> initialStorages) {
         super(
                 new BlockHeader(
-                        parentHash, unclesHash, new RskAddress(coinbase), ByteUtils.clone(EMPTY_TRIE_HASH),
-                        ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH), logsBloom, RLP.parseBlockDifficulty(difficulty),
-                        number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData, Coin.ZERO,
-                        bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                        bitcoinMergedMiningCoinbaseTransaction, new byte[0],
-                        RLP.parseSignedCoinNonNullZero(minimumGasPrice), 0, false,
-                        useRskip92Encoding, false) {
+                        parentHash,
+                        unclesHash,
+                        new RskAddress(coinbase),
+                        ByteUtils.clone(EMPTY_TRIE_HASH),
+                        ByteUtils.clone(EMPTY_TRIE_HASH),
+                        ByteUtils.clone(EMPTY_TRIE_HASH),
+                        logsBloom,
+                        RLP.parseBlockDifficulty(difficulty),
+                        number,
+                        ByteUtil.longToBytesNoLeadZeroes(gasLimit),
+                        gasUsed,
+                        timestamp,
+                        extraData,
+                        Coin.ZERO,
+                        bitcoinMergedMiningHeader,
+                        bitcoinMergedMiningMerkleProof,
+                        bitcoinMergedMiningCoinbaseTransaction,
+                        new byte[0],
+                        RLP.parseSignedCoinNonNullZero(minimumGasPrice),
+                        0,
+                        false,
+                        useRskip92Encoding,
+                        false) {
 
                     @Override
                     protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {
@@ -88,8 +113,7 @@ public class Genesis extends Block {
                 Collections.emptyList(),
                 Collections.emptyList(),
                 isRskip126Enabled,
-                false
-        );
+                false);
         if (!initialAccounts.keySet().containsAll(initialCodes.keySet())) {
             throw new IllegalArgumentException("Code must have an associated account");
         }
@@ -102,15 +126,13 @@ public class Genesis extends Block {
         setTransactionsList(Collections.emptyList());
     }
 
-    public static byte[] getZeroHash(){
+    public static byte[] getZeroHash() {
         return Arrays.copyOf(ZERO_HASH_2048, ZERO_HASH_2048.length);
     }
 
     /**
-     * WORKAROUND.
-     * This is overrode because the Genesis' parent hash is an empty byte array,
-     * which isn't a valid Keccak256 hash.
-     * For encoding purposes, the empty byte array is used instead.
+     * WORKAROUND. This is overrode because the Genesis' parent hash is an empty byte array, which
+     * isn't a valid Keccak256 hash. For encoding purposes, the empty byte array is used instead.
      */
     @Override
     public Keccak256 getParentHash() {

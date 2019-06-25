@@ -19,10 +19,7 @@ package co.rsk.rpc.modules;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * The methods handled by the node.
- * It could be extended to support other RSK methods.
- */
+/** The methods handled by the node. It could be extended to support other RSK methods. */
 public enum RskJsonRpcMethod {
     @JsonProperty("eth_subscribe")
     ETH_SUBSCRIBE,

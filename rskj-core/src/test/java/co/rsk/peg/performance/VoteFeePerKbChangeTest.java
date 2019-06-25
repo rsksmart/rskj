@@ -20,14 +20,13 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.Bridge;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 
 @Ignore
 public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
@@ -36,17 +35,31 @@ public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
     public void voteFeePerKbChange() throws IOException {
         BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
 
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.VOTE_FEE_PER_KB.encode(BigInteger.valueOf(Helper.randomCoin(Coin.MILLICOIN, 1, 100).getValue()));
+        ABIEncoder abiEncoder =
+                (int executionIndex) ->
+                        Bridge.VOTE_FEE_PER_KB.encode(
+                                BigInteger.valueOf(
+                                        Helper.randomCoin(Coin.MILLICOIN, 1, 100).getValue()));
 
-        TxBuilder txBuilder = (int executionIndex) -> {
-            String generator = "auth-fee-per-kb";
-            ECKey sender = ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)));
+        TxBuilder txBuilder =
+                (int executionIndex) -> {
+                    String generator = "auth-fee-per-kb";
+                    ECKey sender =
+                            ECKey.fromPrivate(
+                                    HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)));
 
-            return Helper.buildTx(sender);
-        };
+                    return Helper.buildTx(sender);
+                };
 
         ExecutionStats stats = new ExecutionStats("voteFeePerKbChange");
-        executeAndAverage("voteFeePerKbChange", 1000, abiEncoder, storageInitializer, txBuilder, Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "voteFeePerKbChange",
+                1000,
+                abiEncoder,
+                storageInitializer,
+                txBuilder,
+                Helper.getRandomHeightProvider(10),
+                stats);
 
         BridgePerformanceTest.addStats(stats);
     }

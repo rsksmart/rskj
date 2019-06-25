@@ -19,15 +19,12 @@
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.BtcBlock;
+import java.math.BigInteger;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-
-/**
- * MinerClient for automine setting
- */
+/** MinerClient for automine setting */
 public class AutoMinerClient implements MinerClient {
     private static final Logger logger = LoggerFactory.getLogger("minerClient");
 
@@ -59,15 +56,21 @@ public class AutoMinerClient implements MinerClient {
 
         MinerWork work = minerServer.getWork();
 
-        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
+        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters =
+                co.rsk.bitcoinj.params.RegTestParams.get();
+        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction =
+                MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(
+                        bitcoinNetworkParameters, work);
+        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock =
+                MinerUtils.getBitcoinMergedMiningBlock(
+                        bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 
         BigInteger target = new BigInteger(1, TypeConverter.stringHexToByteArray(work.getTarget()));
         findNonce(bitcoinMergedMiningBlock, target);
 
         logger.info("Mined block: {}", work.getBlockHashForMergedMining());
-        minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+        minerServer.submitBitcoinBlock(
+                work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
         return true;
     }
@@ -81,9 +84,7 @@ public class AutoMinerClient implements MinerClient {
     /**
      * Find a valid nonce for bitcoinMergedMiningBlock, that satisfies the given target difficulty.
      */
-    private void findNonce(
-            BtcBlock bitcoinMergedMiningBlock,
-            BigInteger target) {
+    private void findNonce(BtcBlock bitcoinMergedMiningBlock, BigInteger target) {
         long nextNonceToUse = 0;
         bitcoinMergedMiningBlock.setNonce(nextNonceToUse++);
 

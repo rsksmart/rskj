@@ -26,23 +26,24 @@ import co.rsk.pcc.NativeMethod;
 import org.ethereum.core.CallTransaction;
 
 /**
- * This implements the "extractPublicKeyFromExtendedPublicKey" method
- * that belongs to the HDWalletUtils native contract.
+ * This implements the "extractPublicKeyFromExtendedPublicKey" method that belongs to the
+ * HDWalletUtils native contract.
  *
  * @author Ariel Mendelzon
  */
 public class ExtractPublicKeyFromExtendedPublicKey extends NativeMethod {
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "extractPublicKeyFromExtendedPublicKey",
-            new String[]{"string"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature(
+                    "extractPublicKeyFromExtendedPublicKey",
+                    new String[] {"string"},
+                    new String[] {"bytes"});
 
     private final HDWalletUtilsHelper helper;
 
-    private final static String INVALID_EXTENDED_PUBLIC_KEY = "Invalid extended public key '%s";
+    private static final String INVALID_EXTENDED_PUBLIC_KEY = "Invalid extended public key '%s";
 
-    public ExtractPublicKeyFromExtendedPublicKey(ExecutionEnvironment executionEnvironment, HDWalletUtilsHelper helper) {
+    public ExtractPublicKeyFromExtendedPublicKey(
+            ExecutionEnvironment executionEnvironment, HDWalletUtilsHelper helper) {
         super(executionEnvironment);
         this.helper = helper;
     }
@@ -55,7 +56,8 @@ public class ExtractPublicKeyFromExtendedPublicKey extends NativeMethod {
     @Override
     public Object execute(Object[] arguments) {
         if (arguments == null) {
-            throw new NativeContractIllegalArgumentException(String.format(INVALID_EXTENDED_PUBLIC_KEY, null));
+            throw new NativeContractIllegalArgumentException(
+                    String.format(INVALID_EXTENDED_PUBLIC_KEY, null));
         }
         String xpub = (String) arguments[0];
 
@@ -64,7 +66,8 @@ public class ExtractPublicKeyFromExtendedPublicKey extends NativeMethod {
         try {
             key = DeterministicKey.deserializeB58(xpub, params);
         } catch (IllegalArgumentException e) {
-            throw new NativeContractIllegalArgumentException(String.format(INVALID_EXTENDED_PUBLIC_KEY, xpub), e);
+            throw new NativeContractIllegalArgumentException(
+                    String.format(INVALID_EXTENDED_PUBLIC_KEY, xpub), e);
         }
 
         return key.getPubKeyPoint().getEncoded(true);

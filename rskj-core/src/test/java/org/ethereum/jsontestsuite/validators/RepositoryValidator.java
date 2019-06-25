@@ -20,59 +20,65 @@
 package org.ethereum.jsontestsuite.validators;
 
 import co.rsk.core.RskAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 public class RepositoryValidator {
 
-    public static List<String> valid(Repository currentRepository, Repository postRepository,
-                                     boolean validateRootHash,boolean validateBalances,ValidationStats vStats) {
+    public static List<String> valid(
+            Repository currentRepository,
+            Repository postRepository,
+            boolean validateRootHash,
+            boolean validateBalances,
+            ValidationStats vStats) {
 
         List<String> results = new ArrayList<>();
 
         Set<RskAddress> currentKeys = currentRepository.getAccountsKeys();
         Set<RskAddress> expectedKeys = postRepository.getAccountsKeys();
 
-        if (vStats!=null) vStats.accountChecks++;
+        if (vStats != null) vStats.accountChecks++;
         if (expectedKeys.size() != currentKeys.size()) {
 
             String out =
-                    String.format("The size of the repository is invalid \n expected: %d, \n current: %d",
+                    String.format(
+                            "The size of the repository is invalid \n expected: %d, \n current: %d",
                             expectedKeys.size(), currentKeys.size());
             results.add(out);
         }
 
         for (RskAddress addr : currentKeys) {
-            List<String> accountResult = AccountValidator.valid(addr, currentRepository, postRepository,validateBalances,vStats);
+            List<String> accountResult =
+                    AccountValidator.valid(
+                            addr, currentRepository, postRepository, validateBalances, vStats);
 
             results.addAll(accountResult);
         }
-        if (vStats!=null) vStats.accountChecks++;
+        if (vStats != null) vStats.accountChecks++;
         Set<RskAddress> expectedButAbsent = ByteUtil.difference(expectedKeys, currentKeys);
-        for (RskAddress addr : expectedButAbsent){
+        for (RskAddress addr : expectedButAbsent) {
             String formattedString = String.format("Account: %s: expected but doesn't exist", addr);
             results.add(formattedString);
         }
-
 
         if (validateRootHash) {
             // Compare roots
             String postRoot = Hex.toHexString(postRepository.getRoot());
             String currRoot = Hex.toHexString(currentRepository.getRoot());
 
-            if (vStats!=null) vStats.stateChecks++;
+            if (vStats != null) vStats.stateChecks++;
             if (!postRoot.equals(currRoot)) {
-                String formattedString = String.format("Root hash doesn't match: expected: %s current: %s",
-                        postRoot, currRoot);
+                String formattedString =
+                        String.format(
+                                "Root hash doesn't match: expected: %s current: %s",
+                                postRoot, currRoot);
                 results.add(formattedString);
             }
         }
         return results;
     }
-
 }

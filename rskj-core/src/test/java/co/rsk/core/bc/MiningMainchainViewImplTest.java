@@ -18,30 +18,26 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.crypto.Keccak256;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.db.BlockStore;
-import org.junit.Test;
-
-import java.util.List;
-import java.util.Random;
-
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import co.rsk.crypto.Keccak256;
+import java.util.List;
+import java.util.Random;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.db.BlockStore;
+import org.junit.Test;
 
 public class MiningMainchainViewImplTest {
 
     @Test
     public void creationIsCorrect() {
         BlockStore blockStore = createBlockStore(3);
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                448);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 448);
 
         List<BlockHeader> result = testBlockchain.get();
 
@@ -62,9 +58,8 @@ public class MiningMainchainViewImplTest {
 
     @Test
     public void createWithLessBlocksThanMaxHeight() {
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                createBlockStore(10),
-                11);
+        MiningMainchainViewImpl testBlockchain =
+                new MiningMainchainViewImpl(createBlockStore(10), 11);
 
         List<BlockHeader> result = testBlockchain.get();
 
@@ -74,9 +69,8 @@ public class MiningMainchainViewImplTest {
 
     @Test
     public void createWithBlocksEqualToMaxHeight() {
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                createBlockStore(4),
-                4);
+        MiningMainchainViewImpl testBlockchain =
+                new MiningMainchainViewImpl(createBlockStore(4), 4);
 
         List<BlockHeader> result = testBlockchain.get();
 
@@ -86,9 +80,8 @@ public class MiningMainchainViewImplTest {
 
     @Test
     public void createWithMoreBlocksThanMaxHeight() {
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                createBlockStore(8),
-                6);
+        MiningMainchainViewImpl testBlockchain =
+                new MiningMainchainViewImpl(createBlockStore(8), 6);
 
         List<BlockHeader> result = testBlockchain.get();
 
@@ -102,9 +95,7 @@ public class MiningMainchainViewImplTest {
         Block genesis = blockStore.getChainBlockByNumber(0L);
         when(blockStore.getBestBlock()).thenReturn(genesis);
 
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                1);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 1);
 
         List<BlockHeader> result = testBlockchain.get();
 
@@ -119,9 +110,7 @@ public class MiningMainchainViewImplTest {
         Block genesis = blockStore.getChainBlockByNumber(0L);
         when(blockStore.getBestBlock()).thenReturn(genesis);
 
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                10);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 10);
 
         List<BlockHeader> result = testBlockchain.get();
 
@@ -131,16 +120,14 @@ public class MiningMainchainViewImplTest {
     }
 
     /**
-     * Blockchain has blocks A (genesis) -> B -> C (best block)
-     * A new block D has been added to the real blockchain triggering an add on the abstract blockchain
-     * After the add, abstract blockchain must be B -> C -> D (best block) because max height is 3
+     * Blockchain has blocks A (genesis) -> B -> C (best block) A new block D has been added to the
+     * real blockchain triggering an add on the abstract blockchain After the add, abstract
+     * blockchain must be B -> C -> D (best block) because max height is 3
      */
     @Test
     public void addBlockToTheTipOfTheBlockchainGettingOverMaxHeight() {
         BlockStore blockStore = createBlockStore(3);
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                3);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 3);
 
         Block newBestBlockD = createBlock(3, blockStore.getBestBlock().getHash());
         testBlockchain.addBest(newBestBlockD.getHeader());
@@ -154,16 +141,14 @@ public class MiningMainchainViewImplTest {
     }
 
     /**
-     * Blockchain has blocks A (genesis) -> B -> C (best block)
-     * A new block D has been added to the real blockchain triggering an add on the abstract blockchain
-     * After the add, abstract blockchain must be A (genesis) -> B -> C -> D (best block)
+     * Blockchain has blocks A (genesis) -> B -> C (best block) A new block D has been added to the
+     * real blockchain triggering an add on the abstract blockchain After the add, abstract
+     * blockchain must be A (genesis) -> B -> C -> D (best block)
      */
     @Test
     public void addBlockToTheTipOfTheBlockchain() {
         BlockStore blockStore = createBlockStore(3);
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                448);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 448);
 
         Block newBestBlockD = createBlock(3, blockStore.getBestBlock().getHash());
         testBlockchain.addBest(newBestBlockD.getHeader());
@@ -176,16 +161,14 @@ public class MiningMainchainViewImplTest {
     }
 
     /**
-     * Blockchain has blocks A (genesis) -> B -> C (best block)
-     * A new block B' has been added to the real blockchain triggering an add on the abstract blockchain
-     * After the add, abstract blockchain must be A (genesis) -> B'(best block)
+     * Blockchain has blocks A (genesis) -> B -> C (best block) A new block B' has been added to the
+     * real blockchain triggering an add on the abstract blockchain After the add, abstract
+     * blockchain must be A (genesis) -> B'(best block)
      */
     @Test
     public void addNewBestBlockAtLowerHeight() {
         BlockStore blockStore = createBlockStore(3);
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                448);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 448);
 
         Block newBestBlockB = createBlock(1, blockStore.getChainBlockByNumber(0L).getHash());
         testBlockchain.addBest(newBestBlockB.getHeader());
@@ -198,16 +181,14 @@ public class MiningMainchainViewImplTest {
     }
 
     /**
-     * Blockchain has blocks A (genesis) -> B -> C (best block)
-     * A new block C' has been added to the real blockchain triggering an add on the abstract blockchain
-     * After the add, abstract blockchain must be  A (genesis) -> B' -> C' (best block)
+     * Blockchain has blocks A (genesis) -> B -> C (best block) A new block C' has been added to the
+     * real blockchain triggering an add on the abstract blockchain After the add, abstract
+     * blockchain must be A (genesis) -> B' -> C' (best block)
      */
     @Test
     public void addNewBestBlockAndItsBranchToTheTipOfTheBlockchain() {
         BlockStore blockStore = createBlockStore(3);
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                448);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 448);
 
         Block newBlockB = createBlock(1, blockStore.getChainBlockByNumber(0L).getHash());
         when(blockStore.getBlockByHash(newBlockB.getHash().getBytes())).thenReturn(newBlockB);
@@ -224,23 +205,21 @@ public class MiningMainchainViewImplTest {
     }
 
     /**
-     * Real Blockchain has blocks A -> B -> C -> D -> E -> F (best block)
-     * The abstract chain has a certain block window, suppose D -> E -> F (best)
-     * A new block child of C, D', has been added to the real blockchain triggering an add on the abstract blockchain
-     * After the add, abstract blockchain must roll back and recover older blocks B and C, which would result in
-     * the abstract chain B -> C -> D' (best block)
+     * Real Blockchain has blocks A -> B -> C -> D -> E -> F (best block) The abstract chain has a
+     * certain block window, suppose D -> E -> F (best) A new block child of C, D', has been added
+     * to the real blockchain triggering an add on the abstract blockchain After the add, abstract
+     * blockchain must roll back and recover older blocks B and C, which would result in the
+     * abstract chain B -> C -> D' (best block)
      *
-     * While the test addNewBestBlockAndItsBranchToTheTipOfTheBlockchain covers branch situations
-     * this test tries to address a specific performance improvement in the addBest logic, which involves
-     * searching for ancestor in the chain and appending the new best header to it instead of redoing a
-     * complete retrieval of the chain
+     * <p>While the test addNewBestBlockAndItsBranchToTheTipOfTheBlockchain covers branch situations
+     * this test tries to address a specific performance improvement in the addBest logic, which
+     * involves searching for ancestor in the chain and appending the new best header to it instead
+     * of redoing a complete retrieval of the chain
      */
     @Test
     public void addNewBestBlockAndItsNotChildOfTheTipButHasAParentInTheChain() {
         BlockStore blockStore = createBlockStore(10);
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                4);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 4);
 
         Block ancestor = blockStore.getChainBlockByNumber(6L);
 
@@ -272,25 +251,24 @@ public class MiningMainchainViewImplTest {
         assertThat(result.get(0).getHash(), is(newBestBlock.getHash()));
     }
 
-
     /**
-     * Real Blockchain has blocks A -> B -> C -> D -> E -> F (best block)
-     * The abstract chain has a certain block window, suppose D -> E -> F (best)
-     * A new block child of genesis, G, has been added to the real blockchain triggering an add on the abstract blockchain
-     * After the add, the result is the abstract chain Genesis -> G (best block)
+     * Real Blockchain has blocks A -> B -> C -> D -> E -> F (best block) The abstract chain has a
+     * certain block window, suppose D -> E -> F (best) A new block child of genesis, G, has been
+     * added to the real blockchain triggering an add on the abstract blockchain After the add, the
+     * result is the abstract chain Genesis -> G (best block)
      *
-     * While the test addNewBestBlockAndItsBranchToTheTipOfTheBlockchain covers branching situations
-     * this test tries to address a specific performance improvement in the addBest logic, which involves
-     * searching for ancestor in the chain instead of performing a complete recalculation
+     * <p>While the test addNewBestBlockAndItsBranchToTheTipOfTheBlockchain covers branching
+     * situations this test tries to address a specific performance improvement in the addBest
+     * logic, which involves searching for ancestor in the chain instead of performing a complete
+     * recalculation
      *
-     * This particular test is for corner cases involving the genesis which would happen in development environments
+     * <p>This particular test is for corner cases involving the genesis which would happen in
+     * development environments
      */
     @Test
     public void addNewBestBlockAndItsNotChildOfTheTipButHasGenesisAsParent() {
         BlockStore blockStore = createBlockStore(10);
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                4);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 4);
 
         Block ancestor = blockStore.getChainBlockByNumber(0L);
 
@@ -323,14 +301,13 @@ public class MiningMainchainViewImplTest {
     }
 
     /**
-     * Corner case found though other test cases. In production it's nigh impossible for this situation to take place
+     * Corner case found though other test cases. In production it's nigh impossible for this
+     * situation to take place
      */
     @Test
     public void addBlockWhenBlockStoreHasOnlyGenesisAndHeightIsOne() {
         BlockStore blockStore = createBlockStore(1);
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                1);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 1);
 
         Block ancestor = blockStore.getChainBlockByNumber(0L);
 
@@ -359,14 +336,13 @@ public class MiningMainchainViewImplTest {
     /**
      * This is a corner case to avoid errors due to block having a null parent
      *
-     * Note that it shouldn't be possible for a block of this kind to reach the MiningMainchainViewImpl
+     * <p>Note that it shouldn't be possible for a block of this kind to reach the
+     * MiningMainchainViewImpl
      */
     @Test
     public void addNewBestBlockWithMissingParent() {
         BlockStore blockStore = createBlockStore(10);
-        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(
-                blockStore,
-                4);
+        MiningMainchainViewImpl testBlockchain = new MiningMainchainViewImpl(blockStore, 4);
 
         Block newBestBlock = createBlock(13, new Keccak256(getRandomHash()));
         when(blockStore.getBlockByHash(newBestBlock.getHash().getBytes())).thenReturn(newBestBlock);
@@ -393,16 +369,17 @@ public class MiningMainchainViewImplTest {
         BlockStore blockStore = mock(BlockStore.class);
 
         Block previousBlock = createGenesisBlock();
-        when(blockStore.getBlockByHash(previousBlock.getHash().getBytes())).thenReturn(previousBlock);
+        when(blockStore.getBlockByHash(previousBlock.getHash().getBytes()))
+                .thenReturn(previousBlock);
         when(blockStore.getChainBlockByNumber(0L)).thenReturn(previousBlock);
         when(blockStore.getBestBlock()).thenReturn(previousBlock);
 
-        for(long i = 1; i < height; i++) {
+        for (long i = 1; i < height; i++) {
             Block block = createBlock(i, previousBlock.getHash());
             when(blockStore.getBlockByHash(block.getHash().getBytes())).thenReturn(block);
             when(blockStore.getChainBlockByNumber(block.getNumber())).thenReturn(block);
 
-            if(i == height - 1) {
+            if (i == height - 1) {
                 when(blockStore.getBestBlock()).thenReturn(block);
             }
 
@@ -412,7 +389,7 @@ public class MiningMainchainViewImplTest {
         return blockStore;
     }
 
-    private Block createGenesisBlock(){
+    private Block createGenesisBlock() {
         BlockHeader header = createGenesisHeader();
 
         Block block = mock(Block.class);
@@ -455,7 +432,7 @@ public class MiningMainchainViewImplTest {
         return block;
     }
 
-    private BlockHeader createHeader(long number, Keccak256 parentHash){
+    private BlockHeader createHeader(long number, Keccak256 parentHash) {
         BlockHeader header = mock(BlockHeader.class);
 
         when(header.getNumber()).thenReturn(number);

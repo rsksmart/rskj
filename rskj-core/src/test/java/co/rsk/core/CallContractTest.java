@@ -23,6 +23,7 @@ import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
+import java.math.BigInteger;
 import org.ethereum.core.*;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -30,11 +31,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 07/05/2017.
- */
+/** Created by ajlopez on 07/05/2017. */
 public class CallContractTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
@@ -43,7 +40,8 @@ public class CallContractTest {
     @Test
     public void callContractReturningOne() {
         World world = new World();
-        byte[] code = new byte[] { 0x60, 0x01, 0x60, 0x00, 0x52, 0x60, 0x20, 0x60, 0x00, (byte)0xf3 };
+        byte[] code =
+                new byte[] {0x60, 0x01, 0x60, 0x00, 0x52, 0x60, 0x20, 0x60, 0x00, (byte) 0xf3};
         Account account = new AccountBuilder(world).name("acc1").code(code).build();
 
         ProgramResult result = callContract(world, account.getAddress(), new byte[0]);
@@ -58,27 +56,37 @@ public class CallContractTest {
     }
 
     private static ProgramResult callContract(World world, RskAddress receiveAddress, byte[] data) {
-        Transaction tx = CallTransaction.createRawTransaction(0, 0, 100000000000000L,
-                receiveAddress, 0, data, config.getNetworkConstants().getChainId());
+        Transaction tx =
+                CallTransaction.createRawTransaction(
+                        0,
+                        0,
+                        100000000000000L,
+                        receiveAddress,
+                        0,
+                        data,
+                        config.getNetworkConstants().getChainId());
         tx.sign(new byte[32]);
 
         Block bestBlock = world.getBlockChain().getBestBlock();
 
         Repository repository = world.getRepository().startTracking();
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory =
+                new RepositoryBtcBlockStoreWithCache.Factory(
+                        config.getNetworkConstants().getBridgeConstants().getBtcParams());
         try {
-            TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
-                    config,
-                    null,
-                    null,
-                    blockFactory,
-                    new ProgramInvokeFactoryImpl(),
-                    new PrecompiledContracts(config, btcBlockStoreFactory)
-                    );
+            TransactionExecutorFactory transactionExecutorFactory =
+                    new TransactionExecutorFactory(
+                            config,
+                            null,
+                            null,
+                            blockFactory,
+                            new ProgramInvokeFactoryImpl(),
+                            new PrecompiledContracts(config, btcBlockStoreFactory));
 
-            org.ethereum.core.TransactionExecutor executor = transactionExecutorFactory
-                    .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
-                    .setLocalCall(true);
+            org.ethereum.core.TransactionExecutor executor =
+                    transactionExecutorFactory
+                            .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
+                            .setLocalCall(true);
 
             executor.init();
             executor.execute();

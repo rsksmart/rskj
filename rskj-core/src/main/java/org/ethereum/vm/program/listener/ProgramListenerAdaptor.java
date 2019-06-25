@@ -24,42 +24,26 @@ import org.ethereum.vm.DataWord;
 public class ProgramListenerAdaptor implements ProgramListener {
 
     @Override
-    public void onMemoryExtend(int delta) {
-
-    }
+    public void onMemoryExtend(int delta) {}
 
     @Override
-    public void onMemoryWrite(int address, byte[] data, int size) {
-
-    }
+    public void onMemoryWrite(int address, byte[] data, int size) {}
 
     @Override
-    public void onStackPop() {
-
-    }
+    public void onStackPop() {}
 
     @Override
-    public void onStackPush(DataWord value) {
-
-    }
+    public void onStackPush(DataWord value) {}
 
     @Override
-    public void onStackSwap(int from, int to) {
-
-    }
+    public void onStackSwap(int from, int to) {}
 
     @Override
-    public void onStoragePut(DataWord key, DataWord value) {
-
-    }
+    public void onStoragePut(DataWord key, DataWord value) {}
 
     @Override
-    public void onStoragePut(DataWord key, byte[] value) {
-
-    }
+    public void onStoragePut(DataWord key, byte[] value) {}
 
     @Override
-    public void onStorageClear() {
-
-    }
+    public void onStorageClear() {}
 }

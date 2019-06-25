@@ -19,25 +19,27 @@
 
 package org.ethereum.jsontestsuite.validators;
 
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 
 public class LogsValidator {
 
-    public static List<String> valid(List<LogInfo> origLogs, List<LogInfo> postLogs,ValidationStats vStats) {
+    public static List<String> valid(
+            List<LogInfo> origLogs, List<LogInfo> postLogs, ValidationStats vStats) {
 
         List<String> results = new ArrayList<>();
 
         int i = 0;
         for (LogInfo postLog : postLogs) {
-            if (vStats!=null) vStats.logChecks++;
-            if (origLogs == null || origLogs.size() - 1 < i){
-                String formattedString = String.format("Log: %s: was expected but doesn't exist: address: %s",
-                        i, Hex.toHexString(postLog.getAddress()));
+            if (vStats != null) vStats.logChecks++;
+            if (origLogs == null || origLogs.size() - 1 < i) {
+                String formattedString =
+                        String.format(
+                                "Log: %s: was expected but doesn't exist: address: %s",
+                                i, Hex.toHexString(postLog.getAddress()));
                 results.add(formattedString);
 
                 continue;
@@ -47,31 +49,37 @@ public class LogsValidator {
 
             String postAddress = Hex.toHexString(postLog.getAddress());
             String realAddress = Hex.toHexString(realLog.getAddress());
-            if (vStats!=null) vStats.logChecks++;
+            if (vStats != null) vStats.logChecks++;
             if (!postAddress.equals(realAddress)) {
 
-                String formattedString = String.format("Log: %s: has unexpected address, expected address: %s found address: %s",
-                        i, postAddress, realAddress);
+                String formattedString =
+                        String.format(
+                                "Log: %s: has unexpected address, expected address: %s found address: %s",
+                                i, postAddress, realAddress);
                 results.add(formattedString);
             }
 
             String postData = Hex.toHexString(postLog.getData());
             String realData = Hex.toHexString(realLog.getData());
-            if (vStats!=null) vStats.logChecks++;
+            if (vStats != null) vStats.logChecks++;
             if (!postData.equals(realData)) {
 
-                String formattedString = String.format("Log: %s: has unexpected data, expected data: %s found data: %s",
-                        i, postData, realData);
+                String formattedString =
+                        String.format(
+                                "Log: %s: has unexpected data, expected data: %s found data: %s",
+                                i, postData, realData);
                 results.add(formattedString);
             }
 
             String postBloom = Hex.toHexString(postLog.getBloom().getData());
             String realBloom = Hex.toHexString(realLog.getBloom().getData());
-            if (vStats!=null) vStats.logChecks++;
+            if (vStats != null) vStats.logChecks++;
             if (!postData.equals(realData)) {
 
-                String formattedString = String.format("Log: %s: has unexpected bloom, expected bloom: %s found bloom: %s",
-                        i, postBloom, realBloom);
+                String formattedString =
+                        String.format(
+                                "Log: %s: has unexpected bloom, expected bloom: %s found bloom: %s",
+                                i, postBloom, realBloom);
                 results.add(formattedString);
             }
 
@@ -82,11 +90,13 @@ public class LogsValidator {
             for (DataWord postTopic : postTopics) {
 
                 DataWord realTopic = realTopics.get(j);
-                if (vStats!=null) vStats.logChecks++;
+                if (vStats != null) vStats.logChecks++;
                 if (!postTopic.equals(realTopic)) {
 
-                    String formattedString = String.format("Log: %s: has unexpected topic: %s, expected topic: %s found topic: %s",
-                            i, j, postTopic, realTopic);
+                    String formattedString =
+                            String.format(
+                                    "Log: %s: has unexpected topic: %s, expected topic: %s found topic: %s",
+                                    i, j, postTopic, realTopic);
                     results.add(formattedString);
                 }
                 ++j;
@@ -97,5 +107,4 @@ public class LogsValidator {
 
         return results;
     }
-
 }

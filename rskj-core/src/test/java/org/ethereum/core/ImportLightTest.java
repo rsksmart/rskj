@@ -32,6 +32,8 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
+import java.util.HashMap;
+import java.util.Map;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
@@ -42,19 +44,17 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
-import java.util.HashMap;
-import java.util.Map;
-
-/**
- * Created by Anton Nashatyrev on 29.12.2015.
- */
+/** Created by Anton Nashatyrev on 29.12.2015. */
 public class ImportLightTest {
 
     public static BlockChainImpl createBlockchain(Genesis genesis, TestSystemProperties config) {
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore =
+                new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
 
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+        Repository repository =
+                new MutableRepository(
+                        new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
 
@@ -62,34 +62,47 @@ public class ImportLightTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
-                config,
-                blockStore,
-                receiptStore,
-                blockFactory,
-                new ProgramInvokeFactoryImpl(),
+        TransactionExecutorFactory transactionExecutorFactory =
+                new TransactionExecutorFactory(
+                        config,
+                        blockStore,
+                        receiptStore,
+                        blockFactory,
+                        new ProgramInvokeFactoryImpl(),
+                        null);
+        TransactionPoolImpl transactionPool =
+                new TransactionPoolImpl(
+                        config,
+                        repository,
+                        null,
+                        blockFactory,
+                        listener,
+                        transactionExecutorFactory,
+                        10,
+                        100);
 
-                null);
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
-
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
-        BlockChainImpl blockchain = new BlockChainImpl(
-                repository,
-                blockStore,
-                receiptStore,
-                transactionPool,
-                listener,
-                new DummyBlockValidator(),
-                false,
-                1,
-                new BlockExecutor(
+        StateRootHandler stateRootHandler =
+                new StateRootHandler(
                         config.getActivationConfig(),
-                        new RepositoryLocator(repository, stateRootHandler),
-                        stateRootHandler,
-                        transactionExecutorFactory
-                ),
-                stateRootHandler
-        );
+                        new TrieConverter(),
+                        new HashMapDB(),
+                        new HashMap<>());
+        BlockChainImpl blockchain =
+                new BlockChainImpl(
+                        repository,
+                        blockStore,
+                        receiptStore,
+                        transactionPool,
+                        listener,
+                        new DummyBlockValidator(),
+                        false,
+                        1,
+                        new BlockExecutor(
+                                config.getActivationConfig(),
+                                new RepositoryLocator(repository, stateRootHandler),
+                                stateRootHandler,
+                                transactionExecutorFactory),
+                        stateRootHandler);
 
         blockchain.setNoValidation(true);
 
@@ -112,4 +125,3 @@ public class ImportLightTest {
         return blockchain;
     }
 }
-

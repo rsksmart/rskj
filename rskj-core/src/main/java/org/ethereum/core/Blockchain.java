@@ -21,17 +21,17 @@ package org.ethereum.core;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
+import java.util.List;
+import javax.annotation.Nullable;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
-
-import javax.annotation.Nullable;
-import java.util.List;
 
 public interface Blockchain {
 
     /**
      * Get block by number from the best chain
+     *
      * @param number - number of the block
      * @return block by that number
      */
@@ -39,22 +39,20 @@ public interface Blockchain {
 
     /**
      * Get block by hash
+     *
      * @param hash - hash of the block
      * @return - bloc by that hash
      */
     Block getBlockByHash(byte[] hash);
 
     /**
-     * Get total difficulty from the start
-     * and until the head of the chain
+     * Get total difficulty from the start and until the head of the chain
      *
      * @return - total difficulty
      */
     BlockDifficulty getTotalDifficulty();
 
-    /**
-     * @return - last added block from blockchain
-     */
+    /** @return - last added block from blockchain */
     Block getBestBlock();
 
     long getSize();

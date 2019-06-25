@@ -25,43 +25,42 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 /**
- * This class helps when running tests that should work both before and after a network upgrade.
- * To use it, you need to:
- * 1. Extend it
- * 2. Create a public constructor that receives a TestSystemProperties
- * 3. call super(config)
+ * This class helps when running tests that should work both before and after a network upgrade. To
+ * use it, you need to: 1. Extend it 2. Create a public constructor that receives a
+ * TestSystemProperties 3. call super(config)
  *
- * It will execute your test cases once per fork, with adequate configuration object arguments.
+ * <p>It will execute your test cases once per fork, with adequate configuration object arguments.
  */
 @RunWith(Parameterized.class)
 public abstract class ParameterizedNetworkUpgradeTest {
 
-
     @Parameterized.Parameters(name = "Network version: {0}")
     public static Object[] data() {
-        TestSystemProperties bambooConfig = new TestSystemProperties() {
-            @Override
-            public ActivationConfig getActivationConfig() {
-                return ActivationConfigsForTest.genesis();
-            }
+        TestSystemProperties bambooConfig =
+                new TestSystemProperties() {
+                    @Override
+                    public ActivationConfig getActivationConfig() {
+                        return ActivationConfigsForTest.genesis();
+                    }
 
-            @Override
-            public String toString() {
-                return "Bamboo";
-            }
-        };
-        TestSystemProperties orchidConfig = new TestSystemProperties() {
-            @Override
-            public ActivationConfig getActivationConfig() {
-                return ActivationConfigsForTest.orchid();
-            }
+                    @Override
+                    public String toString() {
+                        return "Bamboo";
+                    }
+                };
+        TestSystemProperties orchidConfig =
+                new TestSystemProperties() {
+                    @Override
+                    public ActivationConfig getActivationConfig() {
+                        return ActivationConfigsForTest.orchid();
+                    }
 
-            @Override
-            public String toString() {
-                return "Orchid";
-            }
-        };
-        return new Object[] { bambooConfig, orchidConfig };
+                    @Override
+                    public String toString() {
+                        return "Orchid";
+                    }
+                };
+        return new Object[] {bambooConfig, orchidConfig};
     }
 
     protected final TestSystemProperties config;

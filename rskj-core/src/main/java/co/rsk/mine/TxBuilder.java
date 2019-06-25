@@ -20,6 +20,9 @@ package co.rsk.mine;
 
 import co.rsk.core.RskAddress;
 import co.rsk.net.BlockProcessor;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
@@ -32,15 +35,10 @@ import org.ethereum.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-
 /**
- * This component creates random txs and stores them to the memory pool.
- * It is used only for testing purposes.
+ * This component creates random txs and stores them to the memory pool. It is used only for testing
+ * purposes.
  */
-
 public class TxBuilder {
 
     private final Constants constants;
@@ -51,23 +49,28 @@ public class TxBuilder {
     private static final Logger logger = LoggerFactory.getLogger("txbuilder");
     private volatile boolean stop = false;
 
-    private byte[] privateKeyBytes  = HashUtil.keccak256("this is a seed".getBytes(StandardCharsets.UTF_8));
+    private byte[] privateKeyBytes =
+            HashUtil.keccak256("this is a seed".getBytes(StandardCharsets.UTF_8));
     private ECKey key;
 
-    public TxBuilder(Constants constants, Ethereum ethereum, BlockProcessor blockProcessor, Repository repository) {
+    public TxBuilder(
+            Constants constants,
+            Ethereum ethereum,
+            BlockProcessor blockProcessor,
+            Repository repository) {
         this.constants = constants;
         this.ethereum = ethereum;
         this.blockProcessor = blockProcessor;
         this.repository = repository;
     }
 
-    public void simulateTxs( ) {
+    public void simulateTxs() {
 
         key = ECKey.fromPrivate(privateKeyBytes);
 
         new Thread() {
             @Override
-            public void run()  {
+            public void run() {
                 try {
                     Thread.sleep(60000);
 
@@ -87,7 +90,7 @@ public class TxBuilder {
                         }
 
                         TxBuilder.this.createNewTx(nonce);
-                        
+
                         Thread.sleep(random.nextInt(51000));
                         nonce = nonce.add(BigInteger.ONE);
                     }
@@ -101,11 +104,13 @@ public class TxBuilder {
         }.start();
     }
 
-    public  void createNewTx(BigInteger txNonce) throws InterruptedException {
+    public void createNewTx(BigInteger txNonce) throws InterruptedException {
 
-        Transaction tx = this.createNewTransaction(BigInteger.valueOf(1), BigInteger.valueOf(21000), txNonce);
+        Transaction tx =
+                this.createNewTransaction(
+                        BigInteger.valueOf(1), BigInteger.valueOf(21000), txNonce);
 
-        //Adds created transaction to the local node's memory pool
+        // Adds created transaction to the local node's memory pool
         ethereum.submitTransaction(tx);
 
         logger.info("Added pending tx={}", tx.getHash());
@@ -114,11 +119,18 @@ public class TxBuilder {
         Thread.sleep(random.nextInt(51000));
     }
 
-    public Transaction createNewTransaction(BigInteger gasPrice, BigInteger gasLimit, BigInteger txNonce)
-    {
+    public Transaction createNewTransaction(
+            BigInteger gasPrice, BigInteger gasLimit, BigInteger txNonce) {
         String toAddress = Hex.toHexString(new ECKey(Utils.getRandom()).getAddress());
 
-        Transaction tx = new Transaction(toAddress, BigInteger.valueOf(1000), txNonce, gasPrice, gasLimit, constants.getChainId());
+        Transaction tx =
+                new Transaction(
+                        toAddress,
+                        BigInteger.valueOf(1000),
+                        txNonce,
+                        gasPrice,
+                        gasLimit,
+                        constants.getChainId());
         tx.sign(privateKeyBytes);
 
         return tx;

@@ -19,11 +19,10 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.nio.ByteBuffer;
 import java.util.Set;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TransactionNodeInformationTest {
 
@@ -40,7 +39,7 @@ public class TransactionNodeInformationTest {
     @Test
     public void transactionEvictionPolicy() {
         final TransactionNodeInformation nodeInformation = new TransactionNodeInformation();
-        final NodeID nodeID1 = new NodeID(new byte[]{2});
+        final NodeID nodeID1 = new NodeID(new byte[] {2});
 
         // Add a few blocks, without exceeding the block limit. NodeID1 should contain them all.
         for (int i = 0; i < 500; i++) {
@@ -48,8 +47,10 @@ public class TransactionNodeInformationTest {
             nodeInformation.addTransactionToNode(hash1, nodeID1);
         }
 
-        Assert.assertTrue(nodeInformation.getNodesByTransaction(createBlockHash(15)).contains(nodeID1));
-        Assert.assertTrue(nodeInformation.getNodesByTransaction(createBlockHash(200)).contains(nodeID1));
+        Assert.assertTrue(
+                nodeInformation.getNodesByTransaction(createBlockHash(15)).contains(nodeID1));
+        Assert.assertTrue(
+                nodeInformation.getNodesByTransaction(createBlockHash(200)).contains(nodeID1));
 
         // Add more blocks, exceeding MAX_NODES. All previous blocks should be evicted.
         // Except from block 10, which is being constantly accessed.
@@ -60,12 +61,17 @@ public class TransactionNodeInformationTest {
             nodeInformation.getNodesByTransaction(createBlockHash(10));
         }
 
-        Assert.assertFalse(nodeInformation.getNodesByTransaction(createBlockHash(1)).contains(nodeID1));
-        Assert.assertFalse(nodeInformation.getNodesByTransaction(createBlockHash(700)).contains(nodeID1));
-        Assert.assertFalse(nodeInformation.getNodesByTransaction(createBlockHash(200)).contains(nodeID1));
+        Assert.assertFalse(
+                nodeInformation.getNodesByTransaction(createBlockHash(1)).contains(nodeID1));
+        Assert.assertFalse(
+                nodeInformation.getNodesByTransaction(createBlockHash(700)).contains(nodeID1));
+        Assert.assertFalse(
+                nodeInformation.getNodesByTransaction(createBlockHash(200)).contains(nodeID1));
 
-        Assert.assertTrue(nodeInformation.getNodesByTransaction(createBlockHash(1900)).contains(nodeID1));
-        Assert.assertTrue(nodeInformation.getNodesByTransaction(createBlockHash(10)).contains(nodeID1));
+        Assert.assertTrue(
+                nodeInformation.getNodesByTransaction(createBlockHash(1900)).contains(nodeID1));
+        Assert.assertTrue(
+                nodeInformation.getNodesByTransaction(createBlockHash(10)).contains(nodeID1));
     }
 
     @Test
@@ -79,10 +85,10 @@ public class TransactionNodeInformationTest {
     public void getIsNotEmptyIfPresent() {
         final TransactionNodeInformation nodeInformation = new TransactionNodeInformation();
         final Keccak256 hash1 = createBlockHash(1);
-        final NodeID nodeID1 = new NodeID(new byte[]{2});
+        final NodeID nodeID1 = new NodeID(new byte[] {2});
 
         final Keccak256 badHash = createBlockHash(3);
-        final NodeID badNode = new NodeID(new byte[]{4});
+        final NodeID badNode = new NodeID(new byte[] {4});
 
         nodeInformation.addTransactionToNode(hash1, nodeID1);
 
@@ -99,10 +105,10 @@ public class TransactionNodeInformationTest {
     public void twoNodesTwoTransactions() {
         final TransactionNodeInformation nodeInformation = new TransactionNodeInformation();
         final Keccak256 hash1 = createBlockHash(1);
-        final NodeID nodeID1 = new NodeID(new byte[]{2});
+        final NodeID nodeID1 = new NodeID(new byte[] {2});
 
         final Keccak256 hash2 = createBlockHash(3);
-        final NodeID nodeID2 = new NodeID(new byte[]{4});
+        final NodeID nodeID2 = new NodeID(new byte[] {4});
 
         nodeInformation.addTransactionToNode(hash1, nodeID1);
         nodeInformation.addTransactionToNode(hash2, nodeID1);
@@ -119,4 +125,3 @@ public class TransactionNodeInformationTest {
         Assert.assertTrue(nodes2.contains(nodeID2));
     }
 }
-

@@ -20,23 +20,24 @@
 package org.ethereum.vm;
 
 import co.rsk.util.TestContract;
+import java.math.BigInteger;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
 public class ProgramTest {
 
-    private static final String LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+    private static final String LOREM_IPSUM =
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
     @Test
     public void helloContract() {
-        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.ZERO, false);
+        ProgramResult result =
+                TestContract.hello().executeFunction("hello", BigInteger.ZERO, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
-                new String[] { "chinchilla" },
+                new String[] {"chinchilla"},
                 TestContract.hello().functions.get("hello").decodeResult(result.getHReturn()));
     }
 
@@ -49,41 +50,46 @@ public class ProgramTest {
 
     @Test
     public void childContractDoesntInheritMsgValue() {
-        ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN, false);
+        ProgramResult result =
+                TestContract.parent().executeFunction("createChild", BigInteger.TEN, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
     @Test
     public void childContractDoesntInheritMsgValue_2() {
-        ProgramResult result = TestContract.msgValueTest().executeFunction("test_create", BigInteger.TEN, false);
+        ProgramResult result =
+                TestContract.msgValueTest().executeFunction("test_create", BigInteger.TEN, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
     @Test
     public void sendFailsAndReturnsFalseThenExecutionContinuesNormally() {
-        ProgramResult result = TestContract.sendTest().executeFunction("test", BigInteger.TEN, false);
+        ProgramResult result =
+                TestContract.sendTest().executeFunction("test", BigInteger.TEN, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
-                new Object[] { BigInteger.valueOf(42) },
+                new Object[] {BigInteger.valueOf(42)},
                 TestContract.sendTest().functions.get("test").decodeResult(result.getHReturn()));
     }
 
     @Test
     public void childContractGetsStipend() {
-        ProgramResult result = TestContract.bankTest().executeFunction("test", BigInteger.TEN, false);
+        ProgramResult result =
+                TestContract.bankTest().executeFunction("test", BigInteger.TEN, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
-                new Object[] { BigInteger.valueOf(43) },
+                new Object[] {BigInteger.valueOf(43)},
                 TestContract.bankTest().functions.get("test").decodeResult(result.getHReturn()));
     }
 
     @Test
     public void shouldRevertIfLessThanStipendGasAvailable() {
-        ProgramResult result = TestContract.bankTest2().executeFunction("test", BigInteger.TEN, false);
+        ProgramResult result =
+                TestContract.bankTest2().executeFunction("test", BigInteger.TEN, false);
         Assert.assertTrue(result.isRevert());
         Assert.assertNull(result.getException());
     }
@@ -98,21 +104,26 @@ public class ProgramTest {
 
     @Test
     public void returnDataSizeTests() {
-        ProgramResult result = TestContract.returnDataTest().executeFunction("testSize", BigInteger.ZERO, false);
+        ProgramResult result =
+                TestContract.returnDataTest().executeFunction("testSize", BigInteger.ZERO, false);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
     @Test
     public void returnPrecompiledDataSizeTest() {
-        ProgramResult result = TestContract.returnDataTest().executeFunction("testPrecompiledSize", BigInteger.ZERO, true);
+        ProgramResult result =
+                TestContract.returnDataTest()
+                        .executeFunction("testPrecompiledSize", BigInteger.ZERO, true);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
     @Test
     public void callPrecompiledContractMethodThroughStub() {
-        ProgramResult result = TestContract.returnBridgeTest().executeFunction("invokeGetFeePerKb", BigInteger.ZERO, true);
+        ProgramResult result =
+                TestContract.returnBridgeTest()
+                        .executeFunction("invokeGetFeePerKb", BigInteger.ZERO, true);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }

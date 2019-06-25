@@ -22,20 +22,16 @@ import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcBlockChain;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.StoredBlock;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
-
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import java.math.BigInteger;
 
-/**
- * Created by ajlopez on 6/9/2016.
- */
+/** Created by ajlopez on 6/9/2016. */
 public class SimpleBlockChain extends BtcBlockChain {
     private BtcBlockStore blockStore;
     private StoredBlock block;
     private StoredBlock highBlock;
     private boolean useHighBlock = false;
-
 
     public SimpleBlockChain(Context context, BtcBlockStore blockStore) throws BlockStoreException {
         super(context, blockStore);
@@ -68,8 +64,7 @@ public class SimpleBlockChain extends BtcBlockChain {
 
     @Override
     public StoredBlock getChainHead() {
-        if(this.useHighBlock)
-            return this.highBlock;
+        if (this.useHighBlock) return this.highBlock;
         return block;
     }
 

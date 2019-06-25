@@ -38,18 +38,19 @@ import com.google.common.base.Objects;
 import java.util.Arrays;
 
 /**
- * <p>An instance of EncryptedData is a holder for an initialization vector and encrypted bytes. It is typically
- * used to hold encrypted private key bytes.</p>
+ * An instance of EncryptedData is a holder for an initialization vector and encrypted bytes. It is
+ * typically used to hold encrypted private key bytes.
  *
- * <p>The initialisation vector is random data that is used to initialise the AES block cipher when the
- * private key bytes were encrypted. You need these for decryption.</p>
+ * <p>The initialisation vector is random data that is used to initialise the AES block cipher when
+ * the private key bytes were encrypted. You need these for decryption.
  */
 public final class EncryptedData {
     public final byte[] initialisationVector;
     public final byte[] encryptedBytes;
 
     public EncryptedData(byte[] initialisationVector, byte[] encryptedBytes) {
-        this.initialisationVector = Arrays.copyOf(initialisationVector, initialisationVector.length);
+        this.initialisationVector =
+                Arrays.copyOf(initialisationVector, initialisationVector.length);
         this.encryptedBytes = Arrays.copyOf(encryptedBytes, encryptedBytes.length);
     }
 
@@ -64,17 +65,22 @@ public final class EncryptedData {
         }
 
         EncryptedData other = (EncryptedData) o;
-        return Arrays.equals(encryptedBytes, other.encryptedBytes) && Arrays.equals(initialisationVector, other.initialisationVector);
+        return Arrays.equals(encryptedBytes, other.encryptedBytes)
+                && Arrays.equals(initialisationVector, other.initialisationVector);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(Arrays.hashCode(encryptedBytes), Arrays.hashCode(initialisationVector));
+        return Objects.hashCode(
+                Arrays.hashCode(encryptedBytes), Arrays.hashCode(initialisationVector));
     }
 
     @Override
     public String toString() {
-        return "EncryptedData [initialisationVector=" + Arrays.toString(initialisationVector)
-            + ", encryptedPrivateKey=" + Arrays.toString(encryptedBytes) + "]";
+        return "EncryptedData [initialisationVector="
+                + Arrays.toString(initialisationVector)
+                + ", encryptedPrivateKey="
+                + Arrays.toString(encryptedBytes)
+                + "]";
     }
 }

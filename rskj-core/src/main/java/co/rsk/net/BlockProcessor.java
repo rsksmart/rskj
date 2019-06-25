@@ -19,15 +19,12 @@
 package co.rsk.net;
 
 import co.rsk.net.messages.NewBlockHashesMessage;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 
-import java.util.List;
-
-/**
- * Created by ajlopez on 5/11/2016.
- */
+/** Created by ajlopez on 5/11/2016. */
 public interface BlockProcessor {
     BlockProcessResult processBlock(MessageChannel sender, Block block);
 

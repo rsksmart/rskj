@@ -21,6 +21,8 @@ package org.ethereum.core.genesis;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import java.io.IOException;
+import java.math.BigInteger;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RskTestFactory;
@@ -28,19 +30,22 @@ import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.math.BigInteger;
-
 public class BlockchainLoaderTest {
 
     @Test
     public void testLoadBlockchainEmptyBlockchain() throws IOException {
-        RskTestFactory objects = new RskTestFactory() {
-            @Override
-            public Genesis buildGenesis() {
-                return GenesisLoader.loadGenesis("blockchain_loader_genesis.json", BigInteger.ZERO, true, true, true);
-            }
-        };
+        RskTestFactory objects =
+                new RskTestFactory() {
+                    @Override
+                    public Genesis buildGenesis() {
+                        return GenesisLoader.loadGenesis(
+                                "blockchain_loader_genesis.json",
+                                BigInteger.ZERO,
+                                true,
+                                true,
+                                true);
+                    }
+                };
         objects.getBlockchain(); // calls loadBlockchain
         Repository repository = objects.getRepository();
 
@@ -61,7 +66,5 @@ public class BlockchainLoaderTest {
         Assert.assertEquals(DataWord.ONE, repository.getStorageValue(address, DataWord.ZERO));
         Assert.assertEquals(DataWord.valueOf(3), repository.getStorageValue(address, DataWord.ONE));
         Assert.assertEquals(274, repository.getCode(address).length);
-
     }
-
 }

@@ -21,17 +21,16 @@ package org.ethereum.solidity;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.Utils;
-import org.ethereum.vm.DataWord;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.Utils;
+import org.ethereum.vm.DataWord;
 
 public abstract class SolidityType {
     protected String name;
@@ -40,16 +39,14 @@ public abstract class SolidityType {
         this.name = name;
     }
 
-    /**
-     * The type name as it was specified in the interface description
-     */
+    /** The type name as it was specified in the interface description */
     public String getName() {
         return name;
     }
 
     /**
-     * The canonical type name (used for the method signature creation)
-     * E.g. 'int' - canonical 'int256'
+     * The canonical type name (used for the method signature creation) E.g. 'int' - canonical
+     * 'int256'
      */
     @JsonValue
     public String getCanonicalName() {
@@ -69,7 +66,7 @@ public abstract class SolidityType {
         }
         if ("address".equals(typeName)) {
             return new AddressType();
-           }
+        }
         if ("string".equals(typeName)) {
             return new StringType();
         }
@@ -96,8 +93,8 @@ public abstract class SolidityType {
     }
 
     /**
-     * @return fixed size in bytes. For the dynamic types returns IntType.getFixedSize()
-     * which is effectively the int offset to dynamic data
+     * @return fixed size in bytes. For the dynamic types returns IntType.getFixedSize() which is
+     *     effectively the int offset to dynamic data
      */
     public int getFixedSize() {
         return 32;
@@ -111,7 +108,6 @@ public abstract class SolidityType {
     public String toString() {
         return getName();
     }
-
 
     public abstract static class ArrayType extends SolidityType {
         public static ArrayType getType(String typeName) {
@@ -174,7 +170,8 @@ public abstract class SolidityType {
         @Override
         public byte[] encodeList(List l) {
             if (l.size() != size) {
-                throw new RuntimeException("List size (" + l.size() + ") != " + size + " for type " + getName());
+                throw new RuntimeException(
+                        "List size (" + l.size() + ") != " + size + " for type " + getName());
             }
             byte[][] elems = new byte[size][];
             for (int i = 0; i < l.size(); i++) {
@@ -250,7 +247,9 @@ public abstract class SolidityType {
             for (int i = 0; i < len; i++) {
                 if (elementType.isDynamicType()) {
                     int dynamicElementOffset = IntType.decodeInt(encoded, elementOffset).intValue();
-                    ret[i] = elementType.decode(encoded, Math.addExact(offset, dynamicElementOffset));
+                    ret[i] =
+                            elementType.decode(
+                                    encoded, Math.addExact(offset, dynamicElementOffset));
                 } else {
                     ret[i] = elementType.decode(encoded, elementOffset);
                 }
@@ -358,7 +357,9 @@ public abstract class SolidityType {
             byte[] addr = super.encode(value);
             for (int i = 0; i < 12; i++) {
                 if (addr[i] != 0) {
-                    throw new RuntimeException("Invalid address (should be 20 bytes length): " + Hex.toHexString(addr));
+                    throw new RuntimeException(
+                            "Invalid address (should be 20 bytes length): "
+                                    + Hex.toHexString(addr));
                 }
             }
             return addr;
@@ -400,8 +401,12 @@ public abstract class SolidityType {
                 if (s.startsWith("0x")) {
                     s = s.substring(2);
                     radix = 16;
-                } else if (s.contains("a") || s.contains("b") || s.contains("c") ||
-                        s.contains("d") || s.contains("e") || s.contains("f")) {
+                } else if (s.contains("a")
+                        || s.contains("b")
+                        || s.contains("c")
+                        || s.contains("d")
+                        || s.contains("e")
+                        || s.contains("f")) {
                     radix = 16;
                 }
                 bigInt = new BigInteger(s, radix);
@@ -410,7 +415,14 @@ public abstract class SolidityType {
             } else if (value instanceof Number) {
                 bigInt = new BigInteger(value.toString());
             } else {
-                throw new RuntimeException("Invalid value for type '" + this + "': " + value + " (" + value.getClass() + ")");
+                throw new RuntimeException(
+                        "Invalid value for type '"
+                                + this
+                                + "': "
+                                + value
+                                + " ("
+                                + value.getClass()
+                                + ")");
             }
             return encodeInt(bigInt);
         }
@@ -421,7 +433,8 @@ public abstract class SolidityType {
         }
 
         public static BigInteger decodeInt(byte[] encoded, int offset) {
-            // This is here because getGasForData might send an empty payload which will produce an exception
+            // This is here because getGasForData might send an empty payload which will produce an
+            // exception
             // But currently the bridge would return the cost of RELEASE_BTC in this situation
             if (encoded.length == 0) {
                 return BigInteger.ZERO;
@@ -460,5 +473,4 @@ public abstract class SolidityType {
             return Boolean.valueOf(((Number) super.decode(encoded, offset)).intValue() != 0);
         }
     }
-
 }

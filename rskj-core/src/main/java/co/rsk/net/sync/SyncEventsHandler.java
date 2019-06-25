@@ -2,13 +2,12 @@ package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockIdentifier;
-
-import javax.annotation.Nonnull;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
 
 public interface SyncEventsHandler {
     boolean sendSkeletonRequest(NodeID nodeID, long height);
@@ -19,9 +18,11 @@ public interface SyncEventsHandler {
 
     Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId);
 
-    void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons);
+    void startDownloadingBodies(
+            List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons);
 
-    void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint);
+    void startDownloadingHeaders(
+            Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint);
 
     void startDownloadingSkeleton(long connectionPoint);
 

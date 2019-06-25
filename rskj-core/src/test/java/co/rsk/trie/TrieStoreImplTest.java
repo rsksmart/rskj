@@ -18,18 +18,16 @@
 
 package co.rsk.trie;
 
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-
-/**
- * Created by ajlopez on 08/01/2017.
- */
+/** Created by ajlopez on 08/01/2017. */
 public class TrieStoreImplTest {
 
     private HashMapDB map;
@@ -67,7 +65,8 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveAndRetrieveTrieNodeWith32BytesKey() {
-        Trie trie = new Trie(store).put(Keccak256Helper.keccak256("foo".getBytes()), "bar".getBytes());
+        Trie trie =
+                new Trie(store).put(Keccak256Helper.keccak256("foo".getBytes()), "bar".getBytes());
 
         store.save(trie);
 
@@ -125,9 +124,10 @@ public class TrieStoreImplTest {
 
     @Test
     public void saveFullTrieWithTwoLongValues() {
-        Trie trie = new Trie(store)
-                .put("foo", TrieValueTest.makeValue(100))
-                .put("bar", TrieValueTest.makeValue(200));
+        Trie trie =
+                new Trie(store)
+                        .put("foo", TrieValueTest.makeValue(100))
+                        .put("bar", TrieValueTest.makeValue(200));
 
         trie.save();
 
@@ -182,14 +182,12 @@ public class TrieStoreImplTest {
 
     @Test
     public void retrieveUnknownHash() {
-        Assert.assertNull(store.retrieve(new byte[] { 0x01, 0x02, 0x03, 0x04 }));
+        Assert.assertNull(store.retrieve(new byte[] {0x01, 0x02, 0x03, 0x04}));
     }
 
     @Test
     public void retrieveTrieByHashEmbedded() {
-        Trie trie = new Trie(store)
-                .put("bar", "foo".getBytes())
-                .put("foo", "bar".getBytes());
+        Trie trie = new Trie(store).put("bar", "foo".getBytes()).put("foo", "bar".getBytes());
 
         trie.save();
         int size = trie.trieSize();
@@ -205,9 +203,10 @@ public class TrieStoreImplTest {
 
     @Test
     public void retrieveTrieByHashNotEmbedded() {
-        Trie trie = new Trie(store)
-                .put("baaaaaaaaaaaaaaaaaaaaar", "foooooooooooooooooooooo".getBytes())
-                .put("foooooooooooooooooooooo", "baaaaaaaaaaaaaaaaaaaaar".getBytes());
+        Trie trie =
+                new Trie(store)
+                        .put("baaaaaaaaaaaaaaaaaaaaar", "foooooooooooooooooooooo".getBytes())
+                        .put("foooooooooooooooooooooo", "baaaaaaaaaaaaaaaaaaaaar".getBytes());
 
         trie.save();
         int size = trie.trieSize();
@@ -223,9 +222,10 @@ public class TrieStoreImplTest {
 
     @Test
     public void retrieveTrieWithLongValuesByHash() {
-        Trie trie = new Trie(store)
-                .put("bar", TrieValueTest.makeValue(100))
-                .put("foo", TrieValueTest.makeValue(200));
+        Trie trie =
+                new Trie(store)
+                        .put("bar", TrieValueTest.makeValue(100))
+                        .put("foo", TrieValueTest.makeValue(200));
 
         trie.save();
 

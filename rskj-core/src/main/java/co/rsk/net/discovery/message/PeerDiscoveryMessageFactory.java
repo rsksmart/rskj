@@ -18,13 +18,12 @@
 
 package co.rsk.net.discovery.message;
 
-/**
- * Created by mario on 13/02/17.
- */
+/** Created by mario on 13/02/17. */
 public class PeerDiscoveryMessageFactory {
     private PeerDiscoveryMessageFactory() {}
 
-    public static PeerDiscoveryMessage createMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
+    public static PeerDiscoveryMessage createMessage(
+            byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         DiscoveryMessageType msgType = DiscoveryMessageType.valueOfType(type[0]);
 
         if (msgType == DiscoveryMessageType.PING) {

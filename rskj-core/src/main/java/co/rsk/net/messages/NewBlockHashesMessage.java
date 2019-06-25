@@ -18,27 +18,23 @@
  */
 package co.rsk.net.messages;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Wrapper around an Ethereum NewBlockHashes message on the network<br>
  *
  * @see EthMessageCodes#NEW_BLOCK_HASHES
- *
  * @author Mikhail Kalinin
  * @since 05.09.2015
  */
 public class NewBlockHashesMessage extends Message {
 
-    /**
-     * List of identifiers holding hash and number of the blocks
-     */
+    /** List of identifiers holding hash and number of the blocks */
     private List<BlockIdentifier> blockIdentifiers;
 
     private boolean parsed;
@@ -77,7 +73,6 @@ public class NewBlockHashesMessage extends Message {
         this.encoded = RLP.encodeList(encodedElementArray);
     }
 
-
     @Override
     public MessageType getMessageType() {
         return MessageType.NEW_BLOCK_HASHES;
@@ -108,5 +103,4 @@ public class NewBlockHashesMessage extends Message {
 
         return "[" + getMessageType() + "] (" + blockIdentifiers.size() + ")";
     }
-
 }

@@ -21,24 +21,21 @@ package org.ethereum.rpc.dto;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.solidity.compiler.CompilationResult;
 
-/**
- * Created by martin.medina on 9/7/2016.
- */
+/** Created by martin.medina on 9/7/2016. */
 public class CompilationResultDTO {
 
     public String code;
     public CompilationInfoDTO info;
 
-    public CompilationResultDTO(CompilationResult.ContractMetadata contractMetadata, CompilationInfoDTO compilationInfo) {
+    public CompilationResultDTO(
+            CompilationResult.ContractMetadata contractMetadata,
+            CompilationInfoDTO compilationInfo) {
         code = TypeConverter.toJsonHex(contractMetadata.bin);
         info = compilationInfo;
     }
 
     @Override
     public String toString() {
-        return "CompilationResult{" +
-                "code='" + code + '\'' +
-                ", info=" + info +
-                '}';
+        return "CompilationResult{" + "code='" + code + '\'' + ", info=" + info + '}';
     }
 }

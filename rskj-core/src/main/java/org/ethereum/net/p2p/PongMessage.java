@@ -19,9 +19,8 @@
 
 package org.ethereum.net.p2p;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Wrapper around an Ethereum Pong message on the network
@@ -30,9 +29,7 @@ import java.util.Arrays;
  */
 public class PongMessage extends P2pMessage {
 
-    /**
-     * Pong message is always a the same single command payload
-     */
+    /** Pong message is always a the same single command payload */
     private static final byte[] FIXED_PAYLOAD = Hex.decode("C0");
 
     @Override

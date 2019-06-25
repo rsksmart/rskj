@@ -25,8 +25,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        GetCoinbasePerformanceTestCase.class,
+    GetCoinbasePerformanceTestCase.class,
 })
 @Ignore
-public class BlockHeaderPerformanceTest extends PrecompiledContractPerformanceTest {
-}
+public class BlockHeaderPerformanceTest extends PrecompiledContractPerformanceTest {}

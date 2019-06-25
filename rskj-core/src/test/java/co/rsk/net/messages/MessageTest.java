@@ -24,21 +24,18 @@ import co.rsk.net.Status;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
-
-/**
- * Created by ajlopez on 5/11/2016.
- */
+/** Created by ajlopez on 5/11/2016. */
 public class MessageTest {
     private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
@@ -128,7 +125,8 @@ public class MessageTest {
 
         StatusMessage newmessage = (StatusMessage) result;
 
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
+        Assert.assertArrayEquals(
+                block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
         Assert.assertEquals(block.getNumber(), newmessage.getStatus().getBestBlockNumber());
         Assert.assertNull(newmessage.getStatus().getBestBlockParentHash());
         Assert.assertNull(newmessage.getStatus().getTotalDifficulty());
@@ -137,7 +135,12 @@ public class MessageTest {
     @Test
     public void encodeDecodeStatusMessageWithCompleteArguments() {
         Block block = new BlockGenerator().getBlock(1);
-        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), new BlockDifficulty(BigInteger.TEN));
+        Status status =
+                new Status(
+                        block.getNumber(),
+                        block.getHash().getBytes(),
+                        block.getParentHash().getBytes(),
+                        new BlockDifficulty(BigInteger.TEN));
         StatusMessage message = new StatusMessage(status);
 
         byte[] encoded = message.getEncoded();
@@ -150,7 +153,8 @@ public class MessageTest {
 
         StatusMessage newmessage = (StatusMessage) result;
 
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
+        Assert.assertArrayEquals(
+                block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
         Assert.assertEquals(block.getNumber(), newmessage.getStatus().getBestBlockNumber());
     }
 
@@ -170,7 +174,8 @@ public class MessageTest {
 
         StatusMessage newmessage = (StatusMessage) result;
 
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
+        Assert.assertArrayEquals(
+                block.getHash().getBytes(), newmessage.getStatus().getBestBlockHash());
         Assert.assertEquals(block.getNumber(), newmessage.getStatus().getBestBlockNumber());
     }
 
@@ -221,8 +226,7 @@ public class MessageTest {
     public void encodeDecodeBlockHeadersResponseMessage() {
         List<BlockHeader> headers = new ArrayList<>();
 
-        for (int k = 1; k <= 4; k++)
-            headers.add(new BlockGenerator().getBlock(k).getHeader());
+        for (int k = 1; k <= 4; k++) headers.add(new BlockGenerator().getBlock(k).getHeader());
 
         BlockHeadersResponseMessage message = new BlockHeadersResponseMessage(100, headers);
 
@@ -243,9 +247,12 @@ public class MessageTest {
         Assert.assertEquals(headers.size(), newmessage.getBlockHeaders().size());
 
         for (int k = 0; k < headers.size(); k++) {
-            Assert.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
-            Assert.assertEquals(headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
-            Assert.assertArrayEquals(headers.get(k).getEncoded(), newmessage.getBlockHeaders().get(k).getEncoded());
+            Assert.assertEquals(
+                    headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
+            Assert.assertEquals(
+                    headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
+            Assert.assertArrayEquals(
+                    headers.get(k).getEncoded(), newmessage.getBlockHeaders().get(k).getEncoded());
         }
     }
 
@@ -275,9 +282,11 @@ public class MessageTest {
         List<BlockIdentifier> decodedIdentifiers = decodedMessage.getBlockIdentifiers();
 
         Assert.assertEquals(identifiers.size(), decodedIdentifiers.size());
-        for (int i = 0; i < identifiers.size(); i ++) {
-            Assert.assertEquals(identifiers.get(i).getNumber(), decodedIdentifiers.get(i).getNumber());
-            Assert.assertArrayEquals(identifiers.get(i).getHash(), decodedIdentifiers.get(i).getHash());
+        for (int i = 0; i < identifiers.size(); i++) {
+            Assert.assertEquals(
+                    identifiers.get(i).getNumber(), decodedIdentifiers.get(i).getNumber());
+            Assert.assertArrayEquals(
+                    identifiers.get(i).getHash(), decodedIdentifiers.get(i).getHash());
         }
     }
 
@@ -486,8 +495,7 @@ public class MessageTest {
     public void encodeDecodeBodyResponseMessage() {
         List<Transaction> transactions = new ArrayList<>();
 
-        for (int k = 1; k <= 10; k++)
-            transactions.add(createTransaction(k));
+        for (int k = 1; k <= 10; k++) transactions.add(createTransaction(k));
 
         List<BlockHeader> uncles = new ArrayList<>();
 
@@ -510,7 +518,7 @@ public class MessageTest {
         Assert.assertArrayEquals(encoded, result.getEncoded());
         Assert.assertEquals(MessageType.BODY_RESPONSE_MESSAGE, result.getMessageType());
 
-        BodyResponseMessage newmessage = (BodyResponseMessage)result;
+        BodyResponseMessage newmessage = (BodyResponseMessage) result;
 
         Assert.assertNotNull(newmessage);
 
@@ -525,7 +533,8 @@ public class MessageTest {
         Assert.assertEquals(uncles.size(), newmessage.getUncles().size());
 
         for (int k = 0; k < uncles.size(); k++)
-            Assert.assertArrayEquals(uncles.get(k).getEncoded(), newmessage.getUncles().get(k).getEncoded());
+            Assert.assertArrayEquals(
+                    uncles.get(k).getEncoded(), newmessage.getUncles().get(k).getEncoded());
     }
 
     private static Transaction createTransaction(int number) {
@@ -535,6 +544,10 @@ public class MessageTest {
         acbuilder.name("receiver" + number);
         Account receiver = acbuilder.build();
         TransactionBuilder txbuilder = new TransactionBuilder();
-        return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(number * 1000 + 1000)).build();
+        return txbuilder
+                .sender(sender)
+                .receiver(receiver)
+                .value(BigInteger.valueOf(number * 1000 + 1000))
+                .build();
     }
 }

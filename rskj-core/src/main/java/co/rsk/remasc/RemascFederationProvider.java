@@ -29,9 +29,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 
-/**
- * Created by ajlopez on 14/11/2017.
- */
+/** Created by ajlopez on 14/11/2017. */
 public class RemascFederationProvider {
     private final FederationSupport federationSupport;
 
@@ -40,16 +38,18 @@ public class RemascFederationProvider {
             BridgeConstants bridgeConstants,
             Repository repository,
             Block processingBlock) {
-        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
-                repository,
-                PrecompiledContracts.BRIDGE_ADDR,
-                bridgeConstants,
-                new BridgeStorageConfiguration(
-                        activationConfig.isActive(ConsensusRule.RSKIP87, processingBlock.getNumber()),
-                        activationConfig.isActive(ConsensusRule.RSKIP123, processingBlock.getNumber())
-                )
-        );
-        this.federationSupport = new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock);
+        BridgeStorageProvider bridgeStorageProvider =
+                new BridgeStorageProvider(
+                        repository,
+                        PrecompiledContracts.BRIDGE_ADDR,
+                        bridgeConstants,
+                        new BridgeStorageConfiguration(
+                                activationConfig.isActive(
+                                        ConsensusRule.RSKIP87, processingBlock.getNumber()),
+                                activationConfig.isActive(
+                                        ConsensusRule.RSKIP123, processingBlock.getNumber())));
+        this.federationSupport =
+                new FederationSupport(bridgeConstants, bridgeStorageProvider, processingBlock);
     }
 
     public int getFederationSize() {

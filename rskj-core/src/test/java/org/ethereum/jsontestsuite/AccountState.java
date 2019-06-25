@@ -21,14 +21,13 @@ package org.ethereum.jsontestsuite;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.DataWord;
-import org.json.simple.JSONObject;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
+import org.json.simple.JSONObject;
 
 /**
  * @author Roman Mandeleil
@@ -43,7 +42,6 @@ public class AccountState {
 
     Map<DataWord, DataWord> storage = new HashMap<>();
 
-
     public AccountState(RskAddress address, JSONObject accountState) {
 
         this.address = address;
@@ -55,10 +53,8 @@ public class AccountState {
 
         this.balance = new Coin(TestCase.toBigInt(balance));
 
-        if (code != null && code.length() > 2)
-            this.code = Hex.decode(code.substring(2));
-        else
-            this.code = ByteUtil.EMPTY_BYTE_ARRAY;
+        if (code != null && code.length() > 2) this.code = Hex.decode(code.substring(2));
+        else this.code = ByteUtil.EMPTY_BYTE_ARRAY;
 
         this.nonce = TestCase.toBigInt(nonce).toByteArray();
 
@@ -95,19 +91,23 @@ public class AccountState {
         return new BigInteger(nonce).longValue();
     }
 
-
     public Map<DataWord, DataWord> getStorage() {
         return storage;
     }
 
     @Override
     public String toString() {
-        return "AccountState{" +
-                "address=" + address +
-                ", balance=" + balance +
-                ", code=" + Hex.toHexString(code) +
-                ", nonce=" + Hex.toHexString(nonce) +
-                ", storage=" + storage +
-                '}';
+        return "AccountState{"
+                + "address="
+                + address
+                + ", balance="
+                + balance
+                + ", code="
+                + Hex.toHexString(code)
+                + ", nonce="
+                + Hex.toHexString(nonce)
+                + ", storage="
+                + storage
+                + '}';
     }
 }

@@ -33,11 +33,10 @@ public interface Web3MnrModule {
     }
 
     default SubmittedBlockInfo mnr_submitBitcoinBlockTransactions(
-            String blockHashHex,
-            String blockHeaderHex,
-            String coinbaseHex,
-            String txnHashesHex) {
-        return getMnrModule().submitBitcoinBlockTransactions(blockHashHex, blockHeaderHex, coinbaseHex, txnHashesHex);
+            String blockHashHex, String blockHeaderHex, String coinbaseHex, String txnHashesHex) {
+        return getMnrModule()
+                .submitBitcoinBlockTransactions(
+                        blockHashHex, blockHeaderHex, coinbaseHex, txnHashesHex);
     }
 
     default SubmittedBlockInfo mnr_submitBitcoinBlockPartialMerkle(
@@ -46,7 +45,13 @@ public interface Web3MnrModule {
             String coinbaseHex,
             String merkleHashesHex,
             String blockTxnCountHex) {
-        return getMnrModule().submitBitcoinBlockPartialMerkle(blockHashHex, blockHeaderHex, coinbaseHex, merkleHashesHex, blockTxnCountHex);
+        return getMnrModule()
+                .submitBitcoinBlockPartialMerkle(
+                        blockHashHex,
+                        blockHeaderHex,
+                        coinbaseHex,
+                        merkleHashesHex,
+                        blockTxnCountHex);
     }
 
     MnrModule getMnrModule();

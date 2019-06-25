@@ -20,27 +20,29 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
 import com.google.common.primitives.UnsignedBytes;
-
 import java.util.*;
 
 /**
- * Representation of a queue of BTC release
- * transactions waiting for confirmations
- * on the rsk network.
+ * Representation of a queue of BTC release transactions waiting for confirmations on the rsk
+ * network.
  *
  * @author Ariel Mendelzon
  */
 public class ReleaseTransactionSet {
     public static class Entry {
         // Compares entries using the lexicographical order of the btc tx's serialized bytes
-        public static final Comparator<Entry> BTC_TX_COMPARATOR = new Comparator<Entry>() {
-            private Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
+        public static final Comparator<Entry> BTC_TX_COMPARATOR =
+                new Comparator<Entry>() {
+                    private Comparator<byte[]> comparator =
+                            UnsignedBytes.lexicographicalComparator();
 
-            @Override
-            public int compare(Entry e1, Entry e2) {
-                return comparator.compare(e1.getTransaction().bitcoinSerialize(), e2.getTransaction().bitcoinSerialize());
-            }
-        };
+                    @Override
+                    public int compare(Entry e1, Entry e2) {
+                        return comparator.compare(
+                                e1.getTransaction().bitcoinSerialize(),
+                                e2.getTransaction().bitcoinSerialize());
+                    }
+                };
 
         private BtcTransaction transaction;
         private Long rskBlockNumber;
@@ -65,9 +67,9 @@ public class ReleaseTransactionSet {
             }
 
             Entry otherEntry = (Entry) o;
-            return otherEntry.getTransaction().equals(getTransaction()) &&
-                    otherEntry.getRskBlockNumber().equals(getRskBlockNumber());
-         }
+            return otherEntry.getTransaction().equals(getTransaction())
+                    && otherEntry.getRskBlockNumber().equals(getRskBlockNumber());
+        }
 
         @Override
         public int hashCode() {
@@ -93,25 +95,28 @@ public class ReleaseTransactionSet {
     }
 
     /**
-     * Given a block number and a minimum number of confirmations,
-     * returns a subset of transactions within the set that have
-     * at least that number of confirmations.
-     * Optionally supply a maximum slice size to limit the output
-     * size.
-     * Sliced items are also removed from the set (thus the name, slice).
+     * Given a block number and a minimum number of confirmations, returns a subset of transactions
+     * within the set that have at least that number of confirmations. Optionally supply a maximum
+     * slice size to limit the output size. Sliced items are also removed from the set (thus the
+     * name, slice).
+     *
      * @param currentBlockNumber the current execution block number (height).
      * @param minimumConfirmations the minimum desired confirmations for the slice elements.
      * @param maximumSliceSize (optional) the maximum number of elements in the slice.
      * @return the slice of btc transactions.
      */
-    public Set<BtcTransaction> sliceWithConfirmations(Long currentBlockNumber, Integer minimumConfirmations, Optional<Integer> maximumSliceSize) {
+    public Set<BtcTransaction> sliceWithConfirmations(
+            Long currentBlockNumber,
+            Integer minimumConfirmations,
+            Optional<Integer> maximumSliceSize) {
         Set<BtcTransaction> output = new HashSet<>();
 
         int count = 0;
         Iterator<Entry> iterator = entries.iterator();
         while (iterator.hasNext()) {
             Entry entry = iterator.next();
-            if (hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations) && (!maximumSliceSize.isPresent() || count < maximumSliceSize.get())) {
+            if (hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations)
+                    && (!maximumSliceSize.isPresent() || count < maximumSliceSize.get())) {
                 output.add(entry.getTransaction());
                 iterator.remove();
                 count++;
@@ -124,7 +129,8 @@ public class ReleaseTransactionSet {
         return output;
     }
 
-    private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
+    private boolean hasEnoughConfirmations(
+            Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
         return (currentBlockNumber - entry.getRskBlockNumber()) >= minimumConfirmations;
     }
 }

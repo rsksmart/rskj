@@ -30,7 +30,9 @@ public class Web3HttpMethodFilterHandler extends SimpleChannelInboundHandler<Ful
             // retain the request so it isn't released automatically by SimpleChannelInboundHandler
             ctx.fireChannelRead(request.retain());
         } else {
-            HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_IMPLEMENTED);
+            HttpResponse response =
+                    new DefaultHttpResponse(
+                            HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_IMPLEMENTED);
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
         }
     }

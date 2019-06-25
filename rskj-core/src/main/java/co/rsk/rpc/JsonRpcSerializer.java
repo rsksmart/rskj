@@ -20,13 +20,10 @@ package co.rsk.rpc;
 import co.rsk.jsonrpc.JsonRpcMessage;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
-
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * Basic JSON-RPC serialization methods.
- */
+/** Basic JSON-RPC serialization methods. */
 public interface JsonRpcSerializer {
     /**
      * @return a JsonRpcMessage serialized into a JSON string

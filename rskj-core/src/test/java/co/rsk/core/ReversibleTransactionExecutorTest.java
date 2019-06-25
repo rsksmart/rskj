@@ -20,6 +20,7 @@
 package co.rsk.core;
 
 import co.rsk.util.TestContract;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
@@ -30,13 +31,12 @@ import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
 public class ReversibleTransactionExecutorTest {
 
     private final RskTestFactory factory = new RskTestFactory();
     private final ContractRunner contractRunner = new ContractRunner(factory);
-    private final ReversibleTransactionExecutor reversibleTransactionExecutor = factory.getReversibleTransactionExecutor();
+    private final ReversibleTransactionExecutor reversibleTransactionExecutor =
+            factory.getReversibleTransactionExecutor();
 
     @Test
     public void executeTransactionHello() {
@@ -51,21 +51,20 @@ public class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
 
-        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
-                bestBlock,
-                bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                helloFn.encode(),
-                from
-        );
+        ProgramResult result =
+                reversibleTransactionExecutor.executeTransaction(
+                        bestBlock,
+                        bestBlock.getCoinbase(),
+                        gasPrice,
+                        gasLimit,
+                        contractAddress.getBytes(),
+                        value,
+                        helloFn.encode(),
+                        from);
 
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
-                new String[]{"chinchilla"},
-                helloFn.decodeResult(result.getHReturn()));
+                new String[] {"chinchilla"}, helloFn.decodeResult(result.getHReturn()));
     }
 
     @Test
@@ -73,17 +72,16 @@ public class ReversibleTransactionExecutorTest {
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
 
-        ProgramResult result = contractRunner.createAndRunContract(
-                Hex.decode(greeter.bytecode),
-                greeterFn.encode("greet me"),
-                BigInteger.ZERO,
-                true
-        );
+        ProgramResult result =
+                contractRunner.createAndRunContract(
+                        Hex.decode(greeter.bytecode),
+                        greeterFn.encode("greet me"),
+                        BigInteger.ZERO,
+                        true);
 
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
-                new String[]{"greet me"},
-                greeterFn.decodeResult(result.getHReturn()));
+                new String[] {"greet me"}, greeterFn.decodeResult(result.getHReturn()));
     }
 
     @Test
@@ -92,23 +90,24 @@ public class ReversibleTransactionExecutorTest {
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
         RskAddress contractAddress = contractRunner.addContract(greeter.runtimeBytecode);
 
-        RskAddress from = new RskAddress("0000000000000000000000000000000000000023"); // someone else
+        RskAddress from =
+                new RskAddress("0000000000000000000000000000000000000023"); // someone else
         byte[] gasPrice = Hex.decode("00");
         byte[] value = Hex.decode("00");
         byte[] gasLimit = Hex.decode("f424");
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
 
-        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
-                bestBlock,
-                bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                greeterFn.encode("greet me"),
-                from
-        );
+        ProgramResult result =
+                reversibleTransactionExecutor.executeTransaction(
+                        bestBlock,
+                        bestBlock.getCoinbase(),
+                        gasPrice,
+                        gasLimit,
+                        contractAddress.getBytes(),
+                        value,
+                        greeterFn.encode("greet me"),
+                        from);
 
         Assert.assertTrue(result.isRevert());
     }
@@ -119,43 +118,42 @@ public class ReversibleTransactionExecutorTest {
         CallTransaction.Function callsFn = countcalls.functions.get("calls");
         RskAddress contractAddress = contractRunner.addContract(countcalls.runtimeBytecode);
 
-        RskAddress from = new RskAddress("0000000000000000000000000000000000000023"); // someone else
+        RskAddress from =
+                new RskAddress("0000000000000000000000000000000000000023"); // someone else
         byte[] gasPrice = Hex.decode("00");
         byte[] value = Hex.decode("00");
         byte[] gasLimit = Hex.decode("f424");
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
 
-        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
-                bestBlock,
-                bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                callsFn.encodeSignature(),
-                from
-        );
+        ProgramResult result =
+                reversibleTransactionExecutor.executeTransaction(
+                        bestBlock,
+                        bestBlock.getCoinbase(),
+                        gasPrice,
+                        gasLimit,
+                        contractAddress.getBytes(),
+                        value,
+                        callsFn.encodeSignature(),
+                        from);
 
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
-                new String[]{"calls: 1"},
-                callsFn.decodeResult(result.getHReturn()));
+                new String[] {"calls: 1"}, callsFn.decodeResult(result.getHReturn()));
 
-        ProgramResult result2 = reversibleTransactionExecutor.executeTransaction(
-                bestBlock,
-                bestBlock.getCoinbase(),
-                gasPrice,
-                gasLimit,
-                contractAddress.getBytes(),
-                value,
-                callsFn.encodeSignature(),
-                from
-        );
+        ProgramResult result2 =
+                reversibleTransactionExecutor.executeTransaction(
+                        bestBlock,
+                        bestBlock.getCoinbase(),
+                        gasPrice,
+                        gasLimit,
+                        contractAddress.getBytes(),
+                        value,
+                        callsFn.encodeSignature(),
+                        from);
 
         Assert.assertNull(result2.getException());
         Assert.assertArrayEquals(
-                new String[]{"calls: 1"},
-                callsFn.decodeResult(result2.getHReturn()));
+                new String[] {"calls: 1"}, callsFn.decodeResult(result2.getHReturn()));
     }
 }

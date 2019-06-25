@@ -20,9 +20,7 @@ package co.rsk.net.handler;
 
 import org.ethereum.core.Transaction;
 
-/**
- * Used to known when a given tx was received by txhandler
- */
+/** Used to known when a given tx was received by txhandler */
 class TxTimestamp {
 
     long timestamp;

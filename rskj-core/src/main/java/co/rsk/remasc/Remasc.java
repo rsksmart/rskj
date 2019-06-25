@@ -22,6 +22,9 @@ import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
+import java.math.BigInteger;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -34,12 +37,9 @@ import org.ethereum.vm.LogInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.util.*;
-import java.util.stream.Collectors;
-
 /**
  * Implements the actual Remasc distribution logic
+ *
  * @author Oscar Guindzberg
  */
 public class Remasc {
@@ -86,28 +86,30 @@ public class Remasc {
 
     /**
      * Returns the internal contract state.
+     *
      * @return the internal contract state.
      */
     public RemascState getStateForDebugging() {
-        return new RemascState(this.provider.getRewardBalance(), this.provider.getBurnedBalance(), this.provider.getBrokenSelectionRule());
+        return new RemascState(
+                this.provider.getRewardBalance(),
+                this.provider.getBurnedBalance(),
+                this.provider.getBrokenSelectionRule());
     }
 
-
-    /**
-     * Implements the actual Remasc distribution logic
-     */
+    /** Implements the actual Remasc distribution logic */
     void processMinersFees() {
         if (!(executionTx instanceof RemascTransaction)) {
-            //Detect
+            // Detect
             // 1) tx to remasc that is not the latest tx in a block
             // 2) invocation to remasc from another contract (ie call opcode)
-            throw new RemascInvalidInvocationException("Invoked Remasc outside last tx of the block");
+            throw new RemascInvalidInvocationException(
+                    "Invoked Remasc outside last tx of the block");
         }
 
         long blockNbr = executionBlock.getNumber();
 
         long processingBlockNumber = blockNbr - remascConstants.getMaturity();
-        if (processingBlockNumber < 1 ) {
+        if (processingBlockNumber < 1) {
             logger.debug("First block has not reached maturity yet, current block is {}", blockNbr);
             return;
         }
@@ -117,13 +119,14 @@ public class Remasc {
 
         // this search can be optimized if have certainty that the execution block is not in a fork
         // larger than depth
-        Block currentBlock = blockStore.getBlockByHashAndDepth(
-                executionBlock.getParentHash().getBytes(),
-                remascConstants.getMaturity() - 1 - uncleGenerationLimit
-        );
+        Block currentBlock =
+                blockStore.getBlockByHashAndDepth(
+                        executionBlock.getParentHash().getBytes(),
+                        remascConstants.getMaturity() - 1 - uncleGenerationLimit);
         descendantsBlocks.push(blockStore.getSiblingsFromBlockByHash(currentBlock.getHash()));
 
-        // descendants are stored in reverse order because the original order to pay siblings is defined in the way
+        // descendants are stored in reverse order because the original order to pay siblings is
+        // defined in the way
         // blocks are ordered in the blockchain (the same as were stored in remasc contract)
         for (int i = 0; i < uncleGenerationLimit - 1; i++) {
             currentBlock = blockStore.getBlockByHash(currentBlock.getParentHash().getBytes());
@@ -139,25 +142,32 @@ public class Remasc {
         rewardBalance = rewardBalance.add(processingBlockReward);
         provider.setRewardBalance(rewardBalance);
 
-        if (processingBlockNumber - remascConstants.getSyntheticSpan() < 0 ) {
-            logger.debug("First block has not reached maturity+syntheticSpan yet, current block is {}", executionBlock.getNumber());
+        if (processingBlockNumber - remascConstants.getSyntheticSpan() < 0) {
+            logger.debug(
+                    "First block has not reached maturity+syntheticSpan yet, current block is {}",
+                    executionBlock.getNumber());
             return;
         }
 
         List<Sibling> siblings = getSiblingsToReward(descendantsBlocks, processingBlockNumber);
         boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
-        boolean brokenSelectionRule = SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
+        boolean brokenSelectionRule =
+                SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
         provider.setBrokenSelectionRule(!siblings.isEmpty() && brokenSelectionRule);
 
         // Takes from rewardBalance this block's height reward.
-        Coin syntheticReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
+        Coin syntheticReward =
+                rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
         boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, blockNbr);
         if (isRskip85Enabled) {
             BigInteger minimumPayableGas = constants.getMinimumPayableGas();
             Coin minPayableFees = executionBlock.getMinimumGasPrice().multiply(minimumPayableGas);
             if (syntheticReward.compareTo(minPayableFees) < 0) {
-                logger.debug("Synthetic Reward: {} is lower than minPayableFees: {} at block: {}",
-                             syntheticReward, minPayableFees, executionBlock.getShortHash());
+                logger.debug(
+                        "Synthetic Reward: {} is lower than minPayableFees: {} at block: {}",
+                        syntheticReward,
+                        minPayableFees,
+                        executionBlock.getShortHash());
                 return;
             }
         }
@@ -166,40 +176,71 @@ public class Remasc {
         provider.setRewardBalance(rewardBalance);
 
         // Pay RSK labs cut
-        Coin payToRskLabs = syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
-        feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
+        Coin payToRskLabs =
+                syntheticReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
+        feesPayer.payMiningFees(
+                processingBlockHeader.getHash().getBytes(),
+                payToRskLabs,
+                remascConstants.getRskLabsAddress(),
+                logs);
         syntheticReward = syntheticReward.subtract(payToRskLabs);
-        Coin payToFederation = payToFederation(constants, isRskip85Enabled, processingBlock, processingBlockHeader, syntheticReward);
+        Coin payToFederation =
+                payToFederation(
+                        constants,
+                        isRskip85Enabled,
+                        processingBlock,
+                        processingBlockHeader,
+                        syntheticReward);
         syntheticReward = syntheticReward.subtract(payToFederation);
 
         if (!siblings.isEmpty()) {
             // Block has siblings, reward distribution is more complex
-            this.payWithSiblings(processingBlockHeader, syntheticReward, siblings, previousBrokenSelectionRule);
+            this.payWithSiblings(
+                    processingBlockHeader, syntheticReward, siblings, previousBrokenSelectionRule);
         } else {
             if (previousBrokenSelectionRule) {
                 // broken selection rule, apply punishment, ie burn part of the reward.
-                Coin punishment = syntheticReward.divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
+                Coin punishment =
+                        syntheticReward.divide(
+                                BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
                 syntheticReward = syntheticReward.subtract(punishment);
                 provider.setBurnedBalance(provider.getBurnedBalance().add(punishment));
             }
-            feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), syntheticReward, processingBlockHeader.getCoinbase(), logs);
+            feesPayer.payMiningFees(
+                    processingBlockHeader.getHash().getBytes(),
+                    syntheticReward,
+                    processingBlockHeader.getCoinbase(),
+                    logs);
         }
     }
 
-    private Coin payToFederation(Constants constants, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
-        RemascFederationProvider federationProvider = new RemascFederationProvider(activationConfig, constants.getBridgeConstants(), repository, processingBlock);
-        Coin federationReward = syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
+    private Coin payToFederation(
+            Constants constants,
+            boolean isRskip85Enabled,
+            Block processingBlock,
+            BlockHeader processingBlockHeader,
+            Coin syntheticReward) {
+        RemascFederationProvider federationProvider =
+                new RemascFederationProvider(
+                        activationConfig,
+                        constants.getBridgeConstants(),
+                        repository,
+                        processingBlock);
+        Coin federationReward =
+                syntheticReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
         Coin payToFederation = provider.getFederationBalance().add(federationReward);
         byte[] processingBlockHash = processingBlockHeader.getHash().getBytes();
         int nfederators = federationProvider.getFederationSize();
-        Coin[] payAndRemainderToFederator = payToFederation.divideAndRemainder(BigInteger.valueOf(nfederators));
+        Coin[] payAndRemainderToFederator =
+                payToFederation.divideAndRemainder(BigInteger.valueOf(nfederators));
         Coin payToFederator = payAndRemainderToFederator[0];
         Coin restToLastFederator = payAndRemainderToFederator[1];
 
         if (isRskip85Enabled) {
             BigInteger minimumFederatorPayableGas = constants.getFederatorMinimumPayableGas();
-            Coin minPayableFederatorFees = executionBlock.getMinimumGasPrice().multiply(minimumFederatorPayableGas);
+            Coin minPayableFederatorFees =
+                    executionBlock.getMinimumGasPrice().multiply(minimumFederatorPayableGas);
             if (payToFederator.compareTo(minPayableFederatorFees) < 0) {
                 provider.setFederationBalance(payToFederation);
                 return federationReward;
@@ -212,66 +253,98 @@ public class Remasc {
             RskAddress federatorAddress = federationProvider.getFederatorAddress(k);
 
             if (k == nfederators - 1 && restToLastFederator.compareTo(Coin.ZERO) > 0) {
-                feesPayer.payMiningFees(processingBlockHash, payToFederator.add(restToLastFederator), federatorAddress, logs);
+                feesPayer.payMiningFees(
+                        processingBlockHash,
+                        payToFederator.add(restToLastFederator),
+                        federatorAddress,
+                        logs);
             } else {
-                feesPayer.payMiningFees(processingBlockHash, payToFederator, federatorAddress, logs);
+                feesPayer.payMiningFees(
+                        processingBlockHash, payToFederator, federatorAddress, logs);
             }
-
         }
 
         return federationReward;
     }
 
     /**
-     * Descendants included on the same chain as the processing block could include siblings
-     * that should be rewarded when fees on this block are paid
+     * Descendants included on the same chain as the processing block could include siblings that
+     * should be rewarded when fees on this block are paid
+     *
      * @param descendants blocks in the same blockchain that may include rewarded siblings
      * @param blockNumber number of the block is looked for siblings
      * @return
      */
-    private List<Sibling> getSiblingsToReward(Deque<Map<Long, List<Sibling>>> descendants, long blockNumber) {
+    private List<Sibling> getSiblingsToReward(
+            Deque<Map<Long, List<Sibling>>> descendants, long blockNumber) {
         return descendants.stream()
                 .flatMap(map -> map.getOrDefault(blockNumber, Collections.emptyList()).stream())
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Pay the mainchain block miner, its siblings miners and the publisher miners
-     */
-    private void payWithSiblings(BlockHeader processingBlockHeader, Coin fullBlockReward, List<Sibling> siblings, boolean previousBrokenSelectionRule) {
-        SiblingPaymentCalculator paymentCalculator = new SiblingPaymentCalculator(fullBlockReward, previousBrokenSelectionRule, siblings.size(), this.remascConstants);
+    /** Pay the mainchain block miner, its siblings miners and the publisher miners */
+    private void payWithSiblings(
+            BlockHeader processingBlockHeader,
+            Coin fullBlockReward,
+            List<Sibling> siblings,
+            boolean previousBrokenSelectionRule) {
+        SiblingPaymentCalculator paymentCalculator =
+                new SiblingPaymentCalculator(
+                        fullBlockReward,
+                        previousBrokenSelectionRule,
+                        siblings.size(),
+                        this.remascConstants);
 
         byte[] processingBlockHeaderHash = processingBlockHeader.getHash().getBytes();
-        this.payPublishersWhoIncludedSiblings(processingBlockHeaderHash, siblings, paymentCalculator.getIndividualPublisherReward());
+        this.payPublishersWhoIncludedSiblings(
+                processingBlockHeaderHash,
+                siblings,
+                paymentCalculator.getIndividualPublisherReward());
         provider.addToBurnBalance(paymentCalculator.getPublishersSurplus());
 
         provider.addToBurnBalance(paymentCalculator.getMinersSurplus());
 
-        this.payIncludedSiblings(processingBlockHeaderHash, siblings, paymentCalculator.getIndividualMinerReward());
+        this.payIncludedSiblings(
+                processingBlockHeaderHash, siblings, paymentCalculator.getIndividualMinerReward());
         if (previousBrokenSelectionRule) {
-            provider.addToBurnBalance(paymentCalculator.getPunishment().multiply(BigInteger.valueOf(siblings.size() + 1L)));
+            provider.addToBurnBalance(
+                    paymentCalculator
+                            .getPunishment()
+                            .multiply(BigInteger.valueOf(siblings.size() + 1L)));
         }
 
         // Pay to main chain block miner
-        feesPayer.payMiningFees(processingBlockHeaderHash, paymentCalculator.getIndividualMinerReward(), processingBlockHeader.getCoinbase(), logs);
+        feesPayer.payMiningFees(
+                processingBlockHeaderHash,
+                paymentCalculator.getIndividualMinerReward(),
+                processingBlockHeader.getCoinbase(),
+                logs);
     }
 
-    private void payPublishersWhoIncludedSiblings(byte[] blockHash, List<Sibling> siblings, Coin minerReward) {
+    private void payPublishersWhoIncludedSiblings(
+            byte[] blockHash, List<Sibling> siblings, Coin minerReward) {
         for (Sibling sibling : siblings) {
-            feesPayer.payMiningFees(blockHash, minerReward, sibling.getIncludedBlockCoinbase(), logs);
+            feesPayer.payMiningFees(
+                    blockHash, minerReward, sibling.getIncludedBlockCoinbase(), logs);
         }
     }
 
     private void payIncludedSiblings(byte[] blockHash, List<Sibling> siblings, Coin topReward) {
-        long perLateBlockPunishmentDivisor = remascConstants.getLateUncleInclusionPunishmentDivisor();
+        long perLateBlockPunishmentDivisor =
+                remascConstants.getLateUncleInclusionPunishmentDivisor();
         for (Sibling sibling : siblings) {
             long processingBlockNumber = executionBlock.getNumber() - remascConstants.getMaturity();
             long numberOfBlocksLate = sibling.getIncludedHeight() - processingBlockNumber - 1L;
-            Coin lateInclusionPunishment = topReward.multiply(BigInteger.valueOf(numberOfBlocksLate)).divide(BigInteger.valueOf(perLateBlockPunishmentDivisor));
-            feesPayer.payMiningFees(blockHash, topReward.subtract(lateInclusionPunishment), sibling.getCoinbase(), logs);
+            Coin lateInclusionPunishment =
+                    topReward
+                            .multiply(BigInteger.valueOf(numberOfBlocksLate))
+                            .divide(BigInteger.valueOf(perLateBlockPunishmentDivisor));
+            feesPayer.payMiningFees(
+                    blockHash,
+                    topReward.subtract(lateInclusionPunishment),
+                    sibling.getCoinbase(),
+                    logs);
             provider.addToBurnBalance(lateInclusionPunishment);
         }
     }
-
 }
-

@@ -19,6 +19,7 @@
 
 package org.ethereum.solidity;
 
+import java.io.IOException;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.solidity.compiler.CompilationResult;
 import org.ethereum.solidity.compiler.SolidityCompiler;
@@ -27,11 +28,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.io.IOException;
-
-/**
- * Created by Anton Nashatyrev on 03.03.2016.
- */
+/** Created by Anton Nashatyrev on 03.03.2016. */
 public class CompilerTest {
 
     @Test
@@ -39,34 +36,35 @@ public class CompilerTest {
     public void simpleTest() throws IOException {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");
-        if (solc == null || solc.isEmpty())
-            solc = "/usr/bin/solc";
+        if (solc == null || solc.isEmpty()) solc = "/usr/bin/solc";
 
         Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);
 
         SolidityCompiler solidityCompiler = new SolidityCompiler(systemProperties);
 
         String contract =
-            "contract a {" +
-                    "  int i1;" +
-                    "  function i() returns (int) {" +
-                    "    return i1;" +
-                    "  }" +
-                    "}";
-        SolidityCompiler.Result res = solidityCompiler.compile(
-                contract.getBytes(), true, SolidityCompiler.Options.ABI, SolidityCompiler.Options.BIN, SolidityCompiler.Options.INTERFACE);
+                "contract a {"
+                        + "  int i1;"
+                        + "  function i() returns (int) {"
+                        + "    return i1;"
+                        + "  }"
+                        + "}";
+        SolidityCompiler.Result res =
+                solidityCompiler.compile(
+                        contract.getBytes(),
+                        true,
+                        SolidityCompiler.Options.ABI,
+                        SolidityCompiler.Options.BIN,
+                        SolidityCompiler.Options.INTERFACE);
         System.out.println("Out: '" + res.output + "'");
         System.out.println("Err: '" + res.errors + "'");
         CompilationResult result = CompilationResult.parse(res.output);
         CompilationResult.ContractMetadata cmeta = result.contracts.get("a");
 
-        if (cmeta == null)
-            cmeta = result.contracts.get("<stdin>:a");
+        if (cmeta == null) cmeta = result.contracts.get("<stdin>:a");
 
-        if (cmeta != null)
-            System.out.println(cmeta.bin);
-        else
-            Assert.fail();
+        if (cmeta != null) System.out.println(cmeta.bin);
+        else Assert.fail();
     }
 
     public static void main(String[] args) throws Exception {

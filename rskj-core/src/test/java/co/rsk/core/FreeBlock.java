@@ -1,21 +1,18 @@
 package co.rsk.core;
 
 import co.rsk.trie.Trie;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-/**
- * Created by SDL on 12/5/2017.
- */
+/** Created by SDL on 12/5/2017. */
 public class FreeBlock {
 
     private FreeBlockHeader header;
@@ -31,17 +28,43 @@ public class FreeBlock {
     private byte[] rlpEncoded;
     private boolean parsed = false;
 
-    public FreeBlock(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                 byte[] difficulty, byte[] number, byte[] gasLimit,
-                     byte[] gasUsed, byte[] timestamp, byte[] extraData,
-                 byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
-                 byte[] transactionsRoot, byte[] stateRoot,
-                 List<Transaction> transactionsList,
-                     List<FreeBlockHeader> uncleList, byte[] minimumGasPrice,
-                     byte[] paidFees) {
+    public FreeBlock(
+            byte[] parentHash,
+            byte[] unclesHash,
+            byte[] coinbase,
+            byte[] logsBloom,
+            byte[] difficulty,
+            byte[] number,
+            byte[] gasLimit,
+            byte[] gasUsed,
+            byte[] timestamp,
+            byte[] extraData,
+            byte[] mixHash,
+            byte[] nonce,
+            byte[] receiptsRoot,
+            byte[] transactionsRoot,
+            byte[] stateRoot,
+            List<Transaction> transactionsList,
+            List<FreeBlockHeader> uncleList,
+            byte[] minimumGasPrice,
+            byte[] paidFees) {
 
-        this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
-                gasUsed, timestamp, extraData, mixHash, nonce, transactionsList, uncleList, minimumGasPrice);
+        this(
+                parentHash,
+                unclesHash,
+                coinbase,
+                logsBloom,
+                difficulty,
+                number,
+                gasLimit,
+                gasUsed,
+                timestamp,
+                extraData,
+                mixHash,
+                nonce,
+                transactionsList,
+                uncleList,
+                minimumGasPrice);
 
         this.header.setPaidFees(paidFees);
 
@@ -54,16 +77,26 @@ public class FreeBlock {
         this.flushRLP();
     }
 
-    public FreeBlock(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                 byte[] difficulty, byte[]  number, byte[] gasLimit,
-                 byte[] gasUsed, byte[] timestamp,
-                 byte[] extraData, byte[] mixHash, byte[] nonce,
-                 List<Transaction> transactionsList, List<FreeBlockHeader> uncleList, byte[] minimumGasPrice) {
+    public FreeBlock(
+            byte[] parentHash,
+            byte[] unclesHash,
+            byte[] coinbase,
+            byte[] logsBloom,
+            byte[] difficulty,
+            byte[] number,
+            byte[] gasLimit,
+            byte[] gasUsed,
+            byte[] timestamp,
+            byte[] extraData,
+            byte[] mixHash,
+            byte[] nonce,
+            List<Transaction> transactionsList,
+            List<FreeBlockHeader> uncleList,
+            byte[] minimumGasPrice) {
 
         if (transactionsList == null) {
             this.transactionsList = Collections.emptyList();
-        }
-        else {
+        } else {
             this.transactionsList = Collections.unmodifiableList(transactionsList);
         }
 
@@ -72,13 +105,23 @@ public class FreeBlock {
             this.uncleList = new CopyOnWriteArrayList<>();
         }
 
-        this.header = new FreeBlockHeader(parentHash, unclesHash, coinbase, logsBloom,
-                difficulty, number, gasLimit, gasUsed,
-                timestamp, extraData, minimumGasPrice, BigInteger.valueOf(this.uncleList.size()).toByteArray());
+        this.header =
+                new FreeBlockHeader(
+                        parentHash,
+                        unclesHash,
+                        coinbase,
+                        logsBloom,
+                        difficulty,
+                        number,
+                        gasLimit,
+                        gasUsed,
+                        timestamp,
+                        extraData,
+                        minimumGasPrice,
+                        BigInteger.valueOf(this.uncleList.size()).toByteArray());
 
         this.parsed = true;
     }
-
 
     private void parseRLP() {
         ArrayList<RLPElement> params = RLP.decode2(rlpEncoded);
@@ -255,7 +298,8 @@ public class FreeBlock {
 
         return body;
     }
-    public static Trie getTxTrie(List<Transaction> transactions){
+
+    public static Trie getTxTrie(List<Transaction> transactions) {
         if (transactions == null) {
             return new Trie();
         }

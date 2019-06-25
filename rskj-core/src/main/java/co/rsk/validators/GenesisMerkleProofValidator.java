@@ -21,21 +21,20 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Validates Merkle proofs with the format used since Genesis until RSKIP 92 activation
- */
+/** Validates Merkle proofs with the format used since Genesis until RSKIP 92 activation */
 public class GenesisMerkleProofValidator implements MerkleProofValidator {
 
     private final NetworkParameters bitcoinNetworkParameters;
     private final byte[] pmtSerialized;
 
-    public GenesisMerkleProofValidator(NetworkParameters bitcoinNetworkParameters, byte[] pmtSerialized) {
+    public GenesisMerkleProofValidator(
+            NetworkParameters bitcoinNetworkParameters, byte[] pmtSerialized) {
         if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
-            throw new IllegalArgumentException("Partial merkle tree does not have the expected size");
+            throw new IllegalArgumentException(
+                    "Partial merkle tree does not have the expected size");
         }
 
         this.bitcoinNetworkParameters = bitcoinNetworkParameters;
@@ -44,10 +43,10 @@ public class GenesisMerkleProofValidator implements MerkleProofValidator {
 
     @Override
     public boolean isValid(Sha256Hash expectedRoot, Sha256Hash coinbaseHash) {
-        PartialMerkleTree merkleTree = new PartialMerkleTree(bitcoinNetworkParameters, pmtSerialized, 0);
+        PartialMerkleTree merkleTree =
+                new PartialMerkleTree(bitcoinNetworkParameters, pmtSerialized, 0);
         List<Sha256Hash> txHashes = new ArrayList<>();
         Sha256Hash root = merkleTree.getTxnHashAndMerkleRoot(txHashes);
-        return root.equals(expectedRoot) &&
-                txHashes.contains(coinbaseHash);
+        return root.equals(expectedRoot) && txHashes.contains(coinbaseHash);
     }
 }

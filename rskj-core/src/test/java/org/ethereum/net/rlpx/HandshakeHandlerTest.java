@@ -17,6 +17,11 @@
  */
 package org.ethereum.net.rlpx;
 
+import static org.ethereum.net.client.Capability.RSK;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.*;
+
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.scoring.PeerScoringManager;
@@ -24,6 +29,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.Collections;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -37,14 +44,6 @@ import org.ethereum.net.server.Channel;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.List;
-
-import static org.ethereum.net.client.Capability.RSK;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
-
 public class HandshakeHandlerTest {
 
     private HandshakeHandler handler;
@@ -57,18 +56,20 @@ public class HandshakeHandlerTest {
     public void setup() {
         RskSystemProperties config = new TestSystemProperties();
         hhKey = config.getMyKey();
-        handler = new HandshakeHandler(
-                config,
-                mock(PeerScoringManager.class),
-                mock(P2pHandler.class),
-                mock(MessageCodec.class),
-                // this needs to be the real object so we can test changing the HELLO message
-                new ConfigCapabilitiesImpl(config)
-        );
+        handler =
+                new HandshakeHandler(
+                        config,
+                        mock(PeerScoringManager.class),
+                        mock(P2pHandler.class),
+                        mock(MessageCodec.class),
+                        // this needs to be the real object so we can test changing the HELLO
+                        // message
+                        new ConfigCapabilitiesImpl(config));
         channel = mock(Channel.class);
         when(channel.getNodeStatistics()).thenReturn(new NodeStatistics());
 
-        // We don't pass the handler to the constructor to avoid calling HandshakeHandler.channelActive
+        // We don't pass the handler to the constructor to avoid calling
+        // HandshakeHandler.channelActive
         ch = new EmbeddedChannel();
         ch.pipeline().addLast(handler);
         ctx = ch.pipeline().firstContext();
@@ -95,7 +96,8 @@ public class HandshakeHandlerTest {
         assertFalse(ch.isOpen());
     }
 
-    // This is sort of an integration test. It interacts with the handshake handler and multiple other objects to
+    // This is sort of an integration test. It interacts with the handshake handler and multiple
+    // other objects to
     // simulate a handshake initiated by a remote peer.
     // In the future, the handshake classes should be rewritten to allow unit testing.
     private void simulateHandshakeStartedByPeer(List<Capability> capabilities) throws Exception {
@@ -113,7 +115,13 @@ public class HandshakeHandlerTest {
         responsePacketByteBuf.readBytes(responsePacket);
         handshake.handleAuthResponseV4(remoteKey, initiatePacket, responsePacket);
 
-        HelloMessage helloMessage = new HelloMessage(P2pHandler.VERSION, "", capabilities, 4321, Hex.toHexString(HashUtil.randomPeerId()));
+        HelloMessage helloMessage =
+                new HelloMessage(
+                        P2pHandler.VERSION,
+                        "",
+                        capabilities,
+                        4321,
+                        Hex.toHexString(HashUtil.randomPeerId()));
         byte[] payload = helloMessage.getEncoded();
         FrameCodec frameCodec = new FrameCodec(handshake.getSecrets());
         ByteBuf byteBufMsg = ch.alloc().buffer();

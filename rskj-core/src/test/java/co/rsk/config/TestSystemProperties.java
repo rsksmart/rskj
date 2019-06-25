@@ -24,19 +24,19 @@ import com.typesafe.config.ConfigFactory;
 
 public class TestSystemProperties extends RskSystemProperties {
 
-    private static final ConfigLoader TEST_LOADER = new ConfigLoader(CliArgs.empty()) {
-        /**
-         * Cache configurations that don't change so we don't read files multiple times.
-         */
-        private final Config TEST_CONFIG = ConfigFactory.parseResources("test-rskj.conf")
-                .withFallback(ConfigFactory.parseResources("rskj.conf"))
-                .withFallback(ConfigFactory.load("config/regtest"));
+    private static final ConfigLoader TEST_LOADER =
+            new ConfigLoader(CliArgs.empty()) {
+                /** Cache configurations that don't change so we don't read files multiple times. */
+                private final Config TEST_CONFIG =
+                        ConfigFactory.parseResources("test-rskj.conf")
+                                .withFallback(ConfigFactory.parseResources("rskj.conf"))
+                                .withFallback(ConfigFactory.load("config/regtest"));
 
-        @Override
-        public Config getConfig() {
-            return TEST_CONFIG;
-        }
-    };
+                @Override
+                public Config getConfig() {
+                    return TEST_CONFIG;
+                }
+            };
 
     public TestSystemProperties() {
         super(TEST_LOADER);

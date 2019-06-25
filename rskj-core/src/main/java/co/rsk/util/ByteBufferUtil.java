@@ -1,9 +1,8 @@
 package co.rsk.util;
 
-import org.bouncycastle.util.encoders.Hex;
-
-import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
+import javax.annotation.Nonnull;
+import org.bouncycastle.util.encoders.Hex;
 
 public class ByteBufferUtil {
     public static byte[] copyToArray(@Nonnull ByteBuffer data) {

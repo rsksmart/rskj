@@ -23,6 +23,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 public interface TxPoolModule {
 
     JsonNode content();
+
     JsonNode inspect();
+
     JsonNode status();
 }

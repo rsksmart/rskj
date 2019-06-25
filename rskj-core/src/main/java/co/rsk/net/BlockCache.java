@@ -21,13 +21,10 @@ package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.MaxSizeHashMap;
+import java.util.Map;
 import org.ethereum.core.Block;
 
-import java.util.Map;
-
-/**
- * Created by ajlopez on 17/06/2017.
- */
+/** Created by ajlopez on 17/06/2017. */
 public class BlockCache {
     private final Map<Keccak256, Block> blockMap;
 

@@ -20,9 +20,7 @@ package org.ethereum.rpc.Simples;
 
 import co.rsk.mine.MinerClient;
 
-/**
- * Created by Ruben on 14/06/2016.
- */
+/** Created by Ruben on 14/06/2016. */
 public class SimpleMinerClient implements MinerClient {
 
     public boolean isMining = false;
@@ -40,7 +38,7 @@ public class SimpleMinerClient implements MinerClient {
         isMining = false;
     }
 
-    public boolean isMining(){
+    public boolean isMining() {
         return isMining;
     }
 }

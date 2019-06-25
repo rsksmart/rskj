@@ -21,8 +21,8 @@ package org.ethereum.rpc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
-import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.net.NodeID;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
@@ -37,19 +37,16 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.scoring.*;
 import co.rsk.test.World;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Random;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.rpc.Simples.SimpleRsk;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Random;
-
-/**
- * Created by ajlopez on 12/07/2017.
- */
+/** Created by ajlopez on 12/07/2017. */
 public class Web3ImplScoringTest {
     private static Random random = new Random();
 
@@ -74,8 +71,7 @@ public class Web3ImplScoringTest {
         try {
             web3.sco_banAddress("192.168.56.1/a");
             Assert.fail();
-        }
-        catch (JsonRpcInvalidParamException ex) {
+        } catch (JsonRpcInvalidParamException ex) {
             Assert.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
         }
     }
@@ -88,8 +84,7 @@ public class Web3ImplScoringTest {
         try {
             web3.sco_unbanAddress("192.168.56.1/a");
             Assert.fail();
-        }
-        catch (JsonRpcInvalidParamException ex) {
+        } catch (JsonRpcInvalidParamException ex) {
             Assert.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
         }
     }
@@ -354,17 +349,25 @@ public class Web3ImplScoringTest {
 
         World world = new World();
         rsk.blockchain = world.getBlockChain();
-        MiningMainchainView miningMainchainView = new MiningMainchainViewImpl(rsk.blockchain.getBlockStore(), 2);
+        MiningMainchainView miningMainchainView =
+                new MiningMainchainViewImpl(rsk.blockchain.getBlockStore(), 2);
 
         Wallet wallet = WalletFactory.createWallet();
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
-        EthModule em = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), world.getBlockChain(),
-                null, new ExecutionBlockRetriever(miningMainchainView, world.getBlockChain(), null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
-                null
-        );
+        EthModule em =
+                new EthModule(
+                        config.getNetworkConstants().getBridgeConstants(),
+                        config.getActivationConfig(),
+                        world.getBlockChain(),
+                        null,
+                        new ExecutionBlockRetriever(
+                                miningMainchainView, world.getBlockChain(), null, null),
+                        null,
+                        new EthModuleSolidityDisabled(),
+                        new EthModuleWalletEnabled(wallet),
+                        null,
+                        null);
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
         return new Web3RskImpl(
@@ -391,8 +394,7 @@ public class Web3ImplScoringTest {
                 null,
                 null,
                 null,
-                null
-        );
+                null);
     }
 
     private static NodeID generateNodeID() {
@@ -408,7 +410,6 @@ public class Web3ImplScoringTest {
                 PeerScoring::new,
                 100,
                 new PunishmentParameters(10, 10, 1000),
-                new PunishmentParameters(10, 10, 1000)
-        );
+                new PunishmentParameters(10, 10, 1000));
     }
 }

@@ -19,28 +19,29 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.net.server.ChannelManager;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-
 /**
- * Centralizes receiving and relaying transactions, so we can only distribute information to nodes that don't already
- * have it.
+ * Centralizes receiving and relaying transactions, so we can only distribute information to nodes
+ * that don't already have it.
  */
 public class TransactionGateway {
     private final ChannelManager channelManager;
     private final CompositeEthereumListener emitter;
     private final TransactionPool transactionPool;
 
-    private final TransactionNodeInformation transactionNodeInformation = new TransactionNodeInformation();
-    private final OnPendingTransactionsReceivedListener listener = new OnPendingTransactionsReceivedListener();
+    private final TransactionNodeInformation transactionNodeInformation =
+            new TransactionNodeInformation();
+    private final OnPendingTransactionsReceivedListener listener =
+            new OnPendingTransactionsReceivedListener();
 
     public TransactionGateway(
             ChannelManager channelManager,
@@ -69,12 +70,13 @@ public class TransactionGateway {
         public void onPendingTransactionsReceived(List<Transaction> txs) {
             for (Transaction tx : txs) {
                 Keccak256 txHash = tx.getHash();
-                Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(txHash));
+                Set<NodeID> nodesToSkip =
+                        new HashSet<>(transactionNodeInformation.getNodesByTransaction(txHash));
                 Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);
 
-                newNodes.forEach(nodeID -> transactionNodeInformation.addTransactionToNode(txHash, nodeID));
+                newNodes.forEach(
+                        nodeID -> transactionNodeInformation.addTransactionToNode(txHash, nodeID));
             }
         }
     }
 }
-

@@ -18,9 +18,20 @@
 
 package co.rsk.core;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.AdditionalMatchers.geq;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -32,18 +43,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.AdditionalMatchers.geq;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class BlockFactoryTest {
 
@@ -82,7 +81,9 @@ public class BlockFactoryTest {
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
+        assertThat(
+                header.getMiningForkDetectionData(),
+                is(decodedHeader.getMiningForkDetectionData()));
     }
 
     @Test
@@ -98,7 +99,9 @@ public class BlockFactoryTest {
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
+        assertThat(
+                header.getMiningForkDetectionData(),
+                is(decodedHeader.getMiningForkDetectionData()));
     }
 
     @Test
@@ -114,20 +117,23 @@ public class BlockFactoryTest {
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
+        assertThat(
+                header.getMiningForkDetectionData(),
+                is(decodedHeader.getMiningForkDetectionData()));
     }
 
     @Test
     public void decodeBlockAfterHeight449AndRskip110On() {
         long number = 457L;
         enableRulesAt(number, RSKIP92, RSKIP110);
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
 
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData);
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
-        byte[] coinbase = org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
+        byte[] coinbase =
+                org.bouncycastle.util.Arrays.concatenate(hashForMergedMining, forkDetectionData);
         coinbase = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, coinbase);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
@@ -138,12 +144,14 @@ public class BlockFactoryTest {
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
-        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
+        assertThat(
+                header.getMiningForkDetectionData(),
+                is(decodedHeader.getMiningForkDetectionData()));
     }
 
     /**
-     * This case can happen when a solution is submitted by a miner in mainnet
-     * and prior to the RSKIP 110 activation.
+     * This case can happen when a solution is submitted by a miner in mainnet and prior to the
+     * RSKIP 110 activation.
      */
     @Test
     public void decodeWithNoMergedMiningDataAndRskip110OffAndNoForkDetectionData() {
@@ -161,16 +169,16 @@ public class BlockFactoryTest {
     }
 
     /**
-     *  If RSKIP 110 is off there should not be fork detection data in the block even if
-     *  a valid array with that data is passed to the BlockHeader constructor.
-     *  This case should not happen in real life.
+     * If RSKIP 110 is off there should not be fork detection data in the block even if a valid
+     * array with that data is passed to the BlockHeader constructor. This case should not happen in
+     * real life.
      */
     @Test
     public void decodeWithNoMergedMiningDataAndRskip110OffAndForkDetectionData() {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
-        byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+        byte[] forkDetectionData = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         BlockHeader header = createBlockHeader(number, forkDetectionData);
 
         byte[] encodedHeader = header.getEncoded(false, false);
@@ -188,8 +196,7 @@ public class BlockFactoryTest {
     }
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
-            long number,
-            byte[] forkDetectionData) {
+            long number, byte[] forkDetectionData) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
@@ -217,9 +224,7 @@ public class BlockFactoryTest {
                 0);
     }
 
-    private BlockHeader createBlockHeader(
-            long number,
-            byte[] forkDetectionData) {
+    private BlockHeader createBlockHeader(long number, byte[] forkDetectionData) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05

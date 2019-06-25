@@ -21,15 +21,14 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
-import org.ethereum.core.Repository;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.Random;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Repository;
+import org.junit.Ignore;
+import org.junit.Test;
 
 // Everything related to locking that is not
 // registerBtcTransaction, which has its own
@@ -42,7 +41,14 @@ public class LockTest extends BridgePerformanceTestCase {
     public void getMinimumLockTxValue() throws IOException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
         ExecutionStats stats = new ExecutionStats("getMinimumLockTxValue");
-        executeAndAverage("getMinimumLockTxValue", 1000, abiEncoder, Helper.buildNoopInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "getMinimumLockTxValue",
+                1000,
+                abiEncoder,
+                Helper.buildNoopInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10),
+                stats);
         BridgePerformanceTest.addStats(stats);
     }
 
@@ -55,14 +61,34 @@ public class LockTest extends BridgePerformanceTestCase {
     }
 
     private void isBtcTxHashAlreadyProcessed_yes(int times, ExecutionStats stats) {
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(new Object[]{Hex.toHexString(randomHashInMap.getBytes())});
-        executeAndAverage("isBtcTxHashAlreadyProcessed-yes", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        ABIEncoder abiEncoder =
+                (int executionIndex) ->
+                        Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(
+                                new Object[] {Hex.toHexString(randomHashInMap.getBytes())});
+        executeAndAverage(
+                "isBtcTxHashAlreadyProcessed-yes",
+                times,
+                abiEncoder,
+                buildInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10),
+                stats);
     }
 
     private void isBtcTxHashAlreadyProcessed_no(int times, ExecutionStats stats) {
         Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(new Random().nextLong()).toByteArray());
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(new Object[]{Hex.toHexString(hash.getBytes())});
-        executeAndAverage("isBtcTxHashAlreadyProcessed-no", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        ABIEncoder abiEncoder =
+                (int executionIndex) ->
+                        Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(
+                                new Object[] {Hex.toHexString(hash.getBytes())});
+        executeAndAverage(
+                "isBtcTxHashAlreadyProcessed-no",
+                times,
+                abiEncoder,
+                buildInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10),
+                stats);
     }
 
     @Test
@@ -74,14 +100,34 @@ public class LockTest extends BridgePerformanceTestCase {
     }
 
     private void getBtcTxHashProcessedHeight_processed(int times, ExecutionStats stats) {
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(new Object[]{Hex.toHexString(randomHashInMap.getBytes())});
-        executeAndAverage("getBtcTxHashProcessedHeight-processed", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        ABIEncoder abiEncoder =
+                (int executionIndex) ->
+                        Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(
+                                new Object[] {Hex.toHexString(randomHashInMap.getBytes())});
+        executeAndAverage(
+                "getBtcTxHashProcessedHeight-processed",
+                times,
+                abiEncoder,
+                buildInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10),
+                stats);
     }
 
     private void getBtcTxHashProcessedHeight_notProcessed(int times, ExecutionStats stats) {
         Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(new Random().nextLong()).toByteArray());
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(new Object[]{Hex.toHexString(hash.getBytes())});
-        executeAndAverage("getBtcTxHashProcessedHeight-notProcessed", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        ABIEncoder abiEncoder =
+                (int executionIndex) ->
+                        Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(
+                                new Object[] {Hex.toHexString(hash.getBytes())});
+        executeAndAverage(
+                "getBtcTxHashProcessedHeight-notProcessed",
+                times,
+                abiEncoder,
+                buildInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10),
+                stats);
     }
 
     private BridgeStorageProviderInitializer buildInitializer() {
@@ -92,13 +138,14 @@ public class LockTest extends BridgePerformanceTestCase {
 
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             int hashesToGenerate = Helper.randomInRange(minHashes, maxHashes);
-            int randomHashIndex = Helper.randomInRange(0, hashesToGenerate-1);
+            int randomHashIndex = Helper.randomInRange(0, hashesToGenerate - 1);
             Random rnd = new Random();
             Map<Sha256Hash, Long> hashesAlreadyProcessed;
             try {
                 hashesAlreadyProcessed = provider.getBtcTxHashesAlreadyProcessed();
             } catch (IOException e) {
-                throw new RuntimeException("Exception trying to gather hashes already processed for benchmarking");
+                throw new RuntimeException(
+                        "Exception trying to gather hashes already processed for benchmarking");
             }
             for (int i = 0; i < hashesToGenerate; i++) {
                 Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(rnd.nextLong()).toByteArray());

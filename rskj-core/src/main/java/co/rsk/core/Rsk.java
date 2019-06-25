@@ -20,9 +20,7 @@ package co.rsk.core;
 
 import org.ethereum.facade.Ethereum;
 
-/**
- * Created by ajlopez on 3/3/2016.
- */
+/** Created by ajlopez on 3/3/2016. */
 public interface Rsk extends Ethereum {
 
     boolean hasBetterBlockToSync();

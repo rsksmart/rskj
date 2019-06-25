@@ -21,9 +21,7 @@ package co.rsk.net.discovery.table;
 import co.rsk.net.NodeID;
 import org.ethereum.crypto.HashUtil;
 
-/**
- * Calculates the distance between 2 nodes
- */
+/** Calculates the distance between 2 nodes */
 public class DistanceCalculator {
     private final int maxDistance;
 
@@ -32,8 +30,9 @@ public class DistanceCalculator {
     }
 
     /**
-     * The distance is calculated as the Most Significant Bit (MSB) position
-     * of the XOR between the keccak256(keccak256(nodeId)) of the 2 nodes
+     * The distance is calculated as the Most Significant Bit (MSB) position of the XOR between the
+     * keccak256(keccak256(nodeId)) of the 2 nodes
+     *
      * @param node1 id
      * @param node2 id
      * @return The distance between 2 nodes
@@ -51,7 +50,6 @@ public class DistanceCalculator {
     }
 
     /**
-     *
      * @param result
      * @return The MSB position of the XOR result.
      */
@@ -74,7 +72,7 @@ public class DistanceCalculator {
         int count = 0;
 
         for (int i = 7; i >= 0; i--) {
-            if (((b & 0xff)& (1 << i)) == 0) {
+            if (((b & 0xff) & (1 << i)) == 0) {
                 count++;
             } else {
                 return count;

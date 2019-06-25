@@ -29,14 +29,13 @@ import io.netty.buffer.*;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.RskErrorResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @ChannelHandler.Sharable
 public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBufHolder> {
@@ -50,7 +49,11 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules) {
         this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
-        jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
+        jsonRpcServer.setErrorResolver(
+                new MultipleErrorResolver(
+                        new RskErrorResolver(),
+                        AnnotationsErrorResolver.INSTANCE,
+                        DefaultErrorResolver.INSTANCE));
     }
 
     @Override
@@ -58,7 +61,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         ByteBuf responseContent = Unpooled.buffer();
         int responseCode;
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())){
+                ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
 
             responseCode = jsonRpcServer.handleRequest(is, os);
         } catch (Exception e) {
@@ -69,10 +72,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             responseCode = errorCode;
         }
 
-        ctx.fireChannelRead(new Web3Result(
-            responseContent,
-            responseCode
-        ));
+        ctx.fireChannelRead(new Web3Result(responseContent, responseCode));
     }
 
     @Override
@@ -81,11 +81,16 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         ctx.close();
     }
 
-    private ByteBuf buildErrorContent(int errorCode, String errorMessage) throws JsonProcessingException {
+    private ByteBuf buildErrorContent(int errorCode, String errorMessage)
+            throws JsonProcessingException {
         Map<String, JsonNode> errorProperties = new HashMap<>();
         errorProperties.put("code", jsonNodeFactory.numberNode(errorCode));
         errorProperties.put("message", jsonNodeFactory.textNode(errorMessage));
-        JsonNode error = jsonNodeFactory.objectNode().set("error", jsonNodeFactory.objectNode().setAll(errorProperties));
-        return Unpooled.wrappedBuffer(mapper.writeValueAsBytes(mapper.treeToValue(error, Object.class)));
+        JsonNode error =
+                jsonNodeFactory
+                        .objectNode()
+                        .set("error", jsonNodeFactory.objectNode().setAll(errorProperties));
+        return Unpooled.wrappedBuffer(
+                mapper.writeValueAsBytes(mapper.treeToValue(error, Object.class)));
     }
 }

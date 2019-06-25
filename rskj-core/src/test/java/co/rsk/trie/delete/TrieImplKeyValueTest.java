@@ -19,14 +19,11 @@
 package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
+import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
-
-/**
- * Created by ajlopez on 03/04/2017.
- */
+/** Created by ajlopez on 03/04/2017. */
 public class TrieImplKeyValueTest {
 
     @Test
@@ -34,12 +31,21 @@ public class TrieImplKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
-        Trie trie = new Trie().put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
-                .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
+        Trie trie =
+                new Trie()
+                        .put(
+                                zeroKey,
+                                "So, first of all, let me assert my firm belief that".getBytes())
+                        .put(
+                                oneKey,
+                                "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(oneKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), "So, first of all, let me assert my firm belief that".getBytes()));
+        Assert.assertTrue(
+                Arrays.equals(
+                        trie.get(zeroKey),
+                        "So, first of all, let me assert my firm belief that".getBytes()));
         Assert.assertNull(trie.get(oneKey));
     }
 
@@ -48,63 +54,90 @@ public class TrieImplKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
-        Trie trie = new Trie().put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
-                .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
+        Trie trie =
+                new Trie()
+                        .put(
+                                zeroKey,
+                                "So, first of all, let me assert my firm belief that".getBytes())
+                        .put(
+                                oneKey,
+                                "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(zeroKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
+        Assert.assertTrue(
+                Arrays.equals(
+                        trie.get(oneKey),
+                        "the only thing we have to fear is... fear itself ".getBytes()));
         Assert.assertNull(trie.get(zeroKey));
     }
 
     @Test
-    public void zeroKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
+    public void zeroKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
-        Trie trie = new Trie().put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
-                .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
+        Trie trie =
+                new Trie()
+                        .put(
+                                zeroKey,
+                                "So, first of all, let me assert my firm belief that".getBytes())
+                        .put(
+                                oneKey,
+                                "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(zeroKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
+        Assert.assertTrue(
+                Arrays.equals(
+                        trie.get(oneKey),
+                        "the only thing we have to fear is... fear itself ".getBytes()));
         Assert.assertNull(trie.get(zeroKey));
     }
 
     @Test
-    public void oneKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
+    public void oneKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
-        Trie trie = new Trie().put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
-                .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
+        Trie trie =
+                new Trie()
+                        .put(
+                                zeroKey,
+                                "So, first of all, let me assert my firm belief that".getBytes())
+                        .put(
+                                oneKey,
+                                "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(oneKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), "So, first of all, let me assert my firm belief that".getBytes()));
+        Assert.assertTrue(
+                Arrays.equals(
+                        trie.get(zeroKey),
+                        "So, first of all, let me assert my firm belief that".getBytes()));
         Assert.assertNull(trie.get(oneKey));
     }
 
     @Test
-    public void forEqualRootStatesAfterDelete(){
+    public void forEqualRootStatesAfterDelete() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
         Trie trie = new Trie();
 
-        byte[] stateHash0 =trie.getHash().getBytes();
+        byte[] stateHash0 = trie.getHash().getBytes();
 
         trie = trie.put(zeroKey, "zero".getBytes());
 
-        byte[] stateHash1 =trie.getHash().getBytes();
+        byte[] stateHash1 = trie.getHash().getBytes();
 
         trie = trie.put(oneKey, "one".getBytes());
 
-        byte[] stateHash2 =trie.getHash().getBytes();
+        byte[] stateHash2 = trie.getHash().getBytes();
 
         trie = trie.delete(oneKey);
 
-        byte[] stateHash3 =trie.getHash().getBytes();
+        byte[] stateHash3 = trie.getHash().getBytes();
 
         byte[] zeroValue = trie.get(zeroKey);
         Assert.assertTrue(Arrays.equals(trie.get(zeroKey), "zero".getBytes()));
@@ -118,14 +151,14 @@ public class TrieImplKeyValueTest {
 
         trie = trie.delete(oneKey);
 
-        byte[] stateHash4 =trie.getHash().getBytes();
+        byte[] stateHash4 = trie.getHash().getBytes();
         Assert.assertTrue(Arrays.equals(stateHash3, stateHash4));
 
         // Re remove the key again
 
-        trie = trie.put(oneKey,null);
+        trie = trie.put(oneKey, null);
 
-        byte[] stateHash5 =trie.getHash().getBytes();
+        byte[] stateHash5 = trie.getHash().getBytes();
         Assert.assertTrue(Arrays.equals(stateHash1, stateHash5));
     }
 }

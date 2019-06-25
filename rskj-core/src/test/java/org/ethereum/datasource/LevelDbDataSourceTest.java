@@ -19,20 +19,19 @@
 
 package org.ethereum.datasource;
 
+import static org.ethereum.TestUtils.randomBytes;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import co.rsk.config.TestSystemProperties;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.ethereum.TestUtils.randomBytes;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 @Ignore
 public class LevelDbDataSourceTest {
@@ -40,7 +39,7 @@ public class LevelDbDataSourceTest {
     private TestSystemProperties config;
 
     @Before
-    public void setup(){
+    public void setup() {
         config = new TestSystemProperties();
     }
 
@@ -51,11 +50,11 @@ public class LevelDbDataSourceTest {
 
         final int batchSize = 100;
         Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
-        
+
         dataSource.updateBatch(batch, Collections.emptySet());
 
         assertEquals(batchSize, dataSource.keys().size());
-        
+
         dataSource.close();
     }
 
@@ -69,7 +68,7 @@ public class LevelDbDataSourceTest {
 
         assertNotNull(dataSource.get(key));
         assertEquals(1, dataSource.keys().size());
-        
+
         dataSource.close();
     }
 
@@ -80,5 +79,4 @@ public class LevelDbDataSourceTest {
         }
         return result;
     }
-
 }

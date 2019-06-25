@@ -18,14 +18,13 @@
 
 package co.rsk.core;
 
+import static org.ethereum.util.BIUtil.max;
+
+import java.math.BigInteger;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
-
-import java.math.BigInteger;
-
-import static org.ethereum.util.BIUtil.max;
 
 public class DifficultyCalculator {
     private final ActivationConfig activationConfig;
@@ -37,7 +36,8 @@ public class DifficultyCalculator {
     }
 
     public BlockDifficulty calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
-        boolean rskip97Active = activationConfig.isActive(ConsensusRule.RSKIP97, header.getNumber());
+        boolean rskip97Active =
+                activationConfig.isActive(ConsensusRule.RSKIP97, header.getNumber());
         if (!rskip97Active) {
             // If more than 10 minutes, reset to minimum difficulty to allow private mining
             if (header.getTimestamp() >= parentHeader.getTimestamp() + 600) {
@@ -49,9 +49,7 @@ public class DifficultyCalculator {
     }
 
     private static BlockDifficulty getBlockDifficulty(
-            BlockHeader curBlockHeader,
-            BlockHeader parent,
-            Constants constants) {
+            BlockHeader curBlockHeader, BlockHeader parent, Constants constants) {
         BlockDifficulty pd = parent.getDifficulty();
         long parentBlockTS = parent.getTimestamp();
         int uncleCount = curBlockHeader.getUncleCount();
@@ -59,7 +57,8 @@ public class DifficultyCalculator {
         int duration = constants.getDurationLimit();
         BigInteger difDivisor = constants.getDifficultyBoundDivisor();
         BlockDifficulty minDif = constants.getMinimumDifficulty();
-        return calcDifficultyWithTimeStamps(curBlockTS, parentBlockTS, pd, uncleCount, duration, difDivisor, minDif);
+        return calcDifficultyWithTimeStamps(
+                curBlockTS, parentBlockTS, pd, uncleCount, duration, difDivisor, minDif);
     }
 
     private static BlockDifficulty calcDifficultyWithTimeStamps(
@@ -99,7 +98,8 @@ public class DifficultyCalculator {
 
         // If parent difficulty is zero (maybe a genesis block),
         // then the first child difficulty MUST
-        // be greater or equal getMinimumDifficulty(). That's why the max() is applied in both the add and the sub
+        // be greater or equal getMinimumDifficulty(). That's why the max() is applied in both the
+        // add and the sub
         // cases.
         // Note that we have to apply max() first in case fromParent ended up being negative.
         return new BlockDifficulty(max(minDif.asBigInteger(), fromParent));

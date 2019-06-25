@@ -19,20 +19,19 @@
 
 package co.rsk.pcc.bto;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeMethod;
+import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Optional;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 public class HDWalletUtilsTest {
     private HDWalletUtils contract;
@@ -41,7 +40,11 @@ public class HDWalletUtilsTest {
     public void createContract() {
         RskSystemProperties config = new TestSystemProperties();
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
-        contract = spy(new HDWalletUtils(config.getActivationConfig(), new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
+        contract =
+                spy(
+                        new HDWalletUtils(
+                                config.getActivationConfig(),
+                                new RskAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
         when(contract.getExecutionEnvironment()).thenReturn(executionEnvironment);
     }
 
@@ -76,8 +79,8 @@ public class HDWalletUtilsTest {
     }
 
     private void assertHasMethod(Class clazz) {
-        Optional<NativeMethod> method = contract.getMethods().stream()
-                .filter(m -> m.getClass() == clazz).findFirst();
+        Optional<NativeMethod> method =
+                contract.getMethods().stream().filter(m -> m.getClass() == clazz).findFirst();
         Assert.assertTrue(method.isPresent());
     }
 }

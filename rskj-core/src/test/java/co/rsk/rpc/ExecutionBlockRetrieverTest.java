@@ -18,25 +18,24 @@
 
 package co.rsk.rpc;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.*;
+
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
 
 public class ExecutionBlockRetrieverTest {
 
@@ -52,14 +51,14 @@ public class ExecutionBlockRetrieverTest {
         miningMainchainView = mock(MiningMainchainView.class);
         minerServer = mock(MinerServer.class);
         builder = mock(BlockToMineBuilder.class);
-        retriever = new ExecutionBlockRetriever(miningMainchainView, blockchain, minerServer, builder);
+        retriever =
+                new ExecutionBlockRetriever(miningMainchainView, blockchain, minerServer, builder);
     }
 
     @Test
     public void getLatest() {
         Block latest = mock(Block.class);
-        when(blockchain.getBestBlock())
-                .thenReturn(latest);
+        when(blockchain.getBestBlock()).thenReturn(latest);
 
         assertThat(retriever.getExecutionBlock("latest"), is(latest));
     }
@@ -68,9 +67,7 @@ public class ExecutionBlockRetrieverTest {
     public void getLatestIsUpToDate() {
         Block latest1 = mock(Block.class);
         Block latest2 = mock(Block.class);
-        when(blockchain.getBestBlock())
-                .thenReturn(latest1)
-                .thenReturn(latest2);
+        when(blockchain.getBestBlock()).thenReturn(latest1).thenReturn(latest2);
 
         assertThat(retriever.getExecutionBlock("latest"), is(latest1));
         assertThat(retriever.getExecutionBlock("latest"), is(latest2));
@@ -79,8 +76,7 @@ public class ExecutionBlockRetrieverTest {
     @Test
     public void getPendingUsesMinerServerLatestBlock() {
         Block latest = mock(Block.class);
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.of(latest));
+        when(minerServer.getLatestBlock()).thenReturn(Optional.of(latest));
 
         assertThat(retriever.getExecutionBlock("pending"), is(latest));
     }
@@ -99,14 +95,12 @@ public class ExecutionBlockRetrieverTest {
 
     @Test
     public void getPendingBuildsPendingBlockIfMinerServerHasNoWork() {
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.empty());
+        when(minerServer.getLatestBlock()).thenReturn(Optional.empty());
 
         BlockHeader bestHeader = mock(BlockHeader.class);
         Block bestBlock = mock(Block.class);
         when(bestBlock.getHeader()).thenReturn(bestHeader);
-        when(blockchain.getBestBlock())
-                .thenReturn(bestBlock);
+        when(blockchain.getBestBlock()).thenReturn(bestBlock);
 
         when(miningMainchainView.get())
                 .thenReturn(new ArrayList<>(Collections.singleton(bestHeader)));
@@ -127,21 +121,16 @@ public class ExecutionBlockRetrieverTest {
         BlockHeader bestHeader = mock(BlockHeader.class);
         Block bestBlock = mock(Block.class);
         when(bestBlock.getHeader()).thenReturn(bestHeader);
-        when(blockchain.getBestBlock())
-                .thenReturn(bestBlock)
-                .thenReturn(bestBlock);
+        when(blockchain.getBestBlock()).thenReturn(bestBlock).thenReturn(bestBlock);
 
         List<BlockHeader> mainchainHeaders = new ArrayList<>();
         mainchainHeaders.add(bestBlock.getHeader());
         mainchainHeaders.add(bestBlock.getHeader());
-        when(miningMainchainView.get())
-                .thenReturn(mainchainHeaders);
+        when(miningMainchainView.get()).thenReturn(mainchainHeaders);
 
         Block builtBlock = mock(Block.class);
-        when(bestBlock.isParentOf(builtBlock))
-                .thenReturn(true);
-        when(builder.build(mainchainHeaders, null))
-                .thenReturn(builtBlock);
+        when(bestBlock.isParentOf(builtBlock)).thenReturn(true);
+        when(builder.build(mainchainHeaders, null)).thenReturn(builtBlock);
 
         assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
         assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
@@ -162,22 +151,18 @@ public class ExecutionBlockRetrieverTest {
         Block bestBlock2 = mock(Block.class);
         when(bestBlock2.getHeader()).thenReturn(bestHeader2);
 
-        when(blockchain.getBestBlock())
-                .thenReturn(bestBlock1)
-                .thenReturn(bestBlock2);
+        when(blockchain.getBestBlock()).thenReturn(bestBlock1).thenReturn(bestBlock2);
 
         when(miningMainchainView.get())
                 .thenReturn(new ArrayList<>(Collections.singleton(bestHeader1)))
                 .thenReturn(new ArrayList<>(Collections.singleton(bestHeader2)));
 
         Block builtBlock1 = mock(Block.class);
-        when(bestBlock1.isParentOf(builtBlock1))
-                .thenReturn(true);
+        when(bestBlock1.isParentOf(builtBlock1)).thenReturn(true);
         when(builder.build(new ArrayList<>(Collections.singleton(bestHeader1)), null))
                 .thenReturn(builtBlock1);
         Block builtBlock2 = mock(Block.class);
-        when(bestBlock2.isParentOf(builtBlock2))
-                .thenReturn(true);
+        when(bestBlock2.isParentOf(builtBlock2)).thenReturn(true);
         when(builder.build(new ArrayList<>(Collections.singleton(bestHeader2)), null))
                 .thenReturn(builtBlock2);
 
@@ -188,8 +173,7 @@ public class ExecutionBlockRetrieverTest {
     @Test
     public void getByNumberBlockExistsHex() {
         Block myBlock = mock(Block.class);
-        when(blockchain.getBlockByNumber(123))
-                .thenReturn(myBlock);
+        when(blockchain.getBlockByNumber(123)).thenReturn(myBlock);
 
         assertThat(retriever.getExecutionBlock("0x7B"), is(myBlock));
         assertThat(retriever.getExecutionBlock("0x7b"), is(myBlock));
@@ -198,24 +182,21 @@ public class ExecutionBlockRetrieverTest {
     @Test
     public void getByNumberBlockExistsDec() {
         Block myBlock = mock(Block.class);
-        when(blockchain.getBlockByNumber(123))
-                .thenReturn(myBlock);
+        when(blockchain.getBlockByNumber(123)).thenReturn(myBlock);
 
         assertThat(retriever.getExecutionBlock("123"), is(myBlock));
     }
 
     @Test(expected = JsonRpcInvalidParamException.class)
     public void getByNumberInvalidBlockNumberHex() {
-        when(blockchain.getBlockByNumber(123))
-                .thenReturn(null);
+        when(blockchain.getBlockByNumber(123)).thenReturn(null);
 
         retriever.getExecutionBlock("0x7B");
     }
 
     @Test(expected = JsonRpcInvalidParamException.class)
     public void getByNumberInvalidBlockNumberDec() {
-        when(blockchain.getBlockByNumber(123))
-                .thenReturn(null);
+        when(blockchain.getBlockByNumber(123)).thenReturn(null);
 
         retriever.getExecutionBlock("123");
     }

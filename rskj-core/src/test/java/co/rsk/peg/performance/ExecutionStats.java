@@ -53,7 +53,6 @@ public class ExecutionStats {
                 executionTimes.getMean() / 1000,
                 realExecutionTimes.getMean() / 1000,
                 slotsWritten.getMean(),
-                slotsCleared.getMean()
-        );
+                slotsCleared.getMean());
     }
 }

@@ -19,9 +19,9 @@
 
 package org.ethereum.jsontestsuite;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.json.simple.JSONObject;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * @author Roman Mandeleil
@@ -31,16 +31,16 @@ public class CallCreate {
 
     private final byte[] data;
     private final byte[] destination;
-    private final long  gasLimit;
+    private final long gasLimit;
     private final byte[] value;
 
-/* e.g.
-        "data" : [
-                ],
-        "destination" : "cd1722f3947def4cf144679da39c4c32bdc35681",
-        "gasLimit" : 9792,
-        "value" : 74
-*/
+    /* e.g.
+            "data" : [
+                    ],
+            "destination" : "cd1722f3947def4cf144679da39c4c32bdc35681",
+            "gasLimit" : 9792,
+            "value" : 74
+    */
 
     public CallCreate(JSONObject callCreateJSON) {
 
@@ -49,10 +49,8 @@ public class CallCreate {
         String gasLimit = callCreateJSON.get("gasLimit").toString();
         String value = callCreateJSON.get("value").toString();
 
-        if (data != null && data.length() > 2)
-            this.data = Hex.decode(data.substring(2));
-        else
-            this.data = ByteUtil.EMPTY_BYTE_ARRAY;
+        if (data != null && data.length() > 2) this.data = Hex.decode(data.substring(2));
+        else this.data = ByteUtil.EMPTY_BYTE_ARRAY;
 
         this.destination = Hex.decode(destination);
         this.gasLimit = TestCase.toBigInt(gasLimit).longValueExact();
@@ -67,7 +65,7 @@ public class CallCreate {
         return destination;
     }
 
-    public long  getGasLimit() {
+    public long getGasLimit() {
         return gasLimit;
     }
 
@@ -77,11 +75,15 @@ public class CallCreate {
 
     @Override
     public String toString() {
-        return "CallCreate{" +
-                "data=" + Hex.toHexString(data) +
-                ", destination=" + Hex.toHexString(destination) +
-                ", gasLimit=" + Long.toHexString(gasLimit) +
-                ", value=" + Hex.toHexString(value) +
-                '}';
+        return "CallCreate{"
+                + "data="
+                + Hex.toHexString(data)
+                + ", destination="
+                + Hex.toHexString(destination)
+                + ", gasLimit="
+                + Long.toHexString(gasLimit)
+                + ", value="
+                + Hex.toHexString(value)
+                + '}';
     }
 }

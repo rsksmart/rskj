@@ -17,29 +17,29 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.*;
+
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import org.junit.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class EthSubscribeRequestTest {
     private JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();
 
     @Test
     public void deserializeNewHeads() throws IOException {
-        String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"newHeads\"]}";
-        RskJsonRpcRequest request = serializer.deserializeRequest(
-                new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
-        );
+        String message =
+                "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"newHeads\"]}";
+        RskJsonRpcRequest request =
+                serializer.deserializeRequest(
+                        new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8)));
 
         assertThat(request, instanceOf(EthSubscribeRequest.class));
         EthSubscribeRequest subscribeRequest = (EthSubscribeRequest) request;
@@ -48,9 +48,9 @@ public class EthSubscribeRequestTest {
 
     @Test(expected = JsonMappingException.class)
     public void logsIsUnsupported() throws IOException {
-        String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\"]}";
+        String message =
+                "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\"]}";
         serializer.deserializeRequest(
-                new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
-        );
+                new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8)));
     }
 }

@@ -19,12 +19,11 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.crypto.Keccak256;
+import java.math.BigInteger;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
 
 public class TxValidatorGasLimitValidatorTest {
     @Test
@@ -39,8 +38,10 @@ public class TxValidatorGasLimitValidatorTest {
 
         TxValidatorGasLimitValidator tvglv = new TxValidatorGasLimitValidator();
 
-        Assert.assertTrue(tvglv.validate(tx1, null, gl, null, Long.MAX_VALUE, false).transactionIsValid());
-        Assert.assertTrue(tvglv.validate(tx2, null, gl, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assert.assertTrue(
+                tvglv.validate(tx1, null, gl, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assert.assertTrue(
+                tvglv.validate(tx2, null, gl, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
     @Test
@@ -55,6 +56,7 @@ public class TxValidatorGasLimitValidatorTest {
 
         TxValidatorGasLimitValidator tvglv = new TxValidatorGasLimitValidator();
 
-        Assert.assertFalse(tvglv.validate(tx1, null, gl, null, Long.MAX_VALUE, false).transactionIsValid());
+        Assert.assertFalse(
+                tvglv.validate(tx1, null, gl, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 }

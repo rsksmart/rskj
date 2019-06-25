@@ -25,9 +25,7 @@ import org.ethereum.core.Account;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 8/7/2016.
- */
+/** Created by ajlopez on 8/7/2016. */
 public class AccountBuilderTest {
     @Test
     public void createAccountWithNameAsSeed() {
@@ -41,13 +39,11 @@ public class AccountBuilderTest {
     public void createAccountWithBalanceAndCode() {
         World world = new World();
 
-        byte[] code = new byte[] { 0x01, 0x02, 0x03 };
+        byte[] code = new byte[] {0x01, 0x02, 0x03};
         Coin balance = Coin.valueOf(10);
 
-        Account account = new AccountBuilder(world).name("acc1")
-                .balance(balance)
-                .code(code)
-                .build();
+        Account account =
+                new AccountBuilder(world).name("acc1").balance(balance).code(code).build();
 
         Assert.assertNotNull(account);
         Assert.assertTrue(account.getEcKey().hasPrivKey());

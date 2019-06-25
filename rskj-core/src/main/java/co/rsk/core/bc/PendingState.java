@@ -18,20 +18,19 @@
 
 package co.rsk.core.bc;
 
+import static java.util.Collections.reverseOrder;
+import static org.ethereum.util.BIUtil.toBI;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import java.math.BigInteger;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.math.BigInteger;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.Collections.reverseOrder;
-import static org.ethereum.util.BIUtil.toBI;
 
 public class PendingState implements AccountInformationProvider {
 
@@ -42,8 +41,10 @@ public class PendingState implements AccountInformationProvider {
     private final TransactionSet pendingTransactions;
     private boolean executed = false;
 
-
-    public PendingState(Repository repository, TransactionSet pendingTransactions, TransactionExecutorFactory transactionExecutorFactory) {
+    public PendingState(
+            Repository repository,
+            TransactionSet pendingTransactions,
+            TransactionExecutorFactory transactionExecutorFactory) {
         this.pendingRepository = repository.startTracking();
         this.pendingTransactions = pendingTransactions;
         this.transactionExecutorFactory = transactionExecutorFactory;
@@ -56,12 +57,14 @@ public class PendingState implements AccountInformationProvider {
 
     @Override
     public DataWord getStorageValue(RskAddress addr, DataWord key) {
-        return postExecutionReturn(executedRepository -> executedRepository.getStorageValue(addr, key));
+        return postExecutionReturn(
+                executedRepository -> executedRepository.getStorageValue(addr, key));
     }
 
     @Override
     public byte[] getStorageBytes(RskAddress addr, DataWord key) {
-        return postExecutionReturn(executedRepository -> executedRepository.getStorageBytes(addr, key));
+        return postExecutionReturn(
+                executedRepository -> executedRepository.getStorageBytes(addr, key));
     }
 
     @Override
@@ -71,7 +74,8 @@ public class PendingState implements AccountInformationProvider {
 
     @Override
     public int getStorageKeysCount(RskAddress addr) {
-        return postExecutionReturn(executedRepository -> executedRepository.getStorageKeysCount(addr));
+        return postExecutionReturn(
+                executedRepository -> executedRepository.getStorageKeysCount(addr));
     }
 
     @Override
@@ -87,11 +91,12 @@ public class PendingState implements AccountInformationProvider {
     @Override
     public BigInteger getNonce(RskAddress addr) {
         BigInteger nextNonce = pendingRepository.getNonce(addr);
-        Optional<BigInteger> maxNonce = this.pendingTransactions.getTransactionsWithSender(addr).stream()
-                .map(Transaction::getNonceAsInteger)
-                .max(BigInteger::compareTo)
-                .map(nonce -> nonce.add(BigInteger.ONE))
-                .filter(nonce -> nonce.compareTo(nextNonce) >= 0);
+        Optional<BigInteger> maxNonce =
+                this.pendingTransactions.getTransactionsWithSender(addr).stream()
+                        .map(Transaction::getNonceAsInteger)
+                        .max(BigInteger::compareTo)
+                        .map(nonce -> nonce.add(BigInteger.ONE))
+                        .filter(nonce -> nonce.compareTo(nextNonce) >= 0);
 
         return maxNonce.orElse(nextNonce);
     }
@@ -106,39 +111,47 @@ public class PendingState implements AccountInformationProvider {
     // for each individual list.
     // To order the price we use a heap to keep it fast.
 
-    // Note that this sort doesn't return the best solution, it is an approximation algorithm to find approximate
+    // Note that this sort doesn't return the best solution, it is an approximation algorithm to
+    // find approximate
     // solution. (No trivial solution)
-    public static List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(List<Transaction> transactions) {
+    public static List<Transaction> sortByPriceTakingIntoAccountSenderAndNonce(
+            List<Transaction> transactions) {
 
-        //Priority heap, and list of transactions are ordered by descending gas price.
-        Comparator<Transaction> gasPriceComparator = reverseOrder(Comparator.comparing(Transaction::getGasPrice));
+        // Priority heap, and list of transactions are ordered by descending gas price.
+        Comparator<Transaction> gasPriceComparator =
+                reverseOrder(Comparator.comparing(Transaction::getGasPrice));
 
-        //First create a map to separate txs by each sender.
-        Map<RskAddress, List<Transaction>> senderTxs = transactions.stream().collect(Collectors.groupingBy(Transaction::getSender));
+        // First create a map to separate txs by each sender.
+        Map<RskAddress, List<Transaction>> senderTxs =
+                transactions.stream().collect(Collectors.groupingBy(Transaction::getSender));
 
-        //For each sender, order all txs by nonce and then by hash,
-        //finally we order by price in cases where nonce are equal, and then by hash to disambiguate
+        // For each sender, order all txs by nonce and then by hash,
+        // finally we order by price in cases where nonce are equal, and then by hash to
+        // disambiguate
         for (List<Transaction> transactionList : senderTxs.values()) {
             transactionList.sort(
-                    Comparator.<Transaction>comparingLong(tx -> ByteUtil.byteArrayToLong(tx.getNonce()))
+                    Comparator.<Transaction>comparingLong(
+                                    tx -> ByteUtil.byteArrayToLong(tx.getNonce()))
                             .thenComparing(gasPriceComparator)
-                            .thenComparing(Transaction::getHash)
-            );
+                            .thenComparing(Transaction::getHash));
         }
 
         PriorityQueue<Transaction> candidateTxs = new PriorityQueue<>(gasPriceComparator);
 
-        //Add the first transaction from each sender to the heap.
-        //Notice that we never push two transaction from the same sender
-        //to avoid losing nonce ordering
-        senderTxs.values().forEach(x -> {
-            Transaction tx = x.remove(0);
-            candidateTxs.add(tx);
-        });
+        // Add the first transaction from each sender to the heap.
+        // Notice that we never push two transaction from the same sender
+        // to avoid losing nonce ordering
+        senderTxs
+                .values()
+                .forEach(
+                        x -> {
+                            Transaction tx = x.remove(0);
+                            candidateTxs.add(tx);
+                        });
 
         long txsCount = transactions.size();
         List<Transaction> sortedTxs = new ArrayList<>();
-        //In each iteration we get the tx with max price (head) from the heap.
+        // In each iteration we get the tx with max price (head) from the heap.
         while (txsCount > 0) {
             Transaction nextTxToAdd = candidateTxs.remove();
             sortedTxs.add(nextTxToAdd);
@@ -162,15 +175,19 @@ public class PendingState implements AccountInformationProvider {
         return action.execute(pendingRepository);
     }
 
-    private void executeTransactions(Repository currentRepository, List<Transaction> pendingTransactions) {
+    private void executeTransactions(
+            Repository currentRepository, List<Transaction> pendingTransactions) {
 
         PendingState.sortByPriceTakingIntoAccountSenderAndNonce(pendingTransactions)
-                .forEach(pendingTransaction -> executeTransaction(currentRepository, pendingTransaction));
+                .forEach(
+                        pendingTransaction ->
+                                executeTransaction(currentRepository, pendingTransaction));
     }
 
     private void executeTransaction(Repository currentRepository, Transaction tx) {
         LOGGER.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
-        TransactionExecutor executor = transactionExecutorFactory.newInstance(currentRepository, tx);
+        TransactionExecutor executor =
+                transactionExecutorFactory.newInstance(currentRepository, tx);
         executor.init();
         executor.execute();
         executor.go();

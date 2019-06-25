@@ -19,22 +19,19 @@
 
 package org.ethereum.net.wire;
 
+import static org.ethereum.net.eth.EthVersion.*;
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.List;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.p2p.P2pMessageCodes;
 import org.ethereum.net.rlpx.MessageCodesResolver;
-
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-
-import static org.ethereum.net.eth.EthVersion.*;
 
 /**
  * @author Roman Mandeleil
@@ -81,50 +78,87 @@ public class AdaptiveMessageIdsTest {
         messageCodesResolver.setEthOffset(0x10);
 
         assertEquals(0x10 + 0, messageCodesResolver.withEthOffset(EthMessageCodes.STATUS.asByte()));
-        assertEquals(0x10 + 1, messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK_HASHES.asByte()));
-        assertEquals(0x10 + 2, messageCodesResolver.withEthOffset(EthMessageCodes.TRANSACTIONS.asByte()));
-        assertEquals(0x10 + 3, messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_HEADERS.asByte()));
-        assertEquals(0x10 + 4, messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_HEADERS.asByte()));
-        assertEquals(0x10 + 5, messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_BODIES.asByte()));
-        assertEquals(0x10 + 6, messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_BODIES.asByte()));
-        assertEquals(0x10 + 7, messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK.asByte()));
+        assertEquals(
+                0x10 + 1,
+                messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK_HASHES.asByte()));
+        assertEquals(
+                0x10 + 2,
+                messageCodesResolver.withEthOffset(EthMessageCodes.TRANSACTIONS.asByte()));
+        assertEquals(
+                0x10 + 3,
+                messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_HEADERS.asByte()));
+        assertEquals(
+                0x10 + 4,
+                messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_HEADERS.asByte()));
+        assertEquals(
+                0x10 + 5,
+                messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_BODIES.asByte()));
+        assertEquals(
+                0x10 + 6,
+                messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_BODIES.asByte()));
+        assertEquals(
+                0x10 + 7, messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK.asByte()));
     }
-
 
     @Test
     public void test4() {
 
-        List<Capability> capabilities = Arrays.asList(
-                new Capability(Capability.RSK, EthVersion.V62.getCode()));
+        List<Capability> capabilities =
+                Arrays.asList(new Capability(Capability.RSK, EthVersion.V62.getCode()));
 
         messageCodesResolver.init(capabilities);
 
         assertEquals(0x10 + 0, messageCodesResolver.withEthOffset(EthMessageCodes.STATUS.asByte()));
-        assertEquals(0x10 + 1, messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK_HASHES.asByte()));
-        assertEquals(0x10 + 2, messageCodesResolver.withEthOffset(EthMessageCodes.TRANSACTIONS.asByte()));
-        assertEquals(0x10 + 3, messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_HEADERS.asByte()));
-        assertEquals(0x10 + 4, messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_HEADERS.asByte()));
-        assertEquals(0x10 + 5, messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_BODIES.asByte()));
-        assertEquals(0x10 + 6, messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_BODIES.asByte()));
-        assertEquals(0x10 + 7, messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK.asByte()));
-
+        assertEquals(
+                0x10 + 1,
+                messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK_HASHES.asByte()));
+        assertEquals(
+                0x10 + 2,
+                messageCodesResolver.withEthOffset(EthMessageCodes.TRANSACTIONS.asByte()));
+        assertEquals(
+                0x10 + 3,
+                messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_HEADERS.asByte()));
+        assertEquals(
+                0x10 + 4,
+                messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_HEADERS.asByte()));
+        assertEquals(
+                0x10 + 5,
+                messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_BODIES.asByte()));
+        assertEquals(
+                0x10 + 6,
+                messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_BODIES.asByte()));
+        assertEquals(
+                0x10 + 7, messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK.asByte()));
     }
 
     @Test // Capabilities should be read in alphabetical order
     public void test5() {
 
-        List<Capability> capabilities = Arrays.asList(
-                new Capability(Capability.RSK, EthVersion.V62.getCode()));
+        List<Capability> capabilities =
+                Arrays.asList(new Capability(Capability.RSK, EthVersion.V62.getCode()));
 
         messageCodesResolver.init(capabilities);
 
         assertEquals(0x10 + 0, messageCodesResolver.withEthOffset(EthMessageCodes.STATUS.asByte()));
-        assertEquals(0x10 + 1, messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK_HASHES.asByte()));
-        assertEquals(0x10 + 2, messageCodesResolver.withEthOffset(EthMessageCodes.TRANSACTIONS.asByte()));
-        assertEquals(0x10 + 3, messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_HEADERS.asByte()));
-        assertEquals(0x10 + 4, messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_HEADERS.asByte()));
-        assertEquals(0x10 + 5, messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_BODIES.asByte()));
-        assertEquals(0x10 + 6, messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_BODIES.asByte()));
-        assertEquals(0x10 + 7, messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK.asByte()));
+        assertEquals(
+                0x10 + 1,
+                messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK_HASHES.asByte()));
+        assertEquals(
+                0x10 + 2,
+                messageCodesResolver.withEthOffset(EthMessageCodes.TRANSACTIONS.asByte()));
+        assertEquals(
+                0x10 + 3,
+                messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_HEADERS.asByte()));
+        assertEquals(
+                0x10 + 4,
+                messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_HEADERS.asByte()));
+        assertEquals(
+                0x10 + 5,
+                messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_BODIES.asByte()));
+        assertEquals(
+                0x10 + 6,
+                messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_BODIES.asByte()));
+        assertEquals(
+                0x10 + 7, messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK.asByte()));
     }
 }

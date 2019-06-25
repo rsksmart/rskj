@@ -1,13 +1,10 @@
 package co.rsk.rpc;
 
+import java.net.URISyntaxException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.net.URISyntaxException;
-
-/**
- * Created by ajlopez on 06/10/2017.
- */
+/** Created by ajlopez on 06/10/2017. */
 public class OriginValidatorTest {
     @Test
     public void noOrigin() throws URISyntaxException {

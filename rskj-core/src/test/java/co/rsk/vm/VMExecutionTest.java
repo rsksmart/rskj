@@ -18,8 +18,16 @@
 
 package co.rsk.vm;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP120;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.util.HashSet;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
@@ -33,22 +41,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.util.HashSet;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP120;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-/**
- * Created by ajlopez on 25/01/2017.
- */
+/** Created by ajlopez on 25/01/2017. */
 public class VMExecutionTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts =
+            new PrecompiledContracts(config, null);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private ProgramInvokeMockImpl invoke;
     private BytecodeCompiler compiler;
@@ -95,9 +93,15 @@ public class VMExecutionTest {
         Assert.assertEquals(DataWord.valueOf(1), stack.peek());
     }
 
-
-    private void executeShift(String number, String shiftAmount, String expect, String op , ActivationConfig.ForBlock activations){
-        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH1 "+shiftAmount+" "+op, 3, activations);
+    private void executeShift(
+            String number,
+            String shiftAmount,
+            String expect,
+            String op,
+            ActivationConfig.ForBlock activations) {
+        Program program =
+                executeCodeWithActivationConfig(
+                        "PUSH32 " + number + " PUSH1 " + shiftAmount + " " + op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -109,20 +113,21 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+        executeShift(
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x00",
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "SHL",
                 activations);
     }
 
-
     @Test
     public void testSHL2() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+        executeShift(
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x01",
                 "0000000000000000000000000000000000000000000000000000000000000002",
                 "SHL",
@@ -134,7 +139,8 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+        executeShift(
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0xff",
                 "8000000000000000000000000000000000000000000000000000000000000000",
                 "SHL",
@@ -151,7 +157,9 @@ public class VMExecutionTest {
         String op = "SHL";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
+        Program program =
+                executeCodeWithActivationConfig(
+                        "PUSH32 " + number + " PUSH2 " + shiftAmount + " " + op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -163,7 +171,8 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        executeShift(
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0x00",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "SHL",
@@ -175,7 +184,8 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        executeShift(
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0xff",
                 "8000000000000000000000000000000000000000000000000000000000000000",
                 "SHL",
@@ -187,7 +197,8 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        executeShift(
+                "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0x01",
                 "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
                 "SHL",
@@ -199,7 +210,8 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+        executeShift(
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x00",
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "SHR",
@@ -211,7 +223,8 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+        executeShift(
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x01",
                 "0000000000000000000000000000000000000000000000000000000000000000",
                 "SHR",
@@ -223,7 +236,8 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
+        executeShift(
+                "0x8000000000000000000000000000000000000000000000000000000000000000",
                 "0x01",
                 "4000000000000000000000000000000000000000000000000000000000000000",
                 "SHR",
@@ -235,20 +249,21 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
+        executeShift(
+                "0x8000000000000000000000000000000000000000000000000000000000000000",
                 "0xff",
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "SHR",
                 activations);
     }
 
-
     @Test
     public void testSHR5() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        executeShift(
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0x00",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "SHR",
@@ -260,7 +275,8 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        executeShift(
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0xff",
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "SHR",
@@ -277,7 +293,9 @@ public class VMExecutionTest {
         String op = "SHR";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
+        Program program =
+                executeCodeWithActivationConfig(
+                        "PUSH32 " + number + " PUSH2 " + shiftAmount + " " + op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -289,85 +307,86 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+        executeShift(
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x00",
                 "0000000000000000000000000000000000000000000000000000000000000001",
                 "SAR",
                 activations);
     }
 
-
     @Test
     public void testSAR2() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x0000000000000000000000000000000000000000000000000000000000000001",
+        executeShift(
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
                 "0x01",
                 "0000000000000000000000000000000000000000000000000000000000000000",
                 "SAR",
                 activations);
     }
 
-
     @Test
     public void testSAR3() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
+        executeShift(
+                "0x8000000000000000000000000000000000000000000000000000000000000000",
                 "0x01",
                 "c000000000000000000000000000000000000000000000000000000000000000",
                 "SAR",
                 activations);
     }
 
-
     @Test
     public void testSAR4() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x8000000000000000000000000000000000000000000000000000000000000000",
+        executeShift(
+                "0x8000000000000000000000000000000000000000000000000000000000000000",
                 "0xff",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "SAR",
                 activations);
     }
 
-
     @Test
     public void testSAR5() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        executeShift(
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0x00",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "SAR",
                 activations);
     }
 
-
     @Test
     public void testSAR6() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        executeShift(
+                "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0x01",
                 "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "SAR",
                 activations);
     }
 
-
     @Test
     public void testSAR7() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(true);
 
-        executeShift("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        executeShift(
+                "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
                 "0xf8",
                 "000000000000000000000000000000000000000000000000000000000000007f",
                 "SAR",
@@ -384,20 +403,23 @@ public class VMExecutionTest {
         String op = "SAR";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
+        Program program =
+                executeCodeWithActivationConfig(
+                        "PUSH32 " + number + " PUSH2 " + shiftAmount + " " + op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(DataWord.valueFromHex(expect), stack.peek());
     }
 
-
-
     @Test(expected = Program.IllegalOperationException.class)
     public void testSAR3ShouldFailOnOldVersion() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
-        executeCodeWithActivationConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3, activations);
+        executeCodeWithActivationConfig(
+                "PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR",
+                3,
+                activations);
     }
 
     @Test(expected = Program.IllegalOperationException.class)
@@ -405,7 +427,10 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
 
-        executeCodeWithActivationConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3, activations);
+        executeCodeWithActivationConfig(
+                "PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL",
+                3,
+                activations);
     }
 
     @Test(expected = Program.IllegalOperationException.class)
@@ -413,7 +438,10 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
 
-        executeCodeWithActivationConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, activations);
+        executeCodeWithActivationConfig(
+                "PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR",
+                3,
+                activations);
     }
 
     @Test
@@ -437,31 +465,35 @@ public class VMExecutionTest {
 
     @Test
     public void dupnFourthItem() {
-        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x03 DUPN", 6);
+        Program program =
+                executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x03 DUPN", 6);
         Stack stack = program.getStack();
 
         Assert.assertEquals(5, stack.size());
         Assert.assertEquals(DataWord.valueOf(1), stack.peek());
 
-        for (int k = 0; k < 4; k++)
-            Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
+        for (int k = 0; k < 4; k++) Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
     }
 
     @Test
     public void dupnTwentiethItem() {
-        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 PUSH1 0x13 DUPN", 22);
+        Program program =
+                executeCode(
+                        "PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 PUSH1 0x13 DUPN",
+                        22);
         Stack stack = program.getStack();
 
         Assert.assertEquals(21, stack.size());
         Assert.assertEquals(DataWord.valueOf(1), stack.peek());
 
-        for (int k = 0; k < 20; k++)
-            Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
+        for (int k = 0; k < 20; k++) Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
     }
 
     @Test(expected = Program.StackTooSmallException.class)
     public void dupnTwentiethItemWithoutEnoughItems() {
-        executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x13 DUPN", 21);
+        executeCode(
+                "PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x13 DUPN",
+                21);
     }
 
     @Test(expected = Program.StackTooSmallException.class)
@@ -481,7 +513,8 @@ public class VMExecutionTest {
 
     @Test
     public void swapnFourthItem() {
-        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x02 SWAPN", 6);
+        Program program =
+                executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x02 SWAPN", 6);
         Stack stack = program.getStack();
 
         Assert.assertEquals(4, stack.size());
@@ -493,15 +526,17 @@ public class VMExecutionTest {
 
     @Test
     public void swapnTwentiethItem() {
-        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 PUSH1 0x12 SWAPN", 22);
+        Program program =
+                executeCode(
+                        "PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 PUSH1 0x12 SWAPN",
+                        22);
         Stack stack = program.getStack();
 
         Assert.assertEquals(20, stack.size());
         Assert.assertEquals(DataWord.valueOf(1), stack.peek());
         Assert.assertEquals(DataWord.valueOf(20), stack.get(0));
 
-        for (int k = 1; k < 19; k++)
-            Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
+        for (int k = 1; k < 19; k++) Assert.assertEquals(DataWord.valueOf(k + 1), stack.get(k));
     }
 
     @Test(expected = Program.StackTooSmallException.class)
@@ -511,7 +546,9 @@ public class VMExecutionTest {
 
     @Test(expected = Program.StackTooSmallException.class)
     public void swapnTwentiethItemWithoutEnoughItems() {
-        executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x12 SWAPN", 22);
+        executeCode(
+                "PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x12 SWAPN",
+                22);
     }
 
     @Test
@@ -529,8 +566,7 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH1 0x03 JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
+        } catch (Program.BadJumpDestinationException ex) {
             Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[3];", ex.getMessage());
         }
     }
@@ -540,8 +576,7 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH1 0x05 JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
+        } catch (Program.BadJumpDestinationException ex) {
             Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[5];", ex.getMessage());
         }
     }
@@ -549,10 +584,11 @@ public class VMExecutionTest {
     @Test
     public void invalidNegativeJump() {
         try {
-            executeCode("PUSH32 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff JUMP", 2);
+            executeCode(
+                    "PUSH32 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff JUMP",
+                    2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
+        } catch (Program.BadJumpDestinationException ex) {
             Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[-1];", ex.getMessage());
         }
     }
@@ -562,8 +598,7 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH1 0xff JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
+        } catch (Program.BadJumpDestinationException ex) {
             Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[255];", ex.getMessage());
         }
     }
@@ -571,7 +606,16 @@ public class VMExecutionTest {
     @Test
     public void dupnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST DUPN 0x5b 0x5b");
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null, new HashSet<>());
+        Program program =
+                new Program(
+                        vmConfig,
+                        precompiledContracts,
+                        blockFactory,
+                        mock(ActivationConfig.ForBlock.class),
+                        code,
+                        invoke,
+                        null,
+                        new HashSet<>());
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -586,7 +630,16 @@ public class VMExecutionTest {
     @Test
     public void swapnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST SWAPN 0x5b 0x5b");
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null, new HashSet<>());
+        Program program =
+                new Program(
+                        vmConfig,
+                        precompiledContracts,
+                        blockFactory,
+                        mock(ActivationConfig.ForBlock.class),
+                        code,
+                        invoke,
+                        null,
+                        new HashSet<>());
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -608,9 +661,9 @@ public class VMExecutionTest {
             int target = k + 6;
             bytecode[k++] = 0x5b; // JUMPDEST
             bytecode[k++] = 0x62; // PUSH3
-            bytecode[k++] = (byte)(target >> 16);
-            bytecode[k++] = (byte)(target >> 8);
-            bytecode[k++] = (byte)(target & 0xff);
+            bytecode[k++] = (byte) (target >> 16);
+            bytecode[k++] = (byte) (target >> 8);
+            bytecode[k++] = (byte) (target & 0xff);
             bytecode[k++] = 0x56; // JUMP
         }
 
@@ -624,7 +677,10 @@ public class VMExecutionTest {
         runtime.gc();
         long initialMemory = runtime.totalMemory() - runtime.freeMemory();
         long initialTime = thread.getCurrentThreadCpuTime();
-        testCode(bytecode, 15000 * 3 + 2, "0000000000000000000000000000000000000000000000000000000000000001");
+        testCode(
+                bytecode,
+                15000 * 3 + 2,
+                "0000000000000000000000000000000000000000000000000000000000000001");
         long finalTime = thread.getCurrentThreadCpuTime();
         long finalMemory = runtime.totalMemory() - runtime.freeMemory();
 
@@ -644,12 +700,14 @@ public class VMExecutionTest {
 
     @Test
     public void returnDataCopyBasicGasCost() {
-        Program program = executeCode(
-                // push some values for RETURNDATACOPY
-                "PUSH1 0x00 PUSH1 0x00 PUSH1 0x01 " +
-                // call RETURNDATACOPY
-                "0x3e",
-        4);
+        Program program =
+                executeCode(
+                        // push some values for RETURNDATACOPY
+                        "PUSH1 0x00 PUSH1 0x00 PUSH1 0x01 "
+                                +
+                                // call RETURNDATACOPY
+                                "0x3e",
+                        4);
 
         Assert.assertNotNull(program);
         Assert.assertNotNull(program.getResult());
@@ -659,12 +717,14 @@ public class VMExecutionTest {
 
     @Test
     public void callDataCopyBasicGasCost() {
-        Program program = executeCode(
-                // push some values for CALLDATACOPY
-                "PUSH1 0x00 PUSH1 0x00 PUSH1 0x01 " +
-                // call CALLDATACOPY
-                "0x37",
-        4);
+        Program program =
+                executeCode(
+                        // push some values for CALLDATACOPY
+                        "PUSH1 0x00 PUSH1 0x00 PUSH1 0x01 "
+                                +
+                                // call CALLDATACOPY
+                                "0x37",
+                        4);
 
         Assert.assertNotNull(program);
         Assert.assertNotNull(program.getResult());
@@ -673,22 +733,36 @@ public class VMExecutionTest {
     }
 
     private Program executeCode(String code, int nsteps) {
-        return executeCodeWithActivationConfig(compiler.compile(code), nsteps, mock(ActivationConfig.ForBlock.class));
+        return executeCodeWithActivationConfig(
+                compiler.compile(code), nsteps, mock(ActivationConfig.ForBlock.class));
     }
 
     private void testCode(byte[] code, int nsteps, String expected) {
-        Program program = executeCodeWithActivationConfig(code, nsteps, mock(ActivationConfig.ForBlock.class));
+        Program program =
+                executeCodeWithActivationConfig(
+                        code, nsteps, mock(ActivationConfig.ForBlock.class));
 
         assertEquals(expected, Hex.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    private Program executeCodeWithActivationConfig(String code, int nsteps, ActivationConfig.ForBlock activations) {
+    private Program executeCodeWithActivationConfig(
+            String code, int nsteps, ActivationConfig.ForBlock activations) {
         return executeCodeWithActivationConfig(compiler.compile(code), nsteps, activations);
     }
 
-    private Program executeCodeWithActivationConfig(byte[] code, int nsteps, ActivationConfig.ForBlock activations) {
+    private Program executeCodeWithActivationConfig(
+            byte[] code, int nsteps, ActivationConfig.ForBlock activations) {
         VM vm = new VM(vmConfig, precompiledContracts);
-        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke,null, new HashSet<>());
+        Program program =
+                new Program(
+                        vmConfig,
+                        precompiledContracts,
+                        blockFactory,
+                        activations,
+                        code,
+                        invoke,
+                        null,
+                        new HashSet<>());
 
         for (int k = 0; k < nsteps; k++) {
             vm.step(program);

@@ -23,9 +23,7 @@ import co.rsk.test.dsl.DslParser;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 8/6/2016.
- */
+/** Created by ajlopez on 8/6/2016. */
 public class DslParserTest {
     @Test
     public void getNoCommandFromEmptyString() {

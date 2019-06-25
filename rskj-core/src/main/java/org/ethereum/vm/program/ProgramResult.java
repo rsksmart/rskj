@@ -19,13 +19,12 @@
 
 package org.ethereum.vm.program;
 
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+
+import java.util.*;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-
-import java.util.*;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * @author Roman Mandeleil
@@ -39,7 +38,8 @@ public class ProgramResult {
     private boolean revert;
 
     // Important:
-    // DataWord is used as a ByteArrayWrapper, because Java data Maps/Sets cannot distiguish duplicate
+    // DataWord is used as a ByteArrayWrapper, because Java data Maps/Sets cannot distiguish
+    // duplicate
     // keys if the key is of type byte[].
     private Map<DataWord, byte[]> codeChanges;
 
@@ -77,7 +77,6 @@ public class ProgramResult {
 
     public void setHReturn(byte[] hReturn) {
         this.hReturn = hReturn;
-
     }
 
     public byte[] getHReturn() {
@@ -95,7 +94,6 @@ public class ProgramResult {
     public void setException(RuntimeException exception) {
         this.exception = exception;
     }
-
 
     public Set<DataWord> getDeleteAccounts() {
         if (deleteAccounts == null) {
@@ -115,7 +113,6 @@ public class ProgramResult {
         getCodeChanges().put(addr, newCode);
     }
 
-
     public void addDeleteAccount(DataWord address) {
         getDeleteAccounts().add(address);
     }
@@ -125,18 +122,17 @@ public class ProgramResult {
     }
 
     public void clearFieldsOnException() {
-        if (deleteAccounts!=null) {
+        if (deleteAccounts != null) {
             deleteAccounts.clear();
         }
-        if (logInfoList!=null) {
+        if (logInfoList != null) {
             logInfoList.clear();
         }
-        if (codeChanges!=null) {
+        if (codeChanges != null) {
             codeChanges.clear();
         }
         resetFutureRefund();
     }
-
 
     public List<LogInfo> getLogInfoList() {
         if (logInfoList == null) {
@@ -171,10 +167,30 @@ public class ProgramResult {
         return internalTransactions;
     }
 
-    public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
-                                                      byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
-        InternalTransaction transaction = new InternalTransaction(parentHash, deep, getInternalTransactions().size(),
-                                        nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note);
+    public InternalTransaction addInternalTransaction(
+            byte[] parentHash,
+            int deep,
+            byte[] nonce,
+            DataWord gasPrice,
+            DataWord gasLimit,
+            byte[] senderAddress,
+            byte[] receiveAddress,
+            byte[] value,
+            byte[] data,
+            String note) {
+        InternalTransaction transaction =
+                new InternalTransaction(
+                        parentHash,
+                        deep,
+                        getInternalTransactions().size(),
+                        nonce,
+                        gasPrice,
+                        gasLimit,
+                        senderAddress,
+                        receiveAddress,
+                        value,
+                        data,
+                        note);
         getInternalTransactions().add(transaction);
         return transaction;
     }
@@ -215,7 +231,7 @@ public class ProgramResult {
             addFutureRefund(another.getFutureRefund());
         }
     }
-    
+
     public static ProgramResult empty() {
         ProgramResult result = new ProgramResult();
         result.setHReturn(EMPTY_BYTE_ARRAY);

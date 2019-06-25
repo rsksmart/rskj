@@ -49,12 +49,11 @@ public class CombinedExecutionStats extends ExecutionStats {
         StringBuilder result = new StringBuilder();
 
         result.append(String.format("%s\n", super.getPrintable()));
-        statsList.stream().forEach(stats ->
-                result.append(String.format("\t\t%s\n", stats.getPrintable()))
-        );
+        statsList.stream()
+                .forEach(stats -> result.append(String.format("\t\t%s\n", stats.getPrintable())));
 
         // Get rid of the last return of carriage
         String printable = result.toString();
-        return printable.substring(0, printable.length()-1);
+        return printable.substring(0, printable.length() - 1);
     }
 }

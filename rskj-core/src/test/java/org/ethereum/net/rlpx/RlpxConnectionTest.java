@@ -19,20 +19,17 @@
 
 package org.ethereum.net.rlpx;
 
+import static org.junit.Assert.*;
+
 import com.google.common.collect.Lists;
+import java.io.*;
+import java.security.SecureRandom;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.client.Capability;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.*;
-import java.security.SecureRandom;
-
-import static org.junit.Assert.*;
-
-/**
- * Created by devrandom on 2015-04-11.
- */
+/** Created by devrandom on 2015-04-11. */
 public class RlpxConnectionTest {
     private FrameCodec iCodec;
     private FrameCodec rCodec;
@@ -54,30 +51,29 @@ public class RlpxConnectionTest {
         byte[] initiatePacket = initiator.encryptAuthMessage(initiate);
         byte[] responsePacket = responder.handleAuthInitiate(initiatePacket, remoteKey);
         initiator.handleAuthResponse(myKey, initiatePacket, responsePacket);
-        to = new PipedInputStream(1024*1024);
+        to = new PipedInputStream(1024 * 1024);
         toOut = new PipedOutputStream(to);
-        from = new PipedInputStream(1024*1024);
+        from = new PipedInputStream(1024 * 1024);
         fromOut = new PipedOutputStream(from);
         iCodec = new FrameCodec(initiator.getSecrets());
         rCodec = new FrameCodec(responder.getSecrets());
         byte[] nodeId = {1, 2, 3, 4};
-        iMessage = new HandshakeMessage(
-                123,
-                "abcd",
-                Lists.newArrayList(
-                        new Capability("zz", (byte) 1),
-                        new Capability("yy", (byte) 3)
-                ),
-                3333,
-                nodeId
-        );
+        iMessage =
+                new HandshakeMessage(
+                        123,
+                        "abcd",
+                        Lists.newArrayList(
+                                new Capability("zz", (byte) 1), new Capability("yy", (byte) 3)),
+                        3333,
+                        nodeId);
     }
 
     @Test
     public void testFrame() throws Exception {
         byte[] payload = new byte[123];
         new SecureRandom().nextBytes(payload);
-        FrameCodec.Frame frame = new FrameCodec.Frame(12345, 123, new ByteArrayInputStream(payload));
+        FrameCodec.Frame frame =
+                new FrameCodec.Frame(12345, 123, new ByteArrayInputStream(payload));
         iCodec.writeFrame(frame, toOut);
         FrameCodec.Frame frame1 = rCodec.readFrames(new DataInputStream(to)).get(0);
         byte[] payload1 = new byte[frame1.size];
@@ -100,8 +96,8 @@ public class RlpxConnectionTest {
 
     @Test
     public void testHandshake() throws IOException {
-        RlpxConnection iConn =  new RlpxConnection(initiator.getSecrets(), from, toOut);
-        RlpxConnection rConn =  new RlpxConnection(responder.getSecrets(), to, fromOut);
+        RlpxConnection iConn = new RlpxConnection(initiator.getSecrets(), from, toOut);
+        RlpxConnection rConn = new RlpxConnection(responder.getSecrets(), to, fromOut);
         iConn.sendProtocolHandshake(iMessage);
         rConn.handleNextMessage();
         HandshakeMessage receivedMessage = rConn.getHandshakeMessage();

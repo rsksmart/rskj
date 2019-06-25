@@ -19,16 +19,13 @@
 package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-import java.util.Arrays;
-import java.util.List;
-
-/**
- * Created by ajlopez on 03/04/2017.
- */
+/** Created by ajlopez on 03/04/2017. */
 public class SecureTrieKeyValueTest {
 
     @Test
@@ -36,12 +33,21 @@ public class SecureTrieKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
-        Trie trie = new Trie().put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
-                .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
+        Trie trie =
+                new Trie()
+                        .put(
+                                zeroKey,
+                                "So, first of all, let me assert my firm belief that".getBytes())
+                        .put(
+                                oneKey,
+                                "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(oneKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(zeroKey), "So, first of all, let me assert my firm belief that".getBytes()));
+        Assert.assertTrue(
+                Arrays.equals(
+                        trie.get(zeroKey),
+                        "So, first of all, let me assert my firm belief that".getBytes()));
         Assert.assertNull(trie.get(oneKey));
     }
 
@@ -50,31 +56,49 @@ public class SecureTrieKeyValueTest {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "1".getBytes();
 
-        Trie trie = new Trie().put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
-                .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
+        Trie trie =
+                new Trie()
+                        .put(
+                                zeroKey,
+                                "So, first of all, let me assert my firm belief that".getBytes())
+                        .put(
+                                oneKey,
+                                "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(zeroKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
+        Assert.assertTrue(
+                Arrays.equals(
+                        trie.get(oneKey),
+                        "the only thing we have to fear is... fear itself ".getBytes()));
         Assert.assertNull(trie.get(zeroKey));
     }
 
     @Test
-    public void zeroKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
+    public void zeroKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
-        Trie trie = new Trie().put(zeroKey, "So, first of all, let me assert my firm belief that".getBytes())
-                .put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
+        Trie trie =
+                new Trie()
+                        .put(
+                                zeroKey,
+                                "So, first of all, let me assert my firm belief that".getBytes())
+                        .put(
+                                oneKey,
+                                "the only thing we have to fear is... fear itself ".getBytes());
 
         trie = trie.delete(zeroKey);
 
-        Assert.assertTrue(Arrays.equals(trie.get(oneKey), "the only thing we have to fear is... fear itself ".getBytes()));
+        Assert.assertTrue(
+                Arrays.equals(
+                        trie.get(oneKey),
+                        "the only thing we have to fear is... fear itself ".getBytes()));
         Assert.assertNull(trie.get(zeroKey));
     }
 
     @Test
-    public void testRecursivelyDelete(){
+    public void testRecursivelyDelete() {
         byte[] key0 = "0".getBytes();
         byte[] key1 = "1".getBytes();
         byte[] key2 = "112999".getBytes();
@@ -106,16 +130,16 @@ public class SecureTrieKeyValueTest {
         trie = trie.deleteRecursive(key1);
 
         // Now only key0 must remain
-        for (int i = 1; i < keys.size() ; i++) {
+        for (int i = 1; i < keys.size(); i++) {
             Assert.assertNull(trie.get(keys.get(i)));
         }
 
         // Now check the tree size and make sure it's the original
-        Assert.assertEquals(trieSize,trie.trieSize());
+        Assert.assertEquals(trieSize, trie.trieSize());
     }
 
     @Test
-    public void testRecursivelyDeleteCollapses(){
+    public void testRecursivelyDeleteCollapses() {
         byte[] key0 = "0".getBytes();
         byte[] key1 = "1".getBytes();
         byte[] key2 = "112999".getBytes();
@@ -151,7 +175,7 @@ public class SecureTrieKeyValueTest {
         trie = trie.delete(new byte[0]);
 
         // Now only key0 must remain
-        for (int i = 1; i < keys.size() ; i++) {
+        for (int i = 1; i < keys.size(); i++) {
             Assert.assertNull(trie.get(keys.get(i)));
         }
 
@@ -160,13 +184,13 @@ public class SecureTrieKeyValueTest {
     }
 
     @Test
-    public void oneKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther(){
+    public void oneKeyWhenTwoKeysHasSharedPathAndOneIsPrefixOfTheOther() {
         byte[] zeroKey = "0".getBytes();
         byte[] oneKey = "012345678910".getBytes();
 
         Trie trie = new Trie();
-        byte[] msgZero ="So, first of all, let me assert my firm belief that".getBytes();
-        trie = trie.put(zeroKey,msgZero );
+        byte[] msgZero = "So, first of all, let me assert my firm belief that".getBytes();
+        trie = trie.put(zeroKey, msgZero);
         Assert.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
 
         trie = trie.put(oneKey, "the only thing we have to fear is... fear itself ".getBytes());
@@ -174,7 +198,6 @@ public class SecureTrieKeyValueTest {
         Assert.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
 
         trie = trie.delete(oneKey);
-
 
         Assert.assertTrue(Arrays.equals(trie.get(zeroKey), msgZero));
         Assert.assertNull(trie.get(oneKey));

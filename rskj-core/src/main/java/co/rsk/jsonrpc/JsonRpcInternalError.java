@@ -17,9 +17,7 @@
  */
 package co.rsk.jsonrpc;
 
-/**
- * A standard error to send when internal errors don't want to be exposed.
- */
+/** A standard error to send when internal errors don't want to be exposed. */
 public class JsonRpcInternalError extends JsonRpcError {
     public JsonRpcInternalError() {
         super(-32603, "Internal error.");

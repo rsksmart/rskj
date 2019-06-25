@@ -36,7 +36,9 @@ public class ParentNumberRule extends DependentBlockHeaderRule {
     @Override
     public boolean validate(BlockHeader header, BlockHeader parent) {
         if (header.getNumber() != (parent.getNumber() + 1)) {
-            logger.error(String.format("#%d: block number is not parentBlock number + 1", header.getNumber()));
+            logger.error(
+                    String.format(
+                            "#%d: block number is not parentBlock number + 1", header.getNumber()));
             return false;
         }
         return true;

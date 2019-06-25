@@ -19,10 +19,16 @@
 
 package org.ethereum.vm.trace;
 
+import static java.lang.String.format;
+import static org.ethereum.util.ByteUtil.toHexString;
+import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
+
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.*;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.Memory;
@@ -31,13 +37,6 @@ import org.ethereum.vm.program.Storage;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.*;
-
-import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.toHexString;
-import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
 
 public class ProgramTrace {
 
@@ -54,11 +53,9 @@ public class ProgramTrace {
 
     private Map<String, String> currentStorage = new HashMap<>();
 
-    @JsonIgnore
-    private boolean fullStorage;
+    @JsonIgnore private boolean fullStorage;
 
-    @JsonIgnore
-    private DataWord storageKey;
+    @JsonIgnore private DataWord storageKey;
 
     public ProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
         if (config.vmTrace() && programInvoke != null) {
@@ -75,7 +72,8 @@ public class ProgramTrace {
                     fullStorage = true;
 
                     String address = toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
-                    Iterator<DataWord> keysIterator = informationProvider.getStorageKeys(ownerAddress);
+                    Iterator<DataWord> keysIterator =
+                            informationProvider.getStorageKeys(ownerAddress);
                     while (keysIterator.hasNext()) {
                         // TODO: solve NULL key/value storage problem
                         DataWord key = keysIterator.next();
@@ -89,7 +87,9 @@ public class ProgramTrace {
                     }
 
                     if (!initStorage.isEmpty()) {
-                        LOGGER.info("{} entries loaded to transaction's initStorage", initStorage.size());
+                        LOGGER.info(
+                                "{} entries loaded to transaction's initStorage",
+                                initStorage.size());
                     }
                 }
             }
@@ -101,7 +101,7 @@ public class ProgramTrace {
     private void saveCurrentStorage(Map<String, String> storage) {
         this.currentStorage = new HashMap<>(storage);
     }
-    
+
     public boolean isEmpty() {
         return contractAddress == null;
     }
@@ -180,7 +180,8 @@ public class ProgramTrace {
         structLogs.get(structLogs.size() - 1).setGasCost(gasCost);
     }
 
-    public Op addOp(byte code, int pc, int deep, long gas, Memory memory, Stack stack, Storage storage) {
+    public Op addOp(
+            byte code, int pc, int deep, long gas, Memory memory, Stack stack, Storage storage) {
         Op op = new Op();
         OpCode opcode = OpCode.code(code);
         op.setOp(opcode);
@@ -198,8 +199,7 @@ public class ProgramTrace {
             if (value != null) {
                 this.currentStorage = new HashMap<>(this.currentStorage);
                 this.currentStorage.put(this.storageKey.toString(), value.toString());
-            }
-            else {
+            } else {
                 this.currentStorage.remove(this.storageKey.toString());
             }
 
@@ -218,9 +218,7 @@ public class ProgramTrace {
         return op;
     }
 
-    /**
-     * Used for merging sub calls execution.
-     */
+    /** Used for merging sub calls execution. */
     public void merge(ProgramTrace programTrace) {
         this.structLogs.addAll(programTrace.structLogs);
     }

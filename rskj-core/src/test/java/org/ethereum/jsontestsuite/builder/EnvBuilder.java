@@ -19,14 +19,14 @@
 
 package org.ethereum.jsontestsuite.builder;
 
+import static org.ethereum.json.Utils.*;
+
 import org.ethereum.jsontestsuite.Env;
 import org.ethereum.jsontestsuite.model.EnvTck;
 
-import static org.ethereum.json.Utils.*;
-
 public class EnvBuilder {
 
-    public static Env build(EnvTck envTck){
+    public static Env build(EnvTck envTck) {
         byte[] coinbase = parseData(envTck.getCurrentCoinbase());
         byte[] difficulty = parseVarData(envTck.getCurrentDifficulty());
         byte[] gasLimit = parseVarData(envTck.getCurrentGasLimit());
@@ -36,5 +36,4 @@ public class EnvBuilder {
 
         return new Env(coinbase, difficulty, gasLimit, number, timestamp, hash);
     }
-
 }

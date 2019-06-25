@@ -19,13 +19,11 @@
 
 package org.ethereum.net.eth.message;
 
+import java.math.BigInteger;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-
-import org.bouncycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
 
 /**
  * Wrapper for Ethereum STATUS message. <br>
@@ -33,30 +31,28 @@ import java.math.BigInteger;
  * @see EthMessageCodes#STATUS
  */
 public class StatusMessage extends EthMessage {
-    private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
+    private static final byte[] ZERO_BYTE_ARRAY = new byte[] {0};
 
     protected byte protocolVersion;
     protected int networkId;
 
-    /**
-     * Total difficulty of the best chain as found in block header.
-     */
+    /** Total difficulty of the best chain as found in block header. */
     protected byte[] totalDifficulty;
-    /**
-     * The hash of the best (i.e. highest TD) known block.
-     */
+    /** The hash of the best (i.e. highest TD) known block. */
     protected byte[] bestHash;
-    /**
-     * The hash of the Genesis block
-     */
+    /** The hash of the Genesis block */
     protected byte[] genesisHash;
 
     public StatusMessage(byte[] encoded) {
         super(encoded);
     }
 
-    public StatusMessage(byte protocolVersion, int networkId,
-                         byte[] totalDifficulty, byte[] bestHash, byte[] genesisHash) {
+    public StatusMessage(
+            byte protocolVersion,
+            int networkId,
+            byte[] totalDifficulty,
+            byte[] bestHash,
+            byte[] genesisHash) {
         this.protocolVersion = protocolVersion;
         this.networkId = networkId;
         this.totalDifficulty = totalDifficulty;
@@ -87,8 +83,8 @@ public class StatusMessage extends EthMessage {
         byte[] bestHash = RLP.encodeElement(this.bestHash);
         byte[] genesisHash = RLP.encodeElement(this.genesisHash);
 
-        this.encoded = RLP.encodeList( protocolVersion, networkId,
-                totalDifficulty, bestHash, genesisHash);
+        this.encoded =
+                RLP.encodeList(protocolVersion, networkId, totalDifficulty, bestHash, genesisHash);
     }
 
     @Override
@@ -148,18 +144,23 @@ public class StatusMessage extends EthMessage {
         return EthMessageCodes.STATUS;
     }
 
-
     @Override
     public String toString() {
         if (!parsed) {
             parse();
         }
-        return "[" + this.getCommand().name() +
-                " protocolVersion=" + this.protocolVersion +
-                " networkId=" + this.networkId +
-                " totalDifficulty=" + ByteUtil.toHexString(this.totalDifficulty) +
-                " bestHash=" + Hex.toHexString(this.bestHash) +
-                " genesisHash=" + Hex.toHexString(this.genesisHash) +
-                "]";
+        return "["
+                + this.getCommand().name()
+                + " protocolVersion="
+                + this.protocolVersion
+                + " networkId="
+                + this.networkId
+                + " totalDifficulty="
+                + ByteUtil.toHexString(this.totalDifficulty)
+                + " bestHash="
+                + Hex.toHexString(this.bestHash)
+                + " genesisHash="
+                + Hex.toHexString(this.genesisHash)
+                + "]";
     }
 }

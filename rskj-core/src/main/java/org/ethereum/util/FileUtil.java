@@ -19,21 +19,18 @@
 
 package org.ethereum.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.lang.System.getProperty;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import static java.lang.System.getProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger("file");
 
-    private FileUtil() {
-
-    }
+    private FileUtil() {}
 
     public static Path getDatabaseDirectoryPath(String databaseDirectory, String name) {
         if (Paths.get(databaseDirectory).isAbsolute()) {
@@ -51,10 +48,10 @@ public class FileUtil {
     public static boolean recursiveDelete(String fileName) {
         File file = new File(fileName);
         if (file.exists()) {
-            //check if the file is a directory
+            // check if the file is a directory
             if (file.isDirectory() && (file.list()).length > 0) {
-                for(String s:file.list()){
-                    //call deletion of file individually
+                for (String s : file.list()) {
+                    // call deletion of file individually
                     recursiveDelete(fileName + System.getProperty("file.separator") + s);
                 }
             }
@@ -69,5 +66,4 @@ public class FileUtil {
             return false;
         }
     }
-
 }

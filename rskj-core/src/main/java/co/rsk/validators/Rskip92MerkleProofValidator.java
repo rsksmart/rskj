@@ -19,21 +19,19 @@ package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.peg.utils.MerkleTreeUtils;
-
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-/**
- * Validates RSKIP 92 Merkle proofs
- */
+/** Validates RSKIP 92 Merkle proofs */
 public class Rskip92MerkleProofValidator implements MerkleProofValidator {
 
     private final byte[] pmtSerialized;
 
     public Rskip92MerkleProofValidator(byte[] pmtSerialized) {
         if ((pmtSerialized.length % Sha256Hash.LENGTH) != 0) {
-            throw new IllegalArgumentException("Partial merkle tree does not have the expected format");
+            throw new IllegalArgumentException(
+                    "Partial merkle tree does not have the expected format");
         }
 
         this.pmtSerialized = pmtSerialized;
@@ -46,8 +44,7 @@ public class Rskip92MerkleProofValidator implements MerkleProofValidator {
     }
 
     private Stream<Sha256Hash> streamHashes() {
-        return IntStream.range(0, pmtSerialized.length / Sha256Hash.LENGTH)
-                .mapToObj(this::getHash);
+        return IntStream.range(0, pmtSerialized.length / Sha256Hash.LENGTH).mapToObj(this::getHash);
     }
 
     private Sha256Hash getHash(int index) {

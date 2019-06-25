@@ -21,17 +21,16 @@ package co.rsk.core;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.EncryptedData;
 import co.rsk.crypto.KeyCrypterAes;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import javax.annotation.concurrent.GuardedBy;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.rpc.TypeConverter;
-import org.bouncycastle.crypto.params.KeyParameter;
-
-import javax.annotation.concurrent.GuardedBy;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
 
 public class Wallet {
     @GuardedBy("accessLock")
@@ -54,19 +53,19 @@ public class Wallet {
         List<byte[]> addresses = new ArrayList<>();
         Set<RskAddress> keys = new HashSet<>();
 
-        synchronized(accessLock) {
-            for (RskAddress addr: this.initialAccounts) {
+        synchronized (accessLock) {
+            for (RskAddress addr : this.initialAccounts) {
                 addresses.add(addr.getBytes());
             }
 
-            for (byte[] address: keyDS.keys()) {
+            for (byte[] address : keyDS.keys()) {
                 keys.add(new RskAddress(address));
             }
 
             keys.addAll(accounts.keySet());
             keys.removeAll(this.initialAccounts);
 
-            for (RskAddress addr: keys) {
+            for (RskAddress addr : keys) {
                 addresses.add(addr.getBytes());
             }
         }
@@ -75,9 +74,7 @@ public class Wallet {
     }
 
     public String[] getAccountAddressesAsHex() {
-        return getAccountAddresses().stream()
-                .map(TypeConverter::toJsonHex)
-                .toArray(String[]::new);
+        return getAccountAddresses().stream().map(TypeConverter::toJsonHex).toArray(String[]::new);
     }
 
     public RskAddress addAccount() {
@@ -124,7 +121,9 @@ public class Wallet {
                 return null;
             }
 
-            return new Account(ECKey.fromPrivate(decryptAES(encrypted, passphrase.getBytes(StandardCharsets.UTF_8))));
+            return new Account(
+                    ECKey.fromPrivate(
+                            decryptAES(encrypted, passphrase.getBytes(StandardCharsets.UTF_8))));
         }
     }
 
@@ -151,7 +150,12 @@ public class Wallet {
                 return false;
             }
 
-            account = new Account(ECKey.fromPrivate(decryptAES(encrypted, passphrase.getBytes(StandardCharsets.UTF_8))));
+            account =
+                    new Account(
+                            ECKey.fromPrivate(
+                                    decryptAES(
+                                            encrypted,
+                                            passphrase.getBytes(StandardCharsets.UTF_8))));
         }
 
         saveAccount(account);
@@ -171,7 +175,8 @@ public class Wallet {
     }
 
     public byte[] addAccountWithSeed(String seed) {
-        return addAccountWithPrivateKey(Keccak256Helper.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
+        return addAccountWithPrivateKey(
+                Keccak256Helper.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
     }
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes) {
@@ -219,7 +224,7 @@ public class Wallet {
 
             return keyCrypter.decrypt(data, keyParameter);
         } catch (IOException | ClassNotFoundException e) {
-            //There are lines of code that should never be executed, this is one of those
+            // There are lines of code that should never be executed, this is one of those
             throw new IllegalStateException(e);
         }
     }
@@ -240,7 +245,7 @@ public class Wallet {
 
             return encryptedResult.toByteArray();
         } catch (IOException e) {
-            //How is this even possible ???
+            // How is this even possible ???
             throw new IllegalStateException(e);
         }
     }

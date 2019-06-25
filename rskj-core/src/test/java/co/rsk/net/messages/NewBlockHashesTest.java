@@ -19,14 +19,12 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import java.util.LinkedList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.util.LinkedList;
-import java.util.List;
 
 public class NewBlockHashesTest {
     @Test
@@ -50,6 +48,7 @@ public class NewBlockHashesTest {
         List<BlockIdentifier> identifiers = message.getBlockIdentifiers();
         Assert.assertEquals(1, identifiers.size());
         Assert.assertEquals(blockIdentifierList.get(0).getNumber(), identifiers.get(0).getNumber());
-        Assert.assertArrayEquals(blockIdentifierList.get(0).getHash(),identifiers.get(0).getHash());
+        Assert.assertArrayEquals(
+                blockIdentifierList.get(0).getHash(), identifiers.get(0).getHash());
     }
 }

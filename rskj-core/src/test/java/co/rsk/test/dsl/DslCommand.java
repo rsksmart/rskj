@@ -20,9 +20,7 @@ package co.rsk.test.dsl;
 
 import java.util.List;
 
-/**
- * Created by ajlopez on 8/6/2016.
- */
+/** Created by ajlopez on 8/6/2016. */
 public class DslCommand {
     private String verb;
     private List<String> arguments;
@@ -36,22 +34,22 @@ public class DslCommand {
         this.arguments = arguments;
     }
 
-    public String getVerb() { return this.verb; }
+    public String getVerb() {
+        return this.verb;
+    }
 
     public boolean isCommand(String verb) {
         return this.verb.equals(verb);
     }
 
     public int getArity() {
-        if (this.arguments == null)
-            return 0;
+        if (this.arguments == null) return 0;
 
         return this.arguments.size();
     }
 
     public String getArgument(int position) {
-        if (this.arguments == null || this.arguments.size() <= position)
-            return null;
+        if (this.arguments == null || this.arguments.size() <= position) return null;
 
         return this.arguments.get(position);
     }

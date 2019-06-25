@@ -19,41 +19,47 @@
 
 package org.ethereum.core;
 
+import static java.lang.String.format;
+import static org.apache.commons.lang3.ArrayUtils.subarray;
+import static org.apache.commons.lang3.StringUtils.stripEnd;
+import static org.ethereum.util.ByteUtil.longToBytesNoLeadZeroes;
+
 import co.rsk.core.RskAddress;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-
-import static java.lang.String.format;
-import static org.apache.commons.lang3.ArrayUtils.subarray;
-import static org.apache.commons.lang3.StringUtils.stripEnd;
-import static org.ethereum.util.ByteUtil.longToBytesNoLeadZeroes;
-
 /**
- * Creates a contract function call transaction.
- * Serializes arguments according to the function ABI .
+ * Creates a contract function call transaction. Serializes arguments according to the function ABI
+ * .
  *
- * Created by Anton Nashatyrev on 25.08.2015.
+ * <p>Created by Anton Nashatyrev on 25.08.2015.
  */
 public class CallTransaction {
 
-    private static final ObjectMapper DEFAULT_MAPPER = new ObjectMapper()
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
+    private static final ObjectMapper DEFAULT_MAPPER =
+            new ObjectMapper()
+                    .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
 
-    public static Transaction createRawTransaction(long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
-                                                   long value, byte[] data, byte chainId) {
+    public static Transaction createRawTransaction(
+            long nonce,
+            long gasPrice,
+            long gasLimit,
+            RskAddress toAddress,
+            long value,
+            byte[] data,
+            byte chainId) {
         return new Transaction(
                 longToBytesNoLeadZeroes(nonce),
                 longToBytesNoLeadZeroes(gasPrice),
@@ -64,18 +70,21 @@ public class CallTransaction {
                 chainId);
     }
 
-
-
-    public static Transaction createCallTransaction(long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
-                                                    long value, Function callFunc, byte chainId, Object... funcArgs) {
+    public static Transaction createCallTransaction(
+            long nonce,
+            long gasPrice,
+            long gasLimit,
+            RskAddress toAddress,
+            long value,
+            Function callFunc,
+            byte chainId,
+            Object... funcArgs) {
 
         byte[] callData = callFunc.encode(funcArgs);
         return createRawTransaction(nonce, gasPrice, gasLimit, toAddress, value, callData, chainId);
     }
 
-    /**
-     * Generic ABI type
-     */
+    /** Generic ABI type */
     public abstract static class Type {
         protected String name;
 
@@ -83,18 +92,18 @@ public class CallTransaction {
             this.name = name;
         }
 
-        /**
-         * The type name as it was specified in the interface description
-         */
+        /** The type name as it was specified in the interface description */
         public String getName() {
             return name;
         }
 
         /**
-         * The canonical type name (used for the method signature creation)
-         * E.g. 'int' - canonical 'int256'
+         * The canonical type name (used for the method signature creation) E.g. 'int' - canonical
+         * 'int256'
          */
-        public String getCanonicalName() {return getName();}
+        public String getCanonicalName() {
+            return getName();
+        }
 
         @JsonCreator
         public static Type getType(String typeName) {
@@ -111,21 +120,28 @@ public class CallTransaction {
 
         /**
          * Encodes the value according to specific type rules
+         *
          * @param value
          */
         public abstract byte[] encode(Object value);
 
         public abstract Object decode(byte[] encoded, int offset);
 
-        public Object decode(byte[] encoded) {return decode(encoded, 0);}
+        public Object decode(byte[] encoded) {
+            return decode(encoded, 0);
+        }
 
         /**
-         * @return fixed size in bytes. For the dynamic types returns IntType.getFixedSize()
-         * which is effectively the int offset to dynamic data
+         * @return fixed size in bytes. For the dynamic types returns IntType.getFixedSize() which
+         *     is effectively the int offset to dynamic data
          */
-        public int getFixedSize() {return 32;}
+        public int getFixedSize() {
+            return 32;
+        }
 
-        public boolean isDynamicType() {return false;}
+        public boolean isDynamicType() {
+            return false;
+        }
 
         @Override
         public String toString() {
@@ -147,7 +163,7 @@ public class CallTransaction {
             if ("uint".equals(getName())) {
                 return "uint256";
             }
-            
+
             return super.getCanonicalName();
         }
 
@@ -156,22 +172,33 @@ public class CallTransaction {
             BigInteger bigInt;
 
             if (value instanceof String) {
-                String s = ((String)value).toLowerCase().trim();
+                String s = ((String) value).toLowerCase().trim();
                 int radix = 10;
                 if (s.startsWith("0x")) {
                     s = s.substring(2);
                     radix = 16;
-                } else if (s.contains("a") || s.contains("b") || s.contains("c") ||
-                        s.contains("d") || s.contains("e") || s.contains("f")) {
+                } else if (s.contains("a")
+                        || s.contains("b")
+                        || s.contains("c")
+                        || s.contains("d")
+                        || s.contains("e")
+                        || s.contains("f")) {
                     radix = 16;
                 }
                 bigInt = new BigInteger(s, radix);
-            } else  if (value instanceof BigInteger) {
+            } else if (value instanceof BigInteger) {
                 bigInt = (BigInteger) value;
-            } else  if (value instanceof Number) {
+            } else if (value instanceof Number) {
                 bigInt = new BigInteger(value.toString());
             } else {
-                throw new RuntimeException("Invalid value for type '" + this + "': " + value + " (" + value.getClass() + ")");
+                throw new RuntimeException(
+                        "Invalid value for type '"
+                                + this
+                                + "': "
+                                + value
+                                + " ("
+                                + value.getClass()
+                                + ")");
             }
             return encodeInt(bigInt);
         }
@@ -184,9 +211,11 @@ public class CallTransaction {
         public static BigInteger decodeInt(byte[] encoded, int offset) {
             return new BigInteger(Arrays.copyOfRange(encoded, offset, offset + 32));
         }
+
         public static byte[] encodeInt(int i) {
             return encodeInt(new BigInteger("" + i));
         }
+
         public static byte[] encodeInt(BigInteger bigInt) {
             byte[] ret = new byte[32];
             Arrays.fill(ret, bigInt.signum() < 0 ? (byte) 0xFF : 0);
@@ -245,13 +274,14 @@ public class CallTransaction {
 
         private Function() {}
 
-        public byte[] encode(Object ... args) {
+        public byte[] encode(Object... args) {
             return ByteUtil.merge(encodeSignature(), encodeArguments(args));
         }
 
-        public byte[] encodeArguments(Param[] params, Object ... args) {
+        public byte[] encodeArguments(Param[] params, Object... args) {
             if (args.length > params.length) {
-                throw new RuntimeException("Too many arguments: " + args.length + " > " + params.length);
+                throw new RuntimeException(
+                        "Too many arguments: " + args.length + " > " + params.length);
             }
 
             int staticSize = 0;
@@ -283,9 +313,10 @@ public class CallTransaction {
             return ByteUtil.merge(bb);
         }
 
-        public byte[] encodeArguments(Object ... args) {
+        public byte[] encodeArguments(Object... args) {
             if (args.length > inputs.length) {
-                throw new CallTransactionException("Too many arguments: " + args.length + " > " + inputs.length);
+                throw new CallTransactionException(
+                        "Too many arguments: " + args.length + " > " + inputs.length);
             }
 
             int staticSize = 0;
@@ -317,7 +348,7 @@ public class CallTransaction {
             return ByteUtil.merge(bb);
         }
 
-        public byte[] encodeOutputs(Object ... args) {
+        public byte[] encodeOutputs(Object... args) {
             return encodeArguments(outputs, args);
         }
 
@@ -327,7 +358,9 @@ public class CallTransaction {
             int off = 0;
             for (int i = 0; i < params.length; i++) {
                 if (params[i].type.isDynamicType()) {
-                    ret[i] = params[i].type.decode(encoded, IntType.decodeInt(encoded, off).intValue());
+                    ret[i] =
+                            params[i].type.decode(
+                                    encoded, IntType.decodeInt(encoded, off).intValue());
                 } else {
                     ret[i] = params[i].type.decode(encoded, off);
                 }
@@ -375,11 +408,12 @@ public class CallTransaction {
             }
         }
 
-        public static Function fromSignature(String funcName, String ... paramTypes) {
+        public static Function fromSignature(String funcName, String... paramTypes) {
             return fromSignature(funcName, paramTypes, new String[0]);
         }
 
-        public static Function fromSignature(String funcName, String[] paramTypes, String[] resultTypes) {
+        public static Function fromSignature(
+                String funcName, String[] paramTypes, String[] resultTypes) {
             Function ret = new Function();
             ret.name = funcName;
             ret.constant = false;
@@ -429,27 +463,26 @@ public class CallTransaction {
         }
 
         private Function getBySignatureHash(byte[] hash) {
-            if (hash.length == 4 ) {
+            if (hash.length == 4) {
                 for (Function function : functions) {
                     if (FastByteComparisons.equalBytes(function.encodeSignature(), hash)) {
                         return function;
                     }
                 }
-            } else if (hash.length == 32 ) {
+            } else if (hash.length == 32) {
                 for (Function function : functions) {
                     if (FastByteComparisons.equalBytes(function.encodeSignatureLong(), hash)) {
                         return function;
                     }
                 }
             } else {
-                throw new CallTransactionException("Function signature hash should be 4 or 32 bytes length");
+                throw new CallTransactionException(
+                        "Function signature hash should be 4 or 32 bytes length");
             }
             return null;
         }
 
-        /**
-         * Parses function and its arguments from transaction invocation binary data
-         */
+        /** Parses function and its arguments from transaction invocation binary data */
         public Invocation parseInvocation(byte[] data) {
             if (data.length < 4) {
                 throw new CallTransactionException("Invalid data length: " + data.length);
@@ -465,10 +498,9 @@ public class CallTransaction {
         public Function[] functions;
     }
 
-
     /**
-     * Represents either function invocation with its arguments
-     * or Event instance with its data members
+     * Represents either function invocation with its arguments or Event instance with its data
+     * members
      */
     public static class Invocation {
         public final Contract contract;
@@ -483,9 +515,14 @@ public class CallTransaction {
 
         @Override
         public String toString() {
-            return "[" + "contract=" + contract +
-                    (function.type == FunctionType.event ? ", event=" : ", function=")
-                    + function + ", args=" + Arrays.toString(args) + ']';
+            return "["
+                    + "contract="
+                    + contract
+                    + (function.type == FunctionType.event ? ", event=" : ", function=")
+                    + function
+                    + ", args="
+                    + Arrays.toString(args)
+                    + ']';
         }
     }
 

@@ -21,9 +21,7 @@ package co.rsk.rpc;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by ajlopez on 19/04/2017.
- */
+/** Created by ajlopez on 19/04/2017. */
 public class ModuleDescription {
     private String name;
     private String version;
@@ -32,7 +30,12 @@ public class ModuleDescription {
     private List<String> enabledMethods;
     private List<String> disabledMethods;
 
-    public ModuleDescription(String name, String version, boolean enabled, List<String> enabledMethods, List<String> disabledMethods) {
+    public ModuleDescription(
+            String name,
+            String version,
+            boolean enabled,
+            List<String> enabledMethods,
+            List<String> disabledMethods) {
         this.name = name;
         this.version = version;
         this.enabled = enabled;

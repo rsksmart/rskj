@@ -19,16 +19,13 @@
 
 package org.ethereum.util;
 
-import org.junit.Test;
-
-import org.bouncycastle.util.encoders.Hex;
+import static org.junit.Assert.*;
 
 import java.math.BigInteger;
-
 import java.util.Arrays;
 import java.util.Objects;
-
-import static org.junit.Assert.*;
+import org.bouncycastle.util.encoders.Hex;
+import org.junit.Test;
 
 public class ValueTest {
 
@@ -57,12 +54,12 @@ public class ValueTest {
         Value num = new Value(1);
         assertEquals(num.asInt(), 1);
 
-        Value inter = new Value(new Object[]{1});
-        Object[] interExp = new Object[]{1};
+        Value inter = new Value(new Object[] {1});
+        Object[] interExp = new Object[] {1};
         assertTrue(cmp(new Value(inter.asObj()), new Value(interExp)));
 
-        Value byt = new Value(new byte[]{1, 2, 3, 4});
-        byte[] bytExp = new byte[]{1, 2, 3, 4};
+        Value byt = new Value(new byte[] {1, 2, 3, 4});
+        byte[] bytExp = new byte[] {1, 2, 3, 4};
         assertTrue(Arrays.equals(byt.asBytes(), bytExp));
 
         Value bigInt = new Value(BigInteger.valueOf(10));
@@ -70,16 +67,14 @@ public class ValueTest {
         assertEquals(bigInt.asBigInt(), bigExp);
     }
 
-
     @Test
     public void longListRLPBug_1() {
 
-        String testRlp = "f7808080d387206f72726563748a626574656c676575736580d387207870726573738a70726564696361626c658080808080808080808080";
+        String testRlp =
+                "f7808080d387206f72726563748a626574656c676575736580d387207870726573738a70726564696361626c658080808080808080808080";
 
         Value val = Value.fromRlpEncoded(Hex.decode(testRlp));
 
         assertEquals(testRlp, Hex.toHexString(val.encode()));
     }
-
-
 }

@@ -30,15 +30,14 @@ import co.rsk.mine.SubmitBlockResult;
 import co.rsk.mine.SubmittedBlockInfo;
 import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
 import co.rsk.util.ListArrayUtil;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 public class MnrModuleImpl implements MnrModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -67,14 +66,21 @@ public class MnrModuleImpl implements MnrModule {
 
         String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
 
-        SubmitBlockResult result = minerServer.submitBitcoinBlock(blockHashForMergedMining, bitcoinBlock);
+        SubmitBlockResult result =
+                minerServer.submitBitcoinBlock(blockHashForMergedMining, bitcoinBlock);
 
         return parseResultAndReturn(result);
     }
 
     @Override
-    public SubmittedBlockInfo submitBitcoinBlockTransactions(String blockHashHex, String blockHeaderHex, String coinbaseHex, String txnHashesHex) {
-        logger.debug("submitBitcoinBlockTransactions(): {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, txnHashesHex);
+    public SubmittedBlockInfo submitBitcoinBlockTransactions(
+            String blockHashHex, String blockHeaderHex, String coinbaseHex, String txnHashesHex) {
+        logger.debug(
+                "submitBitcoinBlockTransactions(): {}, {}, {}, {}",
+                blockHashHex,
+                blockHeaderHex,
+                coinbaseHex,
+                txnHashesHex);
 
         NetworkParameters params = RegTestParams.get();
         new Context(params);
@@ -86,14 +92,27 @@ public class MnrModuleImpl implements MnrModule {
 
         List<String> txnHashes = parseHashes(txnHashesHex);
 
-        SubmitBlockResult result = minerServer.submitBitcoinBlockTransactions(blockHashForMergedMining, bitcoinBlockWithHeaderOnly, coinbase, txnHashes);
+        SubmitBlockResult result =
+                minerServer.submitBitcoinBlockTransactions(
+                        blockHashForMergedMining, bitcoinBlockWithHeaderOnly, coinbase, txnHashes);
 
         return parseResultAndReturn(result);
     }
 
     @Override
-    public SubmittedBlockInfo submitBitcoinBlockPartialMerkle(String blockHashHex, String blockHeaderHex, String coinbaseHex, String merkleHashesHex, String blockTxnCountHex) {
-        logger.debug("submitBitcoinBlockPartialMerkle(): {}, {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, merkleHashesHex, blockTxnCountHex);
+    public SubmittedBlockInfo submitBitcoinBlockPartialMerkle(
+            String blockHashHex,
+            String blockHeaderHex,
+            String coinbaseHex,
+            String merkleHashesHex,
+            String blockTxnCountHex) {
+        logger.debug(
+                "submitBitcoinBlockPartialMerkle(): {}, {}, {}, {}, {}",
+                blockHashHex,
+                blockHeaderHex,
+                coinbaseHex,
+                merkleHashesHex,
+                blockTxnCountHex);
 
         if (merkleHashesHex.isEmpty()) {
             throw new JsonRpcSubmitBlockException("The list of merkle hashes can't be empty");
@@ -111,7 +130,13 @@ public class MnrModuleImpl implements MnrModule {
 
         int txnCount = Integer.parseInt(blockTxnCountHex, 16);
 
-        SubmitBlockResult result = minerServer.submitBitcoinBlockPartialMerkle(blockHashForMergedMining, bitcoinBlockWithHeaderOnly, coinbase, merkleHashes, txnCount);
+        SubmitBlockResult result =
+                minerServer.submitBitcoinBlockPartialMerkle(
+                        blockHashForMergedMining,
+                        bitcoinBlockWithHeaderOnly,
+                        coinbase,
+                        merkleHashes,
+                        txnCount);
 
         return parseResultAndReturn(result);
     }
@@ -129,7 +154,12 @@ public class MnrModuleImpl implements MnrModule {
 
         int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
         byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue() / 8];
-        System.arraycopy(coinbaseAsByteArray, rskTagPosition + RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
+        System.arraycopy(
+                coinbaseAsByteArray,
+                rskTagPosition + RskMiningConstants.RSK_TAG.length,
+                blockHashForMergedMiningArray,
+                0,
+                blockHashForMergedMiningArray.length);
         return TypeConverter.toJsonHex(blockHashForMergedMiningArray);
     }
 

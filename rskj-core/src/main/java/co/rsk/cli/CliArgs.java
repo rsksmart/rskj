@@ -21,7 +21,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * A simple representation of command line arguments, broken into "options", "flags" and "arguments".
+ * A simple representation of command line arguments, broken into "options", "flags" and
+ * "arguments".
  */
 public class CliArgs<O, F> {
 
@@ -37,10 +38,7 @@ public class CliArgs<O, F> {
 
     public static <O, F> CliArgs<O, F> empty() {
         return new CliArgs<>(
-                Collections.emptyList(),
-                Collections.emptyMap(),
-                Collections.emptySet()
-        );
+                Collections.emptyList(), Collections.emptyMap(), Collections.emptySet());
     }
 
     public List<String> getArguments() {
@@ -56,17 +54,22 @@ public class CliArgs<O, F> {
     }
 
     /**
-     * Parses a {@code String[]} of command line arguments in order to populate a
-     * {@link CliArgs} object.
+     * Parses a {@code String[]} of command line arguments in order to populate a {@link CliArgs}
+     * object.
      *
      * <h3>Working with option arguments</h3>
+     *
      * Option arguments must adhere to the exact syntax:
+     *
      * <pre class="code">-optName optValue</pre>
+     *
      * <pre class="code">--flagName</pre>
-     * That is, options must be prefixed with "{@code -}", and must specify a value,
-     * and flags must be prefixed with "{@code --}", and may not specify a value.
+     *
+     * That is, options must be prefixed with "{@code -}", and must specify a value, and flags must
+     * be prefixed with "{@code --}", and may not specify a value.
      */
-    public static class Parser<O extends Enum<O> & OptionalizableCliArg, F extends Enum<F> & CliArg> {
+    public static class Parser<
+            O extends Enum<O> & OptionalizableCliArg, F extends Enum<F> & CliArg> {
 
         private final EnumSet<O> options;
         private final EnumSet<F> flags;
@@ -85,20 +88,25 @@ public class CliArgs<O, F> {
                 switch (args[i].charAt(0)) {
                     case '-':
                         if (args[i].length() < 2) {
-                            throw new IllegalArgumentException("You must provide an option name, e.g. -d");
+                            throw new IllegalArgumentException(
+                                    "You must provide an option name, e.g. -d");
                         }
                         if (args[i].charAt(1) == '-') {
                             if (args[i].length() < 3) {
-                                throw new IllegalArgumentException("You must provide a flag name, e.g. --quiet");
+                                throw new IllegalArgumentException(
+                                        "You must provide a flag name, e.g. --quiet");
                             }
                             flags.add(getFlagByName(args[i].substring(2, args[i].length())));
                         } else {
                             if (args.length - 1 == i) {
                                 throw new IllegalArgumentException(
-                                        String.format("A value must be provided after the option -%s", args[i])
-                                );
+                                        String.format(
+                                                "A value must be provided after the option -%s",
+                                                args[i]));
                             }
-                            options.put(getOptionByName(args[i].substring(1, args[i].length())), args[i + 1]);
+                            options.put(
+                                    getOptionByName(args[i].substring(1, args[i].length())),
+                                    args[i + 1]);
                             i++;
                         }
                         break;
@@ -108,14 +116,14 @@ public class CliArgs<O, F> {
                 }
             }
 
-            Set<O> missingOptions = this.options.stream()
-                    .filter(arg -> !arg.isOptional())
-                    .collect(Collectors.toSet());
+            Set<O> missingOptions =
+                    this.options.stream()
+                            .filter(arg -> !arg.isOptional())
+                            .collect(Collectors.toSet());
             missingOptions.removeAll(options.keySet());
             if (!missingOptions.isEmpty()) {
                 throw new IllegalArgumentException(
-                        String.format("Missing configuration options: %s", missingOptions)
-                );
+                        String.format("Missing configuration options: %s", missingOptions));
             }
 
             return new CliArgs<>(arguments, options, flags);
@@ -126,8 +134,9 @@ public class CliArgs<O, F> {
                     .filter(flag -> flag.getName().equals(flagName))
                     .findFirst()
                     .orElseThrow(
-                            () -> new NoSuchElementException(String.format("--%s is not a valid flag", flagName))
-                    );
+                            () ->
+                                    new NoSuchElementException(
+                                            String.format("--%s is not a valid flag", flagName)));
         }
 
         private O getOptionByName(String optionName) {
@@ -135,8 +144,10 @@ public class CliArgs<O, F> {
                     .filter(opt -> opt.getName().equals(optionName))
                     .findFirst()
                     .orElseThrow(
-                            () -> new NoSuchElementException(String.format("-%s is not a valid option", optionName))
-                    );
+                            () ->
+                                    new NoSuchElementException(
+                                            String.format(
+                                                    "-%s is not a valid option", optionName)));
         }
     }
 }

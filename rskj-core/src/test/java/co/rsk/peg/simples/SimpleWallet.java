@@ -22,9 +22,7 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 
-/**
- * Created by ajlopez on 6/9/2016.
- */
+/** Created by ajlopez on 6/9/2016. */
 public class SimpleWallet extends Wallet {
     public SimpleWallet(Context context) {
         super(context);

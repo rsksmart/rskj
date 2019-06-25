@@ -24,14 +24,13 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.*;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
-import org.ethereum.core.Repository;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.ethereum.core.Repository;
+import org.junit.Ignore;
+import org.junit.Test;
 
 @Ignore
 public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
@@ -50,52 +49,67 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     }
 
     private void registerBtcTransaction_lockSuccess(int times, ExecutionStats stats) {
-        BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
-                1000,
-                2000,
-                20,
-                false
-        );
+        BridgeStorageProviderInitializer storageInitializer =
+                generateInitializerForLock(1000, 2000, 20, false);
 
-        executeAndAverage("registerBtcTransaction-lockSuccess", times, getABIEncoder(), storageInitializer, Helper.getZeroValueValueTxBuilderFromFedMember(), Helper.getRandomHeightProvider(10), stats);
-
+        executeAndAverage(
+                "registerBtcTransaction-lockSuccess",
+                times,
+                getABIEncoder(),
+                storageInitializer,
+                Helper.getZeroValueValueTxBuilderFromFedMember(),
+                Helper.getRandomHeightProvider(10),
+                stats);
     }
 
     private void registerBtcTransaction_alreadyProcessed(int times, ExecutionStats stats) {
-        BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
-                1000,
-                2000,
-                20,
-                true
-        );
+        BridgeStorageProviderInitializer storageInitializer =
+                generateInitializerForLock(1000, 2000, 20, true);
 
-        executeAndAverage("registerBtcTransaction-alreadyProcessed", times, getABIEncoder(), storageInitializer, Helper.getZeroValueValueTxBuilderFromFedMember(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "registerBtcTransaction-alreadyProcessed",
+                times,
+                getABIEncoder(),
+                storageInitializer,
+                Helper.getZeroValueValueTxBuilderFromFedMember(),
+                Helper.getRandomHeightProvider(10),
+                stats);
     }
 
     private void registerBtcTransaction_notEnoughConfirmations(int times, ExecutionStats stats) {
-        BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
-                1000,
-                2000,
-                1,
-                false
-        );
+        BridgeStorageProviderInitializer storageInitializer =
+                generateInitializerForLock(1000, 2000, 1, false);
 
-        executeAndAverage("registerBtcTransaction-notEnoughConfirmations", times, getABIEncoder(), storageInitializer, Helper.getZeroValueValueTxBuilderFromFedMember(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "registerBtcTransaction-notEnoughConfirmations",
+                times,
+                getABIEncoder(),
+                storageInitializer,
+                Helper.getZeroValueValueTxBuilderFromFedMember(),
+                Helper.getRandomHeightProvider(10),
+                stats);
     }
 
     private ABIEncoder getABIEncoder() {
         return (int executionIndex) ->
-                Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{
-                        txToLock.bitcoinSerialize(),
-                        blockWithTxHeight,
-                        pmtOfLockTx.bitcoinSerialize()
-                });
+                Bridge.REGISTER_BTC_TRANSACTION.encode(
+                        new Object[] {
+                            txToLock.bitcoinSerialize(),
+                            blockWithTxHeight,
+                            pmtOfLockTx.bitcoinSerialize()
+                        });
     }
 
-    private BridgeStorageProviderInitializer generateInitializerForLock(int minBtcBlocks, int maxBtcBlocks, int numberOfLockConfirmations, boolean markAsAlreadyProcessed) {
+    private BridgeStorageProviderInitializer generateInitializerForLock(
+            int minBtcBlocks,
+            int maxBtcBlocks,
+            int numberOfLockConfirmations,
+            boolean markAsAlreadyProcessed) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
-            BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository.startTracking());
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory =
+                    new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
+            BtcBlockStore btcBlockStore =
+                    btcBlockStoreFactory.newInstance(repository.startTracking());
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
@@ -112,10 +126,14 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             Address fromAddress = from.toAddress(networkParameters);
             Coin fromAmount = Coin.CENT.multiply(Helper.randomInRange(10, 100));
             Coin lockAmount = fromAmount.divide(Helper.randomInRange(2, 10));
-            Coin changeAmount = fromAmount.subtract(lockAmount).subtract(Coin.MILLICOIN); // 1 millicoin fee simulation
+            Coin changeAmount =
+                    fromAmount
+                            .subtract(lockAmount)
+                            .subtract(Coin.MILLICOIN); // 1 millicoin fee simulation
 
             // Whitelisting sender
-            provider.getLockWhitelist().put(fromAddress, new OneOffWhiteListEntry(fromAddress, lockAmount));
+            provider.getLockWhitelist()
+                    .put(fromAddress, new OneOffWhiteListEntry(fromAddress, lockAmount));
 
             // Input tx
             BtcTransaction inputTx = new BtcTransaction(networkParameters);
@@ -128,11 +146,23 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             txToLock.addOutput(changeAmount, fromAddress);
 
             // Signing the input of the lock tx
-            Sha256Hash hashForSig = txToLock.hashForSignature(0, inputTx.getOutput(0).getScriptPubKey(), BtcTransaction.SigHash.ALL, false);
-            Script scriptSig = new Script(Script.createInputScript(from.sign(hashForSig).encodeToDER(), from.getPubKey()));
+            Sha256Hash hashForSig =
+                    txToLock.hashForSignature(
+                            0,
+                            inputTx.getOutput(0).getScriptPubKey(),
+                            BtcTransaction.SigHash.ALL,
+                            false);
+            Script scriptSig =
+                    new Script(
+                            Script.createInputScript(
+                                    from.sign(hashForSig).encodeToDER(), from.getPubKey()));
             txToLock.getInput(0).setScriptSig(scriptSig);
 
-            pmtOfLockTx = PartialMerkleTree.buildFromLeaves(networkParameters, new byte[]{(byte) 0xff}, Arrays.asList(txToLock.getHash()));
+            pmtOfLockTx =
+                    PartialMerkleTree.buildFromLeaves(
+                            networkParameters,
+                            new byte[] {(byte) 0xff},
+                            Arrays.asList(txToLock.getHash()));
             List<Sha256Hash> hashes = new ArrayList<>();
             Sha256Hash merkleRoot = pmtOfLockTx.getTxnHashAndMerkleRoot(hashes);
 
@@ -145,13 +175,13 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             // Marking as already processed
             if (markAsAlreadyProcessed) {
                 try {
-                    provider.getBtcTxHashesAlreadyProcessed().put(txToLock.getHash(), (long) blockWithTxHeight - 10);
+                    provider.getBtcTxHashesAlreadyProcessed()
+                            .put(txToLock.getHash(), (long) blockWithTxHeight - 10);
                 } catch (IOException e) {
-                    throw new RuntimeException("Exception while trying to mark tx as already processed for test");
+                    throw new RuntimeException(
+                            "Exception while trying to mark tx as already processed for test");
                 }
             }
         };
     }
-
-
 }

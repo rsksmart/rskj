@@ -21,7 +21,8 @@ package co.rsk.db;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieKeySlice;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TrieKeyMapper;
@@ -29,12 +30,7 @@ import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-
-/**
- * Created by SerAdmin on 9/26/2018.
- */
+/** Created by SerAdmin on 9/26/2018. */
 public class MutableTrieCacheTest {
 
     private byte[] toBytes(String x) {
@@ -46,16 +42,15 @@ public class MutableTrieCacheTest {
     }
 
     private String setToString(Set<ByteArrayWrapper> set) {
-        String r ="";
+        String r = "";
         ArrayList<String> list = new ArrayList<>();
 
         for (ByteArrayWrapper item : set) {
             list.add(new String(item.getData(), StandardCharsets.UTF_8));
-
         }
         Collections.sort(list);
-        for (String s : list ) {
-            r = r+s+";";
+        for (String s : list) {
+            r = r + s + ";";
         }
 
         return r;
@@ -70,44 +65,46 @@ public class MutableTrieCacheTest {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
 
         // First put some strings in the base
-        baseMutableTrie.put("ALICE",toBytes("alice"));
+        baseMutableTrie.put("ALICE", toBytes("alice"));
 
         String result;
         result = getKeysFrom(baseMutableTrie);
-        Assert.assertEquals("ALICE;",result);
+        Assert.assertEquals("ALICE;", result);
 
-
-        baseMutableTrie.put("BOB",toBytes("bob"));
+        baseMutableTrie.put("BOB", toBytes("bob"));
 
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         // Now add two more
-        mtCache.put("CAROL",toBytes("carol"));
-        mtCache.put("ROBERT",toBytes("robert"));
+        mtCache.put("CAROL", toBytes("carol"));
+        mtCache.put("ROBERT", toBytes("robert"));
 
         result = getKeysFrom(baseMutableTrie);
-        Assert.assertEquals("ALICE;BOB;",result);
+        Assert.assertEquals("ALICE;BOB;", result);
 
         result = getKeysFrom(mtCache);
 
-        Assert.assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
+        Assert.assertEquals("ALICE;BOB;CAROL;ROBERT;", result);
 
         mtCache.commit();
 
         // Now the base trie must have all
         result = getKeysFrom(baseMutableTrie);
-        Assert.assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
+        Assert.assertEquals("ALICE;BOB;CAROL;ROBERT;", result);
     }
 
     @Test
-    public void testAccountBehavior(){
+    public void testAccountBehavior() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         // when account is deleted any key in that account is deleted
         StringBuilder accountLikeKey = new StringBuilder("HAL");
-        int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.domainPrefix().length + TrieKeyMapper.SECURE_KEY_SIZE;
-        for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
+        int keySize =
+                TrieKeyMapper.ACCOUNT_KEY_SIZE
+                        + TrieKeyMapper.domainPrefix().length
+                        + TrieKeyMapper.SECURE_KEY_SIZE;
+        for (; accountLikeKey.length() < keySize; ) accountLikeKey.append("0");
         mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
         mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
         mtCache.deleteRecursive(toBytes(accountLikeKey.toString()));
@@ -129,8 +126,11 @@ public class MutableTrieCacheTest {
 
         // when account is deleted any key in that account is deleted
         StringBuilder accountLikeKey = new StringBuilder("HAL");
-        int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.domainPrefix().length + TrieKeyMapper.SECURE_KEY_SIZE;
-        for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
+        int keySize =
+                TrieKeyMapper.ACCOUNT_KEY_SIZE
+                        + TrieKeyMapper.domainPrefix().length
+                        + TrieKeyMapper.SECURE_KEY_SIZE;
+        for (; accountLikeKey.length() < keySize; ) accountLikeKey.append("0");
         mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
         mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
         mtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
@@ -139,19 +139,25 @@ public class MutableTrieCacheTest {
         MutableTrieCache otherCache = new MutableTrieCache(mtCache);
         Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "126")));
         otherCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("LAH"));
-        Assert.assertArrayEquals(toBytes("LAH"), otherCache.get(toBytes(accountLikeKey.toString() + "124")));
-        Assert.assertArrayEquals(toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertArrayEquals(
+                toBytes("LAH"), otherCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertArrayEquals(
+                toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "124")));
         otherCache.put(toBytes(accountLikeKey.toString() + "123"), null);
         Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
-        Assert.assertArrayEquals(toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        Assert.assertArrayEquals(
+                toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "123")));
 
         // after commit puts on superior levels are reflected on lower levels
         otherCache.commit();
-        Assert.assertArrayEquals(toBytes("LAH"), otherCache.get(toBytes(accountLikeKey.toString() + "124")));
-        Assert.assertArrayEquals(toBytes("LAH"), mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertArrayEquals(
+                toBytes("LAH"), otherCache.get(toBytes(accountLikeKey.toString() + "124")));
+        Assert.assertArrayEquals(
+                toBytes("LAH"), mtCache.get(toBytes(accountLikeKey.toString() + "124")));
         Assert.assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
         Assert.assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
-        Assert.assertArrayEquals(toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "125")));
+        Assert.assertArrayEquals(
+                toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "125")));
 
         mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
         mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));

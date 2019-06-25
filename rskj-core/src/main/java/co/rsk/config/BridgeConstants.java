@@ -60,7 +60,9 @@ public class BridgeConstants {
         return btcParamsString;
     }
 
-    public Federation getGenesisFederation() { return genesisFederation; }
+    public Federation getGenesisFederation() {
+        return genesisFederation;
+    }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;
@@ -74,15 +76,25 @@ public class BridgeConstants {
         return rsk2BtcMinimumAcceptableConfirmations;
     }
 
-    public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
+    public int getUpdateBridgeExecutionPeriod() {
+        return updateBridgeExecutionPeriod;
+    }
 
-    public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
+    public int getMaxBtcHeadersPerRskBlock() {
+        return maxBtcHeadersPerRskBlock;
+    }
 
-    public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
+    public Coin getMinimumLockTxValue() {
+        return minimumLockTxValue;
+    }
 
-    public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
+    public Coin getMinimumReleaseTxValue() {
+        return minimumReleaseTxValue;
+    }
 
-    public long getFederationActivationAge() { return federationActivationAge; }
+    public long getFederationActivationAge() {
+        return federationActivationAge;
+    }
 
     public long getFundsMigrationAgeSinceActivationBegin() {
         return fundsMigrationAgeSinceActivationBegin;
@@ -92,11 +104,19 @@ public class BridgeConstants {
         return fundsMigrationAgeSinceActivationEnd;
     }
 
-    public AddressBasedAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }
+    public AddressBasedAuthorizer getFederationChangeAuthorizer() {
+        return federationChangeAuthorizer;
+    }
 
-    public AddressBasedAuthorizer getLockWhitelistChangeAuthorizer() { return lockWhitelistChangeAuthorizer; }
+    public AddressBasedAuthorizer getLockWhitelistChangeAuthorizer() {
+        return lockWhitelistChangeAuthorizer;
+    }
 
-    public AddressBasedAuthorizer getFeePerKbChangeAuthorizer() { return feePerKbChangeAuthorizer; }
+    public AddressBasedAuthorizer getFeePerKbChangeAuthorizer() {
+        return feePerKbChangeAuthorizer;
+    }
 
-    public Coin getGenesisFeePerKb() { return genesisFeePerKb; }
+    public Coin getGenesisFeePerKb() {
+        return genesisFeePerKb;
+    }
 }

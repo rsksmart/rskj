@@ -19,29 +19,29 @@
 
 package org.ethereum.jsontestsuite;
 
+import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.json.simple.parser.ParseException;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Ignore
 public class GitHubVMTest {
 
-    //SHACOMMIT of tested commit, ethereum/tests.git
+    // SHACOMMIT of tested commit, ethereum/tests.git
     public String shacommit = "f28ac81493281feec0b17290565cf74042893677";
 
     @Test
     public void runSingle() throws ParseException {
-        String json = JSONReader.loadJSONFromCommit("VMTests/vmEnvironmentalInfoTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("VMTests/vmEnvironmentalInfoTest.json", shacommit);
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, "balance0");
     }
 
@@ -50,14 +50,16 @@ public class GitHubVMTest {
         Set<String> excluded = new HashSet<>();
         // TODO: these are excluded due to bad wrapping behavior in ADDMOD/DataWord.add
         String json = JSONReader.loadJSONFromCommit("VMTests/vmArithmeticTest.json", shacommit);
-        //String json = JSONReader.getTestBlobForTreeSha(shacommit, "vmArithmeticTest.json");
+        // String json = JSONReader.getTestBlobForTreeSha(shacommit, "vmArithmeticTest.json");
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
     @Test // testing full suite
     public void testBitwiseLogicOperationFromGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();
-        String json = JSONReader.loadJSONFromCommit("VMTests/vmBitwiseLogicOperationTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit(
+                        "VMTests/vmBitwiseLogicOperationTest.json", shacommit);
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
@@ -71,18 +73,20 @@ public class GitHubVMTest {
     @Test // testing full suite
     public void testEnvironmentalInfoFromGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();
-        String json = JSONReader.loadJSONFromCommit("VMTests/vmEnvironmentalInfoTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("VMTests/vmEnvironmentalInfoTest.json", shacommit);
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
     @Test // testing full suite
     public void testIOandFlowOperationsFromGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();
-        String json = JSONReader.loadJSONFromCommit("VMTests/vmIOandFlowOperationsTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("VMTests/vmIOandFlowOperationsTest.json", shacommit);
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
-    @Ignore  //FIXME - 60M - need new fast downloader
+    @Ignore // FIXME - 60M - need new fast downloader
     @Test
     public void testvmInputLimitsTest1FromGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();
@@ -90,7 +94,7 @@ public class GitHubVMTest {
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
-    @Ignore //FIXME - 50M - need to handle large filesizes
+    @Ignore // FIXME - 50M - need to handle large filesizes
     @Test
     public void testvmInputLimitsTest2FromGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();
@@ -98,7 +102,7 @@ public class GitHubVMTest {
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
-    @Ignore //FIXME - 20M - possibly provide percentage indicator
+    @Ignore // FIXME - 20M - possibly provide percentage indicator
     @Test
     public void testvmInputLimitsLightTestFromGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();
@@ -139,7 +143,8 @@ public class GitHubVMTest {
     public void testvmSystemOperationsTestGitHub() throws ParseException {
         Set<String> excluded = new HashSet<>();
 
-        String json = JSONReader.loadJSONFromCommit("VMTests/vmSystemOperationsTest.json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit("VMTests/vmSystemOperationsTest.json", shacommit);
         GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
     }
 
@@ -155,10 +160,7 @@ public class GitHubVMTest {
 
         String shacommit = "c5eafb85390eee59b838a93ae31bc16a5fd4f7b1";
         List<String> fileNames = getFileNamesForTreeSha(shacommit);
-        List<String> excludedFiles =
-                Collections.singletonList(
-                        ""
-                );
+        List<String> excludedFiles = Collections.singletonList("");
 
         for (String fileName : fileNames) {
 
@@ -167,6 +169,5 @@ public class GitHubVMTest {
             String json = JSONReader.loadJSON("VMTests//RandomTests/" + fileName);
             GitHubJSONTestSuite.runGitHubJsonVMTest(json);
         }
-
     }
 }

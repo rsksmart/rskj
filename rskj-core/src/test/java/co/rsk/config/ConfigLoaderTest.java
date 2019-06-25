@@ -17,18 +17,17 @@
  */
 package co.rsk.config;
 
-import co.rsk.cli.CliArgs;
-import com.typesafe.config.Config;
-import org.ethereum.config.SystemProperties;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Collections;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import co.rsk.cli.CliArgs;
+import com.typesafe.config.Config;
+import java.util.Collections;
+import org.ethereum.config.SystemProperties;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ConfigLoaderTest {
 
@@ -53,8 +52,7 @@ public class ConfigLoaderTest {
 
     @Test
     public void regtestCliFlagOverridesNetworkBaseConfig() {
-        when(cliArgs.getFlags())
-                .thenReturn(Collections.singleton(NodeCliFlags.NETWORK_REGTEST));
+        when(cliArgs.getFlags()).thenReturn(Collections.singleton(NodeCliFlags.NETWORK_REGTEST));
         Config config = loader.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("regtest"));
@@ -63,8 +61,7 @@ public class ConfigLoaderTest {
 
     @Test
     public void testnetCliFlagOverridesNetworkBaseConfig() {
-        when(cliArgs.getFlags())
-                .thenReturn(Collections.singleton(NodeCliFlags.NETWORK_TESTNET));
+        when(cliArgs.getFlags()).thenReturn(Collections.singleton(NodeCliFlags.NETWORK_TESTNET));
         Config config = loader.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("testnet"));
@@ -72,8 +69,7 @@ public class ConfigLoaderTest {
 
     @Test
     public void dbResetCliFlagEnablesReset() {
-        when(cliArgs.getFlags())
-                .thenReturn(Collections.singleton(NodeCliFlags.DB_RESET));
+        when(cliArgs.getFlags()).thenReturn(Collections.singleton(NodeCliFlags.DB_RESET));
         Config config = loader.getConfig();
 
         assertThat(config.getString(SystemProperties.PROPERTY_BC_CONFIG_NAME), is("main"));

@@ -18,43 +18,41 @@
 
 package co.rsk.net.discovery.message;
 
-import co.rsk.net.discovery.PeerDiscoveryException;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.util.*;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.OptionalInt;
-
 import static org.ethereum.util.ByteUtil.intToBytes;
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
-/**
- * Created by mario on 16/02/17.
- */
+import co.rsk.net.discovery.PeerDiscoveryException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.OptionalInt;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.util.*;
+
+/** Created by mario on 16/02/17. */
 public class FindNodePeerMessage extends PeerDiscoveryMessage {
 
     public static final String MORE_DATA = "FindNodePeerMessage needs more data";
     private byte[] nodeId;
     private String messageId;
 
-    public FindNodePeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
+    public FindNodePeerMessage(
+            byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         super(wire, mdc, signature, type, data);
         this.parse(data);
     }
 
-    private FindNodePeerMessage() {
-    }
+    private FindNodePeerMessage() {}
 
-    public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, Integer networkId) {
+    public static FindNodePeerMessage create(
+            byte[] nodeId, String check, ECKey privKey, Integer networkId) {
 
         /* RLP Encode data */
         byte[] rlpCheck = RLP.encodeElement(check.getBytes(StandardCharsets.UTF_8));
         byte[] rlpNodeId = RLP.encodeElement(nodeId);
 
-        byte[] type = new byte[]{(byte) DiscoveryMessageType.FIND_NODE.getTypeValue()};
+        byte[] type = new byte[] {(byte) DiscoveryMessageType.FIND_NODE.getTypeValue()};
 
         byte[] data;
         byte[] rlpNetworkId = RLP.encodeElement(stripLeadingZeroes(intToBytes(networkId)));
@@ -84,9 +82,8 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
 
         this.nodeId = nodeRlp.getRLPData();
 
-        this.setNetworkIdWithRLP(dataList.size()>2?dataList.get(2):null);
+        this.setNetworkIdWithRLP(dataList.size() > 2 ? dataList.get(2) : null);
     }
-
 
     public String getMessageId() {
         return this.messageId;
@@ -102,7 +99,7 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
         return new ToStringBuilder(this)
                 .append(Hex.toHexString(this.nodeId))
                 .append(this.getNetworkId())
-                .append(this.messageId).toString();
+                .append(this.messageId)
+                .toString();
     }
-
 }

@@ -35,6 +35,13 @@
 
 package co.rsk.jsontestsuite;
 
+import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
@@ -43,20 +50,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static org.ethereum.jsontestsuite.JSONReader.getFileNamesForTreeSha;
-
 /**
  * @author Angel J Lopez
  * @since 02.24.2016
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-
 public class LocalStateTest {
 
     @Ignore // this method is mostly for hands-on convenient testing
@@ -103,8 +101,6 @@ public class LocalStateTest {
         excluded.add("callcodecallcallcode_ABCB_RECURSIVE");
         /* */
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
-
     }
 
     @Test
@@ -182,7 +178,8 @@ public class LocalStateTest {
 
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stCallCreateCallCodeTest");
-        // *** java.lang.instrument ASSERTION FAILED ***: "!errorOutstanding" with message transform method call failed at JPLISAgent.c line: 844
+        // *** java.lang.instrument ASSERTION FAILED ***: "!errorOutstanding" with message transform
+        // method call failed at JPLISAgent.c line: 844
 
         /* Recursive tests excluded */
         excluded.add("Callcode1024OOG");
@@ -204,7 +201,6 @@ public class LocalStateTest {
         excluded.add("callcodeWithHighValueAndGasOOG");
         /* */
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -243,8 +239,7 @@ public class LocalStateTest {
         // CODECOPY (to:0 from:0 length:32)
         // CREATE a contract (Value=0 InOffset =0 InSize =32)
         // This creates a CLONE of the contract
-         excluded.add("CallRecursiveContract");
-
+        excluded.add("CallRecursiveContract");
 
         GitHubJSONTestSuite.runStateTest(json, excluded);
     }
@@ -253,7 +248,6 @@ public class LocalStateTest {
     public void stLogTests() throws ParseException, IOException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stLogTests");
-
 
         /* All these tests use CALL to a contract that executes LOG
          * Because CALL consumes a different amount of gas compared to Ethereum
@@ -374,7 +368,8 @@ public class LocalStateTest {
         //  PUSH 0
         //  PUSH MSIZE
         //  SSTORE (Stores MSIZE at persistent cell 0)
-        excluded.add("mload32bitBound_Msize"); // Tries to store something in address 4294967295. This causes OOG in RSK
+        // Tries to store something in address 4294967295. This causes OOG in RSK
+        excluded.add("mload32bitBound_Msize");
 
         String json = getJSON("stMemoryStressTest");
 
@@ -438,7 +433,6 @@ public class LocalStateTest {
         excluded.add("recursiveCreate");
         excluded.add("testRandomTest");
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -480,7 +474,7 @@ public class LocalStateTest {
         excluded.add("blockhash0");
         excluded.add("blockhashDOS-sec71");
         */
-        GitHubJSONTestSuite.runStateTest(json,excluded);
+        GitHubJSONTestSuite.runStateTest(json, excluded);
     }
 
     @Test
@@ -541,8 +535,8 @@ public class LocalStateTest {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("stTransactionTest");
 
-        //StoreGasOnCreate must be excluded because
-        //CREATE seems to consume more gas in RSK than in Ethereum.
+        // StoreGasOnCreate must be excluded because
+        // CREATE seems to consume more gas in RSK than in Ethereum.
 
         excluded.add("StoreGasOnCreate");
 
@@ -560,7 +554,6 @@ public class LocalStateTest {
         excluded.add("StoreClearsAndInternlCallStoreClearsSuccess");
         */
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Test
@@ -629,11 +622,10 @@ public class LocalStateTest {
         excluded.add("walletExecuteOverDailyLimitOnlyOneOwner");
         */
         GitHubJSONTestSuite.runStateTest(json, excluded);
-
     }
 
     @Ignore
-    //@Test // testing full suite
+    // @Test // testing full suite
     public void testRandomStateGitHub() throws ParseException, IOException {
 
         String sha = "99db6f4f5fea3aa5cfbe8436feba8e213d06d1e8";
@@ -642,8 +634,7 @@ public class LocalStateTest {
                 Arrays.asList(
                         "st201504081841JAVA.json",
                         "st201504081842JAVA.json",
-                        "st201504081843JAVA.json"
-                );
+                        "st201504081843JAVA.json");
 
         for (String fileName : fileNames) {
             if (includedFiles.contains(fileName)) {
@@ -652,12 +643,12 @@ public class LocalStateTest {
                 GitHubJSONTestSuite.runStateTest(json);
             }
         }
-
     }
 
     private static String getJSON(String name) {
-        String json = JSONReader.loadJSONFromResource("json/StateTests/" + name + ".json", LocalVMTest.class.getClassLoader());
+        String json =
+                JSONReader.loadJSONFromResource(
+                        "json/StateTests/" + name + ".json", LocalVMTest.class.getClassLoader());
         return json;
     }
 }
-

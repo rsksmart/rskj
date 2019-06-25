@@ -26,16 +26,17 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 
-/**
- * Created by ajlopez on 6/8/2016.
- */
+/** Created by ajlopez on 6/8/2016. */
 public class SimpleRskTransaction extends Transaction {
     private final Keccak256 hash;
 
     public SimpleRskTransaction(byte[] hash) {
         super(null, null, null, TestUtils.randomAddress().getBytes(), null, null);
         this.hash = hash == null ? null : new Keccak256(hash);
-        this.sender = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
+        this.sender =
+                new RskAddress(
+                        ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()))
+                                .getAddress());
     }
 
     @Override

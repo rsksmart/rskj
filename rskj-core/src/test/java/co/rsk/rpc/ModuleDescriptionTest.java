@@ -19,15 +19,12 @@
 package co.rsk.rpc;
 
 import co.rsk.config.TestSystemProperties;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 19/04/2017.
- */
+/** Created by ajlopez on 19/04/2017. */
 public class ModuleDescriptionTest {
     @Test
     public void createWithInitialData() {
@@ -55,7 +52,8 @@ public class ModuleDescriptionTest {
         disabledMethods.add("evm_reset");
         disabledMethods.add("evm_increaseTime");
 
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
+        ModuleDescription description =
+                new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
 
         Assert.assertEquals("evm", description.getName());
         Assert.assertEquals("1.0", description.getVersion());
@@ -111,7 +109,8 @@ public class ModuleDescriptionTest {
         enabledMethods.add("evm_snapshot");
         enabledMethods.add("evm_revert");
 
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, null);
+        ModuleDescription description =
+                new ModuleDescription("evm", "1.0", true, enabledMethods, null);
 
         Assert.assertTrue(description.methodIsEnable("evm_snapshot"));
         Assert.assertTrue(description.methodIsEnable("evm_revert"));
@@ -134,7 +133,8 @@ public class ModuleDescriptionTest {
         disabledMethods.add("evm_reset");
         disabledMethods.add("evm_increaseTime");
 
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, null, disabledMethods);
+        ModuleDescription description =
+                new ModuleDescription("evm", "1.0", true, null, disabledMethods);
 
         Assert.assertTrue(description.methodIsEnable("evm_snapshot"));
         Assert.assertTrue(description.methodIsEnable("evm_revert"));
@@ -162,7 +162,8 @@ public class ModuleDescriptionTest {
         disabledMethods.add("evm_reset");
         disabledMethods.add("evm_increaseTime");
 
-        ModuleDescription description = new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
+        ModuleDescription description =
+                new ModuleDescription("evm", "1.0", true, enabledMethods, disabledMethods);
 
         Assert.assertTrue(description.methodIsEnable("evm_snapshot"));
         Assert.assertTrue(description.methodIsEnable("evm_revert"));

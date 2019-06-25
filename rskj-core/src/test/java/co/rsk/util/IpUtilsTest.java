@@ -1,15 +1,12 @@
 package co.rsk.util;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Created by mario on 13/07/17.
- */
+/** Created by mario on 13/07/17. */
 public class IpUtilsTest {
 
     private static final String IPV6_WITH_PORT = "[2001:db8:85a3:8d3:1319:8a2e:370:7348]:443";

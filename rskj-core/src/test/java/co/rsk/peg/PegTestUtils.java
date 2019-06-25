@@ -24,9 +24,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.crypto.Keccak256;
 
-/**
- * Created by oscar on 05/08/2016.
- */
+/** Created by oscar on 05/08/2016. */
 public class PegTestUtils {
 
     public static void main(String[] args) {
@@ -39,7 +37,8 @@ public class PegTestUtils {
     private static int nhash = 0;
 
     /**
-     * @deprecated Use createHash3(int) instead. Avoid using persisted state in static class in test environments
+     * @deprecated Use createHash3(int) instead. Avoid using persisted state in static class in test
+     *     environments
      */
     @Deprecated
     public static Keccak256 createHash3() {
@@ -49,12 +48,13 @@ public class PegTestUtils {
     public static Keccak256 createHash3(int nHash) {
         byte[] bytes = new byte[32];
         bytes[0] = (byte) (nHash & 0xFF);
-        bytes[1] = (byte) (nHash >>8 & 0xFF);
+        bytes[1] = (byte) (nHash >> 8 & 0xFF);
         return new Keccak256(bytes);
     }
 
     /**
-     * @deprecated Use createHash(int) instead. Avoid using persisted state in static class in test environments
+     * @deprecated Use createHash(int) instead. Avoid using persisted state in static class in test
+     *     environments
      */
     @Deprecated
     public static Sha256Hash createHash() {
@@ -71,12 +71,16 @@ public class PegTestUtils {
         Script scriptPubKey = federation.getP2SHScript();
         Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
         RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), redeemScript);
-        Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
+        Script inputScript =
+                scriptPubKey.createEmptyInputScript(
+                        redeemData.keys.get(0), redeemData.redeemScript);
         return inputScript;
     }
 
     public static Script createBaseRedeemScriptThatSpendsFromTheFederation(Federation federation) {
-        Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
+        Script redeemScript =
+                ScriptBuilder.createRedeemScript(
+                        federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
         return redeemScript;
     }
 }

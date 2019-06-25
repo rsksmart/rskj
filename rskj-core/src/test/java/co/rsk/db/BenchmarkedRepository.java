@@ -38,7 +38,7 @@ public interface BenchmarkedRepository {
             int oldValueLength = oldValue == null ? 0 : oldValue.length;
             int newValueLength = newValue == null ? 0 : newValue.length;
             int delta = newValueLength - oldValueLength;
-            int slots = (int) Math.ceil((double)Math.abs(delta) / (double)SLOT_SIZE_BYTES);
+            int slots = (int) Math.ceil((double) Math.abs(delta) / (double) SLOT_SIZE_BYTES);
             if (delta > 0) {
                 slotsWritten += slots;
             } else {

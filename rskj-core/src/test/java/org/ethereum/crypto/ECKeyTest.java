@@ -19,11 +19,21 @@
 
 package org.ethereum.crypto;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.junit.Assert.*;
+
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SignatureException;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey.ECDSASignature;
@@ -33,17 +43,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SignatureException;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.junit.Assert.*;
 
 public class ECKeyTest {
     private static final Logger log = LoggerFactory.getLogger(ECKeyTest.class);
@@ -51,8 +50,10 @@ public class ECKeyTest {
     private String privString = "3ecb44df2159c26e0f995712d4f39b6f6e499b40749b1cf1246c37f9516cb6a4";
     private BigInteger privateKey = new BigInteger(Hex.decode(privString));
 
-    private String pubString = "0497466f2b32bc3bb76d4741ae51cd1d8578b48d3f1e68da206d47321aec267ce78549b514e4453d74ef11b0cd5e4e4c364effddac8b51bcfc8de80682f952896f";
-    private String compressedPubString = "0397466f2b32bc3bb76d4741ae51cd1d8578b48d3f1e68da206d47321aec267ce7";
+    private String pubString =
+            "0497466f2b32bc3bb76d4741ae51cd1d8578b48d3f1e68da206d47321aec267ce78549b514e4453d74ef11b0cd5e4e4c364effddac8b51bcfc8de80682f952896f";
+    private String compressedPubString =
+            "0397466f2b32bc3bb76d4741ae51cd1d8578b48d3f1e68da206d47321aec267ce7";
     private byte[] pubKey = Hex.decode(pubString);
     private byte[] compressedPubKey = Hex.decode(compressedPubString);
     private String address = "8a40bfaa73256b60764c1bf40675a99083efb075";
@@ -60,8 +61,12 @@ public class ECKeyTest {
     private String exampleMessage = "This is an example of a signed message.";
 
     // Signature components
-    private final BigInteger r = new BigInteger("28157690258821599598544026901946453245423343069728565040002908283498585537001");
-    private final BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
+    private final BigInteger r =
+            new BigInteger(
+                    "28157690258821599598544026901946453245423343069728565040002908283498585537001");
+    private final BigInteger s =
+            new BigInteger(
+                    "30212485197630673222315826773656074299979444367665131281281249560925428307087");
     byte v = 28;
 
     @Test
@@ -101,7 +106,6 @@ public class ECKeyTest {
         assertArrayEquals(key.getPubKey(), pubKey);
     }
 
-
     @Test
     public void testPublicKeyFromPrivate() {
         byte[] pubFromPriv = ECKey.publicKeyFromPrivate(privateKey, false);
@@ -123,7 +127,9 @@ public class ECKeyTest {
     @Test
     public void testToString() {
         ECKey key = ECKey.fromPrivate(BigInteger.TEN); // An example private key.
-        assertEquals("pub:04a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7893aba425419bc27a3b6c7e693a24c696f794c2ed877a1593cbee53b037368d7", key.toString());
+        assertEquals(
+                "pub:04a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7893aba425419bc27a3b6c7e693a24c696f794c2ed877a1593cbee53b037368d7",
+                key.toString());
     }
 
     @Test
@@ -144,23 +150,36 @@ public class ECKeyTest {
     @Test
     public void testVerifySignature1() {
         ECKey key = ECKey.fromPublicOnly(pubKey);
-        BigInteger r = new BigInteger("28157690258821599598544026901946453245423343069728565040002908283498585537001");
-        BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
-        ECDSASignature sig = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 28);
+        BigInteger r =
+                new BigInteger(
+                        "28157690258821599598544026901946453245423343069728565040002908283498585537001");
+        BigInteger s =
+                new BigInteger(
+                        "30212485197630673222315826773656074299979444367665131281281249560925428307087");
+        ECDSASignature sig =
+                ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 28);
         key.verify(HashUtil.keccak256(exampleMessage.getBytes()), sig);
     }
 
     @Test
     public void testVerifySignature2() {
-        BigInteger r = new BigInteger("c52c114d4f5a3ba904a9b3036e5e118fe0dbb987fe3955da20f2cd8f6c21ab9c", 16);
-        BigInteger s = new BigInteger("6ba4c2874299a55ad947dbc98a25ee895aabf6b625c26c435e84bfd70edf2f69", 16);
-        ECDSASignature sig = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 0x1b);
-        byte[] rawtx = Hex.decode("f82804881bc16d674ec8000094cd2a3d9f938e13cd947ec05abc7fe734df8dd8268609184e72a0006480");
+        BigInteger r =
+                new BigInteger(
+                        "c52c114d4f5a3ba904a9b3036e5e118fe0dbb987fe3955da20f2cd8f6c21ab9c", 16);
+        BigInteger s =
+                new BigInteger(
+                        "6ba4c2874299a55ad947dbc98a25ee895aabf6b625c26c435e84bfd70edf2f69", 16);
+        ECDSASignature sig =
+                ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 0x1b);
+        byte[] rawtx =
+                Hex.decode(
+                        "f82804881bc16d674ec8000094cd2a3d9f938e13cd947ec05abc7fe734df8dd8268609184e72a0006480");
         try {
             ECKey key = ECKey.signatureToKey(HashUtil.keccak256(rawtx), sig);
             System.out.println("Signature public key\t: " + Hex.toHexString(key.getPubKey()));
             System.out.println("Sender is\t\t: " + Hex.toHexString(key.getAddress()));
-            assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(key.getAddress()));
+            assertEquals(
+                    "cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(key.getAddress()));
             key.verify(HashUtil.keccak256(rawtx), sig);
         } catch (SignatureException e) {
             fail();
@@ -171,7 +190,9 @@ public class ECKeyTest {
     @Ignore("The TX sender is not 20-byte long")
     public void testVerifySignature3() throws SignatureException {
 
-        byte[] rawtx = Hex.decode("f86e80893635c9adc5dea000008609184e72a00082109f9479b08ad8787060333663d19704909ee7b1903e58801ba0899b92d0c76cbf18df24394996beef19c050baa9823b4a9828cd9b260c97112ea0c9e62eb4cf0a9d95ca35c8830afac567619d6b3ebee841a3c8be61d35acd8049");
+        byte[] rawtx =
+                Hex.decode(
+                        "f86e80893635c9adc5dea000008609184e72a00082109f9479b08ad8787060333663d19704909ee7b1903e58801ba0899b92d0c76cbf18df24394996beef19c050baa9823b4a9828cd9b260c97112ea0c9e62eb4cf0a9d95ca35c8830afac567619d6b3ebee841a3c8be61d35acd8049");
 
         Transaction tx = new ImmutableTransaction(rawtx);
         ECKey key = ECKey.signatureToKey(HashUtil.keccak256(rawtx), tx.getSignature());
@@ -183,29 +204,34 @@ public class ECKeyTest {
         // todo: add test assertion when the sign/verify part actually works.
     }
 
-
     @Test
     public void testSValue() throws Exception {
-        // Check that we never generate an S value that is larger than half the curve order. This avoids a malleability
-        // issue that can allow someone to change a transaction [hash] without invalidating the signature.
+        // Check that we never generate an S value that is larger than half the curve order. This
+        // avoids a malleability
+        // issue that can allow someone to change a transaction [hash] without invalidating the
+        // signature.
         final int ITERATIONS = 10;
-        ListeningExecutorService executor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(ITERATIONS));
+        ListeningExecutorService executor =
+                MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(ITERATIONS));
         List<ListenableFuture<ECKey.ECDSASignature>> sigFutures = Lists.newArrayList();
         final ECKey key = new ECKey();
         for (byte i = 0; i < ITERATIONS; i++) {
-            final byte[] hash = HashUtil.keccak256(new byte[]{i});
-            sigFutures.add(executor.submit(new Callable<ECDSASignature>() {
-                @Override
-                public ECKey.ECDSASignature call() throws Exception {
-                    return key.doSign(hash);
-                }
-            }));
+            final byte[] hash = HashUtil.keccak256(new byte[] {i});
+            sigFutures.add(
+                    executor.submit(
+                            new Callable<ECDSASignature>() {
+                                @Override
+                                public ECKey.ECDSASignature call() throws Exception {
+                                    return key.doSign(hash);
+                                }
+                            }));
         }
         List<ECKey.ECDSASignature> sigs = Futures.allAsList(sigFutures).get();
         for (ECKey.ECDSASignature signature : sigs) {
             assertTrue(signature.s.compareTo(ECKey.HALF_CURVE_ORDER) <= 0);
         }
-        final ECKey.ECDSASignature duplicate = new ECKey.ECDSASignature(sigs.get(0).r, sigs.get(0).s);
+        final ECKey.ECDSASignature duplicate =
+                new ECKey.ECDSASignature(sigs.get(0).r, sigs.get(0).s);
         assertEquals(sigs.get(0), duplicate);
         assertEquals(sigs.get(0).hashCode(), duplicate.hashCode());
     }
@@ -286,8 +312,13 @@ public class ECKeyTest {
     public void testSignedMessageToKey() throws SignatureException {
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
 
-        ECKey key = ECKey.signatureToKey(messageHash, ECDSASignature.fromComponents(ByteUtil.bigIntegerToBytes(r, 32),
-                ByteUtil.bigIntegerToBytes(s, 32), v));
+        ECKey key =
+                ECKey.signatureToKey(
+                        messageHash,
+                        ECDSASignature.fromComponents(
+                                ByteUtil.bigIntegerToBytes(r, 32),
+                                ByteUtil.bigIntegerToBytes(s, 32),
+                                v));
 
         assertNotNull(key);
         assertArrayEquals(pubKey, key.getPubKey());
@@ -311,10 +342,12 @@ public class ECKeyTest {
         assertTrue(key1.equals(key2));
     }
 
-
     @Test
-    public void decryptAECSIC(){
-        ECKey key = ECKey.fromPrivate(Hex.decode("abb51256c1324a1350598653f46aa3ad693ac3cf5d05f36eba3f495a1f51590f"));
+    public void decryptAECSIC() {
+        ECKey key =
+                ECKey.fromPrivate(
+                        Hex.decode(
+                                "abb51256c1324a1350598653f46aa3ad693ac3cf5d05f36eba3f495a1f51590f"));
         byte[] payload = key.decryptAES(Hex.decode("84a727bc81fa4b13947dc9728b88fd08"));
         System.out.println(Hex.toHexString(payload));
     }

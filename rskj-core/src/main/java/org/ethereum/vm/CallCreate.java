@@ -17,7 +17,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package org.ethereum.vm;
 
 /**
@@ -30,7 +29,6 @@ public class CallCreate {
     final byte[] destination;
     final long gasLimit;
     final byte[] value;
-
 
     public CallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
         this.data = data;

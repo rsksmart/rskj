@@ -17,31 +17,26 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 package org.ethereum.util;
 
 import com.google.common.primitives.UnsignedBytes;
 
-
 /**
- * Utility code to do optimized byte-array comparison.
- * This is borrowed and slightly modified from Guava's {@link UnsignedBytes}
- * class to be able to compare arrays that start at non-zero offsets.
+ * Utility code to do optimized byte-array comparison. This is borrowed and slightly modified from
+ * Guava's {@link UnsignedBytes} class to be able to compare arrays that start at non-zero offsets.
  */
 @SuppressWarnings("restriction")
 public class FastByteComparisons {
@@ -61,24 +56,20 @@ public class FastByteComparisons {
      * @return int
      */
     public static int compareTo(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
-        return LexicographicalComparerHolder.BEST_COMPARER.compareTo(
-                b1, s1, l1, b2, s2, l2);
+        return LexicographicalComparerHolder.BEST_COMPARER.compareTo(b1, s1, l1, b2, s2, l2);
     }
 
     private interface Comparer<T> {
-        int compareTo(T buffer1, int offset1, int length1,
-                      T buffer2, int offset2, int length2);
+        int compareTo(T buffer1, int offset1, int length1, T buffer2, int offset2, int length2);
     }
 
     private static Comparer<byte[]> lexicographicalComparerJavaImpl() {
         return LexicographicalComparerHolder.PureJavaComparer.INSTANCE;
     }
 
-
     /**
-     *
-     * <p>Uses reflection to gracefully fall back to the Java implementation if
-     * {@code Unsafe} isn't available.
+     * Uses reflection to gracefully fall back to the Java implementation if {@code Unsafe} isn't
+     * available.
      */
     private static class LexicographicalComparerHolder {
         static final String UNSAFE_COMPARER_NAME =
@@ -87,8 +78,8 @@ public class FastByteComparisons {
         static final Comparer<byte[]> BEST_COMPARER = getBestComparer();
 
         /**
-         * Returns the Unsafe-using Comparer, or falls back to the pure-Java
-         * implementation if unable to do so.
+         * Returns the Unsafe-using Comparer, or falls back to the pure-Java implementation if
+         * unable to do so.
          */
         static Comparer<byte[]> getBestComparer() {
             try {
@@ -96,8 +87,7 @@ public class FastByteComparisons {
 
                 // yes, UnsafeComparer does implement Comparer<byte[]>
                 @SuppressWarnings("unchecked")
-                Comparer<byte[]> comparer =
-                        (Comparer<byte[]>) theClass.getEnumConstants()[0];
+                Comparer<byte[]> comparer = (Comparer<byte[]>) theClass.getEnumConstants()[0];
                 return comparer;
             } catch (Throwable t) { // ensure we really catch *everything*
                 return lexicographicalComparerJavaImpl();
@@ -108,12 +98,15 @@ public class FastByteComparisons {
             INSTANCE;
 
             @Override
-            public int compareTo(byte[] buffer1, int offset1, int length1,
-                                 byte[] buffer2, int offset2, int length2) {
+            public int compareTo(
+                    byte[] buffer1,
+                    int offset1,
+                    int length1,
+                    byte[] buffer2,
+                    int offset2,
+                    int length2) {
                 // Short circuit equalBytes case
-                if (buffer1 == buffer2 &&
-                        offset1 == offset2 &&
-                        length1 == length2) {
+                if (buffer1 == buffer2 && offset1 == offset2 && length1 == length2) {
                     return 0;
                 }
                 int end1 = offset1 + length1;
@@ -128,7 +121,5 @@ public class FastByteComparisons {
                 return length1 - length2;
             }
         }
-
-
     }
 }

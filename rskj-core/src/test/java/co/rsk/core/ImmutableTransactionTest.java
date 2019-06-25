@@ -2,17 +2,14 @@ package co.rsk.core;
 
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-
-/**
- * Created by ajlopez on 03/08/2017.
- */
+/** Created by ajlopez on 03/08/2017. */
 public class ImmutableTransactionTest {
     @Test
     public void tryingToSignImmutableTransaction() {
@@ -20,8 +17,7 @@ public class ImmutableTransactionTest {
 
         try {
             tx.sign(new byte[32]);
-        }
-        catch (ImmutableTransaction.ImmutableTransactionException ex) {
+        } catch (ImmutableTransaction.ImmutableTransactionException ex) {
             Assert.assertTrue(ex.getMessage().contains("Immutable transaction: trying to sign"));
         }
     }
@@ -30,13 +26,14 @@ public class ImmutableTransactionTest {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .value(BigInteger.TEN)
-                .nonce(2)
-                .immutable()
-                .build();
+        Transaction tx =
+                new TransactionBuilder()
+                        .sender(sender)
+                        .receiver(receiver)
+                        .value(BigInteger.TEN)
+                        .nonce(2)
+                        .immutable()
+                        .build();
 
         return tx;
     }

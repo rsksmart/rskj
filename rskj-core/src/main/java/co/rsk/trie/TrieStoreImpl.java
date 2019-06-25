@@ -23,11 +23,11 @@ import org.ethereum.datasource.KeyValueDataSource;
 /**
  * TrieStoreImpl store and retrieve Trie node by hash
  *
- * It saves/retrieves the serialized form (byte array) of a Trie node
+ * <p>It saves/retrieves the serialized form (byte array) of a Trie node
  *
- * Internally, it uses a key value data source
+ * <p>Internally, it uses a key value data source
  *
- * Created by ajlopez on 08/01/2017.
+ * <p>Created by ajlopez on 08/01/2017.
  */
 public class TrieStoreImpl implements TrieStore {
 
@@ -40,6 +40,7 @@ public class TrieStoreImpl implements TrieStore {
 
     /**
      * save saves a Trie to the store
+     *
      * @param trie
      */
     @Override
@@ -52,29 +53,36 @@ public class TrieStoreImpl implements TrieStore {
 
     @Override
     public void saveValue(Trie trie) {
-            // Note that there is no distinction in keys between node data and value data. This could bring problems in
-            // the future when trying to garbage-collect the data. We could split the key spaces bit a single
-            // overwritten MSB of the hash. Also note that when storing a node that has long value it could be the case
-            // that the save the value here, but the value is already present in the database because other node shares
-            // the value. This is suboptimal, we could check existence here but maybe the database already has
-            // provisions to reduce the load in these cases where a key/value is set equal to the previous value.
-            // In particular our levelDB driver has not method to test for the existence of a key without retrieving the
-            // value also, so manually checking pre-existence here seems it will add overhead on the average case,
-            // instead of reducing it.
-            this.store.put(trie.getValueHash().getBytes(), trie.getValue());
+        // Note that there is no distinction in keys between node data and value data. This could
+        // bring problems in
+        // the future when trying to garbage-collect the data. We could split the key spaces bit a
+        // single
+        // overwritten MSB of the hash. Also note that when storing a node that has long value it
+        // could be the case
+        // that the save the value here, but the value is already present in the database because
+        // other node shares
+        // the value. This is suboptimal, we could check existence here but maybe the database
+        // already has
+        // provisions to reduce the load in these cases where a key/value is set equal to the
+        // previous value.
+        // In particular our levelDB driver has not method to test for the existence of a key
+        // without retrieving the
+        // value also, so manually checking pre-existence here seems it will add overhead on the
+        // average case,
+        // instead of reducing it.
+        this.store.put(trie.getValueHash().getBytes(), trie.getValue());
     }
 
     @Override
-    public void flush(){
+    public void flush() {
         this.store.flush();
     }
 
     /**
      * retrieve retrieves a Trie instance from store, using hash a key
      *
-     * @param hash  the hash to retrieve
-     *
-     * @return  the retrieved Trie, null if key does not exist
+     * @param hash the hash to retrieve
+     * @return the retrieved Trie, null if key does not exist
      */
     @Override
     public Trie retrieve(byte[] hash) {

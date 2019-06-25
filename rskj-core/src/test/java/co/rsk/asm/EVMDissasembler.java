@@ -18,24 +18,21 @@
 
 package co.rsk.asm;
 
-import co.rsk.lll.asm.CodeBlock;
-import co.rsk.lll.asm.EVMAssemblerHelper;
-import org.ethereum.util.Utils;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.OpCode;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
 
-/**
- * Created by Sergio on 25/10/2016.
- */
+import co.rsk.lll.asm.CodeBlock;
+import co.rsk.lll.asm.EVMAssemblerHelper;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import org.ethereum.util.Utils;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.OpCode;
+
+/** Created by Sergio on 25/10/2016. */
 public class EVMDissasembler {
     // Does not yet support script versioning bytes
     private byte[] ops;
@@ -63,7 +60,6 @@ public class EVMDissasembler {
 
         return dw;
     }
-
 
     public static int getScriptVersionInCode(byte[] ops) {
         if (ops.length >= 4) {
@@ -120,7 +116,6 @@ public class EVMDissasembler {
         }
     }
 
-
     public static boolean isEthereumCompatibleScript(byte[] aprogramCode) {
         return getScriptVersionInCode(aprogramCode) == 0;
     }
@@ -167,7 +162,6 @@ public class EVMDissasembler {
         this.block = block;
         this.helper = helper;
         return dissasembleInternal();
-
     }
 
     public String dissasemble(byte[] code) {
@@ -177,8 +171,7 @@ public class EVMDissasembler {
 
     public String getVisualLabelName(int labIndex) {
         String ref = helper.getLabelName(labIndex);
-        if (ref == null)
-            ref = "label_" + Integer.toString(labIndex);
+        if (ref == null) ref = "label_" + Integer.toString(labIndex);
         return ref;
     }
 
@@ -186,17 +179,18 @@ public class EVMDissasembler {
         sb.append(' ').append(op.name()).append(' ');
         int nPush = op.val() - OpCode.PUSH1.val() + 1;
         String name = null;
-        if ((block != null) && (helper != null) && (nPush == 4)) { // optimization, only find int32 label refs
-            int labelId = block.getTagIdByPos(pc+1, tagIterator);
+        if ((block != null)
+                && (helper != null)
+                && (nPush == 4)) { // optimization, only find int32 label refs
+            int labelId = block.getTagIdByPos(pc + 1, tagIterator);
             if (labelId >= 0) {
                 name = getVisualLabelName(labelId);
                 sb.append(name);
-                if (printOffsets)
-                    sb.append(" ;");
+                if (printOffsets) sb.append(" ;");
             }
         }
 
-        if ((printOffsets) || (name==null)) {
+        if ((printOffsets) || (name == null)) {
             byte[] data = Arrays.copyOfRange(code, pc + 1, pc + nPush + 1);
             BigInteger bi = new BigInteger(1, data);
             sb.append("0x").append(bi.toString(16));
@@ -221,14 +215,13 @@ public class EVMDissasembler {
         if (block != null) {
             String ref = block.getSourceRefText(pc, refIterator);
             if (ref != null) {
-                sb.append("; " + ref.replace('\n',' '));
+                sb.append("; " + ref.replace('\n', ' '));
                 newLine = true;
             }
         }
         if (newLine) {
             sb.append("\n");
-            if (printOffsets)
-                sb.append(Utils.align("", ' ', 8, false));
+            if (printOffsets) sb.append(Utils.align("", ' ', 8, false));
         }
     }
 
@@ -241,11 +234,10 @@ public class EVMDissasembler {
         precompile();
         sb = new StringBuilder();
         refIterator = new int[1];
-        tagIterator= new int[1];
+        tagIterator = new int[1];
 
         while (!isStopped()) {
-            if (printOffsets)
-                printOffset();
+            if (printOffsets) printOffset();
 
             printCodeSections();
             byte opCode = getOp(pc);
@@ -257,14 +249,13 @@ public class EVMDissasembler {
                 continue;
             }
 
-
             if (op.name().startsWith("PUSH")) {
                 printPush(op);
                 int nPush = op.val() - OpCode.PUSH1.val() + 1;
                 setPC(pc + nPush + 1);
             } else {
                 sb.append(' ').append(op.name());
-                setPC(pc+1);
+                setPC(pc + 1);
             }
             sb.append('\n');
         }
@@ -272,4 +263,3 @@ public class EVMDissasembler {
         return sb.toString();
     }
 }
-

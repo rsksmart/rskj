@@ -18,22 +18,19 @@
 
 package co.rsk.blockchain;
 
+import static org.junit.Assert.assertTrue;
+
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.List;
-
-import static org.junit.Assert.assertTrue;
-
-/**
- * Created by ajlopez on 4/20/2016.
- */
+/** Created by ajlopez on 4/20/2016. */
 public class BlockchainTest {
     @Test
     public void genesisTest() {
@@ -114,7 +111,7 @@ public class BlockchainTest {
         Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock());
         Block block2 = blockGenerator.createChildBlock(block1, 0, 5);
         Block block1b = blockGenerator.createChildBlock(blockchain.getBestBlock());
-        Block block2b = blockGenerator.createChildBlock(block1b,0,4);
+        Block block2b = blockGenerator.createChildBlock(block1b, 0, 4);
         // genesis <- block1 <- block2
         // genesis <- block1b <- block2b
 
@@ -135,11 +132,11 @@ public class BlockchainTest {
         Blockchain blockchain = createBlockchain();
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(),0,1);
-        Block block1b = blockGenerator.createChildBlock(blockchain.getBestBlock(),0,2);
-        Block block2 = blockGenerator.createChildBlock(block1,0,3);
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), 0, 1);
+        Block block1b = blockGenerator.createChildBlock(blockchain.getBestBlock(), 0, 2);
+        Block block2 = blockGenerator.createChildBlock(block1, 0, 3);
         Block block2b = blockGenerator.createChildBlock(block1b, 0, 1);
-        Block block3b = blockGenerator.createChildBlock(block2b,0,4);
+        Block block3b = blockGenerator.createChildBlock(block2b, 0, 4);
 
         Assert.assertEquals(ImportResult.NO_PARENT, blockchain.tryToConnect(block2));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
@@ -160,15 +157,19 @@ public class BlockchainTest {
         final long chain1Diff = 2;
         final long chain2Diff = 1;
         BlockGenerator blockGenerator = new BlockGenerator();
-        List<Block> chain1 = blockGenerator.getBlockChain(blockchain.getBestBlock(), height, chain1Diff);
-        List<Block> chain2 = blockGenerator.getBlockChain(blockchain.getBestBlock(), height, chain2Diff);
+        List<Block> chain1 =
+                blockGenerator.getBlockChain(blockchain.getBestBlock(), height, chain1Diff);
+        List<Block> chain2 =
+                blockGenerator.getBlockChain(blockchain.getBestBlock(), height, chain2Diff);
 
         for (Block b : chain1)
             Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
         for (Block b : chain2)
             Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockchain.tryToConnect(b));
 
-        Block newblock = blockGenerator.createChildBlock(chain2.get(chain2.size() - 1), 0, 2*height*chain2Diff);
+        Block newblock =
+                blockGenerator.createChildBlock(
+                        chain2.get(chain2.size() - 1), 0, 2 * height * chain2Diff);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(newblock));
 
         Assert.assertEquals(blockchain.getBestBlock(), newblock);
@@ -186,9 +187,13 @@ public class BlockchainTest {
 
         Block block2 = blockGenerator.createChildBlock(blockchain.getBestBlock());
         Block block2b = blockGenerator.createBlock(10, 5);
-        new Block(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList(), true, true);
+        new Block(
+                block2.getHeader(),
+                block2b.getTransactionsList(),
+                block2b.getUncleList(),
+                true,
+                true);
     }
-
 
     private static BlockChainImpl createBlockchain() {
         World world = new World();

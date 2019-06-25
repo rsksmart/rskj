@@ -19,17 +19,16 @@
 
 package co.rsk.pcc.blockheader;
 
+import static org.mockito.Mockito.mock;
+
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
+import java.util.Optional;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Optional;
-
-import static org.mockito.Mockito.mock;
 
 public class BlockAccessorTest {
     private static short MAXIMUM_BLOCK_DEPTH = 100;
@@ -50,8 +49,12 @@ public class BlockAccessorTest {
     public void getBlockBeyondMaximumBlockDepth() {
         executionEnvironment = mock(ExecutionEnvironment.class);
 
-        Assert.assertFalse(blockAccessor.getBlock(MAXIMUM_BLOCK_DEPTH, executionEnvironment).isPresent());
-        Assert.assertFalse(blockAccessor.getBlock((short) (MAXIMUM_BLOCK_DEPTH + 1), executionEnvironment).isPresent());
+        Assert.assertFalse(
+                blockAccessor.getBlock(MAXIMUM_BLOCK_DEPTH, executionEnvironment).isPresent());
+        Assert.assertFalse(
+                blockAccessor
+                        .getBlock((short) (MAXIMUM_BLOCK_DEPTH + 1), executionEnvironment)
+                        .isPresent());
     }
 
     @Test(expected = NativeContractIllegalArgumentException.class)
@@ -63,7 +66,8 @@ public class BlockAccessorTest {
 
     @Test
     public void getGenesisBlock() {
-        ExecutionEnvironment executionEnvironment = EnvironmentUtils.getEnvironmentWithBlockchainOfLength(1);
+        ExecutionEnvironment executionEnvironment =
+                EnvironmentUtils.getEnvironmentWithBlockchainOfLength(1);
 
         Optional<Block> genesis = blockAccessor.getBlock(ZERO_BLOCK_DEPTH, executionEnvironment);
         Optional<Block> firstBlock = blockAccessor.getBlock(ONE_BLOCK_DEPTH, executionEnvironment);
@@ -76,9 +80,10 @@ public class BlockAccessorTest {
 
     @Test
     public void getTenBlocksFromTheTip() {
-        ExecutionEnvironment executionEnvironment = EnvironmentUtils.getEnvironmentWithBlockchainOfLength(100);
+        ExecutionEnvironment executionEnvironment =
+                EnvironmentUtils.getEnvironmentWithBlockchainOfLength(100);
 
-        for(short i = 0; i < 10; i++) {
+        for (short i = 0; i < 10; i++) {
             Optional<Block> block = blockAccessor.getBlock(i, executionEnvironment);
             Assert.assertTrue(block.isPresent());
             Assert.assertEquals(99 - i, block.get().getNumber());

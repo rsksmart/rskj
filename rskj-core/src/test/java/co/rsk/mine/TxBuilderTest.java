@@ -20,13 +20,12 @@ package co.rsk.mine;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.net.BlockProcessor;
+import java.math.BigInteger;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.math.BigInteger;
 
 public class TxBuilderTest {
 
@@ -58,8 +57,7 @@ public class TxBuilderTest {
 
         try {
             builder.createNewTx(nonce);
-        }
-        catch (InterruptedException ex){
+        } catch (InterruptedException ex) {
             Assert.fail();
         }
     }

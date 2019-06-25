@@ -18,20 +18,16 @@
 package co.rsk.jsonrpc;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.util.Objects;
 
 /**
- * This is the base class for JSON-RPC requests.
- * Inheritors should define the methods it accepts and how to map to different specific implementations.
+ * This is the base class for JSON-RPC requests. Inheritors should define the methods it accepts and
+ * how to map to different specific implementations.
  */
 public abstract class JsonRpcRequest<T extends Enum<T>> extends JsonRpcIdentifiableMessage {
     private final T method;
 
-    public JsonRpcRequest(
-            JsonRpcVersion version,
-            T method,
-            int id) {
+    public JsonRpcRequest(JsonRpcVersion version, T method, int id) {
         super(version, id);
         this.method = Objects.requireNonNull(method);
     }

@@ -6,12 +6,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-/**
- * Created by ajlopez on 20/01/2019.
- */
+/** Created by ajlopez on 20/01/2019. */
 public class BlocksBloomTest {
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
+    @Rule public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void createBlocksBloom() {

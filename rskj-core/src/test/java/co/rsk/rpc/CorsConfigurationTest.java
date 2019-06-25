@@ -22,9 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 20/04/2017.
- */
+/** Created by ajlopez on 20/04/2017. */
 public class CorsConfigurationTest {
 
     public static final String EXPECTED_CORS_CONFIG = "*.rsk.co";
@@ -59,8 +57,7 @@ public class CorsConfigurationTest {
         try {
             new CorsConfiguration("host1\rhost2");
             Assert.fail();
-        }
-        catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException ex) {
             Assert.assertEquals("corsheader", ex.getMessage());
         }
     }
@@ -70,8 +67,7 @@ public class CorsConfigurationTest {
         try {
             new CorsConfiguration("host1\nhost2");
             Assert.fail();
-        }
-        catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException ex) {
             Assert.assertEquals("corsheader", ex.getMessage());
         }
     }

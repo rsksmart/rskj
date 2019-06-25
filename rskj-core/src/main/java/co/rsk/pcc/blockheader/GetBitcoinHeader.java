@@ -24,20 +24,19 @@ import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 
 /**
- * This implements the "getBitcoinHeader" method
- * that belongs to the BlockHeaderContract native contract.
+ * This implements the "getBitcoinHeader" method that belongs to the BlockHeaderContract native
+ * contract.
  *
  * @author Diego Masini
  */
 public class GetBitcoinHeader extends BlockHeaderContractMethod {
 
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "getBitcoinHeader",
-            new String[]{"int256"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature(
+                    "getBitcoinHeader", new String[] {"int256"}, new String[] {"bytes"});
 
-    public GetBitcoinHeader(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
+    public GetBitcoinHeader(
+            ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);
     }
 

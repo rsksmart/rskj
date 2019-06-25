@@ -26,9 +26,7 @@ import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
 
-/**
- * Created by ajlopez on 5/14/2016.
- */
+/** Created by ajlopez on 5/14/2016. */
 public class SimpleNode {
     private MessageHandler handler;
     private NodeID nodeID = new NodeID(HashUtil.randomPeerId());
@@ -47,11 +45,14 @@ public class SimpleNode {
     }
 
     public Block getBestBlock() {
-        return ((NodeMessageHandler)handler).getBlockProcessor().getBlockchain().getBestBlock();
+        return ((NodeMessageHandler) handler).getBlockProcessor().getBlockchain().getBestBlock();
     }
 
     public BlockDifficulty getTotalDifficulty() {
-        return ((NodeMessageHandler)this.handler).getBlockProcessor().getBlockchain().getTotalDifficulty();
+        return ((NodeMessageHandler) this.handler)
+                .getBlockProcessor()
+                .getBlockchain()
+                .getTotalDifficulty();
     }
 
     public void sendStatusTo(SimpleNode peer) {
@@ -67,17 +68,24 @@ public class SimpleNode {
 
     public Status getFullStatus() {
         Block block = this.getBestBlock();
-        return new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), this.getTotalDifficulty());
+        return new Status(
+                block.getNumber(),
+                block.getHash().getBytes(),
+                block.getParentHash().getBytes(),
+                this.getTotalDifficulty());
     }
 
     public SimpleNodeChannel getMessageChannel(SimpleNode peer) {
         return new SimpleNodeChannel(this, peer);
     }
 
-    public NodeID getNodeID() { return nodeID; }
+    public NodeID getNodeID() {
+        return nodeID;
+    }
 
     public static SimpleNode createNode() {
-        NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler(new DummyBlockValidationRule());
+        NodeMessageHandler handler =
+                NodeMessageHandlerUtil.createHandler(new DummyBlockValidationRule());
         return new SimpleNode(handler);
     }
 }

@@ -23,10 +23,12 @@ import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Created by mario on 23/01/17.
- */
-public class BlockTimeStampValidationRule implements BlockParentDependantValidationRule, BlockHeaderParentDependantValidationRule, BlockValidationRule, BlockHeaderValidationRule {
+/** Created by mario on 23/01/17. */
+public class BlockTimeStampValidationRule
+        implements BlockParentDependantValidationRule,
+                BlockHeaderParentDependantValidationRule,
+                BlockValidationRule,
+                BlockHeaderValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
@@ -52,7 +54,7 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
 
         boolean result = blockTime - currentTime <= this.validPeriodLength;
 
-        if(!result) {
+        if (!result) {
             logger.warn("Error validating block. Invalid timestamp {}.", blockTime);
         }
 
@@ -72,7 +74,10 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
         result = result && (blockTime > parentTime);
 
         if (!result) {
-            logger.warn("Error validating block. Invalid timestamp {} for parent timestamp {}", blockTime, parentTime);
+            logger.warn(
+                    "Error validating block. Invalid timestamp {} for parent timestamp {}",
+                    blockTime,
+                    parentTime);
         }
 
         return result;

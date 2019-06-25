@@ -18,8 +18,12 @@
 
 package co.rsk.jsontestsuite;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.ethereum.jsontestsuite.RLPTestCase;
 import org.json.simple.parser.ParseException;
@@ -27,11 +31,6 @@ import org.junit.*;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author Angel J Lopez
@@ -41,7 +40,7 @@ import java.util.Set;
 public class LocalRLPTest {
 
     private static Logger logger = LoggerFactory.getLogger("rlp");
-    private static HashMap<String , RLPTestCase> TEST_SUITE;
+    private static HashMap<String, RLPTestCase> TEST_SUITE;
 
     @BeforeClass
     public static void init() throws ParseException, IOException {
@@ -51,8 +50,9 @@ public class LocalRLPTest {
         Assume.assumeFalse("Local test is not available", json.equals(""));
 
         ObjectMapper mapper = new ObjectMapper();
-        JavaType type = mapper.getTypeFactory().
-                constructMapType(HashMap.class, String.class, RLPTestCase.class);
+        JavaType type =
+                mapper.getTypeFactory()
+                        .constructMapType(HashMap.class, String.class, RLPTestCase.class);
 
         TEST_SUITE = mapper.readValue(json, type);
     }
@@ -76,11 +76,10 @@ public class LocalRLPTest {
         Set<String> excluded = new HashSet<>();
 
         for (String key : TEST_SUITE.keySet()) {
-            if ( excluded.contains(key)) {
+            if (excluded.contains(key)) {
                 logger.info("[X] " + key);
                 continue;
-            }
-            else {
+            } else {
                 logger.info("    " + key);
             }
 
@@ -91,7 +90,9 @@ public class LocalRLPTest {
     }
 
     private static String getJSON(String name) {
-        String json = JSONReader.loadJSONFromResource("json/RLPTests/" + name + ".json", LocalVMTest.class.getClassLoader());
+        String json =
+                JSONReader.loadJSONFromResource(
+                        "json/RLPTests/" + name + ".json", LocalVMTest.class.getClassLoader());
         return json;
     }
 }

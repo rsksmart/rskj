@@ -20,20 +20,19 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
+import java.io.IOException;
+import java.util.Collections;
 import org.json.simple.parser.ParseException;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import java.io.IOException;
-import java.util.Collections;
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Ignore
 public class GitHubBlockTest {
 
-    //SHACOMMIT of tested commit, ethereum/tests.git
+    // SHACOMMIT of tested commit, ethereum/tests.git
     public String shacommit = "0895e096ca9de6ba745bad238cb579964bd90cea";
 
     @Ignore // test for conveniently running a single test
@@ -42,8 +41,11 @@ public class GitHubBlockTest {
         TestSystemProperties config = new TestSystemProperties();
         config.setGenesisInfo("frontier.json");
 
-        String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/bcTotalDifficultyTest.json", shacommit);
-        GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(json, "sideChainWithNewMaxDifficultyStartingFromBlock3AfterBlock4");
+        String json =
+                JSONReader.loadJSONFromCommit(
+                        "BlockchainTests/Homestead/bcTotalDifficultyTest.json", shacommit);
+        GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(
+                json, "sideChainWithNewMaxDifficultyStartingFromBlock3AfterBlock4");
     }
 
     private void runFrontier(String name) throws IOException, ParseException {
@@ -52,12 +54,15 @@ public class GitHubBlockTest {
     }
 
     private void runHomestead(String name) throws IOException, ParseException {
-        String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/" + name + ".json", shacommit);
+        String json =
+                JSONReader.loadJSONFromCommit(
+                        "BlockchainTests/Homestead/" + name + ".json", shacommit);
         TestSystemProperties config = new TestSystemProperties();
         GitHubJSONTestSuite.runGitHubJsonBlockTest(json, Collections.EMPTY_SET);
     }
 
-    private void run(String name, boolean frontier, boolean homestead) throws IOException, ParseException {
+    private void run(String name, boolean frontier, boolean homestead)
+            throws IOException, ParseException {
         if (frontier) runFrontier(name);
         if (homestead) runHomestead(name);
     }
@@ -66,7 +71,6 @@ public class GitHubBlockTest {
     public void runBCInvalidHeaderTest() throws ParseException, IOException {
         run("bcInvalidHeaderTest", true, true);
     }
-
 
     @Test
     public void runBCInvalidRLPTest() throws ParseException, IOException {
@@ -78,14 +82,13 @@ public class GitHubBlockTest {
         run("bcRPC_API_Test", true, true);
     }
 
-
     @Test
     public void runBCUncleHeaderValidityTest() throws ParseException, IOException {
         run("bcUncleHeaderValiditiy", true, true);
     }
 
     @Test
-     public void runBCUncleTest() throws ParseException, IOException {
+    public void runBCUncleTest() throws ParseException, IOException {
         run("bcUncleTest", true, true);
     }
 

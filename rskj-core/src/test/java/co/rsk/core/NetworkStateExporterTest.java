@@ -24,6 +24,12 @@ import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
@@ -36,27 +42,20 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-/**
- * Created by oscar on 13/01/2017.
- */
+/** Created by oscar on 13/01/2017. */
 public class NetworkStateExporterTest {
     static String jsonFileName = "networkStateExporterTest.json";
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         FileUtils.deleteQuietly(new File(jsonFileName));
     }
 
     @Test
     public void testEmptyRepo() throws Exception {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+        Repository repository =
+                new MutableRepository(
+                        new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
 
         Map result = writeAndReadJson(repository);
 
@@ -67,25 +66,27 @@ public class NetworkStateExporterTest {
     public void testNoContracts() throws Exception {
         // This test will work on a non-secured Trie. To make it work with a secured-trie
         // you have to do GlobalKeyMap.enabled = true first.
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+        Repository repository =
+                new MutableRepository(
+                        new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
         Set<RskAddress> set;
         set = repository.getAccountsKeys();
-        Assert.assertEquals(1,set.size());
+        Assert.assertEquals(1, set.size());
 
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
 
         set = repository.getAccountsKeys();
-        Assert.assertEquals(1,set.size());
+        Assert.assertEquals(1, set.size());
 
         String address2String = "2000000000000000000000000000000000000000";
         RskAddress addr2 = new RskAddress(address2String);
         repository.createAccount(addr2);
         set = repository.getAccountsKeys();
-        Assert.assertEquals(2,set.size());
+        Assert.assertEquals(2, set.size());
 
         repository.addBalance(addr2, Coin.valueOf(10L));
         repository.increaseNonce(addr2);
@@ -99,37 +100,39 @@ public class NetworkStateExporterTest {
         repository.addBalance(PrecompiledContracts.REMASC_ADDR, Coin.valueOf(10L));
         repository.increaseNonce(PrecompiledContracts.REMASC_ADDR);
 
-
         Map result = writeAndReadJson(repository);
         Assert.assertEquals(3, result.keySet().size());
 
         Map address1Value = (Map) result.get(address1String);
         Assert.assertEquals(2, address1Value.keySet().size());
-        Assert.assertEquals("1",address1Value.get("balance"));
-        Assert.assertEquals("1",address1Value.get("nonce"));
+        Assert.assertEquals("1", address1Value.get("balance"));
+        Assert.assertEquals("1", address1Value.get("nonce"));
 
         Map address2Value = (Map) result.get(address2String);
         Assert.assertEquals(2, address2Value.keySet().size());
-        Assert.assertEquals("10",address2Value.get("balance"));
-        Assert.assertEquals("2",address2Value.get("nonce"));
+        Assert.assertEquals("10", address2Value.get("balance"));
+        Assert.assertEquals("2", address2Value.get("nonce"));
 
         Map remascValue = (Map) result.get(PrecompiledContracts.REMASC_ADDR_STR);
         Assert.assertEquals(2, remascValue.keySet().size());
-        Assert.assertEquals("10",remascValue.get("balance"));
-        Assert.assertEquals("1",remascValue.get("nonce"));
+        Assert.assertEquals("10", remascValue.get("balance"));
+        Assert.assertEquals("1", remascValue.get("nonce"));
     }
+
     @Test
     public void testContracts() throws Exception {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+        Repository repository =
+                new MutableRepository(
+                        new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
 
-        repository.saveCode(addr1, new byte[]{1, 2, 3, 4});
+        repository.saveCode(addr1, new byte[] {1, 2, 3, 4});
         repository.addStorageRow(addr1, DataWord.ZERO, DataWord.ONE);
-        repository.addStorageBytes(addr1, DataWord.ONE, new byte[]{5, 6, 7, 8});
+        repository.addStorageBytes(addr1, DataWord.ONE, new byte[] {5, 6, 7, 8});
 
         AccountState accountState = repository.getAccountState(addr1);
         repository.updateAccountState(addr1, accountState);
@@ -141,21 +144,20 @@ public class NetworkStateExporterTest {
         // Getting address1String only works if the Trie is not secure.
         Map address1Value = (Map) result.get(address1String);
         Assert.assertEquals(3, address1Value.keySet().size());
-        Assert.assertEquals("1",address1Value.get("balance"));
-        Assert.assertEquals("1",address1Value.get("nonce"));
+        Assert.assertEquals("1", address1Value.get("balance"));
+        Assert.assertEquals("1", address1Value.get("nonce"));
         Map contract = (Map) address1Value.get("contract");
         Assert.assertEquals(2, contract.keySet().size());
-        Assert.assertEquals("01020304",contract.get("code"));
+        Assert.assertEquals("01020304", contract.get("code"));
         Map data = (Map) contract.get("data");
         Assert.assertEquals(2, data.keySet().size());
 
         String addrStr = Hex.toHexString(DataWord.ZERO.getData());
 
         // A value expanded with leading zeros requires testing in expanded form.
-        Assert.assertEquals("01",data.get(addrStr));
+        Assert.assertEquals("01", data.get(addrStr));
         Assert.assertEquals("05060708", data.get(Hex.toHexString(DataWord.ONE.getData())));
     }
-
 
     private Map writeAndReadJson(Repository repository) throws Exception {
         NetworkStateExporter nse = new NetworkStateExporter(repository);
@@ -169,5 +171,4 @@ public class NetworkStateExporterTest {
         Map result = new ObjectMapper().readValue(json, type);
         return result;
     }
-
 }

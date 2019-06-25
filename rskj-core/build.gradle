@@ -12,9 +12,19 @@ plugins {
     id 'application'
 }
 
+apply plugin: 'com.diffplug.gradle.spotless'
 apply plugin: 'witness'
 apply plugin: 'maven'
 apply plugin: 'jacoco'
+
+spotless {
+    java {
+        googleJavaFormat('1.7').aosp()
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
 
 test {
     beforeTest { descriptor ->

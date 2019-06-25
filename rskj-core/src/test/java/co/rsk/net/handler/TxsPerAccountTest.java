@@ -2,17 +2,14 @@ package co.rsk.net.handler;
 
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import java.math.BigInteger;
+import java.util.List;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.util.List;
-
-/**
- * Created by ajlopez on 20/06/2017.
- */
+/** Created by ajlopez on 20/06/2017. */
 public class TxsPerAccountTest {
     @Test
     public void containsNoTransactions() {
@@ -40,7 +37,7 @@ public class TxsPerAccountTest {
     public void containsNonce() {
         TxsPerAccount txspa = new TxsPerAccount();
 
-        Transaction tx =  buildTransaction(1);
+        Transaction tx = buildTransaction(1);
 
         txspa.getTransactions().add(tx);
 
@@ -51,7 +48,7 @@ public class TxsPerAccountTest {
     public void retrieveTransactionsReadyToBeSend() {
         TxsPerAccount txspa = new TxsPerAccount();
 
-        Transaction tx =  buildTransaction(1);
+        Transaction tx = buildTransaction(1);
 
         txspa.getTransactions().add(tx);
 
@@ -70,8 +67,8 @@ public class TxsPerAccountTest {
     public void retrieveTransactionsReadyToBeSendTwoNonces() {
         TxsPerAccount txspa = new TxsPerAccount();
 
-        Transaction tx =  buildTransaction(1);
-        Transaction tx2 =  buildTransaction(2);
+        Transaction tx = buildTransaction(1);
+        Transaction tx2 = buildTransaction(2);
 
         txspa.getTransactions().add(tx);
         txspa.getTransactions().add(tx2);
@@ -92,8 +89,8 @@ public class TxsPerAccountTest {
     public void retrieveTransactionsReadyToBeSendAndRemoveNonce() {
         TxsPerAccount txspa = new TxsPerAccount();
 
-        Transaction tx =  buildTransaction(1);
-        Transaction tx2 =  buildTransaction(1);
+        Transaction tx = buildTransaction(1);
+        Transaction tx2 = buildTransaction(1);
 
         txspa.getTransactions().add(tx);
         txspa.getTransactions().add(tx2);

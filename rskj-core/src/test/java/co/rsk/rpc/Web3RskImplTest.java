@@ -35,6 +35,8 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -48,9 +50,6 @@ import org.ethereum.vm.LogInfo;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class Web3RskImplTest {
 
@@ -76,47 +75,53 @@ public class Web3RskImplTest {
         Wallet wallet = WalletFactory.createWallet();
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
-        EthModule em = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockchain,
-                null, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
-                null
-        );
+        EthModule em =
+                new EthModule(
+                        config.getNetworkConstants().getBridgeConstants(),
+                        config.getActivationConfig(),
+                        blockchain,
+                        null,
+                        new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
+                        null,
+                        new EthModuleSolidityDisabled(),
+                        new EthModuleWalletEnabled(wallet),
+                        null,
+                        null);
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
-        Web3RskImpl web3 = new Web3RskImpl(
-                rsk,
-                blockchain,
-                Web3Mocks.getMockTransactionPool(),
-                config,
-                Web3Mocks.getMockMinerClient(),
-                Web3Mocks.getMockMinerServer(),
-                pm,
-                em,
-                null,
-                tpm,
-                null,
-                dm,
-                Web3Mocks.getMockChannelManager(),
-                Web3Mocks.getMockRepositoryLocator(),
-                null,
-                networkStateExporter,
-                blockStore,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
+        Web3RskImpl web3 =
+                new Web3RskImpl(
+                        rsk,
+                        blockchain,
+                        Web3Mocks.getMockTransactionPool(),
+                        config,
+                        Web3Mocks.getMockMinerClient(),
+                        Web3Mocks.getMockMinerServer(),
+                        pm,
+                        em,
+                        null,
+                        tpm,
+                        null,
+                        dm,
+                        Web3Mocks.getMockChannelManager(),
+                        Web3Mocks.getMockRepositoryLocator(),
+                        null,
+                        networkStateExporter,
+                        blockStore,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
         web3.ext_dumpState();
     }
 
     @Test
     public void web3_LogFilterElement_toString() {
         LogInfo logInfo = Mockito.mock(LogInfo.class);
-        byte[] valueToTest = HashUtil.keccak256(new byte[]{1});
+        byte[] valueToTest = HashUtil.keccak256(new byte[] {1});
         Mockito.when(logInfo.getData()).thenReturn(valueToTest);
         List<DataWord> topics = new ArrayList<>();
         topics.add(DataWord.valueFromHex("c1"));
@@ -132,9 +137,12 @@ public class Web3RskImplTest {
         Mockito.when(tx.getHash()).thenReturn(new Keccak256(bytes));
         int logIdx = 5;
 
-        LogFilterElement logFilterElement = new LogFilterElement(logInfo, block, txIndex, tx, logIdx);
+        LogFilterElement logFilterElement =
+                new LogFilterElement(logInfo, block, txIndex, tx, logIdx);
 
-        Assert.assertEquals(logFilterElement.toString(), "LogFilterElement{logIndex='0x5', blockNumber='0x1', blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', transactionHash='0x0200000000000000000000000000000000000000000000000000000000000000', transactionIndex='0x1', address='0x00', data='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}");
+        Assert.assertEquals(
+                logFilterElement.toString(),
+                "LogFilterElement{logIndex='0x5', blockNumber='0x1', blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', transactionHash='0x0200000000000000000000000000000000000000000000000000000000000000', transactionIndex='0x1', address='0x00', data='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}");
     }
 
     @Test
@@ -149,7 +157,9 @@ public class Web3RskImplTest {
         callArguments.data = "data";
         callArguments.nonce = "0";
 
-        Assert.assertEquals(callArguments.toString(), "CallArguments{from='0x1', to='0x2', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0'}");
+        Assert.assertEquals(
+                callArguments.toString(),
+                "CallArguments{from='0x1', to='0x2', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0'}");
     }
 
     @Test
@@ -176,7 +186,9 @@ public class Web3RskImplTest {
         blockResult.uncles = new String[] {"uncle1", "uncle2"};
         blockResult.minimumGasPrice = "minimumGasPrice";
 
-        Assert.assertEquals(blockResult.toString(), "BlockResult{number='number', hash='hash', parentHash='parentHash', sha3Uncles='sha3Uncles', logsBloom='logsBloom', transactionsRoot='transactionsRoot', stateRoot='stateRoot', receiptsRoot='receiptsRoot', miner='miner', difficulty='difficulty', totalDifficulty='totalDifficulty', extraData='extraData', size='size', gasLimit='gasLimit', minimumGasPrice='minimumGasPrice', gasUsed='gasUsed', timestamp='timestamp', transactions=[tx1, tx2], uncles=[uncle1, uncle2]}");
+        Assert.assertEquals(
+                blockResult.toString(),
+                "BlockResult{number='number', hash='hash', parentHash='parentHash', sha3Uncles='sha3Uncles', logsBloom='logsBloom', transactionsRoot='transactionsRoot', stateRoot='stateRoot', receiptsRoot='receiptsRoot', miner='miner', difficulty='difficulty', totalDifficulty='totalDifficulty', extraData='extraData', size='size', gasLimit='gasLimit', minimumGasPrice='minimumGasPrice', gasUsed='gasUsed', timestamp='timestamp', transactions=[tx1, tx2], uncles=[uncle1, uncle2]}");
     }
 
     @Test
@@ -188,6 +200,8 @@ public class Web3RskImplTest {
         filterRequest.address = "0x0000000001";
         filterRequest.topics = new Object[] {"2"};
 
-        Assert.assertEquals(filterRequest.toString(), "FilterRequest{fromBlock='1', toBlock='2', address=0x0000000001, topics=[2]}");
+        Assert.assertEquals(
+                filterRequest.toString(),
+                "FilterRequest{fromBlock='1', toBlock='2', address=0x0000000001, topics=[2]}");
     }
 }

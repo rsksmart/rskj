@@ -19,14 +19,13 @@
 
 package org.ethereum.validator;
 
-import org.ethereum.core.BlockHeader;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.ethereum.core.BlockHeader;
 
 /**
- * Composite {@link BlockHeader} validator
- * aggregating list of simple validation rules depending on parent's block header
+ * Composite {@link BlockHeader} validator aggregating list of simple validation rules depending on
+ * parent's block header
  *
  * @author Mikhail Kalinin
  * @since 02.09.2015
@@ -37,14 +36,14 @@ public class ParentBlockHeaderValidator extends DependentBlockHeaderRule {
 
     public ParentBlockHeaderValidator(List<DependentBlockHeaderRule> rules) {
         this.rules = new ArrayList<>();
-        if(rules != null) {
+        if (rules != null) {
             this.rules.addAll(rules);
         }
     }
 
     @Override
     public boolean validate(BlockHeader header, BlockHeader parent) {
-        if(parent == null) {
+        if (parent == null) {
             return false;
         }
         for (DependentBlockHeaderRule rule : rules) {

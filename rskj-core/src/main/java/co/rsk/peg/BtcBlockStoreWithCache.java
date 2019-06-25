@@ -26,6 +26,7 @@ import org.ethereum.core.Repository;
 
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
+ *
  * @author Oscar Guindzberg
  */
 public interface BtcBlockStoreWithCache extends BtcBlockStore {

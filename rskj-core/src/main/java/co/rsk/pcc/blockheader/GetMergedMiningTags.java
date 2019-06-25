@@ -21,29 +21,27 @@ package co.rsk.pcc.blockheader;
 
 import co.rsk.config.RskMiningConstants;
 import co.rsk.pcc.ExecutionEnvironment;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.util.ByteUtil;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 /**
- * This implements the "getMergedMiningTags" method
- * that belongs to the BlockHeaderContract native contract.
+ * This implements the "getMergedMiningTags" method that belongs to the BlockHeaderContract native
+ * contract.
  *
  * @author Diego Masini
  */
 public class GetMergedMiningTags extends BlockHeaderContractMethod {
-    private final CallTransaction.Function function = CallTransaction.Function.fromSignature(
-            "getMergedMiningTags",
-            new String[]{"int256"},
-            new String[]{"bytes"}
-    );
+    private final CallTransaction.Function function =
+            CallTransaction.Function.fromSignature(
+                    "getMergedMiningTags", new String[] {"int256"}, new String[] {"bytes"});
 
-    public GetMergedMiningTags(ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
+    public GetMergedMiningTags(
+            ExecutionEnvironment executionEnvironment, BlockAccessor blockAccessor) {
         super(executionEnvironment, blockAccessor);
     }
 
@@ -57,16 +55,21 @@ public class GetMergedMiningTags extends BlockHeaderContractMethod {
         byte[] mergedMiningTx = block.getBitcoinMergedMiningCoinbaseTransaction();
 
         List<Byte> mergedMiningTxAsList = Arrays.asList(ArrayUtils.toObject(mergedMiningTx));
-        List<Byte> rskTagBytesAsList = Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+        List<Byte> rskTagBytesAsList =
+                Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
 
-        int rskTagPosition = Collections.lastIndexOfSubList(mergedMiningTxAsList, rskTagBytesAsList);
+        int rskTagPosition =
+                Collections.lastIndexOfSubList(mergedMiningTxAsList, rskTagBytesAsList);
 
         // if RSK Tag not found, return an empty byte array
         if (rskTagPosition == -1) {
             return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
-        int additionalTagsStartIndex = rskTagPosition + RskMiningConstants.RSK_TAG.length + RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
+        int additionalTagsStartIndex =
+                rskTagPosition
+                        + RskMiningConstants.RSK_TAG.length
+                        + RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
         return Arrays.copyOfRange(mergedMiningTx, additionalTagsStartIndex, mergedMiningTx.length);
     }
 }

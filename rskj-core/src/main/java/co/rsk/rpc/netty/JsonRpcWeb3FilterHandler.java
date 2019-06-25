@@ -6,18 +6,14 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.rpc.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by ajlopez on 18/10/2017.
- */
-
+/** Created by ajlopez on 18/10/2017. */
 @ChannelHandler.Sharable
 public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final Logger logger = LoggerFactory.getLogger("jsonrpc");
@@ -27,7 +23,8 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
 
     private OriginValidator originValidator;
 
-    public JsonRpcWeb3FilterHandler(String corsDomains, InetAddress rpcAddress, List<String> rpcHost) {
+    public JsonRpcWeb3FilterHandler(
+            String corsDomains, InetAddress rpcAddress, List<String> rpcHost) {
         this.originValidator = new OriginValidator(corsDomains);
         this.rpcHost = rpcHost;
         this.rpcAddress = rpcAddress;
@@ -47,7 +44,9 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
                         hosts.add(hostAddress.getHostAddress());
                         hosts.add(hostAddress.getHostName());
                     } else {
-                        logger.warn("Wildcard address is not allowed on rpc host property {}", hostAddress);
+                        logger.warn(
+                                "Wildcard address is not allowed on rpc host property {}",
+                                hostAddress);
                     }
                 } catch (UnknownHostException e) {
                     logger.warn("Invalid Host defined on rpc.host", e);
@@ -58,12 +57,14 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request)
+            throws Exception {
         HttpResponse response;
         HttpMethod httpMethod = request.getMethod();
         HttpHeaders headers = request.headers();
 
-        // when a request has multiple host fields declared it would be equivalent to a comma separated list
+        // when a request has multiple host fields declared it would be equivalent to a comma
+        // separated list
         // the request will be inmediately rejected since it won't be parsed as a valid URI
         // and won't work to match an item on rpc.host
         String hostHeader = headers.get(HttpHeaders.Names.HOST);
@@ -71,7 +72,8 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
 
         if (!acceptedHosts.contains(parsedHeader)) {
             logger.debug("Invalid header HOST {}", hostHeader);
-            response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
+            response =
+                    new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
             return;
         }
@@ -84,20 +86,27 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
 
             if (!"application/json".equals(mimeType) && !"application/json-rpc".equals(mimeType)) {
                 logger.debug("Unsupported content type");
-                response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
+                response =
+                        new DefaultHttpResponse(
+                                HttpVersion.HTTP_1_1, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
             } else if (origin != null && !this.originValidator.isValidOrigin(origin)) {
                 logger.debug("Invalid origin");
-                response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
+                response =
+                        new DefaultHttpResponse(
+                                HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
             } else if (referer != null && !this.originValidator.isValidReferer(referer)) {
                 logger.debug("Invalid referer");
-                response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
-            }
-            else {
+                response =
+                        new DefaultHttpResponse(
+                                HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
+            } else {
                 ctx.fireChannelRead(request);
                 return;
             }
         } else {
-            response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_IMPLEMENTED);
+            response =
+                    new DefaultHttpResponse(
+                            HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_IMPLEMENTED);
         }
 
         ctx.write(response).addListener(ChannelFutureListener.CLOSE);
@@ -115,15 +124,15 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
 
     private boolean isAcceptedAddress(final InetAddress address) {
         // Check if the address is a valid special local or loop back
-        if (address.isLoopbackAddress() ) {
+        if (address.isLoopbackAddress()) {
             return true;
         }
         // Check if the address is defined on any interface
         try {
-            return !address.isAnyLocalAddress() && NetworkInterface.getByInetAddress(address) != null;
+            return !address.isAnyLocalAddress()
+                    && NetworkInterface.getByInetAddress(address) != null;
         } catch (SocketException se) {
             return false;
         }
     }
-
 }

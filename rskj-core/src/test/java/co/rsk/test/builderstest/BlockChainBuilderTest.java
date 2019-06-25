@@ -23,9 +23,7 @@ import co.rsk.test.builders.BlockChainBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 8/7/2016.
- */
+/** Created by ajlopez on 8/7/2016. */
 public class BlockChainBuilderTest {
     @Test
     public void createBlockChain() {

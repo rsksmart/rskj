@@ -1,10 +1,9 @@
 package co.rsk.scoring;
 
 /**
- * PeerScoringInformation is a simple class to exposte
- * the recorded scoring information for a peer
- * <p>
- * Created by ajlopez on 12/07/2017.
+ * PeerScoringInformation is a simple class to exposte the recorded scoring information for a peer
+ *
+ * <p>Created by ajlopez on 12/07/2017.
  */
 public class PeerScoringInformation {
     private final int successfulHandshakes;
@@ -49,19 +48,29 @@ public class PeerScoringInformation {
         return this.id;
     }
 
-    public String getType() { return this.type; }
+    public String getType() {
+        return this.type;
+    }
 
     public boolean getGoodReputation() {
         return this.goodReputation;
     }
 
-    public int getSuccessfulHandshakes() { return this.successfulHandshakes; }
+    public int getSuccessfulHandshakes() {
+        return this.successfulHandshakes;
+    }
 
-    public int getFailedHandshakes() { return this.failedHandshakes; }
+    public int getFailedHandshakes() {
+        return this.failedHandshakes;
+    }
 
-    public int getInvalidNetworks() { return this.invalidNetworks; }
+    public int getInvalidNetworks() {
+        return this.invalidNetworks;
+    }
 
-    public int getRepeatedMessages() { return this.repeatedMessages; }
+    public int getRepeatedMessages() {
+        return this.repeatedMessages;
+    }
 
     public int getValidBlocks() {
         return this.validBlocks;
@@ -99,5 +108,7 @@ public class PeerScoringInformation {
         return this.invalidHeader;
     }
 
-    public int getPunishments() { return this.punishments; }
+    public int getPunishments() {
+        return this.punishments;
+    }
 }

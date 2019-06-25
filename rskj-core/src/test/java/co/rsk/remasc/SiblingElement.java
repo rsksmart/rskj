@@ -18,9 +18,7 @@
 
 package co.rsk.remasc;
 
-/**
- * Created by martin.medina on 1/5/17.
- */
+/** Created by martin.medina on 1/5/17. */
 public class SiblingElement {
 
     private final int height;

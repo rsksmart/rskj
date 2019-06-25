@@ -1,5 +1,8 @@
 package co.rsk.mine;
 
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.MiningConfig;
@@ -16,6 +19,8 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import java.math.BigInteger;
+import java.time.Clock;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.BlockFactory;
@@ -33,18 +38,9 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
-import java.time.Clock;
-
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
-/**
- * Created by SerAdmin on 1/3/2018.
- */
+/** Created by SerAdmin on 1/3/2018. */
 public class MainNetMinerTest {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @Rule public TemporaryFolder folder = new TemporaryFolder();
     private TestSystemProperties config;
     private MiningMainchainView mainchainView;
     private TransactionPool transactionPool;
@@ -59,14 +55,18 @@ public class MainNetMinerTest {
         config = spy(new TestSystemProperties());
         when(config.getNetworkConstants()).thenReturn(Constants.mainnet());
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.all());
-        RskTestFactory factory = new RskTestFactory(config) {
-            @Override
-            public Genesis buildGenesis() {
-                Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
-                genesis.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
-                return genesis;
-            }
-        };
+        RskTestFactory factory =
+                new RskTestFactory(config) {
+                    @Override
+                    public Genesis buildGenesis() {
+                        Genesis genesis =
+                                GenesisLoader.loadGenesis(
+                                        "rsk-unittests.json", BigInteger.ZERO, true, true, true);
+                        genesis.getHeader()
+                                .setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
+                        return genesis;
+                    }
+                };
         mainchainView = factory.getMiningMainchainView();
         transactionPool = factory.getTransactionPool();
         blockStore = factory.getBlockStore();
@@ -92,17 +92,17 @@ public class MainNetMinerTest {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
 
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                mainchainView,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                blockToMineBuilder(),
-                clock,
-                blockFactory,
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer =
+                new MinerServerImpl(
+                        config,
+                        ethereumImpl,
+                        mainchainView,
+                        null,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        blockToMineBuilder(),
+                        clock,
+                        blockFactory,
+                        ConfigUtils.getDefaultMiningConfig());
         try {
             minerServer.start();
             MinerWork work = minerServer.getWork();
@@ -111,7 +111,9 @@ public class MainNetMinerTest {
 
             bitcoinMergedMiningBlock.setNonce(2);
 
-            SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+            SubmitBlockResult result =
+                    minerServer.submitBitcoinBlock(
+                            work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
             Assert.assertEquals("ERROR", result.getStatus());
             Assert.assertNull(result.getBlockInfo());
@@ -139,51 +141,55 @@ public class MainNetMinerTest {
         when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                mainchainView,
-                blockProcessor,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                blockToMineBuilder(),
-                clock,
-                blockFactory,
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer =
+                new MinerServerImpl(
+                        config,
+                        ethereumImpl,
+                        mainchainView,
+                        blockProcessor,
+                        new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                        blockToMineBuilder(),
+                        clock,
+                        blockFactory,
+                        ConfigUtils.getDefaultMiningConfig());
         try {
-        minerServer.start();
-        MinerWork work = minerServer.getWork();
+            minerServer.start();
+            MinerWork work = minerServer.getWork();
 
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work);
+            co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work);
 
-        bitcoinMergedMiningBlock.setNonce(1);
+            bitcoinMergedMiningBlock.setNonce(1);
 
-        // Try to submit a block with invalid PoW, this should not eliminate the block from the cache
-        SubmitBlockResult result1 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+            // Try to submit a block with invalid PoW, this should not eliminate the block from the
+            // cache
+            SubmitBlockResult result1 =
+                    minerServer.submitBitcoinBlock(
+                            work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        Assert.assertEquals("ERROR", result1.getStatus());
-        Assert.assertNull(result1.getBlockInfo());
-        Mockito.verify(ethereumImpl, Mockito.times(0)).addNewMinedBlock(Mockito.any());
+            Assert.assertEquals("ERROR", result1.getStatus());
+            Assert.assertNull(result1.getBlockInfo());
+            Mockito.verify(ethereumImpl, Mockito.times(0)).addNewMinedBlock(Mockito.any());
 
-        // Now try to submit the same block, this should work fine since the block remains in the cache
+            // Now try to submit the same block, this should work fine since the block remains in
+            // the cache
 
-        // This WON't work in mainnet because difficulty is HIGH
-        /*---------------------------------------------------------
-        findNonce(work, bitcoinMergedMiningBlock);
+            // This WON't work in mainnet because difficulty is HIGH
+            /*---------------------------------------------------------
+            findNonce(work, bitcoinMergedMiningBlock);
 
-        SubmitBlockResult result2 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+            SubmitBlockResult result2 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        Assert.assertEquals("OK", result2.getStatus());
-        Assert.assertNotNull(result2.getBlockInfo());
-        Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            Assert.assertEquals("OK", result2.getStatus());
+            Assert.assertNotNull(result2.getBlockInfo());
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
 
-        // Finally, submit the same block again and validate that addNewMinedBlock is called again
-        SubmitBlockResult result3 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+            // Finally, submit the same block again and validate that addNewMinedBlock is called again
+            SubmitBlockResult result3 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        Assert.assertEquals("OK", result3.getStatus());
-        Assert.assertNotNull(result3.getBlockInfo());
-        Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
-        -------------------------------*/
+            Assert.assertEquals("OK", result3.getStatus());
+            Assert.assertNotNull(result3.getBlockInfo());
+            Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
+            -------------------------------*/
         } finally {
             minerServer.stop();
         }
@@ -191,12 +197,16 @@ public class MainNetMinerTest {
 
     private co.rsk.bitcoinj.core.BtcBlock getMergedMiningBlock(MinerWork work) {
         NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
-        return MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
+        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction =
+                MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(
+                        bitcoinNetworkParameters, work);
+        return MinerUtils.getBitcoinMergedMiningBlock(
+                bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
     }
 
     private BlockToMineBuilder blockToMineBuilder() {
-        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
+        BlockUnclesValidationRule unclesValidationRule =
+                Mockito.mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
@@ -206,7 +216,8 @@ public class MainNetMinerTest {
                 repositoryLocator,
                 blockStore,
                 transactionPool,
-                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
+                new DifficultyCalculator(
+                        config.getActivationConfig(), config.getNetworkConstants()),
                 new GasLimitCalculator(config.getNetworkConstants()),
                 new ForkDetectionDataCalculator(),
                 unclesValidationRule,
@@ -214,7 +225,6 @@ public class MainNetMinerTest {
                 blockFactory,
                 blockExecutor,
                 new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                new MinerUtils()
-        );
+                new MinerUtils());
     }
 }

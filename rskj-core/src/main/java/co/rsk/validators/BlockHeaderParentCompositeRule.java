@@ -40,7 +40,8 @@ public class BlockHeaderParentCompositeRule implements BlockHeaderParentDependan
         logger.debug("Validating header {} {}", shortHash, number);
         for (BlockHeaderParentDependantValidationRule rule : this.rules) {
             if (!rule.isValid(header, parent)) {
-                logger.warn("Error Validating {} for header {} {}", rule.getClass(), shortHash, number);
+                logger.warn(
+                        "Error Validating {} for header {} {}", rule.getClass(), shortHash, number);
                 return false;
             }
         }

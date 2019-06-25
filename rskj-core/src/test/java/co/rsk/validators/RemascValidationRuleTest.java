@@ -19,6 +19,9 @@
 package co.rsk.validators;
 
 import co.rsk.remasc.RemascTransaction;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -26,13 +29,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Created by mario on 30/12/16.
- */
+/** Created by mario on 30/12/16. */
 public class RemascValidationRuleTest {
 
     @Test
@@ -48,7 +45,14 @@ public class RemascValidationRuleTest {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
-        tx.add(new Transaction("0000000000000000000000000000000000000001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, Constants.REGTEST_CHAIN_ID));
+        tx.add(
+                new Transaction(
+                        "0000000000000000000000000000000000000001",
+                        BigInteger.ZERO,
+                        BigInteger.ZERO,
+                        BigInteger.ONE,
+                        BigInteger.TEN,
+                        Constants.REGTEST_CHAIN_ID));
 
         Mockito.when(b.getTransactionsList()).thenReturn(tx);
 
@@ -63,7 +67,14 @@ public class RemascValidationRuleTest {
 
         List<Transaction> tx = new ArrayList<>();
         tx.add(new RemascTransaction(1L));
-        tx.add(new Transaction("0000000000000000000000000000000000000001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, Constants.REGTEST_CHAIN_ID));
+        tx.add(
+                new Transaction(
+                        "0000000000000000000000000000000000000001",
+                        BigInteger.ZERO,
+                        BigInteger.ZERO,
+                        BigInteger.ONE,
+                        BigInteger.TEN,
+                        Constants.REGTEST_CHAIN_ID));
 
         Mockito.when(b.getTransactionsList()).thenReturn(tx);
 
@@ -77,7 +88,14 @@ public class RemascValidationRuleTest {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
-        tx.add(new Transaction("0000000000000000000000000000000000000001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, Constants.REGTEST_CHAIN_ID));
+        tx.add(
+                new Transaction(
+                        "0000000000000000000000000000000000000001",
+                        BigInteger.ZERO,
+                        BigInteger.ZERO,
+                        BigInteger.ONE,
+                        BigInteger.TEN,
+                        Constants.REGTEST_CHAIN_ID));
         tx.add(new RemascTransaction(1L));
 
         Mockito.when(b.getTransactionsList()).thenReturn(tx);

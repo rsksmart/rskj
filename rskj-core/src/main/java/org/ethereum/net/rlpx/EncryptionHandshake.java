@@ -19,26 +19,23 @@
 
 package org.ethereum.net.rlpx;
 
+import static org.ethereum.crypto.Keccak256Helper.keccak256;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import javax.annotation.Nullable;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.digests.KeccakDigest;
+import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.crypto.ECIESCoder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.digests.KeccakDigest;
-import org.bouncycastle.math.ec.ECPoint;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
-
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
-
-/**
- * Created by devrandom on 2015-04-08.
- */
+/** Created by devrandom on 2015-04-08. */
 public class EncryptionHandshake {
     public static final int NONCE_SIZE = 32;
     public static final int MAC_SIZE = 256;
@@ -60,7 +57,12 @@ public class EncryptionHandshake {
         isInitiator = true;
     }
 
-    EncryptionHandshake(ECPoint remotePublicKey, ECKey ephemeralKey, byte[] initiatorNonce, byte[] responderNonce, boolean isInitiator) {
+    EncryptionHandshake(
+            ECPoint remotePublicKey,
+            ECKey ephemeralKey,
+            byte[] initiatorNonce,
+            byte[] responderNonce,
+            boolean isInitiator) {
         this.remotePublicKey = remotePublicKey;
         this.ephemeralKey = ephemeralKey;
         this.initiatorNonce = initiatorNonce;
@@ -82,7 +84,8 @@ public class EncryptionHandshake {
      */
     public AuthInitiateMessageV4 createAuthInitiateV4(ECKey key) {
         AuthInitiateMessageV4 message = new AuthInitiateMessageV4();
-        BigInteger secretScalar = remotePublicKey.multiply(key.getPrivKey()).normalize().getXCoord().toBigInteger();
+        BigInteger secretScalar =
+                remotePublicKey.multiply(key.getPrivKey()).normalize().getXCoord().toBigInteger();
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
 
         byte[] nonce = initiatorNonce;
@@ -101,7 +104,8 @@ public class EncryptionHandshake {
         return encryptAuthEIP8(padded);
     }
 
-    public AuthInitiateMessageV4 decryptAuthInitiateV4(byte[] in, ECKey myKey) throws InvalidCipherTextException {
+    public AuthInitiateMessageV4 decryptAuthInitiateV4(byte[] in, ECKey myKey)
+            throws InvalidCipherTextException {
         try {
 
             byte[] prefix = new byte[2];
@@ -148,12 +152,17 @@ public class EncryptionHandshake {
     AuthResponseMessageV4 makeAuthInitiateV4(AuthInitiateMessageV4 initiate, ECKey key) {
         initiatorNonce = initiate.nonce;
         remotePublicKey = initiate.publicKey;
-        BigInteger secretScalar = remotePublicKey.multiply(key.getPrivKey()).normalize().getXCoord().toBigInteger();
+        BigInteger secretScalar =
+                remotePublicKey.multiply(key.getPrivKey()).normalize().getXCoord().toBigInteger();
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         byte[] signed = xor(token, initiatorNonce);
 
-        ECKey ephemeral = ECKey.recoverFromSignature(recIdFromSignatureV(initiate.signature.v),
-                initiate.signature, signed, false);
+        ECKey ephemeral =
+                ECKey.recoverFromSignature(
+                        recIdFromSignatureV(initiate.signature.v),
+                        initiate.signature,
+                        signed,
+                        false);
         if (ephemeral == null) {
             throw new RuntimeException("failed to recover signatue from message");
         }
@@ -164,7 +173,8 @@ public class EncryptionHandshake {
         return response;
     }
 
-    public AuthResponseMessageV4 handleAuthResponseV4(ECKey myKey, byte[] initiatePacket, byte[] responsePacket) {
+    public AuthResponseMessageV4 handleAuthResponseV4(
+            ECKey myKey, byte[] initiatePacket, byte[] responsePacket) {
         AuthResponseMessageV4 response = decryptAuthResponseV4(responsePacket, myKey);
         remoteEphemeralKey = response.ephemeralPublicKey;
         responderNonce = response.nonce;
@@ -198,7 +208,12 @@ public class EncryptionHandshake {
         boolean isToken;
         if (token == null) {
             isToken = false;
-            BigInteger secretScalar = remotePublicKey.multiply(key.getPrivKey()).normalize().getXCoord().toBigInteger();
+            BigInteger secretScalar =
+                    remotePublicKey
+                            .multiply(key.getPrivKey())
+                            .normalize()
+                            .getXCoord()
+                            .toBigInteger();
             token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         } else {
             isToken = true;
@@ -208,7 +223,8 @@ public class EncryptionHandshake {
         byte[] signed = xor(token, nonce);
         message.signature = ephemeralKey.sign(signed);
         message.isTokenUsed = isToken;
-        message.ephemeralPublicHash = keccak256(ephemeralKey.getPubKeyPoint().getEncoded(false), 1, 64);
+        message.ephemeralPublicHash =
+                keccak256(ephemeralKey.getPubKeyPoint().getEncoded(false), 1, 64);
         message.publicKey = key.getPubKeyPoint();
         message.nonce = initiatorNonce;
         return message;
@@ -240,7 +256,8 @@ public class EncryptionHandshake {
         }
     }
 
-    public AuthInitiateMessage decryptAuthInitiate(byte[] ciphertext, ECKey myKey) throws InvalidCipherTextException {
+    public AuthInitiateMessage decryptAuthInitiate(byte[] ciphertext, ECKey myKey)
+            throws InvalidCipherTextException {
         try {
             byte[] plaintext = ECIESCoder.decrypt(myKey.getPrivKey(), ciphertext);
             return AuthInitiateMessage.decode(plaintext);
@@ -251,7 +268,8 @@ public class EncryptionHandshake {
         }
     }
 
-    public AuthResponseMessage handleAuthResponse(ECKey myKey, byte[] initiatePacket, byte[] responsePacket) {
+    public AuthResponseMessage handleAuthResponse(
+            ECKey myKey, byte[] initiatePacket, byte[] responsePacket) {
         AuthResponseMessage response = decryptAuthResponse(responsePacket, myKey);
         remoteEphemeralKey = response.ephemeralPublicKey;
         responderNonce = response.nonce;
@@ -260,9 +278,16 @@ public class EncryptionHandshake {
     }
 
     void agreeSecret(byte[] initiatePacket, byte[] responsePacket) {
-        BigInteger secretScalar = remoteEphemeralKey.multiply(ephemeralKey.getPrivKey()).normalize().getXCoord().toBigInteger();
+        BigInteger secretScalar =
+                remoteEphemeralKey
+                        .multiply(ephemeralKey.getPrivKey())
+                        .normalize()
+                        .getXCoord()
+                        .toBigInteger();
         byte[] agreedSecret = ByteUtil.bigIntegerToBytes(secretScalar, SECRET_SIZE);
-        byte[] sharedSecret = Keccak256Helper.keccak256(agreedSecret, Keccak256Helper.keccak256(responderNonce, initiatorNonce));
+        byte[] sharedSecret =
+                Keccak256Helper.keccak256(
+                        agreedSecret, Keccak256Helper.keccak256(responderNonce, initiatorNonce));
         byte[] aesSecret = Keccak256Helper.keccak256(agreedSecret, sharedSecret);
         secrets = new Secrets();
         secrets.aes = aesSecret;
@@ -289,14 +314,16 @@ public class EncryptionHandshake {
         }
     }
 
-    public byte[] handleAuthInitiate(byte[] initiatePacket, ECKey key) throws InvalidCipherTextException {
+    public byte[] handleAuthInitiate(byte[] initiatePacket, ECKey key)
+            throws InvalidCipherTextException {
         AuthResponseMessage response = makeAuthInitiate(initiatePacket, key);
         byte[] responsePacket = encryptAuthResponse(response);
         agreeSecret(initiatePacket, responsePacket);
         return responsePacket;
     }
 
-    AuthResponseMessage makeAuthInitiate(byte[] initiatePacket, ECKey key) throws InvalidCipherTextException {
+    AuthResponseMessage makeAuthInitiate(byte[] initiatePacket, ECKey key)
+            throws InvalidCipherTextException {
         AuthInitiateMessage initiate = decryptAuthInitiate(initiatePacket, key);
         return makeAuthInitiate(initiate, key);
     }
@@ -304,12 +331,17 @@ public class EncryptionHandshake {
     AuthResponseMessage makeAuthInitiate(AuthInitiateMessage initiate, ECKey key) {
         initiatorNonce = initiate.nonce;
         remotePublicKey = initiate.publicKey;
-        BigInteger secretScalar = remotePublicKey.multiply(key.getPrivKey()).normalize().getXCoord().toBigInteger();
+        BigInteger secretScalar =
+                remotePublicKey.multiply(key.getPrivKey()).normalize().getXCoord().toBigInteger();
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         byte[] signed = xor(token, initiatorNonce);
 
-        ECKey ephemeral = ECKey.recoverFromSignature(recIdFromSignatureV(initiate.signature.v),
-                initiate.signature, signed, false);
+        ECKey ephemeral =
+                ECKey.recoverFromSignature(
+                        recIdFromSignatureV(initiate.signature.v),
+                        initiate.signature,
+                        signed,
+                        false);
         if (ephemeral == null) {
             throw new RuntimeException("failed to recover signatue from message");
         }
@@ -322,8 +354,7 @@ public class EncryptionHandshake {
     }
 
     /**
-     * Pads messages with junk data,
-     * pad data length is random value satisfying 100 < len < 300.
+     * Pads messages with junk data, pad data length is random value satisfying 100 < len < 300.
      * It's necessary to make messages described by EIP-8 distinguishable from pre-EIP-8 msgs
      *
      * @param msg message to pad
@@ -343,7 +374,7 @@ public class EncryptionHandshake {
             // compressed
             v -= 4;
         }
-        return (byte)(v - 27);
+        return (byte) (v - 27);
     }
 
     public Secrets getSecrets() {

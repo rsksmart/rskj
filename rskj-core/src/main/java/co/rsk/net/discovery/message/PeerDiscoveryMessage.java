@@ -18,23 +18,22 @@
 
 package co.rsk.net.discovery.message;
 
+import static org.ethereum.crypto.HashUtil.keccak256;
+import static org.ethereum.util.ByteUtil.merge;
+
 import co.rsk.net.NodeID;
+import java.security.SignatureException;
+import java.util.Optional;
+import java.util.OptionalInt;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLPElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.security.SignatureException;
-import java.util.Optional;
-import java.util.OptionalInt;
-
-import static org.ethereum.crypto.HashUtil.keccak256;
-import static org.ethereum.util.ByteUtil.merge;
 
 public abstract class PeerDiscoveryMessage {
     private static final Logger logger = LoggerFactory.getLogger(PeerDiscoveryMessage.class);
@@ -49,7 +48,8 @@ public abstract class PeerDiscoveryMessage {
 
     public PeerDiscoveryMessage() {}
 
-    public PeerDiscoveryMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data){
+    public PeerDiscoveryMessage(
+            byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         this.mdc = mdc;
         this.signature = signature;
         this.type = type;
@@ -70,8 +70,10 @@ public abstract class PeerDiscoveryMessage {
         ecdsaSignature.v -= 27;
 
         byte[] sigBytes =
-                merge(BigIntegers.asUnsignedByteArray(32, ecdsaSignature.r),
-                        BigIntegers.asUnsignedByteArray(32, ecdsaSignature.s), new byte[]{ecdsaSignature.v});
+                merge(
+                        BigIntegers.asUnsignedByteArray(32, ecdsaSignature.r),
+                        BigIntegers.asUnsignedByteArray(32, ecdsaSignature.s),
+                        new byte[] {ecdsaSignature.v});
 
         // [3] calculate MDC
         byte[] forSha = merge(sigBytes, type, data);
@@ -129,7 +131,8 @@ public abstract class PeerDiscoveryMessage {
         if (networkId != null) {
             setValue = ByteUtil.byteArrayToInt(networkId.getRLPData());
         }
-        this.setNetworkId(Optional.ofNullable(setValue).map(OptionalInt::of).orElseGet(OptionalInt::empty));
+        this.setNetworkId(
+                Optional.ofNullable(setValue).map(OptionalInt::of).orElseGet(OptionalInt::empty));
     }
 
     public NodeID getNodeId() {
@@ -172,6 +175,7 @@ public abstract class PeerDiscoveryMessage {
                 .append("mdc", Hex.toHexString(mdc))
                 .append("signature", Hex.toHexString(signature))
                 .append("type", Hex.toHexString(type))
-                .append("data", Hex.toHexString(data)).toString();
+                .append("data", Hex.toHexString(data))
+                .toString();
     }
 }

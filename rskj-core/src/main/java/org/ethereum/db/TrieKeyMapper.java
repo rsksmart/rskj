@@ -20,20 +20,22 @@ package org.ethereum.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
+import java.util.Arrays;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
-import java.util.Arrays;
-
 public class TrieKeyMapper {
     public static final int SECURE_KEY_SIZE = 10;
-    public static final int REMASC_ACCOUNT_KEY_SIZE = SECURE_KEY_SIZE + RemascTransaction.REMASC_ADDRESS.getBytes().length;
+    public static final int REMASC_ACCOUNT_KEY_SIZE =
+            SECURE_KEY_SIZE + RemascTransaction.REMASC_ADDRESS.getBytes().length;
     public static final int ACCOUNT_KEY_SIZE = RskAddress.LENGTH_IN_BYTES;
     public static final int SECURE_ACCOUNT_KEY_SIZE = SECURE_KEY_SIZE + ACCOUNT_KEY_SIZE;
     private static final byte[] DOMAIN_PREFIX = new byte[] {0x00};
-    private static final byte[] STORAGE_PREFIX = new byte[] {0x00}; // This makes the MSB 0 be branching
-    private static final byte[] CODE_PREFIX = new byte[] {(byte) 0x80}; // This makes the MSB 1 be branching
+    private static final byte[] STORAGE_PREFIX =
+            new byte[] {0x00}; // This makes the MSB 0 be branching
+    private static final byte[] CODE_PREFIX =
+            new byte[] {(byte) 0x80}; // This makes the MSB 1 be branching
 
     // This is a performance enhancement. When multiple storage rows for the same
     // contract are stored, the same RskAddress is hashed over and over.

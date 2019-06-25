@@ -20,16 +20,13 @@
 package org.ethereum.config;
 
 import co.rsk.net.NodeID;
-import org.ethereum.net.rlpx.Node;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import org.ethereum.net.rlpx.Node;
 
-/**
- * Created by Anton Nashatyrev on 14.01.2016.
- */
+/** Created by Anton Nashatyrev on 14.01.2016. */
 public class NodeFilter {
     private List<Entry> entries = new ArrayList<>();
 
