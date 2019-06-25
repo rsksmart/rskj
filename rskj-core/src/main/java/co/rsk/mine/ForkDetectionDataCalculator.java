@@ -100,11 +100,16 @@ public class ForkDetectionDataCalculator {
     }
 
     private Uint8 getNumberOfUncles(List<BlockHeader> mainchainBlocks) {
-        // int to Uint8 is a safe creation since number of uncles is max 7 and blocks evaluated are at most 32.
-        // Hence, 7 * 32 = 224 and 224 < 255 (max number that fits on a short type variable)
-        return new Uint8(IntStream
+        int sum = IntStream
                 .range(0, NUMBER_OF_UNCLES)
-                .map(i -> mainchainBlocks.get(i).getUncleCount()).sum());
+                .map(i -> mainchainBlocks.get(i).getUncleCount()).sum();
+
+        final int maxUint = Uint8.MAX_VALUE.intValue();
+        if (sum > maxUint) {
+            return new Uint8(maxUint);
+        }
+
+        return new Uint8(sum);
     }
 
     private byte[] getBlockBeingMinedHeight(List<BlockHeader> mainchainBlocks) {
