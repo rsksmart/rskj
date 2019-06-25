@@ -42,6 +42,7 @@ import static org.mockito.Mockito.when;
 
 
 public class ForkDataDetectionCalculatorTest {
+    private static final int MAX_UNCLES = 10;
 
     private static MessageSerializer serializer;
 
@@ -156,7 +157,7 @@ public class ForkDataDetectionCalculatorTest {
         assertThat(forkDetectionData[6],
                 is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(446).getBitcoinMergedMiningHeader())));
 
-        assertThat(forkDetectionData[7], is((byte)90));
+        assertThat(forkDetectionData[7], is((byte)-120));
 
         assertThat(forkDetectionData[8], is((byte)0));
         assertThat(forkDetectionData[9], is((byte)0));
@@ -190,7 +191,7 @@ public class ForkDataDetectionCalculatorTest {
         assertThat(forkDetectionData[6],
                 is(getBtcBlockHashLeastSignificantByte(trimmedBlocks.get(436).getBitcoinMergedMiningHeader())));
 
-        assertThat(forkDetectionData[7], is((byte)224));
+        assertThat(forkDetectionData[7], is((byte)-1));
 
         assertThat(forkDetectionData[8], is((byte)0));
         assertThat(forkDetectionData[9], is((byte)0));
@@ -206,7 +207,7 @@ public class ForkDataDetectionCalculatorTest {
         List<Block> blocksUncles = createBlockchainAsList(height);
         int i = 0;
         for(Block block : blocksUncles) {
-            when(block.getHeader().getUncleCount()).thenReturn(maxUncles ? 7 : i % 7);
+            when(block.getHeader().getUncleCount()).thenReturn(maxUncles ? MAX_UNCLES : i % MAX_UNCLES);
             i++;
         }
 
