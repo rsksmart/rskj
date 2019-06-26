@@ -26,6 +26,7 @@ import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -948,10 +949,11 @@ public class Web3ImplLogsTest {
         Wallet wallet = WalletFactory.createWallet();
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), blockChain,
+                config.getNetworkConstants().getBridgeConstants(), blockChain,
                 null, new ExecutionBlockRetriever(mainchainView, blockChain, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
-                null
+                new BridgeSupportFactory(
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);

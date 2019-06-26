@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -440,13 +441,19 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
+                    BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                            new RepositoryBtcBlockStoreWithCache.Factory(
+                                    config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                            config.getNetworkConstants().getBridgeConstants(),
+                            config.getActivationConfig());
+
                     TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                             config,
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
                             invokeFactory,
-                            new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams())));
+                            new PrecompiledContracts(config, bridgeSupportFactory));
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
@@ -700,13 +707,19 @@ public class TransactionTest {
 
     private TransactionExecutor executeTransaction(Blockchain blockchain, Transaction tx) {
         Repository track = blockchain.getRepository().startTracking();
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(
+                        config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                config.getNetworkConstants().getBridgeConstants(),
+                config.getActivationConfig());
+
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
                 blockchain.getBlockStore(),
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams())));
+                new PrecompiledContracts(config, bridgeSupportFactory));
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), blockchain.getRepository(), blockchain.getBestBlock(), 0);
 

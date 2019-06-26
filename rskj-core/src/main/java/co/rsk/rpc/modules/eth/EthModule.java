@@ -18,17 +18,18 @@
 
 package co.rsk.rpc.modules.eth;
 
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
+
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeState;
-import co.rsk.peg.BridgeStorageConfiguration;
 import co.rsk.peg.BridgeSupport;
-import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import java.io.IOException;
+import java.util.Map;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -40,11 +41,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Map;
-
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
 // TODO add all RPC methods
 public class EthModule
@@ -60,12 +56,10 @@ public class EthModule
     private final EthModuleWallet ethModuleWallet;
     private final EthModuleTransaction ethModuleTransaction;
     private final BridgeConstants bridgeConstants;
-    private final ActivationConfig activationConfig;
-    private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private final BridgeSupportFactory bridgeSupportFactory;
 
     public EthModule(
             BridgeConstants bridgeConstants,
-            ActivationConfig activationConfig,
             Blockchain blockchain,
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
@@ -73,7 +67,7 @@ public class EthModule
             EthModuleSolidity ethModuleSolidity,
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction,
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
+            BridgeSupportFactory bridgeSupportFactory) {
         this.blockchain = blockchain;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
@@ -82,8 +76,7 @@ public class EthModule
         this.ethModuleWallet = ethModuleWallet;
         this.ethModuleTransaction = ethModuleTransaction;
         this.bridgeConstants = bridgeConstants;
-        this.activationConfig = activationConfig;
-        this.btcBlockStoreFactory = btcBlockStoreFactory;
+        this.bridgeSupportFactory = bridgeSupportFactory;
     }
 
     @Override
@@ -95,14 +88,8 @@ public class EthModule
         Block bestBlock = blockchain.getBestBlock();
         Repository repository = repositoryLocator.snapshotAt(bestBlock.getHeader()).startTracking();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(
-                bridgeConstants,
-                new BridgeStorageConfiguration(
-                        activationConfig.isActive(ConsensusRule.RSKIP87, bestBlock.getNumber()),
-                        activationConfig.isActive(ConsensusRule.RSKIP123, bestBlock.getNumber())
-                ),
-                null, repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR,
-                btcBlockStoreFactory);
+        BridgeSupport bridgeSupport = bridgeSupportFactory.newInstance(
+                repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR, null);
 
         byte[] result = bridgeSupport.getStateForDebugging();
 

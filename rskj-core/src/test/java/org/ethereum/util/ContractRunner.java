@@ -1,9 +1,9 @@
 package org.ethereum.util;
 
-import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.AccountBuilder;
@@ -109,14 +109,18 @@ public class ContractRunner {
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = repository.startTracking();
         RskSystemProperties config = new TestSystemProperties();
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(
+                        config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                config.getNetworkConstants().getBridgeConstants(),
+                config.getActivationConfig());
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,
                 new BlockFactory(config.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, btcBlockStoreFactory)
+                new PrecompiledContracts(config, bridgeSupportFactory)
         );
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(transaction, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);

@@ -87,7 +87,7 @@ public class StateTestRunner {
         this.stateTestCase = stateTestCase;
         setstateTestUSeREMASC(false);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
-        precompiledContracts = new PrecompiledContracts(config, btcBlockStoreFactory);
+        precompiledContracts = new PrecompiledContracts(config, null);
     }
 
     public StateTestRunner setstateTestUSeREMASC(boolean v) {

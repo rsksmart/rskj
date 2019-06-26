@@ -26,6 +26,8 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
@@ -666,7 +668,15 @@ public class BlockExecutorTest {
     }
 
     private static BlockExecutor buildBlockExecutor(Repository repository) {
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(
+                config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+
+        Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                config.getNetworkConstants().getBridgeConstants().getBtcParams());
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+
         return new BlockExecutor(
                 config.getActivationConfig(),
                 new RepositoryLocator(repository, stateRootHandler),
@@ -677,7 +687,7 @@ public class BlockExecutorTest {
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()))
+                        new PrecompiledContracts(config, bridgeSupportFactory)
                 )
         );
     }

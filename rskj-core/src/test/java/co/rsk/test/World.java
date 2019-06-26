@@ -31,7 +31,8 @@ import co.rsk.net.BlockStore;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
@@ -55,7 +56,8 @@ public class World {
     private Map<String, Account> accounts = new HashMap<>();
     private Map<String, Transaction> transactions = new HashMap<>();
     private StateRootHandler stateRootHandler;
-    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private BridgeSupportFactory bridgeSupportFactory;
+
     public World() {
         this(new BlockChainBuilder().build());
     }
@@ -89,7 +91,11 @@ public class World {
         this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
         this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
 
-        this.btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
+        this.bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(
+                        config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                config.getNetworkConstants().getBridgeConstants(),
+                config.getActivationConfig());
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
@@ -97,6 +103,13 @@ public class World {
     public BlockExecutor getBlockExecutor() {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         final TestSystemProperties config = new TestSystemProperties();
+
+        Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                config.getNetworkConstants().getBridgeConstants().getBtcParams());
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
                     config.getActivationConfig(),
@@ -108,7 +121,7 @@ public class World {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,
-                            new PrecompiledContracts(config, btcBlockStoreFactory)
+                            new PrecompiledContracts(config, bridgeSupportFactory)
                     )
             );
         }
@@ -152,7 +165,7 @@ public class World {
         return this.blockChain.getRepository();
     }
 
-    public BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
-        return this.btcBlockStoreFactory;
+    public BridgeSupportFactory getBridgeSupportFactory() {
+        return bridgeSupportFactory;
     }
 }
