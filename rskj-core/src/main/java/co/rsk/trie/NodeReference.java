@@ -63,6 +63,20 @@ public class NodeReference {
     }
 
     /**
+     * If the node is not present, this is either an empty reference, or the hash points to a node already in storage.
+     */
+    public void save(TrieStore store, boolean force) {
+        getNode();
+        if (lazyNode != null) {
+            if (!isEmbeddable()) {
+                lazyNode.save(store, force);
+            } else if (lazyNode.hasLongValue()) {
+                store.saveValue(lazyNode);
+            }
+        }
+    }
+
+    /**
      * The node or empty if this is an empty reference.
      * If the node is not present but its hash is known, it will be retrieved from the store.
      */

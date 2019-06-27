@@ -63,9 +63,10 @@ import co.rsk.rpc.netty.*;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
+import co.rsk.trie.GarbageCollector;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
-import co.rsk.trie.TrieStoreImpl;
+import co.rsk.trie.TrieStore;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.ethereum.config.Constants;
@@ -75,7 +76,6 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.IndexedBlockStore;
@@ -753,14 +753,8 @@ public class RskContext implements NodeBootstrapper {
             FileUtil.recursiveDelete(databaseDir);
         }
 
-        int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = makeDataSource("unitrie", databaseDir);
-
-        if (statesCacheSize != 0) {
-            ds = new DataSourceWithCache(ds, statesCacheSize);
-        }
-
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(new TrieStoreImpl(ds)))));
+        TrieStore trieStore = new GarbageCollector(getCompositeEthereumListener(), getStateRootHandler(), databaseDir);
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(trieStore))));
     }
 
     protected org.ethereum.db.BlockStore buildBlockStore() {
