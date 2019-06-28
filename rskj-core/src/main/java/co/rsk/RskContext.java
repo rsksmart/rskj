@@ -608,7 +608,7 @@ public class RskContext implements NodeBootstrapper {
 
     public NetworkStateExporter getNetworkStateExporter() {
         if (networkStateExporter == null) {
-            networkStateExporter = new NetworkStateExporter(getRepository());
+            networkStateExporter = new NetworkStateExporter(getRepositoryLocator(), getBlockchain());
         }
 
         return networkStateExporter;
