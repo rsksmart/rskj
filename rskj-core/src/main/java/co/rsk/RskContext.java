@@ -295,7 +295,7 @@ public class RskContext implements NodeBootstrapper {
 
     public RepositoryLocator getRepositoryLocator() {
         if (repositoryLocator == null) {
-            repositoryLocator = new RepositoryLocator(getRepository(), getStateRootHandler());
+            repositoryLocator = buildRepositoryLocator();
         }
 
         return repositoryLocator;
@@ -608,7 +608,7 @@ public class RskContext implements NodeBootstrapper {
 
     public NetworkStateExporter getNetworkStateExporter() {
         if (networkStateExporter == null) {
-            networkStateExporter = new NetworkStateExporter(getRepository());
+            networkStateExporter = new NetworkStateExporter(getRepositoryLocator(), getBlockchain());
         }
 
         return networkStateExporter;
@@ -771,6 +771,10 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(new TrieStoreImpl(ds)))));
+    }
+
+    protected RepositoryLocator buildRepositoryLocator() {
+        return new RepositoryLocator(getRepository(), getStateRootHandler());
     }
 
     protected org.ethereum.db.BlockStore buildBlockStore() {

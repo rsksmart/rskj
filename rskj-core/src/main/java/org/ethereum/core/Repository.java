@@ -180,12 +180,6 @@ public interface Repository extends AccountInformationProvider {
 
     byte[] getRoot();
 
-    /**
-     * @deprecated a repository responsibility isn't getting snapshots to other repositories
-     * @see co.rsk.db.RepositoryLocator
-     */
-    Repository getSnapshotTo(byte[] root);
-
     void updateAccountState(RskAddress addr, AccountState accountState);
 
     default void transfer(RskAddress fromAddr, RskAddress toAddr, Coin value) {

@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
@@ -51,12 +52,12 @@ public class RepositoryTest {
     public static final RskAddress HORSE = new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5F");
 
     private MutableRepository repository;
-    private TrieStoreImpl trieStore;
+    private MutableTrieImpl mutableTrie;
 
     @Before
     public void setUp() {
-        trieStore = new TrieStoreImpl(new HashMapDB());
-        repository = new MutableRepository(new MutableTrieImpl(new Trie(trieStore)));
+        mutableTrie = new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB())));
+        repository = new MutableRepository(mutableTrie);
     }
 
     @Test
@@ -159,8 +160,6 @@ public class RepositoryTest {
 
     @Test
     public void test16() {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(trieStore)));
-
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
 
@@ -428,7 +427,7 @@ public class RepositoryTest {
 
         final CountDownLatch failSema = new CountDownLatch(2);
 
-        Repository snap = repository.getSnapshotTo(repository.getRoot());
+        Repository snap = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(repository.getRoot())));
         new Thread(() -> {
             try {
                 int cnt = 1;
@@ -502,7 +501,7 @@ public class RepositoryTest {
         // this new repository to read all nodes from the store. The results must
         // be the same: lazy evaluation of the value must work.
 
-        Repository repository2 = new MutableRepository(new MutableTrieImpl(new Trie(trieStore))).getSnapshotTo(prevRoot);
+        Repository repository2 = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(prevRoot)));
         // Now try to get the size
         codeSize = repository2.getCodeLength(COW);
         assertEquals(codeLongerThan32bytes.length, codeSize);

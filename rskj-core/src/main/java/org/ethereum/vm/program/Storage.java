@@ -229,11 +229,6 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public Repository getSnapshotTo(byte[] root) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void updateAccountState(RskAddress addr, AccountState accountState) {
         throw new UnsupportedOperationException();
     }

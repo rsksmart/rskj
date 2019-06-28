@@ -21,6 +21,7 @@ package co.rsk.vm;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.test.World;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
@@ -51,6 +52,7 @@ public class BlockchainVMTest {
         public Blockchain blockchain;
         public ECKey faucetKey;
         public Repository repository;
+        public RepositoryLocator repositoryLocator;
     }
     static long addrCounter =1;
 
@@ -87,7 +89,7 @@ public class BlockchainVMTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
 
         MinerHelper mh = new MinerHelper(
-                binfo.repository, binfo.blockchain);
+                binfo.repository, binfo.repositoryLocator, binfo.blockchain);
 
         mh.completeBlock(block2, block1);
 
@@ -116,6 +118,7 @@ public class BlockchainVMTest {
         binfo.faucetKey = createFaucetAccount(world);
         binfo.blockchain = world.getBlockChain();
         binfo.repository = world.getRepository();
+        binfo.repositoryLocator = new RepositoryLocator(world.getRepository(), world.getStateRootHandler());
         return binfo;
     }
 

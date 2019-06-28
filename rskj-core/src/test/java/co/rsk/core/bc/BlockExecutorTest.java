@@ -130,7 +130,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
+        Repository finalRepository = new MutableRepository(repository.getMutableTrie().getSnapshotTo(result.getFinalState().getHash()));
 
         accountState = finalRepository.getAccountState(account);
 
@@ -187,7 +187,7 @@ public class BlockExecutorTest {
 
         // here is the papa. my commit changes stateroot while previous commit did not.
 
-        Repository finalRepository = repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
+        Repository finalRepository = new MutableRepository(repository.getMutableTrie().getSnapshotTo(result.getFinalState().getHash()));
 
         accountState = finalRepository.getAccountState(account);
 
@@ -569,7 +569,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
+        Repository finalRepository = new MutableRepository(repository.getMutableTrie().getSnapshotTo(result.getFinalState().getHash()));
 
         accountState = finalRepository.getAccountState(account.getAddress());
 

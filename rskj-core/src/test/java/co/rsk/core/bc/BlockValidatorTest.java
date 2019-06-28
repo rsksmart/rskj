@@ -645,7 +645,6 @@ public class BlockValidatorTest {
         BlockStore blockStore = Mockito.mock(org.ethereum.db.BlockStore.class);
         Repository repository = Mockito.mock(Repository.class);
 
-        Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
         Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
 
         Block parent = new BlockBuilder().minGasPrice(BigInteger.ZERO)
@@ -673,7 +672,6 @@ public class BlockValidatorTest {
         BlockStore blockStore = Mockito.mock(org.ethereum.db.BlockStore.class);
         Repository repository = Mockito.mock(Repository.class);
 
-        Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
         Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
 
         Block parent = new BlockBuilder().minGasPrice(BigInteger.ZERO)
@@ -697,7 +695,6 @@ public class BlockValidatorTest {
         BlockStore blockStore = Mockito.mock(org.ethereum.db.BlockStore.class);
         Repository repository = Mockito.mock(Repository.class);
 
-        Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
         Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
 
         Block parent = new BlockBuilder().minGasPrice(BigInteger.TEN)

@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeSupportFactory;
@@ -48,6 +49,7 @@ public class MinerHelper {
 
     private final Blockchain blockchain;
     private final Repository repository;
+    private final RepositoryLocator repositoryLocator;
     private final GasLimitCalculator gasLimitCalculator;
     private final BlockFactory blockFactory;
 
@@ -56,8 +58,9 @@ public class MinerHelper {
     private Coin totalPaidFees = Coin.ZERO;
     private List<TransactionReceipt> txReceipts;
 
-    public MinerHelper(Repository repository , Blockchain blockchain) {
+    public MinerHelper(Repository repository, RepositoryLocator repositoryLocator, Blockchain blockchain) {
         this.repository = repository;
+        this.repositoryLocator = repositoryLocator;
         this.blockchain = blockchain;
         this.gasLimitCalculator = new GasLimitCalculator(config.getNetworkConstants());
         this.blockFactory = new BlockFactory(config.getActivationConfig());
@@ -69,10 +72,8 @@ public class MinerHelper {
         totalPaidFees = Coin.ZERO;
         txReceipts = new ArrayList<>();
 
-        //Repository originalRepo  = ((Repository) ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
-
         // This creates a snapshot WITHOUT history of the current "parent" reponsitory.
-        Repository originalRepo  = repository.getSnapshotTo(parent.getStateRoot());
+        Repository originalRepo  = repositoryLocator.snapshotAt(parent.getHeader());
 
         Repository track = originalRepo.startTracking();
 
