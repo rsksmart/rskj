@@ -23,7 +23,6 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.trie.MutableTrie;
-import co.rsk.trie.Trie;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
@@ -175,8 +174,6 @@ public interface Repository extends AccountInformationProvider {
      * @param root - new root
      */
     void syncToRoot(byte[] root);
-
-    void syncTo(Trie root);
 
     byte[] getRoot();
 

@@ -312,11 +312,6 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public void syncTo(Trie root) {
-        mutableTrie = new MutableTrieImpl(root);
-    }
-
-    @Override
     public synchronized byte[] getRoot() {
         if (mutableTrie.hasStore()) {
             mutableTrie.save();
