@@ -22,8 +22,10 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
@@ -184,7 +186,9 @@ public interface Repository extends AccountInformationProvider {
      * @deprecated a repository responsibility isn't getting snapshots to other repositories
      * @see co.rsk.db.RepositoryLocator
      */
-    Repository getSnapshotTo(byte[] root);
+    default Repository getSnapshotTo(byte[] root) {
+        return new MutableRepository(getMutableTrie().getSnapshotTo(new Keccak256(root)));
+    }
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 
