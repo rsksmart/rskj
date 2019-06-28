@@ -18,8 +18,10 @@
 
 package co.rsk.db;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
+import org.ethereum.db.MutableRepository;
 
 public class RepositoryLocator {
     private final Repository repository;
@@ -33,7 +35,7 @@ public class RepositoryLocator {
     }
 
     public Repository snapshotAt(BlockHeader header) {
-        byte[] stateRoot = stateRootHandler.translate(header).getBytes();
-        return repository.getSnapshotTo(stateRoot);
+        Keccak256 stateRoot = stateRootHandler.translate(header);
+        return new MutableRepository(repository.getMutableTrie().getSnapshotTo(stateRoot));
     }
 }

@@ -22,8 +22,8 @@ package co.rsk.db;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
@@ -745,8 +745,8 @@ public class RepositoryImplOriginalTest {
 
     @Test // testing for snapshot
     public void test20() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
+        MutableTrieImpl mutableTrie = new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB())));
+        Repository repository = new MutableRepository(mutableTrie);
         byte[] root = repository.getRoot();
 
         DataWord cowKey1 = DataWord.valueFromHex("c1");
@@ -773,19 +773,19 @@ public class RepositoryImplOriginalTest {
 
         byte[] root3 = repository.getRoot();
 
-        Repository snapshot = repository.getSnapshotTo(root);
+        Repository snapshot = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(root)));
         assertThat(snapshot.getStorageValue(COW, cowKey1), is(nullValue()));
         assertThat(snapshot.getStorageValue(COW, cowKey2), is(nullValue()));
         assertThat(snapshot.getStorageValue(HORSE, horseKey1), is(nullValue()));
         assertThat(snapshot.getStorageValue(HORSE, horseKey2), is(nullValue()));
 
-        snapshot = repository.getSnapshotTo(root2);
+        snapshot = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(root2)));
         assertThat(snapshot.getStorageValue(COW, cowKey1), is(cowVal1));
         assertThat(snapshot.getStorageValue(COW, cowKey2), is(nullValue()));
         assertThat(snapshot.getStorageValue(HORSE, horseKey1), is(horseVal1));
         assertThat(snapshot.getStorageValue(HORSE, horseKey2), is(nullValue()));
 
-        snapshot = repository.getSnapshotTo(root3);
+        snapshot = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(root3)));
         assertThat(snapshot.getStorageValue(COW, cowKey1), is(cowVal1));
         assertThat(snapshot.getStorageValue(COW, cowKey2), is(cowVal0));
         assertThat(snapshot.getStorageValue(HORSE, horseKey1), is(horseVal1));
@@ -796,8 +796,8 @@ public class RepositoryImplOriginalTest {
 
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
+        MutableTrieImpl mutableTrie = new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB())));
+        final Repository repository = new MutableRepository(mutableTrie);
 
         final DataWord cowKey1 = DataWord.valueFromHex("c1");
         final DataWord cowKey2 = DataWord.valueFromHex("c2");
@@ -816,7 +816,7 @@ public class RepositoryImplOriginalTest {
         Repository[] snaps = new Repository[10];
 
         for (int i = 0; i < 10; ++i) {
-            snaps[i] = repository.getSnapshotTo(repository.getRoot());
+            snaps[i] = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(repository.getRoot())));
         }
         for (int i = 0; i < 10; ++i) {
             int finalI = i;
