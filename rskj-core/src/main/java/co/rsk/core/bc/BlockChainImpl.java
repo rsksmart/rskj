@@ -479,7 +479,8 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private void processBest(final Block block) {
-        EventDispatchThread.invokeLater(() -> transactionPool.processBest(block));
+        // this has to happen in the same thread so the TransactionPool is immediately aware of the new best block
+        transactionPool.processBest(block);
     }
 
     private void onBlock(Block block, BlockResult result) {
