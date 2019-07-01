@@ -213,11 +213,6 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void syncToRoot(byte[] root) {
-        repository.syncToRoot(root);
-    }
-
-    @Override
     public byte[] getRoot() {
         return repository.getRoot();
     }

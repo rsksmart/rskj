@@ -45,7 +45,7 @@ public class MutableRepository implements Repository {
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
     private final TrieKeyMapper trieKeyMapper;
-    private MutableTrie mutableTrie;
+    private final MutableTrie mutableTrie;
 
     public MutableRepository(Trie atrie) {
         this(new MutableTrieImpl(atrie));
@@ -304,11 +304,6 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void rollback() {
         mutableTrie.rollback();
-    }
-
-    @Override
-    public synchronized void syncToRoot(byte[] root) {
-        mutableTrie = mutableTrie.getSnapshotTo(new Keccak256(root));
     }
 
     @Override

@@ -76,32 +76,6 @@ public class RepositoryImplTest {
     }
 
     @Test
-    public void syncToRootAfterCreatingAnAccount() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
-
-        repository.flush();
-
-        RskAddress accAddress = randomAccountAddress();
-        byte[] initialRoot = repository.getRoot();
-
-        repository.createAccount(accAddress);
-        repository.flush();
-
-        byte[] newRoot = repository.getRoot();
-
-        Assert.assertTrue(repository.isExist(accAddress));
-
-        repository.syncToRoot(initialRoot);
-
-        Assert.assertFalse(repository.isExist(accAddress));
-
-        repository.syncToRoot(newRoot);
-
-        Assert.assertTrue(repository.isExist(accAddress));
-    }
-
-    @Test
     public void updateAccountState() {
         RskAddress accAddress = randomAccountAddress();
 
@@ -438,31 +412,6 @@ public class RepositoryImplTest {
         Assert.assertEquals(2, keys.size());
         Assert.assertTrue(keys.contains(accAddress1));
         Assert.assertTrue(keys.contains(accAddress2));
-    }
-
-    @Test
-    public void getAccountsKeysOnSnapshot()
-    {
-        RskAddress accAddress1 = randomAccountAddress();
-        RskAddress accAddress2 = randomAccountAddress();
-
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
-
-        repository.createAccount(accAddress1);
-        repository.flush();
-
-        byte[] root = repository.getRoot();
-
-        repository.createAccount(accAddress2);
-
-        repository.syncToRoot(root);
-
-        Set<RskAddress> keys = repository.getAccountsKeys();
-
-        Assert.assertNotNull(keys);
-        Assert.assertFalse(keys.isEmpty());
-        Assert.assertEquals(1, keys.size());
     }
 
     @Test

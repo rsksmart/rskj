@@ -20,6 +20,7 @@ package co.rsk.test.builders;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.test.World;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
@@ -36,16 +37,18 @@ public class AccountBuilder {
     private Coin balance;
     private byte[] code;
     private Blockchain blockChain;
+    private RepositoryLocator repositoryLocator;
 
     public AccountBuilder() {
     }
 
     public AccountBuilder(World world) {
-        this(world.getBlockChain());
+        this(world.getBlockChain(), world.getRepositoryLocator());
     }
 
-    public AccountBuilder(Blockchain blockChain) {
+    public AccountBuilder(Blockchain blockChain, RepositoryLocator repositoryLocator) {
         this.blockChain = blockChain;
+        this.repositoryLocator = repositoryLocator;
     }
 
     public AccountBuilder name(String name) {
@@ -71,7 +74,7 @@ public class AccountBuilder {
         if (blockChain != null) {
             Block best = blockChain.getStatus().getBestBlock();
             BlockDifficulty td = blockChain.getStatus().getTotalDifficulty();
-            Repository repository = blockChain.getRepository();
+            Repository repository = repositoryLocator.snapshotAt(blockChain.getBestBlock().getHeader());
 
             Repository track = repository.startTracking();
 

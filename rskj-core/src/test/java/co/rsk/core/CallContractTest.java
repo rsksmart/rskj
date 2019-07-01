@@ -65,7 +65,9 @@ public class CallContractTest {
 
         Block bestBlock = world.getBlockChain().getBestBlock();
 
-        Repository repository = world.getRepository().startTracking();
+        Repository repository = world.getRepositoryLocator()
+                .snapshotAt(world.getBlockChain().getBestBlock().getHeader())
+                .startTracking();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(

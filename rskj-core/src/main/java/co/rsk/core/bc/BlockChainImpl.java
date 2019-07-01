@@ -354,7 +354,6 @@ public class BlockChainImpl implements Blockchain {
         synchronized (accessLock) {
             status = new BlockChainStatus(block, totalDifficulty);
             blockStore.saveBlock(block, totalDifficulty, true);
-            repository.syncToRoot(stateRootHandler.translate(block.getHeader()).getBytes());
         }
     }
 

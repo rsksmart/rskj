@@ -70,9 +70,11 @@ public class ImportLightTest {
                 new ProgramInvokeFactoryImpl(),
 
                 null);
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
-
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        RepositoryLocator repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
+
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
+
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,

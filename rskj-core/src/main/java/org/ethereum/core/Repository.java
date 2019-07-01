@@ -167,14 +167,6 @@ public interface Repository extends AccountInformationProvider {
 
     void save();
 
-    /**
-     * Return to one of the previous snapshots
-     * by moving the root.
-     *
-     * @param root - new root
-     */
-    void syncToRoot(byte[] root);
-
     byte[] getRoot();
 
     void updateAccountState(RskAddress addr, AccountState accountState);

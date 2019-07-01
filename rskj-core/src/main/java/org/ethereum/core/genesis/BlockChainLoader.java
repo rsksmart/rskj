@@ -127,10 +127,7 @@ public class BlockChainLoader {
 
         String rootHash = config.rootHashStart();
         if (rootHash != null && !"".equals(rootHash.trim())) {
-            // update world state by dummy hash
-            byte[] rootHashArray = Hex.decode(rootHash);
             logger.info("Loading root hash from property file: [{}]", rootHash);
-            this.repository.syncToRoot(rootHashArray);
         }
 
         return blockchain;

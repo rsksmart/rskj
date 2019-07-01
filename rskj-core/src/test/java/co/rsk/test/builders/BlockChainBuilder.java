@@ -66,6 +66,8 @@ public class BlockChainBuilder {
     private EthereumListener listener;
     private StateRootHandler stateRootHandler;
     private BridgeSupportFactory bridgeSupportFactory;
+    private TransactionPoolImpl transactionPool;
+    private RepositoryLocator repositoryLocator;
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -129,6 +131,18 @@ public class BlockChainBuilder {
         return this.stateRootHandler;
     }
 
+    public Repository getRepository() {
+        return repository;
+    }
+
+    public RepositoryLocator getRepositoryLocator() {
+        return repositoryLocator;
+    }
+
+    public TransactionPoolImpl getTransactionPool() {
+        return transactionPool;
+    }
+
     public BlockChainImpl build() {
         if (config == null){
             config = new TestSystemProperties();
@@ -188,8 +202,9 @@ public class BlockChainBuilder {
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(config, bridgeSupportFactory)
         );
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(
-                config, this.repository, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
+        repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
+        transactionPool = new TransactionPoolImpl(
+                config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
                 transactionExecutorFactory, 10, 100
         );
         BlockExecutor blockExecutor = new BlockExecutor(
