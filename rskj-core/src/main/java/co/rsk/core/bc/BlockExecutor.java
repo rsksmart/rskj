@@ -259,9 +259,8 @@ public class BlockExecutor {
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
-        Repository initialRepository = repositoryLocator.snapshotAt(parent);
 
-        Repository track = initialRepository.startTracking();
+        Repository track = repositoryLocator.startTrackingAt(parent);
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
@@ -353,7 +352,7 @@ public class BlockExecutor {
                 receipts,
                 totalGasUsed,
                 totalPaidFees,
-                initialRepository.getTrie()
+                track.getTrie()
         );
         profiler.stop(metric);
         return result;

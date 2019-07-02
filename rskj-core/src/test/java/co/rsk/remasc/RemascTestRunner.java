@@ -26,6 +26,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryReader;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -196,15 +197,15 @@ class RemascTestRunner {
     }
 
     public Coin getAccountBalance(RskAddress addr) {
-        Repository repository = builder.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositoryReader repository = builder.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
         return getAccountBalance(repository, addr);
     }
 
-    public static Coin getAccountBalance(Repository repository, byte[] address) {
+    public static Coin getAccountBalance(RepositoryReader repository, byte[] address) {
         return getAccountBalance(repository, new RskAddress(address));
     }
 
-    public static Coin getAccountBalance(Repository repository, RskAddress addr) {
+    public static Coin getAccountBalance(RepositoryReader repository, RskAddress addr) {
         AccountState accountState = repository.getAccountState(addr);
 
         return accountState == null ? null : repository.getAccountState(addr).getBalance();

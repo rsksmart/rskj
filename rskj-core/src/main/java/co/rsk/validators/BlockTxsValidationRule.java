@@ -20,9 +20,9 @@ package co.rsk.validators;
 
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositoryReader;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +65,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             return true;
         }
 
-        Repository parentRepo = repositoryLocator.snapshotAt(parent.getHeader());
+        RepositoryReader parentRepo = repositoryLocator.snapshotAt(parent.getHeader());
 
         Map<RskAddress, BigInteger> curNonce = new HashMap<>();
 

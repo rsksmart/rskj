@@ -24,6 +24,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositoryReader;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -239,14 +240,14 @@ public class TransactionModuleTest {
         return txInBlock;
     }
 
-    private String sendTransaction(Web3Impl web3, Repository repository) {
+    private String sendTransaction(Web3Impl web3, RepositoryReader repository) {
 
         Web3.CallArguments args = getTransactionParameters(web3, repository);
 
         return web3.eth_sendTransaction(args);
     }
 
-    private Web3.CallArguments getTransactionParameters(Web3Impl web3, Repository repository) {
+    private Web3.CallArguments getTransactionParameters(Web3Impl web3, RepositoryReader repository) {
         RskAddress addr1 = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
         String addr2 = web3.personal_newAccountWithSeed("addr2");
         BigInteger value = BigInteger.valueOf(7);

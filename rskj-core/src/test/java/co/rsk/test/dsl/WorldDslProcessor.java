@@ -25,6 +25,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositoryReader;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
@@ -137,7 +138,7 @@ public class WorldDslProcessor {
         }
 
         BlockHeader bestBlock = world.getBlockChain().getBestBlock().getHeader();
-        Repository repository = world.getRepositoryLocator().snapshotAt(bestBlock);
+        RepositoryReader repository = world.getRepositoryLocator().snapshotAt(bestBlock);
         Coin accountBalance = repository.getBalance(accountAddress);
         if (expected.equals(accountBalance))
             return;

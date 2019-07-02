@@ -25,27 +25,27 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.junit.Test;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RepositoryLocatorTest {
     @Test
     public void getsSnapshotFromTranslatedStateRoot() {
-        Repository repository = mock(Repository.class);
-        StateRootHandler stateRootHandler = mock(StateRootHandler.class);
-
         BlockHeader header = mock(BlockHeader.class);
         Keccak256 stateRoot = TestUtils.randomHash();
+        StateRootHandler stateRootHandler = mock(StateRootHandler.class);
         when(stateRootHandler.translate(header)).thenReturn(stateRoot);
 
-        Trie expectedTrie = mock(Trie.class);
+        Trie underlyingTrie = mock(Trie.class);
+        when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash());
         Trie trie = mock(Trie.class);
-        when(trie.getSnapshotTo(stateRoot)).thenReturn(expectedTrie);
+        when(trie.getSnapshotTo(stateRoot)).thenReturn(underlyingTrie);
+        Repository repository = mock(Repository.class);
         when(repository.getTrie()).thenReturn(trie);
 
         RepositoryLocator repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
-        Trie actualTrie = repositoryLocator.snapshotAt(header).getTrie();
-        assertSame(expectedTrie, actualTrie);
+        RepositoryReader actualRepository = repositoryLocator.snapshotAt(header);
+        assertEquals(underlyingTrie.getHash(), new Keccak256(actualRepository.getRoot()));
     }
 }

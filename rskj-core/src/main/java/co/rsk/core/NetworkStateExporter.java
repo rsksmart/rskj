@@ -20,6 +20,7 @@ package co.rsk.core;
 
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositoryReader;
 import co.rsk.panic.PanicProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -27,7 +28,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -57,7 +57,7 @@ public class NetworkStateExporter {
     }
 
     public boolean exportStatus(String outputFile) {
-        Repository frozenRepository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositoryReader frozenRepository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
         File dumpFile = new File(outputFile);
 

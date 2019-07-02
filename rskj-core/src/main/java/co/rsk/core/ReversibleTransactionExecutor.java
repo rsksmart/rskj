@@ -50,7 +50,7 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             RskAddress fromAddress) {
-        Repository snapshot = repositoryLocator.snapshotAt(executionBlock.getHeader()).startTracking();
+        Repository snapshot = repositoryLocator.startTrackingAt(executionBlock.getHeader());
 
         byte[] nonce = snapshot.getNonce(fromAddress).toByteArray();
         UnsignedTransaction tx = new UnsignedTransaction(

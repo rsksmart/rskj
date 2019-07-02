@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositoryReader;
 import co.rsk.test.World;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
@@ -94,7 +95,7 @@ public class BlockchainVMTest {
         mh.completeBlock(block2, block1);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block2));
-        Repository repository = binfo.repositoryLocator.snapshotAt(block2.getHeader());
+        RepositoryReader repository = binfo.repositoryLocator.snapshotAt(block2.getHeader());
 
         Assert.assertEquals(blockchain.getBestBlock(), block2);
         Assert.assertEquals(2, block2.getNumber());

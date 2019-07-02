@@ -25,10 +25,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -73,8 +70,8 @@ public class RemascStorageProviderTest {
         assertEquals(expectedBurnedBalance, provider.getBurnedBalance());
     }
 
-    private RemascStorageProvider getRemascStorageProvider(Repository repository) {
-        return new RemascStorageProvider(repository, PrecompiledContracts.REMASC_ADDR);
+    private RemascStorageProvider getRemascStorageProvider(RepositoryReader repository) {
+        return new RemascStorageProvider(repository.startTracking(), PrecompiledContracts.REMASC_ADDR);
     }
 
     private List<Block> createSimpleBlocks(Block parent, int size, RskAddress coinbase) {
@@ -230,7 +227,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        Repository repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositoryReader repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(0), Coin.valueOf(0L), 1L);
     }
 
@@ -277,7 +274,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        Repository repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositoryReader repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(84000), Coin.valueOf(0L), 0L);
     }
 
@@ -299,8 +296,8 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        Repository repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository, testRunner.getBlockChain().getBestBlock());
+        RepositoryReader repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
         assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(repository).getFederationBalance());
         long federatorBalance = (168 / federationProvider.getFederationSize()) * 2;
         assertEquals(Coin.valueOf(federatorBalance), RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
@@ -326,8 +323,8 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        Repository repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository, testRunner.getBlockChain().getBestBlock());
+        RepositoryReader repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
         assertEquals(Coin.valueOf(336), this.getRemascStorageProvider(repository).getFederationBalance());
         assertEquals(null, RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
     }
@@ -351,7 +348,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        Repository repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositoryReader repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(126000), Coin.valueOf(0L), 0L);
     }
 
@@ -376,8 +373,8 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        Repository repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository, testRunner.getBlockChain().getBestBlock());
+        RepositoryReader repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
         long federatorBalance = (1680 / federationProvider.getFederationSize()) * 2;
         assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(repository).getFederationBalance());
         assertEquals(Coin.valueOf(federatorBalance), RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
@@ -404,7 +401,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        Repository repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositoryReader repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(840000L), Coin.valueOf(0L), 0L);
     }
 
@@ -431,7 +428,6 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        Repository repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
         List<Block> blocks = new ArrayList<>();
         blocks.add(RemascTestRunner.createBlock(genesisBlock, blockchain.getBestBlock(), PegTestUtils.createHash3(),
                 coinbase, Collections.emptyList(), gasLimit, gasPrice, 14, txValue, cowKey, null));
@@ -469,7 +465,7 @@ public class RemascStorageProviderTest {
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
-            repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+            RepositoryReader repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
             long blockNumber = blockchain.getBestBlock().getNumber();
             if (blockNumber == 24){ // before first special block
