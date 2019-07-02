@@ -72,15 +72,10 @@ public class MinerHelper {
         totalPaidFees = Coin.ZERO;
         txReceipts = new ArrayList<>();
 
-        // This creates a snapshot WITHOUT history of the current "parent" reponsitory.
-        Repository originalRepo  = repositoryLocator.snapshotAt(parent.getHeader());
-
-        Repository track = originalRepo.startTracking();
-
-        // Repository track = new RepositoryTrack((Repository)ethereum.getRepository());
+        Repository track = repositoryLocator.startTrackingAt(parent.getHeader());
 
         // this variable is set before iterating transactions in case list is empty
-        latestStateRootHash = originalRepo.getRoot();
+        latestStateRootHash = track.getRoot();
 
         // RSK test, remove
         String stateHash1 = Hex.toHexString(blockchain.getBestBlock().getStateRoot());
@@ -123,7 +118,7 @@ public class MinerHelper {
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
             receipt.setCumulativeGas(totalGasUsed);
-            latestStateRootHash = originalRepo.getRoot();
+            latestStateRootHash = track.getRoot();
             receipt.setPostTxState(latestStateRootHash);
             receipt.setTxStatus(executor.getReceipt().isSuccessful());
             receipt.setStatus(executor.getReceipt().getStatus());

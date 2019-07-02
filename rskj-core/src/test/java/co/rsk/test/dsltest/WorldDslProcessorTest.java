@@ -18,13 +18,13 @@
 
 package co.rsk.test.dsltest;
 
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
@@ -269,7 +269,7 @@ public class WorldDslProcessorTest {
         Account account = world.getAccountByName("acc1");
 
         Assert.assertNotNull(account);
-        Repository repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
         Assert.assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
     }
 

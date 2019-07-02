@@ -72,9 +72,14 @@ public interface AccountInformationProvider {
     /**
      * Retrieve the code associated with an account
      *
+     * This method returns null if there is no code at the address.
+     * It may return the empty array for contracts that have installed zero code on construction.
+     * (not checked)
+     *
      * @param addr of the account
      * @return code in byte-array format
      */
+    @Nullable
     byte[] getCode(RskAddress addr);
 
     /**

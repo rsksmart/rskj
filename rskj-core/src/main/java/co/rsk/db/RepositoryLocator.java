@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.trie.MutableTrie;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
@@ -34,8 +35,16 @@ public class RepositoryLocator {
         this.stateRootHandler = stateRootHandler;
     }
 
-    public Repository snapshotAt(BlockHeader header) {
+    public RepositorySnapshot snapshotAt(BlockHeader header) {
+        return new MutableRepository(mutableTrieSnapshotAt(header));
+    }
+
+    public Repository startTrackingAt(BlockHeader header) {
+        return new MutableRepository(new MutableTrieCache(mutableTrieSnapshotAt(header)));
+    }
+
+    private MutableTrie mutableTrieSnapshotAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
-        return new MutableRepository(repository.getTrie().getSnapshotTo(stateRoot));
+        return new MutableTrieImpl(repository.getTrie().getSnapshotTo(stateRoot));
     }
 }

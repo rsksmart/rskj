@@ -18,8 +18,6 @@
 
 package co.rsk.rpc.modules.eth;
 
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
-
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
@@ -28,8 +26,6 @@ import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
-import java.io.IOException;
-import java.util.Map;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -41,6 +37,11 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Map;
+
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
 // TODO add all RPC methods
 public class EthModule
@@ -86,10 +87,10 @@ public class EthModule
 
     public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
         Block bestBlock = blockchain.getBestBlock();
-        Repository repository = repositoryLocator.snapshotAt(bestBlock.getHeader()).startTracking();
+        Repository track = repositoryLocator.startTrackingAt(bestBlock.getHeader());
 
         BridgeSupport bridgeSupport = bridgeSupportFactory.newInstance(
-                repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR, null);
+                track, bestBlock, PrecompiledContracts.BRIDGE_ADDR, null);
 
         byte[] result = bridgeSupport.getStateForDebugging();
 
