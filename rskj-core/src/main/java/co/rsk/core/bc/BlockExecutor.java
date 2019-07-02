@@ -353,7 +353,7 @@ public class BlockExecutor {
                 receipts,
                 totalGasUsed,
                 totalPaidFees,
-                initialRepository.getMutableTrie().getTrie()
+                initialRepository.getTrie()
         );
         profiler.stop(metric);
         return result;

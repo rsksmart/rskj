@@ -36,6 +36,6 @@ public class RepositoryLocator {
 
     public Repository snapshotAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
-        return new MutableRepository(repository.getMutableTrie().getSnapshotTo(stateRoot));
+        return new MutableRepository(repository.getTrie().getSnapshotTo(stateRoot));
     }
 }

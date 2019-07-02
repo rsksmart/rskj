@@ -28,7 +28,7 @@ public class RepositoryTrackWithBenchmarking extends MutableRepository implement
     protected final Statistics statistics;
 
     public RepositoryTrackWithBenchmarking(Repository repository) {
-        super(new MutableTrieCache(repository.getMutableTrie()));
+        super(new MutableTrieCache(new MutableTrieImpl(repository.getTrie())));
         statistics = new Statistics();
     }
 

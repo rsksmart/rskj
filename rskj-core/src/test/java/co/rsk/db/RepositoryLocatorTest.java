@@ -19,7 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
@@ -39,13 +39,13 @@ public class RepositoryLocatorTest {
         Keccak256 stateRoot = TestUtils.randomHash();
         when(stateRootHandler.translate(header)).thenReturn(stateRoot);
 
-        MutableTrie expectedMutableTrie = mock(MutableTrie.class);
-        MutableTrie mutableTrie = mock(MutableTrie.class);
-        when(mutableTrie.getSnapshotTo(stateRoot)).thenReturn(expectedMutableTrie);
-        when(repository.getMutableTrie()).thenReturn(mutableTrie);
+        Trie expectedTrie = mock(Trie.class);
+        Trie trie = mock(Trie.class);
+        when(trie.getSnapshotTo(stateRoot)).thenReturn(expectedTrie);
+        when(repository.getTrie()).thenReturn(trie);
 
         RepositoryLocator repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
-        MutableTrie actualMutableTrie = repositoryLocator.snapshotAt(header).getMutableTrie();
-        assertSame(expectedMutableTrie, actualMutableTrie);
+        Trie actualTrie = repositoryLocator.snapshotAt(header).getTrie();
+        assertSame(expectedTrie, actualTrie);
     }
 }

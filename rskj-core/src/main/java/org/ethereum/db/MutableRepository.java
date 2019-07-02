@@ -57,8 +57,8 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public MutableTrie getMutableTrie() {
-        return mutableTrie;
+    public Trie getTrie() {
+        return mutableTrie.getTrie();
     }
 
     @Override
@@ -277,7 +277,7 @@ public class MutableRepository implements Repository {
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
     @Override
     public synchronized Repository startTracking() {
-        return new MutableRepository(new MutableTrieCache(this.getMutableTrie()));
+        return new MutableRepository(new MutableTrieCache(mutableTrie));
     }
 
     @Override

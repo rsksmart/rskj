@@ -134,9 +134,9 @@ public class BlockChainLoader {
     }
 
     private void updateGenesis(Repository repository) {
-        genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), repository.getMutableTrie().getTrie()).getBytes());
+        genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), repository.getTrie()).getBytes());
         genesis.flushRLP();
-        stateRootHandler.register(genesis.getHeader(), repository.getMutableTrie().getTrie());
+        stateRootHandler.register(genesis.getHeader(), repository.getTrie());
     }
 
     private void loadRepository(Repository repository) {

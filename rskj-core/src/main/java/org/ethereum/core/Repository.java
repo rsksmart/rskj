@@ -22,7 +22,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
-import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
@@ -30,8 +30,7 @@ import java.math.BigInteger;
 import java.util.Set;
 
 public interface Repository extends AccountInformationProvider {
-
-    MutableTrie getMutableTrie();
+    Trie getTrie();
 
     /**
      * Create a new account in the database

@@ -247,7 +247,7 @@ public class TrieConverterTest {
 
         track.commit();
         TrieConverter tc = new TrieConverter();
-        byte[] oldRoot = tc.getOrchidAccountTrieRoot(repository.getMutableTrie().getTrie());
+        byte[] oldRoot = tc.getOrchidAccountTrieRoot(repository.getTrie());
         Trie atrie = deserialize(SERIALIZED_ORCHID_TRIESTORE_WITH_LEADING_ZEROES_STORAGE_KEYS);
 
         Assert.assertThat(Hex.toHexString(oldRoot), is(atrie.getHashOrchid(true).toHexString()));
@@ -284,7 +284,7 @@ public class TrieConverterTest {
 
         track.commit();
         TrieConverter tc = new TrieConverter();
-        byte[] oldRoot = tc.getOrchidAccountTrieRoot(repository.getMutableTrie().getTrie());
+        byte[] oldRoot = tc.getOrchidAccountTrieRoot(repository.getTrie());
         Trie atrie = deserialize(SERIALIZED_ORCHID_TRIESTORE_SIMPLE);
 
         Assert.assertThat(Hex.toHexString(oldRoot), is(atrie.getHashOrchid(true).toHexString()));

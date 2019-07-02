@@ -113,7 +113,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         Repository track = mock(Repository.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
-        Mockito.doReturn(repository.getMutableTrie()).when(track).getMutableTrie();
+        Mockito.doReturn(repository.getTrie()).when(track).getTrie();
         when(track.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
         when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
         when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
