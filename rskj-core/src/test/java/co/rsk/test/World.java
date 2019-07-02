@@ -56,26 +56,30 @@ public class World {
     private Map<String, Account> accounts = new HashMap<>();
     private Map<String, Transaction> transactions = new HashMap<>();
     private StateRootHandler stateRootHandler;
+    private Repository repository;
+    private TransactionPool transactionPool;
     private BridgeSupportFactory bridgeSupportFactory;
 
     public World() {
-        this(new BlockChainBuilder().build());
+        this(new BlockChainBuilder());
     }
 
     public World(Repository repository) {
-        this(new BlockChainBuilder().setRepository(repository).build());
+        this(new BlockChainBuilder().setRepository(repository));
     }
 
     public World(ReceiptStore receiptStore) {
-        this(new BlockChainBuilder().setReceiptStore(receiptStore).build());
+        this(new BlockChainBuilder().setReceiptStore(receiptStore));
     }
 
-    public World(BlockChainImpl blockChain) {
-        this(blockChain, null);
+    private World(BlockChainBuilder blockChainBuilder) {
+        this(blockChainBuilder.build(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null);
     }
 
-    public World(BlockChainImpl blockChain, Genesis genesis) {
+    public World(BlockChainImpl blockChain, Repository repository, TransactionPool transactionPool, Genesis genesis) {
         this.blockChain = blockChain;
+        this.repository = repository;
+        this.transactionPool = transactionPool;
 
         if (genesis == null) {
             genesis = (Genesis) BlockChainImplTest.getGenesisBlock(blockChain);
@@ -162,7 +166,15 @@ public class World {
     public void saveTransaction(String name, Transaction transaction) { transactions.put(name, transaction); }
 
     public Repository getRepository() {
-        return this.blockChain.getRepository();
+        return repository;
+    }
+
+    public RepositoryLocator getRepositoryLocator() {
+        return new RepositoryLocator(getRepository(), getStateRootHandler());
+    }
+
+    public TransactionPool getTransactionPool() {
+        return transactionPool;
     }
 
     public BridgeSupportFactory getBridgeSupportFactory() {

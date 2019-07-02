@@ -1,21 +1,15 @@
 package org.ethereum.util;
 
-import co.rsk.config.RskSystemProperties;
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.*;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
 
@@ -23,10 +17,9 @@ import java.math.BigInteger;
  * Helper methods to easily run contracts.
  */
 public class ContractRunner {
-    private final Repository repository;
+    private final RepositoryLocator repositoryLocator;
     private final Blockchain blockchain;
-    private final BlockStore blockStore;
-    private final ReceiptStore receiptStore;
+    private final TransactionExecutorFactory transactionExecutorFactory;
 
     public final Account sender;
 
@@ -35,17 +28,15 @@ public class ContractRunner {
     }
 
     public ContractRunner(RskTestFactory factory) {
-        this(factory.getRepository(), factory.getBlockchain(), factory.getBlockStore(), factory.getReceiptStore());
+        this(factory.getRepositoryLocator(), factory.getBlockchain(), factory.getTransactionExecutorFactory());
     }
 
-    private ContractRunner(Repository repository,
+    private ContractRunner(RepositoryLocator repositoryLocator,
                            Blockchain blockchain,
-                           BlockStore blockStore,
-                           ReceiptStore receiptStore) {
+                           TransactionExecutorFactory transactionExecutorFactory) {
         this.blockchain = blockchain;
-        this.repository = repository;
-        this.blockStore = blockStore;
-        this.receiptStore = receiptStore;
+        this.repositoryLocator = repositoryLocator;
+        this.transactionExecutorFactory = transactionExecutorFactory;
 
         // we build a new block with high gas limit because Genesis' is too low
         Block block = new BlockBuilder(blockchain)
@@ -53,14 +44,14 @@ public class ContractRunner {
                 .build();
         blockchain.setStatus(block, block.getCumulativeDifficulty());
         // create a test sender account with a large balance for running any contract
-        this.sender = new AccountBuilder(blockchain)
+        this.sender = new AccountBuilder(blockchain, repositoryLocator)
                 .name("sender")
                 .balance(Coin.valueOf(1_000_000_000_000L))
                 .build();
     }
 
     public RskAddress addContract(String runtimeBytecode) {
-        Account contractAccount = new AccountBuilder(blockchain)
+        Account contractAccount = new AccountBuilder(blockchain, repositoryLocator)
                         .name(runtimeBytecode)
                         .balance(Coin.valueOf(10))
                         .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
@@ -70,18 +61,23 @@ public class ContractRunner {
     }
 
     public ProgramResult createContract(byte[] bytecode) {
-        Transaction creationTx = contractCreateTx(bytecode);
-        return executeTransaction(creationTx).getResult();
+        return createContract(bytecode, repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader()));
+    }
+
+    private ProgramResult createContract(byte[] bytecode, Repository repository) {
+        Transaction creationTx = contractCreateTx(bytecode, repository);
+        return executeTransaction(creationTx, repository).getResult();
     }
 
     public ProgramResult createAndRunContract(byte[] bytecode, byte[] encodedCall, BigInteger value, boolean localCall) {
-        createContract(bytecode);
-        Transaction creationTx = contractCreateTx(bytecode);
-        executeTransaction(creationTx);
-        return runContract(creationTx.getContractAddress().getBytes(), encodedCall, value, localCall);
+        Repository repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        createContract(bytecode, repository);
+        Transaction creationTx = contractCreateTx(bytecode, repository);
+        executeTransaction(creationTx, repository);
+        return runContract(creationTx.getContractAddress().getBytes(), encodedCall, value, localCall, repository);
     }
 
-    private Transaction contractCreateTx(byte[] bytecode) {
+    private Transaction contractCreateTx(byte[] bytecode, Repository repository) {
         BigInteger nonceCreate = repository.getNonce(sender.getAddress());
         return new TransactionBuilder()
                 .gasLimit(BigInteger.valueOf(10_000_000))
@@ -91,7 +87,7 @@ public class ContractRunner {
                 .build();
     }
 
-    private ProgramResult runContract(byte[] contractAddress, byte[] encodedCall, BigInteger value, boolean localCall) {
+    private ProgramResult runContract(byte[] contractAddress, byte[] encodedCall, BigInteger value, boolean localCall, Repository repository) {
         BigInteger nonceExecute = repository.getNonce(sender.getAddress());
         Transaction transaction = new TransactionBuilder()
                 // a large gas limit will allow running any contract
@@ -103,25 +99,11 @@ public class ContractRunner {
                 .value(value)
                 .build();
         transaction.setLocalCallTransaction(localCall);
-        return executeTransaction(transaction).getResult();
+        return executeTransaction(transaction, repository).getResult();
     }
 
-    private TransactionExecutor executeTransaction(Transaction transaction) {
+    private TransactionExecutor executeTransaction(Transaction transaction, Repository repository) {
         Repository track = repository.startTracking();
-        RskSystemProperties config = new TestSystemProperties();
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(
-                        config.getNetworkConstants().getBridgeConstants().getBtcParams()),
-                config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
-        TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
-                config,
-                blockStore,
-                receiptStore,
-                new BlockFactory(config.getActivationConfig()),
-                new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory)
-        );
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(transaction, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
         executor.init();

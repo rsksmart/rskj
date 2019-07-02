@@ -24,6 +24,7 @@ import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
+import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
@@ -268,7 +269,8 @@ public class WorldDslProcessorTest {
         Account account = world.getAccountByName("acc1");
 
         Assert.assertNotNull(account);
-        Assert.assertEquals(new BigInteger("1000000"), world.getRepository().getBalance(account.getAddress()).asBigInteger());
+        Repository repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        Assert.assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
     }
 
     @Test

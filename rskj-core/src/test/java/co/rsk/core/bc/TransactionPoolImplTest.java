@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.Coin;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
@@ -35,6 +36,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.ethereum.util.TransactionFactoryHelper.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 /**
  * Created by ajlopez on 08/08/2016.
@@ -51,12 +55,18 @@ public class TransactionPoolImplTest {
             protected Genesis buildGenesis() {
                 return GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
             }
+
+            @Override
+            protected RepositoryLocator buildRepositoryLocator() {
+                return spy(super.buildRepositoryLocator());
+            }
         };
         blockChain = rskTestContext.getBlockchain();
         repository = rskTestContext.getRepository();
+        RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
         transactionPool = new TransactionPoolImpl(
                 rskTestContext.getRskSystemProperties(),
-                repository,
+                repositoryLocator,
                 rskTestContext.getBlockStore(),
                 rskTestContext.getBlockFactory(),
                 rskTestContext.getCompositeEthereumListener(),
@@ -66,6 +76,10 @@ public class TransactionPoolImplTest {
         );
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
+
+        // this is to workaround the current test structure, which abuses the Repository by
+        // modifying it in place
+        doReturn(repository).when(repositoryLocator).snapshotAt(any());
     }
 
     @Test

@@ -136,7 +136,9 @@ public class WorldDslProcessor {
                 accountAddress = new RskAddress(accountName);
         }
 
-        Coin accountBalance = world.getRepository().getBalance(accountAddress);
+        BlockHeader bestBlock = world.getBlockChain().getBestBlock().getHeader();
+        Repository repository = world.getRepositoryLocator().snapshotAt(bestBlock);
+        Coin accountBalance = repository.getBalance(accountAddress);
         if (expected.equals(accountBalance))
             return;
 
@@ -205,7 +207,6 @@ public class WorldDslProcessor {
             block.seal();
 
             latestImportResult = blockChain.tryToConnect(block);
-            blockChain.getRepository().syncToRoot(block.getStateRoot());
         }
     }
 

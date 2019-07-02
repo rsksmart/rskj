@@ -22,7 +22,6 @@ package org.ethereum.vm.program;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.MutableTrie;
-import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -211,16 +210,6 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void rollback() {
         repository.rollback();
-    }
-
-    @Override
-    public void syncToRoot(byte[] root) {
-        repository.syncToRoot(root);
-    }
-
-    @Override
-    public void syncTo(Trie root) {
-        repository.syncTo(root);
     }
 
     @Override

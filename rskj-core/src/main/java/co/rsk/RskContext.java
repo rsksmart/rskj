@@ -280,7 +280,7 @@ public class RskContext implements NodeBootstrapper {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             transactionPool = new TransactionPoolImpl(
                     rskSystemProperties,
-                    getRepository(),
+                    getRepositoryLocator(),
                     getBlockStore(),
                     getBlockFactory(),
                     getCompositeEthereumListener(),
