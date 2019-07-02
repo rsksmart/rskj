@@ -346,13 +346,7 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
-        // This commitment changes the initialRepository's view of the state
-        // This does not affect the parent's (repository) view or state, but it DOES
-        // affect the storage of the parent.
-        track.commit();
-
-        // All data saved to store
-        initialRepository.save();
+        track.save();
 
         BlockResult result = new BlockResult(
                 executedTransactions,
