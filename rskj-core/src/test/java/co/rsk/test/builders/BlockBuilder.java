@@ -41,7 +41,7 @@ import java.util.List;
  * Created by ajlopez on 8/6/2016.
  */
 public class BlockBuilder {
-    private Blockchain blockChain;
+    private final Blockchain blockChain;
     private final BlockGenerator blockGenerator;
     private Block parent;
     private long difficulty;
@@ -49,26 +49,12 @@ public class BlockBuilder {
     private List<BlockHeader> uncles;
     private BigInteger minGasPrice;
     private byte[] gasLimit;
-    private BridgeSupportFactory bridgeSupportFactory;
+    private final BridgeSupportFactory bridgeSupportFactory;
 
-    public BlockBuilder() {
-        this.blockGenerator = new BlockGenerator();
-    }
-
-    public BlockBuilder(World world) {
-        this(world.getBlockChain(), new BlockGenerator());
-        this.bridgeSupportFactory = world.getBridgeSupportFactory();
-    }
-
-    public BlockBuilder(Blockchain blockChain) {
-        this(blockChain, new BlockGenerator());
-    }
-
-    private BlockBuilder(Blockchain blockChain, BlockGenerator blockGenerator) {
+    public BlockBuilder(Blockchain blockChain, BridgeSupportFactory bridgeSupportFactory) {
         this.blockChain = blockChain;
-        this.blockGenerator = blockGenerator;
-        // sane defaults
-        this.parent(blockChain.getBestBlock());
+        this.blockGenerator = new BlockGenerator();
+        this.bridgeSupportFactory = bridgeSupportFactory;
     }
 
     public BlockBuilder parent(Block parent) {

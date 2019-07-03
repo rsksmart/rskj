@@ -22,7 +22,6 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.db.StateRootHandler;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.validators.BlockValidator;
@@ -630,7 +629,7 @@ public class BlockChainImplTest {
 
         Block genesis = blockChain.getBestBlock();
 
-        Block block = new BlockBuilder().minGasPrice(BigInteger.ZERO).transactions(txs).parent(genesis).build();
+        Block block = new BlockBuilder(null, null).minGasPrice(BigInteger.ZERO).transactions(txs).parent(genesis).build();
 
         blockExecutor.executeAndFill(block, genesis.getHeader());
 

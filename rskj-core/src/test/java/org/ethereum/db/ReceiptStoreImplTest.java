@@ -228,11 +228,11 @@ public class ReceiptStoreImplTest {
         World world = new World();
         Block genesis = world.getBlockChain().getBestBlock();
 
-        Block block1a = new BlockBuilder().difficulty(10).parent(genesis).build();
-        Block block1b = new BlockBuilder().difficulty(block1a.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
+        Block block1a = new BlockBuilder(null, null).difficulty(10).parent(genesis).build();
+        Block block1b = new BlockBuilder(null, null).difficulty(block1a.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
 
-        Block block2a = new BlockBuilder().parent(block1a).build();
-        Block block2b = new BlockBuilder().parent(block1b).build();
+        Block block2a = new BlockBuilder(null, null).parent(block1a).build();
+        Block block2b = new BlockBuilder(null, null).parent(block1b).build();
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1a));
         Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));

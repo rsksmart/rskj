@@ -43,7 +43,7 @@ public class NodeBlockProcessorUnclesTest {
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
-        Block block1 = new BlockBuilder().parent(genesis).build();
+        Block block1 = new BlockBuilder(null, null).parent(genesis).build();
 
         processor.processBlock(null, block1);
 
@@ -58,7 +58,8 @@ public class NodeBlockProcessorUnclesTest {
 
         Block genesis = blockChain.getBestBlock();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain);
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null);
+        blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block uncle1 = blockBuilder.parent(genesis).build();
         Block uncle2 = blockBuilder.parent(genesis).build();
@@ -89,7 +90,8 @@ public class NodeBlockProcessorUnclesTest {
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain);
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null);
+        blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block uncle1 = blockBuilder.parent(genesis).build();
         Block uncle2 = blockBuilder.parent(genesis).build();
@@ -118,15 +120,15 @@ public class NodeBlockProcessorUnclesTest {
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
-        Block block1 = new BlockBuilder().parent(genesis).build();
-        Block uncle1 = new BlockBuilder().parent(genesis).build();
-        Block uncle2 = new BlockBuilder().parent(genesis).build();
+        Block block1 = new BlockBuilder(null, null).parent(genesis).build();
+        Block uncle1 = new BlockBuilder(null, null).parent(genesis).build();
+        Block uncle2 = new BlockBuilder(null, null).parent(genesis).build();
 
         List<BlockHeader> uncles = new ArrayList<>();
         uncles.add(uncle1.getHeader());
         uncles.add(uncle2.getHeader());
 
-        Block block2 = new BlockBuilder().parent(block1).uncles(uncles).build();
+        Block block2 = new BlockBuilder(null, null).parent(block1).uncles(uncles).build();
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 

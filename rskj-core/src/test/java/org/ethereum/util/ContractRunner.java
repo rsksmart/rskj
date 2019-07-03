@@ -40,7 +40,8 @@ public class ContractRunner {
         this.transactionExecutorFactory = transactionExecutorFactory;
 
         // we build a new block with high gas limit because Genesis' is too low
-        Block block = new BlockBuilder(blockchain)
+        Block block = new BlockBuilder(blockchain, null)
+                .parent(blockchain.getBestBlock())
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .build();
         blockchain.setStatus(block, block.getCumulativeDifficulty());

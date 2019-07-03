@@ -223,7 +223,7 @@ public class RskForksBridgeTest {
 
     private Block buildBlock(Block parent, long difficulty) {
         World world = new World(blockChain, null, null, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(difficulty).parent(parent);
+        BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).difficulty(difficulty).parent(parent);
         return blockBuilder.build();
     }
 
@@ -234,7 +234,7 @@ public class RskForksBridgeTest {
     private Block buildBlock(Block parent, long difficulty, Transaction ... txs) {
         List<Transaction> txList = Arrays.asList(txs);
         World world = new World(blockChain, null, null, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
+        BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
         return blockBuilder.build();
     }
 
