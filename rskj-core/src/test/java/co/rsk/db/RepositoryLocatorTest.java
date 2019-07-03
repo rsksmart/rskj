@@ -19,33 +19,33 @@
 package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.junit.Test;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RepositoryLocatorTest {
     @Test
     public void getsSnapshotFromTranslatedStateRoot() {
-        Repository repository = mock(Repository.class);
-        StateRootHandler stateRootHandler = mock(StateRootHandler.class);
-
         BlockHeader header = mock(BlockHeader.class);
         Keccak256 stateRoot = TestUtils.randomHash();
+        StateRootHandler stateRootHandler = mock(StateRootHandler.class);
         when(stateRootHandler.translate(header)).thenReturn(stateRoot);
 
-        MutableTrie expectedMutableTrie = mock(MutableTrie.class);
-        MutableTrie mutableTrie = mock(MutableTrie.class);
-        when(mutableTrie.getSnapshotTo(stateRoot)).thenReturn(expectedMutableTrie);
-        when(repository.getMutableTrie()).thenReturn(mutableTrie);
+        Trie underlyingTrie = mock(Trie.class);
+        when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash());
+        Trie trie = mock(Trie.class);
+        when(trie.getSnapshotTo(stateRoot)).thenReturn(underlyingTrie);
+        Repository repository = mock(Repository.class);
+        when(repository.getTrie()).thenReturn(trie);
 
         RepositoryLocator repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
-        MutableTrie actualMutableTrie = repositoryLocator.snapshotAt(header).getMutableTrie();
-        assertSame(expectedMutableTrie, actualMutableTrie);
+        RepositorySnapshot actualRepository = repositoryLocator.snapshotAt(header);
+        assertEquals(underlyingTrie.getHash(), new Keccak256(actualRepository.getRoot()));
     }
 }

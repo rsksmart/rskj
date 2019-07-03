@@ -26,6 +26,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
@@ -140,7 +141,7 @@ public class BlockToMineBuilder {
 
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
 
-        Repository originalRepo = repositoryLocator.snapshotAt(parentHeader);
+        RepositorySnapshot originalRepo = repositoryLocator.snapshotAt(parentHeader);
 
         return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }

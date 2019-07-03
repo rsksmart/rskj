@@ -4,6 +4,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
@@ -64,20 +65,20 @@ public class ContractRunner {
         return createContract(bytecode, repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader()));
     }
 
-    private ProgramResult createContract(byte[] bytecode, Repository repository) {
+    private ProgramResult createContract(byte[] bytecode, RepositorySnapshot repository) {
         Transaction creationTx = contractCreateTx(bytecode, repository);
         return executeTransaction(creationTx, repository).getResult();
     }
 
     public ProgramResult createAndRunContract(byte[] bytecode, byte[] encodedCall, BigInteger value, boolean localCall) {
-        Repository repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
         createContract(bytecode, repository);
         Transaction creationTx = contractCreateTx(bytecode, repository);
         executeTransaction(creationTx, repository);
         return runContract(creationTx.getContractAddress().getBytes(), encodedCall, value, localCall, repository);
     }
 
-    private Transaction contractCreateTx(byte[] bytecode, Repository repository) {
+    private Transaction contractCreateTx(byte[] bytecode, RepositorySnapshot repository) {
         BigInteger nonceCreate = repository.getNonce(sender.getAddress());
         return new TransactionBuilder()
                 .gasLimit(BigInteger.valueOf(10_000_000))
@@ -87,7 +88,7 @@ public class ContractRunner {
                 .build();
     }
 
-    private ProgramResult runContract(byte[] contractAddress, byte[] encodedCall, BigInteger value, boolean localCall, Repository repository) {
+    private ProgramResult runContract(byte[] contractAddress, byte[] encodedCall, BigInteger value, boolean localCall, RepositorySnapshot repository) {
         BigInteger nonceExecute = repository.getNonce(sender.getAddress());
         Transaction transaction = new TransactionBuilder()
                 // a large gas limit will allow running any contract
@@ -102,10 +103,10 @@ public class ContractRunner {
         return executeTransaction(transaction, repository).getResult();
     }
 
-    private TransactionExecutor executeTransaction(Transaction transaction, Repository repository) {
+    private TransactionExecutor executeTransaction(Transaction transaction, RepositorySnapshot repository) {
         Repository track = repository.startTracking();
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(transaction, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
+                .newInstance(transaction, 0, RskAddress.nullAddress(), track, blockchain.getBestBlock(), 0);
         executor.init();
         executor.execute();
         executor.go();

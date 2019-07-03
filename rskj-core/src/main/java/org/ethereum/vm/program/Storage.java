@@ -21,7 +21,7 @@ package org.ethereum.vm.program;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -55,8 +55,8 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public MutableTrie getMutableTrie() {
-        return repository.getMutableTrie();
+    public Trie getTrie() {
+        return repository.getTrie();
     }
 
     @Override

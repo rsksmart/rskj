@@ -20,7 +20,11 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.*;
+import co.rsk.db.RepositorySnapshot;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.TransactionSet;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -43,7 +47,7 @@ public class PendingState implements AccountInformationProvider {
     private boolean executed = false;
 
 
-    public PendingState(Repository repository, TransactionSet pendingTransactions, TransactionExecutorFactory transactionExecutorFactory) {
+    public PendingState(RepositorySnapshot repository, TransactionSet pendingTransactions, TransactionExecutorFactory transactionExecutorFactory) {
         this.pendingRepository = repository.startTracking();
         this.pendingTransactions = pendingTransactions;
         this.transactionExecutorFactory = transactionExecutorFactory;
