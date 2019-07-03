@@ -58,7 +58,7 @@ public class NodeBlockProcessorUnclesTest {
 
         Block genesis = blockChain.getBestBlock();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null);
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChain.getRepository());
         blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block uncle1 = blockBuilder.parent(genesis).build();
@@ -90,7 +90,7 @@ public class NodeBlockProcessorUnclesTest {
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null);
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChain.getRepository());
         blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block uncle1 = blockBuilder.parent(genesis).build();

@@ -148,7 +148,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Object[] logs = web3.eth_getFilterLogs(id);
@@ -172,7 +172,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
@@ -205,7 +205,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         web3.eth_getFilterLogs(id);
@@ -246,7 +246,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Object[] logs = web3.eth_getFilterChanges(id);
@@ -803,7 +803,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Object[] logs = web3.eth_getFilterChanges(id);
@@ -828,7 +828,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         String mainAddress = tx.getContractAddress().toString();
@@ -839,7 +839,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
-        Block block2 = new BlockBuilder(blockChain, null).parent(block1).transactions(txs2).build();
+        Block block2 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(block1).transactions(txs2).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Object[] logs = web3.eth_getFilterChanges(id);
@@ -867,7 +867,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         String mainAddress = tx.getContractAddress().toString();
@@ -878,7 +878,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
-        Block block2 = new BlockBuilder(blockChain, null).parent(block1).transactions(txs2).build();
+        Block block2 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(block1).transactions(txs2).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Transaction tx3;
@@ -886,7 +886,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs3 = new ArrayList<>();
         txs3.add(tx3);
-        Block block3 = new BlockBuilder(blockChain, null).parent(block2).transactions(txs3).build();
+        Block block3 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(block2).transactions(txs3).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
         Object[] logs = web3.eth_getFilterChanges(id);
@@ -911,7 +911,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         String mainAddress = tx.getContractAddress().toString();
@@ -921,7 +921,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
-        Block block2 = new BlockBuilder(blockChain, null).parent(block1).transactions(txs2).build();
+        Block block2 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(block1).transactions(txs2).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Transaction tx3;
@@ -929,7 +929,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs3 = new ArrayList<>();
         txs3.add(tx3);
-        Block block3 = new BlockBuilder(blockChain, null).parent(block2).transactions(txs3).build();
+        Block block3 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(block2).transactions(txs3).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
@@ -987,9 +987,9 @@ public class Web3ImplLogsTest {
 
     private void addTwoEmptyBlocks() {
         Block genesis = blockChain.getBlockByNumber(0);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
-        Block block2 = new BlockBuilder(blockChain, null).parent(block1).build();
+        Block block2 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(block1).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
         Assert.assertEquals(3, blockChain.getSize());
     }
@@ -1023,7 +1023,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         web3.personal_newAccountWithSeed("notDefault");
@@ -1044,7 +1044,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
     }
 
@@ -1057,7 +1057,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
@@ -1065,7 +1065,7 @@ public class Web3ImplLogsTest {
         Transaction tx2 = getContractTransactionWithInvoke(acc1, contractAddress);
         List<Transaction> tx2s = new ArrayList<>();
         tx2s.add(tx2);
-        Block block2 = new BlockBuilder(blockChain, null).parent(block1).transactions(tx2s).build();
+        Block block2 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(block1).transactions(tx2s).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         web3.personal_newAccountWithSeed("default");
@@ -1082,7 +1082,7 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(blockChain, null).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
@@ -1091,13 +1091,13 @@ public class Web3ImplLogsTest {
         Transaction tx2 = getContractTransactionWithInvoke(acc1, contractAddress);
         List<Transaction> tx2s = new ArrayList<>();
         tx2s.add(tx2);
-        Block block2 = new BlockBuilder(blockChain, null).parent(block1).transactions(tx2s).build();
+        Block block2 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(block1).transactions(tx2s).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Transaction tx3 = getContractTransactionWithCall(acc1, contractAddress);
         List<Transaction> tx3s = new ArrayList<>();
         tx3s.add(tx3);
-        Block block3 = new BlockBuilder(blockChain, null).parent(block2).transactions(tx3s).build();
+        Block block3 = new BlockBuilder(blockChain, null).repository(blockChain.getRepository()).parent(block2).transactions(tx3s).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
         web3.personal_newAccountWithSeed("default");
