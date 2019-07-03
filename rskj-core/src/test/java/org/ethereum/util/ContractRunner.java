@@ -29,19 +29,20 @@ public class ContractRunner {
     }
 
     public ContractRunner(RskTestFactory factory) {
-        this(factory.getRepositoryLocator(), factory.getBlockchain(), factory.getTransactionExecutorFactory());
+        this(factory.getRepositoryLocator(), factory.getBlockchain(), factory.getTransactionExecutorFactory(), factory.getRepository());
     }
 
     private ContractRunner(RepositoryLocator repositoryLocator,
                            Blockchain blockchain,
-                           TransactionExecutorFactory transactionExecutorFactory) {
+                           TransactionExecutorFactory transactionExecutorFactory,
+                           Repository repository) {
         this.blockchain = blockchain;
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
 
         // we build a new block with high gas limit because Genesis' is too low
         Block block = new BlockBuilder(blockchain, null)
-                .repository(blockchain.getRepository())
+                .repository(repository)
                 .parent(blockchain.getBestBlock())
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .build();
