@@ -70,7 +70,7 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
-        Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
         processor.processMessage(sender, message);
@@ -146,7 +146,7 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
-        Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
         processor.postMessage(sender, message);
@@ -165,7 +165,7 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
-        Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
         processor.start();
@@ -189,7 +189,7 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
-        Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         byte[] mergedMiningHeader = block.getBitcoinMergedMiningHeader();
         mergedMiningHeader[76] += 3; //change merged mining nonce.
         Message message = new BlockMessage(block);
@@ -900,7 +900,7 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
-        Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockRequestMessage(100, block.getHash().getBytes());
 
         processor.processMessage(new SimpleMessageChannel(), message);

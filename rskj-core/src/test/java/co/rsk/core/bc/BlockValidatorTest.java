@@ -404,7 +404,7 @@ public class BlockValidatorTest {
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
-        Blockchain blockchain = BlockChainBuilder.ofSize(30, true);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(30, true);
 
         Block genesis = blockchain.getBlockByNumber(0);
         Block uncle1a = blockchain.getBlockByNumber(1);
@@ -739,9 +739,10 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidTxNonce() {
-        BlockChainImpl blockChain = new BlockChainBuilder().setListener(new BlockExecutorTest.SimpleEthereumListener()).build();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+        BlockChainImpl blockChain = blockChainBuilder.setListener(new BlockExecutorTest.SimpleEthereumListener()).build();
 
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+        Block genesis = BlockChainImplTest.getGenesisBlock(blockChainBuilder.getRepository());
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.TEN, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
@@ -751,7 +752,7 @@ public class BlockValidatorTest {
         Whitebox.setInternalState(block.getHeader(), "number", 25L);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addBlockTxsValidationRule(blockChain.getRepository())
+                .addBlockTxsValidationRule(blockChainBuilder.getRepository())
                 .build();
 
         Assert.assertFalse(validator.isValid(block));

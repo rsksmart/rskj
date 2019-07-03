@@ -84,8 +84,9 @@ public class MainNetMinerTest {
     @Test
     public void submitBitcoinBlockProofOfWorkNotGoodEnough() {
         /* We need a low target */
-        BlockChainImpl blockchain = new BlockChainBuilder().build();
-        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(blockchain);
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+        BlockChainImpl blockchain = blockChainBuilder.build();
+        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(blockChainBuilder.getRepository());
         gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE)));
         blockchain.setStatus(gen, gen.getCumulativeDifficulty());
 

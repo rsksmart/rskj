@@ -385,8 +385,7 @@ public class BlockExecutorTest {
     }
 
     public static TestObjects generateBlockWithOneTransaction() {
-        BlockChainImpl blockchain = new BlockChainBuilder().build();
-        Repository repository = blockchain.getRepository();
+        Repository repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB())));
 
         Repository track = repository.startTracking();
 
@@ -412,7 +411,7 @@ public class BlockExecutorTest {
 
         // getGenesisBlock() modifies the repository, adding some pre-mined accounts
         // Not nice for a getter, but it is what it is :(
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
+        Block genesis = BlockChainImplTest.getGenesisBlock(repository);
         genesis.setStateRoot(repository.getRoot());
 
         // Returns the root state prior block execution but after loading
@@ -578,10 +577,7 @@ public class BlockExecutorTest {
     }
 
     public TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
-
-        BlockChainImpl blockchain = new BlockChainBuilder().build();
-        Repository repository = blockchain.getRepository();
-
+        Repository repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB())));
         Repository track = repository.startTracking();
 
         Account account = createAccount("acctest1", track, Coin.valueOf(30000));
@@ -605,7 +601,7 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
+        Block genesis = BlockChainImplTest.getGenesisBlock(repository);
         genesis.setStateRoot(repository.getRoot());
         Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 

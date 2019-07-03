@@ -682,7 +682,7 @@ public class BridgeSupportTest {
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
 
-        Repository repository = blockchain.getRepository();
+        Repository repository = builder.getRepository();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtHeightZero);

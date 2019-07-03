@@ -249,7 +249,7 @@ public class RemascStorageProviderTest {
 
         testRunner.start();
         this.validateRemascsStorageIsCorrect(
-                this.getRemascStorageProvider(testRunner.getBlockChain().getRepository()),
+                this.getRemascStorageProvider(builder.getRepository()),
                 Coin.valueOf(0L),
                 Coin.valueOf(0L),
                 0L

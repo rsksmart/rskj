@@ -241,18 +241,18 @@ public class BlockChainBuilder {
         return blockChain;
     }
 
-    public static Blockchain ofSize(int size) {
+    public Blockchain ofSize(int size) {
         return ofSize(size, false);
     }
 
-    public static Blockchain ofSize(int size, boolean mining) {
+    public Blockchain ofSize(int size, boolean mining) {
         return ofSize(size, mining, Collections.emptyMap());
     }
 
-    public static Blockchain ofSize(int size, boolean mining, Map<RskAddress, AccountState> accounts) {
+    public Blockchain ofSize(int size, boolean mining, Map<RskAddress, AccountState> accounts) {
         BlockGenerator blockGenerator = new BlockGenerator();
         Genesis genesis = blockGenerator.getGenesisBlock(accounts);
-        BlockChainImpl blockChain = new BlockChainBuilder().setGenesis(genesis).build();
+        BlockChainImpl blockChain = setGenesis(genesis).build();
 
         if (size > 0) {
             List<Block> blocks = mining ? blockGenerator.getMinedBlockChain(genesis, size) : blockGenerator.getBlockChain(genesis, size);

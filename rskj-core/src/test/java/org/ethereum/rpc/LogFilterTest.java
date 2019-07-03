@@ -60,7 +60,7 @@ public class LogFilterTest {
         RskTestFactory factory = new RskTestFactory();
         Blockchain blockchain = factory.getBlockchain();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
-        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, repositoryLocator);
+        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, repositoryLocator, factory.getRepository());
         Block block = blockchain.getBestBlock();
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
@@ -80,7 +80,7 @@ public class LogFilterTest {
         RskTestFactory factory = new RskTestFactory();
         Blockchain blockchain = factory.getBlockchain();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
-        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, repositoryLocator);
+        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, repositoryLocator, factory.getRepository());
         Block block = blockchain.getBestBlock();
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
@@ -101,7 +101,7 @@ public class LogFilterTest {
         RskTestFactory factory = new RskTestFactory();
         Blockchain blockchain = factory.getBlockchain();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
-        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, repositoryLocator);
+        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, repositoryLocator, factory.getRepository());
         Block block = blockchain.getBestBlock();
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);

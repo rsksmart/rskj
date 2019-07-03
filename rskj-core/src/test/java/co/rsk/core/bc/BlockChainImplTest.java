@@ -637,9 +637,7 @@ public class BlockChainImplTest {
     }
 
     @Deprecated
-    public static Block getGenesisBlock(Blockchain blockChain) {
-        Repository repository = blockChain.getRepository();
-
+    public static Block getGenesisBlock(final Repository repository) {
         Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
 
         for (Map.Entry<RskAddress, AccountState> accountsEntry : genesis.getAccounts().entrySet()) {

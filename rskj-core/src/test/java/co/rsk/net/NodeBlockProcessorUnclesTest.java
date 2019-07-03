@@ -53,12 +53,13 @@ public class NodeBlockProcessorUnclesTest {
 
     @Test
     public void addBlockWithTwoKnownUncles() throws UnknownHostException {
-        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+        BlockChainImpl blockChain = blockChainBuilder.build();
         NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
         Block genesis = blockChain.getBestBlock();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChain.getRepository());
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChainBuilder.getRepository());
         blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block uncle1 = blockBuilder.parent(genesis).build();
@@ -85,12 +86,13 @@ public class NodeBlockProcessorUnclesTest {
 
     @Test
     public void addBlockWithTwoUnknownUncles() throws UnknownHostException {
-        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+        BlockChainImpl blockChain = blockChainBuilder.build();
         NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChain.getRepository());
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChainBuilder.getRepository());
         blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block uncle1 = blockBuilder.parent(genesis).build();

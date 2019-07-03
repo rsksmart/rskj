@@ -107,11 +107,12 @@ public class BlockUtilsTest {
 
     @Test
     public void unknowAncestorsHashesUsingUncles() {
-        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+        BlockChainImpl blockChain = blockChainBuilder.build();
         Genesis genesis = (Genesis) blockChain.getBestBlock();
         BlockStore store = new BlockStore();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChain.getRepository());
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChainBuilder.getRepository());
         blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block block1b = blockBuilder.parent(genesis).build();

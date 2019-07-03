@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -64,7 +65,7 @@ public class RskForksBridgeTest {
         world = new World();
         blockChain = world.getBlockChain();
         repositoryLocator = world.getRepositoryLocator();
-        repository = blockChain.getRepository();
+        repository = world.getRepository();
 
         whitelistManipulationKey = ECKey.fromPrivate(Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
 
@@ -222,7 +223,7 @@ public class RskForksBridgeTest {
     }
 
     private Block buildBlock(Block parent, long difficulty) {
-        World world = new World(blockChain, null, null, genesis);
+        World world = new World(blockChain, repository, null, genesis);
         BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(difficulty).parent(parent);
         return blockBuilder.build();
     }
@@ -233,7 +234,7 @@ public class RskForksBridgeTest {
 
     private Block buildBlock(Block parent, long difficulty, Transaction ... txs) {
         List<Transaction> txList = Arrays.asList(txs);
-        World world = new World(blockChain, null, null, genesis);
+        World world = new World(blockChain, repository, null, genesis);
         BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
         return blockBuilder.build();
     }
@@ -466,8 +467,9 @@ public class RskForksBridgeTest {
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory())
                 );
+        Repository track = repository.startTracking();
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository, blockChain.getBestBlock(), 0)
+                .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), track, blockChain.getBestBlock(), 0)
                 .setLocalCall(true);
 
         executor.init();

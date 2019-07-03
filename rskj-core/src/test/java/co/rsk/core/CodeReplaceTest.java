@@ -21,8 +21,11 @@ package co.rsk.core;
 import co.rsk.asm.EVMAssembler;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -30,6 +33,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -56,12 +61,14 @@ public class CodeReplaceTest {
     public void replaceCodeTest1() throws InterruptedException {
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(
                 GenesisLoader.loadGenesis(
                         nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"),
                         false, true, true
                 ),
-                config
+                config,
+                repository
         );
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
@@ -81,12 +88,12 @@ public class CodeReplaceTest {
         byte[] code = assembler.assemble(asm);
 
         // Creates a contract
-        Transaction tx1 = createTx(blockchain, sender, new byte[0], code);
-        executeTransaction(blockchain, tx1);
+        Transaction tx1 = createTx(sender, new byte[0], code, repository);
+        executeTransaction(blockchain, tx1, repository);
         // Now we can directly check the store and see the new code.
         RskAddress createdContract = tx1.getContractAddress();
         byte[] expectedCode  = Arrays.copyOfRange(code, 12, 12+20);
-        byte[] installedCode = blockchain.getRepository().getCode(createdContract);
+        byte[] installedCode = repository.getCode(createdContract);
         // assert the contract has been created
         Assert.assertTrue(Arrays.equals(expectedCode, installedCode));
 
@@ -100,16 +107,16 @@ public class CodeReplaceTest {
         byte[] code2 = assembler.assemble(asm2);
 
         // The second transaction changes the contract code
-        Transaction tx2 = createTx(blockchain, sender, tx1.getContractAddress().getBytes(), code2);
-        TransactionExecutor executor2 = executeTransaction(blockchain, tx2);
-        byte[] installedCode2 = blockchain.getRepository().getCode(createdContract);
+        Transaction tx2 = createTx(sender, tx1.getContractAddress().getBytes(), code2, repository);
+        TransactionExecutor executor2 = executeTransaction(blockchain, tx2, repository);
+        byte[] installedCode2 = repository.getCode(createdContract);
         // assert the contract code has been created
         Assert.assertTrue(Arrays.equals(installedCode2, code2));
         Assert.assertEquals(1, executor2.getResult().getCodeChanges().size()); // there is one code change
 
         // We could add a third tx to execute the new code
-        Transaction tx3 = createTx(blockchain, sender, tx1.getContractAddress().getBytes(), new byte[0]);
-        TransactionExecutor executor3 = executeTransaction(blockchain, tx3);
+        Transaction tx3 = createTx(sender, tx1.getContractAddress().getBytes(), new byte[0], repository);
+        TransactionExecutor executor3 = executeTransaction(blockchain, tx3, repository);
         // check return code from contract call
         Assert.assertArrayEquals(Hex.decode("FF"), executor3.getResult().getHReturn());
     }
@@ -119,12 +126,14 @@ public class CodeReplaceTest {
         // We test code replacement during initialization: this is forbitten.
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(
                 GenesisLoader.loadGenesis(
                         nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"),
                         false, true, true
                 ),
-                config
+                config,
+                repository
         );
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
@@ -141,8 +150,8 @@ public class CodeReplaceTest {
         byte[] code = assembler.assemble(asm);
 
         // Creates a contract
-        Transaction tx1 = createTx(blockchain, sender, new byte[0], code);
-        TransactionExecutor executor1 = executeTransaction(blockchain, tx1);
+        Transaction tx1 = createTx(sender, new byte[0], code, repository);
+        TransactionExecutor executor1 = executeTransaction(blockchain, tx1, repository);
         // Now we can directly check the store and see the new code.
         Assert.assertTrue(executor1.getResult().getException() != null);
     }
@@ -152,12 +161,14 @@ public class CodeReplaceTest {
         TestSystemProperties oldConfig = config;
         config = new TestSystemProperties();
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
+        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(
                 GenesisLoader.loadGenesis(
                         nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"),
                         false, true, true
                 ),
-                config
+                config,
+                repository
         );
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
@@ -177,12 +188,12 @@ public class CodeReplaceTest {
         byte[] code = assembler.assemble(asm);
 
         // Creates a contract
-        Transaction tx1 = createTx(blockchain, sender, new byte[0], code);
-        executeTransaction(blockchain, tx1);
+        Transaction tx1 = createTx(sender, new byte[0], code, repository);
+        executeTransaction(blockchain, tx1, repository);
         // Now we can directly check the store and see the new code.
         RskAddress createdContract = tx1.getContractAddress();
         byte[] expectedCode  = Arrays.copyOfRange(code, 12, 12+20);
-        byte[] installedCode = blockchain.getRepository().getCode(createdContract);
+        byte[] installedCode = repository.getCode(createdContract);
         // assert the contract has been created
         Assert.assertTrue(Arrays.equals(expectedCode, installedCode));
 
@@ -194,8 +205,8 @@ public class CodeReplaceTest {
 
         byte[] code2 = assembler.assemble(asm2);
 
-        Transaction tx2 = createTx(blockchain, sender, tx1.getContractAddress().getBytes(), code2);
-        TransactionExecutor executor2 = executeTransaction(blockchain, tx2);
+        Transaction tx2 = createTx(sender, tx1.getContractAddress().getBytes(), code2, repository);
+        TransactionExecutor executor2 = executeTransaction(blockchain, tx2, repository);
         // code remains the same
         Assert.assertTrue(Arrays.equals(code2, code2));
         Assert.assertEquals(0, executor2.getResult().getCodeChanges().size()); // there is no code change
@@ -205,13 +216,12 @@ public class CodeReplaceTest {
         config = oldConfig;
     }
 
-    protected Transaction createTx(BlockChainImpl blockchain, ECKey sender, byte[] receiveAddress, byte[] data) throws InterruptedException {
-        return createTx(blockchain, sender, receiveAddress, data, 0);
+    protected Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, Repository repository) throws InterruptedException {
+        return createTx(sender, receiveAddress, data, 0, repository.getNonce(new RskAddress(sender.getAddress())));
     }
 
-    protected Transaction createTx(BlockChainImpl blockchain, ECKey sender, byte[] receiveAddress,
-                                   byte[] data, long value) throws InterruptedException {
-        BigInteger nonce = blockchain.getRepository().getNonce(new RskAddress(sender.getAddress()));
+    protected Transaction createTx(ECKey sender, byte[] receiveAddress,
+                                   byte[] data, long value, final BigInteger nonce) throws InterruptedException {
         Transaction tx = new Transaction(
                 ByteUtil.bigIntegerToBytes(nonce),
                 ByteUtil.longToBytesNoLeadZeroes(1),
@@ -224,8 +234,8 @@ public class CodeReplaceTest {
         return tx;
     }
 
-    public TransactionExecutor executeTransaction(BlockChainImpl blockchain, Transaction tx) {
-        Repository track = blockchain.getRepository().startTracking();
+    public TransactionExecutor executeTransaction(BlockChainImpl blockchain, Transaction tx, Repository repository) {
+        Repository track = repository.startTracking();
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
@@ -239,7 +249,7 @@ public class CodeReplaceTest {
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(config, bridgeSupportFactory));
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(tx, 0, RskAddress.nullAddress(), blockchain.getRepository(), blockchain.getBestBlock(), 0);
+                .newInstance(tx, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
 
         executor.init();
         executor.execute();
