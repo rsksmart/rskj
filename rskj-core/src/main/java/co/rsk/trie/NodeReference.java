@@ -155,7 +155,7 @@ public class NodeReference {
      * Do not use.
      */
     public long referenceSize() {
-        return getNode().map(trie -> trie.getTreeSize().value).orElse(0L) + serializedLength();
+        return getNode().map(trie -> trie.getChildrenSize().value).orElse(0L) + serializedLength();
     }
 
     public static NodeReference empty() {

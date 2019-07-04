@@ -108,7 +108,7 @@ public class Trie {
 
     // the size of this node along with its children (in bytes)
     // note that we use a long because an int would allow only up to 4GB of state to be stored.
-    private VarInt treeSize;
+    private VarInt childrenSize;
 
     // associated store, to store or retrieve nodes in the trie
     private TrieStore store;
@@ -135,7 +135,7 @@ public class Trie {
     }
 
     // full constructor
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt treeSize) {
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -143,7 +143,7 @@ public class Trie {
         this.sharedPath = sharedPath;
         this.valueLength = valueLength;
         this.valueHash = valueHash;
-        this.treeSize = treeSize;
+        this.childrenSize = childrenSize;
         checkValueLength();
     }
 
@@ -305,9 +305,9 @@ public class Trie {
             }
         }
 
-        VarInt treeSize = new VarInt(0);
+        VarInt childrenSize = new VarInt(0);
         if (leftNodePresent || rightNodePresent) {
-            treeSize = readVarInt(message);
+            childrenSize = readVarInt(message);
         }
 
         byte[] value;
@@ -340,7 +340,7 @@ public class Trie {
             throw new IllegalArgumentException("The message had more data than expected");
         }
 
-        Trie trie = new Trie(store, sharedPath, value, left, right, lvalue, valueHash, treeSize);
+        Trie trie = new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize);
 
         if (store != null) {
             trie.saved = true;
@@ -714,14 +714,14 @@ public class Trie {
         boolean hasLongVal = this.hasLongValue();
 
         SharedPathSerializer sharedPathSerializer = new SharedPathSerializer(this.sharedPath);
-        VarInt treeSize = getTreeSize();
+        VarInt childrenSize = getChildrenSize();
 
         ByteBuffer buffer = ByteBuffer.allocate(
                 1 + // flags
                         sharedPathSerializer.serializedLength() +
                         this.left.serializedLength() +
                         this.right.serializedLength() +
-                        (this.isTerminal() ? 0 : treeSize.getSizeInBytes()) +
+                        (this.isTerminal() ? 0 : childrenSize.getSizeInBytes()) +
                         (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue())
         );
 
@@ -760,7 +760,7 @@ public class Trie {
         this.right.serializeInto(buffer);
 
         if (!this.isTerminal()) {
-            buffer.put(treeSize.encode());
+            buffer.put(childrenSize.encode());
         }
 
         if (hasLongVal) {
@@ -1040,16 +1040,16 @@ public class Trie {
      * It shouldn't be called from outside. It's still public for NodeReference call
      *
      */
-    public VarInt getTreeSize() {
-        if (treeSize == null) {
+    public VarInt getChildrenSize() {
+        if (childrenSize == null) {
             if (isTerminal()) {
-                treeSize = new VarInt(0);
+                childrenSize = new VarInt(0);
             } else {
-                treeSize = new VarInt(this.left.referenceSize() + this.right.referenceSize());
+                childrenSize = new VarInt(this.left.referenceSize() + this.right.referenceSize());
             }
         }
 
-        return treeSize;
+        return childrenSize;
     }
 
     private byte[] retrieveLongValue() {
