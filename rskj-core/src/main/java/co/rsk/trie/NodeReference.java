@@ -155,7 +155,12 @@ public class NodeReference {
      * Do not use.
      */
     public long referenceSize() {
-        return getNode().map(trie -> trie.getChildrenSize().value).orElse(0L) + serializedLength();
+        return getNode().map(this::nodeSize).orElse(0L);
+    }
+
+    private long nodeSize(Trie trie) {
+        long externalValueLength = trie.hasLongValue() ? trie.getValueLength().intValue() : 0L;
+        return trie.getChildrenSize().value + externalValueLength + trie.getMessageLength();
     }
 
     public static NodeReference empty() {

@@ -36,7 +36,7 @@ public class TrieTreeSizeTest {
         Trie trie = new Trie()
                 .put(new byte[]{0x00}, new byte[]{0x01})
                 .put(new byte[]{0x01}, new byte[32]);
-        Assert.assertThat(trie.getChildrenSize().value, is(37L));
+        Assert.assertThat(trie.getChildrenSize().value, is(35L));
     }
 
     @Test
@@ -44,6 +44,6 @@ public class TrieTreeSizeTest {
         Trie trie = new Trie()
                 .put(new byte[]{0x00}, new byte[]{0x01})
                 .put(new byte[]{0x01}, new byte[33]);
-        Assert.assertThat(trie.getChildrenSize().value, is(40L));
+        Assert.assertThat(trie.getChildrenSize().value, is(71L));
     }
 }
