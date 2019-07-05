@@ -97,7 +97,7 @@ public class BlockChainImplInvalidTest {
 
         Block genesis = blockChain.getBestBlock();
 
-        Block block = new BlockBuilder().minGasPrice(BigInteger.ONE)
+        Block block = new BlockBuilder(null, null).minGasPrice(BigInteger.ONE)
                 .parent(genesis).build();
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
@@ -107,7 +107,7 @@ public class BlockChainImplInvalidTest {
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
-        block = new BlockBuilder().transactions(txs).minGasPrice(BigInteger.valueOf(11L))
+        block = new BlockBuilder(null, null).transactions(txs).minGasPrice(BigInteger.valueOf(11L))
                 .parent(genesis).build();
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));

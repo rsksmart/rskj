@@ -25,17 +25,13 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
-import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -50,11 +46,9 @@ import java.util.Map;
  */
 public class ImportLightTest {
 
-    public static BlockChainImpl createBlockchain(Genesis genesis, TestSystemProperties config) {
+    public static BlockChainImpl createBlockchain(Genesis genesis, TestSystemProperties config, Repository repository) {
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
-
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
 

@@ -119,11 +119,6 @@ public class BlockChainImpl implements Blockchain {
     }
 
     @Override
-    public Repository getRepository() {
-        return repository;
-    }
-
-    @Override
     public BlockStore getBlockStore() { return blockStore; }
 
     @VisibleForTesting

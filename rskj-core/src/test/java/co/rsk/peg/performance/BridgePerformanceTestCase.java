@@ -211,7 +211,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
                 bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                         bridgeSupportFactory);
-                Blockchain blockchain = BlockChainBuilder.ofSize(height);
+                Blockchain blockchain = new BlockChainBuilder().ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);
                 bridge.init(
                         tx,

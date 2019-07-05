@@ -106,7 +106,7 @@ public class TransactionModuleTest {
         World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
-        Repository repository = blockchain.getRepository();
+        Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
@@ -167,7 +167,7 @@ public class TransactionModuleTest {
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
-        Repository repository = blockchain.getRepository();
+        Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();
@@ -194,7 +194,7 @@ public class TransactionModuleTest {
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
-        Repository repository = blockchain.getRepository();
+        Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
         BlockStore blockStore = world.getBlockChain().getBlockStore();

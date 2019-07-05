@@ -82,7 +82,7 @@ public class World {
         this.transactionPool = transactionPool;
 
         if (genesis == null) {
-            genesis = (Genesis) BlockChainImplTest.getGenesisBlock(blockChain);
+            genesis = (Genesis) BlockChainImplTest.getGenesisBlock(repository);
             this.blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
         }
         this.saveBlock("g00", genesis);
