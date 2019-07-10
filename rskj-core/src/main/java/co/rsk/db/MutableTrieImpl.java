@@ -128,13 +128,6 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
-    public MutableTrie getSnapshotTo(Keccak256 hash) {
-        // Since getSnapshotTo() does not modify the current trie (this.trie)
-        // then there is no need to save nodes.
-        return new MutableTrieImpl(trie.getSnapshotTo(hash));
-    }
-
-    @Override
     public boolean hasStore() {
         return trie.hasStore();
     }

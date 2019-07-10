@@ -233,12 +233,6 @@ public class MutableTrieCache implements MutableTrie {
     }
 
     @Override
-    public MutableTrie getSnapshotTo(Keccak256 hash) {
-        assertNoCache();
-        return new MutableTrieCache(trie.getSnapshotTo(hash));
-    }
-
-    @Override
     public boolean hasStore() {
         return trie.hasStore();
     }

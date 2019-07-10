@@ -773,19 +773,19 @@ public class RepositoryImplOriginalTest {
 
         byte[] root3 = repository.getRoot();
 
-        Repository snapshot = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(root)));
+        Repository snapshot = new MutableRepository(mutableTrie.getTrie().getSnapshotTo(new Keccak256(root)));
         assertThat(snapshot.getStorageValue(COW, cowKey1), is(nullValue()));
         assertThat(snapshot.getStorageValue(COW, cowKey2), is(nullValue()));
         assertThat(snapshot.getStorageValue(HORSE, horseKey1), is(nullValue()));
         assertThat(snapshot.getStorageValue(HORSE, horseKey2), is(nullValue()));
 
-        snapshot = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(root2)));
+        snapshot = new MutableRepository(mutableTrie.getTrie().getSnapshotTo(new Keccak256(root2)));
         assertThat(snapshot.getStorageValue(COW, cowKey1), is(cowVal1));
         assertThat(snapshot.getStorageValue(COW, cowKey2), is(nullValue()));
         assertThat(snapshot.getStorageValue(HORSE, horseKey1), is(horseVal1));
         assertThat(snapshot.getStorageValue(HORSE, horseKey2), is(nullValue()));
 
-        snapshot = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(root3)));
+        snapshot = new MutableRepository(mutableTrie.getTrie().getSnapshotTo(new Keccak256(root3)));
         assertThat(snapshot.getStorageValue(COW, cowKey1), is(cowVal1));
         assertThat(snapshot.getStorageValue(COW, cowKey2), is(cowVal0));
         assertThat(snapshot.getStorageValue(HORSE, horseKey1), is(horseVal1));
@@ -816,7 +816,7 @@ public class RepositoryImplOriginalTest {
         Repository[] snaps = new Repository[10];
 
         for (int i = 0; i < 10; ++i) {
-            snaps[i] = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(repository.getRoot())));
+            snaps[i] = new MutableRepository(mutableTrie.getTrie().getSnapshotTo(new Keccak256(repository.getRoot())));
         }
         for (int i = 0; i < 10; ++i) {
             int finalI = i;
