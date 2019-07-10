@@ -19,6 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
 import org.ethereum.core.Repository;
@@ -186,7 +187,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     private BridgeStorageProviderInitializer buildInitializer(boolean generatePendingFederation, ABICallSpecGenerator specToVoteGenerator) {
-        return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+        return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             if (generatePendingFederation) {
                 final int minKeys = 10;
                 final int maxKeys = 16;

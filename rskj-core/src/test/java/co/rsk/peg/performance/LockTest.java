@@ -19,6 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import org.ethereum.core.Repository;
@@ -90,7 +91,7 @@ public class LockTest extends BridgePerformanceTestCase {
         final int minHeight = 1000;
         final int maxHeight = 2000;
 
-        return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+        return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             int hashesToGenerate = Helper.randomInRange(minHashes, maxHashes);
             int randomHashIndex = Helper.randomInRange(0, hashesToGenerate-1);
             Random rnd = new Random();
