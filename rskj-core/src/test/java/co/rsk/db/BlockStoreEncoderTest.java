@@ -1,10 +1,6 @@
 package co.rsk.db;
 
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
@@ -14,6 +10,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Optional;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BlockStoreEncoderTest {
 
@@ -131,15 +131,5 @@ public class BlockStoreEncoderTest {
 
         RLPList rlpList = RLP.decodeList(result);
         assertArrayEquals(encodedBlock, rlpList.getRLPData());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void encodeBlockHeader_illegal_argument() {
-        target.encodeBlockHeader(null);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void encodeBlock_illegal_argument() {
-        target.encodeBlock(null);
     }
 }

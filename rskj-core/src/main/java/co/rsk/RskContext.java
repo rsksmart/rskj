@@ -24,10 +24,7 @@ import co.rsk.config.*;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
@@ -67,6 +64,7 @@ import co.rsk.scoring.PunishmentParameters;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
+import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.ethereum.config.Constants;
@@ -1468,7 +1466,8 @@ public class RskContext implements NodeBootstrapper {
 
         KeyValueDataSource blocksDB = makeDataSource("blocks", databaseDir);
 
-        return new IndexedBlockStore(getBlockFactory(), indexMap, blocksDB, indexDB);
+        return new IndexedBlockStore(new BlockStoreEncoder(getBlockFactory()), indexMap, blocksDB, indexDB,
+                new BlockCache(5000), new MaxSizeHashMap<>(50000, true));
     }
 
     public static KeyValueDataSource makeDataSource(String name, String databaseDir) {

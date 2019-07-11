@@ -18,13 +18,14 @@
 
 package co.rsk.db;
 
-import java.util.Optional;
-
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
+
+import javax.annotation.Nonnull;
+import java.util.Optional;
 
 /**
  * Encodes and decodes both block headers and blocks allowing both value types to be stored the same block store.
@@ -36,7 +37,7 @@ public class BlockStoreEncoder {
     /**
      * @param blockFactory The block factory is needed to decode encoded blocks and headers, cannot be null.
      */
-    public BlockStoreEncoder(BlockFactory blockFactory) {
+    public BlockStoreEncoder(@Nonnull BlockFactory blockFactory) {
         this.blockFactory = blockFactory;
     }
 
@@ -46,11 +47,7 @@ public class BlockStoreEncoder {
      * @param blockHeader The block header to encode, cannot be null.
      * @return The encoded header, never null.
      */
-    public byte[] encodeBlockHeader(BlockHeader blockHeader) {
-        if (blockHeader == null) {
-            throw new IllegalArgumentException("Block header to wrap cannot be null");
-        }
-
+    public byte[] encodeBlockHeader(@Nonnull BlockHeader blockHeader) {
         return RLP.encodeList(blockHeader.getEncoded());
     }
 
@@ -60,11 +57,7 @@ public class BlockStoreEncoder {
      * @param block The block to encode, cannot be null.
      * @return The encoded block, never null.
      */
-    public byte[] encodeBlock(Block block) {
-        if (block == null) {
-            throw new IllegalArgumentException("Block to wrap cannot be null");
-        }
-
+    public byte[] encodeBlock(@Nonnull Block block) {
         return block.getEncoded();
     }
 

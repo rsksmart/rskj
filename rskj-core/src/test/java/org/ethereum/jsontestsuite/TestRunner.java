@@ -27,12 +27,13 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.*;
+import co.rsk.net.BlockCache;
+import co.rsk.remasc.Sibling;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
+import co.rsk.util.MaxSizeHashMap;
 import co.rsk.validators.DummyBlockValidator;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -132,7 +133,8 @@ public class TestRunner {
         Block genesis = build(testCase.getGenesisBlockHeader(), null, null);
         Repository repository = RepositoryBuilder.build(testCase.getPre());
 
-        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(new BlockStoreEncoder(blockFactory), new HashMap<>(), new HashMapDB(), null,
+                new BlockCache(5000), new MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>>(50000, true));
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();

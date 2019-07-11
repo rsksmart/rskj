@@ -20,14 +20,21 @@
 package org.ethereum.jsontestsuite.runners;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.*;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.BlockStoreEncoder;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.net.BlockCache;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.remasc.Sibling;
 import co.rsk.trie.TrieConverter;
+import co.rsk.util.MaxSizeHashMap;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -54,10 +61,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.byteArrayToLong;
@@ -130,7 +134,9 @@ public class StateTestRunner {
 
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
-        BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        BlockStore blockStore = new IndexedBlockStore(new BlockStoreEncoder(blockFactory), new HashMap<>(), new HashMapDB(), null,
+                new BlockCache(5000), new MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>>(50000, true)
+        );
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         blockchain = new BlockChainImpl(
                 repository,

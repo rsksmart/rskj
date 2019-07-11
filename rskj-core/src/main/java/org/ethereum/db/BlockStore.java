@@ -23,7 +23,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.db.RemascCache;
 import org.ethereum.core.Block;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -41,7 +40,6 @@ public interface BlockStore extends RemascCache {
 
     Block getChainBlockByNumber(long blockNumber);
 
-    @Nonnull
     List<Block> getChainBlocksByNumber(long blockNumber);
 
     void removeBlock(Block block);

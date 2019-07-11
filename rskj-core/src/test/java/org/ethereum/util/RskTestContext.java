@@ -19,10 +19,13 @@ package org.ethereum.util;
 
 import co.rsk.RskContext;
 import co.rsk.core.Wallet;
+import co.rsk.db.BlockStoreEncoder;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
+import co.rsk.net.BlockCache;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
@@ -45,7 +48,8 @@ public class RskTestContext extends RskContext {
 
     @Override
     protected BlockStore buildBlockStore() {
-        return new IndexedBlockStore(getBlockFactory(), new HashMap<>(), new HashMapDB(), null);
+        return new IndexedBlockStore(new BlockStoreEncoder(getBlockFactory()), new HashMap<>(), new HashMapDB(), null,
+                new BlockCache(5000), new MaxSizeHashMap<>(50000, true));
     }
 
     @Override

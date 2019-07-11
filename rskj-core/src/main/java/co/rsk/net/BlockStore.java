@@ -18,9 +18,9 @@
 
 package co.rsk.net;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import co.rsk.crypto.Keccak256;
 
 import javax.annotation.Nonnull;
 import java.util.*;

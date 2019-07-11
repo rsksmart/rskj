@@ -24,14 +24,17 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
+import co.rsk.db.BlockStoreEncoder;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.net.BlockCache;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
+import co.rsk.util.MaxSizeHashMap;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
@@ -169,7 +172,8 @@ public class BlockChainBuilder {
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         if (blockStore == null) {
-            blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+            blockStore = new IndexedBlockStore(new BlockStoreEncoder(blockFactory), new HashMap<>(), new HashMapDB(), null,
+                    new BlockCache(5000), new MaxSizeHashMap<>(50000, true));
         }
 
         if (receiptStore == null) {

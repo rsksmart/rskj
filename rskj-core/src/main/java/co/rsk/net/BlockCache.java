@@ -22,28 +22,76 @@ package co.rsk.net;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
+import java.util.Optional;
 
 /**
- * Created by ajlopez on 17/06/2017.
+ * BlockStoreCache stores both blocks and block headers and has a set max size. Elements are removed in access order.
  */
 public class BlockCache {
+
     private final Map<Keccak256, Block> blockMap;
+    private final Map<Keccak256, BlockHeader> headerMap;
+
 
     public BlockCache(int cacheSize) {
         this.blockMap = new MaxSizeHashMap<>(cacheSize, true);
+        this.headerMap = new MaxSizeHashMap<>(cacheSize, true);
     }
 
     public void removeBlock(Block block) {
-        blockMap.remove(block.getHash());
+        Keccak256 hash = block.getHash();
+
+        blockMap.remove(hash);
+        headerMap.remove(hash);
     }
 
-    public void addBlock(Block block) {
-        blockMap.put(block.getHash(), block);
+    /**
+     * Adds a block to the cache, any other block or header with the same hash is removed.
+     *
+     * @param block The block to store, cannot be null.
+     */
+    public void addBlock(@Nonnull Block block) {
+        Keccak256 hash = block.getHash();
+        blockMap.put(hash, block);
+        headerMap.remove(hash);
     }
 
-    public Block getBlockByHash(byte[] hash) {
-        return blockMap.get(new Keccak256(hash));
+    /**
+     * Adds a block header to the cache, any other header with the same hash is removed.
+     *
+     * @param blockHeader The header to store, cannot be null.
+     */
+    public void addBlockHeader(@Nonnull BlockHeader blockHeader) {
+        Keccak256 hash = blockHeader.getHash();
+        headerMap.put(hash, blockHeader);
+    }
+
+    /**
+     * Retrieves a block.
+     *
+     * @param hash The look up key, cannot be null.
+     * @return An optional, empty if the block was not found.
+     */
+    public Optional<Block> getBlockByHash(@Nonnull Keccak256 hash) {
+        return Optional.ofNullable(blockMap.get(hash));
+    }
+
+    /**
+     * Retrieves a header from the cache. If a block is found instead of a header, the block's header is returned.
+     *
+     * @param hash The look up key, cannot be null.
+     * @return An optional, empty if the header was not found in the cache.
+     */
+    public Optional<BlockHeader> getBlockHeaderByHash(@Nonnull Keccak256 hash) {
+        BlockHeader headerResult = headerMap.get(hash);
+        if (headerResult != null) {
+            return Optional.of(headerResult);
+        }
+
+        return getBlockByHash(hash).map(Block::getHeader);
     }
 }

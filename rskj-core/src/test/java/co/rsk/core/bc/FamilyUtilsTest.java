@@ -21,6 +21,9 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.BlockStoreEncoder;
+import co.rsk.net.BlockCache;
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -256,7 +259,8 @@ public class FamilyUtilsTest {
     }
 
     private static BlockStore createBlockStore() {
-        return new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        return new IndexedBlockStore(new BlockStoreEncoder(blockFactory), new HashMap<>(), new HashMapDB(), null,
+                new BlockCache(5000), new MaxSizeHashMap<>(50000, true));
     }
 
     private static boolean containsHash(Keccak256 hash, List<BlockHeader> headers) {
