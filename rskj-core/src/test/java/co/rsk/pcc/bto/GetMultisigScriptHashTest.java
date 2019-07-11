@@ -226,22 +226,22 @@ public class GetMultisigScriptHashTest {
 
     @Test
     public void gasIsBaseIfLessThanOrEqualstoTwoKeysPassed() {
-        Assert.assertEquals(13_500L, method.getGas(new Object[]{
+        Assert.assertEquals(20_000L, method.getGas(new Object[]{
                 BigInteger.valueOf(1L),
                 null
         }, new byte[]{}));
-        Assert.assertEquals(13_500L, method.getGas(new Object[]{
+        Assert.assertEquals(20_000L, method.getGas(new Object[]{
                 BigInteger.valueOf(1L),
                 new Object[]{
                 }
         }, new byte[]{}));
-        Assert.assertEquals(13_500L, method.getGas(new Object[]{
+        Assert.assertEquals(20_000L, method.getGas(new Object[]{
                 BigInteger.valueOf(1L),
                 new Object[]{
                         Hex.decode("02566d5ded7c7db1aa7ee4ef6f76989fb42527fcfdcddcd447d6793b7d869e46f7")
                 }
         }, new byte[]{}));
-        Assert.assertEquals(13_500L, method.getGas(new Object[]{
+        Assert.assertEquals(20_000L, method.getGas(new Object[]{
                 BigInteger.valueOf(1L),
                 new Object[]{
                         Hex.decode("02566d5ded7c7db1aa7ee4ef6f76989fb42527fcfdcddcd447d6793b7d869e46f7"),
