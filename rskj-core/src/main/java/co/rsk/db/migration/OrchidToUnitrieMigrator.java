@@ -295,7 +295,7 @@ public class OrchidToUnitrieMigrator {
             Trie trie = getContractStorageTrie(contractAddress, contractData);
             TrieStore trieStore = trie.getStore();
 
-            if (trie.isSaved() && trie.getHash().equals(oldAccountStateRoot)) {
+            if (trie.getHash().equals(oldAccountStateRoot)) {
                 return trie;
             }
 
