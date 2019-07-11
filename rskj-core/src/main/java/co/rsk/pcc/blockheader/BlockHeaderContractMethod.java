@@ -52,6 +52,6 @@ public abstract class BlockHeaderContractMethod extends NativeMethod {
 
     @Override
     public long getGas(Object[] parsedArguments, byte[] originalData) {
-        return 1000L + super.getGas(parsedArguments, originalData);
+        return 4000L + super.getGas(parsedArguments, originalData);
     }
 }

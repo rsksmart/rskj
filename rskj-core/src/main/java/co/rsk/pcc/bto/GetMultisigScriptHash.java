@@ -48,8 +48,8 @@ public class GetMultisigScriptHash extends NativeMethod {
     private final static int COMPRESSED_PUBLIC_KEY_LENGTH = 33;
     private final static int UNCOMPRESSED_PUBLIC_KEY_LENGTH = 65;
 
-    private final static long BASE_COST = 13_500L;
-    private final static long COST_PER_EXTRA_KEY = 500L;
+    private final static long BASE_COST = 20_000L;
+    private final static long COST_PER_EXTRA_KEY = 700L;
 
     private final static int MINIMUM_REQUIRED_KEYS = 2;
 
