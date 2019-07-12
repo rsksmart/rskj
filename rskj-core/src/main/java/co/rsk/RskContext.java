@@ -778,7 +778,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected org.ethereum.db.BlockStore buildBlockStore() {
-        return buildBlockStore(getBlockFactory(), getRskSystemProperties().databaseDir());
+        return buildBlockStore(getRskSystemProperties().databaseDir());
     }
 
     protected RskSystemProperties buildRskSystemProperties() {
@@ -1432,12 +1432,11 @@ public class RskContext implements NodeBootstrapper {
         return minerClock;
     }
 
-    public static org.ethereum.db.BlockStore buildBlockStore(BlockFactory blockFactory, String databaseDir) {
+    public org.ethereum.db.BlockStore buildBlockStore(String databaseDir) {
         File blockIndexDirectory = new File(databaseDir + "/blocks/");
         File dbFile = new File(blockIndexDirectory, "index");
         if (!blockIndexDirectory.exists()) {
-            boolean mkdirsSuccess = blockIndexDirectory.mkdirs();
-            if (!mkdirsSuccess) {
+            if (!blockIndexDirectory.mkdirs()) {
                 throw new IllegalArgumentException(String.format(
                         "Unable to create blocks directory: %s", blockIndexDirectory
                 ));
@@ -1456,7 +1455,7 @@ public class RskContext implements NodeBootstrapper {
 
         KeyValueDataSource blocksDB = makeDataSource("blocks", databaseDir);
 
-        return new IndexedBlockStore(blockFactory, indexMap, blocksDB, indexDB);
+        return new IndexedBlockStore(getBlockFactory(), indexMap, blocksDB, indexDB);
     }
 
     public static KeyValueDataSource makeDataSource(String name, String databaseDir) {
