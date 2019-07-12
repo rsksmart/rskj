@@ -22,6 +22,7 @@ package org.ethereum.core;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSupportFactory;
@@ -30,7 +31,6 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
@@ -592,9 +592,13 @@ public class TransactionTest {
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         MutableRepository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
-        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
-                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true, true),
-                                                                 config, repository);
+        Blockchain blockchain = ImportLightTest.createBlockchain(
+                new TestGenesisLoader(
+                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        false, true, true
+                ).load(),
+                config, repository
+        );
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -664,9 +668,13 @@ public class TransactionTest {
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         MutableRepository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
-        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
-                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true, true),
-                                                                 config, repository);
+        Blockchain blockchain = ImportLightTest.createBlockchain(
+                new TestGenesisLoader(
+                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        false, true, true
+                ).load(),
+                config, repository
+        );
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));

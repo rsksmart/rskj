@@ -75,6 +75,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -142,6 +143,7 @@ public class RskContext implements NodeBootstrapper {
     private org.ethereum.db.BlockStore blockStore;
     private co.rsk.net.BlockStore netBlockStore;
     private Repository repository;
+    private GenesisLoader genesisLoader;
     private Genesis genesis;
     private CompositeEthereumListener compositeEthereumListener;
     private DifficultyCalculator difficultyCalculator;
@@ -744,10 +746,13 @@ public class RskContext implements NodeBootstrapper {
         );
     }
 
-    protected Genesis buildGenesis() {
+    protected GenesisLoader buildGenesisLoader() {
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         ActivationConfig.ForBlock genesisActivations = rskSystemProperties.getActivationConfig().forBlock(0L);
-        return GenesisLoader.loadGenesis(
+        return new GenesisLoaderImpl(
+                rskSystemProperties.getActivationConfig(),
+                getStateRootHandler(),
+                getRepository(),
                 rskSystemProperties.genesisInfo(),
                 rskSystemProperties.getNetworkConstants().getInitialNonce(),
                 true,
@@ -848,9 +853,17 @@ public class RskContext implements NodeBootstrapper {
         return new Wallet(ds);
     }
 
+    public GenesisLoader getGenesisLoader() {
+        if (genesisLoader == null) {
+            genesisLoader = buildGenesisLoader();
+        }
+
+        return genesisLoader;
+    }
+
     public Genesis getGenesis() {
         if (genesis == null) {
-            genesis = buildGenesis();
+            genesis = getGenesisLoader().load();
         }
 
         return genesis;

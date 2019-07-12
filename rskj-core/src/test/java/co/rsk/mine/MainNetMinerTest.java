@@ -11,6 +11,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -61,10 +62,15 @@ public class MainNetMinerTest {
         when(config.getActivationConfig()).thenReturn(ActivationConfigsForTest.all());
         RskTestFactory factory = new RskTestFactory(config) {
             @Override
-            public Genesis buildGenesis() {
-                Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
-                genesis.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
-                return genesis;
+            public GenesisLoader buildGenesisLoader() {
+                return new TestGenesisLoader(getRepository(), "rsk-unittests.json", BigInteger.ZERO, true, true, true) {
+                    @Override
+                    public Genesis load() {
+                        Genesis genesis = super.load();
+                        genesis.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
+                        return genesis;
+                    }
+                };
             }
         };
         mainchainView = factory.getMiningMainchainView();

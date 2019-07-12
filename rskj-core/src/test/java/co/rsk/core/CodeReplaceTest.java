@@ -21,6 +21,7 @@ package co.rsk.core;
 import co.rsk.asm.EVMAssembler;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -30,8 +31,10 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
-import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
@@ -63,10 +66,10 @@ public class CodeReplaceTest {
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(
-                GenesisLoader.loadGenesis(
-                        nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"),
+                new TestGenesisLoader(
+                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
                         false, true, true
-                ),
+                ).load(),
                 config,
                 repository
         );
@@ -128,10 +131,10 @@ public class CodeReplaceTest {
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(
-                GenesisLoader.loadGenesis(
-                        nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"),
+                new TestGenesisLoader(
+                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
                         false, true, true
-                ),
+                ).load(),
                 config,
                 repository
         );
@@ -163,10 +166,10 @@ public class CodeReplaceTest {
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(
-                GenesisLoader.loadGenesis(
-                        nonce, getClass().getResourceAsStream("/genesis/genesis-light.json"),
+                new TestGenesisLoader(
+                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
                         false, true, true
-                ),
+                ).load(),
                 config,
                 repository
         );

@@ -312,10 +312,6 @@ public abstract class SystemProperties {
         return configFromFiles.getString("hello.phrase");
     }
 
-    public String rootHashStart() {
-        return configFromFiles.hasPath("root.hash.start") ? configFromFiles.getString("root.hash.start") : null;
-    }
-
     public List<String> peerCapabilities() {
         return configFromFiles.hasPath("peer.capabilities") ?  configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
     }
