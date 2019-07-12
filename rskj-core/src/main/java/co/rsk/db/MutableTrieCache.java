@@ -233,11 +233,6 @@ public class MutableTrieCache implements MutableTrie {
     }
 
     @Override
-    public boolean hasStore() {
-        return trie.hasStore();
-    }
-
-    @Override
     public Uint24 getValueLength(byte[] key) {
         return internalGet(key, trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
     }

@@ -62,7 +62,7 @@ public class LogFilterTest {
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
-        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, blockStore, repositoryLocator, factory.getRepository());
+        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, blockStore, repositoryLocator, factory.getTrieStore());
         Block block = blockchain.getBestBlock();
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
@@ -83,7 +83,7 @@ public class LogFilterTest {
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
-        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, blockStore, repositoryLocator, factory.getRepository());
+        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, blockStore, repositoryLocator, factory.getTrieStore());
         Block block = blockchain.getBestBlock();
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
@@ -105,7 +105,7 @@ public class LogFilterTest {
         Blockchain blockchain = factory.getBlockchain();
         BlockStore blockStore = factory.getBlockStore();
         RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
-        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, blockStore, repositoryLocator, factory.getRepository());
+        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, blockStore, repositoryLocator, factory.getTrieStore());
         Block block = blockchain.getBestBlock();
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);

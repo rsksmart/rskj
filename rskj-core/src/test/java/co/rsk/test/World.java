@@ -35,6 +35,7 @@ import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -57,6 +58,7 @@ public class World {
     private Map<String, Transaction> transactions = new HashMap<>();
     private StateRootHandler stateRootHandler;
     private BlockStore blockStore;
+    private TrieStore trieStore;
     private Repository repository;
     private TransactionPool transactionPool;
     private BridgeSupportFactory bridgeSupportFactory;
@@ -65,26 +67,24 @@ public class World {
         this(new BlockChainBuilder());
     }
 
-    public World(Repository repository) {
-        this(new BlockChainBuilder().setRepository(repository));
-    }
-
     public World(ReceiptStore receiptStore) {
         this(new BlockChainBuilder().setReceiptStore(receiptStore));
     }
 
     private World(BlockChainBuilder blockChainBuilder) {
-        this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null);
+        this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getTrieStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null);
     }
 
     public World(
             BlockChainImpl blockChain,
             BlockStore blockStore,
+            TrieStore trieStore,
             Repository repository,
             TransactionPool transactionPool,
             Genesis genesis) {
         this.blockChain = blockChain;
         this.blockStore = blockStore;
+        this.trieStore = trieStore;
         this.repository = repository;
         this.transactionPool = transactionPool;
 
@@ -124,7 +124,7 @@ public class World {
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
                     config.getActivationConfig(),
-                    new RepositoryLocator(this.getRepository(), stateRootHandler),
+                    new RepositoryLocator(getTrieStore(), stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
@@ -177,7 +177,11 @@ public class World {
     }
 
     public RepositoryLocator getRepositoryLocator() {
-        return new RepositoryLocator(getRepository(), getStateRootHandler());
+        return new RepositoryLocator(getTrieStore(), getStateRootHandler());
+    }
+
+    public TrieStore getTrieStore() {
+        return trieStore;
     }
 
     public TransactionPool getTransactionPool() {

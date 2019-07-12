@@ -59,8 +59,6 @@ public interface MutableTrie {
     // TODO(mc) this method is only used from tests
     Set<ByteArrayWrapper> collectKeys(int size);
 
-    boolean hasStore();
-
     Trie getTrie();
 
     // This is for optimizing EXTCODESIZE. It returns the size of the value

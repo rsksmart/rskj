@@ -42,20 +42,6 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void hasStore() {
-        Trie trie = new Trie(store).put("foo", "bar".getBytes());
-
-        Assert.assertTrue(trie.hasStore());
-    }
-
-    @Test
-    public void hasNoStore() {
-        Trie trie = new Trie(null).put("foo", "bar".getBytes());
-
-        Assert.assertFalse(trie.hasStore());
-    }
-
-    @Test
     public void saveTrieNode() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 

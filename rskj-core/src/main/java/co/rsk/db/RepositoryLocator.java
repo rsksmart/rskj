@@ -37,13 +37,6 @@ public class RepositoryLocator {
     private final TrieStore trieStore;
     private final StateRootHandler stateRootHandler;
 
-    @Deprecated
-    public RepositoryLocator(
-            Repository repository,
-            StateRootHandler stateRootHandler) {
-        this(repository.getTrie().getStore(), stateRootHandler);
-    }
-
     public RepositoryLocator(TrieStore store, StateRootHandler stateRootHandler) {
         this.trieStore = store;
         this.stateRootHandler = stateRootHandler;
@@ -61,9 +54,9 @@ public class RepositoryLocator {
         Keccak256 stateRoot = stateRootHandler.translate(header);
 
         if (EMPTY_HASH.equals(stateRoot)) {
-            return new MutableTrieImpl(new Trie(trieStore));
+            return new MutableTrieImpl(trieStore, new Trie(trieStore));
         }
 
-        return new MutableTrieImpl(trieStore.retrieve(stateRoot.getBytes()));
+        return new MutableTrieImpl(trieStore, trieStore.retrieve(stateRoot.getBytes()));
     }
 }

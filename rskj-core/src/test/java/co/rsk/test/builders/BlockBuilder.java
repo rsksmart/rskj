@@ -26,6 +26,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -43,7 +44,7 @@ import java.util.List;
 public class BlockBuilder {
     private final Blockchain blockChain;
     private final BlockGenerator blockGenerator;
-    private Repository repository;
+    private TrieStore trieStore;
     private Block parent;
     private long difficulty;
     private List<Transaction> txs;
@@ -94,8 +95,8 @@ public class BlockBuilder {
         return this;
     }
 
-    public BlockBuilder repository(Repository repository) {
-        this.repository = repository;
+    public BlockBuilder trieStore(TrieStore store) {
+        this.trieStore = store;
         return this;
     }
 
@@ -107,7 +108,7 @@ public class BlockBuilder {
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
-                    new RepositoryLocator(repository, stateRootHandler),
+                    new RepositoryLocator(trieStore, stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(
                             config,

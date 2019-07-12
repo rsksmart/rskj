@@ -28,6 +28,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
@@ -52,6 +53,7 @@ public class RskForksBridgeTest {
     );
 
     private RepositoryLocator repositoryLocator;
+    private TrieStore trieStore;
     private Repository repository;
     //private ECKey keyHoldingRSKs;
     private ECKey whitelistManipulationKey;
@@ -60,6 +62,7 @@ public class RskForksBridgeTest {
     private Block blockBase;
     private World world;
     private BlockStore blockStore;
+    private BridgeSupportFactory bridgeSupportFactory;
 
     @Before
     public void before() {
@@ -67,7 +70,9 @@ public class RskForksBridgeTest {
         blockChain = world.getBlockChain();
         blockStore = world.getBlockStore();
         repositoryLocator = world.getRepositoryLocator();
+        trieStore = world.getTrieStore();
         repository = world.getRepository();
+        bridgeSupportFactory = world.getBridgeSupportFactory();
 
         whitelistManipulationKey = ECKey.fromPrivate(Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
 
@@ -225,9 +230,7 @@ public class RskForksBridgeTest {
     }
 
     private Block buildBlock(Block parent, long difficulty) {
-        World world = new World(blockChain, blockStore, repository, null, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                                                     world.getBlockStore()).repository(world.getRepository()).difficulty(difficulty).parent(parent);
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, bridgeSupportFactory, blockStore).trieStore(trieStore).difficulty(difficulty).parent(parent);
         return blockBuilder.build();
     }
 
@@ -237,9 +240,7 @@ public class RskForksBridgeTest {
 
     private Block buildBlock(Block parent, long difficulty, Transaction ... txs) {
         List<Transaction> txList = Arrays.asList(txs);
-        World world = new World(blockChain, blockStore, repository, null, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                                                     world.getBlockStore()).repository(world.getRepository()).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, bridgeSupportFactory, blockStore).trieStore(trieStore).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
         return blockBuilder.build();
     }
 

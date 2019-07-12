@@ -66,6 +66,7 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
@@ -142,6 +143,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockChainLoader blockChainLoader;
     private org.ethereum.db.BlockStore blockStore;
     private co.rsk.net.BlockStore netBlockStore;
+    private TrieStore trieStore;
     private Repository repository;
     private GenesisLoader genesisLoader;
     private Genesis genesis;
@@ -326,6 +328,14 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return receiptStore;
+    }
+
+    public TrieStore getTrieStore() {
+        if (trieStore == null) {
+            trieStore = buildTrieStore();
+        }
+
+        return trieStore;
     }
 
     public Repository getRepository() {
@@ -761,7 +771,7 @@ public class RskContext implements NodeBootstrapper {
         );
     }
 
-    protected Repository buildRepository() {
+    protected TrieStore buildTrieStore() {
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
         if (rskSystemProperties.databaseReset()) {
@@ -775,11 +785,16 @@ public class RskContext implements NodeBootstrapper {
             ds = new DataSourceWithCache(ds, statesCacheSize);
         }
 
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie(new TrieStoreImpl(ds)))));
+        return new TrieStoreImpl(ds);
+    }
+
+    protected Repository buildRepository() {
+        TrieStore trieStore = getTrieStore();
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie(trieStore))));
     }
 
     protected RepositoryLocator buildRepositoryLocator() {
-        return new RepositoryLocator(getRepository(), getStateRootHandler());
+        return new RepositoryLocator(getTrieStore(), getStateRootHandler());
     }
 
     protected org.ethereum.db.BlockStore buildBlockStore() {

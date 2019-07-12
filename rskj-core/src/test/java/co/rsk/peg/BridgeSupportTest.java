@@ -4487,6 +4487,6 @@ public class BridgeSupportTest {
     }
 
     public static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 }

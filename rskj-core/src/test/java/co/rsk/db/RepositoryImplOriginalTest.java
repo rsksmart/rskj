@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
@@ -745,7 +746,8 @@ public class RepositoryImplOriginalTest {
 
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
-        MutableTrieImpl mutableTrie = new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB())));
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
         final Repository repository = new MutableRepository(mutableTrie);
 
         final DataWord cowKey1 = DataWord.valueFromHex("c1");
@@ -765,7 +767,7 @@ public class RepositoryImplOriginalTest {
         Repository[] snaps = new Repository[10];
 
         for (int i = 0; i < 10; ++i) {
-            snaps[i] = new MutableRepository(mutableTrie.getTrie().getStore().retrieve(repository.getRoot()));
+            snaps[i] = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()));
         }
         for (int i = 0; i < 10; ++i) {
             int finalI = i;
@@ -821,6 +823,6 @@ public class RepositoryImplOriginalTest {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieImpl(new Trie()));
+        return new MutableRepository(new MutableTrieImpl(null, new Trie()));
     }
 }

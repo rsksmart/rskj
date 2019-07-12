@@ -292,20 +292,14 @@ public class OrchidToUnitrieMigrator {
 
     private Trie getContractStorageTrie(RskAddress contractAddress, ContractData contractData, Keccak256 oldAccountStateRoot) {
         try {
-            Trie trie = getContractStorageTrie(contractAddress, contractData);
-            TrieStore trieStore = trie.getStore();
-
-            if (trie.getHash().equals(oldAccountStateRoot)) {
-                return trie;
-            }
-
+            TrieStore trieStore = getContractStorageTrie(contractAddress, contractData);
             return trieStore.retrieve(oldAccountStateRoot.getBytes());
         } catch (IllegalArgumentException e) {
             throw new IllegalStateException("Cannot find state root trie. Check the log for more info.", e);
         }
     }
 
-    private Trie getContractStorageTrie(RskAddress contractAddress, ContractData contractData) {
+    private TrieStore getContractStorageTrie(RskAddress contractAddress, ContractData contractData) {
         byte[] external = contractData.getExternal();
         byte[] root = contractData.getRoot();
 
@@ -313,9 +307,8 @@ public class OrchidToUnitrieMigrator {
             return orchidTrieDeserialize(root);
         }
 
-        Trie contractStorageTrie = orchidContractsTrieStore.retrieve(root);
-        if (contractStorageTrie != null) {
-            return contractStorageTrie;
+        if (orchidContractsTrieStore.retrieve(root) != null) {
+            return orchidContractsTrieStore;
         }
 
         // picco-fix (ref: co.rsk.db.ContractStorageStoreFactory#getTrieStore)
@@ -323,7 +316,7 @@ public class OrchidToUnitrieMigrator {
                 contractAddress,
                 address -> new CachedTrieStore(new TrieStoreImpl(RskContext.makeDataSource("details-storage/" + address, databaseDir)))
         );
-        contractStorageTrie = contractTrieStore.retrieve(root);
+        Trie contractStorageTrie = contractTrieStore.retrieve(root);
         if (contractStorageTrie == null) {
             throw new IllegalStateException(String.format("Unable to find root %s for the contract %s", Hex.toHexString(root), contractAddress));
         }
@@ -331,10 +324,10 @@ public class OrchidToUnitrieMigrator {
             throw new IllegalStateException(String.format("Stored contract state is not consistent with the expected root (%s)", Hex.toHexString(root)));
         }
 
-        return contractStorageTrie;
+        return contractTrieStore;
     }
 
-    private static Trie orchidTrieDeserialize(byte[] bytes) {
+    private static TrieStore orchidTrieDeserialize(byte[] bytes) {
         final int keccakSize = Keccak256Helper.DEFAULT_SIZE_BYTES;
         int expectedSize = Short.BYTES + keccakSize;
         if (expectedSize > bytes.length) {
@@ -345,13 +338,15 @@ public class OrchidToUnitrieMigrator {
         byte[] root = Arrays.copyOfRange(bytes, Short.BYTES, expectedSize);
         TrieStore store = orchidTrieStoreDeserialize(bytes, expectedSize, new HashMapDB());
 
-        Trie newTrie = store.retrieve(root);
-
-        if (newTrie == null) {
-            throw new IllegalArgumentException(String.format("Deserialized storage doesn't contain expected trie: %s", Hex.toHexString(root)));
+        try {
+            store.retrieve(root);
+            return store;
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                    String.format("Deserialized storage doesn't contain expected trie: %s", Hex.toHexString(root)),
+                    ex
+            );
         }
-
-        return newTrie;
     }
 
     private static TrieStore orchidTrieStoreDeserialize(byte[] bytes, int offset, KeyValueDataSource ds) {
