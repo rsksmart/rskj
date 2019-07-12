@@ -35,11 +35,17 @@ import java.util.stream.Collectors;
 public class SnapshotManager {
     private List<Long> snapshots = new ArrayList<>();
     private final Blockchain blockchain;
+    private final BlockStore blockStore;
     private final TransactionPool transactionPool;
     private final MinerServer minerServer;
 
-    public SnapshotManager(Blockchain blockchain, TransactionPool transactionPool, MinerServer minerServer) {
+    public SnapshotManager(
+            Blockchain blockchain,
+            BlockStore blockStore,
+            TransactionPool transactionPool,
+            MinerServer minerServer) {
         this.blockchain = blockchain;
+        this.blockStore = blockStore;
         this.transactionPool = transactionPool;
         this.minerServer = minerServer;
     }
@@ -54,10 +60,8 @@ public class SnapshotManager {
 
         long bestNumber = blockchain.getBestBlock().getNumber();
 
-        BlockStore store = blockchain.getBlockStore();
-
-        Block block = store.getChainBlockByNumber(0);
-        BlockDifficulty difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash().getBytes());
+        Block block = blockStore.getChainBlockByNumber(0);
+        BlockDifficulty difficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
 
         blockchain.setStatus(block, difficulty);
 
@@ -93,10 +97,8 @@ public class SnapshotManager {
             return true;
         }
 
-        BlockStore store = blockchain.getBlockStore();
-
-        Block block = store.getChainBlockByNumber(newBestBlockNumber);
-        BlockDifficulty difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash().getBytes());
+        Block block = blockStore.getChainBlockByNumber(newBestBlockNumber);
+        BlockDifficulty difficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
 
         blockchain.setStatus(block, difficulty);
 

@@ -505,8 +505,7 @@ public class RskContext implements NodeBootstrapper {
                     getMinerServer(),
                     getMinerClient(),
                     getMinerClock(),
-                    getBlockchain(),
-                    getTransactionPool()
+                    new SnapshotManager(getBlockchain(), getBlockStore(), getTransactionPool(), getMinerServer())
             );
         }
 
