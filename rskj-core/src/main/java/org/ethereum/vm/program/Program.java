@@ -349,10 +349,6 @@ public class Program {
         return memory.readWord(addr.intValue());
     }
 
-    public DataWord memoryLoad(int address) {
-        return memory.readWord(address);
-    }
-
     public byte[] memoryChunk(int offset, int size) {
         return memory.read(offset, size);
     }
@@ -656,23 +652,6 @@ public class Program {
 
     }
 
-    public static long limitToMaxGas(DataWord gas) {
-        long r =gas.longValueSafe();
-        if (r>MAX_GAS) {
-            return MAX_GAS;
-        }
-        return r;
-
-    }
-
-    public static long limitToMaxGas(BigInteger gas) {
-        long r =limitToMaxLong(gas);
-        if (r>MAX_GAS) {
-            return MAX_GAS;
-        }
-        return r;
-    }
-
     public static long limitToMaxLong(BigInteger gas) {
         try {
             long r = gas.longValueExact();
@@ -693,16 +672,6 @@ public class Program {
             d = Math.multiplyExact(a, b);
         } catch (ArithmeticException e) {
             d = Long.MAX_VALUE;
-        }
-        return d;
-    }
-
-    public static long addLimitToMaxLong(long a,long b) {
-        long d;
-        try {
-            d = Math.addExact(a,b);
-        } catch (ArithmeticException e) {
-            d= Long.MAX_VALUE;
         }
         return d;
     }
