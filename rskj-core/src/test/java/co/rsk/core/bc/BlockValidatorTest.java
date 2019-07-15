@@ -87,26 +87,6 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidChildBlockBadDifficulty() {
-        Block genesis = new BlockGenerator().getGenesisBlock();
-        Block block = new BlockGenerator().createChildBlock(genesis);
-        block.getHeader().setDifficulty(BlockDifficulty.ZERO);
-
-        BlockStore blockStore = Mockito.mock(BlockStore.class);
-        Mockito.when(blockStore.getBestBlock()).thenReturn(block);
-        BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addDifficultyRule()
-                .blockStore(blockStore)
-                .build();
-
-        // If the parent difficulty is zero, the child difficulty will always be zero
-        // because the child  difficulty is always the parent diff multiplied by a factor.
-        // However, the calcDifficulty will put the minimum configured difficulty, so that the child
-        // difficulty can never be zero.
-        Assert.assertFalse(validator.isValid(block));
-    }
-
-    @Test
     public void invalidChildBlockBadGasLimit() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
