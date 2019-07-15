@@ -657,24 +657,6 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void parentInvalidNumber() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
-
-        BlockGenerator blockGenerator = new BlockGenerator();
-
-        Block genesis = blockGenerator.getGenesisBlock();
-
-        Block block = new BlockBuilder(null, null).parent(genesis).build();
-        Whitebox.setInternalState(block.getHeader(), "number", 25L);
-        BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addParentNumberRule()
-                .blockStore(store)
-                .build();
-
-        Assert.assertFalse(validator.isValid(block));
-    }
-
-    @Test
     public void noRemascTx() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
