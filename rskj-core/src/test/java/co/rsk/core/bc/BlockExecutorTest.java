@@ -29,7 +29,6 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
@@ -384,7 +383,7 @@ public class BlockExecutorTest {
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
-    public static TestObjects generateBlockWithOneTransaction() {
+    private static TestObjects generateBlockWithOneTransaction() {
         Repository repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB())));
 
         Repository track = repository.startTracking();

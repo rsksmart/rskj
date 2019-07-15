@@ -87,27 +87,6 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void validateBlockWithTransaction() {
-        BlockChainImpl blockChain = new BlockChainBuilder().setListener(new BlockExecutorTest.SimpleEthereumListener()).build();
-
-        Block genesis = blockChain.getBestBlock();
-
-        Block parent = new BlockBuilder(null, null).parent(genesis).build();
-        parent.seal();
-
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(BlockExecutorTest.generateBlockWithOneTransaction().getTransaction());
-        Block block = new BlockBuilder(null, null).parent(parent).transactions(txs).build();;
-        block.seal();
-
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(parent));
-
-        BlockValidator validator = createValidator(blockChain.getBlockStore());
-
-        Assert.assertTrue(validator.isValid(block));
-    }
-
-    @Test
     public void invalidChildBlockBadDifficulty() {
         Block genesis = new BlockGenerator().getGenesisBlock();
         Block block = new BlockGenerator().createChildBlock(genesis);
@@ -619,28 +598,6 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void twoTransactionsSameNonce() {
-        BlockExecutorTest.TestObjects objects = BlockExecutorTest.generateBlockWithOneTransaction();
-
-        List<Transaction> txs = new ArrayList<>();
-        Transaction tx = objects.getTransaction();
-        txs.add(tx);
-        txs.add(tx);
-
-        BlockGenerator blockGenerator = new BlockGenerator();
-
-        Block genesis = blockGenerator.getGenesisBlock();
-        Block block = blockGenerator.createChildBlock(genesis);
-        block.setTransactionsList(txs);
-
-        BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addBlockTxsValidationRule(objects.getRepository())
-                .build();
-
-        Assert.assertFalse(validator.isValid(block));
-    }
-
-    @Test
     public void processBlockWithInvalidMGPTxs() {
         BlockStore blockStore = Mockito.mock(org.ethereum.db.BlockStore.class);
         Repository repository = Mockito.mock(Repository.class);
@@ -732,27 +689,6 @@ public class BlockValidatorTest {
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addParentNumberRule()
                 .blockStore(store)
-                .build();
-
-        Assert.assertFalse(validator.isValid(block));
-    }
-
-    @Test
-    public void invalidTxNonce() {
-        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
-        BlockChainImpl blockChain = blockChainBuilder.setListener(new BlockExecutorTest.SimpleEthereumListener()).build();
-
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockChainBuilder.getRepository());
-
-        List<Transaction> txs = new ArrayList<>();
-        Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.TEN, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
-        tx.sign(new byte[]{});
-        txs.add(tx);
-        Block block = new BlockBuilder(null, null).parent(genesis).transactions(txs).build();
-        Whitebox.setInternalState(block.getHeader(), "number", 25L);
-
-        BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addBlockTxsValidationRule(blockChainBuilder.getRepository())
                 .build();
 
         Assert.assertFalse(validator.isValid(block));
