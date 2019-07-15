@@ -87,24 +87,6 @@ public class BlockValidatorTest {
     }
 
     @Test
-    public void invalidChildBlockBadGasLimit() {
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Block genesis = blockGenerator.getGenesisBlock();
-        Block block1 = blockGenerator.createChildBlock(genesis);
-        Block block2 = blockGenerator.createChildBlock(block1);
-        Block parent = blockGenerator.createChildBlock(block2);
-
-        Whitebox.setInternalState(parent.getHeader(), "gasLimit", new byte[]{0x00});
-        Block block = blockGenerator.createChildBlock(parent);
-
-        BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addParentGasLimitRule()
-                .build();
-
-        Assert.assertFalse(validator.isValid(block));
-    }
-
-    @Test
     public void invalidBlockWithoutParent() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();

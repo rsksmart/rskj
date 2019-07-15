@@ -41,6 +41,10 @@ public class BlockParentGasLimitRule implements BlockParentDependantValidationRu
     private int gasLimitBoundDivisor;
 
     public BlockParentGasLimitRule(int gasLimitBoundDivisor) {
+        if (gasLimitBoundDivisor < 1) {
+            throw new IllegalArgumentException("The gasLimitBoundDivisor argument must be strictly greater than 0");
+        }
+
         this.gasLimitBoundDivisor = gasLimitBoundDivisor;
     }
 
@@ -52,8 +56,9 @@ public class BlockParentGasLimitRule implements BlockParentDependantValidationRu
             return false;
         }
 
+        BlockHeader parentHeader = parent.getHeader();
         BigInteger headerGasLimit = new BigInteger(1, header.getGasLimit());
-        BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
+        BigInteger parentGasLimit = new BigInteger(1, parentHeader.getGasLimit());
 
         if (headerGasLimit.compareTo(parentGasLimit.multiply(BigInteger.valueOf(gasLimitBoundDivisor - 1L)).divide(BigInteger.valueOf(gasLimitBoundDivisor))) < 0 ||
             headerGasLimit.compareTo(parentGasLimit.multiply(BigInteger.valueOf(gasLimitBoundDivisor + 1L)).divide(BigInteger.valueOf(gasLimitBoundDivisor))) > 0) {
