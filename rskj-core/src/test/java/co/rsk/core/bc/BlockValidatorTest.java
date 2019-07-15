@@ -27,7 +27,6 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
-import co.rsk.validators.BlockValidator;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
@@ -54,53 +53,6 @@ public class BlockValidatorTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
-    public void validateGenesisBlock() {
-        BlockValidatorImpl validator = new BlockValidatorBuilder().build();
-        Block genesis = new BlockGenerator().getGenesisBlock();
-
-        Assert.assertTrue(validator.isValid(genesis));
-    }
-
-    @Test
-    public void validateEmptyBlock() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
-        Block genesis = new BlockGenerator().getGenesisBlock();
-        blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
-
-        Block block = new BlockBuilder(null, null).parent(genesis).build();
-        BlockValidator validator = createValidator(blockStore);
-
-        Assert.assertTrue(validator.isValid(block));
-    }
-
-    @Test
-    public void validateChildBlock() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
-        Block genesis = new BlockGenerator().getGenesisBlock();
-        blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
-
-        Block block = new BlockGenerator().createChildBlock(genesis);
-
-        BlockValidator validator = createValidator(blockStore);
-
-        Assert.assertTrue(validator.isValid(block));
-    }
-
-    @Test
-    public void invalidBlockWithoutParent() {
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Block genesis = blockGenerator.getGenesisBlock();
-        Block block1 = blockGenerator.createChildBlock(genesis);
-        Block block2 = blockGenerator.createChildBlock(block1);
-
-        BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addParentBlockHeaderValidator()
-                .build();
-
-        Assert.assertFalse(validator.isValid(block2));
-    }
-
-    @Test
     public void validEmptyUnclesHash() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
@@ -125,35 +77,6 @@ public class BlockValidatorTest {
                 .build();
 
         Assert.assertFalse(validator.isValid(block1));
-    }
-
-    @Test
-    public void validateHeader() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
-
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Block genesis = blockGenerator.getGenesisBlock();
-        Block parent = new BlockBuilder(null, null).parent(genesis).build();
-        Block block = new BlockBuilder(null, null).parent(parent).build();
-
-        store.saveBlock(parent, TEST_DIFFICULTY, true);
-
-        BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addParentBlockHeaderValidator()
-                .addBlockRootValidationRule()
-                .addBlockUnclesValidationRule(null)
-                .blockStore(store)
-                .build();
-
-        Assert.assertTrue(validator.isValid(block));
-    }
-
-    @Test
-    public void getGenesisEmptyAncestorSet() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Block genesis = blockGenerator.getGenesisBlock();
-        Assert.assertTrue(FamilyUtils.getAncestors(store, genesis, 6).isEmpty());
     }
 
     @Test
@@ -751,19 +674,6 @@ public class BlockValidatorTest {
                 .thenReturn((System.currentTimeMillis() / 1000) + 2000);
 
         Assert.assertTrue(validator.isValid(block));
-    }
-
-    private static BlockValidator createValidator(BlockStore blockStore) {
-        BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
-
-        validatorBuilder
-                .addBlockRootValidationRule()
-                .addParentGasLimitRule()
-                .addBlockRootValidationRule()
-                .addBlockUnclesValidationRule(blockStore)
-                .blockStore(blockStore);
-
-        return validatorBuilder.build();
     }
 }
 
