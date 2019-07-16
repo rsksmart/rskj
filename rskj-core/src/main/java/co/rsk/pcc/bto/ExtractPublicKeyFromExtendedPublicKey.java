@@ -82,6 +82,6 @@ public class ExtractPublicKeyFromExtendedPublicKey extends NativeMethod {
 
     @Override
     public long getGas(Object[] parsedArguments, byte[] originalData) {
-        return 6_800L;
+        return 11_300L;
     }
 }

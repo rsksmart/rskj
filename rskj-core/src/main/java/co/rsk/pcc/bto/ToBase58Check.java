@@ -101,6 +101,6 @@ public class ToBase58Check extends NativeMethod {
 
     @Override
     public long getGas(Object[] parsedArguments, byte[] originalData) {
-        return 8_000L;
+        return 13_000L;
     }
 }

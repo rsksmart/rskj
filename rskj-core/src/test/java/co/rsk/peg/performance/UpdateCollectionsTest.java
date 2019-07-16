@@ -20,6 +20,7 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
@@ -53,7 +54,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
     private void updateCollections_nothing(ExecutionStats stats, int numCases) throws IOException {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {};
+        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {};
         final byte[] updateCollectionsEncoded = Bridge.UPDATE_COLLECTIONS.encode();
         ABIEncoder abiEncoder = (int executionIndex) -> updateCollectionsEncoded;
 
@@ -78,7 +79,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         final int maxMilliReleaseBtc = 2000;
 
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             Random rnd = new Random();
             List<UTXO> utxos;
             ReleaseRequestQueue queue;
@@ -140,7 +141,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         final int maxCentOutput = 100;
 
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             Random rnd = new Random();
             SortedMap<Keccak256, BtcTransaction> txsWaitingForSignatures;
             ReleaseTransactionSet txSet;

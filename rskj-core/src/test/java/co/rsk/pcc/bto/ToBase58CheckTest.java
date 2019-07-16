@@ -121,4 +121,13 @@ public class ToBase58CheckTest {
             Assert.assertTrue(e.getMessage().contains("version must be a numeric value between 0 and 255"));
         }
     }
+
+    @Test
+    public void gasIsCorrect() {
+        Assert.assertEquals(13_000, method.getGas(new Object[]{
+                Hex.decode("0d3bf5f30dda7584645546079318e97f0e1d044f"),
+                BigInteger.valueOf(111L)
+        }, new byte[]{}));
+    }
+
 }

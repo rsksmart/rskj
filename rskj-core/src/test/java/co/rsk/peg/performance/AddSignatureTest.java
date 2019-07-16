@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import org.ethereum.core.Repository;
@@ -95,7 +96,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
         final int minNumInputs = 1;
         final int maxNumInputs = 10;
 
-        return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+        return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             releaseTx = new BtcTransaction(networkParameters);
 
             Federation federation = bridgeConstants.getGenesisFederation();

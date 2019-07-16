@@ -73,7 +73,7 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
         final int minBtcBlocks = 1000;
         final int maxBtcBlocks = 2000;
 
-        return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+        return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(), repository,
                     new HashMap<>(), PrecompiledContracts.BRIDGE_ADDR);
             Context btcContext = new Context(networkParameters);
