@@ -248,13 +248,13 @@ public class VMTest {
                 " PUSH1 0x00" + // but call a non-existent contract
                 " PUSH4 0x005B8D80" +
                 " STATICCALL" +
-                " PUSH1 0x20 " +
-                " PUSH1 0x00 " +
-                " PUSH1 0x40" +
-                " RETURNDATACOPY" +
-                " PUSH1 0x20" +
-                " PUSH1 0x40" +
-                " RETURN"  // the return value of the contract should be 0x15 (0x40 not overwritten)
+                " PUSH1 0x20 " + // now put the 32 bytes
+                " PUSH1 0x00 " + // from the beginning of the return databuffer
+                " PUSH1 0x40" + //  to the 0x40 position on memory
+                " RETURNDATACOPY" + // do it!
+                " PUSH1 0x20" +  // and return 32 bytes
+                " PUSH1 0x40" +  // from the 0x40 position on memory
+                " RETURN"  // the return value of the contract should be zero (as last call failed)
         ));
         vm.steps(program, Long.MAX_VALUE);
         assertEquals(program.getResult().getHReturn(), new byte[0]);
@@ -285,12 +285,12 @@ public class VMTest {
                " PUSH1 0x00" + // but call a non-existent contract
                " PUSH4 0x005B8D80" +
                " STATICCALL" +
-               " RETURNDATASIZE" +
+               " RETURNDATASIZE" + // push the return data size to the stack
                " PUSH1 0x40" +
-               " MSTORE" +
+               " MSTORE" +  // and store the value in the 0x40 position
                " PUSH1 0x20" +
                " PUSH1 0x40" +
-               " RETURN"  // the return value of the contract should be 0x15 (0x40 not overwritten)
+               " RETURN"  // the return value of the return data size (should be zero)
        ));
        vm.steps(program, Long.MAX_VALUE);
        assertEquals(program.getResult().getHReturn(), new byte[0]);
