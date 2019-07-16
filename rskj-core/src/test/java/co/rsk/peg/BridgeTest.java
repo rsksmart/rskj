@@ -30,6 +30,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
@@ -40,14 +41,13 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.*;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
-import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.PrecompiledContracts;
@@ -3147,6 +3147,7 @@ public class BridgeTest {
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {
-        return GenesisLoader.loadGenesis(config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false);
+        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new TestGenesisLoader(repository, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false).load();
     }
 }

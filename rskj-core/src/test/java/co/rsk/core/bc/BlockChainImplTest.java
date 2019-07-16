@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.validators.BlockValidator;
@@ -57,8 +58,8 @@ public class BlockChainImplTest {
     public void setup() {
         objects = new RskTestFactory() {
             @Override
-            public Genesis buildGenesis() {
-                return GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
+            protected GenesisLoader buildGenesisLoader() {
+                return new TestGenesisLoader(getRepository(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
             }
 
             @Override
@@ -638,7 +639,7 @@ public class BlockChainImplTest {
 
     @Deprecated
     public static Block getGenesisBlock(final Repository repository) {
-        Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
+        Genesis genesis = new TestGenesisLoader(repository, "rsk-unittests.json", BigInteger.ZERO, true, true, true).load();
 
         for (Map.Entry<RskAddress, AccountState> accountsEntry : genesis.getAccounts().entrySet()) {
             RskAddress accountAddress = accountsEntry.getKey();

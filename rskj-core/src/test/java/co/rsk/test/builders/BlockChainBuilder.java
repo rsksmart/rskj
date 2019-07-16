@@ -36,6 +36,7 @@ import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
+import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
@@ -94,6 +95,7 @@ public class BlockChainBuilder {
         return this;
     }
 
+    /** @param genesis a non-finalized genesis info */
     public BlockChainBuilder setGenesis(Genesis genesis) {
         this.genesis = genesis;
         return this;
@@ -159,6 +161,11 @@ public class BlockChainBuilder {
         if (genesis == null) {
             genesis = new BlockGenerator().getGenesisBlock();
         }
+
+        GenesisLoaderImpl.loadGenesisInitalState(repository, genesis);
+        repository.commit();
+        genesis.setStateRoot(repository.getRoot());
+        genesis.flushRLP();
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         if (blockStore == null) {

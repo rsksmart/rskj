@@ -28,6 +28,7 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
@@ -38,7 +39,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
-import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -490,9 +490,7 @@ public class BridgeUtilsTest {
                 constants.getBridgeConstants(),
                 activationConfig);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,
                 1,
@@ -502,12 +500,13 @@ public class BridgeUtilsTest {
                 Bridge.UPDATE_COLLECTIONS, constants.getChainId());
         rskTx.sign(privKeyBytes);
 
-        Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance());
+        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(repository));
         bridge.init(rskTx, rskExecutionBlock, repository.startTracking(), null, null, null);
         Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
     }
 
-    private Genesis getGenesisInstance() {
-        return GenesisLoader.loadGenesis("frontier.json", constants.getInitialNonce(), false, true, true);
+    private Genesis getGenesisInstance(Repository repository) {
+        return new TestGenesisLoader(repository, "frontier.json", constants.getInitialNonce(), false, true, true).load();
     }
 }
