@@ -28,6 +28,7 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
@@ -263,20 +264,26 @@ public class TransactionExecutor {
             profiler.stop(metric);
 
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
-            long requiredGas = precompiledContract.getGasForData(tx.getData());
+            BigInteger requiredGas = BigInteger.valueOf(precompiledContract.getGasForData(tx.getData()));
             BigInteger txGasLimit = toBI(tx.getGasLimit());
+            BigInteger gasUsed = requiredGas.add(BigInteger.valueOf(basicTxCost));
 
-            if (!localCall && txGasLimit.compareTo(BigInteger.valueOf(requiredGas)) < 0) {
-                // no refund
-                // no endowment
-                execError(String.format("Out of Gas calling precompiled contract 0x%s, required: %d, left: %s ",
-                        targetAddress.toString(), (requiredGas + basicTxCost), mEndGas));
+            if (!localCall &&
+                    ((!activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(requiredGas) < 0) ||
+                            (activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(gasUsed) < 0))) {
+                // no refund no endowment
+                execError(String.format(
+                        "Out of Gas calling precompiled contract at block %d for address 0x%s. required: %s, used: %s, left: %s ",
+                        executionBlock.getNumber(),
+                        targetAddress.toString(),
+                        requiredGas,
+                        gasUsed,
+                        mEndGas));
                 mEndGas = BigInteger.ZERO;
                 profiler.stop(metric);
                 return;
             } else {
-                long gasUsed = requiredGas + basicTxCost;
-                mEndGas = txGasLimit.subtract(BigInteger.valueOf(requiredGas + basicTxCost));
+                mEndGas = txGasLimit.subtract(gasUsed);
 
                 // FIXME: save return for vm trace
                 try {
@@ -292,7 +299,7 @@ public class TransactionExecutor {
                     result.setException(e);
                 }
 
-                result.spendGas(gasUsed);
+                result.spendGas(gasUsed.longValue());
                 profiler.stop(metric);
             }
         } else {
