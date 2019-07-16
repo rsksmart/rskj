@@ -213,13 +213,87 @@ public class VMTest {
                         " PUSH1 0x00" +
                         " PUSH20 0x" + invoke.getContractAddress() +
                         " PUSH4 0x005B8D80" +
-                        " STATICCALL"));
+                        " STATICCALL"
+        ));
 
         program.fullTrace();
         vm.steps(program, Long.MAX_VALUE);
 
         assertEquals(DataWord.ONE, program.stackPop());
         assertTrue(program.getStack().isEmpty());
+    }
+
+    @Test
+    public void TestReturnDatBufferDataIsZeroAfterFailedCall() {
+        invoke = new ProgramInvokeMockImpl(compile( "PUSH1 0x10" +
+                " PUSH1 0x05 " +
+                " ADD" +
+                " PUSH1 0x40" +
+                " MSTORE " +
+                " PUSH1 0x20 " +
+                " PUSH1 0x40" +
+                " RETURN"
+        ), null);
+        program = getProgram(compile(" PUSH1 0x20" +  // return size is 32 bytes
+                " PUSH1 0x40" +  // on free memory pointer
+                " PUSH1 0x00" +  // no argument
+                " PUSH1 0x00" +  // no argument size
+                " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+                " PUSH4 0x005B8D80" + // with some gas
+                " STATICCALL" +  // call it! result should be 0x15
+                " PUSH1 0x20" +  // now do the same...
+                " PUSH1 0x40" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" + // but call a non-existent contract
+                " PUSH4 0x005B8D80" +
+                " STATICCALL" +
+                " PUSH1 0x20 " +
+                " PUSH1 0x00 " +
+                " PUSH1 0x40" +
+                " RETURNDATACOPY" +
+                " PUSH1 0x20" +
+                " PUSH1 0x40" +
+                " RETURN"  // the return value of the contract should be 0x15 (0x40 not overwritten)
+        ));
+        vm.steps(program, Long.MAX_VALUE);
+        assertEquals(program.getResult().getHReturn(), new byte[0]);
+    }
+
+    @Test
+    public void TestReturnDataBufferSizeIsZeroAfterFailedCall() {
+       invoke = new ProgramInvokeMockImpl(compile( "PUSH1 0x10" +
+                       " PUSH1 0x05 " +
+                       " ADD" +
+                       " PUSH1 0x40" +
+                       " MSTORE " +
+                       " PUSH1 0x20 " +
+                       " PUSH1 0x40" +
+                       " RETURN"
+       ), null);
+       program = getProgram(compile(" PUSH1 0x20" +  // return size is 32 bytes
+               " PUSH1 0x40" +  // on free memory pointer
+               " PUSH1 0x00" +  // no argument
+               " PUSH1 0x00" +  // no argument size
+               " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+               " PUSH4 0x005B8D80" + // with some gas
+               " STATICCALL" +  // call it! result should be 0x15
+               " PUSH1 0x20" +  // now do the same...
+               " PUSH1 0x40" +
+               " PUSH1 0x00" +
+               " PUSH1 0x00" +
+               " PUSH1 0x00" + // but call a non-existent contract
+               " PUSH4 0x005B8D80" +
+               " STATICCALL" +
+               " RETURNDATASIZE" +
+               " PUSH1 0x40" +
+               " MSTORE" +
+               " PUSH1 0x20" +
+               " PUSH1 0x40" +
+               " RETURN"  // the return value of the contract should be 0x15 (0x40 not overwritten)
+       ));
+       vm.steps(program, Long.MAX_VALUE);
+       assertEquals(program.getResult().getHReturn(), new byte[0]);
     }
 
     @Test
