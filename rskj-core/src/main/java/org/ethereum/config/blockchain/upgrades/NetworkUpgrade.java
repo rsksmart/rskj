@@ -20,6 +20,7 @@ package org.ethereum.config.blockchain.upgrades;
 
 public enum NetworkUpgrade {
     GENESIS("genesis"),
+    BAHAMAS("bahamas"),
     AFTER_BRIDGE_SYNC("afterBridgeSync"),
     ORCHID("orchid"),
     ORCHID_060("orchid060"),
