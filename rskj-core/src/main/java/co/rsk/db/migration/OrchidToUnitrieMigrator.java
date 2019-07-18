@@ -127,7 +127,7 @@ public class OrchidToUnitrieMigrator {
             logger.error("Reset database or continue syncing with previous version");
             // just opening the db against the unitrie directory creates certain file structure
             // we clean that here in case of an error
-            Files.deleteIfExists(unitrieDatabase);
+            FileUtil.recursiveDelete(unitrieDatabase.toString());
             System.exit(1);
         }
 
