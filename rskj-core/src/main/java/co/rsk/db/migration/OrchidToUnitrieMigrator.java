@@ -145,7 +145,16 @@ public class OrchidToUnitrieMigrator {
                 )
         );
 
-        unitrieMigrationTool.migrate();
+        try {
+            unitrieMigrationTool.migrate();
+        } catch (RuntimeException e) {
+            logger.error("Couldn't migrate the database", e);
+
+            FileUtil.recursiveDelete(unitrieDatabase.toString());
+            Files.deleteIfExists(Paths.get(databaseDir, MissingOrchidStorageKeysProvider.MAPDB_FILENAME));
+            System.exit(1);
+        }
+
         ctx.getBlockStore().removeBlock(bestBlock);
         if (ctx.getBlockchain().tryToConnect(bestBlock) != ImportResult.IMPORTED_BEST) {
             logger.error(
@@ -178,19 +187,7 @@ public class OrchidToUnitrieMigrator {
             throw new IllegalStateException(String.format("Stored account state is not consistent with the expected root (%s) for block %d", Hex.toHexString(orchidStateRoot), blockToMigrate.getNumber()));
         }
 
-        try {
-            buildPartialUnitrie(orchidAccountsTrie, unitrieRepository);
-        } catch (MissingContractStorageKeysException e) {
-            StringBuilder missingStorageKeysMessage = new StringBuilder(
-                "We have detected an inconsistency in your database and are unable to migrate it automatically.\n" +
-                "Please visit https://www.github.com/rsksmart/rskj/issues/452 for information on how to continue.\n" +
-                "Here is the data you'll need:\n"
-            );
-            for (Keccak256 entry : e.getMissingStorageKeys()) {
-                missingStorageKeysMessage.append(entry.toHexString()).append("\n");
-            }
-            logger.error(missingStorageKeysMessage.toString());
-        }
+        buildPartialUnitrie(orchidAccountsTrie, unitrieRepository);
 
         byte[] lastStateRoot = unitrieRepository.getRoot();
         byte[] orchidMigratedStateRoot = trieConverter.getOrchidAccountTrieRoot(unitrieRepository.getMutableTrie().getTrie());
@@ -208,12 +205,11 @@ public class OrchidToUnitrieMigrator {
         return unitrieRepository.getMutableTrie().getTrie();
     }
 
-    private void buildPartialUnitrie(Trie orchidAccountsTrie, Repository repository) throws MissingContractStorageKeysException {
+    private void buildPartialUnitrie(Trie orchidAccountsTrie, Repository repository) {
         int accountsToLog = 500;
         int accountsCounter = 0;
         logger.trace("(x = {} accounts): ", accountsToLog);
         Iterator<Trie.IterationElement> orchidAccountsTrieIterator = orchidAccountsTrie.getPreOrderIterator();
-        Collection<Keccak256> missingStorageKeys = new HashSet<>();
         while (orchidAccountsTrieIterator.hasNext()) {
             Trie.IterationElement orchidAccountsTrieElement = orchidAccountsTrieIterator.next();
             TrieKeySlice currentElementExpandedPath = orchidAccountsTrieElement.getNodeKey();
@@ -229,23 +225,16 @@ public class OrchidToUnitrieMigrator {
                 byte[] codeHash = oldAccountState.getCodeHash();
                 byte[] accountStateRoot = oldAccountState.getStateRoot();
                 if (contractData != null) {
-                    try {
-                        migrateContract(accountAddress, repository, contractData, codeHash, accountStateRoot);
-                    } catch (MissingContractStorageKeysException e) {
-                        missingStorageKeys.addAll(e.getMissingStorageKeys());
-                    }
+                    migrateContract(accountAddress, repository, contractData, codeHash, accountStateRoot);
                 }
                 if (accountsCounter % accountsToLog == 0) {
                     logger.trace("x");
                 }
             }
         }
-        if (!missingStorageKeys.isEmpty()) {
-            throw new MissingContractStorageKeysException(missingStorageKeys);
-        }
     }
 
-    private void migrateContract(RskAddress accountAddress, Repository currentRepository, byte[] contractDataRaw, byte[] accountCodeHash, byte[] stateRoot) throws MissingContractStorageKeysException {
+    private void migrateContract(RskAddress accountAddress, Repository currentRepository, byte[] contractDataRaw, byte[] accountCodeHash, byte[] stateRoot) {
         ContractData contractData = new ContractData(contractDataRaw);
 
         boolean initialized = false;
@@ -273,17 +262,12 @@ public class OrchidToUnitrieMigrator {
                 Keccak256 storageKeyHash = new Keccak256(Keccak256Helper.keccak256(rawKey));
                 keccak256Cache.put(storageKeyHash, storageKey);
             }
-            Collection<Keccak256> missingStorageKeys = new HashSet<>();
             Iterator<Trie.IterationElement> inOrderIterator = contractStorageTrie.getInOrderIterator();
             while (inOrderIterator.hasNext()) {
                 Trie.IterationElement iterationElement = inOrderIterator.next();
                 if (iterationElement.getNode().getValue() != null) {
                     Keccak256 storageKeyHash = new Keccak256(iterationElement.getNodeKey().encode());
                     DataWord storageKey = keccak256Cache.computeIfAbsent(storageKeyHash, missingOrchidStorageKeysProvider::getKeccak256PreImage);
-                    if (storageKey == null) {
-                        missingStorageKeys.add(storageKeyHash);
-                        continue;
-                    }
 
                     byte[] value = iterationElement.getNode().getValue();
                     migratedKeysCounter++;
@@ -296,10 +280,6 @@ public class OrchidToUnitrieMigrator {
                     }
                     currentRepository.addStorageBytes(contractAddress, storageKey, value);
                 }
-            }
-            if (!missingStorageKeys.isEmpty()) {
-                logger.error("{} keys lost", missingStorageKeys.size());
-                throw new MissingContractStorageKeysException(missingStorageKeys);
             }
         }
 
@@ -495,19 +475,6 @@ public class OrchidToUnitrieMigrator {
 
         @Override
         public void flush() {
-        }
-    }
-
-    private static class MissingContractStorageKeysException extends Exception {
-
-        private final Collection<Keccak256> missingStorageKeys;
-
-        private MissingContractStorageKeysException(Collection<Keccak256> missingStorageKeys) {
-            this.missingStorageKeys = Collections.unmodifiableCollection(missingStorageKeys);
-        }
-
-        private Collection<Keccak256> getMissingStorageKeys() {
-            return missingStorageKeys;
         }
     }
 }
