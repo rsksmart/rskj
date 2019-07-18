@@ -28,7 +28,6 @@ import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -42,7 +41,7 @@ import java.util.Map;
 
 public class MissingOrchidStorageKeysProvider {
 
-    private static final String MAPDB_FILENAME = "migration-extras";
+    public static final String MAPDB_FILENAME = "migration-extras";
 
     private static final Logger logger = LoggerFactory.getLogger(MissingOrchidStorageKeysProvider.class);
 
@@ -57,7 +56,6 @@ public class MissingOrchidStorageKeysProvider {
         this.databaseLocalFile = databasePath.resolve(MAPDB_FILENAME).toFile();
     }
 
-    @Nullable
     public DataWord getKeccak256PreImage(Keccak256 storageKeyHash) {
         if (patchDatabase == null) {
             if (!databaseLocalFile.exists()) {
@@ -82,13 +80,24 @@ public class MissingOrchidStorageKeysProvider {
         }
 
         byte[] storageKey = patchDatabase.get(storageKeyHash.getBytes());
-        if (!Arrays.equals(storageKeyHash.getBytes(), Keccak256Helper.keccak256(storageKey))) {
+        if (storageKey == null) {
+            throw new IllegalStateException(String.format(
+                    "We have detected a recoverable inconsistency in your database during the migration process.\n" +
+                    "The patching information required to do this is not available at the moment, " +
+                    "but it's automatically updated every hour.\n" +
+                    "Please try again in a few minutes. " +
+                    "If you have any question please reach through our support channel at http://gitter.im/rsksmart/rskj\n" +
+                    "Missing storage key: %s",
+                    storageKeyHash.toHexString()
+                ));
+        }
+        if (!Arrays.equals(storageKeyHash.getBytes(), Keccak256Helper.keccak256(DataWord.valueOf(storageKey).getData()))) {
             throw new IllegalStateException(
                     String.format("You have downloaded an inconsistent database. %s doesn't match expected keccak256 hash (%s)",
                             Hex.toHexString(storageKey),
                             Hex.toHexString(storageKeyHash.getBytes())
                     ));
         }
-        return storageKey != null? DataWord.valueOf(storageKey) : null;
+        return DataWord.valueOf(storageKey);
     }
 }
