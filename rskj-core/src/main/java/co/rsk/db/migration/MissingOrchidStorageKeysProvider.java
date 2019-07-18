@@ -82,7 +82,7 @@ public class MissingOrchidStorageKeysProvider {
         }
 
         byte[] storageKey = patchDatabase.get(storageKeyHash.getBytes());
-        if (!Arrays.equals(storageKeyHash.getBytes(), Keccak256Helper.keccak256(storageKey))) {
+        if (!Arrays.equals(storageKeyHash.getBytes(), Keccak256Helper.keccak256(DataWord.valueOf(storageKey).getData()))) {
             throw new IllegalStateException(
                     String.format("You have downloaded an inconsistent database. %s doesn't match expected keccak256 hash (%s)",
                             Hex.toHexString(storageKey),
