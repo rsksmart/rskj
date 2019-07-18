@@ -27,6 +27,7 @@ import co.rsk.trie.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
+import org.ethereum.core.ImportResult;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
@@ -117,7 +118,8 @@ public class OrchidToUnitrieMigrator {
 
         // this block number has to be validated before the release to ensure the migration works fine for every user
         long minimumBlockNumberToMigrate = ctx.getRskSystemProperties().getDatabaseMigrationMinimumHeight();
-        Block blockToMigrate = ctx.getBlockStore().getBestBlock();
+        Block bestBlock = ctx.getBlockStore().getBestBlock();
+        Block blockToMigrate = ctx.getBlockStore().getBlockByHash(bestBlock.getParentHash().getBytes());
         if (blockToMigrate == null || blockToMigrate.getNumber() < minimumBlockNumberToMigrate) {
             logger.error(
                     "The database can't be migrated because the node wasn't up to date before upgrading. " +
@@ -144,6 +146,17 @@ public class OrchidToUnitrieMigrator {
         );
 
         unitrieMigrationTool.migrate();
+        ctx.getBlockStore().removeBlock(bestBlock);
+        if (ctx.getBlockchain().tryToConnect(bestBlock) != ImportResult.IMPORTED_BEST) {
+            logger.error(
+                    "The database can't be migrated because the block {} couldn't be connected after the migration.",
+                    bestBlock.getNumber()
+            );
+            // just opening the db against the unitrie directory creates certain file structure
+            // we clean that here in case of an error
+            FileUtil.recursiveDelete(unitrieDatabase.toString());
+            System.exit(1);
+        }
     }
 
     public void migrate() {
