@@ -147,7 +147,7 @@ public class OrchidToUnitrieMigrator {
     }
 
     public void migrate() {
-        logger.info("Migration started");
+        logger.info("Migration started. It can take up to 15 minutes");
         logger.info("Block {}", blockToMigrate.getNumber());
         Trie migratedTrie = migrateState(blockToMigrate);
         unitrieRepository.flush();
