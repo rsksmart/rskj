@@ -19,6 +19,7 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.core.Block;
 import org.ethereum.rpc.TypeConverter;
@@ -34,10 +35,12 @@ public class EthModuleTest {
     @Test
     public void callSmokeTest() {
         Web3.CallArguments args = new Web3.CallArguments();
-        Block executionBlock = mock(Block.class);
+        BlockResult blockResult = mock(BlockResult.class);
+        Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock("latest"))
-                .thenReturn(executionBlock);
+        when(retriever.getExecutionBlock_workaround("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
 
         byte[] hreturn = TypeConverter.stringToByteArray("hello");
         ProgramResult executorResult = mock(ProgramResult.class);
@@ -45,7 +48,7 @@ public class EthModuleTest {
                 .thenReturn(hreturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        when(executor.executeTransaction(eq(executionBlock), any(), any(), any(), any(), any(), any(), any()))
+        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);
 
         EthModule eth = new EthModule(
