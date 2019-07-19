@@ -343,40 +343,6 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized List<byte[]> getListHashesEndWith(byte[] hash, long number){
-
-        List<Block> blocks = getListBlocksEndWith(hash, number);
-        List<byte[]> hashes = new ArrayList<>(blocks.size());
-
-        for (Block b : blocks) {
-            hashes.add(b.getHash().getBytes());
-        }
-
-        return hashes;
-    }
-
-    private synchronized List<Block> getListBlocksEndWith(byte[] hash, long qty) {
-        Block block = getBlockByHash(hash);
-
-        if (block == null) {
-            return new ArrayList<>();
-        }
-
-        List<Block> blocks = new ArrayList<>((int) qty);
-
-        for (int i = 0; i < qty; ++i) {
-
-            blocks.add(block);
-            block = getBlockByHash(hash);
-            if (block == null) {
-                break;
-            }
-        }
-
-        return blocks;
-    }
-
-    @Override
     public synchronized void reBranch(Block forkBlock){
 
         Block bestBlock = getBestBlock();

@@ -54,8 +54,6 @@ public interface BlockStore extends RemascCache {
 
     boolean isBlockExist(byte[] hash);
 
-    List<byte[]> getListHashesEndWith(byte[] hash, long qty);
-
     void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain);
 
     BlockDifficulty getTotalDifficultyForHash(byte[] hash);
