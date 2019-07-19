@@ -19,6 +19,7 @@
 package co.rsk.rpc;
 
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
@@ -112,8 +113,10 @@ public class ExecutionBlockRetrieverTest {
                 .thenReturn(new ArrayList<>(Collections.singleton(bestHeader)));
 
         Block builtBlock = mock(Block.class);
+        BlockResult blockResult = mock(BlockResult.class);
         when(builder.build(new ArrayList<>(Collections.singleton(bestHeader)), null))
-                .thenReturn(builtBlock);
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(builtBlock);
 
         assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
     }
@@ -137,11 +140,13 @@ public class ExecutionBlockRetrieverTest {
         when(miningMainchainView.get())
                 .thenReturn(mainchainHeaders);
 
+        BlockResult blockResult = mock(BlockResult.class);
         Block builtBlock = mock(Block.class);
         when(bestBlock.isParentOf(builtBlock))
                 .thenReturn(true);
         when(builder.build(mainchainHeaders, null))
-                .thenReturn(builtBlock);
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(builtBlock);
 
         assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
         assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
@@ -171,15 +176,16 @@ public class ExecutionBlockRetrieverTest {
                 .thenReturn(new ArrayList<>(Collections.singleton(bestHeader2)));
 
         Block builtBlock1 = mock(Block.class);
-        when(bestBlock1.isParentOf(builtBlock1))
-                .thenReturn(true);
-        when(builder.build(new ArrayList<>(Collections.singleton(bestHeader1)), null))
-                .thenReturn(builtBlock1);
+        when(bestBlock1.isParentOf(builtBlock1)).thenReturn(true);
+        BlockResult blockResult1 = mock(BlockResult.class);
+        when(blockResult1.getBlock()).thenReturn(builtBlock1);
+        when(builder.build(new ArrayList<>(Collections.singleton(bestHeader1)), null)).thenReturn(blockResult1);
+
         Block builtBlock2 = mock(Block.class);
-        when(bestBlock2.isParentOf(builtBlock2))
-                .thenReturn(true);
-        when(builder.build(new ArrayList<>(Collections.singleton(bestHeader2)), null))
-                .thenReturn(builtBlock2);
+        when(bestBlock2.isParentOf(builtBlock2)).thenReturn(true);
+        BlockResult blockResult2 = mock(BlockResult.class);
+        when(blockResult2.getBlock()).thenReturn(builtBlock2);
+        when(builder.build(new ArrayList<>(Collections.singleton(bestHeader2)), null)).thenReturn(blockResult2);
 
         assertThat(retriever.getExecutionBlock("pending"), is(builtBlock1));
         assertThat(retriever.getExecutionBlock("pending"), is(builtBlock2));
