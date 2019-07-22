@@ -29,6 +29,7 @@ import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
@@ -50,11 +51,13 @@ public class BlockBuilder {
     private BigInteger minGasPrice;
     private byte[] gasLimit;
     private final BridgeSupportFactory bridgeSupportFactory;
+    private BlockStore blockStore;
 
-    public BlockBuilder(Blockchain blockChain, BridgeSupportFactory bridgeSupportFactory) {
+    public BlockBuilder(Blockchain blockChain, BridgeSupportFactory bridgeSupportFactory, BlockStore blockStore) {
         this.blockChain = blockChain;
         this.blockGenerator = new BlockGenerator();
         this.bridgeSupportFactory = bridgeSupportFactory;
+        this.blockStore = blockStore;
     }
 
     public BlockBuilder parent(Block parent) {
@@ -108,7 +111,7 @@ public class BlockBuilder {
                     stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
-                            blockChain.getBlockStore(),
+                            blockStore,
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl(),

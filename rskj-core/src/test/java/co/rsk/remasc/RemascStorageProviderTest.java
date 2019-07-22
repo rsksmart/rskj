@@ -454,7 +454,7 @@ public class RemascStorageProviderTest {
                 stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
-                        blockchain.getBlockStore(),
+                        builder.getBlockStore(),
                         null,
                         new BlockFactory(config.getActivationConfig()),
                         new ProgramInvokeFactoryImpl(),

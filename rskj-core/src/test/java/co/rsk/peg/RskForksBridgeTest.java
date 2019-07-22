@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -33,6 +32,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -59,11 +59,13 @@ public class RskForksBridgeTest {
     private BlockChainImpl blockChain;
     private Block blockBase;
     private World world;
+    private BlockStore blockStore;
 
     @Before
-    public void before() throws IOException, ClassNotFoundException {
+    public void before() {
         world = new World();
         blockChain = world.getBlockChain();
+        blockStore = world.getBlockStore();
         repositoryLocator = world.getRepositoryLocator();
         repository = world.getRepository();
 
@@ -76,7 +78,7 @@ public class RskForksBridgeTest {
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();
 
-        blockChain.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+        blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
         Transaction whitelistAddressTx = buildWhitelistTx();
         Transaction receiveHeadersTx = buildReceiveHeadersTx();
@@ -223,8 +225,9 @@ public class RskForksBridgeTest {
     }
 
     private Block buildBlock(Block parent, long difficulty) {
-        World world = new World(blockChain, repository, null, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(difficulty).parent(parent);
+        World world = new World(blockChain, blockStore, repository, null, genesis);
+        BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                                     world.getBlockStore()).repository(world.getRepository()).difficulty(difficulty).parent(parent);
         return blockBuilder.build();
     }
 
@@ -234,8 +237,9 @@ public class RskForksBridgeTest {
 
     private Block buildBlock(Block parent, long difficulty, Transaction ... txs) {
         List<Transaction> txList = Arrays.asList(txs);
-        World world = new World(blockChain, repository, null, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
+        World world = new World(blockChain, blockStore, repository, null, genesis);
+        BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                                     world.getBlockStore()).repository(world.getRepository()).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
         return blockBuilder.build();
     }
 
@@ -449,7 +453,7 @@ public class RskForksBridgeTest {
         NO_TX, WAITING_FOR_SIGNATURES, WAITING_FOR_SELECTION, WAITING_FOR_CONFIRMATIONS
     }
 
-    private BridgeState callGetStateForDebuggingTx() throws IOException, ClassNotFoundException {
+    private BridgeState callGetStateForDebuggingTx() throws IOException {
         TestSystemProperties beforeBambooProperties = new TestSystemProperties();
         Transaction rskTx = CallTransaction.createRawTransaction(0,
                 Long.MAX_VALUE,
@@ -461,7 +465,7 @@ public class RskForksBridgeTest {
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 beforeBambooProperties,
-                blockChain.getBlockStore(),
+                blockStore,
                 null,
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),

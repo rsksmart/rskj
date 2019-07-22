@@ -29,7 +29,6 @@ import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,7 +42,7 @@ public class NodeBlockProcessorUnclesTest {
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
-        Block block1 = new BlockBuilder(null, null).parent(genesis).build();
+        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
 
         processor.processBlock(null, block1);
 
@@ -52,14 +51,16 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void addBlockWithTwoKnownUncles() throws UnknownHostException {
+    public void addBlockWithTwoKnownUncles() {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockChain = blockChainBuilder.build();
+        org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
         NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
         Block genesis = blockChain.getBestBlock();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChainBuilder.getRepository());
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null, blockStore)
+                .repository(blockChainBuilder.getRepository());
         blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block uncle1 = blockBuilder.parent(genesis).build();
@@ -85,14 +86,16 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void addBlockWithTwoUnknownUncles() throws UnknownHostException {
+    public void addBlockWithTwoUnknownUncles() {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockChain = blockChainBuilder.build();
+        org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
         NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChainBuilder.getRepository());
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null, blockStore)
+                .repository(blockChainBuilder.getRepository());
         blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block uncle1 = blockBuilder.parent(genesis).build();
@@ -117,20 +120,21 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() throws UnknownHostException {
+    public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() {
         NodeBlockProcessor processor = createNodeBlockProcessor(new BlockChainBuilder().build());
 
         Block genesis = processor.getBlockchain().getBestBlock();
 
-        Block block1 = new BlockBuilder(null, null).parent(genesis).build();
-        Block uncle1 = new BlockBuilder(null, null).parent(genesis).build();
-        Block uncle2 = new BlockBuilder(null, null).parent(genesis).build();
+        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
+        Block uncle1 = new BlockBuilder(null, null, null).parent(genesis).build();
+        Block uncle2 = new BlockBuilder(null, null, null).parent(genesis).build();
 
         List<BlockHeader> uncles = new ArrayList<>();
         uncles.add(uncle1.getHeader());
         uncles.add(uncle2.getHeader());
 
-        Block block2 = new BlockBuilder(null, null).parent(block1).uncles(uncles).build();
+        Block block2 = new BlockBuilder(null, null, null)
+                .parent(block1).uncles(uncles).build();
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -148,8 +152,7 @@ public class NodeBlockProcessorUnclesTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
 
-        return processor;
+        return new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
     }
 }

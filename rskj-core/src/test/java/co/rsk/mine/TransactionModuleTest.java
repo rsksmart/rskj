@@ -85,7 +85,7 @@ public class TransactionModuleTest {
         Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
-        BlockStore blockStore = world.getBlockChain().getBlockStore();
+        BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100);
 
@@ -109,7 +109,7 @@ public class TransactionModuleTest {
         Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
-        BlockStore blockStore = world.getBlockChain().getBlockStore();
+        BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100);
 
@@ -136,12 +136,12 @@ public class TransactionModuleTest {
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
-        MiningMainchainView mainchainView = new MiningMainchainViewImpl(blockchain.getBlockStore(), 1);
+        MiningMainchainView mainchainView = new MiningMainchainViewImpl(world.getBlockStore(), 1);
 
         StateRootHandler stateRootHandler = world.getStateRootHandler();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
-        BlockStore blockStore = world.getBlockChain().getBlockStore();
+        BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = world.getTransactionPool();
 
@@ -170,7 +170,7 @@ public class TransactionModuleTest {
         Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
-        BlockStore blockStore = world.getBlockChain().getBlockStore();
+        BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100);
 
@@ -197,7 +197,7 @@ public class TransactionModuleTest {
         Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
-        BlockStore blockStore = world.getBlockChain().getBlockStore();
+        BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100);
 

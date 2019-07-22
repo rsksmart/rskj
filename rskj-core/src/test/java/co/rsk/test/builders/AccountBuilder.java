@@ -29,6 +29,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockStore;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -38,17 +39,19 @@ public class AccountBuilder {
     private Coin balance;
     private byte[] code;
     private Blockchain blockChain;
+    private BlockStore blockStore;
     private RepositoryLocator repositoryLocator;
 
     public AccountBuilder() {
     }
 
     public AccountBuilder(World world) {
-        this(world.getBlockChain(), world.getRepositoryLocator());
+        this(world.getBlockChain(), world.getBlockStore(), world.getRepositoryLocator());
     }
 
-    public AccountBuilder(Blockchain blockChain, RepositoryLocator repositoryLocator) {
+    public AccountBuilder(Blockchain blockChain, BlockStore blockStore, RepositoryLocator repositoryLocator) {
         this.blockChain = blockChain;
+        this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
     }
 
@@ -97,7 +100,7 @@ public class AccountBuilder {
             best.setStateRoot(repository.getRoot());
             best.flushRLP();
 
-            blockChain.getBlockStore().saveBlock(best, td, true);
+            blockStore.saveBlock(best, td, true);
         }
 
         return account;

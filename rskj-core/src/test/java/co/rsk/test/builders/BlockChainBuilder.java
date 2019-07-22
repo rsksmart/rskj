@@ -145,6 +145,10 @@ public class BlockChainBuilder {
         return transactionPool;
     }
 
+    public BlockStore getBlockStore() {
+        return blockStore;
+    }
+
     public BlockChainImpl build() {
         if (config == null){
             config = new TestSystemProperties();

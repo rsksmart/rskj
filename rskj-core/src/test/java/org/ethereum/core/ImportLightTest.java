@@ -31,7 +31,7 @@ import co.rsk.trie.TrieConverter;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -46,10 +46,12 @@ import java.util.Map;
  */
 public class ImportLightTest {
 
-    public static BlockChainImpl createBlockchain(Genesis genesis, TestSystemProperties config, Repository repository) {
+    public static BlockChainImpl createBlockchain(
+            Genesis genesis,
+            TestSystemProperties config,
+            Repository repository,
+            BlockStore blockStore) {
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
-
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
 
         KeyValueDataSource ds = new HashMapDB();

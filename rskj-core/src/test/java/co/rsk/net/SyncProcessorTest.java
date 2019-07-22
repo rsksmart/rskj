@@ -793,7 +793,7 @@ public class SyncProcessorTest {
                 stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
-                        blockchain.getBlockStore(),
+                        blockChainBuilder.getBlockStore(),
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
