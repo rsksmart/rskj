@@ -20,6 +20,7 @@ package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
@@ -100,9 +101,9 @@ public interface Web3EthModule {
         return getEthModule().sendTransaction(args);
     }
 
-    Web3.BlockResult eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception;
+    BlockResultDTO eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception;
 
-    Web3.BlockResult eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) throws Exception;
+    BlockResultDTO eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) throws Exception;
 
     TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception;
 
@@ -112,9 +113,9 @@ public interface Web3EthModule {
 
     TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception;
 
-    Web3.BlockResult eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) throws Exception;
+    BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) throws Exception;
 
-    Web3.BlockResult eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) throws Exception;
+    BlockResultDTO eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) throws Exception;
 
     String[] eth_getCompilers();
 
