@@ -426,8 +426,6 @@ public abstract class SystemProperties {
                     publicIp = address.getHostAddress();
                     logger.info("Public IP identified {}", publicIp);
                     return publicIp;
-                } catch (IOException e) {
-                    logger.warn("Can't resolve public IP", e);
                 } catch (IllegalArgumentException e) {
                     logger.warn("Can't resolve public IP", e);
                 }
@@ -435,40 +433,40 @@ public abstract class SystemProperties {
             }
         }
 
-        publicIp = getMyPublicIpFromRemoteService();
+        publicIp = getMyPublicIpFromRemoteService().getHostAddress();
         return publicIp;
     }
 
-    private String getMyPublicIpFromRemoteService(){
+    private InetAddress getMyPublicIpFromRemoteService(){
         try {
             URL ipCheckService = publicIpCheckService();
             logger.info("Public IP wasn't set or resolved, using {} to identify it...", ipCheckService);
 
+            String ipFromService;
             try (BufferedReader in = new BufferedReader(new InputStreamReader(ipCheckService.openStream()))) {
-                publicIp = in.readLine();
+                ipFromService = in.readLine();
             }
 
-            if (publicIp == null || publicIp.trim().isEmpty()) {
-                logger.warn("Unable to retrieve public IP from {} {}.", ipCheckService, publicIp);
-                throw new IOException("Invalid address: '" + publicIp + "'");
+            if (ipFromService == null || ipFromService.trim().isEmpty()) {
+                logger.warn("Unable to retrieve public IP from {} {}.", ipCheckService, ipFromService);
+                throw new IOException("Invalid address: '" + ipFromService + "'");
             }
 
-            tryParseIpOrThrow(publicIp);
-            logger.info("Identified public IP: {}", publicIp);
-            return publicIp;
+            InetAddress resolvedIp = tryParseIpOrThrow(ipFromService);
+            logger.info("Identified public IP: {}", resolvedIp);
+            return resolvedIp;
         } catch (IOException e) {
             logger.error("Can't get public IP", e);
         } catch (IllegalArgumentException e) {
             logger.error("Can't get public IP", e);
         }
 
-        String bindAddress = getBindAddress().toString();
-        if (getBindAddress().isAnyLocalAddress()){
+        InetAddress bindAddress = getBindAddress();
+        if (bindAddress.isAnyLocalAddress()){
             throw new RuntimeException("Wildcard on bind address it's not allowed as fallback for public IP " + bindAddress);
         }
-        publicIp = bindAddress;
 
-        return publicIp;
+        return bindAddress;
     }
 
     private URL publicIpCheckService() throws MalformedURLException {
@@ -624,11 +622,16 @@ public abstract class SystemProperties {
         return configFromFiles.getString(PROPERTY_RPC_CORS);
     }
 
-    private InetAddress tryParseIpOrThrow(String ipToParse) throws IOException {
+    /**
+     * Parses a list of IPs separated by commas. E.g. "171.99.160.48, 171.99.160.48".
+     */
+    private InetAddress tryParseIpOrThrow(String ipsToParse) {
         try {
+            String[] ips = ipsToParse.split(", ");
+            String ipToParse = ips[ips.length - 1];
             return InetAddress.getByName(ipToParse);
         } catch (UnknownHostException e) {
-            throw new IllegalArgumentException("Invalid address: '" + ipToParse + "'", e);
+            throw new IllegalArgumentException("Invalid address(es): '" + ipsToParse + "'", e);
         }
     }
 
