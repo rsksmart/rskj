@@ -590,27 +590,6 @@ public class Trie {
     public boolean isEmbeddable() {
         return isTerminal() && getMessageLength() <= MAX_EMBEDDED_NODE_SIZE_IN_BYTES;
     }
-    /**
-     * save saves the unsaved current trie and subnodes to their associated store
-     *
-     */
-    public void save() {
-        if (this.saved) {
-            return;
-        }
-
-        // Without store, nodes cannot be saved. Abort silently
-        if (this.store == null) {
-            return;
-        }
-
-        this.left.save();
-        this.right.save();
-
-        this.store.save(this);
-        this.saved = true;
-        this.encoded = null;
-    }
 
     public boolean isSaved() {
         return saved;

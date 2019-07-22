@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
+import co.rsk.trie.TrieStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
@@ -104,7 +105,10 @@ public class MutableTrieImpl implements MutableTrie {
 
     @Override
     public void save() {
-        trie.save();
+        TrieStore store = trie.getStore();
+        if (store != null) {
+            store.save(trie);
+        }
     }
 
     @Override
