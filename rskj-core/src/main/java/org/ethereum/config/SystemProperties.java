@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -440,14 +441,15 @@ public abstract class SystemProperties {
 
     private String getMyPublicIpFromRemoteService(){
         try {
-            logger.info("Public IP wasn't set or resolved, using checkip.amazonaws.com to identify it...");
+            URL ipCheckService = publicIpCheckService();
+            logger.info("Public IP wasn't set or resolved, using {} to identify it...", ipCheckService);
 
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(new URL("http://checkip.amazonaws.com").openStream()))) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(ipCheckService.openStream()))) {
                 publicIp = in.readLine();
             }
 
             if (publicIp == null || publicIp.trim().isEmpty()) {
-                logger.warn("Unable to retrieve public IP from checkip.amazonaws.com {}.", publicIp);
+                logger.warn("Unable to retrieve public IP from {} {}.", ipCheckService, publicIp);
                 throw new IOException("Invalid address: '" + publicIp + "'");
             }
 
@@ -467,6 +469,10 @@ public abstract class SystemProperties {
         publicIp = bindAddress;
 
         return publicIp;
+    }
+
+    private URL publicIpCheckService() throws MalformedURLException {
+        return new URL(configFromFiles.getString("public.ipCheckService"));
     }
 
     public boolean isSyncEnabled() {
