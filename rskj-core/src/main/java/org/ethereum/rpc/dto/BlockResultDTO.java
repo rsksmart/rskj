@@ -28,7 +28,9 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.TypeConverter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
@@ -49,9 +51,13 @@ public class BlockResultDTO {
     private final String gasLimit;//: QUANTITY - the maximum gas allowed in this block.
     private final String gasUsed; // QUANTITY - the total used gas by all transactions in this block.
     private final String timestamp; //: QUANTITY - the unix timestamp for when the block was collated.
-    private final List<Object> transactions; //: Array - Array of transaction objects, or 32 Bytes transaction hashes depending on the last given parameter.
-    private final List<String> uncles; //: Array - Array of uncle hashes.
+    private final List<Object> transactions; //: Collection - Collection of transaction objects, or 32 Bytes transaction hashes depending on the last given parameter.
+    private final List<String> uncles; //: Collection - Collection of uncle hashes.
     private final String minimumGasPrice;
+    private final String bitcoinMergedMiningHeader;
+    private final String bitcoinMergedMiningCoinbaseTransaction;
+    private final String bitcoinMergedMiningMerkleProof;
+    private final String hashForMergedMining;
 
     public BlockResultDTO(
             Long number,
@@ -70,9 +76,13 @@ public class BlockResultDTO {
             byte[] gasLimit,
             long gasUsed,
             long timestamp,
-            Object[] transactions,
-            String[] uncles,
-            Coin minimumGasPrice) {
+            List<Object> transactions,
+            List<String> uncles,
+            Coin minimumGasPrice,
+            byte[] bitcoinMergedMiningHeader,
+            byte[] bitcoinMergedMiningCoinbaseTransaction,
+            byte[] bitcoinMergedMiningMerkleProof,
+            byte[] hashForMergedMining) {
         this.number = number != null ? TypeConverter.toJsonHex(number) : null;
         this.hash = hash != null ? TypeConverter.toJsonHex(hash.getBytes()) : null;
         this.parentHash = TypeConverter.toJsonHex(parentHash.getBytes());
@@ -91,10 +101,14 @@ public class BlockResultDTO {
         this.gasUsed = TypeConverter.toJsonHex(gasUsed);
         this.timestamp = TypeConverter.toJsonHex(timestamp);
 
-        this.transactions = Arrays.asList(transactions);
-        this.uncles = Arrays.asList(uncles);
+        this.transactions = Collections.unmodifiableList(transactions);
+        this.uncles = Collections.unmodifiableList(uncles);
 
         this.minimumGasPrice = minimumGasPrice != null ? TypeConverter.toJsonHex(minimumGasPrice.getBytes()) : null;
+        this.bitcoinMergedMiningHeader = TypeConverter.toJsonHex(bitcoinMergedMiningHeader);
+        this.bitcoinMergedMiningCoinbaseTransaction = TypeConverter.toJsonHex(bitcoinMergedMiningCoinbaseTransaction);
+        this.bitcoinMergedMiningMerkleProof = TypeConverter.toJsonHex(bitcoinMergedMiningMerkleProof);
+        this.hashForMergedMining = TypeConverter.toJsonHex(hashForMergedMining);
     }
 
     public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore) {
@@ -108,13 +122,13 @@ public class BlockResultDTO {
         Coin mgp = b.getMinimumGasPrice();
 
         List<Object> transactions = new ArrayList<>();
-
+        List<Transaction> blockTransactions = b.getTransactionsList();
         if (fullTx) {
-            for (int i = 0; i < b.getTransactionsList().size(); i++) {
-                transactions.add(new TransactionResultDTO(b, i, b.getTransactionsList().get(i)));
+            for (int i = 0; i < blockTransactions.size(); i++) {
+                transactions.add(new TransactionResultDTO(b, i, blockTransactions.get(i)));
             }
         } else {
-            for (Transaction tx : b.getTransactionsList()) {
+            for (Transaction tx : blockTransactions) {
                 transactions.add(tx.getHash().toJsonString());
             }
         }
@@ -142,9 +156,13 @@ public class BlockResultDTO {
                 b.getGasLimit(),
                 b.getGasUsed(),
                 b.getTimestamp(),
-                transactions.toArray(),
-                uncles.toArray(new String[uncles.size()]),
-                mgp == null ? null : mgp
+                transactions,
+                uncles,
+                mgp,
+                b.getBitcoinMergedMiningHeader(),
+                b.getBitcoinMergedMiningCoinbaseTransaction(),
+                b.getBitcoinMergedMiningMerkleProof(),
+                b.getHashForMergedMining()
         );
     }
 
@@ -212,15 +230,30 @@ public class BlockResultDTO {
         return timestamp;
     }
 
-    public Object[] getTransactions() {
-        return transactions.toArray();
+    public List<Object> getTransactions() {
+        return Collections.unmodifiableList(transactions);
     }
 
-    public String[] getUncles() {
-        return uncles.toArray(new String[uncles.size()]);
-    }
+    public List<String> getUncles() { return Collections.unmodifiableList(uncles); }
 
     public String getMinimumGasPrice() {
         return minimumGasPrice;
     }
+
+    public String getBitcoinMergedMiningHeader() {
+        return bitcoinMergedMiningHeader;
+    }
+
+    public String getBitcoinMergedMiningCoinbaseTransaction() {
+        return bitcoinMergedMiningCoinbaseTransaction;
+    }
+
+    public String getBitcoinMergedMiningMerkleProof() {
+        return bitcoinMergedMiningMerkleProof;
+    }
+
+    public String getHashForMergedMining() {
+        return hashForMergedMining;
+    }
 }
+
