@@ -29,7 +29,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.BlockStoreEncoder;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
-import co.rsk.net.BlockCache;
+import co.rsk.net.BlockStoreCache;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.remasc.Sibling;
@@ -135,7 +135,7 @@ public class StateTestRunner {
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(new BlockStoreEncoder(blockFactory), new HashMap<>(), new HashMapDB(), null,
-                new BlockCache(5000), new MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>>(50000, true)
+                new BlockStoreCache(5000), new MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>>(50000, true)
         );
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         blockchain = new BlockChainImpl(

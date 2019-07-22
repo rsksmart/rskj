@@ -25,7 +25,7 @@ import co.rsk.db.BlockStoreEncoder;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.net.BlockCache;
+import co.rsk.net.BlockStoreCache;
 import co.rsk.remasc.Sibling;
 import co.rsk.util.MaxSizeHashMap;
 import com.google.common.annotations.VisibleForTesting;
@@ -59,7 +59,7 @@ public class IndexedBlockStore implements BlockStore, BlockHeaderStore {
     private static final Logger logger = LoggerFactory.getLogger("general");
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
-    private final BlockCache blockCache;
+    private final BlockStoreCache blockStoreCache;
     private final MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache;
 
     private final Map<Long, List<BlockInfo>> index;
@@ -70,19 +70,19 @@ public class IndexedBlockStore implements BlockStore, BlockHeaderStore {
     public IndexedBlockStore(
             BlockStoreEncoder blockStoreEncoder, Map<Long, List<BlockInfo>> index,
             KeyValueDataSource blocks,
-            DB indexDB, BlockCache blockCache,
+            DB indexDB, BlockStoreCache blockStoreCache,
             MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache) {
         this.blockStoreEncoder = blockStoreEncoder;
         this.index = index;
         this.blocks = blocks;
         this.indexDB  = indexDB;
-        this.blockCache = blockCache;
+        this.blockStoreCache = blockStoreCache;
         this.remascCache = remascCache;
     }
 
     @Override
     public synchronized void removeBlock(Block block) {
-        this.blockCache.removeBlock(block);
+        this.blockStoreCache.removeBlock(block);
         this.remascCache.remove(block.getHash());
         this.blocks.delete(block.getHash().getBytes());
 
@@ -222,8 +222,8 @@ public class IndexedBlockStore implements BlockStore, BlockHeaderStore {
             blocks.put(hashBytes, blockStoreEncoder.encodeBlockHeader(blockHeader));
         }
 
-        if (!blockCache.getBlockHeaderByHash(hash).isPresent()) {
-            blockCache.addBlockHeader(blockHeader);
+        if (!blockStoreCache.getBlockHeaderByHash(hash).isPresent()) {
+            blockStoreCache.addBlockHeader(blockHeader);
         }
     }
 
@@ -257,7 +257,7 @@ public class IndexedBlockStore implements BlockStore, BlockHeaderStore {
         }
 
         index.put(block.getNumber(), blockInfos);
-        blockCache.addBlock(block);
+        blockStoreCache.addBlock(block);
         remascCache.put(block.getHash(), getSiblingsFromBlock(block));
     }
 
@@ -310,13 +310,13 @@ public class IndexedBlockStore implements BlockStore, BlockHeaderStore {
      */
     @Override
     public synchronized Optional<BlockHeader> getBlockHeaderByHash(@Nonnull Keccak256 hash) {
-        Optional<BlockHeader> cachedHeader = blockCache.getBlockHeaderByHash(hash);
+        Optional<BlockHeader> cachedHeader = blockStoreCache.getBlockHeaderByHash(hash);
         if (cachedHeader.isPresent()) {
             return cachedHeader;
         }
 
         Optional<BlockHeader> blockHeader = getDSValue(hash).flatMap(blockStoreEncoder::decodeBlockHeader);
-        blockHeader.ifPresent(blockCache::addBlockHeader);
+        blockHeader.ifPresent(blockStoreCache::addBlockHeader);
         return blockHeader;
     }
 
@@ -329,7 +329,7 @@ public class IndexedBlockStore implements BlockStore, BlockHeaderStore {
         }
 
         Block block = optionalBlock.get();
-        blockCache.addBlock(block);
+        blockStoreCache.addBlock(block);
         remascCache.put(block.getHash(), getSiblingsFromBlock(block));
         return block;
     }
@@ -341,7 +341,7 @@ public class IndexedBlockStore implements BlockStore, BlockHeaderStore {
      * @return A block optional, empty if not found.
      */
     private synchronized Optional<Block> getBlock(byte[] hash) {
-        Optional<Block> cacheValue = this.blockCache.getBlockByHash(new Keccak256(hash));
+        Optional<Block> cacheValue = this.blockStoreCache.getBlockByHash(new Keccak256(hash));
         return cacheValue.isPresent() ? cacheValue : getDSValue(new Keccak256(hash))
                 .flatMap(blockStoreEncoder::decodeBlock);
     }

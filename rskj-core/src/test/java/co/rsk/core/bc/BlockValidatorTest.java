@@ -24,7 +24,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.BlockStoreEncoder;
-import co.rsk.net.BlockCache;
+import co.rsk.net.BlockStoreCache;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.remasc.Sibling;
 import co.rsk.test.builders.BlockBuilder;
@@ -54,7 +54,7 @@ public class BlockValidatorTest {
   private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final BlockStoreEncoder blockStoreEncoder = new BlockStoreEncoder(blockFactory);
-  private final BlockCache blockCache = new BlockCache(5000);
+  private final BlockStoreCache blockStoreCache = new BlockStoreCache(5000);
   private final MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache =
       new MaxSizeHashMap<>(50000, true);
 
@@ -91,7 +91,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -113,7 +113,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -150,7 +150,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -214,7 +214,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -252,7 +252,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -287,7 +287,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -320,7 +320,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -360,7 +360,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -393,7 +393,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -424,7 +424,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -482,7 +482,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -523,7 +523,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();
@@ -570,7 +570,7 @@ public class BlockValidatorTest {
             new HashMap<>(),
             new HashMapDB(),
             null,
-                blockCache,
+                blockStoreCache,
             remascCache);
 
     BlockGenerator blockGenerator = new BlockGenerator();

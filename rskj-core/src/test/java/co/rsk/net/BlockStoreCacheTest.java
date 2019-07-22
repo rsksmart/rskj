@@ -30,7 +30,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BlockCacheTest {
+public class BlockStoreCacheTest {
 
     private static final Keccak256 HASH_1 = new Keccak256(HashUtil.sha256(new byte[]{1}));
     private static final Keccak256 HASH_2 = new Keccak256(HashUtil.sha256(new byte[]{2}));
@@ -40,13 +40,13 @@ public class BlockCacheTest {
 
     @Test
     public void getUnknownBlockAsNull() {
-        BlockCache store = getSubject();
+        BlockStoreCache store = getSubject();
         assertFalse(store.getBlockByHash(HASH_1).isPresent());
     }
 
     @Test
     public void putAndGetValue() {
-        BlockCache store = getSubject();
+        BlockStoreCache store = getSubject();
         Block block = blockWithHash(HASH_1);
         store.addBlock(block);
 
@@ -56,7 +56,7 @@ public class BlockCacheTest {
 
     @Test
     public void putMoreThanSizeAndCheckCleanup() {
-        BlockCache store = getSubject();
+        BlockStoreCache store = getSubject();
 
         store.addBlock(blockWithHash(HASH_1));
         store.addBlock(blockWithHash(HASH_2));
@@ -73,7 +73,7 @@ public class BlockCacheTest {
 
     @Test
     public void repeatingValueAtEndPreventsCleanup() {
-        BlockCache store = getSubject();
+        BlockStoreCache store = getSubject();
 
         store.addBlock(blockWithHash(HASH_1));
         store.addBlock(blockWithHash(HASH_2));
@@ -92,7 +92,7 @@ public class BlockCacheTest {
 
     @Test
     public void addAndRemoveBlock() {
-        BlockCache store = getSubject();
+        BlockStoreCache store = getSubject();
         Block block = blockWithHash(HASH_1);
         store.addBlock(block);
         store.removeBlock(block);
@@ -105,7 +105,7 @@ public class BlockCacheTest {
      */
     @Test
     public void addAndRemoveBlockHeader() {
-        BlockCache store = getSubject();
+        BlockStoreCache store = getSubject();
         store.addBlockHeader(blockHeaderWithHash(HASH_1));
         store.removeBlock(blockWithHash(HASH_1));
 
@@ -118,7 +118,7 @@ public class BlockCacheTest {
      */
     @Test
     public void getBlockHeader_from_block() {
-        BlockCache store = getSubject();
+        BlockStoreCache store = getSubject();
         Block block = blockWithHash(HASH_1);
 
         when(block.getHeader()).thenReturn(mock(BlockHeader.class));
@@ -133,7 +133,7 @@ public class BlockCacheTest {
      */
     @Test
     public void getBlockHeader_from_header() {
-        BlockCache store = getSubject();
+        BlockStoreCache store = getSubject();
         store.addBlockHeader(blockHeaderWithHash(HASH_1));
 
         assertFalse(store.getBlockByHash(HASH_1).isPresent());
@@ -145,14 +145,14 @@ public class BlockCacheTest {
      */
     @Test
     public void getBlockHeader_not_found() {
-        BlockCache store = getSubject();
+        BlockStoreCache store = getSubject();
 
         assertFalse(store.getBlockHeaderByHash(HASH_1).isPresent());
     }
 
 
-    private BlockCache getSubject() {
-        return new BlockCache(4);
+    private BlockStoreCache getSubject() {
+        return new BlockStoreCache(4);
     }
 
     private static Block blockWithHash(Keccak256 hash) {

@@ -31,13 +31,13 @@ import java.util.Optional;
 /**
  * BlockStoreCache stores both blocks and block headers and has a set max size. Elements are removed in access order.
  */
-public class BlockCache {
+public class BlockStoreCache {
 
     private final Map<Keccak256, Block> blockMap;
     private final Map<Keccak256, BlockHeader> headerMap;
 
 
-    public BlockCache(int cacheSize) {
+    public BlockStoreCache(int cacheSize) {
         this.blockMap = new MaxSizeHashMap<>(cacheSize, true);
         this.headerMap = new MaxSizeHashMap<>(cacheSize, true);
     }

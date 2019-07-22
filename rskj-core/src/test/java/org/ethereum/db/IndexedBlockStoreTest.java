@@ -22,7 +22,7 @@ package org.ethereum.db;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.BlockStoreEncoder;
-import co.rsk.net.BlockCache;
+import co.rsk.net.BlockStoreCache;
 import co.rsk.remasc.Sibling;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Block;
@@ -49,7 +49,7 @@ public class IndexedBlockStoreTest {
     private KeyValueDataSource keyValueDataSource;
     private DB indexDB;
     private IndexedBlockStore target;
-    private BlockCache blockCache;
+    private BlockStoreCache blockStoreCache;
     private MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>> remascCache;
 
     @Before
@@ -58,7 +58,7 @@ public class IndexedBlockStoreTest {
         indexMap = mock(Map.class);
         keyValueDataSource = mock(KeyValueDataSource.class);
         indexDB = mock(DB.class);
-        blockCache = mock(BlockCache.class);
+        blockStoreCache = mock(BlockStoreCache.class);
         remascCache = mock(MaxSizeHashMap.class);
 
         target = new IndexedBlockStore(
@@ -66,7 +66,7 @@ public class IndexedBlockStoreTest {
                 indexMap,
                 keyValueDataSource,
                 indexDB,
-                blockCache,
+                blockStoreCache,
                 remascCache
         );
     }
@@ -107,11 +107,11 @@ public class IndexedBlockStoreTest {
         Keccak256 hash = mock(Keccak256.class);
 
         when(blockHeader.getHash()).thenReturn(hash);
-        when(blockCache.getBlockHeaderByHash(hash)).thenReturn(Optional.of(blockHeader));
+        when(blockStoreCache.getBlockHeaderByHash(hash)).thenReturn(Optional.of(blockHeader));
 
         target.saveBlockHeader(blockHeader);
 
-        verify(blockCache, times(0)).addBlockHeader(blockHeader);
+        verify(blockStoreCache, times(0)).addBlockHeader(blockHeader);
     }
 
     @Test
@@ -120,11 +120,11 @@ public class IndexedBlockStoreTest {
         Keccak256 hash = mock(Keccak256.class);
 
         when(blockHeader.getHash()).thenReturn(hash);
-        when(blockCache.getBlockHeaderByHash(hash)).thenReturn(Optional.empty());
+        when(blockStoreCache.getBlockHeaderByHash(hash)).thenReturn(Optional.empty());
 
         target.saveBlockHeader(blockHeader);
 
-        verify(blockCache, times(1)).addBlockHeader(blockHeader);
+        verify(blockStoreCache, times(1)).addBlockHeader(blockHeader);
     }
 
 
@@ -170,7 +170,7 @@ public class IndexedBlockStoreTest {
 
         target.saveBlock(block, mock(BlockDifficulty.class), true);
 
-        verify(blockCache, times(1)).addBlock(block);
+        verify(blockStoreCache, times(1)).addBlock(block);
     }
 
     @Test

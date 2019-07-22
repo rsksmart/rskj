@@ -22,7 +22,7 @@ import co.rsk.core.Wallet;
 import co.rsk.db.BlockStoreEncoder;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
-import co.rsk.net.BlockCache;
+import co.rsk.net.BlockStoreCache;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.MaxSizeHashMap;
@@ -49,7 +49,7 @@ public class RskTestContext extends RskContext {
     @Override
     protected BlockStore buildBlockStore() {
         return new IndexedBlockStore(new BlockStoreEncoder(getBlockFactory()), new HashMap<>(), new HashMapDB(), null,
-                new BlockCache(5000), new MaxSizeHashMap<>(50000, true));
+                new BlockStoreCache(5000), new MaxSizeHashMap<>(50000, true));
     }
 
     @Override

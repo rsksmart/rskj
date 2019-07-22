@@ -22,7 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.BlockStoreEncoder;
-import co.rsk.net.BlockCache;
+import co.rsk.net.BlockStoreCache;
 import co.rsk.remasc.Sibling;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -176,6 +176,6 @@ public class BlockForkTest {
 
     private static BlockStore createBlockStore() {
         return new IndexedBlockStore(new BlockStoreEncoder(blockFactory), new HashMap<>(), new HashMapDB(), null,
-                new BlockCache(5000), new MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>>(50000, true));
+                new BlockStoreCache(5000), new MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>>(50000, true));
     }
 }

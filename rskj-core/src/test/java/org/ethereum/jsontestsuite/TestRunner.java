@@ -29,7 +29,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.*;
-import co.rsk.net.BlockCache;
+import co.rsk.net.BlockStoreCache;
 import co.rsk.remasc.Sibling;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
@@ -134,7 +134,7 @@ public class TestRunner {
         Repository repository = RepositoryBuilder.build(testCase.getPre());
 
         IndexedBlockStore blockStore = new IndexedBlockStore(new BlockStoreEncoder(blockFactory), new HashMap<>(), new HashMapDB(), null,
-                new BlockCache(5000), new MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>>(50000, true));
+                new BlockStoreCache(5000), new MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>>(50000, true));
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();

@@ -27,7 +27,7 @@ import co.rsk.core.bc.*;
 import co.rsk.db.BlockStoreEncoder;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
-import co.rsk.net.BlockCache;
+import co.rsk.net.BlockStoreCache;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -173,7 +173,7 @@ public class BlockChainBuilder {
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(new BlockStoreEncoder(blockFactory), new HashMap<>(), new HashMapDB(), null,
-                    new BlockCache(5000), new MaxSizeHashMap<>(50000, true));
+                    new BlockStoreCache(5000), new MaxSizeHashMap<>(50000, true));
         }
 
         if (receiptStore == null) {

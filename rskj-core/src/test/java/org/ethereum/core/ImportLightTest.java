@@ -29,7 +29,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.BlockStoreEncoder;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
-import co.rsk.net.BlockCache;
+import co.rsk.net.BlockStoreCache;
 import co.rsk.remasc.Sibling;
 import co.rsk.trie.TrieConverter;
 import co.rsk.util.MaxSizeHashMap;
@@ -56,7 +56,7 @@ public class ImportLightTest {
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         BlockStoreEncoder blockStoreEncoder = new BlockStoreEncoder(blockFactory);
         IndexedBlockStore blockStore = new IndexedBlockStore(blockStoreEncoder, new HashMap<>(), new HashMapDB(), null,
-                new BlockCache(5000), new MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>>(50000, true));
+                new BlockStoreCache(5000), new MaxSizeHashMap<Keccak256, Map<Long, List<Sibling>>>(50000, true));
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
 

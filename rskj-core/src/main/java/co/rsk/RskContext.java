@@ -1467,7 +1467,7 @@ public class RskContext implements NodeBootstrapper {
         KeyValueDataSource blocksDB = makeDataSource("blocks", databaseDir);
 
         return new IndexedBlockStore(new BlockStoreEncoder(getBlockFactory()), indexMap, blocksDB, indexDB,
-                new BlockCache(5000), new MaxSizeHashMap<>(50000, true));
+                new BlockStoreCache(5000), new MaxSizeHashMap<>(50000, true));
     }
 
     public static KeyValueDataSource makeDataSource(String name, String databaseDir) {
