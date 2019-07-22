@@ -180,9 +180,9 @@ public class TrieStoreImplTest {
         verifyNoMoreInteractions(map);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void retrieveUnknownHash() {
-        Assert.assertNull(store.retrieve(new byte[] { 0x01, 0x02, 0x03, 0x04 }));
+        store.retrieve(new byte[] { 0x01, 0x02, 0x03, 0x04 });
     }
 
     @Test

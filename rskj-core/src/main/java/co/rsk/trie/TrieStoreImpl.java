@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.datasource.KeyValueDataSource;
 
 /**
@@ -69,16 +70,14 @@ public class TrieStoreImpl implements TrieStore {
         this.store.flush();
     }
 
-    /**
-     * retrieve retrieves a Trie instance from store, using hash a key
-     *
-     * @param hash  the hash to retrieve
-     *
-     * @return  the retrieved Trie, null if key does not exist
-     */
     @Override
     public Trie retrieve(byte[] hash) {
         byte[] message = this.store.get(hash);
+        if (message == null) {
+            throw new IllegalArgumentException(String.format(
+                    "The trie with root %s is missing in this store", Hex.toHexString(hash)
+            ));
+        }
 
         return Trie.fromMessage(message, this);
     }

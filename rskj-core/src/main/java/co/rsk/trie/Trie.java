@@ -26,13 +26,10 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.RLP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -60,12 +57,8 @@ public class Trie {
     private static final int ARITY = 2;
     private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 44;
 
-    private static final Logger logger = LoggerFactory.getLogger("newtrie");
     private static final Profiler profiler = ProfilerFactory.getInstance();
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private static final String PANIC_TOPIC = "newtrie";
     private static final String INVALID_ARITY = "Invalid arity";
-    private static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash %s";
 
     private static final int MESSAGE_HEADER_LENGTH = 2 + Short.BYTES * 2;
     private static final String INVALID_VALUE_LENGTH = "Invalid value length";
@@ -153,10 +146,6 @@ public class Trie {
      * recognize the old serialization format.
      */
     public static Trie fromMessage(byte[] message, TrieStore store) {
-        if (message == null) {
-            return null;
-        }
-
         Trie trie;
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
         if (message[0] == ARITY) {
@@ -623,6 +612,14 @@ public class Trie {
         this.encoded = null;
     }
 
+    public boolean isSaved() {
+        return saved;
+    }
+
+    public void setSaved() {
+        saved = true;
+    }
+
     // key is the key with exactly collectKeyLen bytes.
     // in non-expanded form (binary)
     // special value Integer.MAX_VALUE means collect them all.
@@ -781,17 +778,12 @@ public class Trie {
         return implicitByte == 0 ? this.left : this.right;
     }
 
-    private static Trie internalRetrieve(TrieStore store, byte[] root) {
-        Trie newTrie = store.retrieve(root);
+    public NodeReference getLeft() {
+        return left;
+    }
 
-        if (newTrie == null) {
-            String log = String.format(ERROR_NON_EXISTENT_TRIE, Hex.toHexString(root));
-            logger.error(log);
-            panicProcessor.panic(PANIC_TOPIC, log);
-            throw new IllegalArgumentException(log);
-        }
-
-        return newTrie;
+    public NodeReference getRight() {
+        return right;
     }
 
     /**
@@ -989,19 +981,7 @@ public class Trie {
         return left.isEmpty() && right.isEmpty();
     }
 
-    public Trie getSnapshotTo(Keccak256 hash) {
-        if (emptyHash.equals(hash)) {
-            return new Trie(this.store);
-        }
-
-        // check if saved to only return this when we know it is in disk storage
-        if (this.saved && getHash().equals(hash)) {
-            return this;
-        }
-
-        return internalRetrieve(this.store, hash.getBytes());
-    }
-
+    @Nullable
     public TrieStore getStore() {
         return this.store;
     }

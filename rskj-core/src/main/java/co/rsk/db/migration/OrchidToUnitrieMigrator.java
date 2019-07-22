@@ -234,19 +234,13 @@ public class OrchidToUnitrieMigrator {
         }
     }
 
-    private void migrateContract(RskAddress accountAddress, Repository currentRepository, byte[] contractDataRaw, byte[] accountCodeHash, byte[] stateRoot) {
+    private void migrateContract(RskAddress accountAddress, Repository currentRepository, byte[] contractDataRaw, byte[] accountCodeHash, byte[] orchidAccountStateRoot) {
         ContractData contractData = new ContractData(contractDataRaw);
 
         boolean initialized = false;
-        if (!Arrays.equals(stateRoot, EMPTY_TRIE_HASH)) {
+        if (!Arrays.equals(orchidAccountStateRoot, EMPTY_TRIE_HASH)) {
             RskAddress contractAddress = contractData.getContractAddress();
-            Trie contractStorageTrie = getContractStorageTrie(contractAddress, contractData);
-
-            try {
-                contractStorageTrie = contractStorageTrie.getSnapshotTo(new Keccak256(stateRoot));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalStateException("Cannot find state root trie. Check the log for more info.", e);
-            }
+            Trie contractStorageTrie = getContractStorageTrie(contractAddress, contractData, new Keccak256(orchidAccountStateRoot));
 
             RLPList rlpKeys = contractData.getKeys();
             int keysCount = rlpKeys.size();
@@ -293,6 +287,21 @@ public class OrchidToUnitrieMigrator {
                 code = orchidContractsStorage.get(accountCodeHash);
             }
             currentRepository.saveCode(accountAddress, code);
+        }
+    }
+
+    private Trie getContractStorageTrie(RskAddress contractAddress, ContractData contractData, Keccak256 oldAccountStateRoot) {
+        try {
+            Trie trie = getContractStorageTrie(contractAddress, contractData);
+            TrieStore trieStore = trie.getStore();
+
+            if (trie.isSaved() && trie.getHash().equals(oldAccountStateRoot)) {
+                return trie;
+            }
+
+            return trieStore.retrieve(oldAccountStateRoot.getBytes());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Cannot find state root trie. Check the log for more info.", e);
         }
     }
 

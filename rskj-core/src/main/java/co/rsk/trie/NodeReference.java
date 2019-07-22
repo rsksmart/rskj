@@ -23,7 +23,6 @@ import org.ethereum.crypto.Keccak256Helper;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
-import java.util.Objects;
 import java.util.Optional;
 
 public class NodeReference {
@@ -75,10 +74,7 @@ public class NodeReference {
             return Optional.empty();
         }
 
-        lazyNode = Objects.requireNonNull(
-                store.retrieve(lazyHash.getBytes()),
-                "The node with this hash is not present in the trie store"
-        );
+        lazyNode = store.retrieve(lazyHash.getBytes());
         return Optional.of(lazyNode);
     }
 

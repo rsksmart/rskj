@@ -20,18 +20,32 @@ package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.util.RLP;
+
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class RepositoryLocator {
-    private final Repository repository;
+    // all zeroed, default hash for empty nodes
+    private static final Keccak256 EMPTY_HASH = new Keccak256(Keccak256Helper.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
+
+    private final TrieStore trieStore;
     private final StateRootHandler stateRootHandler;
 
+    @Deprecated
     public RepositoryLocator(
             Repository repository,
             StateRootHandler stateRootHandler) {
-        this.repository = repository;
+        this(repository.getTrie().getStore(), stateRootHandler);
+    }
+
+    public RepositoryLocator(TrieStore store, StateRootHandler stateRootHandler) {
+        this.trieStore = store;
         this.stateRootHandler = stateRootHandler;
     }
 
@@ -45,6 +59,11 @@ public class RepositoryLocator {
 
     private MutableTrie mutableTrieSnapshotAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
-        return new MutableTrieImpl(repository.getTrie().getSnapshotTo(stateRoot));
+
+        if (EMPTY_HASH.equals(stateRoot)) {
+            return new MutableTrieImpl(new Trie(trieStore));
+        }
+
+        return new MutableTrieImpl(trieStore.retrieve(stateRoot.getBytes()));
     }
 }

@@ -25,6 +25,7 @@ public interface TrieStore {
 
     void flush();
 
+    /** Retrieve a trie node with the specified hash from this store */
     Trie retrieve(byte[] hash);
 
     byte[] retrieveValue(byte[] hash);

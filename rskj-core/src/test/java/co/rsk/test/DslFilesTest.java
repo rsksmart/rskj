@@ -20,7 +20,6 @@ package co.rsk.test;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.crypto.Keccak256;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
@@ -108,10 +107,10 @@ public class DslFilesTest {
         Block top2 = world.getBlockByName("b02b");
 
         // Creates a new view of the repository, standing on top1 state
-        Repository repo1 = new MutableRepository(world.getRepository().getTrie().getSnapshotTo(new Keccak256(top1.getStateRoot())));
+        Repository repo1 = new MutableRepository(world.getRepository().getTrie().getStore().retrieve(top1.getStateRoot()));
 
         // Creates a new view of the repository, standing on top2 state
-        Repository repo2 = new MutableRepository(world.getRepository().getTrie().getSnapshotTo(new Keccak256(top2.getStateRoot())));
+        Repository repo2 = new MutableRepository(world.getRepository().getTrie().getStore().retrieve(top2.getStateRoot()));
         // addr1: sender's account
         RskAddress addr1 = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
         // addr2: Parent Contract account

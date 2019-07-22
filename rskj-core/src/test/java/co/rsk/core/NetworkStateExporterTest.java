@@ -18,7 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.trie.Trie;
@@ -74,10 +73,8 @@ public class NetworkStateExporterTest {
 
         RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
 
-        when(repositoryLocator.snapshotAt(block.getHeader())).then(a -> {
-            Trie atrie = mutableTrie.getTrie().getSnapshotTo(new Keccak256(repository.getRoot()));
-            return new MutableRepository(atrie);
-        });
+        when(repositoryLocator.snapshotAt(block.getHeader()))
+                .thenReturn(new MutableRepository(mutableTrie));
 
         this.nse = new NetworkStateExporter(repositoryLocator, blockchain);
     }
