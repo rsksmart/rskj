@@ -24,6 +24,7 @@ import co.rsk.mine.MinerServer;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
+import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestContext;
 import org.junit.Assert;
 import org.junit.Before;
@@ -51,9 +52,10 @@ public class SnapshotManagerTest {
         minerServer = factory.getMinerServer();
         minerClient = factory.getMinerClient();
         transactionPool = factory.getTransactionPool();
+        BlockStore blockStore = factory.getBlockStore();
         // don't call start to avoid creating threads
         transactionPool.processBest(blockchain.getBestBlock());
-        manager = new SnapshotManager(blockchain, transactionPool, mock(MinerServer.class));
+        manager = new SnapshotManager(blockchain, blockStore, transactionPool, mock(MinerServer.class));
     }
 
     @Test

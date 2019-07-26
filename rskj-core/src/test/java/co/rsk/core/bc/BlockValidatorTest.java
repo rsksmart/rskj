@@ -489,14 +489,14 @@ public class BlockValidatorTest {
 
         Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
 
-        Block parent = new BlockBuilder(null, null).minGasPrice(BigInteger.ZERO)
+        Block parent = new BlockBuilder(null, null, null).minGasPrice(BigInteger.ZERO)
                 .parent(new BlockGenerator().getGenesisBlock()).build();
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, config.getNetworkConstants().getChainId());
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
-        Block block = new BlockBuilder(null, null).minGasPrice(BigInteger.TEN).transactions(txs)
+        Block block = new BlockBuilder(null, null, null).minGasPrice(BigInteger.TEN).transactions(txs)
                 .parent(parent).build();
 
         Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
@@ -516,10 +516,10 @@ public class BlockValidatorTest {
 
         Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
 
-        Block parent = new BlockBuilder(null, null).minGasPrice(BigInteger.ZERO)
+        Block parent = new BlockBuilder(null, null, null).minGasPrice(BigInteger.ZERO)
                 .parent(new BlockGenerator().getGenesisBlock()).build();
 
-        Block block = new BlockBuilder(null, null).minGasPrice(BigInteger.TEN)
+        Block block = new BlockBuilder(null, null, null).minGasPrice(BigInteger.TEN)
                 .parent(parent).build();
 
         Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
@@ -539,7 +539,7 @@ public class BlockValidatorTest {
 
         Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
 
-        Block parent = new BlockBuilder(null, null).minGasPrice(BigInteger.TEN)
+        Block parent = new BlockBuilder(null, null, null).minGasPrice(BigInteger.TEN)
                 .parent(new BlockGenerator().getGenesisBlock()).build();
 
         List<Transaction> txs = new ArrayList<>();
@@ -547,8 +547,8 @@ public class BlockValidatorTest {
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
-        Block block = new BlockBuilder(null, null).transactions(txs).minGasPrice(BigInteger.valueOf(11L))
-                .parent(parent).build();
+        Block block = new BlockBuilder(null, null,null)
+                .transactions(txs).minGasPrice(BigInteger.valueOf(11L)).parent(parent).build();
 
         Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
@@ -570,7 +570,7 @@ public class BlockValidatorTest {
         Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
         tx.sign(new byte[]{});
         txs.add(tx);
-        Block block = new BlockBuilder(null, null).parent(genesis).transactions(txs).build();
+        Block block = new BlockBuilder(null, null, null).parent(genesis).transactions(txs).build();
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addRemascValidationRule()
@@ -578,10 +578,10 @@ public class BlockValidatorTest {
 
         Assert.assertFalse(validator.isValid(block));
 
-        block = new BlockBuilder(null, null).parent(genesis).transactions(null).build();
+        block = new BlockBuilder(null, null, null).parent(genesis).transactions(null).build();
         Assert.assertFalse(validator.isValid(block));
 
-        block = new BlockBuilder(null, null).parent(genesis).transactions(new ArrayList<>()).build();
+        block = new BlockBuilder(null, null, null).parent(genesis).transactions(new ArrayList<>()).build();
         Assert.assertFalse(validator.isValid(block));
     }
 
@@ -596,7 +596,7 @@ public class BlockValidatorTest {
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         txs.add(tx);
 
-        Block block = new BlockBuilder(null, null).parent(genesis).transactions(txs).build();
+        Block block = new BlockBuilder(null, null, null).parent(genesis).transactions(txs).build();
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addRemascValidationRule()
@@ -615,7 +615,7 @@ public class BlockValidatorTest {
         tx.sign(new byte[]{});
         txs.add(tx);
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
-        Block block = new BlockBuilder(null, null).parent(genesis).transactions(txs).build();
+        Block block = new BlockBuilder(null, null, null).parent(genesis).transactions(txs).build();
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addRemascValidationRule()
                 .build();

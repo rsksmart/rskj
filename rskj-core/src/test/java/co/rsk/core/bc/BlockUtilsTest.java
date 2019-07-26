@@ -38,15 +38,17 @@ import java.util.Set;
 public class BlockUtilsTest {
     @Test
     public void blockInSomeBlockChain() {
-        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+        BlockChainImpl blockChain = blockChainBuilder.build();
+        org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
 
         Block genesis = blockChain.getBestBlock();
 
-        Block block1 = new BlockBuilder(null, null).parent(genesis).build();
-        Block block1b = new BlockBuilder(null, null).parent(genesis).build();
-        Block block2 = new BlockBuilder(null, null).parent(block1).build();
-        Block block3 = new BlockBuilder(null, null).parent(block2).build();
-        blockChain.getBlockStore().saveBlock(block3, new BlockDifficulty(BigInteger.ONE), false);
+        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
+        Block block1b = new BlockBuilder(null, null, null).parent(genesis).build();
+        Block block2 = new BlockBuilder(null, null, null).parent(block1).build();
+        Block block3 = new BlockBuilder(null, null, null).parent(block2).build();
+        blockStore.saveBlock(block3, new BlockDifficulty(BigInteger.ONE), false);
 
         blockChain.tryToConnect(block1);
         blockChain.tryToConnect(block1b);
@@ -65,10 +67,10 @@ public class BlockUtilsTest {
 
         Block genesis = blockChain.getBestBlock();
 
-        Block block1 = new BlockBuilder(null, null).difficulty(2l).parent(genesis).build();
-        Block block1b = new BlockBuilder(null, null).difficulty(1l).parent(genesis).build();
-        Block block2 = new BlockBuilder(null, null).parent(block1).build();
-        Block block3 = new BlockBuilder(null, null).parent(block2).build();
+        Block block1 = new BlockBuilder(null, null, null).difficulty(2l).parent(genesis).build();
+        Block block1b = new BlockBuilder(null, null, null).difficulty(1l).parent(genesis).build();
+        Block block2 = new BlockBuilder(null, null, null).parent(block1).build();
+        Block block3 = new BlockBuilder(null, null, null).parent(block2).build();
 
         store.saveBlock(block3);
 
@@ -112,7 +114,9 @@ public class BlockUtilsTest {
         Genesis genesis = (Genesis) blockChain.getBestBlock();
         BlockStore store = new BlockStore();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null).repository(blockChainBuilder.getRepository());
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null,
+                                                     blockChainBuilder.getBlockStore()
+        ).repository(blockChainBuilder.getRepository());
         blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block block1b = blockBuilder.parent(genesis).build();

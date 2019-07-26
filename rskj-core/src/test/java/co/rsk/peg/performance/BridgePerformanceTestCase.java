@@ -44,6 +44,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static net.bytebuddy.agent.builder.AgentBuilder.RedefinitionStrategy.BatchAllocator.ForFixedSize.ofSize;
+
 public abstract class BridgePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     protected static NetworkParameters networkParameters;
     protected static BridgeConstants bridgeConstants;
@@ -211,13 +213,14 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
                 bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                         bridgeSupportFactory);
-                Blockchain blockchain = new BlockChainBuilder().ofSize(height);
+                BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+                Blockchain blockchain = blockChainBuilder.ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);
                 bridge.init(
                         tx,
                         blockchain.getBestBlock(),
                         benchmarkerTrack,
-                        blockchain.getBlockStore(),
+                        blockChainBuilder.getBlockStore(),
                         null,
                         logs
                 );

@@ -130,7 +130,7 @@ public class BlockHeaderContractTest {
     public void getCoinbase() {
         buildBlockchainOfLength(2);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getCoinbaseFunction.encode(new BigInteger("0")));
         Object[] decodedResult = getCoinbaseFunction.decodeResult(encodedResult);
@@ -147,7 +147,7 @@ public class BlockHeaderContractTest {
     public void getMinimumGasPrice() {
         buildBlockchainOfLength(2);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getMinGasPriceFunction.encode(new BigInteger("0")));
         Object[] decodedResult = getMinGasPriceFunction.decodeResult(encodedResult);
@@ -164,7 +164,7 @@ public class BlockHeaderContractTest {
     public void getBlockHash() {
         buildBlockchainOfLength(2);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
         byte[] expectedHash = world.getBlockChain().getBestBlock().getParentHash().getBytes();
 
         byte[] encodedResult = contract.execute(getBlockHashFunction.encode(new BigInteger("0")));
@@ -181,7 +181,7 @@ public class BlockHeaderContractTest {
     public void getMergedMiningTags() {
         buildBlockchainOfLength(2);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getMergedMiningTagsFunction.encode(new BigInteger("0")));
         Object[] decodedResult = getMergedMiningTagsFunction.decodeResult(encodedResult);
@@ -198,7 +198,7 @@ public class BlockHeaderContractTest {
 
     @Test
     public void getEmptyMergedMiningTags() {
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getMergedMiningTagsFunction.encode(new BigInteger("0")));
         Object[] decodedResult = getMergedMiningTagsFunction.decodeResult(encodedResult);
@@ -214,7 +214,7 @@ public class BlockHeaderContractTest {
     public void getGasLimit() {
         buildBlockchainOfLength(2);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getGasLimitFunction.encode(new BigInteger("0")));
         Object[] decodedResult = getGasLimitFunction.decodeResult(encodedResult);
@@ -231,7 +231,7 @@ public class BlockHeaderContractTest {
     public void getGasUsed() {
         buildBlockchainOfLength(2);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getGasUsedFunction.encode(new BigInteger("0")));
         Object[] decodedResult = getGasUsedFunction.decodeResult(encodedResult);
@@ -248,7 +248,7 @@ public class BlockHeaderContractTest {
     public void getDifficulty() {
         buildBlockchainOfLength(2);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getDifficultyFunction.encode(new BigInteger("0")));
         Object[] decodedResult = getDifficultyFunction.decodeResult(encodedResult);
@@ -265,7 +265,7 @@ public class BlockHeaderContractTest {
     public void getBitcoinHeader() {
         buildBlockchainOfLength(2);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getBitcoinHeaderFunction.encode(new BigInteger("0")));
         Object[] decodedResult = getBitcoinHeaderFunction.decodeResult(encodedResult);
@@ -291,7 +291,7 @@ public class BlockHeaderContractTest {
         // creates a blockchain where every block has two uncles
         buildBlockchainOfLengthWithUncles(6);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         // getting first uncle
         byte[] encodedResult = contract.execute(getUncleCoinbaseAddressFunction.encode(new BigInteger("1"), new BigInteger("0")));
@@ -330,7 +330,7 @@ public class BlockHeaderContractTest {
     public void getDifficultyForBlockAtDepth1000() {
         buildBlockchainOfLength(4000);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getDifficultyFunction.encode(new BigInteger("1000")));
         Object[] decodedResult = getDifficultyFunction.decodeResult(encodedResult);
@@ -347,7 +347,7 @@ public class BlockHeaderContractTest {
     public void blockBeyondMaximumBlockDepth() {
         buildBlockchainOfLength(5000);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getMergedMiningTagsFunction.encode(new BigInteger("4992")));
         Object[] decodedResult = getMergedMiningTagsFunction.decodeResult(encodedResult);
@@ -363,7 +363,7 @@ public class BlockHeaderContractTest {
     public void invalidBlockDepth() {
         buildBlockchainOfLength(300);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getMergedMiningTagsFunction.encode(new BigInteger("500")));
         Object[] decodedResult = getMergedMiningTagsFunction.decodeResult(encodedResult);
@@ -420,7 +420,7 @@ public class BlockHeaderContractTest {
     public void negativeBlockDepth() {
         buildBlockchainOfLength(10);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         contract.execute(getCoinbaseFunction.encode(new BigInteger("-1")));
 
@@ -431,7 +431,7 @@ public class BlockHeaderContractTest {
     public void negativeUncleIndex() {
         buildBlockchainOfLength(10);
 
-        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         contract.execute(getUncleCoinbaseAddressFunction.encode(new BigInteger("1"), new BigInteger("-1")));
 
@@ -450,7 +450,7 @@ public class BlockHeaderContractTest {
     }
 
     private void initContract(BlockHeaderContract contract, Transaction tx, Block block, World world) {
-        contract.init(tx, block, world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+        contract.init(tx, block, world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
     }
 
     private Block mineBlock(Block parent) {

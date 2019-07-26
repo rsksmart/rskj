@@ -474,7 +474,7 @@ public class BridgeSupportTest {
 
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
+            builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
@@ -544,11 +544,11 @@ public class BridgeSupportTest {
         Blockchain blockchain = builder.setTesting(true).build();
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
+            builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = null;
-        org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
+        org.ethereum.db.BlockStore rskBlockStore = builder.getBlockStore();
         Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         tx.sign(new ECKey().getPrivKeyBytes());
 
@@ -678,7 +678,7 @@ public class BridgeSupportTest {
         Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
+            builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
 
@@ -775,7 +775,7 @@ public class BridgeSupportTest {
         Blockchain blockchain = builder.setTesting(true).build();
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
+            builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         Transaction rskTx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);

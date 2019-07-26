@@ -118,9 +118,6 @@ public class BlockChainImpl implements Blockchain {
         this.stateRootHandler = stateRootHandler;
     }
 
-    @Override
-    public BlockStore getBlockStore() { return blockStore; }
-
     @VisibleForTesting
     public void setBlockValidator(BlockValidator validator) {
         this.blockValidator = validator;

@@ -32,6 +32,7 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.util.RskTestFactory;
@@ -53,6 +54,7 @@ public class BlockChainImplTest {
     private Blockchain blockChain;
     private BlockExecutor blockExecutor;
     private BlockExecutorTest.SimpleEthereumListener listener;
+    private BlockStore blockStore;
 
     @Before
     public void setup() {
@@ -69,6 +71,7 @@ public class BlockChainImplTest {
         };
         config = objects.getRskSystemProperties();
         blockChain = objects.getBlockchain();
+        blockStore = objects.getBlockStore();
         blockExecutor = objects.getBlockExecutor();
         listener = (BlockExecutorTest.SimpleEthereumListener) objects.getCompositeEthereumListener();
     }
@@ -115,8 +118,8 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Assert.assertEquals(2, blockChain.getSize());
-        Assert.assertTrue(blockChain.getBlockStore().isBlockExist(genesis.getHash().getBytes()));
-        Assert.assertTrue(blockChain.getBlockStore().isBlockExist(block1.getHash().getBytes()));
+        Assert.assertTrue(blockStore.isBlockExist(genesis.getHash().getBytes()));
+        Assert.assertTrue(blockStore.isBlockExist(block1.getHash().getBytes()));
 
         BlockChainStatus status = blockChain.getStatus();
 
@@ -630,7 +633,8 @@ public class BlockChainImplTest {
 
         Block genesis = blockChain.getBestBlock();
 
-        Block block = new BlockBuilder(null, null).minGasPrice(BigInteger.ZERO).transactions(txs).parent(genesis).build();
+        Block block = new BlockBuilder(null, null,null)
+                .minGasPrice(BigInteger.ZERO).transactions(txs).parent(genesis).build();
 
         blockExecutor.executeAndFill(block, genesis.getHeader());
 

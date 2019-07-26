@@ -141,7 +141,7 @@ class RemascTestRunner {
                 builder.getStateRootHandler(),
                 new TransactionExecutorFactory(
                         builder.getConfig(),
-                        blockchain.getBlockStore(),
+                        builder.getBlockStore(),
                         null,
                         blockFactory,
                         programInvokeFactory,
@@ -173,7 +173,7 @@ class RemascTestRunner {
 
                 blockSiblings.add(siblingBlock.getHeader());
 
-                blockchain.getBlockStore().saveBlock(siblingBlock, cummDifficulty.add(siblingBlock.getCumulativeDifficulty()), false);
+                builder.getBlockStore().saveBlock(siblingBlock, cummDifficulty.add(siblingBlock.getCumulativeDifficulty()), false);
                 this.addedSiblings.add(siblingBlock);
             }
 

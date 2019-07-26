@@ -44,6 +44,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Before;
@@ -124,6 +125,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void processMinersFeesWithoutMinimumSyntheticSpan() {
         Blockchain blockchain = blockchainBuilder.build();
+        BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 2);
@@ -131,7 +133,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTx);
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
-        BlockExecutor blockExecutor = buildBlockExecutor(blockchain, repositoryLocator);
+        BlockExecutor blockExecutor = buildBlockExecutor(repositoryLocator, blockStore);
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
@@ -163,6 +165,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void processMinersFeesWithNoSiblings() {
         Blockchain blockchain = blockchainBuilder.build();
+        BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
@@ -170,7 +173,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTx);
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
-        BlockExecutor blockExecutor = buildBlockExecutor(blockchain, repositoryLocator);
+        BlockExecutor blockExecutor = buildBlockExecutor(repositoryLocator, blockStore);
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
@@ -212,6 +215,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void processMinersFeesWithOneSibling() {
         Blockchain blockchain = blockchainBuilder.build();
+        BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
@@ -222,7 +226,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockThatIncludesUncle);
         blocks.addAll(createSimpleBlocks(blockThatIncludesUncle, 8));
 
-        BlockExecutor blockExecutor = buildBlockExecutor(blockchain, repositoryLocator);
+        BlockExecutor blockExecutor = buildBlockExecutor(repositoryLocator, blockStore);
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
@@ -291,6 +295,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void siblingThatBreaksSelectionRuleGetsPunished() {
         Blockchain blockchain = blockchainBuilder.build();
+        BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
 
         final long NUMBER_OF_TXS_WITH_FEES = 3;
@@ -316,7 +321,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockThatIncludesUnclesE);
         blocks.addAll(createSimpleBlocks(blockThatIncludesUnclesE, 7));
 
-        BlockExecutor blockExecutor = buildBlockExecutor(blockchain, repositoryLocator);
+        BlockExecutor blockExecutor = buildBlockExecutor(repositoryLocator, blockStore);
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
@@ -427,6 +432,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void noPublisherFeeIsPaidWhenThePublisherHasNoSiblings() {
         Blockchain blockchain = blockchainBuilder.build();
+        BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
 
         final long NUMBER_OF_TXS_WITH_FEES = 3;
@@ -442,7 +448,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockThatIncludesUncleC);
         blocks.addAll(createSimpleBlocks(blockThatIncludesUncleC, 7));
 
-        BlockExecutor blockExecutor = buildBlockExecutor(blockchain, repositoryLocator);
+        BlockExecutor blockExecutor = buildBlockExecutor(repositoryLocator, blockStore);
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
@@ -482,6 +488,7 @@ public class RemascProcessMinerFeesTest {
 
     private void processMinersFeesWithOneSiblingBrokenSelectionRule(String reasonForBrokenSelectionRule) {
         Blockchain blockchain = blockchainBuilder.build();
+        BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
 
         int NHASH = 200;
@@ -519,7 +526,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTxD);
         blocks.addAll(createSimpleBlocks(blockWithOneTxD, 7));
 
-        BlockExecutor blockExecutor = buildBlockExecutor(blockchain, repositoryLocator);
+        BlockExecutor blockExecutor = buildBlockExecutor(repositoryLocator, blockStore);
 
         boolean isSuccessful = executeBlocks(blockchain, blocks, blockExecutor);
         assertTrue(isSuccessful);
@@ -599,6 +606,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void processMinersFeesFromTxThatIsNotTheLatestTx() {
         Blockchain blockchain = blockchainBuilder.build();
+        BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
@@ -606,7 +614,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTx);
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
-        BlockExecutor blockExecutor = buildBlockExecutor(blockchain, repositoryLocator);
+        BlockExecutor blockExecutor = buildBlockExecutor(repositoryLocator, blockStore);
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
@@ -659,6 +667,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void processMinersFeesFromTxInvokedByAnotherContract() {
         Blockchain blockchain = blockchainBuilder.build();
+        BlockStore blockStore = blockchainBuilder.getBlockStore();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
@@ -666,7 +675,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTx);
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
-        BlockExecutor blockExecutor = buildBlockExecutor(blockchain, repositoryLocator);
+        BlockExecutor blockExecutor = buildBlockExecutor(repositoryLocator, blockStore);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
@@ -992,7 +1001,7 @@ public class RemascProcessMinerFeesTest {
         return new RemascStorageProvider(repository.startTracking(), PrecompiledContracts.REMASC_ADDR);
     }
 
-    private BlockExecutor buildBlockExecutor(Blockchain blockchain, RepositoryLocator repositoryLocator) {
+    private BlockExecutor buildBlockExecutor(RepositoryLocator repositoryLocator, BlockStore blockStore) {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
@@ -1004,7 +1013,7 @@ public class RemascProcessMinerFeesTest {
                 stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
-                        blockchain.getBlockStore(),
+                        blockStore,
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
