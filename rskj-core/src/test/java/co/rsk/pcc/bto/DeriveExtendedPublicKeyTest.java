@@ -206,6 +206,14 @@ public class DeriveExtendedPublicKeyTest {
         }, "Path should contain 10 levels at most");
     }
 
+    @Test
+    public void gasIsCorrect() {
+        Assert.assertEquals(107_000, method.getGas(new Object[]{
+                "tpubD6NzVbkrYhZ4YHQqwWz3Tm1ESZ9AidobeyLG4mEezB6hN8gFFWrcjczyF77Lw3HEs6Rjd2R11BEJ8Y9ptfxx9DFknkdujp58mFMx9H5dc1r",
+                "2/3/4"
+        }, new byte[]{}));
+    }
+
     private void assertFailsWithMessage(Runnable statement, String message) {
         try {
             statement.run();

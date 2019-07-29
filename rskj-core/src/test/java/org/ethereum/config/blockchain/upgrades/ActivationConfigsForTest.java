@@ -57,10 +57,10 @@ public class ActivationConfigsForTest {
         return allBut();
     }
 
-    public static ActivationConfig allBut(ConsensusRule... upgradesToEnable) {
+    public static ActivationConfig allBut(ConsensusRule... upgradesToDisable) {
         Map<ConsensusRule, Long> consensusRules = EnumSet.allOf(ConsensusRule.class).stream()
                 .collect(Collectors.toMap(Function.identity(), ignored -> 0L));
-        for (ConsensusRule consensusRule : upgradesToEnable) {
+        for (ConsensusRule consensusRule : upgradesToDisable) {
             consensusRules.put(consensusRule, -1L);
         }
 

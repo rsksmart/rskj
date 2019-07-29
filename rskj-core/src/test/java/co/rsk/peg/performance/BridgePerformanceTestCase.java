@@ -19,6 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.BenchmarkedRepository;
@@ -126,12 +127,12 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
         }
 
         public static BridgeStorageProviderInitializer buildNoopInitializer() {
-            return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {};
+            return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore btcBlockStore) -> {};
         }
     }
 
     protected interface BridgeStorageProviderInitializer {
-        void initialize(BridgeStorageProvider provider, Repository repository, int executionIndex);
+        void initialize(BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore);
     }
 
     protected interface PostInitCallback {
@@ -195,7 +196,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
                 BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
-                storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex);
+                storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex, btcBlockStoreFactory.newInstance(repository));
                 try {
                     storageProvider.save();
                 } catch (Exception e) {

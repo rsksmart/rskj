@@ -93,7 +93,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     }
 
     private BridgeStorageProviderInitializer generateInitializerForLock(int minBtcBlocks, int maxBtcBlocks, int numberOfLockConfirmations, boolean markAsAlreadyProcessed) {
-        return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+        return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
             BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository.startTracking());
             Context btcContext = new Context(networkParameters);

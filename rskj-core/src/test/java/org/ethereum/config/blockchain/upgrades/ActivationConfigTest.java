@@ -30,6 +30,7 @@ public class ActivationConfigTest {
     private static final Config BASE_CONFIG = ConfigFactory.parseString(String.join("\n",
             "hardforkActivationHeights: {",
             "    genesis: 0",
+            "    bahamas: 0",
             "    afterBridgeSync: 0,",
             "    orchid: 0,",
             "    orchid060: 0,",
@@ -57,6 +58,8 @@ public class ActivationConfigTest {
             "    rskip124: wasabi100,",
             "    rskip125: wasabi100",
             "    rskip126: wasabi100",
+            "    rskip132: wasabi100",
+            "    rskip136: bahamas",
             "}"
     ));
 

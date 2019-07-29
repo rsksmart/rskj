@@ -70,6 +70,15 @@ public class ExecutionBlockRetriever {
 
             Block bestBlock = blockchain.getBestBlock();
             if (cachedBlock == null || !bestBlock.isParentOf(cachedBlock)) {
+
+                // If the miner server is not running there is no one to update the mining mainchain view,
+                // thus breaking eth_call with 'pending' parameter
+                //
+                // This is just a provisional fix not intended to remain in the long run
+                if (!minerServer.isRunning()) {
+                    miningMainchainView.addBest(bestBlock.getHeader());
+                }
+
                 List<BlockHeader> mainchainHeaders = miningMainchainView.get();
                 cachedBlock = builder.build(mainchainHeaders, null);
             }

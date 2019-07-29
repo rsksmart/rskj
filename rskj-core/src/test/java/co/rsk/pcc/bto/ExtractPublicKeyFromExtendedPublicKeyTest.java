@@ -104,4 +104,12 @@ public class ExtractPublicKeyFromExtendedPublicKeyTest {
             Assert.assertTrue(e.getMessage().contains("Invalid extended public key"));
         }
     }
+
+    @Test
+    public void gasIsCorrect() {
+        Assert.assertEquals(11_300, method.getGas(new Object[]{
+                "xpub661MyMwAqRbcFMGNG2YcHvj3x63bAZN9U5cKikaiQ4zu2D1cvpnZYyXNR9nH62sGp4RR39Ui7SVQSq1PY4JbPuEuu5prVJJC3d5Pogft712"
+        }, new byte[]{}));
+    }
+
 }

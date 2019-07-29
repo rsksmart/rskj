@@ -1010,9 +1010,9 @@ public class BridgeSupport {
     }
 
     public Long getBtcTransactionConfirmationsGetCost(Object[] args) {
-        final long BASIC_COST = 13_600;
-        final long STEP_COST = 70;
-        final long DOUBLE_HASH_COST = 72*2;
+        final long BASIC_COST = 27_000;
+        final long STEP_COST = 315;
+        final long DOUBLE_HASH_COST = 144; // 72 * 2. 72 is the cost of the hash operation
 
         Sha256Hash btcBlockHash;
         int branchHashesSize;

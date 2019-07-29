@@ -36,9 +36,9 @@ public class BridgeDevNetConstants extends BridgeConstants {
     // IMPORTANT: BTC, RSK and MST keys are the same.
     // Change upon implementation of the <INSERT FORK NAME HERE> fork.
     public static final List<BtcECKey> DEVNET_FEDERATION_PUBLIC_KEYS = Arrays.asList(
-            BtcECKey.fromPublicOnly(Hex.decode("0234ab441aa5edb1c7341315e21408c3947cce345156c465b3336e8c6a5552f35f")),
-            BtcECKey.fromPublicOnly(Hex.decode("03301f6c4422aa96d85f52a93612a0c6eeea3d04cfa32f97a7a764c67e062e992a")),
-            BtcECKey.fromPublicOnly(Hex.decode("02d33a1f8f5cfa2f7be71b0002710f4c8f3ea44fef40056be7b89ed3ca0eb3431c"))
+            BtcECKey.fromPublicOnly(Hex.decode("03d68975ab0f6ab782febc37aaa486ae19cc5e72c6900e34e21317285c88915ed6")),
+            BtcECKey.fromPublicOnly(Hex.decode("02914c05df0b11862ac6931c226ad40ebc4f5624ee6dca34278d3bbfa73b914cbd")),
+            BtcECKey.fromPublicOnly(Hex.decode("0309d9df35855aa45235a04e30d228889eb03e462874588e631359d5f9cdea6519"))
     );
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {

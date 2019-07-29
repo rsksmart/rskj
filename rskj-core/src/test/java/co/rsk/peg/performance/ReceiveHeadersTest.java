@@ -28,12 +28,11 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,6 +44,12 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     private BtcBlockStore btcBlockStore;
     private BtcBlock lastBlock;
     private BtcBlock expectedBestBlock;
+
+    @BeforeClass
+    public static void setupA() {
+        constants = Constants.regtest();
+        activationConfig = ActivationConfigsForTest.all();
+    }
 
     // This is here for profiling with any external tools (e.g., visualVM)
     public static void main(String args[]) throws Exception {
@@ -141,7 +146,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
             int currentDepth = forkDepth;
             while (currentDepth-- > 0) {
                 try {
-                    currentBlock = btcBlockStore.get(lastBlock.getPrevBlockHash()).getHeader();
+                    currentBlock = btcBlockStore.get(currentBlock.getPrevBlockHash()).getHeader();
                 } catch (BlockStoreException e) {
                     throw new RuntimeException("Unexpected error trying to fetch previous block", e);
                 }
@@ -155,15 +160,15 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
 
             expectedBestBlock = currentBlock;
 
-            Object[] headersEncoded = headersToSendToBridge.stream().map(h -> h.bitcoinSerialize()).toArray();
+            Object[] headersEncoded = headersToSendToBridge.stream().map(h -> h.cloneAsHeader().bitcoinSerialize()).toArray();
 
             return Bridge.RECEIVE_HEADERS.encode(new Object[]{headersEncoded});
         };
     }
 
     private BridgeStorageProviderInitializer buildInitializer(int minBlocks, int maxBlocks) {
-        return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(), repository, new HashMap<>(),PrecompiledContracts.BRIDGE_ADDR);
+        return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
+            btcBlockStore = blockStore;
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
