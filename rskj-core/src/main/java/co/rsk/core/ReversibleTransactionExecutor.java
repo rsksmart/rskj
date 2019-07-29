@@ -50,9 +50,9 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             RskAddress fromAddress) {
-        Repository snapshot = repositoryLocator.snapshotAt(executionBlock.getHeader()).startTracking();
+        Repository track = repositoryLocator.startTrackingAt(executionBlock.getHeader());
 
-        byte[] nonce = snapshot.getNonce(fromAddress).toByteArray();
+        byte[] nonce = track.getNonce(fromAddress).toByteArray();
         UnsignedTransaction tx = new UnsignedTransaction(
                 nonce,
                 gasPrice,
@@ -64,7 +64,7 @@ public class ReversibleTransactionExecutor {
         );
 
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(tx, 0, coinbase, snapshot, executionBlock, 0)
+                .newInstance(tx, 0, coinbase, track, executionBlock, 0)
                 .setLocalCall(true);
 
         executor.init();

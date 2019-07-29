@@ -26,6 +26,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
@@ -35,6 +36,7 @@ import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
+import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
@@ -64,7 +66,9 @@ public class BlockChainBuilder {
     private RskSystemProperties config;
     private EthereumListener listener;
     private StateRootHandler stateRootHandler;
-    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private BridgeSupportFactory bridgeSupportFactory;
+    private TransactionPoolImpl transactionPool;
+    private RepositoryLocator repositoryLocator;
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -91,6 +95,7 @@ public class BlockChainBuilder {
         return this;
     }
 
+    /** @param genesis a non-finalized genesis info */
     public BlockChainBuilder setGenesis(Genesis genesis) {
         this.genesis = genesis;
         return this;
@@ -112,7 +117,6 @@ public class BlockChainBuilder {
     }
 
     public BlockChainBuilder setBtcBlockStoreFactory(BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
-        this.btcBlockStoreFactory = btcBlockStoreFactory;
         return this;
     }
 
@@ -127,6 +131,22 @@ public class BlockChainBuilder {
 
     public StateRootHandler getStateRootHandler() {
         return this.stateRootHandler;
+    }
+
+    public Repository getRepository() {
+        return repository;
+    }
+
+    public RepositoryLocator getRepositoryLocator() {
+        return repositoryLocator;
+    }
+
+    public TransactionPoolImpl getTransactionPool() {
+        return transactionPool;
+    }
+
+    public BlockStore getBlockStore() {
+        return blockStore;
     }
 
     public BlockChainImpl build() {
@@ -145,6 +165,11 @@ public class BlockChainBuilder {
         if (genesis == null) {
             genesis = new BlockGenerator().getGenesisBlock();
         }
+
+        GenesisLoaderImpl.loadGenesisInitalState(repository, genesis);
+        repository.commit();
+        genesis.setStateRoot(repository.getRoot());
+        genesis.flushRLP();
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         if (blockStore == null) {
@@ -165,9 +190,12 @@ public class BlockChainBuilder {
             listener = new BlockExecutorTest.SimpleEthereumListener();
         }
 
-        if(btcBlockStoreFactory == null) {
-            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()
-            );
+        if (bridgeSupportFactory == null) {
+            bridgeSupportFactory = new BridgeSupportFactory(
+                    new RepositoryBtcBlockStoreWithCache.Factory(
+                            config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                    config.getNetworkConstants().getBridgeConstants(),
+                    config.getActivationConfig());
         }
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
@@ -183,10 +211,11 @@ public class BlockChainBuilder {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, btcBlockStoreFactory)
+                new PrecompiledContracts(config, bridgeSupportFactory)
         );
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(
-                config, this.repository, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
+        repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
+        transactionPool = new TransactionPoolImpl(
+                config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
                 transactionExecutorFactory, 10, 100
         );
         BlockExecutor blockExecutor = new BlockExecutor(
@@ -223,18 +252,18 @@ public class BlockChainBuilder {
         return blockChain;
     }
 
-    public static Blockchain ofSize(int size) {
+    public Blockchain ofSize(int size) {
         return ofSize(size, false);
     }
 
-    public static Blockchain ofSize(int size, boolean mining) {
+    public Blockchain ofSize(int size, boolean mining) {
         return ofSize(size, mining, Collections.emptyMap());
     }
 
-    public static Blockchain ofSize(int size, boolean mining, Map<RskAddress, AccountState> accounts) {
+    public Blockchain ofSize(int size, boolean mining, Map<RskAddress, AccountState> accounts) {
         BlockGenerator blockGenerator = new BlockGenerator();
         Genesis genesis = blockGenerator.getGenesisBlock(accounts);
-        BlockChainImpl blockChain = new BlockChainBuilder().setGenesis(genesis).build();
+        BlockChainImpl blockChain = setGenesis(genesis).build();
 
         if (size > 0) {
             List<Block> blocks = mining ? blockGenerator.getMinedBlockChain(genesis, size) : blockGenerator.getBlockChain(genesis, size);

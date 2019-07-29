@@ -25,6 +25,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.*;
+import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStoreImpl;
@@ -43,6 +44,8 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static net.bytebuddy.agent.builder.AgentBuilder.RedefinitionStrategy.BatchAllocator.ForFixedSize.ofSize;
 
 public abstract class BridgePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     protected static NetworkParameters networkParameters;
@@ -204,14 +207,21 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
                 List<LogInfo> logs = new ArrayList<>();
 
-                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, btcBlockStoreFactory);
-                Blockchain blockchain = BlockChainBuilder.ofSize(height);
+                Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                        constants.getBridgeConstants().getBtcParams());
+                BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                        btcBlockStoreFactory, constants.getBridgeConstants(), activationConfig);
+
+                bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+                        bridgeSupportFactory);
+                BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+                Blockchain blockchain = blockChainBuilder.ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);
                 bridge.init(
                         tx,
                         blockchain.getBestBlock(),
                         benchmarkerTrack,
-                        blockchain.getBlockStore(),
+                        blockChainBuilder.getBlockStore(),
                         null,
                         logs
                 );

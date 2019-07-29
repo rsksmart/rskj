@@ -24,6 +24,7 @@ import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.net.NodeID;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -354,16 +355,17 @@ public class Web3ImplScoringTest {
 
         World world = new World();
         rsk.blockchain = world.getBlockChain();
-        MiningMainchainView miningMainchainView = new MiningMainchainViewImpl(rsk.blockchain.getBlockStore(), 2);
+        MiningMainchainView miningMainchainView = new MiningMainchainViewImpl(world.getBlockStore(), 2);
 
         Wallet wallet = WalletFactory.createWallet();
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), world.getBlockChain(),
+                config.getNetworkConstants().getBridgeConstants(), world.getBlockChain(),
                 null, new ExecutionBlockRetriever(miningMainchainView, world.getBlockChain(), null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
-                null
+                new BridgeSupportFactory(
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
         );
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);

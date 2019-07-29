@@ -45,7 +45,7 @@ public class MutableRepository implements Repository {
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
     private final TrieKeyMapper trieKeyMapper;
-    private MutableTrie mutableTrie;
+    private final MutableTrie mutableTrie;
 
     public MutableRepository(Trie atrie) {
         this(new MutableTrieImpl(atrie));
@@ -57,8 +57,8 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public MutableTrie getMutableTrie() {
-        return mutableTrie;
+    public Trie getTrie() {
+        return mutableTrie.getTrie();
     }
 
     @Override
@@ -277,7 +277,7 @@ public class MutableRepository implements Repository {
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
     @Override
     public synchronized Repository startTracking() {
-        return new MutableRepository(new MutableTrieCache(this.getMutableTrie()));
+        return new MutableRepository(new MutableTrieCache(mutableTrie));
     }
 
     @Override
@@ -307,16 +307,6 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public synchronized void syncToRoot(byte[] root) {
-        mutableTrie = mutableTrie.getSnapshotTo(new Keccak256(root));
-    }
-
-    @Override
-    public void syncTo(Trie root) {
-        mutableTrie = new MutableTrieImpl(root);
-    }
-
-    @Override
     public synchronized byte[] getRoot() {
         if (mutableTrie.hasStore()) {
             mutableTrie.save();
@@ -325,18 +315,6 @@ public class MutableRepository implements Repository {
         Keccak256 rootHash = mutableTrie.getHash();
         logger.trace("getting repository root hash {}", rootHash);
         return rootHash.getBytes();
-    }
-
-    // What's the difference between startTracking() and getSnapshotTo()?
-    // getSnapshotTo() does not create a new cache layer. It just gives you a view of the same Repository under another
-    // root. This means that if you save data, that data will pass through.
-
-    // A snapshot is a RepositoryTracker object but it's not a cache, because the repository created is a
-    // MutableRepository, and not a RepositoryTrack
-    @Override
-    public synchronized Repository getSnapshotTo(byte[] root) {
-        MutableTrie atrie = mutableTrie.getSnapshotTo(new Keccak256(root));
-        return new MutableRepository(atrie.getTrie());
     }
 
     @Override

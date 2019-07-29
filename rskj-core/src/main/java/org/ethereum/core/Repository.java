@@ -21,18 +21,14 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.AccountInformationProvider;
-import co.rsk.trie.MutableTrie;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.trie.Trie;
 import org.ethereum.vm.DataWord;
 
-import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.Set;
 
-public interface Repository extends AccountInformationProvider {
-
-    MutableTrie getMutableTrie();
+public interface Repository extends RepositorySnapshot {
+    Trie getTrie();
 
     /**
      * Create a new account in the database
@@ -52,21 +48,6 @@ public interface Repository extends AccountInformationProvider {
     AccountState createAccount(RskAddress addr);
 
     void setupContract(RskAddress addr);
-
-    /**
-     * @param addr - account to check
-     * @return - true if account exist,
-     *           false otherwise
-     */
-    boolean isExist(RskAddress addr);
-
-    /**
-     * Retrieve an account
-     *
-     * @param addr of the account
-     * @return account state as stored in the database
-     */
-    AccountState getAccountState(RskAddress addr);
 
     /**
      * Deletes the account. This is recursive: all storage keys are deleted
@@ -101,21 +82,6 @@ public interface Repository extends AccountInformationProvider {
     void saveCode(RskAddress addr, byte[] code);
 
     /**
-     * get the code associated with an account
-     *
-     * This method returns null if there is no code at the address.
-     * It may return the empty array for contracts that have installed zero code on construction.
-     * (not checked)
-    */
-    @Override
-    @Nullable
-    byte[] getCode(RskAddress addr);
-
-     // This method can retrieve the code size without actually retrieving the code
-    // in some cases.
-    int getCodeLength(RskAddress addr);
-
-    /**
      * Put a value in storage of an account at a given key
      *
      * @param addr of the account
@@ -126,9 +92,6 @@ public interface Repository extends AccountInformationProvider {
 
     void addStorageBytes(RskAddress addr, DataWord key, byte[] value);
 
-    @Override
-    byte[] getStorageBytes(RskAddress addr, DataWord key);
-
     /**
      * Add value to the balance of an account
      *
@@ -137,18 +100,6 @@ public interface Repository extends AccountInformationProvider {
      * @return new balance of the account
      */
     Coin addBalance(RskAddress addr, Coin value);
-
-    /**
-     * @return Returns set of all the account addresses
-     */
-    Set<RskAddress> getAccountsKeys();
-
-    /**
-     * Save a snapshot and start tracking future changes
-     *
-     * @return the tracker repository
-     */
-    Repository startTracking();
 
     void flush();
 
@@ -167,24 +118,6 @@ public interface Repository extends AccountInformationProvider {
     void rollback();
 
     void save();
-
-    /**
-     * Return to one of the previous snapshots
-     * by moving the root.
-     *
-     * @param root - new root
-     */
-    void syncToRoot(byte[] root);
-
-    void syncTo(Trie root);
-
-    byte[] getRoot();
-
-    /**
-     * @deprecated a repository responsibility isn't getting snapshots to other repositories
-     * @see co.rsk.db.RepositoryLocator
-     */
-    Repository getSnapshotTo(byte[] root);
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 

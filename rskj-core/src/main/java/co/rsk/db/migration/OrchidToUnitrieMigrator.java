@@ -190,7 +190,7 @@ public class OrchidToUnitrieMigrator {
         buildPartialUnitrie(orchidAccountsTrie, unitrieRepository);
 
         byte[] lastStateRoot = unitrieRepository.getRoot();
-        byte[] orchidMigratedStateRoot = trieConverter.getOrchidAccountTrieRoot(unitrieRepository.getMutableTrie().getTrie());
+        byte[] orchidMigratedStateRoot = trieConverter.getOrchidAccountTrieRoot(unitrieRepository.getTrie());
         if (!Arrays.equals(orchidStateRoot, orchidMigratedStateRoot)) {
             logger.error("State root after migration doesn't match");
             logger.error("Orchid state root: {}", Hex.toHexString(orchidStateRoot));
@@ -202,7 +202,7 @@ public class OrchidToUnitrieMigrator {
             logger.info("State root: {}", Hex.toHexString(lastStateRoot));
         }
 
-        return unitrieRepository.getMutableTrie().getTrie();
+        return unitrieRepository.getTrie();
     }
 
     private void buildPartialUnitrie(Trie orchidAccountsTrie, Repository repository) {

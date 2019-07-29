@@ -22,8 +22,10 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -47,6 +49,7 @@ public class MinerHelper {
 
     private final Blockchain blockchain;
     private final Repository repository;
+    private final RepositoryLocator repositoryLocator;
     private final GasLimitCalculator gasLimitCalculator;
     private final BlockFactory blockFactory;
 
@@ -55,8 +58,9 @@ public class MinerHelper {
     private Coin totalPaidFees = Coin.ZERO;
     private List<TransactionReceipt> txReceipts;
 
-    public MinerHelper(Repository repository , Blockchain blockchain) {
+    public MinerHelper(Repository repository, RepositoryLocator repositoryLocator, Blockchain blockchain) {
         this.repository = repository;
+        this.repositoryLocator = repositoryLocator;
         this.blockchain = blockchain;
         this.gasLimitCalculator = new GasLimitCalculator(config.getNetworkConstants());
         this.blockFactory = new BlockFactory(config.getActivationConfig());
@@ -68,17 +72,10 @@ public class MinerHelper {
         totalPaidFees = Coin.ZERO;
         txReceipts = new ArrayList<>();
 
-        //Repository originalRepo  = ((Repository) ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
-
-        // This creates a snapshot WITHOUT history of the current "parent" reponsitory.
-        Repository originalRepo  = repository.getSnapshotTo(parent.getStateRoot());
-
-        Repository track = originalRepo.startTracking();
-
-        // Repository track = new RepositoryTrack((Repository)ethereum.getRepository());
+        Repository track = repositoryLocator.startTrackingAt(parent.getHeader());
 
         // this variable is set before iterating transactions in case list is empty
-        latestStateRootHash = originalRepo.getRoot();
+        latestStateRootHash = track.getRoot();
 
         // RSK test, remove
         String stateHash1 = Hex.toHexString(blockchain.getBestBlock().getStateRoot());
@@ -90,6 +87,11 @@ public class MinerHelper {
 
         int txindex = 0;
 
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                config.getNetworkConstants().getBridgeConstants(),
+                config.getActivationConfig());
+
         for (Transaction tx : block.getTransactionsList()) {
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                     config,
@@ -97,7 +99,7 @@ public class MinerHelper {
                     null,
                     blockFactory,
                     null,
-                    new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams())));
+                    new PrecompiledContracts(config, bridgeSupportFactory));
             TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 
@@ -116,7 +118,7 @@ public class MinerHelper {
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
             receipt.setCumulativeGas(totalGasUsed);
-            latestStateRootHash = originalRepo.getRoot();
+            latestStateRootHash = track.getRoot();
             receipt.setPostTxState(latestStateRootHash);
             receipt.setTxStatus(executor.getReceipt().isSuccessful());
             receipt.setStatus(executor.getReceipt().getStatus());

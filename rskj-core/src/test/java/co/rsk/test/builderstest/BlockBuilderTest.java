@@ -34,7 +34,7 @@ public class BlockBuilderTest {
     public void buildBlockWithGenesisAsParent() {
         Block genesis = new BlockGenerator().getGenesisBlock();
 
-        BlockBuilder builder = new BlockBuilder();
+        BlockBuilder builder = new BlockBuilder(null, null, null);
 
         Block block = builder
                 .parent(genesis)
@@ -50,7 +50,7 @@ public class BlockBuilderTest {
     public void buildBlockWithDifficulty() {
         Block genesis = new BlockGenerator().getGenesisBlock();
 
-        BlockBuilder builder = new BlockBuilder();
+        BlockBuilder builder = new BlockBuilder(null, null, null);
 
         Block block = builder
                 .parent(genesis)

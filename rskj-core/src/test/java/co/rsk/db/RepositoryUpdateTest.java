@@ -51,8 +51,9 @@ public class RepositoryUpdateTest {
 
         Repository repo = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
         updateContractDetails(repo, address, details);
+        repo.commit();
 
-        byte[] value = repo.getMutableTrie().get(DataWord.ONE.getData());
+        byte[] value = repo.getTrie().get(DataWord.ONE.getData());
 
         Assert.assertNull(value);
         Assert.assertEquals(0, details.getStorageSize());
@@ -66,8 +67,9 @@ public class RepositoryUpdateTest {
 
         Repository repo = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
         updateContractDetails(repo, address, details);
+        repo.commit();
 
-        byte[] value = repo.getMutableTrie().get(DataWord.ONE.getData());
+        byte[] value = repo.getTrie().get(DataWord.ONE.getData());
 
         Assert.assertNull(value);
         Assert.assertEquals(0, details.getStorageSize());
@@ -83,7 +85,7 @@ public class RepositoryUpdateTest {
         Repository repo = new MutableRepository(new MutableTrieImpl(new Trie()));
         updateContractDetails(repo, address, details);
 
-        Assert.assertNotNull(repo.getMutableTrie().getHash().getBytes());
+        Assert.assertNotNull(repo.getTrie().getHash().getBytes());
     }
 
     private static void updateContractDetails(Repository repository, RskAddress addr, ContractDetailsImpl contractDetails) {

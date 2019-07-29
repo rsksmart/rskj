@@ -228,11 +228,11 @@ public class ReceiptStoreImplTest {
         World world = new World();
         Block genesis = world.getBlockChain().getBestBlock();
 
-        Block block1a = new BlockBuilder().difficulty(10).parent(genesis).build();
-        Block block1b = new BlockBuilder().difficulty(block1a.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
+        Block block1a = new BlockBuilder(null, null, null).difficulty(10).parent(genesis).build();
+        Block block1b = new BlockBuilder(null, null,null).difficulty(block1a.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
 
-        Block block2a = new BlockBuilder().parent(block1a).build();
-        Block block2b = new BlockBuilder().parent(block1b).build();
+        Block block2a = new BlockBuilder(null, null, null).parent(block1a).build();
+        Block block2b = new BlockBuilder(null, null, null).parent(block1b).build();
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1a));
         Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
@@ -251,21 +251,21 @@ public class ReceiptStoreImplTest {
 
         store.add(block1b.getHash().getBytes(), 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), block2a.getHash().getBytes(), world.getBlockChain().getBlockStore());
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), block2a.getHash().getBytes(), world.getBlockStore());
 
         Assert.assertNotNull(result.getBlockHash());
         Assert.assertArrayEquals(block1a.getHash().getBytes(), result.getBlockHash());
         Assert.assertEquals(3, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
 
-        result = store.get(receipt.getTransaction().getHash().getBytes(), block2b.getHash().getBytes(), world.getBlockChain().getBlockStore());
+        result = store.get(receipt.getTransaction().getHash().getBytes(), block2b.getHash().getBytes(), world.getBlockStore());
 
         Assert.assertNotNull(result.getBlockHash());
         Assert.assertArrayEquals(block1b.getHash().getBytes(), result.getBlockHash());
         Assert.assertEquals(42, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
 
-        result = store.get(receipt.getTransaction().getHash().getBytes(), genesis.getHash().getBytes(), world.getBlockChain().getBlockStore());
+        result = store.get(receipt.getTransaction().getHash().getBytes(), genesis.getHash().getBytes(), world.getBlockStore());
 
         Assert.assertNull(result);
     }

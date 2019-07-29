@@ -19,6 +19,7 @@
 package co.rsk.test.builderstest;
 
 import co.rsk.core.Coin;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.Account;
@@ -51,7 +52,8 @@ public class AccountBuilderTest {
 
         Assert.assertNotNull(account);
         Assert.assertTrue(account.getEcKey().hasPrivKey());
-        Assert.assertEquals(balance, world.getRepository().getBalance(account.getAddress()));
-        Assert.assertArrayEquals(code, world.getRepository().getCode(account.getAddress()));
+        RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        Assert.assertEquals(balance, repository.getBalance(account.getAddress()));
+        Assert.assertArrayEquals(code, repository.getCode(account.getAddress()));
     }
 }

@@ -21,7 +21,6 @@ package org.ethereum.vm.program;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -56,8 +55,8 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public MutableTrie getMutableTrie() {
-        return repository.getMutableTrie();
+    public Trie getTrie() {
+        return repository.getTrie();
     }
 
     @Override
@@ -214,23 +213,8 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void syncToRoot(byte[] root) {
-        repository.syncToRoot(root);
-    }
-
-    @Override
-    public void syncTo(Trie root) {
-        repository.syncTo(root);
-    }
-
-    @Override
     public byte[] getRoot() {
         return repository.getRoot();
-    }
-
-    @Override
-    public Repository getSnapshotTo(byte[] root) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.World;
@@ -64,8 +65,15 @@ public class CallContractTest {
 
         Block bestBlock = world.getBlockChain().getBestBlock();
 
-        Repository repository = world.getRepository().startTracking();
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
+        Repository repository = world.getRepositoryLocator()
+                .startTrackingAt(world.getBlockChain().getBestBlock().getHeader());
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                config.getNetworkConstants().getBridgeConstants().getBtcParams());
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                btcBlockStoreFactory,
+                config.getNetworkConstants().getBridgeConstants(),
+                config.getActivationConfig());
+
         try {
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                     config,
@@ -73,7 +81,7 @@ public class CallContractTest {
                     null,
                     blockFactory,
                     new ProgramInvokeFactoryImpl(),
-                    new PrecompiledContracts(config, btcBlockStoreFactory)
+                    new PrecompiledContracts(config, bridgeSupportFactory)
                     );
 
             org.ethereum.core.TransactionExecutor executor = transactionExecutorFactory
