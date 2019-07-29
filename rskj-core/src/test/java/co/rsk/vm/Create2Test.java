@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
@@ -58,7 +59,13 @@ public class Create2Test {
     private BytecodeCompiler compiler = new BytecodeCompiler();
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()));
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(
+            config,
+            new BridgeSupportFactory(
+                    new RepositoryBtcBlockStoreWithCache.Factory(
+                            config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                    config.getNetworkConstants().getBridgeConstants(),
+                    config.getActivationConfig()));
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final Transaction transaction = createTransaction();
 

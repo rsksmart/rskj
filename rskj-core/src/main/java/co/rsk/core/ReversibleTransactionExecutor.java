@@ -20,6 +20,7 @@
 package co.rsk.core;
 
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -65,7 +66,7 @@ public class ReversibleTransactionExecutor {
 
     @Deprecated
     public ProgramResult executeTransaction_workaround(
-            Repository snapshot,
+            RepositorySnapshot snapshot,
             Block executionBlock,
             RskAddress coinbase,
             byte[] gasPrice,

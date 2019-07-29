@@ -33,7 +33,7 @@ public class EnvironmentUtils {
         buildBlockchainOfLength(world, config, blockchainLength);
 
         ExecutionEnvironment executionEnvironment = mock(ExecutionEnvironment.class);
-        when(executionEnvironment.getBlockStore()).thenReturn(world.getBlockChain().getBlockStore());
+        when(executionEnvironment.getBlockStore()).thenReturn(world.getBlockStore());
         when(executionEnvironment.getBlock()).thenReturn(world.getBlockChain().getBestBlock());
 
         return executionEnvironment;

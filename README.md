@@ -4,18 +4,19 @@
 
 
 # About
-RskJ is a Java implementation of the RSK node. For more information about RSK, visit [www.rsk.co](http://www.rsk.co). The [RSK white paper](https://uploads.strikinglycdn.com/files/90847694-70f0-4668-ba7f-dd0c6b0b00a1/RootstockWhitePaperv9-Overview.pdf) provides a complete conceptual overview of the platform.
+RskJ is a Java implementation of the RSK node. For more information about RSK, visit [www.rsk.co](http://www.rsk.co). The [RSK white paper](https://www.rsk.co/wp-content/uploads/2019/02/RSK-White-Paper-Updated.pdf) provides a complete conceptual overview of the platform.
 
 If you have questions about the code please find us on [![Gitter](https://badges.gitter.im/rsksmart/rskj.svg)](https://gitter.im/rsksmart/rskj?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-You may also want to check [our blog](http://media.rsk.co) for articles and updates on the project.
+You may also want to check [our blog](https://www.rsk.co/noticias/) for articles and updates on the project.
 
 
 # Getting Started
 Information about compiling and running an RSK node can be found in the [wiki](https://github.com/rsksmart/rskj/wiki).
 
 # Report Security Vulnerabilities
-If you find a security issue, please contact us at <security@rsk.co>, or report it through our [bug bounty program](https://bounty.rsk.co/). We reward security experts, software developers and hackers who dedicate time and effort to improve the RSK platform.
+We have a [vulnerability reporting guideline](https://github.com/rsksmart/rskj/blob/master/SECURITY.md) for details on how to
+contact us to report a vulnerability.
 
 # License
 RskJ is licensed under the GNU Lesser General Public License v3.0, also included in our repository in the COPYING.LESSER file.

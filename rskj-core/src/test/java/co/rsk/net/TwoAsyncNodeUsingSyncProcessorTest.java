@@ -195,7 +195,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void stopSyncingAfter5SkeletonChunks() {
-        Blockchain b1 = BlockChainBuilder.ofSize(30, false);
+        Blockchain b1 = new BlockChainBuilder().ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 2000, false);
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -225,7 +225,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void syncInMultipleStepsWithLongBlockchain() {
-        Blockchain b1 = BlockChainBuilder.ofSize(300, false);
+        Blockchain b1 = new BlockChainBuilder().ofSize(300, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 4000, false);
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);

@@ -19,17 +19,19 @@
 package co.rsk.core;
 
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.panic.PanicProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.ethereum.core.Repository;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Blockchain;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -44,18 +46,18 @@ import java.util.Iterator;
 public class NetworkStateExporter {
     private static final Logger logger = LoggerFactory.getLogger(NetworkStateExporter.class);
 
-    private Repository repository;
+    private final RepositoryLocator repositoryLocator;
+    private final Blockchain blockchain;
 
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    public NetworkStateExporter(Repository repository) {
-        this.repository = repository;
+    public NetworkStateExporter(RepositoryLocator repositoryLocator, Blockchain blockchain) {
+        this.repositoryLocator = repositoryLocator;
+        this.blockchain = blockchain;
     }
 
     public boolean exportStatus(String outputFile) {
-        // This will only work if GlobalKeyMap.enabled = true when building the whole
-        // repository, since keys are not stored on disk.
-        Repository frozenRepository = this.repository.getSnapshotTo(this.repository.getRoot());
+        RepositorySnapshot frozenRepository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
         File dumpFile = new File(outputFile);
 

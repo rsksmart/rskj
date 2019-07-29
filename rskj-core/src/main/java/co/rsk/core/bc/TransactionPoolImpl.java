@@ -22,6 +22,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
 import com.google.common.annotations.VisibleForTesting;
@@ -59,7 +61,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final RskSystemProperties config;
     private final BlockStore blockStore;
-    private final Repository repository;
+    private final RepositoryLocator repositoryLocator;
     private final BlockFactory blockFactory;
     private final EthereumListener listener;
     private final TransactionExecutorFactory transactionExecutorFactory;
@@ -75,7 +77,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     public TransactionPoolImpl(
             RskSystemProperties config,
-            Repository repository,
+            RepositoryLocator repositoryLocator,
             BlockStore blockStore,
             BlockFactory blockFactory,
             EthereumListener listener,
@@ -84,7 +86,7 @@ public class TransactionPoolImpl implements TransactionPool {
             int outdatedTimeout) {
         this.config = config;
         this.blockStore = blockStore;
-        this.repository = repository;
+        this.repositoryLocator = repositoryLocator;
         this.blockFactory = blockFactory;
         this.listener = listener;
         this.transactionExecutorFactory = transactionExecutorFactory;
@@ -131,7 +133,7 @@ public class TransactionPoolImpl implements TransactionPool {
         return getPendingState(getCurrentRepository());
     }
 
-    private PendingState getPendingState(Repository currentRepository) {
+    private PendingState getPendingState(RepositorySnapshot currentRepository) {
         removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
         return new PendingState(
                 currentRepository,
@@ -147,10 +149,8 @@ public class TransactionPoolImpl implements TransactionPool {
         );
     }
 
-    private Repository getCurrentRepository() {
-        return repository;
-        // TODO(lsebrie): transaction pool shouldn't assume that repository is always on the right state
-        //return repository.getSnapshotTo(stateRootHandler.translate(this.getBestBlock().getHeader()).getBytes());
+    private RepositorySnapshot getCurrentRepository() {
+        return repositoryLocator.snapshotAt(getBestBlock().getHeader());
     }
 
     @Override
@@ -205,7 +205,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
-        Repository currentRepository = getCurrentRepository();
+        RepositorySnapshot currentRepository = getCurrentRepository();
         TransactionValidationResult validationResult = shouldAcceptTx(tx, currentRepository);
         if (!validationResult.transactionIsValid()) {
             return TransactionPoolAddResult.withError(validationResult.getErrorMessage());
@@ -425,11 +425,7 @@ public class TransactionPoolImpl implements TransactionPool {
         );
     }
 
-    private TransactionValidationResult shouldAcceptTx(Transaction tx, Repository currentRepository) {
-        if (bestBlock == null) {
-            return TransactionValidationResult.ok();
-        }
-
+    private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
         AccountState state = currentRepository.getAccountState(tx.getSender());
         return validator.isValid(tx, bestBlock, state);
     }
@@ -441,7 +437,7 @@ public class TransactionPoolImpl implements TransactionPool {
      */
     private boolean senderCanPayPendingTransactionsAndNewTx(
             Transaction newTx,
-            Repository currentRepository) {
+            RepositorySnapshot currentRepository) {
         List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender());
 
         Coin accumTxCost = Coin.ZERO;

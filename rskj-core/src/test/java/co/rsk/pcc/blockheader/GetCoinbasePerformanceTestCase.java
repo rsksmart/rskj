@@ -56,7 +56,7 @@ public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerforman
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
                 World world = buildWorld(6000, 500, 6);
                 BlockHeaderContract contract = new BlockHeaderContract(activationConfig, new RskAddress("0000000000000000000000000000000001000010"));
-                contract.init(txBuilder.build(executionIndex), world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockChain().getBlockStore(), null, new LinkedList<>());
+                contract.init(txBuilder.build(executionIndex), world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
                 return EnvironmentBuilder.Environment.withContract(contract);
         };

@@ -26,7 +26,8 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -127,14 +128,20 @@ class RemascTestRunner {
 
         BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), new RepositoryBtcBlockStoreWithCache.Factory(builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()));
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(
+                        builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()),
+                builder.getConfig().getNetworkConstants().getBridgeConstants(),
+                builder.getConfig().getActivationConfig());
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory);
         BlockExecutor blockExecutor = new BlockExecutor(
                 builder.getConfig().getActivationConfig(),
-                new RepositoryLocator(blockchain.getRepository(), builder.getStateRootHandler()),
+                builder.getRepositoryLocator(),
                 builder.getStateRootHandler(),
                 new TransactionExecutorFactory(
                         builder.getConfig(),
-                        blockchain.getBlockStore(),
+                        builder.getBlockStore(),
                         null,
                         blockFactory,
                         programInvokeFactory,
@@ -166,7 +173,7 @@ class RemascTestRunner {
 
                 blockSiblings.add(siblingBlock.getHeader());
 
-                blockchain.getBlockStore().saveBlock(siblingBlock, cummDifficulty.add(siblingBlock.getCumulativeDifficulty()), false);
+                builder.getBlockStore().saveBlock(siblingBlock, cummDifficulty.add(siblingBlock.getCumulativeDifficulty()), false);
                 this.addedSiblings.add(siblingBlock);
             }
 
@@ -183,10 +190,6 @@ class RemascTestRunner {
 
             System.out.println(result);
         }
-
-        this.blockchain.getRepository().syncToRoot(
-                builder.getStateRootHandler().translate(blockchain.getBestBlock().getHeader()).getBytes()
-        );
     }
 
     public Blockchain getBlockChain() {
@@ -194,14 +197,15 @@ class RemascTestRunner {
     }
 
     public Coin getAccountBalance(RskAddress addr) {
-        return getAccountBalance(this.blockchain.getRepository(), addr);
+        RepositorySnapshot repository = builder.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
+        return getAccountBalance(repository, addr);
     }
 
-    public static Coin getAccountBalance(Repository repository, byte[] address) {
+    public static Coin getAccountBalance(RepositorySnapshot repository, byte[] address) {
         return getAccountBalance(repository, new RskAddress(address));
     }
 
-    public static Coin getAccountBalance(Repository repository, RskAddress addr) {
+    public static Coin getAccountBalance(RepositorySnapshot repository, RskAddress addr) {
         AccountState accountState = repository.getAccountState(addr);
 
         return accountState == null ? null : repository.getAccountState(addr).getBalance();

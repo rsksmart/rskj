@@ -20,6 +20,8 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.Coin;
+import co.rsk.core.genesis.TestGenesisLoader;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
@@ -35,6 +37,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.ethereum.util.TransactionFactoryHelper.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 /**
  * Created by ajlopez on 08/08/2016.
@@ -48,15 +53,21 @@ public class TransactionPoolImplTest {
     public void setUp() {
         RskTestContext rskTestContext = new RskTestContext(new String[]{"--regtest"}) {
             @Override
-            protected Genesis buildGenesis() {
-                return GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
+            protected GenesisLoader buildGenesisLoader() {
+                return new TestGenesisLoader(getRepository(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
+            }
+
+            @Override
+            protected RepositoryLocator buildRepositoryLocator() {
+                return spy(super.buildRepositoryLocator());
             }
         };
         blockChain = rskTestContext.getBlockchain();
         repository = rskTestContext.getRepository();
+        RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
         transactionPool = new TransactionPoolImpl(
                 rskTestContext.getRskSystemProperties(),
-                repository,
+                repositoryLocator,
                 rskTestContext.getBlockStore(),
                 rskTestContext.getBlockFactory(),
                 rskTestContext.getCompositeEthereumListener(),
@@ -66,6 +77,10 @@ public class TransactionPoolImplTest {
         );
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
+
+        // this is to workaround the current test structure, which abuses the Repository by
+        // modifying it in place
+        doReturn(repository).when(repositoryLocator).snapshotAt(any());
     }
 
     @Test
@@ -392,7 +407,7 @@ public class TransactionPoolImplTest {
         btxs.add(tx3);
 
         Block genesis = blockChain.getBestBlock();
-        Block block = new BlockBuilder().parent(genesis).transactions(btxs).build();
+        Block block = new BlockBuilder(null, null, null).parent(genesis).transactions(btxs).build();
 
         transactionPool.processBest(block);
 
@@ -425,7 +440,8 @@ public class TransactionPoolImplTest {
         txs.add(tx3);
         txs.add(tx4);
 
-        Block block = new BlockBuilder().parent(new BlockGenerator().getGenesisBlock()).transactions(txs).build();
+        Block block = new BlockBuilder(null, null,null)
+                .parent(new BlockGenerator().getGenesisBlock()).transactions(txs).build();
 
         transactionPool.retractBlock(block);
 
@@ -617,7 +633,8 @@ public class TransactionPoolImplTest {
 
     @Test
     public void checkTxWithLowGasPriceIsRejected() {
-        Block newBest = new BlockBuilder().parent(transactionPool.getBestBlock()).minGasPrice(BigInteger.valueOf(100)).build();
+        Block newBest = new BlockBuilder(null, null,null)
+                .parent(transactionPool.getBestBlock()).minGasPrice(BigInteger.valueOf(100)).build();
         transactionPool.processBest(newBest);
 
         Coin balance = Coin.valueOf(1000000);

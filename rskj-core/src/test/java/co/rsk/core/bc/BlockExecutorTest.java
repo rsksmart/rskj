@@ -26,8 +26,9 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
@@ -128,7 +129,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
+        Repository finalRepository = new MutableRepository(repository.getTrie().getSnapshotTo(result.getFinalState().getHash()));
 
         accountState = finalRepository.getAccountState(account);
 
@@ -185,7 +186,7 @@ public class BlockExecutorTest {
 
         // here is the papa. my commit changes stateroot while previous commit did not.
 
-        Repository finalRepository = repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
+        Repository finalRepository = new MutableRepository(repository.getTrie().getSnapshotTo(result.getFinalState().getHash()));
 
         accountState = finalRepository.getAccountState(account);
 
@@ -382,9 +383,8 @@ public class BlockExecutorTest {
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
-    public static TestObjects generateBlockWithOneTransaction() {
-        BlockChainImpl blockchain = new BlockChainBuilder().build();
-        Repository repository = blockchain.getRepository();
+    private static TestObjects generateBlockWithOneTransaction() {
+        Repository repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB())));
 
         Repository track = repository.startTracking();
 
@@ -410,7 +410,7 @@ public class BlockExecutorTest {
 
         // getGenesisBlock() modifies the repository, adding some pre-mined accounts
         // Not nice for a getter, but it is what it is :(
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
+        Block genesis = BlockChainImplTest.getGenesisBlock(repository);
         genesis.setStateRoot(repository.getRoot());
 
         // Returns the root state prior block execution but after loading
@@ -567,7 +567,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = repository.getSnapshotTo(result.getFinalState().getHash().getBytes());
+        Repository finalRepository = new MutableRepository(repository.getTrie().getSnapshotTo(result.getFinalState().getHash()));
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
@@ -576,10 +576,7 @@ public class BlockExecutorTest {
     }
 
     public TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
-
-        BlockChainImpl blockchain = new BlockChainBuilder().build();
-        Repository repository = blockchain.getRepository();
-
+        Repository repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB())));
         Repository track = repository.startTracking();
 
         Account account = createAccount("acctest1", track, Coin.valueOf(30000));
@@ -603,7 +600,7 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
+        Block genesis = BlockChainImplTest.getGenesisBlock(repository);
         genesis.setStateRoot(repository.getRoot());
         Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 
@@ -666,7 +663,15 @@ public class BlockExecutorTest {
     }
 
     private static BlockExecutor buildBlockExecutor(Repository repository) {
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(
+                config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+
+        Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                config.getNetworkConstants().getBridgeConstants().getBtcParams());
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+
         return new BlockExecutor(
                 config.getActivationConfig(),
                 new RepositoryLocator(repository, stateRootHandler),
@@ -677,7 +682,7 @@ public class BlockExecutorTest {
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()))
+                        new PrecompiledContracts(config, bridgeSupportFactory)
                 )
         );
     }

@@ -34,7 +34,7 @@ public class RepositoryMigrationTest {
         Assert.assertThat(repository.getAccountState(COW).getNonce(), is(accountNonce));
 
         TrieConverter converter = new TrieConverter();
-        byte[] oldRoot = converter.getOrchidAccountTrieRoot(repository.getMutableTrie().getTrie());
+        byte[] oldRoot = converter.getOrchidAccountTrieRoot(repository.getTrie());
         // expected ab158b4a1d2411492194768fbd2669c069b60e5d0bcc859e51fe477855829ae7
         System.out.println(Hex.toHexString(oldRoot));
     }
