@@ -24,12 +24,14 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.validators.BlockValidationRule;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -106,7 +108,7 @@ public class BlockToMineBuilder {
      * @param mainchainHeaders last best chain blocks where 0 index is the best block and so on.
      * @param extraData extra data to pass to the block being built.
      */
-    public Block build(List<BlockHeader> mainchainHeaders, byte[] extraData) {
+    public BlockResult build(List<BlockHeader> mainchainHeaders, byte[] extraData) {
         BlockHeader newBlockParentHeader = mainchainHeaders.get(0);
         List<BlockHeader> uncles = FamilyUtils.getUnclesHeaders(
                 blockStore,
@@ -127,8 +129,7 @@ public class BlockToMineBuilder {
         final Block newBlock = createBlock(mainchainHeaders, uncles, txs, minimumGasPrice, extraData);
 
         removePendingTransactions(txsToRemove);
-        executor.executeAndFill(newBlock, newBlockParentHeader);
-        return newBlock;
+        return executor.executeAndFill(newBlock, newBlockParentHeader);
     }
 
     private List<Transaction> getTransactions(List<Transaction> txsToRemove, BlockHeader parentHeader, Coin minGasPrice) {
@@ -150,7 +151,8 @@ public class BlockToMineBuilder {
         transactionPool.removeTransactions(transactions);
     }
 
-    private Block createBlock(
+    @VisibleForTesting
+    public Block createBlock(
             List<BlockHeader> mainchainHeaders,
             List<BlockHeader> uncles,
             List<Transaction> txs,

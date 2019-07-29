@@ -27,6 +27,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -686,7 +687,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(block2.getDifficulty()).thenReturn(BlockDifficulty.ZERO);
 
         BlockToMineBuilder builder = mock(BlockToMineBuilder.class);
-        when(builder.build(any(), any())).thenReturn(block1).thenReturn(block2);
+        BlockResult blockResult = mock(BlockResult.class);
+        BlockResult blockResult2 = mock(BlockResult.class);
+        when(blockResult.getBlock()).thenReturn(block1);
+        when(blockResult2.getBlock()).thenReturn(block2);
+        when(builder.build(any(), any())).thenReturn(blockResult).thenReturn(blockResult2);
 
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(

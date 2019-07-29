@@ -21,6 +21,7 @@ package co.rsk.rpc.modules.eth;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
@@ -29,6 +30,7 @@ import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
@@ -102,8 +104,14 @@ public class EthModule
     public String call(Web3.CallArguments args, String bnOrId) {
         String s = null;
         try {
-            Block executionBlock = executionBlockRetriever.getExecutionBlock(bnOrId);
-            ProgramResult res = callConstant(args, executionBlock);
+            BlockResult blockResult = executionBlockRetriever.getExecutionBlock_workaround(bnOrId);
+            ProgramResult res;
+            if (blockResult.getFinalState() != null) {
+                res = callConstant_workaround(args, blockResult);
+            } else {
+                res = callConstant(args, blockResult.getBlock());
+            }
+
             if (res.isRevert()) {
                 throw RskJsonRpcRequestException.transactionRevertedExecutionError();
             }
@@ -149,6 +157,22 @@ public class EthModule
         return reversibleTransactionExecutor.executeTransaction(
                 executionBlock,
                 executionBlock.getCoinbase(),
+                hexArgs.getGasPrice(),
+                hexArgs.getGasLimit(),
+                hexArgs.getToAddress(),
+                hexArgs.getValue(),
+                hexArgs.getData(),
+                hexArgs.getFromAddress()
+        );
+    }
+
+    @Deprecated
+    private ProgramResult callConstant_workaround(Web3.CallArguments args, BlockResult executionBlock) {
+        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+        return reversibleTransactionExecutor.executeTransaction_workaround(
+                new MutableRepository(executionBlock.getFinalState()),
+                executionBlock.getBlock(),
+                executionBlock.getBlock().getCoinbase(),
                 hexArgs.getGasPrice(),
                 hexArgs.getGasLimit(),
                 hexArgs.getToAddress(),

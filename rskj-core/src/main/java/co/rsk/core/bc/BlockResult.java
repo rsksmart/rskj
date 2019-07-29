@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.trie.Trie;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 
@@ -31,6 +32,7 @@ import java.util.List;
  */
 public class BlockResult {
     public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new BlockResult(
+            null,
             Collections.emptyList(),
             Collections.emptyList(),
             0,
@@ -38,6 +40,7 @@ public class BlockResult {
             null
     );
 
+    private final Block block;
     private final List<Transaction> executedTransactions;
     private final List<TransactionReceipt> transactionReceipts;
     private final long gasUsed;
@@ -48,16 +51,22 @@ public class BlockResult {
     private final Trie finalState;
 
     public BlockResult(
+            Block block,
             List<Transaction> executedTransactions,
             List<TransactionReceipt> transactionReceipts,
             long gasUsed,
             Coin paidFees,
             Trie finalState) {
+        this.block = block;
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
         this.gasUsed = gasUsed;
         this.paidFees = paidFees;
         this.finalState = finalState;
+    }
+
+    public Block getBlock() {
+        return block;
     }
 
     public List<Transaction> getExecutedTransactions() { return executedTransactions; }
@@ -77,5 +86,4 @@ public class BlockResult {
     public Trie getFinalState() {
         return this.finalState;
     }
-
 }

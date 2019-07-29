@@ -76,9 +76,10 @@ public class BlockExecutor {
      * @param block        A block to execute and complete
      * @param parent       The parent of the block.
      */
-    public void executeAndFill(Block block, BlockHeader parent) {
+    public BlockResult executeAndFill(Block block, BlockHeader parent) {
         BlockResult result = execute(block, parent, true, false);
         fill(block, result);
+        return result;
     }
 
     @VisibleForTesting
@@ -348,6 +349,7 @@ public class BlockExecutor {
         track.save();
 
         BlockResult result = new BlockResult(
+                block,
                 executedTransactions,
                 receipts,
                 totalGasUsed,

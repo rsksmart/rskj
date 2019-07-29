@@ -24,6 +24,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -38,6 +39,7 @@ import org.ethereum.db.BlockStore;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -47,8 +49,7 @@ import java.util.Collections;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -58,6 +59,7 @@ public class BlockToMineBuilderTest {
 
     private BlockToMineBuilder blockBuilder;
     private BlockValidationRule validationRules;
+    private BlockExecutor blockExecutor;
 
     @Before
     public void setUp() {
@@ -70,6 +72,7 @@ public class BlockToMineBuilderTest {
         MinimumGasPriceCalculator minimumGasPriceCalculator = mock(MinimumGasPriceCalculator.class);
         MinerUtils minerUtils = mock(MinerUtils.class);
 
+        blockExecutor = mock(BlockExecutor.class);
         blockBuilder = new BlockToMineBuilder(
                 mock(ActivationConfig.class),
                 miningConfig,
@@ -82,7 +85,7 @@ public class BlockToMineBuilderTest {
                 validationRules,
                 mock(MinerClock.class),
                 new BlockFactory(ActivationConfigsForTest.all()),
-                mock(BlockExecutor.class),
+                blockExecutor,
                 minimumGasPriceCalculator,
                 minerUtils
         );
@@ -106,22 +109,29 @@ public class BlockToMineBuilderTest {
     public void BuildBlockHasEmptyUnclesWhenCreateAnInvalidBlock() {
         BlockHeader parent = buildBlockHeaderWithSibling();
 
+        BlockResult expectedResult = mock(BlockResult.class);
+        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
+
         when(validationRules.isValid(any())).thenReturn(false);
+        when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
 
-        Block nextBLock = blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
+        blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
 
-        assertThat(nextBLock.getUncleList(), empty());
+        assertThat(blockCaptor.getValue().getUncleList(), empty());
     }
 
     @Test
     public void BuildBlockHasUnclesWhenCreateAnInvalidBlock() {
         BlockHeader parent = buildBlockHeaderWithSibling();
 
+        BlockResult expectedResult = mock(BlockResult.class);
+        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
         when(validationRules.isValid(any())).thenReturn(true);
+        when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
 
-        Block nextBLock = blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
+        blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
 
-        assertThat(nextBLock.getUncleList(), hasSize(1));
+        assertThat(blockCaptor.getValue().getUncleList(), hasSize(1));
     }
 
     private BlockHeader buildBlockHeaderWithSibling() {
