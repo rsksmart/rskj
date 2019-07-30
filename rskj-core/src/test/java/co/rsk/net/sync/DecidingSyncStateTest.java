@@ -77,7 +77,7 @@ public class DecidingSyncStateTest {
         Map<NodeID, Instant> failedPeers = new LinkedHashMap<>();
 
         PeersInformation knownPeers = new PeersInformation(RskMockFactory.getChannelManager(),
-                syncConfiguration, blockchain, failedPeers, peerScoringManager);
+                syncConfiguration, blockchain, peerScoringManager);
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
@@ -96,7 +96,7 @@ public class DecidingSyncStateTest {
         Map<NodeID, Instant> failedPeers = new LinkedHashMap<>();
 
         PeersInformation knownPeers = new PeersInformation(RskMockFactory.getChannelManager(),
-                syncConfiguration, blockchain, failedPeers, peerScoringManager);
+                syncConfiguration, blockchain, peerScoringManager);
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
@@ -115,7 +115,7 @@ public class DecidingSyncStateTest {
         Map<NodeID, Instant> failedPeers = new LinkedHashMap<>();
 
         PeersInformation knownPeers = new PeersInformation(RskMockFactory.getChannelManager(),
-                syncConfiguration, blockchain, failedPeers, peerScoringManager);
+                syncConfiguration, blockchain, peerScoringManager);
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
