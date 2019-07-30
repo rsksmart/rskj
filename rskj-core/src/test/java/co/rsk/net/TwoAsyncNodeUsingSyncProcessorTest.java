@@ -95,7 +95,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void buildBlockchainWithUnclesAndSynchronize() throws InterruptedException {
+    public void buildBlockchainWithUnclesAndSynchronize() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(10, true, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 

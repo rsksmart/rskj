@@ -12,32 +12,38 @@ import java.util.Map;
 
 public class DownloadingSkeletonSyncState extends BaseSyncState {
 
-    private final List<NodeID> candidates;
+    private final PeersInformation peersInformation;
     private final Map<NodeID, List<BlockIdentifier>> skeletons;
     private final Map<NodeID, Boolean> availables;
+    private final NodeID selectedPeerId;
     private long connectionPoint;
     private long expectedSkeletons;
     private boolean selectedPeerAnswered;
 
 
-    public DownloadingSkeletonSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, PeersInformation knownPeers, long connectionPoint) {
-        super(syncInformation, syncEventsHandler, syncConfiguration);
+    public DownloadingSkeletonSyncState(SyncConfiguration syncConfiguration,
+                                        SyncEventsHandler syncEventsHandler,
+                                        PeersInformation peersInformation,
+                                        NodeID selectedPeerId,
+                                        long connectionPoint) {
+        super(syncEventsHandler, syncConfiguration);
+        this.selectedPeerId = selectedPeerId;
         this.connectionPoint = connectionPoint;
         this.skeletons = new HashMap<>();
         this.availables = new HashMap<>();
         this.selectedPeerAnswered = false;
-        this.candidates = knownPeers.getPeerCandidates();
+        this.peersInformation = peersInformation;
         this.expectedSkeletons = 0;
     }
 
     @Override
     public void newSkeleton(List<BlockIdentifier> skeleton, MessageChannel peer) {
         NodeID peerId = peer.getPeerNodeID();
-        boolean isSelectedPeer = peerId.equals(syncInformation.getSelectedPeerId());
+        boolean isSelectedPeer = peerId.equals(selectedPeerId);
 
         // defensive programming: this should never happen
         if (skeleton.size() < 2) {
-            syncInformation.reportEvent("Invalid skeleton received from node {}",
+            peersInformation.reportEvent("Invalid skeleton received from node {}",
                     EventType.INVALID_MESSAGE, peerId, peerId);
 
             // when the selected peer fails automatically all process restarts
@@ -65,11 +71,11 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     public void tick(Duration duration) {
         timeElapsed = timeElapsed.plus(duration);
         if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0) {
-            candidates.stream()
+            peersInformation.getPeerCandidates().stream()
                     .filter(availables::get)
                     .filter(c -> !skeletons.containsKey(c))
                     .forEach(p ->
-                            syncInformation.reportEvent("Timeout waiting skeleton from node {}",
+                            peersInformation.reportEvent("Timeout waiting skeleton from node {}",
                                     EventType.TIMEOUT_MESSAGE, p, p));
 
             // when the selected peer fails automatically all process restarts
@@ -84,7 +90,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
 
     @Override
     public void onEnter() {
-        candidates.forEach(this::trySendRequest);
+        peersInformation.getPeerCandidates().forEach(this::trySendRequest);
         expectedSkeletons = availables.size();
     }
 
