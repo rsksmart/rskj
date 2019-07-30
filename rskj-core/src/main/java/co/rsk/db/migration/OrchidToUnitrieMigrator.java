@@ -32,7 +32,9 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.util.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -116,10 +118,17 @@ public class OrchidToUnitrieMigrator {
             return;
         }
 
+        BlockStore blockStore = ctx.getBlockStore();
+        long maximumBlockNumberToMigrate = ctx.getRskSystemProperties().getDatabaseMigrationMaximumHeight();
+        if (maximumBlockNumberToMigrate != 0 && blockStore.getMaxNumber() > maximumBlockNumberToMigrate) {
+            ((IndexedBlockStore) blockStore).rewind(maximumBlockNumberToMigrate);
+            blockStore.flush();
+        }
+
         // this block number has to be validated before the release to ensure the migration works fine for every user
         long minimumBlockNumberToMigrate = ctx.getRskSystemProperties().getDatabaseMigrationMinimumHeight();
-        Block bestBlock = ctx.getBlockStore().getBestBlock();
-        Block blockToMigrate = ctx.getBlockStore().getBlockByHash(bestBlock.getParentHash().getBytes());
+        Block bestBlock = blockStore.getBestBlock();
+        Block blockToMigrate = blockStore.getBlockByHash(bestBlock.getParentHash().getBytes());
         if (blockToMigrate == null || blockToMigrate.getNumber() < minimumBlockNumberToMigrate) {
             logger.error(
                     "The database can't be migrated because the node wasn't up to date before upgrading. " +
@@ -155,7 +164,7 @@ public class OrchidToUnitrieMigrator {
             System.exit(1);
         }
 
-        ctx.getBlockStore().removeBlock(bestBlock);
+        blockStore.removeBlock(bestBlock);
         if (ctx.getBlockchain().tryToConnect(bestBlock) != ImportResult.IMPORTED_BEST) {
             logger.error(
                     "The database can't be migrated because the block {} couldn't be connected after the migration.",
