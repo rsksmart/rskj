@@ -31,6 +31,7 @@ import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
@@ -57,7 +58,6 @@ import java.util.Map;
 public class BlockChainBuilder {
     private boolean testing;
     private List<Block> blocks;
-    private List<TransactionInfo> txinfos;
 
     private Repository repository;
     private BlockStore blockStore;
@@ -69,6 +69,7 @@ public class BlockChainBuilder {
     private BridgeSupportFactory bridgeSupportFactory;
     private TransactionPoolImpl transactionPool;
     private RepositoryLocator repositoryLocator;
+    private TrieStore trieStore;
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
@@ -80,18 +81,13 @@ public class BlockChainBuilder {
         return this;
     }
 
-    public BlockChainBuilder setRepository(Repository repository) {
-        this.repository = repository;
+    public BlockChainBuilder setTrieStore(TrieStore store) {
+        this.trieStore = store;
         return this;
     }
 
     public BlockChainBuilder setBlockStore(BlockStore blockStore) {
         this.blockStore = blockStore;
-        return this;
-    }
-
-    public BlockChainBuilder setTransactionInfos(List<TransactionInfo> txinfos) {
-        this.txinfos = txinfos;
         return this;
     }
 
@@ -133,6 +129,10 @@ public class BlockChainBuilder {
         return this.stateRootHandler;
     }
 
+    public TrieStore getTrieStore() {
+        return trieStore;
+    }
+
     public Repository getRepository() {
         return repository;
     }
@@ -154,8 +154,12 @@ public class BlockChainBuilder {
             config = new TestSystemProperties();
         }
 
+        if (trieStore == null) {
+            trieStore = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
+        }
+
         if (repository == null) {
-            repository = new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB().setClearOnClose(false))));
+            repository = new MutableRepository(trieStore, new Trie(trieStore));
         }
 
         if (stateRootHandler == null) {
@@ -182,10 +186,6 @@ public class BlockChainBuilder {
             receiptStore = new ReceiptStoreImpl(ds);
         }
 
-        if (txinfos != null && !txinfos.isEmpty())
-            for (TransactionInfo txinfo : txinfos)
-                receiptStore.add(txinfo.getBlockHash(), txinfo.getIndex(), txinfo.getReceipt());
-
         if (listener == null) {
             listener = new BlockExecutorTest.SimpleEthereumListener();
         }
@@ -201,7 +201,7 @@ public class BlockChainBuilder {
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
 
         validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
-                .addBlockTxsValidationRule(repository).blockStore(blockStore);
+                .addBlockTxsValidationRule(trieStore).blockStore(blockStore);
 
         BlockValidator blockValidator = validatorBuilder.build();
 
@@ -213,14 +213,14 @@ public class BlockChainBuilder {
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(config, bridgeSupportFactory)
         );
-        repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
+        repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
         transactionPool = new TransactionPoolImpl(
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
                 transactionExecutorFactory, 10, 100
         );
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
-                new RepositoryLocator(repository, stateRootHandler),
+                repositoryLocator,
                 stateRootHandler,
                 transactionExecutorFactory
         );

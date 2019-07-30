@@ -3140,11 +3140,11 @@ public class BridgeTest {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {
-        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
         return new TestGenesisLoader(repository, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false).load();
     }
 }

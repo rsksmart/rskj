@@ -36,7 +36,7 @@ public class TrieSaveRetrieveTest {
         for (int k = 0; k < 1000; k++)
             trie = trie.put(k + "", (k + "").getBytes());
 
-        trie.save();
+        store.save(trie);
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
@@ -61,7 +61,7 @@ public class TrieSaveRetrieveTest {
         for (int k = 0; k < 1000; k++)
             trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
-        trie.save();
+        store.save(trie);
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
@@ -86,7 +86,7 @@ public class TrieSaveRetrieveTest {
         for (int k = 0; k < 1000; k++)
             trie = trie.put(k + "", (k + "").getBytes());
 
-        trie.save();
+        store.save(trie);
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
@@ -111,7 +111,7 @@ public class TrieSaveRetrieveTest {
         for (int k = 0; k < 1000; k++)
             trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
-        trie.save();
+        store.save(trie);
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
@@ -136,7 +136,7 @@ public class TrieSaveRetrieveTest {
         for (int k = 1000; k > 0; k--)
             trie = trie.put(k + "", (k + "").getBytes());
 
-        trie.save();
+        store.save(trie);
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
@@ -161,7 +161,7 @@ public class TrieSaveRetrieveTest {
         for (int k = 1000; k > 0; k--)
             trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
-        trie.save();
+        store.save(trie);
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
@@ -186,7 +186,7 @@ public class TrieSaveRetrieveTest {
         for (int k = 1000; k > 0; k--)
             trie = trie.put(k + "", (k + "").getBytes());
 
-        trie.save();
+        store.save(trie);
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
@@ -211,7 +211,7 @@ public class TrieSaveRetrieveTest {
         for (int k = 1000; k > 0; k--)
             trie = trie.put(k + "", TrieValueTest.makeValue(k + 200));
 
-        trie.save();
+        store.save(trie);
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
@@ -235,7 +235,7 @@ public class TrieSaveRetrieveTest {
                 .put("bar", "baz".getBytes())
                 .put("answer", "42".getBytes());
 
-        trie.save();
+        store.save(trie);
 
         Assert.assertNotEquals(0, trie.trieSize());
         int embeddableNodes = 3;
@@ -251,7 +251,7 @@ public class TrieSaveRetrieveTest {
                 .put("bar", TrieValueTest.makeValue(100))
                 .put("answer", TrieValueTest.makeValue(200));
 
-        trie.save();
+        store.save(trie);
 
         Assert.assertNotEquals(0, trie.trieSize());
         int embeddableNodes = 3;
@@ -268,7 +268,7 @@ public class TrieSaveRetrieveTest {
                 .put("bar", "baz".getBytes())
                 .put("answer", "42".getBytes());
 
-        trie.save();
+        store.save(trie);
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
@@ -290,7 +290,7 @@ public class TrieSaveRetrieveTest {
                 .put("bar", TrieValueTest.makeValue(100))
                 .put("answer", TrieValueTest.makeValue(200));
 
-        trie.save();
+        store.save(trie);
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
 

@@ -61,7 +61,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     }
 
     private Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
     @Test
@@ -278,7 +278,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         // Read original store
         InputStream fileInputStream = ClassLoader.getSystemResourceAsStream("peg/RepositoryBlockStore_data.ser");
         ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BtcBlockStoreWithCache store = btcBlockStoreFactory.newInstance(repository);

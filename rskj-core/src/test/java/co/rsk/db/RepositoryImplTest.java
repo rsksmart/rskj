@@ -330,7 +330,7 @@ public class RepositoryImplTest {
     public void setAndGetStorageValueUsingNewRepositoryForTest() {
         RskAddress accAddress = randomAccountAddress();
 
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie()));
+        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         repository.addStorageRow(accAddress, DataWord.ONE, DataWord.ONE);
 
@@ -417,7 +417,7 @@ public class RepositoryImplTest {
     @Test
     public void flushNoReconnect() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
+        Repository repository = new MutableRepository(new MutableTrieImpl(store, new Trie(store)));
 
         RskAddress accAddress = randomAccountAddress();
         byte[] initialRoot = repository.getRoot();
@@ -450,10 +450,10 @@ public class RepositoryImplTest {
     }
 
     private static Repository createRepositoryWithCache() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieImpl(new Trie()));
+        return new MutableRepository(new MutableTrieImpl(null, new Trie()));
     }
 }

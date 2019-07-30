@@ -116,7 +116,7 @@ public class BlockUtilsTest {
 
         BlockBuilder blockBuilder = new BlockBuilder(blockChain, null,
                                                      blockChainBuilder.getBlockStore()
-        ).repository(blockChainBuilder.getRepository());
+        ).trieStore(blockChainBuilder.getTrieStore());
         blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block block1b = blockBuilder.parent(genesis).build();

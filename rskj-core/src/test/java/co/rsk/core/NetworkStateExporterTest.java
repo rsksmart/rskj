@@ -18,11 +18,10 @@
 
 package co.rsk.core;
 
-import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -64,7 +63,8 @@ public class NetworkStateExporterTest {
 
     @Before
     public void setup() {
-        MutableTrieImpl mutableTrie = new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB())));
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
         repository = new MutableRepository(mutableTrie);
         blockchain = mock(Blockchain.class);
 
@@ -75,10 +75,8 @@ public class NetworkStateExporterTest {
 
         RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
 
-        when(repositoryLocator.snapshotAt(block.getHeader())).then(a -> {
-            MutableTrie atrie = mutableTrie.getSnapshotTo(new Keccak256(repository.getRoot()));
-            return new MutableRepository(atrie.getTrie());
-        });
+        when(repositoryLocator.snapshotAt(block.getHeader()))
+                .thenReturn(new MutableRepository(mutableTrie));
 
         this.nse = new NetworkStateExporter(repositoryLocator, blockchain);
     }

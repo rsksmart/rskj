@@ -55,7 +55,7 @@ public class WorldDslProcessor {
     public WorldDslProcessor(World world) {
         this.world = world;
         BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                                                     world.getBlockStore()).repository(world.getRepository());
+                                                     world.getBlockStore()).trieStore(world.getTrieStore());
         blockBuilder.parent(world.getBlockChain().getBestBlock());
         this.blockBuilder = blockBuilder;
     }
@@ -254,7 +254,7 @@ public class WorldDslProcessor {
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
-                    new RepositoryLocator(world.getRepository(), stateRootHandler),
+                    new RepositoryLocator(world.getTrieStore(), stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(
                             config,

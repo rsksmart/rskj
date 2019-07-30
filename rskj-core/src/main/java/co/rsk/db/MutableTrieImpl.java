@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
+import co.rsk.trie.TrieStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
@@ -37,9 +38,11 @@ public class MutableTrieImpl implements MutableTrie {
 
     private Trie trie;
     private TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+    private TrieStore trieStore;
 
-    public MutableTrieImpl(Trie atrie) {
-        trie = atrie;
+    public MutableTrieImpl(TrieStore trieStore, Trie trie) {
+        this.trieStore = trieStore;
+        this.trie = trie;
     }
 
     @Override
@@ -104,7 +107,9 @@ public class MutableTrieImpl implements MutableTrie {
 
     @Override
     public void save() {
-        trie.save();
+        if (trieStore != null) {
+            trieStore.save(trie);
+        }
     }
 
     @Override
@@ -125,18 +130,6 @@ public class MutableTrieImpl implements MutableTrie {
     @Override
     public Set<ByteArrayWrapper> collectKeys(int size) {
         return trie.collectKeys(size);
-    }
-
-    @Override
-    public MutableTrie getSnapshotTo(Keccak256 hash) {
-        // Since getSnapshotTo() does not modify the current trie (this.trie)
-        // then there is no need to save nodes.
-        return new MutableTrieImpl(trie.getSnapshotTo(hash));
-    }
-
-    @Override
-    public boolean hasStore() {
-        return trie.hasStore();
     }
 
     private static class StorageKeysIterator implements Iterator<DataWord> {

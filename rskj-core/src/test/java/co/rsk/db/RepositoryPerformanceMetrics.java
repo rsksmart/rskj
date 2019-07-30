@@ -204,10 +204,10 @@ public class RepositoryPerformanceMetrics {
     }
 
     public static Repository createRepositoryWithCache() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
     public static Repository createRepository(TrieStore store) {
-        return new MutableRepository(new MutableTrieImpl(new Trie(store)));
+        return new MutableRepository(new MutableTrieImpl(store, new Trie(store)));
     }
 }

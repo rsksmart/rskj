@@ -28,6 +28,7 @@ import co.rsk.peg.*;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -44,8 +45,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static net.bytebuddy.agent.builder.AgentBuilder.RedefinitionStrategy.BatchAllocator.ForFixedSize.ofSize;
 
 public abstract class BridgePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     protected static NetworkParameters networkParameters;
@@ -185,16 +184,18 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             private Bridge bridge;
             private RepositoryTrackWithBenchmarking benchmarkerTrack;
 
-            private Repository createRepository() {
-                return new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB())));
+            private TrieStore createTrieStore() {
+                return new TrieStoreImpl(new HashMapDB());
             }
 
             @Override
             public Environment build(int executionIndex, TxBuilder txBuilder, int height) {
-                Repository repository = createRepository();
+                TrieStore trieStore = createTrieStore();
+                Trie trie = new Trie(trieStore);
+                Repository repository = new MutableRepository(trieStore, trie);
                 BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(activationConfig.forBlock((long) executionIndex));
 
-                benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
+                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, trie);
                 BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
                 storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex, btcBlockStoreFactory.newInstance(repository));
                 try {
@@ -204,7 +205,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 }
                 benchmarkerTrack.commit();
 
-                benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
+                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, trie);
                 List<LogInfo> logs = new ArrayList<>();
 
                 Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(

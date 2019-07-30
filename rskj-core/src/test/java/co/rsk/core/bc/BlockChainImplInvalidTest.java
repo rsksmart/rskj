@@ -22,6 +22,7 @@ import co.rsk.RskContext;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
@@ -84,12 +85,12 @@ public class BlockChainImplInvalidTest {
 
     @Test
     public void addInvalidMGPBlock() {
-        Repository repository = objects.getRepository();
+        TrieStore trieStore = objects.getTrieStore();
         BlockStore blockStore = objects.getBlockStore();
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
         validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
-                .addBlockTxsValidationRule(repository).addPrevMinGasPriceRule().addTxsMinGasPriceRule();
+                .addBlockTxsValidationRule(trieStore).addPrevMinGasPriceRule().addTxsMinGasPriceRule();
 
         validatorBuilder.build();
 

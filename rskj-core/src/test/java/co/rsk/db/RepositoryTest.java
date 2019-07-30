@@ -19,8 +19,8 @@
 package co.rsk.db;
 
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
@@ -53,10 +53,12 @@ public class RepositoryTest {
 
     private MutableRepository repository;
     private MutableTrieImpl mutableTrie;
+    private TrieStore trieStore;
 
     @Before
     public void setUp() {
-        mutableTrie = new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB())));
+        trieStore = new TrieStoreImpl(new HashMapDB());
+        mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
         repository = new MutableRepository(mutableTrie);
     }
 
@@ -427,7 +429,7 @@ public class RepositoryTest {
 
         final CountDownLatch failSema = new CountDownLatch(2);
 
-        Repository snap = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(repository.getRoot())));
+        Repository snap = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()));
         new Thread(() -> {
             try {
                 int cnt = 1;
@@ -501,7 +503,7 @@ public class RepositoryTest {
         // this new repository to read all nodes from the store. The results must
         // be the same: lazy evaluation of the value must work.
 
-        Repository repository2 = new MutableRepository(mutableTrie.getSnapshotTo(new Keccak256(prevRoot)));
+        Repository repository2 = new MutableRepository(trieStore, trieStore.retrieve(prevRoot));
         // Now try to get the size
         codeSize = repository2.getCodeLength(COW);
         assertEquals(codeLongerThan32bytes.length, codeSize);

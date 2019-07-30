@@ -40,6 +40,7 @@ import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.bouncycastle.util.encoders.Hex;
@@ -82,6 +83,7 @@ public class TransactionModuleTest {
         World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
+        TrieStore trieStore = world.getTrieStore();
         Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
@@ -89,7 +91,7 @@ public class TransactionModuleTest {
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, null, repository, transactionPool, blockStore, false);
+        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false);
 
         String tx = sendTransaction(web3, repository);
 
@@ -106,6 +108,7 @@ public class TransactionModuleTest {
         World world = new World();
         BlockChainImpl blockchain = world.getBlockChain();
 
+        TrieStore trieStore = world.getTrieStore();
         Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
@@ -113,7 +116,7 @@ public class TransactionModuleTest {
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, null, repository, transactionPool, blockStore, true);
+        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, true);
 
         String tx = sendTransaction(web3, repository);
 
@@ -167,14 +170,14 @@ public class TransactionModuleTest {
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
-        Repository repository = world.getRepository();
+        TrieStore trieStore = world.getTrieStore();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, true);
+        Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true);
 
         String txHash = sendRawTransaction(web3);
 
@@ -194,14 +197,14 @@ public class TransactionModuleTest {
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
 
-        Repository repository = world.getRepository();
+        TrieStore trieStore = world.getTrieStore();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, receiptStore, repository, transactionPool, blockStore, false);
+        Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false);
 
         String txHash = sendRawTransaction(web3);
 
@@ -269,7 +272,7 @@ public class TransactionModuleTest {
 
     private Web3Impl createEnvironment(Blockchain blockchain,
                                        ReceiptStore receiptStore,
-                                       Repository repository,
+                                       TrieStore store,
                                        TransactionPool transactionPool,
                                        BlockStore blockStore,
                                        boolean mineInstant) {
@@ -286,7 +289,7 @@ public class TransactionModuleTest {
                 blockStore,
                 mineInstant,
                 stateRootHandler,
-                new RepositoryLocator(repository, stateRootHandler));
+                new RepositoryLocator(store, stateRootHandler));
     }
 
     private Web3Impl createEnvironment(Blockchain blockchain, MiningMainchainView mainchainView, ReceiptStore receiptStore, TransactionPool transactionPool, BlockStore blockStore, boolean mineInstant, StateRootHandler stateRootHandler, RepositoryLocator repositoryLocator) {

@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -38,8 +39,12 @@ import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
 
 public class RepositoryBuilder {
 
-    public static Repository build(Map<String, AccountTck> accounts){
-        Repository repositoryDummy = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+    public static Repository build(Map<String, AccountTck> accounts) {
+        return build(new TrieStoreImpl(new HashMapDB()), accounts);
+    }
+
+    public static Repository build(TrieStore trieStore, Map<String, AccountTck> accounts) {
+        Repository repositoryDummy = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         Repository track = repositoryDummy.startTracking();
         for (String address : accounts.keySet()) {
             RskAddress addr = new RskAddress(address);

@@ -27,9 +27,11 @@ import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
@@ -170,7 +172,7 @@ public class EthModule
     private ProgramResult callConstant_workaround(Web3.CallArguments args, BlockResult executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction_workaround(
-                new MutableRepository(executionBlock.getFinalState()),
+                new MutableRepository(new TrieStoreImpl(new HashMapDB()), executionBlock.getFinalState()),
                 executionBlock.getBlock(),
                 executionBlock.getBlock().getCoinbase(),
                 hexArgs.getGasPrice(),
