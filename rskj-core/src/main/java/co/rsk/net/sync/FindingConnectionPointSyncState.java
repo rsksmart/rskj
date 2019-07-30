@@ -1,20 +1,30 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.Blockchain;
 
 import java.util.Optional;
 
 public class FindingConnectionPointSyncState extends BaseSyncState {
+    private final Blockchain blockchain;
+    private final NodeID selectedPeerId;
     private ConnectionPointFinder connectionPointFinder;
 
-    public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, long bestBlockNumber) {
-        super(syncInformation, syncEventsHandler, syncConfiguration);
+    public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration,
+                                           SyncEventsHandler syncEventsHandler,
+                                           Blockchain blockchain,
+                                           NodeID selectedPeerId,
+                                           long bestBlockNumber) {
+        super(syncEventsHandler, syncConfiguration);
+        this.blockchain = blockchain;
+        this.selectedPeerId = selectedPeerId;
         this.connectionPointFinder = new ConnectionPointFinder(bestBlockNumber);
     }
 
     @Override
     public void newConnectionPointData(byte[] hash) {
-        if (this.syncInformation.isKnownBlock(hash)) {
+        if (isKnownBlock(hash)) {
             connectionPointFinder.updateFound();
         } else {
             connectionPointFinder.updateNotFound();
@@ -31,11 +41,15 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
         syncEventsHandler.startDownloadingSkeleton(cp.get());
     }
 
+    private boolean isKnownBlock(byte[] hash) {
+        return blockchain.getBlockByHash(hash) != null;
+    }
+
     private void trySendRequest() {
         boolean sent = syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
         if (!sent) {
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), syncInformation.getSelectedPeerId());
+                    this.getClass(), selectedPeerId);
         }
     }
 

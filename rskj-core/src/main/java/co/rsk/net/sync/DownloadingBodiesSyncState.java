@@ -1,14 +1,14 @@
 package co.rsk.net.sync;
 
+import co.rsk.crypto.Keccak256;
+import co.rsk.net.BlockSyncService;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
+import co.rsk.validators.BlockCompositeRule;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 
 import java.time.Duration;
@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 
 public class DownloadingBodiesSyncState  extends BaseSyncState {
 
+    private final PeersInformation peersInformation;
+    private final Blockchain blockchain;
     private final BlockFactory blockFactory;
 
     // responses on wait
@@ -48,17 +50,25 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private final List<NodeID> suitablePeers;
     // maximum time waiting for a peer to answer
     private final Duration limit;
+    private final BlockCompositeRule blockValidationRule;
+    private final BlockSyncService blockSyncService;
 
     public DownloadingBodiesSyncState(SyncConfiguration syncConfiguration,
                                       SyncEventsHandler syncEventsHandler,
-                                      SyncInformation syncInformation,
+                                      PeersInformation peersInformation,
+                                      Blockchain blockchain,
                                       BlockFactory blockFactory,
+                                      BlockSyncService blockSyncService, BlockCompositeRule blockValidationRule,
                                       List<Deque<BlockHeader>> pendingHeaders,
                                       Map<NodeID, List<BlockIdentifier>> skeletons) {
 
-        super(syncInformation, syncEventsHandler, syncConfiguration);
+        super(syncEventsHandler, syncConfiguration);
+        this.peersInformation = peersInformation;
+        this.blockchain = blockchain;
         this.blockFactory = blockFactory;
         this.limit = syncConfiguration.getTimeoutWaitingRequest();
+        this.blockSyncService = blockSyncService;
+        this.blockValidationRule = blockValidationRule;
         this.pendingBodyResponses = new HashMap<>();
         this.pendingHeaders = pendingHeaders;
         this.skeletons = skeletons;
@@ -93,13 +103,14 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
             return;
         }
 
-        if (!syncInformation.blockIsValid(block)) {
+        if (!blockValidationRule.isValid(block)) {
             handleInvalidMessage(peerId, header);
             return;
         }
 
         // handle block
-        if (syncInformation.processBlock(block, peer).isInvalidBlock()){
+        // this is a controled place where we ask for blocks, we never should look for missing hashes
+        if (blockSyncService.processBlock(block, peer, true).isInvalidBlock()){
             handleInvalidBlock(peerId, header);
             return;
         }
@@ -124,7 +135,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void handleInvalidBlock(NodeID peerId, BlockHeader header) {
-        syncInformation.reportEvent(
+        peersInformation.reportEvent(
                 "Invalid block received from node {} {} {}",
                 EventType.INVALID_BLOCK, peerId,
                 peerId, header.getNumber(), header.getShortHash());
@@ -140,7 +151,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void handleInvalidMessage(NodeID peerId, BlockHeader header) {
-        syncInformation.reportEvent(
+        peersInformation.reportEvent(
                 "Invalid body received from node {} {} {}",
                 EventType.INVALID_MESSAGE, peerId,
                 peerId, header.getNumber(), header.getShortHash());
@@ -156,7 +167,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void handleUnexpectedBody(NodeID peerId) {
-        syncInformation.reportEvent(
+        peersInformation.reportEvent(
                 "Unexpected body received from node {}",
                 EventType.UNEXPECTED_MESSAGE, peerId, peerId);
 
@@ -190,7 +201,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         BlockHeader header = headers.poll();
         while (header != null) {
             // we double check if the header was not downloaded or obtained by another way
-            if (!syncInformation.isKnownBlock(header.getHash().getBytes())) {
+            if (!isKnownBlock(header.getHash())) {
                 return Optional.of(header);
             }
             header = headers.poll();
@@ -206,6 +217,10 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         return blockHeader;
     }
 
+    private boolean isKnownBlock(Keccak256 hash) {
+        return blockchain.getBlockByHash(hash.getBytes()) != null;
+    }
+
     private Optional<BlockHeader> tryFindBlockHeader(NodeID peerId) {
         // we start from the last chunk that can be downloaded
         for (int segmentNumber = segmentByNode.get(peerId); segmentNumber >= 0; segmentNumber--){
@@ -217,7 +232,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                 BlockHeader header = headers.poll();
                 while (header != null) {
                     // we double check if the header was not downloaded or obtained by another way
-                    if (!syncInformation.isKnownBlock(header.getHash().getBytes())) {
+                    if (!isBlockKnown(header.getHash())) {
                         chunksBeingDownloaded.put(peerId, chunkNumber);
                         segmentsBeingDownloaded.put(peerId, segmentNumber);
                         return Optional.of(header);
@@ -227,6 +242,10 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
             }
         }
         return Optional.empty();
+    }
+
+    private boolean isBlockKnown(Keccak256 hash) {
+        return blockchain.getBlockByHash(hash.getBytes()) != null;
     }
 
     @Override
@@ -265,7 +284,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void handleTimeoutMessage(NodeID peerId) {
-        syncInformation.reportEvent("Timeout waiting body from node {}",
+        peersInformation.reportEvent("Timeout waiting body from node {}",
                 EventType.TIMEOUT_MESSAGE, peerId, peerId);
         Long messageId = messagesByPeers.remove(peerId);
         BlockHeader header = pendingBodyResponses.remove(messageId).header;
