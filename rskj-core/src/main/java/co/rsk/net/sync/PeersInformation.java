@@ -4,7 +4,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
-import co.rsk.net.SyncProcessor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.core.Blockchain;
@@ -26,6 +25,7 @@ import java.util.stream.Stream;
  */
 public class PeersInformation {
 
+    private static final int MAX_SIZE_FAILURE_RECORDS = 10;
     private static final Logger logger = LoggerFactory.getLogger(PeersInformation.class);
 
     private final ChannelManager channelManager;
@@ -39,12 +39,16 @@ public class PeersInformation {
     public PeersInformation(ChannelManager channelManager,
                             SyncConfiguration syncConfiguration,
                             Blockchain blockchain,
-                            Map<NodeID, Instant> failedPeers,
                             PeerScoringManager peerScoringManager){
         this.channelManager = channelManager;
         this.syncConfiguration = syncConfiguration;
         this.blockchain = blockchain;
-        this.failedPeers = failedPeers;
+        this.failedPeers = new LinkedHashMap<NodeID, Instant>(MAX_SIZE_FAILURE_RECORDS, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<NodeID, Instant> eldest) {
+                return size() > MAX_SIZE_FAILURE_RECORDS;
+            }
+        };
         this.peerScoringManager = peerScoringManager;
         this.peerComparator = ((Comparator<Map.Entry<NodeID, SyncPeerStatus>>) this::comparePeerFailInstant)
                 // TODO reenable when unprocessable blocks stop being marked as invalid blocks
@@ -52,8 +56,18 @@ public class PeersInformation {
                 .thenComparing(this::comparePeerTotalDifficulty);
     }
 
-    public void reportEvent(String message, EventType eventType, NodeID peerId, Object... arguments) {
+    public void reportEventWithLog(String message, NodeID peerId, EventType eventType, Object... arguments) {
         logger.trace(message, arguments);
+        peerScoringManager.recordEvent(peerId, null, eventType);
+    }
+
+    public void reportEvent(NodeID peerId, EventType eventType) {
+        peerScoringManager.recordEvent(peerId, null, eventType);
+    }
+
+    public void reportErrorEvent(String message, NodeID peerId, EventType eventType, Object... arguments) {
+        logger.trace(message, arguments);
+        failedPeers.put(peerId, Instant.now());
         peerScoringManager.recordEvent(peerId, null, eventType);
     }
 
@@ -192,5 +206,7 @@ public class PeersInformation {
         return Instant.EPOCH;
     }
 
-
+    public void clearOlderFailedPeersThan(Instant instant) {
+        failedPeers.values().removeIf(instant::isAfter);
+    }
 }
