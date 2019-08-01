@@ -126,22 +126,22 @@ public final class FederationMember {
         this.mstPublicKey = ECKey.fromPublicOnly(mstPublicKey.getPubKey(true));
     }
 
-    BtcECKey getBtcPublicKey() {
+    public BtcECKey getBtcPublicKey() {
         // Return a copy
         return BtcECKey.fromPublicOnly(btcPublicKey.getPubKey());
     }
 
-    ECKey getRskPublicKey() {
+    public ECKey getRskPublicKey() {
         // Return a copy
         return ECKey.fromPublicOnly(rskPublicKey.getPubKey());
     }
 
-    ECKey getMstPublicKey() {
+    public ECKey getMstPublicKey() {
         // Return a copy
         return ECKey.fromPublicOnly(mstPublicKey.getPubKey());
     }
 
-    ECKey getPublicKey(KeyType keyType) {
+    public ECKey getPublicKey(KeyType keyType) {
         switch (keyType) {
             case RSK:
                 return getRskPublicKey();

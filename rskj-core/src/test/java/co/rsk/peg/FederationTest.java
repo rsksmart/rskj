@@ -34,11 +34,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -48,6 +46,7 @@ import static org.mockito.Mockito.any;
 public class FederationTest {
     private Federation federation;
     private List<BtcECKey> sortedPublicKeys;
+    private List<ECKey> rskPubKeys;
     private List<byte[]> rskAddresses;
 
     @Before
@@ -59,18 +58,22 @@ public class FederationTest {
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        sortedPublicKeys = Arrays.asList(new BtcECKey[]{
+        sortedPublicKeys = Arrays.stream(new BtcECKey[]{
                 BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(200)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(300)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(400)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(500)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(600)),
-        }).stream().sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        }).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
-        rskAddresses = Arrays.asList(101, 201, 301, 401, 501, 601)
+        rskPubKeys = Stream.of(101, 201, 301, 401, 501, 601)
+                .map(i -> ECKey.fromPrivate(BigInteger.valueOf(i)))
+                .collect(Collectors.toList());
+
+        rskAddresses = rskPubKeys
                 .stream()
-                .map(i -> ECKey.fromPrivate(BigInteger.valueOf(i)).getAddress())
+                .map(ECKey::getAddress)
                 .collect(Collectors.toList());
     }
 
@@ -283,5 +286,34 @@ public class FederationTest {
     @Test
     public void testToString() {
         Assert.assertEquals("4 of 6 signatures federation", federation.toString());
+    }
+
+    @Test
+    public void isMember(){
+        //Both valid params
+        FederationMember federationMember = federation.getMembers().get(0);
+        Assert.assertTrue(federation.isMember(federationMember));
+
+        byte[] b = new byte[20];
+        new Random().nextBytes(b);
+
+        ECKey invalidRskKey = ECKey.fromPrivate(b);
+        BtcECKey invalidBtcKey = BtcECKey.fromPrivate(b);
+
+        // Valid PubKey, invalid rskAddress
+        FederationMember invalidRskPubKey = new FederationMember(federationMember.getBtcPublicKey(), invalidRskKey, federationMember.getMstPublicKey());
+        Assert.assertFalse(federation.isMember(invalidRskPubKey));
+
+        //Invalid PubKey, valid rskAddress
+        FederationMember invalidBtcPubKey = new FederationMember(invalidBtcKey, federationMember.getRskPublicKey(), federationMember.getMstPublicKey());
+        Assert.assertFalse(federation.isMember(invalidBtcPubKey));
+
+        //Valid btcKey & valid rskAddress, invalid mstKey
+        FederationMember invalidMstPubKey = new FederationMember(federationMember.getBtcPublicKey(), federationMember.getRskPublicKey(), invalidRskKey);
+        Assert.assertFalse(federation.isMember(invalidMstPubKey));
+
+        //All invalid params
+        FederationMember invalidPubKeys = new FederationMember(invalidBtcKey, invalidRskKey, invalidRskKey);
+        Assert.assertFalse(federation.isMember(invalidPubKeys));
     }
 }
