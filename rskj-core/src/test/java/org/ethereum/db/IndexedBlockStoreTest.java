@@ -31,7 +31,6 @@ import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.util.FileUtil;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mapdb.DB;
@@ -49,8 +48,9 @@ import java.util.*;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 
 public class IndexedBlockStoreTest {
@@ -61,7 +61,7 @@ public class IndexedBlockStoreTest {
     private TestSystemProperties config;
     private BlockFactory blockFactory;
 
-    @Before
+//    @Before
     public void setup() throws URISyntaxException, IOException {
 
         URL scenario1 = ClassLoader
@@ -1012,4 +1012,23 @@ public class IndexedBlockStoreTest {
         assertEquals(block2.getCumulativeDifficulty(), indexedBlockStore.getTotalDifficultyForHash(block2.getHash().getBytes()));
     }
 
+    @Test
+    public void rewind() {
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(mock(BlockFactory.class), new HashMap<>(), mock(KeyValueDataSource.class), mock(DB.class));
+        long blocksToGenerate = 14;
+        for (long i = 0; i < blocksToGenerate; i++) {
+            Block block = mock(Block.class);
+            when(block.getHash()).thenReturn(randomHash());
+            when(block.getNumber()).thenReturn(i);
+            indexedBlockStore.saveBlock(block, ZERO, true);
+        }
+        Block bestBlock = indexedBlockStore.getBestBlock();
+        assertThat(bestBlock.getNumber(), is(blocksToGenerate - 1));
+
+        long blockToRewind = blocksToGenerate / 2;
+        indexedBlockStore.rewind(blockToRewind);
+
+        bestBlock = indexedBlockStore.getBestBlock();
+        assertThat(bestBlock.getNumber(), is(blockToRewind));
+    }
 }
