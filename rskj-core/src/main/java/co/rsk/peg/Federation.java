@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
  *
  * @author Ariel Mendelzon
  */
+
 public final class Federation {
     private final List<FederationMember> members;
     private final Instant creationTime;
@@ -141,6 +142,10 @@ public final class Federation {
     public boolean hasMemberWithRskAddress(byte[] address) {
         return members.stream()
                 .anyMatch(m -> Arrays.equals(m.getRskPublicKey().getAddress(), address));
+    }
+
+    public boolean isMember(FederationMember federationMember){
+        return this.members.contains(federationMember);
     }
 
     @Override
