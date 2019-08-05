@@ -186,12 +186,12 @@ public class VMTest {
         // and then 32 to copy the value in return data copy.
         assertEquals("good program has 64 mem", 64, goodProgram.getMemSize());
         assertEquals("bad program has 64 mem", 64, badProgram.getMemSize());
-        assertEquals("good program uses 3 less gas than the good one",
+        assertEquals("good program uses 3 less gas than the bad one",
                 goodProgram.getResult().getGasUsed() - 3, badProgram.getResult().getGasUsed());
     }
 
 
-    @Test
+    @Test(expected = Program.OutOfGasException.class)
     public void TestCanGetMemoryUsingIdentityContract() {
         String fTimes64 = StringUtils.repeat('F', 64);
         invoke.setGas(6800000);
@@ -225,11 +225,13 @@ public class VMTest {
         ), createTransaction(Integer.MAX_VALUE));
 
         vm.steps(niceProgram, Long.MAX_VALUE);
-        int niceMemorySize = niceProgram.getMemSize();
-        long niceGasUsage = niceProgram.getResult().getGasUsed();
-        System.out.println("NICE PROGRAM");
-        System.out.println("MEM SIZE: " + niceMemorySize);
-        System.out.println("GAS USAGE: " + niceGasUsage);
+        // It may be useful to uncomment this if you need more details
+        // about the behavior of the program.
+        // int niceMemorySize = niceProgram.getMemSize();
+        // long niceGasUsage = niceProgram.getResult().getGasUsed();
+        // System.out.println("NICE PROGRAM");
+        // System.out.println("MEM SIZE: " + niceMemorySize);
+        // System.out.println("GAS USAGE: " + niceGasUsage);
 
         byte[] badBytecode = compile(
                 " PUSH32 0x" + fTimes64 + // store the biggest 32 bytes number
@@ -266,11 +268,14 @@ public class VMTest {
         );
         Program badProgram = getProgram(badBytecode);
         vm.steps(badProgram, Long.MAX_VALUE);
-        int badMemorySize = badProgram.getMemSize();
-        long badGasUsage = badProgram.getResult().getGasUsed();
-        System.out.println("BAD PROGRAM");
-        System.out.println("MEM SIZE: " + badMemorySize);
-        System.out.println("GAS USAGE: " + badGasUsage);
+        // It may be useful to uncomment this if you need more details
+        // about the behavior of the program.
+        // int badMemorySize = badProgram.getMemSize();
+        // long badGasUsage = badProgram.getResult().getGasUsed();
+        // System.out.println("BAD PROGRAM");
+        // System.out.println("MEM SIZE: " + badMemorySize);
+        // System.out.println("GAS USAGE: " + badGasUsage);
+        invoke.setGas(100000);
     }
 
     @Test

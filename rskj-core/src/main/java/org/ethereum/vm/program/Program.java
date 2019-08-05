@@ -1389,7 +1389,7 @@ public class Program {
                 this.returnDataBuffer = out;
             }
 
-            this.memorySave(msg.getOutDataOffs().intValue(), out);
+            this.memorySaveLimited(msg.getOutDataOffs().intValue(), out, msg.getOutDataSize().intValue());
             this.stackPushOne();
             track.commit();
         }
