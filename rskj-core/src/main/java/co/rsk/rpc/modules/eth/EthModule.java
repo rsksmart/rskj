@@ -33,6 +33,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
@@ -62,9 +63,11 @@ public class EthModule
     private final EthModuleTransaction ethModuleTransaction;
     private final BridgeConstants bridgeConstants;
     private final BridgeSupportFactory bridgeSupportFactory;
+    private final byte chainId;
 
     public EthModule(
             BridgeConstants bridgeConstants,
+            byte chainId,
             Blockchain blockchain,
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
@@ -73,6 +76,7 @@ public class EthModule
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction,
             BridgeSupportFactory bridgeSupportFactory) {
+        this.chainId = chainId;
         this.blockchain = blockchain;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
@@ -152,6 +156,10 @@ public class EthModule
     @Override
     public String sign(String addr, String data) {
         return ethModuleWallet.sign(addr, data);
+    }
+
+    public String chainId() {
+        return TypeConverter.toJsonHex(new byte[] { chainId });
     }
 
     private ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {

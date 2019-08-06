@@ -997,7 +997,7 @@ public class Web3ImplLogsTest {
         Wallet wallet = WalletFactory.createWallet();
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), blockChain,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockChain,
                 null, new ExecutionBlockRetriever(mainchainView, blockChain, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(

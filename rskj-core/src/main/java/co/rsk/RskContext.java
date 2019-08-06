@@ -494,8 +494,10 @@ public class RskContext implements NodeBootstrapper {
 
     public EthModule getEthModule() {
         if (ethModule == null) {
+            Constants networkConstants = getRskSystemProperties().getNetworkConstants();
             ethModule = new EthModule(
-                    getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
+                    networkConstants.getBridgeConstants(),
+                    networkConstants.getChainId(),
                     getBlockchain(),
                     getReversibleTransactionExecutor(),
                     getExecutionBlockRetriever(),

@@ -19,6 +19,7 @@
 package co.rsk;
 
 import co.rsk.config.NodeCliFlags;
+import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.util.RskTestContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
