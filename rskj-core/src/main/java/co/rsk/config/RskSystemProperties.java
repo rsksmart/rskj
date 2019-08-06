@@ -327,6 +327,10 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getLong("database.unitrie-migration.minimum-height");
     }
 
+    public long getDatabaseMigrationMaximumHeight() {
+        return configFromFiles.getLong("database.unitrie-migration.maximum-height");
+    }
+
     public URL getDatabaseMissingStorageKeysUrl() {
         String missingKeysUrl = configFromFiles.getString("database.unitrie-migration.missing-keys-url");
         try {

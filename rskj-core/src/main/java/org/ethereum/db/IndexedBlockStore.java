@@ -576,6 +576,24 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     /**
+     * Deletes from disk storage all blocks with number strictly larger than blockNumber.
+     * Note that this doesn't clean the caches, making it unsuitable for using after initialization.
+     */
+    public void rewind(long blockNumber) {
+        long maxNumber = getMaxNumber();
+        for (long i = maxNumber; i > blockNumber; i--) {
+            List<BlockInfo> blockInfos = index.remove(i);
+            if (blockInfos == null) {
+                continue;
+            }
+
+            for (BlockInfo blockInfo : blockInfos) {
+                this.blocks.delete(blockInfo.getHash().getBytes());
+            }
+        }
+    }
+
+    /**
      * When a block is processed on remasc the contract needs to calculate all siblings that
      * that should be rewarded when fees on this block are paid
      * @param block the block is looked for siblings
