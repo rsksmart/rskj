@@ -22,15 +22,24 @@ package org.ethereum.core;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
+import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.ethereum.util.ByteUtil;
@@ -48,6 +57,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -440,13 +450,19 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
+                    BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                            new RepositoryBtcBlockStoreWithCache.Factory(
+                                    config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                            config.getNetworkConstants().getBridgeConstants(),
+                            config.getActivationConfig());
+
                     TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                             config,
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
                             invokeFactory,
-                            new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams())));
+                            new PrecompiledContracts(config, bridgeSupportFactory));
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
@@ -579,9 +595,16 @@ public class TransactionTest {
          */
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
-        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
-                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true, true),
-                                                                 config);
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(),null);
+        Blockchain blockchain = ImportLightTest.createBlockchain(
+                new TestGenesisLoader(
+                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        false, true, true
+                ).load(),
+                config, repository, blockStore, trieStore
+        );
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -589,8 +612,8 @@ public class TransactionTest {
         String code = "6060604052341561000c57fe5b5b6102938061001c6000396000f3006060604052361561004a576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806309e587a514610053578063de990da914610065575b6100515b5b565b005b341561005b57fe5b610063610077565b005b341561006d57fe5b610075610092565b005b3373ffffffffffffffffffffffffffffffffffffffff16ff5b565b60003090508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b15156100fa57fe5b60325a03f1151561010757fe5b5050508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b151561016d57fe5b60325a03f1151561017a57fe5b5050508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b15156101e057fe5b60325a03f115156101ed57fe5b5050508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b151561025357fe5b60325a03f1151561026057fe5b5050505b505600a165627a7a72305820084e74021c556522723b6725354378df2fb4b6732f82dd33f5daa29e2820b37c0029";
         String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"homicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"multipleHomicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"payable\":true,\"type\":\"fallback\"}]";
 
-        Transaction tx = createTx(blockchain, sender, new byte[0], Hex.decode(code));
-        executeTransaction(blockchain, tx);
+        Transaction tx = createTx(sender, new byte[0], Hex.decode(code), repository);
+        executeTransaction(blockchain, blockStore, tx, repository);
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
 
@@ -615,8 +638,8 @@ public class TransactionTest {
         catch (RuntimeException ex) {
         }
 
-        Transaction tx1 = createTx(blockchain, sender, contractAddress, callData, 0);
-        ProgramResult programResult = executeTransaction(blockchain, tx1).getResult();
+        Transaction tx1 = createTx(sender, contractAddress, callData, repository);
+        ProgramResult programResult = executeTransaction(blockchain, blockStore, tx1, repository).getResult();
 
         // suicide of a single account should be counted only once
         Assert.assertEquals(24000, programResult.getFutureRefund());
@@ -650,9 +673,16 @@ public class TransactionTest {
          */
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
-        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
-                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true, true),
-                                                                 config);
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        Blockchain blockchain = ImportLightTest.createBlockchain(
+                new TestGenesisLoader(
+                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        false, true, true
+                ).load(),
+                config, repository, blockStore, trieStore
+        );
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -664,29 +694,28 @@ public class TransactionTest {
         // Second contract ABI
         String abi2 = "[{\"constant\":false,\"inputs\":[{\"name\":\"invokedAddress\",\"type\":\"address\"}],\"name\":\"doIt\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"externalEvent\",\"type\":\"event\"}]";
 
-        Transaction tx1 = createTx(blockchain, sender, new byte[0], Hex.decode(code1));
-        executeTransaction(blockchain, tx1);
+        Transaction tx1 = createTx(sender, new byte[0], Hex.decode(code1), repository);
+        executeTransaction(blockchain, blockStore, tx1, repository);
 
-        Transaction tx2 = createTx(blockchain, sender, new byte[0], Hex.decode(code2));
-        executeTransaction(blockchain, tx2);
+        Transaction tx2 = createTx(sender, new byte[0], Hex.decode(code2), repository);
+        executeTransaction(blockchain, blockStore, tx2, repository);
 
         CallTransaction.Contract contract2 = new CallTransaction.Contract(abi2);
         byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(tx1.getContractAddress().getBytes()));
 
-        Transaction tx3 = createTx(blockchain, sender, tx2.getContractAddress().getBytes(), data);
-        TransactionExecutor executor = executeTransaction(blockchain, tx3);
+        Transaction tx3 = createTx(sender, tx2.getContractAddress().getBytes(), data, repository);
+        TransactionExecutor executor = executeTransaction(blockchain, blockStore, tx3, repository);
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
-        Assert.assertEquals(false, executor.getResult().getLogInfoList().get(0).isRejected());
+        Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
     }
 
-    private Transaction createTx(Blockchain blockchain, ECKey sender, byte[] receiveAddress, byte[] data) throws InterruptedException {
-        return createTx(blockchain, sender, receiveAddress, data, 0);
+    private Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, final Repository repository) throws InterruptedException {
+        return createTx(sender, receiveAddress, data, 0, repository.getNonce(new RskAddress(sender.getAddress())));
     }
 
-    private Transaction createTx(Blockchain blockchain, ECKey sender, byte[] receiveAddress,
-                                   byte[] data, long value) throws InterruptedException {
-        BigInteger nonce = blockchain.getRepository().getNonce(new RskAddress(sender.getAddress()));
+    private Transaction createTx(ECKey sender, byte[] receiveAddress,
+                                 byte[] data, long value, BigInteger nonce) throws InterruptedException {
         Transaction tx = new Transaction(
                 ByteUtil.bigIntegerToBytes(nonce),
                 ByteUtil.longToBytesNoLeadZeroes(1),
@@ -698,17 +727,27 @@ public class TransactionTest {
         return tx;
     }
 
-    private TransactionExecutor executeTransaction(Blockchain blockchain, Transaction tx) {
-        Repository track = blockchain.getRepository().startTracking();
+    private TransactionExecutor executeTransaction(
+            Blockchain blockchain,
+            BlockStore blockStore,
+            Transaction tx,
+            Repository repository) {
+        Repository track = repository.startTracking();
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(
+                        config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                config.getNetworkConstants().getBridgeConstants(),
+                config.getActivationConfig());
+
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
-                blockchain.getBlockStore(),
+                blockStore,
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams())));
+                new PrecompiledContracts(config, bridgeSupportFactory));
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(tx, 0, RskAddress.nullAddress(), blockchain.getRepository(), blockchain.getBestBlock(), 0);
+                .newInstance(tx, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
 
         executor.init();
         executor.execute();

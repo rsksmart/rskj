@@ -260,9 +260,8 @@ public class BlockExecutor {
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
-        Repository initialRepository = repositoryLocator.snapshotAt(parent);
 
-        Repository track = initialRepository.startTracking();
+        Repository track = repositoryLocator.startTrackingAt(parent);
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
@@ -347,13 +346,7 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
-        // This commitment changes the initialRepository's view of the state
-        // This does not affect the parent's (repository) view or state, but it DOES
-        // affect the storage of the parent.
-        track.commit();
-
-        // All data saved to store
-        initialRepository.save();
+        track.save();
 
         BlockResult result = new BlockResult(
                 block,
@@ -361,7 +354,7 @@ public class BlockExecutor {
                 receipts,
                 totalGasUsed,
                 totalPaidFees,
-                initialRepository.getMutableTrie().getTrie()
+                track.getTrie()
         );
         profiler.stop(metric);
         return result;

@@ -87,6 +87,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
             protected Repository buildRepository() {
                 return Mockito.spy(super.buildRepository());
             }
+
+            @Override
+            protected RepositoryLocator buildRepositoryLocator() {
+                return Mockito.spy(super.buildRepositoryLocator());
+            }
         };
         blockchain = factory.getMiningMainchainView();
         repository = factory.getRepository();
@@ -109,13 +114,12 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         Repository track = mock(Repository.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
-        Mockito.doReturn(repository.getMutableTrie()).when(track).getMutableTrie();
+        Mockito.doReturn(repository.getTrie()).when(track).getTrie();
         when(track.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
         when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
         when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
         when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
-        Mockito.doReturn(track).when(repository).getSnapshotTo(any());
-        Mockito.doReturn(track).when(repository).startTracking();
+        Mockito.doReturn(track).when(repositoryLocator).startTrackingAt(any());
         Mockito.doReturn(track).when(track).startTracking();
 
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));

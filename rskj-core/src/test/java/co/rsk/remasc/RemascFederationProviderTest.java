@@ -37,7 +37,7 @@ public class RemascFederationProviderTest {
         return new RemascFederationProvider(
                 ActivationConfigsForTest.all(),
                 BridgeRegTestConstants.getInstance(),
-                blockchain.getRepository(),
+                builder.getRepository(),
                 blockchain.getBestBlock()
         );
     }

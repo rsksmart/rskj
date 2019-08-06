@@ -199,7 +199,7 @@ public class OrchidToUnitrieMigrator {
         buildPartialUnitrie(orchidAccountsTrie, unitrieRepository);
 
         byte[] lastStateRoot = unitrieRepository.getRoot();
-        byte[] orchidMigratedStateRoot = trieConverter.getOrchidAccountTrieRoot(unitrieRepository.getMutableTrie().getTrie());
+        byte[] orchidMigratedStateRoot = trieConverter.getOrchidAccountTrieRoot(unitrieRepository.getTrie());
         if (!Arrays.equals(orchidStateRoot, orchidMigratedStateRoot)) {
             logger.error("State root after migration doesn't match");
             logger.error("Orchid state root: {}", Hex.toHexString(orchidStateRoot));
@@ -211,7 +211,7 @@ public class OrchidToUnitrieMigrator {
             logger.info("State root: {}", Hex.toHexString(lastStateRoot));
         }
 
-        return unitrieRepository.getMutableTrie().getTrie();
+        return unitrieRepository.getTrie();
     }
 
     private void buildPartialUnitrie(Trie orchidAccountsTrie, Repository repository) {
@@ -243,19 +243,13 @@ public class OrchidToUnitrieMigrator {
         }
     }
 
-    private void migrateContract(RskAddress accountAddress, Repository currentRepository, byte[] contractDataRaw, byte[] accountCodeHash, byte[] stateRoot) {
+    private void migrateContract(RskAddress accountAddress, Repository currentRepository, byte[] contractDataRaw, byte[] accountCodeHash, byte[] orchidAccountStateRoot) {
         ContractData contractData = new ContractData(contractDataRaw);
 
         boolean initialized = false;
-        if (!Arrays.equals(stateRoot, EMPTY_TRIE_HASH)) {
+        if (!Arrays.equals(orchidAccountStateRoot, EMPTY_TRIE_HASH)) {
             RskAddress contractAddress = contractData.getContractAddress();
-            Trie contractStorageTrie = getContractStorageTrie(contractAddress, contractData);
-
-            try {
-                contractStorageTrie = contractStorageTrie.getSnapshotTo(new Keccak256(stateRoot));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalStateException("Cannot find state root trie. Check the log for more info.", e);
-            }
+            Trie contractStorageTrie = getContractStorageTrie(contractAddress, contractData, new Keccak256(orchidAccountStateRoot));
 
             RLPList rlpKeys = contractData.getKeys();
             int keysCount = rlpKeys.size();
@@ -305,7 +299,16 @@ public class OrchidToUnitrieMigrator {
         }
     }
 
-    private Trie getContractStorageTrie(RskAddress contractAddress, ContractData contractData) {
+    private Trie getContractStorageTrie(RskAddress contractAddress, ContractData contractData, Keccak256 oldAccountStateRoot) {
+        try {
+            TrieStore trieStore = getContractStorageTrie(contractAddress, contractData);
+            return trieStore.retrieve(oldAccountStateRoot.getBytes());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Cannot find state root trie. Check the log for more info.", e);
+        }
+    }
+
+    private TrieStore getContractStorageTrie(RskAddress contractAddress, ContractData contractData) {
         byte[] external = contractData.getExternal();
         byte[] root = contractData.getRoot();
 
@@ -313,9 +316,8 @@ public class OrchidToUnitrieMigrator {
             return orchidTrieDeserialize(root);
         }
 
-        Trie contractStorageTrie = orchidContractsTrieStore.retrieve(root);
-        if (contractStorageTrie != null) {
-            return contractStorageTrie;
+        if (orchidContractsTrieStore.retrieve(root) != null) {
+            return orchidContractsTrieStore;
         }
 
         // picco-fix (ref: co.rsk.db.ContractStorageStoreFactory#getTrieStore)
@@ -323,7 +325,7 @@ public class OrchidToUnitrieMigrator {
                 contractAddress,
                 address -> new CachedTrieStore(new TrieStoreImpl(RskContext.makeDataSource("details-storage/" + address, databaseDir)))
         );
-        contractStorageTrie = contractTrieStore.retrieve(root);
+        Trie contractStorageTrie = contractTrieStore.retrieve(root);
         if (contractStorageTrie == null) {
             throw new IllegalStateException(String.format("Unable to find root %s for the contract %s", Hex.toHexString(root), contractAddress));
         }
@@ -331,10 +333,10 @@ public class OrchidToUnitrieMigrator {
             throw new IllegalStateException(String.format("Stored contract state is not consistent with the expected root (%s)", Hex.toHexString(root)));
         }
 
-        return contractStorageTrie;
+        return contractTrieStore;
     }
 
-    private static Trie orchidTrieDeserialize(byte[] bytes) {
+    private static TrieStore orchidTrieDeserialize(byte[] bytes) {
         final int keccakSize = Keccak256Helper.DEFAULT_SIZE_BYTES;
         int expectedSize = Short.BYTES + keccakSize;
         if (expectedSize > bytes.length) {
@@ -345,13 +347,15 @@ public class OrchidToUnitrieMigrator {
         byte[] root = Arrays.copyOfRange(bytes, Short.BYTES, expectedSize);
         TrieStore store = orchidTrieStoreDeserialize(bytes, expectedSize, new HashMapDB());
 
-        Trie newTrie = store.retrieve(root);
-
-        if (newTrie == null) {
-            throw new IllegalArgumentException(String.format("Deserialized storage doesn't contain expected trie: %s", Hex.toHexString(root)));
+        try {
+            store.retrieve(root);
+            return store;
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                    String.format("Deserialized storage doesn't contain expected trie: %s", Hex.toHexString(root)),
+                    ex
+            );
         }
-
-        return newTrie;
     }
 
     private static TrieStore orchidTrieStoreDeserialize(byte[] bytes, int offset, KeyValueDataSource ds) {
@@ -465,11 +469,6 @@ public class OrchidToUnitrieMigrator {
         public void save(Trie trie) {
             triesCache.put(trie.getHash(), trie);
             parent.save(trie);
-        }
-
-        @Override
-        public void saveValue(Trie trie) {
-            throw new UnsupportedOperationException("It's not expected for current store to save values");
         }
 
         @Override

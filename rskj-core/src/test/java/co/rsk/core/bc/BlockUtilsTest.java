@@ -23,10 +23,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockStore;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.ImportResult;
+import org.ethereum.core.*;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -41,15 +38,17 @@ import java.util.Set;
 public class BlockUtilsTest {
     @Test
     public void blockInSomeBlockChain() {
-        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+        BlockChainImpl blockChain = blockChainBuilder.build();
+        org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
 
         Block genesis = blockChain.getBestBlock();
 
-        Block block1 = new BlockBuilder().parent(genesis).build();
-        Block block1b = new BlockBuilder().parent(genesis).build();
-        Block block2 = new BlockBuilder().parent(block1).build();
-        Block block3 = new BlockBuilder().parent(block2).build();
-        blockChain.getBlockStore().saveBlock(block3, new BlockDifficulty(BigInteger.ONE), false);
+        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
+        Block block1b = new BlockBuilder(null, null, null).parent(genesis).build();
+        Block block2 = new BlockBuilder(null, null, null).parent(block1).build();
+        Block block3 = new BlockBuilder(null, null, null).parent(block2).build();
+        blockStore.saveBlock(block3, new BlockDifficulty(BigInteger.ONE), false);
 
         blockChain.tryToConnect(block1);
         blockChain.tryToConnect(block1b);
@@ -68,10 +67,10 @@ public class BlockUtilsTest {
 
         Block genesis = blockChain.getBestBlock();
 
-        Block block1 = new BlockBuilder().difficulty(2l).parent(genesis).build();
-        Block block1b = new BlockBuilder().difficulty(1l).parent(genesis).build();
-        Block block2 = new BlockBuilder().parent(block1).build();
-        Block block3 = new BlockBuilder().parent(block2).build();
+        Block block1 = new BlockBuilder(null, null, null).difficulty(2l).parent(genesis).build();
+        Block block1b = new BlockBuilder(null, null, null).difficulty(1l).parent(genesis).build();
+        Block block2 = new BlockBuilder(null, null, null).parent(block1).build();
+        Block block3 = new BlockBuilder(null, null, null).parent(block2).build();
 
         store.saveBlock(block3);
 
@@ -110,11 +109,15 @@ public class BlockUtilsTest {
 
     @Test
     public void unknowAncestorsHashesUsingUncles() {
-        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+        BlockChainImpl blockChain = blockChainBuilder.build();
         Genesis genesis = (Genesis) blockChain.getBestBlock();
         BlockStore store = new BlockStore();
 
-        BlockBuilder blockBuilder = new BlockBuilder(blockChain);
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, null,
+                                                     blockChainBuilder.getBlockStore()
+        ).trieStore(blockChainBuilder.getTrieStore());
+        blockBuilder.parent(blockChain.getBestBlock());
         Block block1 = blockBuilder.parent(genesis).build();
         Block block1b = blockBuilder.parent(genesis).build();
         Block block2 = blockBuilder.parent(block1).build();

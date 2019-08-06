@@ -24,6 +24,7 @@ import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.*;
@@ -159,7 +160,14 @@ public class Web3ImplSnapshotTest {
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = getMinerServerForTest(ethereum, minerClock);
         MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
-        EvmModule evmModule = new EvmModuleImpl(minerServer, minerClient, minerClock, blockchain, factory.getTransactionPool());
+        EvmModule evmModule = new EvmModuleImpl(minerServer, minerClient, minerClock,
+                                                new SnapshotManager(
+                                                        blockchain,
+                                                        factory.getBlockStore(),
+                                                        factory.getTransactionPool(),
+                                                        minerServer
+                                                )
+        );
         PersonalModule pm = new PersonalModuleWalletDisabled();
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);

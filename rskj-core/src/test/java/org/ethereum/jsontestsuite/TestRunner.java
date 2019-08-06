@@ -33,6 +33,8 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -130,7 +132,8 @@ public class TestRunner {
         ValidationStats vStats = new ValidationStats();
 
         Block genesis = build(testCase.getGenesisBlockHeader(), null, null);
-        Repository repository = RepositoryBuilder.build(testCase.getPre());
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        Repository repository = RepositoryBuilder.build(trieStore, testCase.getPre());
 
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
@@ -148,9 +151,11 @@ public class TestRunner {
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
                 null);
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
-
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
+
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
+
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
@@ -162,7 +167,7 @@ public class TestRunner {
                 1,
                 new BlockExecutor(
                         config.getActivationConfig(),
-                        new RepositoryLocator(repository, stateRootHandler),
+                        new RepositoryLocator(trieStore, stateRootHandler),
                         stateRootHandler,
                         transactionExecutorFactory
                 ),
@@ -675,7 +680,7 @@ public class TestRunner {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
     public Block build(

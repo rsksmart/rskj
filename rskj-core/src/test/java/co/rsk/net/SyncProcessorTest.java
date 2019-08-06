@@ -13,6 +13,7 @@ import co.rsk.net.sync.DownloadingBodiesSyncState;
 import co.rsk.net.sync.DownloadingHeadersSyncState;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.StatusUtils;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -51,7 +52,7 @@ public class SyncProcessorTest {
     @Test
     public void noPeers() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -74,7 +75,7 @@ public class SyncProcessorTest {
     @Test
     public void processStatusWithAdvancedPeers() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 
@@ -128,7 +129,7 @@ public class SyncProcessorTest {
     @Test
     public void syncWithAdvancedPeerAfterTimeoutWaitingPeers() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 
@@ -188,7 +189,7 @@ public class SyncProcessorTest {
     @Test
     public void dontSyncWithoutAdvancedPeerAfterTimeoutWaitingPeers() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 
@@ -228,7 +229,7 @@ public class SyncProcessorTest {
     @Test
     public void syncWithAdvancedStatusAnd5Peers() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 
@@ -307,7 +308,7 @@ public class SyncProcessorTest {
     @Test
     public void processStatusWithPeerWithSameDifficulty() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(100);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
@@ -341,7 +342,7 @@ public class SyncProcessorTest {
 
     @Test
     public void sendSkeletonRequest() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(100);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
         Channel channel = mock(Channel.class);
@@ -381,7 +382,7 @@ public class SyncProcessorTest {
 
     @Test
     public void sendBlockHashRequest() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
@@ -424,7 +425,7 @@ public class SyncProcessorTest {
 
     @Test(expected = Exception.class)
     public void processBlockHashResponseWithUnknownHash() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
 
@@ -442,7 +443,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processBlockHeadersResponseWithEmptyList() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
@@ -469,7 +470,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processBlockHeadersResponseRejectsNonSolicitedMessages() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(3);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
@@ -499,8 +500,8 @@ public class SyncProcessorTest {
 
     @Test
     public void processBlockHeadersResponseWithManyHeadersMissingFirstParent() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        Blockchain otherBlockchain = BlockChainBuilder.ofSize(10, true);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
+        Blockchain otherBlockchain = new BlockChainBuilder().ofSize(10, true);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -532,7 +533,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processBlockHeadersResponseWithOneExistingHeader() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(3);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
@@ -562,7 +563,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processBodyResponseRejectsNonSolicitedMessages() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(3);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -590,7 +591,7 @@ public class SyncProcessorTest {
     @Test
     public void processBodyResponseAddsToBlockchain() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(10);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
@@ -642,7 +643,7 @@ public class SyncProcessorTest {
     @Test
     public void doesntProcessInvalidBodyResponse() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(10);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
@@ -702,7 +703,7 @@ public class SyncProcessorTest {
     @Test
     public void doesntProcessUnexpectedBodyResponse() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(10);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
@@ -766,7 +767,8 @@ public class SyncProcessorTest {
         accounts.put(receiverAccount.getAddress(), new AccountState(BigInteger.ZERO, Coin.ZERO));
 
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(0, false, accounts);
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+        Blockchain blockchain = blockChainBuilder.ofSize(0, false, accounts);
 
         Block genesis = blockchain.getBestBlock();
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
@@ -777,20 +779,25 @@ public class SyncProcessorTest {
                 createTransaction(senderAccount, receiverAccount, BigInteger.valueOf(1000000), BigInteger.ZERO)
         );
 
-        Block block = new BlockGenerator().createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
+        Block block = new BlockGenerator().createChildBlock(genesis, txs, blockChainBuilder.getRepository().getRoot());
 
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                config.getNetworkConstants().getBridgeConstants(),
+                config.getActivationConfig());
+
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
-                new RepositoryLocator(blockchain.getRepository(), stateRootHandler),
+                new RepositoryLocator(blockChainBuilder.getTrieStore(), stateRootHandler),
                 stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
-                        blockchain.getBlockStore(),
+                        blockChainBuilder.getBlockStore(),
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()))
+                        new PrecompiledContracts(config, bridgeSupportFactory)
                 )
         );
         Assert.assertEquals(1, block.getTransactionsList().size());
@@ -843,7 +850,7 @@ public class SyncProcessorTest {
     @Test
     public void processBlockResponseAddsToBlockchain() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(10);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
@@ -879,8 +886,8 @@ public class SyncProcessorTest {
 
     @Test
     public void findConnectionPointBlockchainWithGenesisVsBlockchainWith100Blocks() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        Blockchain advancedBlockchain = BlockChainBuilder.ofSize(100);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
+        Blockchain advancedBlockchain = new BlockChainBuilder().ofSize(100);
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
@@ -940,7 +947,7 @@ public class SyncProcessorTest {
 
     @Test
     public void findConnectionPointBlockchainWith30BlocksVsBlockchainWith100Blocks() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(30);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(30);
         Blockchain advancedBlockchain = BlockChainBuilder.copyAndExtend(blockchain, 70);
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
@@ -1002,7 +1009,7 @@ public class SyncProcessorTest {
     @Test
     public void processSkeletonResponseWithTenBlockIdentifiers() {
         final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -1057,7 +1064,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processSkeletonResponseWithoutBlockIdentifiers() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
@@ -1087,7 +1094,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processSkeletonResponseWithConnectionPoint() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(25);
+        Blockchain blockchain = new BlockChainBuilder().ofSize(25);
 
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();

@@ -24,7 +24,6 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
-import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -195,19 +194,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private ActivationConfig.ForBlock activations;
     private org.ethereum.core.Transaction rskTx;
-    private org.ethereum.core.Block rskExecutionBlock;
-    private Repository repository;
-    private List<LogInfo> logs;
 
     private BridgeSupport bridgeSupport;
-    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private BridgeSupportFactory bridgeSupportFactory;
 
-    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig, BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
+    public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
+            BridgeSupportFactory bridgeSupportFactory) {
+        this.bridgeSupportFactory = bridgeSupportFactory;
         this.contractAddress = contractAddress;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
         this.activationConfig = activationConfig;
-        this.btcBlockStoreFactory = btcBlockStoreFactory;
     }
 
     @Override
@@ -284,11 +281,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public void init(Transaction rskTx, Block rskExecutionBlock, Repository repository, BlockStore rskBlockStore, ReceiptStore rskReceiptStore, List<LogInfo> logs) {
         this.activations = activationConfig.forBlock(rskExecutionBlock.getNumber());
         this.rskTx = rskTx;
-        this.rskExecutionBlock = rskExecutionBlock;
-        this.repository = repository;
-        this.logs = logs;
 
-        this.bridgeSupport = setup();
+        this.bridgeSupport = bridgeSupportFactory.newInstance(
+                repository,
+                rskExecutionBlock,
+                contractAddress,
+                logs);
     }
 
     @Override
@@ -345,23 +343,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             panicProcessor.panic("bridgeexecute", ex.getMessage());
             throw new RuntimeException(String.format("Exception executing bridge: %s", ex.getMessage()), ex);
         }
-    }
-
-    private BridgeSupport setup() {
-        return new BridgeSupport(
-                bridgeConstants,
-                new BridgeStorageProvider(
-                        repository,
-                        contractAddress,
-                        bridgeConstants,
-                        BridgeStorageConfiguration.fromBlockchainConfig(activations)
-                ),
-                new BridgeEventLoggerImpl(bridgeConstants, logs),
-                repository,
-                rskExecutionBlock,
-                btcBlockStoreFactory,
-                null
-        );
     }
 
     private void teardown() throws IOException {

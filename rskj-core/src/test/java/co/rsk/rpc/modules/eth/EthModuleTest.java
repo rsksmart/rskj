@@ -20,6 +20,7 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.bc.BlockResult;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.core.Block;
 import org.ethereum.rpc.TypeConverter;
@@ -54,14 +55,14 @@ public class EthModuleTest {
         EthModule eth = new EthModule(
                 null,
                 null,
-                null,
                 executor,
                 retriever,
                 null,
                 null,
                 null,
                 null,
-                null);
+                new BridgeSupportFactory(
+                        null, null, null));
 
         String result = eth.call(args, "latest");
         assertThat(result, is(TypeConverter.toJsonHex(hreturn)));

@@ -24,12 +24,13 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
-import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.test.World;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
@@ -41,34 +42,23 @@ import java.util.List;
  * Created by ajlopez on 8/6/2016.
  */
 public class BlockBuilder {
-    private Blockchain blockChain;
+    private final Blockchain blockChain;
     private final BlockGenerator blockGenerator;
+    private TrieStore trieStore;
     private Block parent;
     private long difficulty;
     private List<Transaction> txs;
     private List<BlockHeader> uncles;
     private BigInteger minGasPrice;
     private byte[] gasLimit;
-    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private final BridgeSupportFactory bridgeSupportFactory;
+    private BlockStore blockStore;
 
-    public BlockBuilder() {
-        this.blockGenerator = new BlockGenerator();
-    }
-
-    public BlockBuilder(World world) {
-        this(world.getBlockChain(), new BlockGenerator());
-        this.btcBlockStoreFactory = world.getBtcBlockStoreFactory();
-    }
-
-    public BlockBuilder(Blockchain blockChain) {
-        this(blockChain, new BlockGenerator());
-    }
-
-    private BlockBuilder(Blockchain blockChain, BlockGenerator blockGenerator) {
+    public BlockBuilder(Blockchain blockChain, BridgeSupportFactory bridgeSupportFactory, BlockStore blockStore) {
         this.blockChain = blockChain;
-        this.blockGenerator = blockGenerator;
-        // sane defaults
-        this.parent(blockChain.getBestBlock());
+        this.blockGenerator = new BlockGenerator();
+        this.bridgeSupportFactory = bridgeSupportFactory;
+        this.blockStore = blockStore;
     }
 
     public BlockBuilder parent(Block parent) {
@@ -105,6 +95,11 @@ public class BlockBuilder {
         return this;
     }
 
+    public BlockBuilder trieStore(TrieStore store) {
+        this.trieStore = store;
+        return this;
+    }
+
     public Block build() {
         Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
@@ -113,15 +108,15 @@ public class BlockBuilder {
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
-                    new RepositoryLocator(blockChain.getRepository(), stateRootHandler),
+                    new RepositoryLocator(trieStore, stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
-                            blockChain.getBlockStore(),
+                            blockStore,
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl(),
-                            new PrecompiledContracts(config, btcBlockStoreFactory)
+                            new PrecompiledContracts(config, bridgeSupportFactory)
                     )
             );
             executor.executeAndFill(block, parent.getHeader());

@@ -19,7 +19,9 @@
 package co.rsk.core;
 
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,13 +29,16 @@ import com.google.common.io.ByteStreams;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
-import org.ethereum.core.Repository;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
@@ -43,11 +48,38 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /**
  * Created by oscar on 13/01/2017.
  */
 public class NetworkStateExporterTest {
     static String jsonFileName = "networkStateExporterTest.json";
+    private MutableRepository repository;
+    private NetworkStateExporter nse;
+    private Blockchain blockchain;
+    private Block block;
+
+    @Before
+    public void setup() {
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
+        repository = new MutableRepository(mutableTrie);
+        blockchain = mock(Blockchain.class);
+
+        block = mock(Block.class);
+        when(blockchain.getBestBlock()).thenReturn(block);
+        BlockHeader blockHeader = mock(BlockHeader.class);
+        when(block.getHeader()).thenReturn(blockHeader);
+
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+
+        when(repositoryLocator.snapshotAt(block.getHeader()))
+                .thenReturn(new MutableRepository(mutableTrie));
+
+        this.nse = new NetworkStateExporter(repositoryLocator, blockchain);
+    }
 
     @AfterClass
     public static void cleanup(){
@@ -56,18 +88,13 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testEmptyRepo() throws Exception {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
-
-        Map result = writeAndReadJson(repository);
+        Map result = writeAndReadJson();
 
         Assert.assertEquals(0, result.keySet().size());
     }
 
     @Test
     public void testNoContracts() throws Exception {
-        // This test will work on a non-secured Trie. To make it work with a secured-trie
-        // you have to do GlobalKeyMap.enabled = true first.
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
@@ -99,8 +126,7 @@ public class NetworkStateExporterTest {
         repository.addBalance(PrecompiledContracts.REMASC_ADDR, Coin.valueOf(10L));
         repository.increaseNonce(PrecompiledContracts.REMASC_ADDR);
 
-
-        Map result = writeAndReadJson(repository);
+        Map result = writeAndReadJson();
         Assert.assertEquals(3, result.keySet().size());
 
         Map address1Value = (Map) result.get(address1String);
@@ -120,7 +146,6 @@ public class NetworkStateExporterTest {
     }
     @Test
     public void testContracts() throws Exception {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress addr1 = new RskAddress(address1String);
         repository.createAccount(addr1);
@@ -134,7 +159,7 @@ public class NetworkStateExporterTest {
         AccountState accountState = repository.getAccountState(addr1);
         repository.updateAccountState(addr1, accountState);
 
-        Map result = writeAndReadJson(repository);
+        Map result = writeAndReadJson();
 
         Assert.assertEquals(1, result.keySet().size());
 
@@ -156,9 +181,7 @@ public class NetworkStateExporterTest {
         Assert.assertEquals("05060708", data.get(Hex.toHexString(DataWord.ONE.getData())));
     }
 
-
-    private Map writeAndReadJson(Repository repository) throws Exception {
-        NetworkStateExporter nse = new NetworkStateExporter(repository);
+    private Map writeAndReadJson() throws Exception {
         Assert.assertTrue(nse.exportStatus(jsonFileName));
 
         InputStream inputStream = new FileInputStream(jsonFileName);
@@ -169,5 +192,4 @@ public class NetworkStateExporterTest {
         Map result = new ObjectMapper().readValue(json, type);
         return result;
     }
-
 }

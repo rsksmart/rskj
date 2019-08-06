@@ -60,10 +60,6 @@ public class Web3Mocks {
         return mock(ChannelManager.class);
     }
 
-    public static Repository getMockRepository() {
-        return mock(Repository.class);
-    }
-
     public static RepositoryLocator getMockRepositoryLocator() {
         return mock(RepositoryLocator.class);
     }
@@ -73,7 +69,7 @@ public class Web3Mocks {
     }
 
     public static BlockStore getMockBlockStore() {
-        return mock(BlockStore.class);
+        return mock(BlockStore.class, RETURNS_DEEP_STUBS);
     }
 
     public static MessageHandler getMockMessageHandler() {

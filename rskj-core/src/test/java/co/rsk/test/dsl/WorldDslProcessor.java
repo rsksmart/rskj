@@ -25,6 +25,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
@@ -53,7 +54,10 @@ public class WorldDslProcessor {
 
     public WorldDslProcessor(World world) {
         this.world = world;
-        this.blockBuilder = new BlockBuilder(world);
+        BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                                     world.getBlockStore()).trieStore(world.getTrieStore());
+        blockBuilder.parent(world.getBlockChain().getBestBlock());
+        this.blockBuilder = blockBuilder;
     }
 
     public World getWorld() { return this.world; }
@@ -136,7 +140,9 @@ public class WorldDslProcessor {
                 accountAddress = new RskAddress(accountName);
         }
 
-        Coin accountBalance = world.getRepository().getBalance(accountAddress);
+        BlockHeader bestBlock = world.getBlockChain().getBestBlock().getHeader();
+        RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(bestBlock);
+        Coin accountBalance = repository.getBalance(accountAddress);
         if (expected.equals(accountBalance))
             return;
 
@@ -205,7 +211,6 @@ public class WorldDslProcessor {
             block.seal();
 
             latestImportResult = blockChain.tryToConnect(block);
-            blockChain.getRepository().syncToRoot(block.getStateRoot());
         }
     }
 
@@ -249,11 +254,11 @@ public class WorldDslProcessor {
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
-                    new RepositoryLocator(world.getRepository(), stateRootHandler),
+                    new RepositoryLocator(world.getTrieStore(), stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
-                            world.getBlockChain().getBlockStore(),
+                            world.getBlockStore(),
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,

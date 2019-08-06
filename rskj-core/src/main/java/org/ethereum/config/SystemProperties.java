@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -312,10 +313,6 @@ public abstract class SystemProperties {
         return configFromFiles.getString("hello.phrase");
     }
 
-    public String rootHashStart() {
-        return configFromFiles.hasPath("root.hash.start") ? configFromFiles.getString("root.hash.start") : null;
-    }
-
     public List<String> peerCapabilities() {
         return configFromFiles.hasPath("peer.capabilities") ?  configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
     }
@@ -429,8 +426,6 @@ public abstract class SystemProperties {
                     publicIp = address.getHostAddress();
                     logger.info("Public IP identified {}", publicIp);
                     return publicIp;
-                } catch (IOException e) {
-                    logger.warn("Can't resolve public IP", e);
                 } catch (IllegalArgumentException e) {
                     logger.warn("Can't resolve public IP", e);
                 }
@@ -438,39 +433,44 @@ public abstract class SystemProperties {
             }
         }
 
-        publicIp = getMyPublicIpFromRemoteService();
+        publicIp = getMyPublicIpFromRemoteService().getHostAddress();
         return publicIp;
     }
 
-    private String getMyPublicIpFromRemoteService(){
+    private InetAddress getMyPublicIpFromRemoteService(){
         try {
-            logger.info("Public IP wasn't set or resolved, using checkip.amazonaws.com to identify it...");
+            URL ipCheckService = publicIpCheckService();
+            logger.info("Public IP wasn't set or resolved, using {} to identify it...", ipCheckService);
 
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(new URL("http://checkip.amazonaws.com").openStream()))) {
-                publicIp = in.readLine();
+            String ipFromService;
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(ipCheckService.openStream()))) {
+                ipFromService = in.readLine();
             }
 
-            if (publicIp == null || publicIp.trim().isEmpty()) {
-                logger.warn("Unable to retrieve public IP from checkip.amazonaws.com {}.", publicIp);
-                throw new IOException("Invalid address: '" + publicIp + "'");
+            if (ipFromService == null || ipFromService.trim().isEmpty()) {
+                logger.warn("Unable to retrieve public IP from {} {}.", ipCheckService, ipFromService);
+                throw new IOException("Invalid address: '" + ipFromService + "'");
             }
 
-            tryParseIpOrThrow(publicIp);
-            logger.info("Identified public IP: {}", publicIp);
-            return publicIp;
+            InetAddress resolvedIp = tryParseIpOrThrow(ipFromService);
+            logger.info("Identified public IP: {}", resolvedIp);
+            return resolvedIp;
         } catch (IOException e) {
             logger.error("Can't get public IP", e);
         } catch (IllegalArgumentException e) {
             logger.error("Can't get public IP", e);
         }
 
-        String bindAddress = getBindAddress().toString();
-        if (getBindAddress().isAnyLocalAddress()){
+        InetAddress bindAddress = getBindAddress();
+        if (bindAddress.isAnyLocalAddress()){
             throw new RuntimeException("Wildcard on bind address it's not allowed as fallback for public IP " + bindAddress);
         }
-        publicIp = bindAddress;
 
-        return publicIp;
+        return bindAddress;
+    }
+
+    private URL publicIpCheckService() throws MalformedURLException {
+        return new URL(configFromFiles.getString("public.ipCheckService"));
     }
 
     public boolean isSyncEnabled() {
@@ -622,11 +622,16 @@ public abstract class SystemProperties {
         return configFromFiles.getString(PROPERTY_RPC_CORS);
     }
 
-    private InetAddress tryParseIpOrThrow(String ipToParse) throws IOException {
+    /**
+     * Parses a list of IPs separated by commas. E.g. "171.99.160.48, 171.99.160.48".
+     */
+    private InetAddress tryParseIpOrThrow(String ipsToParse) {
         try {
+            String[] ips = ipsToParse.split(", ");
+            String ipToParse = ips[ips.length - 1];
             return InetAddress.getByName(ipToParse);
         } catch (UnknownHostException e) {
-            throw new IllegalArgumentException("Invalid address: '" + ipToParse + "'", e);
+            throw new IllegalArgumentException("Invalid address(es): '" + ipsToParse + "'", e);
         }
     }
 

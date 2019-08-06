@@ -137,7 +137,7 @@ public class SimpleAsyncNode extends SimpleNode {
     // TODO(mc) find out why the following two work differently
 
     public static SimpleAsyncNode createNodeWithBlockChainBuilder(int size) {
-        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockChainBuilder.extend(blockchain, size, false, true);
         return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
     }

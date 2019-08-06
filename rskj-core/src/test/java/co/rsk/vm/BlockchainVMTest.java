@@ -21,6 +21,8 @@ package co.rsk.vm;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.World;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
@@ -51,6 +53,7 @@ public class BlockchainVMTest {
         public Blockchain blockchain;
         public ECKey faucetKey;
         public Repository repository;
+        public RepositoryLocator repositoryLocator;
     }
     static long addrCounter =1;
 
@@ -65,7 +68,7 @@ public class BlockchainVMTest {
         NewBlockChainInfo binfo = createNewBlockchain();
         Blockchain blockchain = binfo.blockchain;
         BlockGenerator blockGenerator = new BlockGenerator();
-        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), Collections.emptyList(), binfo.repository.getRoot());
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), Collections.emptyList(), blockchain.getBestBlock().getStateRoot());
         Coin transferAmount = Coin.valueOf(100L);
         // Add a single transaction paying to a new address
         byte[] dstAddress = randomAddress();
@@ -83,16 +86,16 @@ public class BlockchainVMTest {
         t.sign(binfo.faucetKey.getPrivKeyBytes());
         List<Transaction> txs = Collections.singletonList(t);
 
-        Block block2 = blockGenerator.createChildBlock(block1, txs, binfo.repository.getRoot());
+        Block block2 = blockGenerator.createChildBlock(block1, txs, blockchain.getBestBlock().getStateRoot());
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
 
         MinerHelper mh = new MinerHelper(
-                binfo.repository, binfo.blockchain);
+                binfo.repository, binfo.repositoryLocator, binfo.blockchain);
 
         mh.completeBlock(block2, block1);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block2));
-        blockchain.getRepository().syncToRoot(block2.getStateRoot());
+        RepositorySnapshot repository = binfo.repositoryLocator.snapshotAt(block2.getHeader());
 
         Assert.assertEquals(blockchain.getBestBlock(), block2);
         Assert.assertEquals(2, block2.getNumber());
@@ -101,11 +104,11 @@ public class BlockchainVMTest {
         srcAmount = srcAmount.subtract(transactionGasPrice.multiply(transactionGasLimit));
 
         Assert.assertEquals(
-                binfo.repository.getBalance(new RskAddress(binfo.faucetKey.getAddress())),
+                repository.getBalance(new RskAddress(binfo.faucetKey.getAddress())),
                 srcAmount);
 
         Assert.assertEquals(
-                binfo.repository.getBalance(new RskAddress(dstAddress)),
+                repository.getBalance(new RskAddress(dstAddress)),
                 transferAmount);
     }
 
@@ -116,6 +119,7 @@ public class BlockchainVMTest {
         binfo.faucetKey = createFaucetAccount(world);
         binfo.blockchain = world.getBlockChain();
         binfo.repository = world.getRepository();
+        binfo.repositoryLocator = new RepositoryLocator(world.getTrieStore(), world.getStateRootHandler());
         return binfo;
     }
 

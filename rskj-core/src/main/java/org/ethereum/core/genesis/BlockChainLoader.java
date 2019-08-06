@@ -21,27 +21,19 @@ package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
-import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.StateRootHandler;
-import co.rsk.trie.Trie;
 import co.rsk.validators.BlockValidator;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 /**
  * Created by mario on 13/01/17.
@@ -85,6 +77,26 @@ public class BlockChainLoader {
     }
 
     public BlockChainImpl loadBlockchain() {
+        BlockDifficulty totalDifficulty;
+        Block bestBlock = blockStore.getBestBlock();
+        if (bestBlock == null) {
+            logger.info("DB is empty - adding Genesis");
+
+            bestBlock = genesis;
+            totalDifficulty = genesis.getCumulativeDifficulty();
+
+            listener.onBlock(genesis, new ArrayList<>());
+
+            logger.info("Genesis block loaded");
+        } else {
+            totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
+
+            logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
+                    bestBlock.getNumber(),
+                    totalDifficulty,
+                    Hex.toHexString(bestBlock.getStateRoot()));
+        }
+
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
@@ -97,87 +109,8 @@ public class BlockChainLoader {
                 blockExecutor,
                 stateRootHandler
         );
-
-        Block bestBlock = blockStore.getBestBlock();
-        if (bestBlock == null) {
-            logger.info("DB is empty - adding Genesis");
-
-            loadRepository(this.repository);
-            updateGenesis(this.repository);
-            blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
-            blockchain.setStatus(genesis, genesis.getCumulativeDifficulty());
-
-            listener.onBlock(genesis, new ArrayList<>() );
-
-            logger.info("Genesis block loaded");
-        } else {
-            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
-            blockchain.setStatus(bestBlock, totalDifficulty);
-
-            // we need to do this because when bestBlock == null we touch the genesis' state root
-            Repository genesisRepo = new MutableRepository(new MutableTrieImpl(new Trie()));
-            loadRepository(genesisRepo);
-            updateGenesis(genesisRepo);
-
-            logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
-                    blockchain.getBestBlock().getNumber(),
-                    blockchain.getTotalDifficulty(),
-                    Hex.toHexString(blockchain.getBestBlock().getStateRoot()));
-        }
-
-        String rootHash = config.rootHashStart();
-        if (rootHash != null && !"".equals(rootHash.trim())) {
-            // update world state by dummy hash
-            byte[] rootHashArray = Hex.decode(rootHash);
-            logger.info("Loading root hash from property file: [{}]", rootHash);
-            this.repository.syncToRoot(rootHashArray);
-        }
+        blockchain.setStatus(bestBlock, totalDifficulty);
 
         return blockchain;
-    }
-
-    private void updateGenesis(Repository repository) {
-        genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), repository.getMutableTrie().getTrie()).getBytes());
-        genesis.flushRLP();
-        stateRootHandler.register(genesis.getHeader(), repository.getMutableTrie().getTrie());
-    }
-
-    private void loadRepository(Repository repository) {
-        // first we need to create the accounts, which creates also the associated ContractDetails
-        for (RskAddress accounts : genesis.getAccounts().keySet()) {
-            repository.createAccount(accounts);
-        }
-
-        // second we create contracts whom only have code modifying the preexisting ContractDetails instance
-        for (Map.Entry<RskAddress, byte[]> codeEntry : genesis.getCodes().entrySet()) {
-            RskAddress contractAddress = codeEntry.getKey();
-            repository.setupContract(contractAddress);
-            repository.saveCode(contractAddress, codeEntry.getValue());
-            Map<DataWord, byte[]> contractStorage = genesis.getStorages().get(contractAddress);
-            for (Map.Entry<DataWord, byte[]> storageEntry : contractStorage.entrySet()) {
-                repository.addStorageBytes(contractAddress, storageEntry.getKey(), storageEntry.getValue());
-            }
-        }
-
-        // given the accounts had the proper storage root set from the genesis construction we update the account state
-        for (Map.Entry<RskAddress, AccountState> accountEntry : genesis.getAccounts().entrySet()) {
-            repository.updateAccountState(accountEntry.getKey(), accountEntry.getValue());
-        }
-
-        setupPrecompiledContractsStorage(repository);
-
-        repository.commit();
-        repository.save();
-    }
-
-    /**
-     * When created, contracts are marked in storage for consistency.
-     * Here, we apply this logic to precompiled contracts depending on consensus rules
-     */
-    private void setupPrecompiledContractsStorage(Repository repository) {
-        ActivationConfig.ForBlock genesisActivations = config.getActivationConfig().forBlock(0);
-        if (genesisActivations.isActivating(ConsensusRule.RSKIP126)) {
-            BlockExecutor.maintainPrecompiledContractStorageRoots(repository, genesisActivations);
-        }
     }
 }

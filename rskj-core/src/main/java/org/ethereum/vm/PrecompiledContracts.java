@@ -26,7 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
-import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.remasc.RemascContract;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -108,12 +108,12 @@ public class PrecompiledContracts {
     private static Ripempd160 ripempd160 = new Ripempd160();
     private static Identity identity = new Identity();
     private static BigIntegerModexp bigIntegerModexp = new BigIntegerModexp();
-    private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     private final RskSystemProperties config;
+    private final BridgeSupportFactory bridgeSupportFactory;
 
-    public PrecompiledContracts(RskSystemProperties config, BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
+    public PrecompiledContracts(RskSystemProperties config, BridgeSupportFactory bridgeSupportFactory) {
         this.config = config;
-        this.btcBlockStoreFactory = btcBlockStoreFactory;
+        this.bridgeSupportFactory = bridgeSupportFactory;
     }
 
 
@@ -135,7 +135,8 @@ public class PrecompiledContracts {
             return identity;
         }
         if (address.equals(BRIDGE_ADDR_DW)) {
-            return new Bridge(BRIDGE_ADDR, config.getNetworkConstants(), config.getActivationConfig(), btcBlockStoreFactory);
+            return new Bridge(BRIDGE_ADDR, config.getNetworkConstants(), config.getActivationConfig(),
+                    bridgeSupportFactory);
         }
         if (address.equals(BIG_INT_MODEXP_ADDR_DW)) {
             return bigIntegerModexp;

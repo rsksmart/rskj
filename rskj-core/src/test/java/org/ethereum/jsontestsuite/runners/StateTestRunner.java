@@ -20,14 +20,15 @@
 package org.ethereum.jsontestsuite.runners;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.*;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
-import co.rsk.peg.BtcBlockStoreWithCache;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -54,10 +55,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.byteArrayToLong;
@@ -74,6 +72,7 @@ public class StateTestRunner {
     }
 
     protected StateTestCase stateTestCase;
+    private TrieStoreImpl trieStore;
     protected Repository repository;
     protected Transaction transaction;
     protected BlockChainImpl blockchain;
@@ -86,8 +85,7 @@ public class StateTestRunner {
     public StateTestRunner(StateTestCase stateTestCase) {
         this.stateTestCase = stateTestCase;
         setstateTestUSeREMASC(false);
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
-        precompiledContracts = new PrecompiledContracts(config, btcBlockStoreFactory);
+        precompiledContracts = new PrecompiledContracts(config, null);
     }
 
     public StateTestRunner setstateTestUSeREMASC(boolean v) {
@@ -125,7 +123,8 @@ public class StateTestRunner {
     public List<String> runImpl() {
         vStats = new ValidationStats();
         logger.info("");
-        repository = RepositoryBuilder.build(stateTestCase.getPre());
+        trieStore = new TrieStoreImpl(new HashMapDB());
+        repository = RepositoryBuilder.build(trieStore, stateTestCase.getPre());
         logger.info("loaded repository");
 
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
@@ -143,7 +142,7 @@ public class StateTestRunner {
                 1,
                 new BlockExecutor(
                         config.getActivationConfig(),
-                        new RepositoryLocator(repository, stateRootHandler),
+                        new RepositoryLocator(trieStore, stateRootHandler),
                         stateRootHandler,
                         new TransactionExecutorFactory(
                                 config,

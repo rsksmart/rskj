@@ -18,19 +18,19 @@
 
 package co.rsk.core;
 
-import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
-import org.ethereum.util.RskTestFactory;
+import org.ethereum.db.BlockStore;
+import org.ethereum.util.RskTestContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.List;
 
 import static org.mockito.Mockito.mock;
 
@@ -40,19 +40,22 @@ import static org.mockito.Mockito.mock;
 public class SnapshotManagerTest {
 
     private Blockchain blockchain;
-    private Repository repository;
     private TransactionPool transactionPool;
     private SnapshotManager manager;
+    private MinerServer minerServer;
+    private MinerClient minerClient;
 
     @Before
     public void setUp() {
-        RskTestFactory factory = new RskTestFactory();
+        RskTestContext factory = new RskTestContext(new String[]{"--regtest"});
         blockchain = factory.getBlockchain();
-        repository = factory.getRepository();
+        minerServer = factory.getMinerServer();
+        minerClient = factory.getMinerClient();
         transactionPool = factory.getTransactionPool();
+        BlockStore blockStore = factory.getBlockStore();
         // don't call start to avoid creating threads
         transactionPool.processBest(blockchain.getBestBlock());
-        manager = new SnapshotManager(blockchain, transactionPool, mock(MinerServer.class));
+        manager = new SnapshotManager(blockchain, blockStore, transactionPool, mock(MinerServer.class));
     }
 
     @Test
@@ -75,7 +78,7 @@ public class SnapshotManagerTest {
 
     @Test
     public void takeSnapshotOnManyBlocks() {
-        addBlocks(blockchain, 10);
+        addBlocks(10);
 
         int result = manager.takeSnapshot();
 
@@ -89,13 +92,13 @@ public class SnapshotManagerTest {
 
     @Test
     public void takeTwoSnapshots() {
-        addBlocks(blockchain, 10);
+        addBlocks(10);
 
         int result1 = manager.takeSnapshot();
 
         Assert.assertEquals(1, result1);
 
-        addBlocks(blockchain, 10);
+        addBlocks(10);
 
         int result2 = manager.takeSnapshot();
 
@@ -122,13 +125,13 @@ public class SnapshotManagerTest {
 
     @Test
     public void revertToSnapshot() {
-        addBlocks(blockchain, 10);
+        addBlocks(10);
 
         BlockChainStatus status = blockchain.getStatus();
 
         int snapshotId = manager.takeSnapshot();
 
-        addBlocks(blockchain, 20);
+        addBlocks(20);
 
         Assert.assertEquals(30, blockchain.getStatus().getBestBlockNumber());
 
@@ -146,13 +149,13 @@ public class SnapshotManagerTest {
 
     @Test
     public void revertToSnapshotClearingTransactionPool() {
-        addBlocks(blockchain, 10);
+        addBlocks(10);
 
         BlockChainStatus status = blockchain.getStatus();
 
         int snapshotId = manager.takeSnapshot();
 
-        addBlocks(blockchain, 20);
+        addBlocks(20);
 
         manager.takeSnapshot();
 
@@ -160,8 +163,6 @@ public class SnapshotManagerTest {
 
         Assert.assertNotNull(transactionPool);
 
-        setUpSampleAccounts();
-        repository.commit();
         transactionPool.addTransaction(createSampleTransaction());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
@@ -189,16 +190,12 @@ public class SnapshotManagerTest {
         Block genesis = blockchain.getBestBlock();
         BlockDifficulty genesisDifficulty = blockchain.getStatus().getTotalDifficulty();
 
-        addBlocks(blockchain, 10);
+        addBlocks(10);
 
         BlockChainStatus status = blockchain.getStatus();
 
         Assert.assertEquals(10, status.getBestBlockNumber());
 
-        setUpSampleAccounts();
-        // Now the repository has uncommited changes. Before taking a snapshot,
-        // it should commit them upstream.
-        repository.commit();
         transactionPool.addTransaction(createSampleTransaction());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
         Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
@@ -224,27 +221,15 @@ public class SnapshotManagerTest {
             Assert.assertTrue(blockchain.getBlocksByNumber(k).isEmpty());
     }
 
-    private static void addBlocks(Blockchain blockchain, int size) {
-        List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
-
-        for (Block block : blocks)
-            blockchain.tryToConnect(block);
-    }
-
-    private void setUpSampleAccounts() {
-        Repository track = repository.startTracking();
-
-        for (String name : new String[]{"sender", "receiver"}) {
-            Account account = new AccountBuilder().name(name).build();
-            track.createAccount(account.getAddress());
-            track.addBalance(account.getAddress(), Coin.valueOf(5000000));
+    private void addBlocks(int size) {
+        for (int i = 0; i < size; i++) {
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            Assert.assertTrue(minerClient.mineBlock());
         }
-
-        track.commit();
     }
 
-    private static Transaction createSampleTransaction() {
-        Account sender = new AccountBuilder().name("sender").build();
+    private Transaction createSampleTransaction() {
+        Account sender = new AccountBuilder().name("cow").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
         Transaction tx = new TransactionBuilder()

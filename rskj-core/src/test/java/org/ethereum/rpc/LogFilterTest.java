@@ -20,8 +20,10 @@ package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.RskAddress;
+import co.rsk.db.RepositoryLocator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,8 +58,11 @@ public class LogFilterTest {
 
     @Test
     public void eventAfterBlockWithEvent() {
-        Blockchain blockchain = new RskTestFactory().getBlockchain();
-        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain);
+        RskTestFactory factory = new RskTestFactory();
+        Blockchain blockchain = factory.getBlockchain();
+        BlockStore blockStore = factory.getBlockStore();
+        RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
+        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, blockStore, repositoryLocator, factory.getTrieStore());
         Block block = blockchain.getBestBlock();
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
@@ -74,8 +79,11 @@ public class LogFilterTest {
 
     @Test
     public void twoEventsAfterTwoBlocksWithEventAndToLatestBlock() {
-        Blockchain blockchain = new RskTestFactory().getBlockchain();
-        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain);
+        RskTestFactory factory = new RskTestFactory();
+        Blockchain blockchain = factory.getBlockchain();
+        BlockStore blockStore = factory.getBlockStore();
+        RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
+        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, blockStore, repositoryLocator, factory.getTrieStore());
         Block block = blockchain.getBestBlock();
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
@@ -93,8 +101,11 @@ public class LogFilterTest {
 
     @Test
     public void onlyOneEventAfterTwoBlocksWithEventAndFromLatestBlock() {
-        Blockchain blockchain = new RskTestFactory().getBlockchain();
-        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain);
+        RskTestFactory factory = new RskTestFactory();
+        Blockchain blockchain = factory.getBlockchain();
+        BlockStore blockStore = factory.getBlockStore();
+        RepositoryLocator repositoryLocator = factory.getRepositoryLocator();
+        Web3ImplLogsTest.addEmptyBlockToBlockchain(blockchain, blockStore, repositoryLocator, factory.getTrieStore());
         Block block = blockchain.getBestBlock();
 
         AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);

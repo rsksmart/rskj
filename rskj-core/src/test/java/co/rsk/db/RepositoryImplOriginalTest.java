@@ -46,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
 
 /**
@@ -743,61 +742,13 @@ public class RepositoryImplOriginalTest {
         assertThat(repository.getStorageValue(HORSE, horseKey1), is(horseVal0));
     }
 
-    @Test // testing for snapshot
-    public void test20() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
-        byte[] root = repository.getRoot();
-
-        DataWord cowKey1 = DataWord.valueFromHex("c1");
-        DataWord cowKey2 = DataWord.valueFromHex("c2");
-        DataWord cowVal1 = DataWord.valueFromHex("c0a1");
-        DataWord cowVal0 = DataWord.valueFromHex("c0a0");
-
-        DataWord horseKey1 = DataWord.valueFromHex("e1");
-        DataWord horseKey2 = DataWord.valueFromHex("e2");
-        DataWord horseVal1 = DataWord.valueFromHex("c0a1");
-        DataWord horseVal0 = DataWord.valueFromHex("c0a0");
-
-        Repository track2 = repository.startTracking(); //track
-        track2.addStorageRow(COW, cowKey1, cowVal1);
-        track2.addStorageRow(HORSE, horseKey1, horseVal1);
-        track2.commit();
-
-        byte[] root2 = repository.getRoot();
-
-        track2 = repository.startTracking(); //track
-        track2.addStorageRow(COW, cowKey2, cowVal0);
-        track2.addStorageRow(HORSE, horseKey2, horseVal0);
-        track2.commit();
-
-        byte[] root3 = repository.getRoot();
-
-        Repository snapshot = repository.getSnapshotTo(root);
-        assertThat(snapshot.getStorageValue(COW, cowKey1), is(nullValue()));
-        assertThat(snapshot.getStorageValue(COW, cowKey2), is(nullValue()));
-        assertThat(snapshot.getStorageValue(HORSE, horseKey1), is(nullValue()));
-        assertThat(snapshot.getStorageValue(HORSE, horseKey2), is(nullValue()));
-
-        snapshot = repository.getSnapshotTo(root2);
-        assertThat(snapshot.getStorageValue(COW, cowKey1), is(cowVal1));
-        assertThat(snapshot.getStorageValue(COW, cowKey2), is(nullValue()));
-        assertThat(snapshot.getStorageValue(HORSE, horseKey1), is(horseVal1));
-        assertThat(snapshot.getStorageValue(HORSE, horseKey2), is(nullValue()));
-
-        snapshot = repository.getSnapshotTo(root3);
-        assertThat(snapshot.getStorageValue(COW, cowKey1), is(cowVal1));
-        assertThat(snapshot.getStorageValue(COW, cowKey2), is(cowVal0));
-        assertThat(snapshot.getStorageValue(HORSE, horseKey1), is(horseVal1));
-        assertThat(snapshot.getStorageValue(HORSE, horseKey2), is(horseVal0));
-    }
-
     private boolean running = true;
 
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
+        final Repository repository = new MutableRepository(mutableTrie);
 
         final DataWord cowKey1 = DataWord.valueFromHex("c1");
         final DataWord cowKey2 = DataWord.valueFromHex("c2");
@@ -816,7 +767,7 @@ public class RepositoryImplOriginalTest {
         Repository[] snaps = new Repository[10];
 
         for (int i = 0; i < 10; ++i) {
-            snaps[i] = repository.getSnapshotTo(repository.getRoot());
+            snaps[i] = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()));
         }
         for (int i = 0; i < 10; ++i) {
             int finalI = i;
@@ -872,6 +823,6 @@ public class RepositoryImplOriginalTest {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieImpl(new Trie()));
+        return new MutableRepository(new MutableTrieImpl(null, new Trie()));
     }
 }

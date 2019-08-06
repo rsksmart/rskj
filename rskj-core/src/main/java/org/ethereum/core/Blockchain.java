@@ -22,7 +22,6 @@ package org.ethereum.core;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.db.BlockInformation;
-import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 
 import javax.annotation.Nullable;
@@ -73,11 +72,6 @@ public interface Blockchain {
     List<Block> getBlocksByNumber(long blockNr);
 
     void removeBlocksByNumber(long blockNr);
-
-    BlockStore getBlockStore();
-
-    @Deprecated
-    Repository getRepository();
 
     List<BlockInformation> getBlocksInformationByNumber(long number);
 

@@ -25,10 +25,8 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -72,8 +70,8 @@ public class RemascStorageProviderTest {
         assertEquals(expectedBurnedBalance, provider.getBurnedBalance());
     }
 
-    private RemascStorageProvider getRemascStorageProvider(Blockchain blockchain) throws IOException {
-        return new RemascStorageProvider(blockchain.getRepository(), PrecompiledContracts.REMASC_ADDR);
+    private RemascStorageProvider getRemascStorageProvider(RepositorySnapshot repository) {
+        return new RemascStorageProvider(repository.startTracking(), PrecompiledContracts.REMASC_ADDR);
     }
 
     private List<Block> createSimpleBlocks(Block parent, int size, RskAddress coinbase) {
@@ -122,7 +120,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setSaveRetrieveAndGetRewardBalance() throws IOException {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie()));
+        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -160,7 +158,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setSaveRetrieveAndGetBurnedBalance() throws IOException {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie()));
+        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -198,7 +196,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setSaveRetrieveAndGetBrokenSelectionRule() throws IOException {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie()));
+        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -227,7 +225,10 @@ public class RemascStorageProviderTest {
                 .initialHeight(15).siblingElements(siblings).txSigningKey(this.cowKey);
 
         testRunner.start();
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(testRunner.getBlockChain()), Coin.valueOf(0), Coin.valueOf(0L), 1L);
+        Blockchain blockchain = testRunner.getBlockChain();
+        RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(0), Coin.valueOf(0L), 1L);
     }
 
     @Test
@@ -248,7 +249,7 @@ public class RemascStorageProviderTest {
 
         testRunner.start();
         this.validateRemascsStorageIsCorrect(
-                this.getRemascStorageProvider(testRunner.getBlockChain()),
+                this.getRemascStorageProvider(builder.getRepository()),
                 Coin.valueOf(0L),
                 Coin.valueOf(0L),
                 0L
@@ -271,7 +272,10 @@ public class RemascStorageProviderTest {
                 .initialHeight(15).siblingElements(new ArrayList<>()).txSigningKey(this.cowKey).gasPrice(gasPrice);
 
         testRunner.start();
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(testRunner.getBlockChain()), Coin.valueOf(84000), Coin.valueOf(0L), 0L);
+        Blockchain blockchain = testRunner.getBlockChain();
+        RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(84000), Coin.valueOf(0L), 0L);
     }
 
     @Test
@@ -290,9 +294,11 @@ public class RemascStorageProviderTest {
                 .initialHeight(15).siblingElements(new ArrayList<>()).txSigningKey(this.cowKey).gasPrice(gasPrice);
 
         testRunner.start();
-        Repository repository = testRunner.getBlockChain().getRepository();
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository, testRunner.getBlockChain().getBestBlock());
-        assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(testRunner.getBlockChain()).getFederationBalance());
+        Blockchain blockchain = testRunner.getBlockChain();
+        RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
+        assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(repository).getFederationBalance());
         long federatorBalance = (168 / federationProvider.getFederationSize()) * 2;
         assertEquals(Coin.valueOf(federatorBalance), RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
     }
@@ -315,9 +321,11 @@ public class RemascStorageProviderTest {
                 .initialHeight(15).siblingElements(new ArrayList<>()).txSigningKey(this.cowKey).gasPrice(gasPrice);
 
         testRunner.start();
-        Repository repository = testRunner.getBlockChain().getRepository();
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository, testRunner.getBlockChain().getBestBlock());
-        assertEquals(Coin.valueOf(336), this.getRemascStorageProvider(testRunner.getBlockChain()).getFederationBalance());
+        Blockchain blockchain = testRunner.getBlockChain();
+        RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
+        assertEquals(Coin.valueOf(336), this.getRemascStorageProvider(repository).getFederationBalance());
         assertEquals(null, RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
     }
 
@@ -338,7 +346,10 @@ public class RemascStorageProviderTest {
                 .initialHeight(15).siblingElements(new ArrayList<>()).txSigningKey(this.cowKey).gasPrice(gasPrice);
 
         testRunner.start();
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(testRunner.getBlockChain()), Coin.valueOf(126000), Coin.valueOf(0L), 0L);
+        Blockchain blockchain = testRunner.getBlockChain();
+        RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(126000), Coin.valueOf(0L), 0L);
     }
 
     @Test
@@ -360,10 +371,12 @@ public class RemascStorageProviderTest {
                 .initialHeight(15).siblingElements(new ArrayList<>()).txSigningKey(this.cowKey).gasPrice(gasPrice);
 
         testRunner.start();
-        Repository repository = testRunner.getBlockChain().getRepository();
-        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository, testRunner.getBlockChain().getBestBlock());
+        Blockchain blockchain = testRunner.getBlockChain();
+        RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
         long federatorBalance = (1680 / federationProvider.getFederationSize()) * 2;
-        assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(testRunner.getBlockChain()).getFederationBalance());
+        assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(repository).getFederationBalance());
         assertEquals(Coin.valueOf(federatorBalance), RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
     }
 
@@ -386,7 +399,10 @@ public class RemascStorageProviderTest {
                 .initialHeight(15).siblingElements(new ArrayList<>()).txSigningKey(this.cowKey).gasPrice(gasPrice);
 
         testRunner.start();
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(testRunner.getBlockChain()), Coin.valueOf(840000L), Coin.valueOf(0L), 0L);
+        Blockchain blockchain = testRunner.getBlockChain();
+        RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(840000L), Coin.valueOf(0L), 0L);
     }
 
     @Test
@@ -411,6 +427,7 @@ public class RemascStorageProviderTest {
         testRunner.setFixedCoinbase(coinbase);
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
+        RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
         List<Block> blocks = new ArrayList<>();
         blocks.add(RemascTestRunner.createBlock(genesisBlock, blockchain.getBestBlock(), PegTestUtils.createHash3(),
                 coinbase, Collections.emptyList(), gasLimit, gasPrice, 14, txValue, cowKey, null));
@@ -423,38 +440,45 @@ public class RemascStorageProviderTest {
 
         blocks.addAll(createSimpleBlocks(blocks.get(blocks.size()-1),10, coinbase));
 
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(),
+                new TrieConverter(), new HashMapDB(), new HashMap<>());
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(
+                        config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
-                new RepositoryLocator(blockchain.getRepository(), stateRootHandler),
+                repositoryLocator,
                 stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
-                        blockchain.getBlockStore(),
+                        builder.getBlockStore(),
                         null,
                         new BlockFactory(config.getActivationConfig()),
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()))
+                        new PrecompiledContracts(config, bridgeSupportFactory)
                 )
         );
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
-            blockchain.getRepository().syncToRoot(builder.getStateRootHandler().translate(b.getHeader()).getBytes());
+            RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
             long blockNumber = blockchain.getBestBlock().getNumber();
             if (blockNumber == 24){ // before first special block
-                assertEquals(Coin.valueOf(1663200L), RemascTestRunner.getAccountBalance(blockchain.getRepository(), coinbase));
+                assertEquals(Coin.valueOf(1663200L), RemascTestRunner.getAccountBalance(repository, coinbase));
             } else if (blockNumber == 25 || blockNumber == 26){ // after first and second special block
-                assertEquals(Coin.valueOf(1829520L), RemascTestRunner.getAccountBalance(blockchain.getRepository(), coinbase));
+                assertEquals(Coin.valueOf(1829520L), RemascTestRunner.getAccountBalance(repository, coinbase));
             } else if (blockNumber == 27 || blockNumber == 28){ // after third and fourth special block
-                assertEquals(Coin.valueOf(1999167L), RemascTestRunner.getAccountBalance(blockchain.getRepository(), coinbase));
+                assertEquals(Coin.valueOf(1999167L), RemascTestRunner.getAccountBalance(repository, coinbase));
             }
         }
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 }

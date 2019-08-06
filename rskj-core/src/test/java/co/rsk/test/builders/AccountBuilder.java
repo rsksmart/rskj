@@ -20,6 +20,8 @@ package co.rsk.test.builders;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.World;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
@@ -27,6 +29,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockStore;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -36,16 +39,20 @@ public class AccountBuilder {
     private Coin balance;
     private byte[] code;
     private Blockchain blockChain;
+    private BlockStore blockStore;
+    private RepositoryLocator repositoryLocator;
 
     public AccountBuilder() {
     }
 
     public AccountBuilder(World world) {
-        this(world.getBlockChain());
+        this(world.getBlockChain(), world.getBlockStore(), world.getRepositoryLocator());
     }
 
-    public AccountBuilder(Blockchain blockChain) {
+    public AccountBuilder(Blockchain blockChain, BlockStore blockStore, RepositoryLocator repositoryLocator) {
         this.blockChain = blockChain;
+        this.blockStore = blockStore;
+        this.repositoryLocator = repositoryLocator;
     }
 
     public AccountBuilder name(String name) {
@@ -71,7 +78,7 @@ public class AccountBuilder {
         if (blockChain != null) {
             Block best = blockChain.getStatus().getBestBlock();
             BlockDifficulty td = blockChain.getStatus().getTotalDifficulty();
-            Repository repository = blockChain.getRepository();
+            RepositorySnapshot repository = repositoryLocator.snapshotAt(blockChain.getBestBlock().getHeader());
 
             Repository track = repository.startTracking();
 
@@ -93,7 +100,7 @@ public class AccountBuilder {
             best.setStateRoot(repository.getRoot());
             best.flushRLP();
 
-            blockChain.getBlockStore().saveBlock(best, td, true);
+            blockStore.saveBlock(best, td, true);
         }
 
         return account;

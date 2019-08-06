@@ -23,8 +23,6 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerClock;
 import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,13 +42,12 @@ public class EvmModuleImpl implements EvmModule {
             MinerServer minerServer,
             MinerClient minerClient,
             MinerClock minerClock,
-            Blockchain blockchain,
-            TransactionPool transactionPool) {
+            SnapshotManager snapshotManager) {
         this.minerManager = new MinerManager();
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.minerClock = minerClock;
-        this.snapshotManager = new SnapshotManager(blockchain, transactionPool, minerServer);
+        this.snapshotManager = snapshotManager;
     }
 
     @Override

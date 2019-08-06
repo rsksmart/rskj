@@ -25,12 +25,15 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -38,20 +41,19 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RskForksBridgeTest {
     private static ECKey fedECPrivateKey = ECKey.fromPrivate(
             BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKey()
     );
 
+    private RepositoryLocator repositoryLocator;
+    private TrieStore trieStore;
     private Repository repository;
     //private ECKey keyHoldingRSKs;
     private ECKey whitelistManipulationKey;
@@ -59,12 +61,18 @@ public class RskForksBridgeTest {
     private BlockChainImpl blockChain;
     private Block blockBase;
     private World world;
+    private BlockStore blockStore;
+    private BridgeSupportFactory bridgeSupportFactory;
 
     @Before
-    public void before() throws IOException, ClassNotFoundException {
+    public void before() {
         world = new World();
         blockChain = world.getBlockChain();
-        repository = blockChain.getRepository();
+        blockStore = world.getBlockStore();
+        repositoryLocator = world.getRepositoryLocator();
+        trieStore = world.getTrieStore();
+        repository = world.getRepository();
+        bridgeSupportFactory = world.getBridgeSupportFactory();
 
         whitelistManipulationKey = ECKey.fromPrivate(Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
 
@@ -75,7 +83,7 @@ public class RskForksBridgeTest {
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();
 
-        blockChain.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+        blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
         Transaction whitelistAddressTx = buildWhitelistTx();
         Transaction receiveHeadersTx = buildReceiveHeadersTx();
@@ -90,18 +98,18 @@ public class RskForksBridgeTest {
         Transaction releaseTx = buildReleaseTx();
         Block blockB1 = buildBlock(blockBase, releaseTx);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockB1));
-        blockChain.getRepository().syncToRoot(blockB1.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockB1.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_SELECTION);
 
         Block blockB2 = buildBlock(blockB1);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockB2));
-        blockChain.getRepository().syncToRoot(blockB2.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockB2.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_SELECTION);
 
         Transaction updateCollectionsTx = buildUpdateCollectionsTx();
         Block blockB3 = buildBlock(blockB2, updateCollectionsTx);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockB3));
-        blockChain.getRepository().syncToRoot(blockB3.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockB3.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_CONFIRMATIONS);
     }
 
@@ -115,7 +123,7 @@ public class RskForksBridgeTest {
 
         Block blockA2 = buildBlock(blockA1, 6l, releaseTx);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockA2));
-        blockChain.getRepository().syncToRoot(blockA2.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockA2.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_SELECTION);
 
         Block blockB1 = buildBlock(blockBase, 1l, releaseTx);
@@ -129,7 +137,7 @@ public class RskForksBridgeTest {
         Transaction updateCollectionsTx = buildUpdateCollectionsTx();
         Block blockB3 = buildBlock(blockB2, 10l, updateCollectionsTx);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockB3));
-        blockChain.getRepository().syncToRoot(blockB3.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockB3.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_CONFIRMATIONS);
     }
 
@@ -140,12 +148,12 @@ public class RskForksBridgeTest {
 
         Block blockB1 = buildBlock(blockBase, releaseTx);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockB1));
-        blockChain.getRepository().syncToRoot(blockB1.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockB1.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_SELECTION);
 
         Block blockB2 = buildBlock(blockB1,6l);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockB2));
-        blockChain.getRepository().syncToRoot(blockB2.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockB2.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_SELECTION);
 
         Block blockA1 = buildBlock(blockBase,1);
@@ -159,7 +167,7 @@ public class RskForksBridgeTest {
         Transaction updateCollectionsTx = buildUpdateCollectionsTx();
         Block blockB3 = buildBlock(blockB2,12, updateCollectionsTx);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockB3));
-        blockChain.getRepository().syncToRoot(blockB3.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockB3.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_CONFIRMATIONS);
     }
 
@@ -169,12 +177,12 @@ public class RskForksBridgeTest {
 
         Block blockA1 = buildBlock(blockBase, releaseTx);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockA1));
-        blockChain.getRepository().syncToRoot(blockA1.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockA1.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_SELECTION);
 
         Block blockA2 = buildBlock(blockA1,3);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockA2));
-        blockChain.getRepository().syncToRoot(blockA2.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockA2.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_SELECTION);
 
         Block blockB1 = buildBlock(blockBase,2);
@@ -188,7 +196,7 @@ public class RskForksBridgeTest {
         Transaction updateCollectionsTx = buildUpdateCollectionsTx();
         Block blockB3 = buildBlock(blockB2,6l, updateCollectionsTx);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockB3));
-        blockChain.getRepository().syncToRoot(blockB3.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockB3.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.NO_TX);
     }
 
@@ -198,12 +206,12 @@ public class RskForksBridgeTest {
 
         Block blockA1 = buildBlock(blockBase, 4l);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockA1));
-        blockChain.getRepository().syncToRoot(blockA1.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockA1.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.NO_TX);
 
         Block blockA2 = buildBlock(blockA1, 5l);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockA2));
-        blockChain.getRepository().syncToRoot(blockA2.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockA2.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.NO_TX);
 
         Block blockB1 = buildBlock(blockBase, 1l, releaseTx);
@@ -217,13 +225,12 @@ public class RskForksBridgeTest {
         Transaction updateCollectionsTx = buildUpdateCollectionsTx();
         Block blockB3 = buildBlock(blockB2, 10l, updateCollectionsTx);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockB3));
-        blockChain.getRepository().syncToRoot(blockB3.getStateRoot());
+        repository = repositoryLocator.startTrackingAt(blockB3.getHeader());
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_CONFIRMATIONS);
     }
 
     private Block buildBlock(Block parent, long difficulty) {
-        World world = new World(blockChain, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(difficulty).parent(parent);
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, bridgeSupportFactory, blockStore).trieStore(trieStore).difficulty(difficulty).parent(parent);
         return blockBuilder.build();
     }
 
@@ -233,8 +240,7 @@ public class RskForksBridgeTest {
 
     private Block buildBlock(Block parent, long difficulty, Transaction ... txs) {
         List<Transaction> txList = Arrays.asList(txs);
-        World world = new World(blockChain, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, bridgeSupportFactory, blockStore).trieStore(trieStore).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
         return blockBuilder.build();
     }
 
@@ -448,7 +454,7 @@ public class RskForksBridgeTest {
         NO_TX, WAITING_FOR_SIGNATURES, WAITING_FOR_SELECTION, WAITING_FOR_CONFIRMATIONS
     }
 
-    private BridgeState callGetStateForDebuggingTx() throws IOException, ClassNotFoundException {
+    private BridgeState callGetStateForDebuggingTx() throws IOException {
         TestSystemProperties beforeBambooProperties = new TestSystemProperties();
         Transaction rskTx = CallTransaction.createRawTransaction(0,
                 Long.MAX_VALUE,
@@ -460,14 +466,15 @@ public class RskForksBridgeTest {
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 beforeBambooProperties,
-                blockChain.getBlockStore(),
+                blockStore,
                 null,
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(beforeBambooProperties, world.getBtcBlockStoreFactory())
+                new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory())
                 );
+        Repository track = repository.startTracking();
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository, blockChain.getBestBlock(), 0)
+                .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), track, blockChain.getBestBlock(), 0)
                 .setLocalCall(true);
 
         executor.init();

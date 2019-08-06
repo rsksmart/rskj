@@ -20,8 +20,9 @@ package co.rsk.core.bc;
 
 import co.rsk.RskContext;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
@@ -39,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BlockChainImplInvalidTest {
-    private RskSystemProperties config;
     private Blockchain blockChain;
     private RskContext objects;
 
@@ -47,8 +47,8 @@ public class BlockChainImplInvalidTest {
     public void setup() {
         objects = new RskTestContext(new String[0]) {
             @Override
-            public Genesis buildGenesis() {
-                return GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
+            protected GenesisLoader buildGenesisLoader() {
+                return new TestGenesisLoader(getRepository(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
             }
 
             @Override
@@ -60,7 +60,6 @@ public class BlockChainImplInvalidTest {
                 );
             }
         };
-        config = objects.getRskSystemProperties();
         blockChain = objects.getBlockchain();
     }
 
@@ -86,18 +85,18 @@ public class BlockChainImplInvalidTest {
 
     @Test
     public void addInvalidMGPBlock() {
-        Repository repository = objects.getRepository();
+        TrieStore trieStore = objects.getTrieStore();
         BlockStore blockStore = objects.getBlockStore();
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
         validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
-                .addBlockTxsValidationRule(repository).addPrevMinGasPriceRule().addTxsMinGasPriceRule();
+                .addBlockTxsValidationRule(trieStore).addPrevMinGasPriceRule().addTxsMinGasPriceRule();
 
         validatorBuilder.build();
 
         Block genesis = blockChain.getBestBlock();
 
-        Block block = new BlockBuilder().minGasPrice(BigInteger.ONE)
+        Block block = new BlockBuilder(null, null, null).minGasPrice(BigInteger.ONE)
                 .parent(genesis).build();
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
@@ -107,7 +106,7 @@ public class BlockChainImplInvalidTest {
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
-        block = new BlockBuilder().transactions(txs).minGasPrice(BigInteger.valueOf(11L))
+        block = new BlockBuilder(null, null, null).transactions(txs).minGasPrice(BigInteger.valueOf(11L))
                 .parent(genesis).build();
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));

@@ -18,7 +18,12 @@
 
 package co.rsk.trie;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.datasource.KeyValueDataSource;
+
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * TrieStoreImpl store and retrieve Trie node by hash
@@ -31,27 +36,36 @@ import org.ethereum.datasource.KeyValueDataSource;
  */
 public class TrieStoreImpl implements TrieStore {
 
-    // a key value data source to use
     private KeyValueDataSource store;
+
+    /** Weak references are removed once the tries are garbage collected */
+    private Set<Trie> savedTries = Collections.newSetFromMap(new WeakHashMap<>());
 
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
     }
 
     /**
-     * save saves a Trie to the store
-     * @param trie
+     * Recursively saves all unsaved nodes of this trie to the underlying key-value store
      */
     @Override
     public void save(Trie trie) {
-        this.store.put(trie.getHash().getBytes(), trie.toMessage());
-        if (trie.hasLongValue()) {
-            saveValue(trie);
-        }
+        save(trie, true);
     }
 
-    @Override
-    public void saveValue(Trie trie) {
+    /**
+     * @param forceSaveRoot allows saving the root node even if it's embeddable
+     */
+    private void save(Trie trie, boolean forceSaveRoot) {
+        if (savedTries.contains(trie)) {
+            // it is guaranteed that the children of a saved node are also saved
+            return;
+        }
+
+        trie.getLeft().getNode().ifPresent(t -> save(t, false));
+        trie.getRight().getNode().ifPresent(t -> save(t, false));
+
+        if (trie.hasLongValue()) {
             // Note that there is no distinction in keys between node data and value data. This could bring problems in
             // the future when trying to garbage-collect the data. We could split the key spaces bit a single
             // overwritten MSB of the hash. Also note that when storing a node that has long value it could be the case
@@ -62,6 +76,14 @@ public class TrieStoreImpl implements TrieStore {
             // value also, so manually checking pre-existence here seems it will add overhead on the average case,
             // instead of reducing it.
             this.store.put(trie.getValueHash().getBytes(), trie.getValue());
+        }
+
+        if (trie.isEmbeddable() && !forceSaveRoot) {
+            return;
+        }
+
+        this.store.put(trie.getHash().getBytes(), trie.toMessage());
+        savedTries.add(trie);
     }
 
     @Override
@@ -69,18 +91,18 @@ public class TrieStoreImpl implements TrieStore {
         this.store.flush();
     }
 
-    /**
-     * retrieve retrieves a Trie instance from store, using hash a key
-     *
-     * @param hash  the hash to retrieve
-     *
-     * @return  the retrieved Trie, null if key does not exist
-     */
     @Override
     public Trie retrieve(byte[] hash) {
         byte[] message = this.store.get(hash);
+        if (message == null) {
+            throw new IllegalArgumentException(String.format(
+                    "The trie with root %s is missing in this store", Hex.toHexString(hash)
+            ));
+        }
 
-        return Trie.fromMessage(message, this);
+        Trie trie = Trie.fromMessage(message, this);
+        savedTries.add(trie);
+        return trie;
     }
 
     @Override

@@ -25,17 +25,14 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
-import co.rsk.trie.TrieStoreImpl;
+import co.rsk.trie.TrieStore;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.MutableRepository;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -50,12 +47,13 @@ import java.util.Map;
  */
 public class ImportLightTest {
 
-    public static BlockChainImpl createBlockchain(Genesis genesis, TestSystemProperties config) {
+    public static BlockChainImpl createBlockchain(
+            Genesis genesis,
+            TestSystemProperties config,
+            Repository repository,
+            BlockStore blockStore,
+            TrieStore trieStore) {
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
-
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
-
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
 
         KeyValueDataSource ds = new HashMapDB();
@@ -70,9 +68,11 @@ public class ImportLightTest {
                 new ProgramInvokeFactoryImpl(),
 
                 null);
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repository, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
-
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
+
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
+
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
@@ -84,7 +84,7 @@ public class ImportLightTest {
                 1,
                 new BlockExecutor(
                         config.getActivationConfig(),
-                        new RepositoryLocator(repository, stateRootHandler),
+                        repositoryLocator,
                         stateRootHandler,
                         transactionExecutorFactory
                 ),

@@ -19,12 +19,11 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
 import co.rsk.validators.*;
-import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.mockito.Mockito;
@@ -52,13 +51,7 @@ public class BlockValidatorBuilder {
 
     private RemascValidationRule remascValidationRule;
 
-    private BlockParentNumberRule parentNumberRule;
-
-    private BlockDifficultyRule difficultyRule;
-
     private BlockTimeStampValidationRule blockTimeStampValidationRule;
-
-    private BlockParentGasLimitRule parentGasLimitRule;
 
     private BlockCompositeRule blockCompositeRule;
 
@@ -71,9 +64,9 @@ public class BlockValidatorBuilder {
         return this;
     }
 
-    public BlockValidatorBuilder addBlockTxsValidationRule(Repository repository) {
+    public BlockValidatorBuilder addBlockTxsValidationRule(TrieStore trieStore) {
         this.blockTxsValidationRule = new BlockTxsValidationRule(new RepositoryLocator(
-                repository,
+                trieStore,
                 new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>())
         ));
         return this;
@@ -86,11 +79,6 @@ public class BlockValidatorBuilder {
 
     public BlockValidatorBuilder addTxsMinGasPriceRule() {
         this.txsMinGasPriceRule = new TxsMinGasPriceRule();
-        return this;
-    }
-
-    public BlockValidatorBuilder addParentBlockHeaderValidator() {
-        this.addParentNumberRule().addDifficultyRule().addParentGasLimitRule();;
         return this;
     }
 
@@ -122,21 +110,6 @@ public class BlockValidatorBuilder {
         return this;
     }
 
-    public BlockValidatorBuilder addParentNumberRule() {
-        this.parentNumberRule = new BlockParentNumberRule();
-        return this;
-    }
-
-    public BlockValidatorBuilder addDifficultyRule() {
-        this.difficultyRule = new BlockDifficultyRule(new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()));
-        return this;
-    }
-
-    public BlockValidatorBuilder addParentGasLimitRule() {
-        parentGasLimitRule = new BlockParentGasLimitRule(config.getNetworkConstants().getGasLimitBoundDivisor());
-        return this;
-    }
-
     public BlockValidatorBuilder addBlockTimeStampValidationRule(int validPeriod) {
         this.blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
         return this;
@@ -153,7 +126,7 @@ public class BlockValidatorBuilder {
         }
 
         if (this.blockParentCompositeRule == null) {
-            this.blockParentCompositeRule = new BlockParentCompositeRule(this.blockTxsFieldsValidationRule, this.blockTxsValidationRule, this.prevMinGasPriceRule, this.parentNumberRule, this.difficultyRule, this.parentGasLimitRule);
+            this.blockParentCompositeRule = new BlockParentCompositeRule(this.blockTxsFieldsValidationRule, this.blockTxsValidationRule, this.prevMinGasPriceRule);
         }
 
         return new BlockValidatorImpl(this.blockStore, this.blockParentCompositeRule, this.blockCompositeRule);

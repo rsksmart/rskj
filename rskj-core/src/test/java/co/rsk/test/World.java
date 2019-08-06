@@ -27,16 +27,18 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.BlockNodeInformation;
-import co.rsk.net.BlockStore;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.peg.BtcBlockStoreWithCache;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -55,33 +57,44 @@ public class World {
     private Map<String, Account> accounts = new HashMap<>();
     private Map<String, Transaction> transactions = new HashMap<>();
     private StateRootHandler stateRootHandler;
-    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
-    public World() {
-        this(new BlockChainBuilder().build());
-    }
+    private BlockStore blockStore;
+    private TrieStore trieStore;
+    private Repository repository;
+    private TransactionPool transactionPool;
+    private BridgeSupportFactory bridgeSupportFactory;
 
-    public World(Repository repository) {
-        this(new BlockChainBuilder().setRepository(repository).build());
+    public World() {
+        this(new BlockChainBuilder());
     }
 
     public World(ReceiptStore receiptStore) {
-        this(new BlockChainBuilder().setReceiptStore(receiptStore).build());
+        this(new BlockChainBuilder().setReceiptStore(receiptStore));
     }
 
-    public World(BlockChainImpl blockChain) {
-        this(blockChain, null);
+    private World(BlockChainBuilder blockChainBuilder) {
+        this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getTrieStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null);
     }
 
-    public World(BlockChainImpl blockChain, Genesis genesis) {
+    public World(
+            BlockChainImpl blockChain,
+            BlockStore blockStore,
+            TrieStore trieStore,
+            Repository repository,
+            TransactionPool transactionPool,
+            Genesis genesis) {
         this.blockChain = blockChain;
+        this.blockStore = blockStore;
+        this.trieStore = trieStore;
+        this.repository = repository;
+        this.transactionPool = transactionPool;
 
         if (genesis == null) {
-            genesis = (Genesis) BlockChainImplTest.getGenesisBlock(blockChain);
+            genesis = (Genesis) BlockChainImplTest.getGenesisBlock(repository);
             this.blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
         }
         this.saveBlock("g00", genesis);
 
-        BlockStore store = new BlockStore();
+        co.rsk.net.BlockStore store = new co.rsk.net.BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
@@ -89,7 +102,11 @@ public class World {
         this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
         this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
 
-        this.btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams());
+        this.bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(
+                        config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                config.getNetworkConstants().getBridgeConstants(),
+                config.getActivationConfig());
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
@@ -97,18 +114,25 @@ public class World {
     public BlockExecutor getBlockExecutor() {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         final TestSystemProperties config = new TestSystemProperties();
+
+        Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                config.getNetworkConstants().getBridgeConstants().getBtcParams());
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
                     config.getActivationConfig(),
-                    new RepositoryLocator(this.getRepository(), stateRootHandler),
+                    new RepositoryLocator(getTrieStore(), stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
-                            this.getBlockChain().getBlockStore(),
+                            blockStore,
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,
-                            new PrecompiledContracts(config, btcBlockStoreFactory)
+                            new PrecompiledContracts(config, bridgeSupportFactory)
                     )
             );
         }
@@ -149,10 +173,26 @@ public class World {
     public void saveTransaction(String name, Transaction transaction) { transactions.put(name, transaction); }
 
     public Repository getRepository() {
-        return this.blockChain.getRepository();
+        return repository;
     }
 
-    public BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
-        return this.btcBlockStoreFactory;
+    public RepositoryLocator getRepositoryLocator() {
+        return new RepositoryLocator(getTrieStore(), getStateRootHandler());
+    }
+
+    public TrieStore getTrieStore() {
+        return trieStore;
+    }
+
+    public TransactionPool getTransactionPool() {
+        return transactionPool;
+    }
+
+    public BridgeSupportFactory getBridgeSupportFactory() {
+        return bridgeSupportFactory;
+    }
+
+    public BlockStore getBlockStore() {
+        return blockStore;
     }
 }
