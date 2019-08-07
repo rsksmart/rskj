@@ -18,11 +18,14 @@
 
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.bc.BlockResult;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
@@ -54,6 +57,7 @@ public class EthModuleTest {
 
         EthModule eth = new EthModule(
                 null,
+                anyByte(),
                 null,
                 executor,
                 retriever,
@@ -66,5 +70,22 @@ public class EthModuleTest {
 
         String result = eth.call(args, "latest");
         assertThat(result, is(TypeConverter.toJsonHex(hreturn)));
+    }
+
+    @Test
+    public void chainId() {
+        EthModule eth = new EthModule(
+                mock(BridgeConstants.class),
+                (byte) 33,
+                mock(Blockchain.class),
+                mock(ReversibleTransactionExecutor.class),
+                mock(ExecutionBlockRetriever.class),
+                mock(RepositoryLocator.class),
+                mock(EthModuleSolidity.class),
+                mock(EthModuleWallet.class),
+                mock(EthModuleTransaction.class),
+                mock(BridgeSupportFactory.class)
+        );
+        assertThat(eth.chainId(), is("0x21"));
     }
 }

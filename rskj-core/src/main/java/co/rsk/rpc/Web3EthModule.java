@@ -52,6 +52,10 @@ public interface Web3EthModule {
         return getEthModule().bridgeState();
     }
 
+    default String eth_chainId() {
+        return getEthModule().chainId();
+    }
+
     EthModule getEthModule();
 
     String eth_protocolVersion();

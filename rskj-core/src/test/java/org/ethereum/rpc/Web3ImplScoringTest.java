@@ -361,7 +361,7 @@ public class Web3ImplScoringTest {
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), world.getBlockChain(),
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), world.getBlockChain(),
                 null, new ExecutionBlockRetriever(miningMainchainView, world.getBlockChain(), null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
