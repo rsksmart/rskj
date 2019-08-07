@@ -38,6 +38,8 @@ import java.math.BigInteger;
 import java.net.UnknownHostException;
 import java.util.List;
 
+import static org.mockito.Mockito.*;
+
 /**
  * Created by ajlopez on 5/11/2016.
  */
@@ -1047,5 +1049,30 @@ public class NodeBlockProcessorTest {
             Assert.assertEquals(expected[i].getNumber(), actual.get(i).getNumber());
             Assert.assertArrayEquals(expected[i].getHash(), actual.get(i).getHash());
         }
+    }
+
+    @Test
+    public void failIfProcessBlockHeadersRequestCountHigher()  {
+
+        final MessageChannel sender = mock(MessageChannel.class);
+
+
+        final Block block = new BlockGenerator().getBlock(3);
+
+        final BlockStore store = new BlockStore();
+        store.saveBlock(block);
+
+        final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        TestSystemProperties config = new TestSystemProperties();
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+
+        final Integer size = syncConfiguration.getChunkSize() + 1;
+        processor.processBlockHeadersRequest(sender, 1, block.getHash().getBytes(), size);
+
+        verify(sender, never()).sendMessage(any());
+
     }
 }

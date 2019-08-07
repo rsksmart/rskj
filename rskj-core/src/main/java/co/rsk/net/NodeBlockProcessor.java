@@ -180,6 +180,12 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processBlockHeadersRequest(@Nonnull final MessageChannel sender, long requestId, @Nonnull final byte[] hash, int count) {
         logger.trace("Processing headers request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
+
+        if (count > syncConfiguration.getChunkSize()) {
+            logger.trace("Headers request from {} failed because size {}", sender.getPeerNodeID(), count);
+            return;
+        }
+
         Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
