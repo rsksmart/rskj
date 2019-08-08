@@ -23,6 +23,8 @@ import org.junit.Test;
 
 import java.util.Random;
 
+import static org.mockito.Mockito.*;
+
 public class BlockHashResponseMessageTest {
     @Test
     public void createMessage() {
@@ -36,5 +38,21 @@ public class BlockHashResponseMessageTest {
         Assert.assertEquals(id, message.getId());
         Assert.assertArrayEquals(hash, message.getHash());
         Assert.assertEquals(MessageType.BLOCK_HASH_RESPONSE_MESSAGE, message.getMessageType());
+    }
+
+    @Test
+    public void accept() {
+        long someId = 42;
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+
+        BlockHashResponseMessage message = new BlockHashResponseMessage(someId, hash);
+
+        MessageVisitor visitor = mock(MessageVisitor.class);
+
+        message.accept(visitor);
+
+        verify(visitor, times(1)).apply(message);
     }
 }

@@ -22,6 +22,8 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.mockito.Mockito.*;
+
 /**
  * Created by ajlopez on 5/11/2016.
  */
@@ -34,5 +36,17 @@ public class BlockRequestMessageTest {
         Assert.assertEquals(100, message.getId());
         Assert.assertArrayEquals(hash, message.getBlockHash());
         Assert.assertEquals(MessageType.BLOCK_REQUEST_MESSAGE, message.getMessageType());
+    }
+
+    @Test
+    public void accept() {
+        byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
+        BlockRequestMessage message = new BlockRequestMessage(100, hash);
+
+        MessageVisitor visitor = mock(MessageVisitor.class);
+
+        message.accept(visitor);
+
+        verify(visitor, times(1)).apply(message);
     }
 }

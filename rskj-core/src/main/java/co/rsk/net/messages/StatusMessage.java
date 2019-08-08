@@ -56,4 +56,9 @@ public class StatusMessage extends Message {
     public Status getStatus() {
         return this.status;
     }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

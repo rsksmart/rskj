@@ -23,11 +23,11 @@ import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Created by ajlopez on 7/22/2016.
- */
+import static org.mockito.Mockito.*;
+
 public class TransactionsMessageTest {
     @Test
     public void getMessageType() {
@@ -43,5 +43,17 @@ public class TransactionsMessageTest {
         Assert.assertNotNull(message.getTransactions());
         Assert.assertEquals(10, message.getTransactions().size());
         Assert.assertSame(txs, message.getTransactions());
+    }
+
+    @Test
+    public void accept() {
+        List<Transaction> txs = new LinkedList<>();
+        TransactionsMessage message = new TransactionsMessage(txs);
+
+        MessageVisitor visitor = mock(MessageVisitor.class);
+
+        message.accept(visitor);
+
+        verify(visitor, times(1)).apply(message);
     }
 }

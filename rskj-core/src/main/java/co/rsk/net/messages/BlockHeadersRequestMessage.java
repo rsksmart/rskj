@@ -54,5 +54,10 @@ public class BlockHeadersRequestMessage extends MessageWithId {
     public MessageType getResponseMessageType() {
         return MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE;
     }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }
 

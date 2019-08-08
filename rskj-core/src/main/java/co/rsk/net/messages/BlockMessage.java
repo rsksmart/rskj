@@ -46,4 +46,9 @@ public class BlockMessage extends Message {
 
         return RLP.encodeList(block);
     }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

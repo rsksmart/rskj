@@ -22,7 +22,7 @@ import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 5/10/2016.
@@ -39,5 +39,17 @@ public class BlockMessageTest {
         Block block = mock(Block.class);
         BlockMessage message = new BlockMessage(block);
         Assert.assertSame(block, message.getBlock());
+    }
+
+    @Test
+    public void accept() {
+        Block block = mock(Block.class);
+        BlockMessage message = new BlockMessage(block);
+
+        MessageVisitor visitor = mock(MessageVisitor.class);
+
+        message.accept(visitor);
+
+        verify(visitor, times(1)).apply(message);
     }
 }

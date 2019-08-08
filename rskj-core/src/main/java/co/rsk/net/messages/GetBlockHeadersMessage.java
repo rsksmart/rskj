@@ -203,6 +203,11 @@ public class GetBlockHeadersMessage extends Message {
     }
 
     @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
+
+    @Override
     public String toString() {
         if (!parsed) {
             parse();

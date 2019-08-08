@@ -28,6 +28,8 @@ import org.bouncycastle.util.encoders.Hex;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.mockito.Mockito.*;
+
 public class NewBlockHashesTest {
     @Test
     public void getMessageType() {
@@ -51,5 +53,17 @@ public class NewBlockHashesTest {
         Assert.assertEquals(1, identifiers.size());
         Assert.assertEquals(blockIdentifierList.get(0).getNumber(), identifiers.get(0).getNumber());
         Assert.assertArrayEquals(blockIdentifierList.get(0).getHash(),identifiers.get(0).getHash());
+    }
+
+    @Test
+    public void accept() {
+        List<BlockIdentifier> blockIdentifiers = new LinkedList<>();
+        NewBlockHashesMessage message = new NewBlockHashesMessage(blockIdentifiers);
+
+        MessageVisitor visitor = mock(MessageVisitor.class);
+
+        message.accept(visitor);
+
+        verify(visitor, times(1)).apply(message);
     }
 }

@@ -19,12 +19,16 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.mockito.Mockito.*;
+
 public class GetBlockHeaderMessageTest {
     @Test
     public void createWithBlockHeaderHash() {
@@ -38,5 +42,17 @@ public class GetBlockHeaderMessageTest {
 
         Assert.assertArrayEquals(hash, message.getBlockHash());
         Assert.assertEquals(MessageType.GET_BLOCK_HEADERS_MESSAGE, message.getMessageType());
+    }
+
+    @Test
+    public void accept() {
+        GetBlockHeadersMessage message = new GetBlockHeadersMessage(
+                100, new byte[]{0x0F}, 1, 0, false);
+
+        MessageVisitor visitor = mock(MessageVisitor.class);
+
+        message.accept(visitor);
+
+        verify(visitor, times(1)).apply(message);
     }
 }

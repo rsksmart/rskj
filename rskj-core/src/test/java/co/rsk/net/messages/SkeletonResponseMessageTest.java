@@ -23,11 +23,13 @@ import org.ethereum.core.BlockIdentifier;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.bouncycastle.util.encoders.Hex.decode;
 import static org.bouncycastle.util.encoders.Hex.toHexString;
+import static org.mockito.Mockito.*;
 
 public class SkeletonResponseMessageTest {
 
@@ -48,5 +50,17 @@ public class SkeletonResponseMessageTest {
         assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, skeletonMessage.getMessageType());
         assertEquals(42, skeletonMessage.getId());
         assertEquals(2, skeletonMessage.getBlockIdentifiers().size());
+    }
+
+    @Test
+    public void accept() {
+        List<BlockIdentifier> blockIdentifiers = new LinkedList<>();
+        SkeletonResponseMessage message = new SkeletonResponseMessage(1, blockIdentifiers);
+
+        MessageVisitor visitor = mock(MessageVisitor.class);
+
+        message.accept(visitor);
+
+        verify(visitor, times(1)).apply(message);
     }
 }
