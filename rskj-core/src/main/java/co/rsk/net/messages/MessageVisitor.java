@@ -214,11 +214,6 @@ public class MessageVisitor {
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }
 
-    public void apply(GetBlockHeadersMessage message) {
-        loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
-    }
-
-
     private void recordEvent(MessageChannel sender, EventType event) {
         if (sender == null) {
             return;
