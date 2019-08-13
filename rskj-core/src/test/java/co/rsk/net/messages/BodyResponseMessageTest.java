@@ -12,11 +12,11 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Created by usuario on 25/08/2017.
- */
+import static org.mockito.Mockito.*;
+
 public class BodyResponseMessageTest {
     @Test
     public void createMessage() {
@@ -62,5 +62,19 @@ public class BodyResponseMessageTest {
         Account receiver = acbuilder.build();
         TransactionBuilder txbuilder = new TransactionBuilder();
         return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(number * 1000 + 1000)).build();
+    }
+
+    @Test
+    public void accept() {
+        List<Transaction> transactions = new LinkedList<>();
+        List<BlockHeader> uncles = new LinkedList<>();
+
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+
+        MessageVisitor visitor = mock(MessageVisitor.class);
+
+        message.accept(visitor);
+
+        verify(visitor, times(1)).apply(message);
     }
 }

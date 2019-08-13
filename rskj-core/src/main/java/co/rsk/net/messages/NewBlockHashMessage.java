@@ -26,4 +26,9 @@ public class NewBlockHashMessage extends Message {
         byte[] elementHash = RLP.encodeElement(this.hash);
         return RLP.encodeList(elementHash);
     }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

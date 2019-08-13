@@ -65,4 +65,9 @@ public class TransactionsMessage extends Message {
         this.transactions.forEach(tx -> sb.append(tx.getHash().toHexString()).append(", "));
         return sb.toString();
     }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

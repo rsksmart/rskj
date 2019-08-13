@@ -54,4 +54,9 @@ public class BlockHashRequestMessage extends MessageWithId {
     public long getId() { return this.id; }
 
     public long getHeight() { return this.height; }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

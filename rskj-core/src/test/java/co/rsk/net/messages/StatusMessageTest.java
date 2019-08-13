@@ -27,9 +27,8 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 
-/**
- * Created by ajlopez on 5/11/2016.
- */
+import static org.mockito.Mockito.*;
+
 public class StatusMessageTest {
     @Test
     public void createWithBestBlockNumberAndHash() {
@@ -78,5 +77,16 @@ public class StatusMessageTest {
         Assert.assertSame(status, message.getStatus());
         Assert.assertEquals(0, message.getStatus().getBestBlockNumber());
         Assert.assertArrayEquals(genesis.getHash().getBytes(), message.getStatus().getBestBlockHash());
+    }
+
+    @Test
+    public void accept() {
+        StatusMessage message = new StatusMessage(mock(Status.class));
+
+        MessageVisitor visitor = mock(MessageVisitor.class);
+
+        message.accept(visitor);
+
+        verify(visitor, times(1)).apply(message);
     }
 }
