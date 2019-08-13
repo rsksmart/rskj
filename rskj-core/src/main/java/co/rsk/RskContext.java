@@ -886,9 +886,14 @@ public class RskContext implements NodeBootstrapper {
 
     private BlockChainLoader getBlockChainLoader() {
         if (blockChainLoader == null) {
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
             blockChainLoader = new BlockChainLoader(
-                    getRskSystemProperties(),
-                    getRepository(),
+                    new BlockChainFlusher(
+                            rskSystemProperties.isFlushEnabled(),
+                            rskSystemProperties.flushNumberOfBlocks(),
+                            getTrieStore(),
+                            getBlockStore()
+                    ),
                     getBlockStore(),
                     getReceiptStore(),
                     getTransactionPool(),
