@@ -83,11 +83,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     public void setUp() {
         RskTestFactory factory = new RskTestFactory(config) {
             @Override
-            protected Repository buildRepository() {
-                return Mockito.spy(super.buildRepository());
-            }
-
-            @Override
             protected RepositoryLocator buildRepositoryLocator() {
                 return Mockito.spy(super.buildRepositoryLocator());
             }
