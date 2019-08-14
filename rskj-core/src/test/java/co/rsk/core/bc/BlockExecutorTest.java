@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
@@ -72,7 +73,7 @@ public class BlockExecutorTest {
     private Blockchain blockchain;
     private BlockExecutor executor;
     private TrieStore trieStore;
-    private Repository repository;
+    private RepositorySnapshot repository;
 
     @Before
     public void setUp() {
@@ -80,7 +81,7 @@ public class BlockExecutorTest {
         blockchain = objects.getBlockchain();
         executor = objects.getBlockExecutor();
         trieStore = objects.getTrieStore();
-        repository = objects.getRepository();
+        repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
     }
 
     @Test

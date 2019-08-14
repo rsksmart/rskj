@@ -23,6 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieStore;
@@ -618,9 +619,7 @@ public class BlockChainImplTest {
 
     @Test
     public void addValidMGPBlock() {
-        Repository repository = objects.getRepository();
-
-        Repository track = repository.startTracking();
+        Repository track = objects.getRepositoryLocator().startTrackingAt(blockChain.getBestBlock().getHeader());
 
         Account account = BlockExecutorTest.createAccount("acctest1", track, Coin.valueOf(100000));
         Assert.assertTrue(account.getEcKey().hasPrivKey());
@@ -647,9 +646,8 @@ public class BlockChainImplTest {
     }
 
     private Block getBlockWithOneTransaction() {
-        Repository repository = objects.getRepository();
-
         Block bestBlock = blockChain.getBestBlock();
+        RepositorySnapshot repository = objects.getRepositoryLocator().snapshotAt(bestBlock.getHeader());
 
         String toAddress = Hex.toHexString(catKey.getAddress());
         BigInteger nonce = repository.getNonce(new RskAddress(cowKey.getAddress()));
