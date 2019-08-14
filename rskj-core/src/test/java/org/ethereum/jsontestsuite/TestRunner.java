@@ -28,10 +28,7 @@ import co.rsk.core.bc.BlockChainFlusher;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
@@ -136,7 +133,7 @@ public class TestRunner {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = RepositoryBuilder.build(trieStore, testCase.getPre());
 
-        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();

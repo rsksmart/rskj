@@ -22,6 +22,7 @@ import co.rsk.asm.EVMAssembler;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.genesis.TestGenesisLoader;
+import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -49,7 +50,6 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.HashMap;
 
 /**
  * Created by Sergio on 26/02/2017.
@@ -235,7 +235,7 @@ public class CodeReplaceTest {
     }
 
     private BlockStore getBlockStore() {
-        return new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        return new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
     }
 
     protected Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, Repository repository) throws InterruptedException {

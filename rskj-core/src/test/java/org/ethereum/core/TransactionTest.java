@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -57,7 +58,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -597,7 +597,7 @@ public class TransactionTest {
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
-        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(),null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
                         trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
@@ -675,7 +675,7 @@ public class TransactionTest {
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
-        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
                         trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,

@@ -26,18 +26,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.vm.DataWord;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.mapdb.Serializer;
 
 import java.io.File;
 import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 
 public final class TestUtils {
 
@@ -80,16 +77,6 @@ public final class TestUtils {
 
     public static Keccak256 randomHash() {
         return new Keccak256(randomBytes(32));
-    }
-
-    public static Map<Long, List<IndexedBlockStore.BlockInfo>> createIndexMap(DB db){
-
-        Map<Long, List<IndexedBlockStore.BlockInfo>> index = db.hashMapCreate("index")
-                .keySerializer(Serializer.LONG)
-                .valueSerializer(BLOCK_INFO_SERIALIZER)
-                .makeOrGet();
-
-        return index;
     }
 
     public static DB createMapDB(String testDBDir){

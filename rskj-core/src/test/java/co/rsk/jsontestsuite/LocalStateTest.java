@@ -428,7 +428,7 @@ public class LocalStateTest {
     }
 
     @Test
-    public void stRecursiveCreate() throws ParseException, IOException {
+    public void stRecursiveCreate() throws IOException {
         Set<String> excluded = new HashSet<>();
 
         String json = getJSON("stRecursiveCreate");

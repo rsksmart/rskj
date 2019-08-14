@@ -19,6 +19,7 @@ package org.ethereum.util;
 
 import co.rsk.RskContext;
 import co.rsk.core.Wallet;
+import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -46,7 +47,7 @@ public class RskTestContext extends RskContext {
 
     @Override
     protected BlockStore buildBlockStore() {
-        return new IndexedBlockStore(getBlockFactory(), new HashMap<>(), new HashMapDB(), null);
+        return new IndexedBlockStore(getBlockFactory(), new HashMapDB(), new HashMapBlocksIndex());
     }
 
     @Override

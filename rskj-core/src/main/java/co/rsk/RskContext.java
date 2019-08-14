@@ -24,6 +24,7 @@ import co.rsk.config.*;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.MapDBBlocksIndex;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.logfilter.BlocksBloomStore;
@@ -101,7 +102,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,11 +112,7 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-
-import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
-
 
 /**
  * Creates the initial object graph without a DI framework.
@@ -1462,15 +1458,9 @@ public class RskContext implements NodeBootstrapper {
                 .closeOnJvmShutdown()
                 .make();
 
-        Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = indexDB.hashMapCreate("index")
-                .keySerializer(Serializer.LONG)
-                .valueSerializer(BLOCK_INFO_SERIALIZER)
-                .counterEnable()
-                .makeOrGet();
-
         KeyValueDataSource blocksDB = makeDataSource("blocks", databaseDir);
 
-        return new IndexedBlockStore(getBlockFactory(), indexMap, blocksDB, indexDB);
+        return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
     }
 
     public static KeyValueDataSource makeDataSource(String name, String databaseDir) {
