@@ -6,7 +6,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
-import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -14,7 +14,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
@@ -261,7 +260,7 @@ public class BridgeCostsTest {
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {
-        Repository repository = new MutableRepository(new TrieStoreImpl(new HashMapDB()), new Trie());
-        return new TestGenesisLoader(repository, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false).load();
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        return new TestGenesisLoader(trieStore, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false).load();
     }
 }

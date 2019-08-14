@@ -416,7 +416,7 @@ public class BlockExecutorTest {
 
         // getGenesisBlock() modifies the repository, adding some pre-mined accounts
         // Not nice for a getter, but it is what it is :(
-        Block genesis = BlockChainImplTest.getGenesisBlock(repository);
+        Block genesis = BlockChainImplTest.getGenesisBlock(trieStore);
         genesis.setStateRoot(repository.getRoot());
 
         // Returns the root state prior block execution but after loading
@@ -609,7 +609,7 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block genesis = BlockChainImplTest.getGenesisBlock(repository);
+        Block genesis = BlockChainImplTest.getGenesisBlock(trieStore);
         genesis.setStateRoot(repository.getRoot());
         Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 

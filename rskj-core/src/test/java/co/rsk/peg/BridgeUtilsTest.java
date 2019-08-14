@@ -33,12 +33,15 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -500,13 +503,14 @@ public class BridgeUtilsTest {
                 Bridge.UPDATE_COLLECTIONS, constants.getChainId());
         rskTx.sign(privKeyBytes);
 
-        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
-        Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(repository));
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie())));
+        Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(trieStore));
         bridge.init(rskTx, rskExecutionBlock, repository.startTracking(), null, null, null);
         Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
     }
 
-    private Genesis getGenesisInstance(Repository repository) {
-        return new TestGenesisLoader(repository, "frontier.json", constants.getInitialNonce(), false, true, true).load();
+    private Genesis getGenesisInstance(TrieStore trieStore) {
+        return new TestGenesisLoader(trieStore, "frontier.json", constants.getInitialNonce(), false, true, true).load();
     }
 }

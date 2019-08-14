@@ -762,7 +762,7 @@ public class RskContext implements NodeBootstrapper {
         return new GenesisLoaderImpl(
                 rskSystemProperties.getActivationConfig(),
                 getStateRootHandler(),
-                getRepository(),
+                getTrieStore(),
                 rskSystemProperties.genesisInfo(),
                 rskSystemProperties.getNetworkConstants().getInitialNonce(),
                 true,

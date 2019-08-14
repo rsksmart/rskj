@@ -20,9 +20,9 @@
 package co.rsk.core.genesis;
 
 import co.rsk.db.StateRootHandler;
+import co.rsk.trie.TrieStore;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.core.Repository;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
 
 import java.io.InputStream;
@@ -35,14 +35,14 @@ import java.math.BigInteger;
 @Deprecated
 public class TestGenesisLoader extends GenesisLoaderImpl {
     public TestGenesisLoader(
-            Repository repository,
+            TrieStore trieStore,
             String genesisFile,
             BigInteger initialNonce,
             boolean isRsk,
             boolean useRskip92Encoding,
             boolean isRskip126Enabled) {
         this(
-                repository,
+                trieStore,
                 GenesisLoaderImpl.class.getResourceAsStream("/genesis/" + genesisFile),
                 initialNonce,
                 isRsk,
@@ -52,14 +52,14 @@ public class TestGenesisLoader extends GenesisLoaderImpl {
     }
 
     public TestGenesisLoader(
-            Repository repository,
+            TrieStore trieStore,
             InputStream resourceAsStream,
             BigInteger initialNonce,
             boolean isRsk,
             boolean useRskip92Encoding,
             boolean isRskip126Enabled) {
         this(
-                repository,
+                trieStore,
                 ActivationConfigsForTest.regtest(),
                 initialNonce,
                 resourceAsStream,
@@ -70,7 +70,7 @@ public class TestGenesisLoader extends GenesisLoaderImpl {
     }
 
     private TestGenesisLoader(
-            Repository repository,
+            TrieStore trieStore,
             ActivationConfig activationConfig,
             BigInteger initialNonce,
             InputStream resourceAsStream,
@@ -80,7 +80,7 @@ public class TestGenesisLoader extends GenesisLoaderImpl {
         super(
                 activationConfig,
                 new StateRootHandler(activationConfig, null, null, null),
-                repository,
+                trieStore,
                 resourceAsStream,
                 initialNonce,
                 isRsk,

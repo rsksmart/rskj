@@ -22,6 +22,8 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -30,6 +32,7 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.MutableRepository;
 import org.ethereum.json.Utils;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -54,8 +57,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
 
     private final ActivationConfig activationConfig;
     private final StateRootHandler stateRootHandler;
-    // TODO(mc) we should depend on a store and not a repository
-    private final Repository repository;
+    private final TrieStore trieStore;
 
     private final BigInteger initialNonce;
     private final boolean isRsk;
@@ -66,7 +68,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
     public GenesisLoaderImpl(
             ActivationConfig activationConfig,
             StateRootHandler stateRootHandler,
-            Repository repository,
+            TrieStore trieStore,
             String genesisFile,
             BigInteger initialNonce,
             boolean isRsk,
@@ -75,7 +77,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
         this(
                 activationConfig,
                 stateRootHandler,
-                repository,
+                trieStore,
                 GenesisLoaderImpl.class.getResourceAsStream("/genesis/" + genesisFile),
                 initialNonce,
                 isRsk,
@@ -87,7 +89,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
     public GenesisLoaderImpl(
             ActivationConfig activationConfig,
             StateRootHandler stateRootHandler,
-            Repository repository,
+            TrieStore trieStore,
             InputStream resourceAsStream,
             BigInteger initialNonce,
             boolean isRsk,
@@ -95,7 +97,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
             boolean isRskip126Enabled) {
         this.activationConfig = activationConfig;
         this.stateRootHandler = stateRootHandler;
-        this.repository = repository;
+        this.trieStore = trieStore;
 
         this.initialNonce = initialNonce;
         this.isRsk = isRsk;
@@ -107,8 +109,8 @@ public class GenesisLoaderImpl implements GenesisLoader {
     @Override
     public Genesis load() {
         Genesis incompleteGenesis = readFromJson();
-        loadRepository(incompleteGenesis);
-        updateGenesis(incompleteGenesis);
+        Trie genesisTrie = loadGenesisTrie(incompleteGenesis);
+        updateGenesisStateRoot(genesisTrie, incompleteGenesis);
         return incompleteGenesis;
     }
 
@@ -195,19 +197,21 @@ public class GenesisLoaderImpl implements GenesisLoader {
                 isRskip126Enabled, accounts, codes, storages);
     }
 
-    private void loadRepository(Genesis genesis) {
+    private Trie loadGenesisTrie(Genesis genesis) {
+        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
         loadGenesisInitalState(repository, genesis);
 
         setupPrecompiledContractsStorage(repository);
 
         repository.commit();
         repository.save();
+        return repository.getTrie();
     }
 
-    private void updateGenesis(Genesis genesis) {
-        genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), repository.getTrie()).getBytes());
+    private void updateGenesisStateRoot(Trie genesisTrie, Genesis genesis) {
+        genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), genesisTrie).getBytes());
         genesis.flushRLP();
-        stateRootHandler.register(genesis.getHeader(), repository.getTrie());
+        stateRootHandler.register(genesis.getHeader(), genesisTrie);
     }
 
     /**

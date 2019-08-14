@@ -72,7 +72,7 @@ public class CodeReplaceTest {
         BlockStore blockStore = getBlockStore();
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
-                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
                         false, true, true
                 ).load(),
                 config,
@@ -141,7 +141,7 @@ public class CodeReplaceTest {
         BlockStore blockStore = getBlockStore();
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
-                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
                         false, true, true
                 ).load(),
                 config,
@@ -180,7 +180,7 @@ public class CodeReplaceTest {
         BlockStore blockStore = getBlockStore();
         BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
-                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
                         false, true, true
                 ).load(),
                 config,

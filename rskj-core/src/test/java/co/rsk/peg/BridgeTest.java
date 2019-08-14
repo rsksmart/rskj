@@ -24,7 +24,10 @@ import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.*;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
@@ -37,6 +40,8 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.test.World;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -44,6 +49,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.solidity.SolidityType;
@@ -3144,7 +3150,7 @@ public class BridgeTest {
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {
-        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
-        return new TestGenesisLoader(repository, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false).load();
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        return new TestGenesisLoader(trieStore, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false).load();
     }
 }

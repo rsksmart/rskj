@@ -84,8 +84,8 @@ public class TransactionModuleTest {
         BlockChainImpl blockchain = world.getBlockChain();
 
         TrieStore trieStore = world.getTrieStore();
-        Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
         BlockStore blockStore = world.getBlockStore();
 
@@ -109,8 +109,8 @@ public class TransactionModuleTest {
         BlockChainImpl blockchain = world.getBlockChain();
 
         TrieStore trieStore = world.getTrieStore();
-        Repository repository = world.getRepository();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
         BlockStore blockStore = world.getBlockStore();
 

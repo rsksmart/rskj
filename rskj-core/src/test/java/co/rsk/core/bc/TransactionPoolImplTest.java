@@ -54,7 +54,7 @@ public class TransactionPoolImplTest {
         RskTestContext rskTestContext = new RskTestContext(new String[]{"--regtest"}) {
             @Override
             protected GenesisLoader buildGenesisLoader() {
-                return new TestGenesisLoader(getRepository(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
+                return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
             }
 
             @Override
