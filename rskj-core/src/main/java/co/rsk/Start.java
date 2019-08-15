@@ -17,11 +17,8 @@
  */
 package co.rsk;
 
-import co.rsk.db.migration.OrchidToUnitrieMigrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /**
  * The entrypoint for the RSK full node
@@ -29,11 +26,8 @@ import java.io.IOException;
 public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         RskContext ctx = new RskContext(args);
-        // this feature is only needed until the Wasabi network upgrade is activated.
-        OrchidToUnitrieMigrator.migrateStateToUnitrieIfNeeded(ctx);
-
         NodeRunner runner = ctx.getNodeRunner();
         try {
             runner.run();
