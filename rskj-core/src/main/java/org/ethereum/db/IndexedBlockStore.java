@@ -497,10 +497,7 @@ public class IndexedBlockStore implements BlockStore {
     public void rewind(long blockNumber) {
         long maxNumber = getMaxNumber();
         for (long i = maxNumber; i > blockNumber; i--) {
-            List<BlockInfo> blockInfos = index.removeBlocksByNumber(i);
-            if (blockInfos == null) {
-                continue;
-            }
+            List<BlockInfo> blockInfos = index.removeLast();
 
             for (BlockInfo blockInfo : blockInfos) {
                 this.blocks.delete(blockInfo.getHash().getBytes());
@@ -526,6 +523,7 @@ public class IndexedBlockStore implements BlockStore {
                     )
                 );
     }
+
 
     public static class BlockInfo implements Serializable {
         private static final long serialVersionUID = 5906746360128478753L;
@@ -557,7 +555,6 @@ public class IndexedBlockStore implements BlockStore {
         public void setMainChain(boolean mainChain) {
             this.mainChain = mainChain;
         }
-
     }
 
 

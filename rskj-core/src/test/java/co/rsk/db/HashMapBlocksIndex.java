@@ -40,8 +40,8 @@ public class HashMapBlocksIndex implements BlocksIndex {
     }
 
     @Override
-    public List<IndexedBlockStore.BlockInfo> removeBlocksByNumber(long blockNumber) {
-        List<IndexedBlockStore.BlockInfo> result = index.remove(blockNumber);
+    public List<IndexedBlockStore.BlockInfo> removeLast() {
+        List<IndexedBlockStore.BlockInfo> result = index.remove(getMaxNumber());
         if (result == null) {
             result = new ArrayList<>();
         }

@@ -30,6 +30,7 @@ import java.util.List;
  * <p>
  * The blocks themselves are not stored, only the smallest information required to access them by hash.
  */
+//TODO(im): Better public methods, this storage should enforce its own invariants.
 public interface BlocksIndex {
     /**
      * Retrieves the max block number stored in the index. It might not belong to the main chain.
@@ -60,11 +61,11 @@ public interface BlocksIndex {
     void putBlocks(long blockNumber, List<IndexedBlockStore.BlockInfo> blocks);
 
     /**
-     * Removes the blocks from the storage.
+     * Removes the blocks with the highest block number from the storage.
      *
      * @return The removed blocks.
      */
-    List<IndexedBlockStore.BlockInfo> removeBlocksByNumber(long blockNumber);
+    List<IndexedBlockStore.BlockInfo> removeLast();
 
     /**
      * Commits the changes to the underlying permanent storage.

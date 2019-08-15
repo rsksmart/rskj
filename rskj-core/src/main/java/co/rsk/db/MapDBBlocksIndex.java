@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.util.ByteUtil;
 import org.mapdb.DB;
 import org.mapdb.Serializer;
 
@@ -33,24 +34,41 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
  */
 public class MapDBBlocksIndex implements BlocksIndex {
 
+    private static final String MAX_BLOCK_NUMBER_KEY = "max_block";
+
     private final Map<Long, List<IndexedBlockStore.BlockInfo>> index;
+    private final Map<String, byte[]> metadata;
+
     private final DB indexDB;
 
     public MapDBBlocksIndex(DB indexDB) {
+
+        this.indexDB = indexDB;
+
         index = indexDB.hashMapCreate("index")
                 .keySerializer(Serializer.LONG)
                 .valueSerializer(BLOCK_INFO_SERIALIZER)
                 .counterEnable()
                 .makeOrGet();
-        this.indexDB = indexDB;
+
+        metadata = indexDB.hashMapCreate("metadata")
+                .keySerializer(Serializer.STRING)
+                .valueSerializer(Serializer.BYTE_ARRAY)
+                .makeOrGet();
+
+        if (!metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) {
+            long maxBlockNumber = (long) index.size() - 1;
+            metadata.put(MAX_BLOCK_NUMBER_KEY,  ByteUtil.longToBytes(maxBlockNumber));
+        }
     }
 
-    //TODO (im): This implementation is a hacky solution which wont work without having the full block chain in the
-    // index. The max number should be either stored in a permanent storage and updated or calculated when initializing
-    // the index.
     @Override
     public long getMaxNumber() {
-        return (long)index.size() - 1L;
+        if (index.isEmpty()) {
+            return -1;
+        }
+
+        return ByteUtil.byteArrayToLong(metadata.get(MAX_BLOCK_NUMBER_KEY));
     }
 
     @Override
@@ -65,15 +83,28 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     @Override
     public void putBlocks(long blockNumber, List<IndexedBlockStore.BlockInfo> blocks) {
+        if (blocks == null || blocks.isEmpty()) {
+            throw new IllegalArgumentException("Block list cannot be empty nor null.");
+        }
+
+        if (blockNumber > getMaxNumber()) {
+            metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(blockNumber));
+        }
+
         index.put(blockNumber, blocks);
     }
 
     @Override
-    public List<IndexedBlockStore.BlockInfo> removeBlocksByNumber(long blockNumber) {
-        List<IndexedBlockStore.BlockInfo> result = index.remove(blockNumber);
+    public List<IndexedBlockStore.BlockInfo> removeLast() {
+        long lastBlockNumber = getMaxNumber();
+        List<IndexedBlockStore.BlockInfo> result = index.remove(lastBlockNumber);
+
         if (result == null) {
             result = new ArrayList<>();
         }
+
+        metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(lastBlockNumber - 1));
+
         return result;
     }
 
