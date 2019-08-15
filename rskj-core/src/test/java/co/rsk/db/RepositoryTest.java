@@ -423,7 +423,7 @@ public class RepositoryTest {
         Repository track2 = repository.startTracking(); //track
         track2.addStorageBytes(COW, cowKey2, cowVal0);
         track2.commit();
-        repository.flush();
+        trieStore.flush();
 
         assertArrayEquals(cowVal0, repository.getStorageBytes(COW, cowKey2));
 
@@ -458,7 +458,7 @@ public class RepositoryTest {
                     track21.addStorageBytes(COW, cowKey1, cVal);
                     track21.commit();
 
-                    repository.flush();
+                    trieStore.flush();
 
                     assertArrayEquals(cVal, repository.getStorageBytes(COW, cowKey1));
                     assertArrayEquals(cowVal0, repository.getStorageBytes(COW, cowKey2));

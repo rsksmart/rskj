@@ -113,11 +113,6 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
-    public void flush() {
-        trie.flush();
-    }
-
-    @Override
     public void commit() {
         // TODO(mc) is it OK to leave this empty? why?
     }

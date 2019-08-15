@@ -193,11 +193,6 @@ public class MutableTrieCache implements MutableTrie {
     }
 
     @Override
-    public void flush() {
-        trie.flush();
-    }
-
-    @Override
     public void rollback() {
         cache.clear();
         deleteRecursiveLog.clear();

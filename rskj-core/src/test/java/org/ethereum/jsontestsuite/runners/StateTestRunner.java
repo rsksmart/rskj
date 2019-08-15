@@ -168,7 +168,7 @@ public class StateTestRunner {
 
         ProgramResult programResult = executeTransaction(transaction);
 
-        repository.flushNoReconnect();
+        trieStore.flush();
 
         List<LogInfo> origLogs = programResult.getLogInfoList();
         List<LogInfo> postLogs = LogBuilder.build(stateTestCase.getLogs());

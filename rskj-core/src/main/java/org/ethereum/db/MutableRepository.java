@@ -282,17 +282,6 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public synchronized void flush() {
-        mutableTrie.save();
-        mutableTrie.flush();
-    }
-
-    @Override
-    public synchronized void flushNoReconnect() {
-        this.flush();
-    }
-
-    @Override
     public void save() {
         mutableTrie.save();
     }

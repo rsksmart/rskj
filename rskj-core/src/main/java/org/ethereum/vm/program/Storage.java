@@ -188,16 +188,6 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void flush() {
-        repository.flush();
-    }
-
-    @Override
-    public void flushNoReconnect() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void commit() {
         repository.commit();
     }

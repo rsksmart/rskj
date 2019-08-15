@@ -50,8 +50,6 @@ public interface MutableTrie {
 
     void save();
 
-    void flush();
-
     void commit();
 
     void rollback();
