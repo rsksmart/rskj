@@ -56,7 +56,7 @@ public class TwoNodeTest {
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         NodeMessageHandler handler = new NodeMessageHandler(new TestSystemProperties(), mock(org.ethereum.db.BlockStore.class), processor, null, null, null, null, new DummyBlockValidationRule());
 
-        return new SimpleNode(handler);
+        return new SimpleNode(handler, blockchain);
     }
 
     @Test

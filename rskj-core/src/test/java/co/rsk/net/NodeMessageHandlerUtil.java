@@ -24,10 +24,8 @@ public class NodeMessageHandlerUtil {
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
-    public static NodeMessageHandler createHandler(BlockValidationRule validationRule) {
-        final World world = new World();
+    public static NodeMessageHandler createHandler(BlockValidationRule validationRule, Blockchain blockchain) {
         final BlockStore store = new BlockStore();
-        final Blockchain blockchain = world.getBlockChain();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;

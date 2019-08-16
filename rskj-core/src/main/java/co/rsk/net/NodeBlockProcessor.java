@@ -74,12 +74,6 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.syncConfiguration = syncConfiguration;
     }
 
-    @Override
-    @Nonnull
-    public Blockchain getBlockchain() {
-        return this.blockchain;
-    }
-
     /**
      * Detect a block number that is too advanced
      * based on sync chunk size and maximum number of chuncks

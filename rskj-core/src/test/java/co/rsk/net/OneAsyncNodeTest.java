@@ -67,7 +67,7 @@ public class OneAsyncNodeTest {
         );
         NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
 
-        return new SimpleAsyncNode(handler, syncProcessor, channelManager);
+        return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }
 
     private static Block getGenesis() {

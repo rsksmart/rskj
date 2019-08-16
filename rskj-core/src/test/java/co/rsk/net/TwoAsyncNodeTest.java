@@ -58,7 +58,7 @@ public class TwoAsyncNodeTest {
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, null, null, null, null, new DummyBlockValidationRule());
 
-        return new SimpleAsyncNode(handler);
+        return new SimpleAsyncNode(handler, blockchain);
     }
 
     private static SimpleAsyncNode createNodeWithUncles(int size) {
@@ -77,7 +77,7 @@ public class TwoAsyncNodeTest {
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, null, null, null, null, new DummyBlockValidationRule());
 
-        return new SimpleAsyncNode(handler);
+        return new SimpleAsyncNode(handler, blockchain);
     }
 
     private static Block getGenesis() {

@@ -65,6 +65,10 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private volatile boolean stopped;
 
+    /**
+     * @param continuousBlockStore This block store is used to report the current node status.
+     *                             It should have every block from genesis to best block.
+     */
     public NodeMessageHandler(RskSystemProperties config,
                               BlockStore continuousBlockStore,
                               @Nonnull final BlockProcessor blockProcessor,
@@ -224,11 +228,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
 
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
-    }
-
-    @VisibleForTesting
-    public BlockProcessor getBlockProcessor() {
-        return blockProcessor;
     }
 
     private static class MessageTask {

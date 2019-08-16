@@ -38,16 +38,17 @@ import java.util.List;
 public class NodeBlockProcessorUnclesTest {
     @Test
     public void addBlockWithoutUncles() {
-        NodeBlockProcessor processor = createNodeBlockProcessor(new BlockChainBuilder().build());
+        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
-        Block genesis = processor.getBlockchain().getBestBlock();
+        Block genesis = blockChain.getBestBlock();
 
         Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
 
         processor.processBlock(null, block1);
 
-        Assert.assertEquals(1, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block1.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertEquals(1, blockChain.getBestBlock().getNumber());
+        Assert.assertArrayEquals(block1.getHash().getBytes(), blockChain.getBestBlockHash());
     }
 
     @Test
@@ -80,8 +81,8 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(sender, block2);
 
-        Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block2.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertEquals(2, blockChain.getBestBlock().getNumber());
+        Assert.assertArrayEquals(block2.getHash().getBytes(), blockChain.getBestBlockHash());
         Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
     }
 
@@ -92,7 +93,7 @@ public class NodeBlockProcessorUnclesTest {
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
         NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
-        Block genesis = processor.getBlockchain().getBestBlock();
+        Block genesis = blockChain.getBestBlock();
 
         BlockBuilder blockBuilder = new BlockBuilder(blockChain, null, blockStore)
                 .trieStore(blockChainBuilder.getTrieStore());
@@ -113,17 +114,18 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(sender, block2);
 
-        Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block2.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertEquals(2, blockChain.getBestBlock().getNumber());
+        Assert.assertArrayEquals(block2.getHash().getBytes(), blockChain.getBestBlockHash());
 
         Assert.assertEquals(0, sender.getGetBlockMessages().size());
     }
 
     @Test
     public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() {
-        NodeBlockProcessor processor = createNodeBlockProcessor(new BlockChainBuilder().build());
+        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
-        Block genesis = processor.getBlockchain().getBestBlock();
+        Block genesis = blockChain.getBestBlock();
 
         Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
         Block uncle1 = new BlockBuilder(null, null, null).parent(genesis).build();
@@ -140,8 +142,8 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(sender, block2);
 
-        Assert.assertEquals(0, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(genesis.getHash().getBytes(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertEquals(0, blockChain.getBestBlock().getNumber());
+        Assert.assertArrayEquals(genesis.getHash().getBytes(), blockChain.getBestBlockHash());
         Assert.assertEquals(1, sender.getGetBlockMessages().size());
         Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(block1.getHash()));
     }
