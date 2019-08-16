@@ -66,7 +66,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     private final DifficultyCalculator difficultyCalculator;
     private MiningMainchainView blockchain;
-    private Repository repository;
     private RepositoryLocator repositoryLocator;
     private BlockStore blockStore;
     private TransactionPool transactionPool;
@@ -84,17 +83,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     public void setUp() {
         RskTestFactory factory = new RskTestFactory(config) {
             @Override
-            protected Repository buildRepository() {
-                return Mockito.spy(super.buildRepository());
-            }
-
-            @Override
             protected RepositoryLocator buildRepositoryLocator() {
                 return Mockito.spy(super.buildRepositoryLocator());
             }
         };
         blockchain = factory.getMiningMainchainView();
-        repository = factory.getRepository();
         repositoryLocator = factory.getRepositoryLocator();
         blockStore = factory.getBlockStore();
         transactionPool = factory.getTransactionPool();
@@ -112,6 +105,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(tx1.getHash()).thenReturn(new Keccak256(s1));
         when(tx1.getEncoded()).thenReturn(new byte[32]);
 
+        Repository repository = repositoryLocator.startTrackingAt(blockStore.getBestBlock().getHeader());
         Repository track = mock(Repository.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
         Mockito.doReturn(repository.getTrie()).when(track).getTrie();

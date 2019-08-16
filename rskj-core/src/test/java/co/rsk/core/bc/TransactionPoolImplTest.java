@@ -54,7 +54,7 @@ public class TransactionPoolImplTest {
         RskTestContext rskTestContext = new RskTestContext(new String[]{"--regtest"}) {
             @Override
             protected GenesisLoader buildGenesisLoader() {
-                return new TestGenesisLoader(getRepository(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
+                return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
             }
 
             @Override
@@ -63,8 +63,8 @@ public class TransactionPoolImplTest {
             }
         };
         blockChain = rskTestContext.getBlockchain();
-        repository = rskTestContext.getRepository();
         RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
+        repository = repositoryLocator.startTrackingAt(blockChain.getBestBlock().getHeader());
         transactionPool = new TransactionPoolImpl(
                 rskTestContext.getRskSystemProperties(),
                 repositoryLocator,

@@ -559,17 +559,6 @@ public class Trie {
         return buffer.array();
     }
 
-    /**
-     * sends all data to disk. This applies to the store and all keys saved into the
-     * store, not only to this node.
-     */
-    public void flush() {
-        if (this.store==null) {
-            return;
-        }
-        this.store.flush();
-    }
-
     // This method should only be called DURING save(). It should not be called in other places
     // because it will expand the node encoding in a memory cache that is ONLY removed after save()
     public boolean isEmbeddable() {

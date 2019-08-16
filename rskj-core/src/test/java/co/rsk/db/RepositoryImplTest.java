@@ -23,12 +23,9 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieHashTest;
-import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.TestUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
@@ -412,20 +409,6 @@ public class RepositoryImplTest {
         Assert.assertEquals(2, keys.size());
         Assert.assertTrue(keys.contains(accAddress1));
         Assert.assertTrue(keys.contains(accAddress2));
-    }
-
-    @Test
-    public void flushNoReconnect() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(store, new Trie(store)));
-
-        RskAddress accAddress = randomAccountAddress();
-        byte[] initialRoot = repository.getRoot();
-
-        repository.createAccount(accAddress);
-        repository.flushNoReconnect();
-
-        Assert.assertTrue(repository.isExist(accAddress));
     }
 
     @Test

@@ -24,8 +24,6 @@ import co.rsk.config.*;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.logfilter.BlocksBloomStore;
@@ -64,7 +62,6 @@ import co.rsk.rpc.netty.*;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
-import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -82,7 +79,6 @@ import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -144,7 +140,6 @@ public class RskContext implements NodeBootstrapper {
     private org.ethereum.db.BlockStore blockStore;
     private co.rsk.net.BlockStore netBlockStore;
     private TrieStore trieStore;
-    private Repository repository;
     private GenesisLoader genesisLoader;
     private Genesis genesis;
     private CompositeEthereumListener compositeEthereumListener;
@@ -336,14 +331,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return trieStore;
-    }
-
-    public Repository getRepository() {
-        if (repository == null) {
-            repository = buildRepository();
-        }
-
-        return repository;
     }
 
     public BlockExecutor getBlockExecutor() {
@@ -698,12 +685,10 @@ public class RskContext implements NodeBootstrapper {
                 getWeb3(),
                 getWeb3HttpServer(),
                 getWeb3WebSocketServer(),
-                getRepository(),
                 getBlockchain(),
                 getChannelManager(),
                 getSyncPool(),
                 getNodeMessageHandler(),
-                getNodeBlockProcessor(),
                 getTransactionPool(),
                 getPeerServer(),
                 getPeerClientFactory(),
@@ -764,7 +749,7 @@ public class RskContext implements NodeBootstrapper {
         return new GenesisLoaderImpl(
                 rskSystemProperties.getActivationConfig(),
                 getStateRootHandler(),
-                getRepository(),
+                getTrieStore(),
                 rskSystemProperties.genesisInfo(),
                 rskSystemProperties.getNetworkConstants().getInitialNonce(),
                 true,
@@ -788,11 +773,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return new TrieStoreImpl(ds);
-    }
-
-    protected Repository buildRepository() {
-        TrieStore trieStore = getTrieStore();
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie(trieStore))));
     }
 
     protected RepositoryLocator buildRepositoryLocator() {
@@ -888,9 +868,14 @@ public class RskContext implements NodeBootstrapper {
 
     private BlockChainLoader getBlockChainLoader() {
         if (blockChainLoader == null) {
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
             blockChainLoader = new BlockChainLoader(
-                    getRskSystemProperties(),
-                    getRepository(),
+                    new BlockChainFlusher(
+                            rskSystemProperties.isFlushEnabled(),
+                            rskSystemProperties.flushNumberOfBlocks(),
+                            getTrieStore(),
+                            getBlockStore()
+                    ),
                     getBlockStore(),
                     getReceiptStore(),
                     getTransactionPool(),

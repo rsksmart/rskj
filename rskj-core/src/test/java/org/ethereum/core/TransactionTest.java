@@ -600,7 +600,7 @@ public class TransactionTest {
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(),null);
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
-                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
                         false, true, true
                 ).load(),
                 config, repository, blockStore, trieStore
@@ -678,7 +678,7 @@ public class TransactionTest {
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
-                        repository, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
                         false, true, true
                 ).load(),
                 config, repository, blockStore, trieStore

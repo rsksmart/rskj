@@ -48,7 +48,7 @@ public class BlockChainImplInvalidTest {
         objects = new RskTestContext(new String[0]) {
             @Override
             protected GenesisLoader buildGenesisLoader() {
-                return new TestGenesisLoader(getRepository(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
+                return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
             }
 
             @Override

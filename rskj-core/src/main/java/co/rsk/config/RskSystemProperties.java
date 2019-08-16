@@ -150,10 +150,6 @@ public class RskSystemProperties extends SystemProperties {
         return getDouble("miner.minFeesNotifyInDollars", 0);
     }
 
-    public boolean simulateTxs() {
-        return getBoolean("simulateTxs.enabled", false);
-    }
-
     public boolean waitForSync() {
         return getBoolean("sync.waitForSync", false);
     }

@@ -19,14 +19,16 @@
 
 package org.ethereum.core.genesis;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.BlockChainFlusher;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidator;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
@@ -42,9 +44,8 @@ public class BlockChainLoader {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
-    private final RskSystemProperties config;
+    private final BlockChainFlusher flusher;
     private final BlockStore blockStore;
-    private final Repository repository;
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
     private final EthereumListener listener;
@@ -54,8 +55,7 @@ public class BlockChainLoader {
     private final StateRootHandler stateRootHandler;
 
     public BlockChainLoader(
-            RskSystemProperties config,
-            Repository repository,
+            BlockChainFlusher flusher,
             BlockStore blockStore,
             ReceiptStore receiptStore,
             TransactionPool transactionPool,
@@ -64,9 +64,8 @@ public class BlockChainLoader {
             BlockExecutor blockExecutor,
             Genesis genesis,
             StateRootHandler stateRootHandler) {
-        this.config = config;
         this.blockStore = blockStore;
-        this.repository = repository;
+        this.flusher = flusher;
         this.receiptStore = receiptStore;
         this.transactionPool = transactionPool;
         this.listener = listener;
@@ -98,14 +97,12 @@ public class BlockChainLoader {
         }
 
         BlockChainImpl blockchain = new BlockChainImpl(
-                repository,
+                flusher,
                 blockStore,
                 receiptStore,
                 transactionPool,
                 listener,
                 blockValidator,
-                config.isFlushEnabled(),
-                config.flushNumberOfBlocks(),
                 blockExecutor,
                 stateRootHandler
         );

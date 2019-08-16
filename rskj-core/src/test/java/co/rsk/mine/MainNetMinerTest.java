@@ -63,7 +63,7 @@ public class MainNetMinerTest {
         RskTestFactory factory = new RskTestFactory(config) {
             @Override
             public GenesisLoader buildGenesisLoader() {
-                return new TestGenesisLoader(getRepository(), "rsk-unittests.json", BigInteger.ZERO, true, true, true) {
+                return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true) {
                     @Override
                     public Genesis load() {
                         Genesis genesis = super.load();
@@ -92,7 +92,7 @@ public class MainNetMinerTest {
         /* We need a low target */
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockchain = blockChainBuilder.build();
-        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(blockChainBuilder.getRepository());
+        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(blockChainBuilder.getTrieStore());
         gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE)));
         blockchain.setStatus(gen, gen.getCumulativeDifficulty());
 

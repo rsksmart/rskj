@@ -24,6 +24,7 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.bc.BlockChainFlusher;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
@@ -157,14 +158,12 @@ public class TestRunner {
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
 
         BlockChainImpl blockchain = new BlockChainImpl(
-                repository,
+                new BlockChainFlusher(false, 1, trieStore, blockStore),
                 blockStore,
                 receiptStore,
                 transactionPool,
                 null,
                 new DummyBlockValidator(),
-                false,
-                1,
                 new BlockExecutor(
                         config.getActivationConfig(),
                         new RepositoryLocator(trieStore, stateRootHandler),
