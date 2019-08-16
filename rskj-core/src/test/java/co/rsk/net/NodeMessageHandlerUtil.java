@@ -40,7 +40,7 @@ public class NodeMessageHandlerUtil {
         );
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule);
+        return new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule);
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor() {
@@ -78,6 +78,6 @@ public class NodeMessageHandlerUtil {
                 blockValidationRule, new BlockCompositeRule(new BlockUnclesHashValidationRule(),
                 new BlockRootValidationRule(config.getActivationConfig())), DIFFICULTY_CALCULATOR
         );
-        return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, blockValidationRule);
+        return new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, null, blockValidationRule);
     }
 }

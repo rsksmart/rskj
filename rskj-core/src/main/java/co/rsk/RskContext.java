@@ -1350,6 +1350,7 @@ public class RskContext implements NodeBootstrapper {
         if (nodeMessageHandler == null) {
             nodeMessageHandler = new NodeMessageHandler(
                     getRskSystemProperties(),
+                    getBlockStore(),
                     getNodeBlockProcessor(),
                     getSyncProcessor(),
                     getChannelManager(),

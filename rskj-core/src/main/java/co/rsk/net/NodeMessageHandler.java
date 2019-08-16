@@ -20,16 +20,15 @@ package co.rsk.net;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
-import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockStore;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +52,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final ChannelManager channelManager;
     private final TransactionGateway transactionGateway;
     private final PeerScoringManager peerScoringManager;
+    private final BlockStore continuousBlockStore;
+
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
 
@@ -65,6 +66,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private volatile boolean stopped;
 
     public NodeMessageHandler(RskSystemProperties config,
+                              BlockStore continuousBlockStore,
                               @Nonnull final BlockProcessor blockProcessor,
                               final SyncProcessor syncProcessor,
                               @Nullable final ChannelManager channelManager,
@@ -77,6 +79,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         this.syncProcessor = syncProcessor;
         this.transactionGateway = transactionGateway;
         this.blockValidationRule = blockValidationRule;
+        this.continuousBlockStore = continuousBlockStore;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
     }
@@ -190,7 +193,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Duration timeTick = Duration.ofMillis(now - lastTickSent);
         // TODO(lsebrie): handle timeouts properly
         lastTickSent = now;
-        if (queue.isEmpty()){
+        if (queue.isEmpty()) {
             this.syncProcessor.onTimePassed(timeTick);
         }
 
@@ -202,22 +205,17 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
     }
 
-    private synchronized void sendStatusToAll() {
-        BlockChainStatus blockChainStatus = this.blockProcessor.getBlockchain().getStatus();
-        Block block = blockChainStatus.getBestBlock();
-        BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
+    @VisibleForTesting
+    public synchronized void sendStatusToAll() {
+        Block block = continuousBlockStore.getBestBlock();
+        BlockDifficulty totalDifficulty = continuousBlockStore.getTotalDifficultyForHash(block.getHash().getBytes());
 
-        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash().getBytes(), totalDifficulty);
-        logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
+        Status status = new Status(block.getNumber(),
+                block.getHash().getBytes(),
+                block.getParentHash().getBytes(),
+                totalDifficulty);
+        logger.trace("Sending status best block to all {} {}", block.getNumber(), block.getHash());
         this.channelManager.broadcastStatus(status);
-    }
-
-    public synchronized Block getBestBlock() {
-        return this.blockProcessor.getBlockchain().getBestBlock();
-    }
-
-    public synchronized BlockDifficulty getTotalDifficulty() {
-        return this.blockProcessor.getBlockchain().getTotalDifficulty();
     }
 
     private void recordEvent(MessageChannel sender, EventType event) {
