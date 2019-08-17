@@ -50,7 +50,6 @@ public class GasCost {
     public static final int SLOAD = 200;
     public static final int STOP = 0;
     public static final int SUICIDE = 5000;
-    public static final int CODEREPLACE = 15000;
     public static final int CLEAR_SSTORE = 5000;
     public static final int SET_SSTORE = 20000;
     public static final int RESET_SSTORE = 5000;
