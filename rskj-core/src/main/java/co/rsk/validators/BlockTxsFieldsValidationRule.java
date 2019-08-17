@@ -18,8 +18,14 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import org.bouncycastle.util.BigIntegers;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +47,7 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
         List<Transaction> txs = block.getTransactionsList();
         for (Transaction tx : txs) {
             try {
-                tx.verify();
+                validate(tx);
             } catch (RuntimeException e) {
                 logger.warn("Unable to verify transaction", e);
                 return false;
@@ -49,5 +55,38 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
         }
 
         return true;
+    }
+
+    private static void validate(Transaction tx) {
+        if (tx.getNonce().length > DataWord.BYTES) {
+            throw new RuntimeException("Nonce is not valid");
+        }
+        RskAddress receiveAddress = tx.getReceiveAddress();
+        if (receiveAddress != null && receiveAddress.getBytes().length != 0 && receiveAddress.getBytes().length != Constants.getMaxAddressByteLength()) {
+            throw new RuntimeException("Receive address is not valid");
+        }
+        if (tx.getGasLimit().length > DataWord.BYTES) {
+            throw new RuntimeException("Gas Limit is not valid");
+        }
+        Coin gasPrice = tx.getGasPrice();
+        if (gasPrice != null && gasPrice.getBytes().length > DataWord.BYTES) {
+            throw new RuntimeException("Gas Price is not valid");
+        }
+        if (tx.getValue().getBytes().length > DataWord.BYTES) {
+            throw new RuntimeException("Value is not valid");
+        }
+        ECKey.ECDSASignature signature = tx.getSignature();
+        if (signature != null) {
+            if (BigIntegers.asUnsignedByteArray(signature.r).length > DataWord.BYTES) {
+                throw new RuntimeException("Signature R is not valid");
+            }
+            if (BigIntegers.asUnsignedByteArray(signature.s).length > DataWord.BYTES) {
+                throw new RuntimeException("Signature S is not valid");
+            }
+            RskAddress sender = tx.getSender();
+            if (sender.getBytes() != null && sender.getBytes().length != Constants.getMaxAddressByteLength()) {
+                throw new RuntimeException("Sender is not valid");
+            }
+        }
     }
 }

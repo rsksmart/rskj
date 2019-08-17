@@ -70,13 +70,6 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
         Map<RskAddress, BigInteger> curNonce = new HashMap<>();
 
         for (Transaction tx : txs) {
-            try {
-                tx.verify();
-            } catch (RuntimeException e) {
-                logger.warn("Unable to verify transaction", e);
-                return false;
-            }
-
             RskAddress sender = tx.getSender();
             BigInteger expectedNonce = curNonce.get(sender);
             if (expectedNonce == null) {
