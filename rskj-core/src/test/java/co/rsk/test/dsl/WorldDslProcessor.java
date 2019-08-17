@@ -33,6 +33,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieConverter;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
@@ -143,7 +144,7 @@ public class WorldDslProcessor {
             Transaction tx = world.getTransactionByName(accountName);
 
             if (tx != null)
-                accountAddress = tx.getContractAddress();
+                accountAddress = HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce());
             else
                 accountAddress = new RskAddress(accountName);
         }

@@ -21,6 +21,8 @@ package co.rsk.rpc.modules.trace;
 
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
@@ -63,7 +65,8 @@ public class TraceTransformer {
         if (isContractCreation) {
             String outputText = trace.getResult();
             byte[] createdCode = outputText == null ? new byte[0] : Hex.decode(outputText);
-            RskAddress createdAddress = txInfo.getReceipt().getTransaction().getContractAddress();
+            final Transaction tx = txInfo.getReceipt().getTransaction();
+            RskAddress createdAddress = HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce());
             creationData = new CreationData(creationInput, createdCode, createdAddress);
             traceType = TraceType.CREATE;
         }

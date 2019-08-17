@@ -109,12 +109,12 @@ public class HashUtil {
      * @param nonce - nonce of creating address
      * @return new address
      */
-    public static byte[] calcNewAddr(byte[] addr, byte[] nonce) {
+    public static RskAddress calcNewAddr(byte[] addr, byte[] nonce) {
 
         byte[] encSender = RLP.encodeElement(addr);
         byte[] encNonce = RLP.encodeBigInteger(new BigInteger(1, nonce));
 
-        return keccak256Omit12(RLP.encodeList(encSender, encNonce));
+        return new RskAddress(keccak256Omit12(RLP.encodeList(encSender, encNonce)));
     }
 
     /**

@@ -30,6 +30,7 @@ import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
@@ -368,7 +369,7 @@ public class TransactionExecutor {
     }
 
     private void create() {
-        RskAddress newContractAddress = tx.getContractAddress();
+        RskAddress newContractAddress = HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce());
         cacheTrack.createAccount(newContractAddress); // pre-created
 
         if (isEmpty(tx.getData())) {
@@ -482,7 +483,7 @@ public class TransactionExecutor {
         } else {
             mEndGas = GasCost.subtract(mEndGas,  returnDataGasValue);
             program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
-            cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
+            cacheTrack.saveCode(HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce()), result.getHReturn());
         }
     }
 

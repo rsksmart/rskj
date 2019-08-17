@@ -303,15 +303,6 @@ public class Transaction {
         this.sender = null;
     }
 
-    @Nullable
-    public RskAddress getContractAddress() {
-        if (!isContractCreation()) {
-            return null;
-        }
-
-        return new RskAddress(HashUtil.calcNewAddr(this.getSender().getBytes(), this.getNonce()));
-    }
-
     public boolean isContractCreation() {
         return this.receiveAddress.equals(RskAddress.nullAddress());
     }

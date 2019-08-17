@@ -10,6 +10,7 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.program.ProgramResult;
@@ -83,7 +84,7 @@ public class ContractRunner {
         createContract(bytecode, repository);
         Transaction creationTx = contractCreateTx(bytecode, repository);
         executeTransaction(creationTx, repository);
-        return runContract(creationTx.getContractAddress().getBytes(), encodedCall, value, localCall, repository);
+        return runContract(HashUtil.calcNewAddr(creationTx.getSender().getBytes(), creationTx.getNonce()).getBytes(), encodedCall, value, localCall, repository);
     }
 
     private Transaction contractCreateTx(byte[] bytecode, RepositorySnapshot repository) {

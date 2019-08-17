@@ -28,6 +28,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
@@ -239,7 +240,8 @@ public class DslFilesTest {
         Assert.assertNotEquals(topic2, topic3);
 
         // only the third log was directly produced by the created contract
-        byte[] contractAddress = txinfo.getReceipt().getTransaction().getContractAddress().getBytes();
+        Transaction transaction = txinfo.getReceipt().getTransaction();
+        byte[] contractAddress = HashUtil.calcNewAddr(transaction.getSender().getBytes(), transaction.getNonce()).getBytes();
 
         Assert.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(0).getAddress()));
         Assert.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(1).getAddress()));
