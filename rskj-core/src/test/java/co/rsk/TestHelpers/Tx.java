@@ -21,8 +21,8 @@ package co.rsk.TestHelpers;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.BridgeUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Transaction;
 import org.mockito.Mockito;
@@ -61,7 +61,7 @@ public class Tx {
         r.nextBytes(returnReceiveAddressBytes);
         RskAddress returnReceiveAddress = new RskAddress(returnReceiveAddressBytes);
 
-        Mockito.when(transaction.getSender()).thenReturn(returnSender);
+        Mockito.when(transaction.accept(any(SenderResolverVisitor.class))).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
         Mockito.when(transaction.acceptTransactionSignature(config.getNetworkConstants().getChainId())).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);

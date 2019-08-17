@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.Coin;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.remasc.RemascTransaction;
@@ -74,7 +75,8 @@ public class TransactionPoolImplTest {
                 rskTestContext.getCompositeEthereumListener(),
                 rskTestContext.getTransactionExecutorFactory(),
                 10,
-                100
+                100,
+                new SenderResolverVisitor()
         );
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
@@ -540,9 +542,9 @@ public class TransactionPoolImplTest {
 
         transactionPool.addTransaction(tx);
 
-        Assert.assertNotNull(HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce()).getBytes());
+        Assert.assertNotNull(HashUtil.calcNewAddr(tx.accept(new SenderResolverVisitor()).getBytes(), tx.getNonce()).getBytes());
         // Stored value at 0 position should be 1, one more than the blockChain best block
-        Assert.assertEquals(DataWord.ONE, transactionPool.getPendingState().getStorageValue(HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce()), DataWord.ZERO));
+        Assert.assertEquals(DataWord.ONE, transactionPool.getPendingState().getStorageValue(HashUtil.calcNewAddr(tx.accept(new SenderResolverVisitor()).getBytes(), tx.getNonce()), DataWord.ZERO));
     }
 
     @Test
@@ -611,7 +613,7 @@ public class TransactionPoolImplTest {
 
         Transaction tx = createSampleTransaction(1, 2, 3000, 0);
 
-        repository.increaseNonce(tx.getSender());
+        repository.increaseNonce(tx.accept(new SenderResolverVisitor()));
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 

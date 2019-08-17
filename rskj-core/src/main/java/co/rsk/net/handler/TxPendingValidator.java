@@ -20,6 +20,7 @@ package co.rsk.net.handler;
 
 import co.rsk.core.Coin;
 import co.rsk.core.TransactionUtils;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
 import org.ethereum.config.Constants;
@@ -46,10 +47,12 @@ public class TxPendingValidator {
 
     private final Constants constants;
     private final ActivationConfig activationConfig;
+    private final SenderResolverVisitor senderResolver;
 
-    public TxPendingValidator(Constants constants, ActivationConfig activationConfig) {
+    public TxPendingValidator(Constants constants, ActivationConfig activationConfig, SenderResolverVisitor senderResolver) {
         this.constants = constants;
         this.activationConfig = activationConfig;
+        this.senderResolver = senderResolver;
 
         validatorSteps.add(new TxNotNullValidator());
         validatorSteps.add(new TxValidatorNotRemascTxValidator());
@@ -58,17 +61,17 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorNonceRangeValidator());
         validatorSteps.add(new TxValidatorAccountBalanceValidator());
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
-        validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig));
+        validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig, senderResolver));
     }
 
     public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
-        long basicTxCost = TransactionUtils.getTransactionCost(tx, tx.getSender(), constants, activationConfig.forBlock(bestBlockNumber));
+        long basicTxCost = TransactionUtils.getTransactionCost(tx, tx.accept(senderResolver), constants, activationConfig.forBlock(bestBlockNumber));
 
         if (state == null && basicTxCost != 0) {
-            logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender());
+            logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.accept(senderResolver));
             return TransactionValidationResult.withError("the sender account doesn't exist");
         }
 

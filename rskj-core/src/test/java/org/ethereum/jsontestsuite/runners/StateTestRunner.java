@@ -22,6 +22,7 @@ package org.ethereum.jsontestsuite.runners;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -89,7 +90,7 @@ public class StateTestRunner {
     public StateTestRunner(StateTestCase stateTestCase) {
         this.stateTestCase = stateTestCase;
         setstateTestUSeREMASC(false);
-        precompiledContracts = new PrecompiledContracts(config, null);
+        precompiledContracts = new PrecompiledContracts(config, null, new SenderResolverVisitor());
     }
 
     public StateTestRunner setstateTestUSeREMASC(boolean v) {
@@ -106,9 +107,10 @@ public class StateTestRunner {
                 null,
                 blockFactory,
                 invokeFactory,
-                precompiledContracts);
+                precompiledContracts,
+                new SenderResolverVisitor());
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(transaction, transaction.getSender(), 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
+                .newInstance(transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
 
         try{
             executor.init();
@@ -135,6 +137,7 @@ public class StateTestRunner {
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         blockchain = new BlockChainImpl(
                 blockStore,
                 null,
@@ -151,7 +154,8 @@ public class StateTestRunner {
                                 null,
                                 blockFactory,
                                 new ProgramInvokeFactoryImpl(),
-                                precompiledContracts
+                                precompiledContracts,
+                                senderResolver
                         )
                 ),
                 stateRootHandler

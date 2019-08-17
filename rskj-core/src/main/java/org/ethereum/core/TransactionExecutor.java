@@ -104,7 +104,7 @@ public class TransactionExecutor {
     private boolean localCall = false;
 
     public TransactionExecutor(
-            Constants constants, ActivationConfig activationConfig, Transaction tx, final RskAddress sender, int txindex, RskAddress coinbase,
+            Constants constants, ActivationConfig activationConfig, Transaction tx, RskAddress sender, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
             boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts, ExecutorService vmExecution) {
@@ -316,7 +316,7 @@ public class TransactionExecutor {
                 result.spendGas(basicTxCost);
             } else {
                 ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
+                        programInvokeFactory.createProgramInvoke(tx, sender, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts);
@@ -338,7 +338,7 @@ public class TransactionExecutor {
             // storage. It doesn't even call setupContract() to setup a storage root
         } else {
             cacheTrack.setupContract(newContractAddress);
-            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
+            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, sender, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
             this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts);

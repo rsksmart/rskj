@@ -18,10 +18,7 @@
 
 package co.rsk.remasc;
 
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.*;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockHashesHelper;
@@ -129,12 +126,13 @@ class RemascTestRunner {
         BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
 
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()),
                 builder.getConfig().getNetworkConstants().getBridgeConstants(),
-                builder.getConfig().getActivationConfig());
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory);
+                builder.getConfig().getActivationConfig(), senderResolver);
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory, senderResolver);
         BlockExecutor blockExecutor = new BlockExecutor(
                 builder.getConfig().getActivationConfig(),
                 builder.getRepositoryLocator(),
@@ -145,7 +143,8 @@ class RemascTestRunner {
                         null,
                         blockFactory,
                         programInvokeFactory,
-                        precompiledContracts
+                        precompiledContracts,
+                        senderResolver
                 )
         );
 

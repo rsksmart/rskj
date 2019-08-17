@@ -23,6 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.*;
@@ -443,10 +444,11 @@ public class RemascStorageProviderTest {
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(),
                 new TrieConverter(), new HashMapDB(), new HashMap<>());
 
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
-                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+                config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), senderResolver);
 
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
@@ -458,7 +460,8 @@ public class RemascStorageProviderTest {
                         null,
                         new BlockFactory(config.getActivationConfig()),
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory)
+                        new PrecompiledContracts(config, bridgeSupportFactory, senderResolver),
+                        senderResolver
                 )
         );
 

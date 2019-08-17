@@ -18,6 +18,7 @@
 
 package co.rsk.test.dsl;
 
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.test.World;
 import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.encoders.Hex;
@@ -57,7 +58,7 @@ public class TransactionBuildDslProcessor {
             this.builder.nonce(Long.parseLong(cmd.getArgument(0)));
         else if (cmd.isCommand("contract")) {
             Transaction transaction = this.world.getTransactionByName(cmd.getArgument(0));
-            this.builder.receiverAddress(HashUtil.calcNewAddr(transaction.getSender().getBytes(), transaction.getNonce()).getBytes());
+            this.builder.receiverAddress(HashUtil.calcNewAddr(transaction.accept(new SenderResolverVisitor()).getBytes(), transaction.getNonce()).getBytes());
         }
         else if (cmd.isCommand("receiverAddress"))
             if (cmd.getArgument(0).equals("0") || cmd.getArgument(0).equals("00"))

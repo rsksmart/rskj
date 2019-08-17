@@ -19,6 +19,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.crypto.Keccak256;
 
 import java.util.*;
@@ -27,18 +28,20 @@ import java.util.stream.Collectors;
 public class TransactionSet {
     private final Map<Keccak256, Transaction> transactionsByHash;
     private final Map<RskAddress, List<Transaction>> transactionsByAddress;
+    private final SenderResolverVisitor senderResolver;
 
-    public TransactionSet() {
-        this(new HashMap<>(), new HashMap<>());
+    public TransactionSet(SenderResolverVisitor senderResolver) {
+        this(new HashMap<>(), new HashMap<>(), senderResolver);
     }
 
-    public TransactionSet(TransactionSet transactionSet) {
-        this(new HashMap<>(transactionSet.transactionsByHash), new HashMap<>(transactionSet.transactionsByAddress));
+    public TransactionSet(TransactionSet transactionSet, SenderResolverVisitor senderResolver) {
+        this(new HashMap<>(transactionSet.transactionsByHash), new HashMap<>(transactionSet.transactionsByAddress), senderResolver);
     }
 
-    public TransactionSet(Map<Keccak256, Transaction> transactionsByHash, Map<RskAddress, List<Transaction>> transactionsByAddress) {
+    private TransactionSet(Map<Keccak256, Transaction> transactionsByHash, Map<RskAddress, List<Transaction>> transactionsByAddress, SenderResolverVisitor senderResolver) {
         this.transactionsByHash = transactionsByHash;
         this.transactionsByAddress = transactionsByAddress;
+        this.senderResolver = senderResolver;
     }
 
     public void addTransaction(Transaction transaction) {
@@ -50,7 +53,7 @@ public class TransactionSet {
 
         this.transactionsByHash.put(txhash, transaction);
 
-        RskAddress senderAddress = transaction.getSender();
+        RskAddress senderAddress = transaction.accept(senderResolver);
 
         List<Transaction> txs = this.transactionsByAddress.get(senderAddress);
 
@@ -76,7 +79,7 @@ public class TransactionSet {
         return this.transactionsByHash.containsKey(transaction.getHash());
     }
 
-    public void removeTransactionByHash(Keccak256 hash) {
+    public void removeTransactionByHash(Keccak256 hash, SenderResolverVisitor senderResolver) {
         Transaction transaction = this.transactionsByHash.get(hash);
 
         if (transaction == null) {
@@ -85,7 +88,7 @@ public class TransactionSet {
 
         this.transactionsByHash.remove(hash);
 
-        RskAddress senderAddress = transaction.getSender();
+        RskAddress senderAddress = transaction.accept(senderResolver);
         List<Transaction> txs = this.transactionsByAddress.get(senderAddress);
 
         if (txs != null) {

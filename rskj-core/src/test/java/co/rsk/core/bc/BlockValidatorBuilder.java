@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieConverter;
@@ -60,7 +61,7 @@ public class BlockValidatorBuilder {
     private BlockStore blockStore;
 
     public BlockValidatorBuilder addBlockTxsFieldsValidationRule() {
-        this.blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule();
+        this.blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule(new SenderResolverVisitor());
         return this;
     }
 
@@ -68,7 +69,7 @@ public class BlockValidatorBuilder {
         this.blockTxsValidationRule = new BlockTxsValidationRule(new RepositoryLocator(
                 trieStore,
                 new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>())
-        ));
+        ), new SenderResolverVisitor());
         return this;
     }
 

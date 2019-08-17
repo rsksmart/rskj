@@ -23,9 +23,8 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.BlockDifficulty;
+import co.rsk.core.*;
 import co.rsk.core.Coin;
-import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.MiningMainchainView;
@@ -94,7 +93,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         blockFactory = factory.getBlockFactory();
         blockExecutor = factory.getBlockExecutor();
         minimumGasPriceCalculator = new MinimumGasPriceCalculator(Coin.ZERO);
-        minerUtils = new MinerUtils();
+        minerUtils = new MinerUtils(new SenderResolverVisitor());
     }
 
     @Test
@@ -105,13 +104,14 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(tx1.getHash()).thenReturn(new Keccak256(s1));
         when(tx1.getEncoded()).thenReturn(new byte[32]);
 
+        RskAddress sender = tx1.accept(mock(SenderResolverVisitor.class));
         Repository repository = repositoryLocator.startTrackingAt(blockStore.getBestBlock().getHeader());
         Repository track = mock(Repository.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
         Mockito.doReturn(repository.getTrie()).when(track).getTrie();
-        when(track.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
+        when(track.getNonce(sender)).thenReturn(BigInteger.ZERO);
+        when(track.getBalance(sender)).thenReturn(Coin.valueOf(4200000L));
         when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
-        when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
         when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
         Mockito.doReturn(track).when(repositoryLocator).startTrackingAt(any());
         Mockito.doReturn(track).when(track).startTracking();

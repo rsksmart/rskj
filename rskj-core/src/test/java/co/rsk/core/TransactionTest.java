@@ -118,14 +118,14 @@ public class TransactionTest {
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
         // Retrieve sender from transaction
-        RskAddress sender = tx.getSender();
+        RskAddress sender = tx.accept(new SenderResolverVisitor());
 
         // Re-sign transaction with a different sender's key
         byte[] newSenderPrivateKey = HashUtil.keccak256("bat".getBytes());
         tx.sign(newSenderPrivateKey);
 
         // Retrieve new sender from transaction
-        RskAddress newSender = tx.getSender();
+        RskAddress newSender = tx.accept(new SenderResolverVisitor());
 
         // Verify sender changed
         assertNotEquals(sender, newSender);
@@ -244,21 +244,23 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
+                    SenderResolverVisitor senderResolver = new SenderResolverVisitor();
                     BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                             new RepositoryBtcBlockStoreWithCache.Factory(
                                     config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                             config.getNetworkConstants().getBridgeConstants(),
-                            config.getActivationConfig());
-                    precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory);
+                            config.getActivationConfig(), senderResolver);
+                    precompiledContracts = new PrecompiledContracts(config, bridgeSupportFactory, senderResolver);
                     TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                             config,
                             new BlockStoreDummy(),
                             null,
                             blockFactory,
                             invokeFactory,
-                            precompiledContracts);
+                            precompiledContracts,
+                            senderResolver);
                     TransactionExecutor executor = transactionExecutorFactory
-                            .newInstance(txConst, txConst.getSender(), 0, bestBlock.getCoinbase(), track, bestBlock, 0)
+                            .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
 
                     executor.init();

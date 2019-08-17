@@ -28,6 +28,7 @@ import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
@@ -106,6 +107,7 @@ public class BridgeSupport {
     private final FederationSupport federationSupport;
 
     private final Context btcContext;
+    private final SenderResolverVisitor senderResolver;
     private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     private BtcBlockStoreWithCache btcBlockStore;
     private BtcBlockChain btcBlockChain;
@@ -119,7 +121,8 @@ public class BridgeSupport {
             Block executionBlock,
             Context btcContext,
             FederationSupport federationSupport,
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
+            SenderResolverVisitor senderResolver) {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
@@ -128,6 +131,7 @@ public class BridgeSupport {
         this.btcContext = btcContext;
         this.federationSupport = federationSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
+        this.senderResolver = senderResolver;
     }
 
     @VisibleForTesting
@@ -1515,7 +1519,7 @@ public class BridgeSupport {
         AddressBasedAuthorizer authorizer = bridgeConstants.getFederationChangeAuthorizer();
 
         // Must be authorized to vote (checking for signature)
-        if (!authorizer.isAuthorized(tx.getSender())) {
+        if (!authorizer.isAuthorized(tx.accept(senderResolver))) {
             return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
 
@@ -1537,7 +1541,7 @@ public class BridgeSupport {
 
         ABICallElection election = provider.getFederationElection(authorizer);
         // Register the vote. It is expected to succeed, since all previous checks succeeded
-        if (!election.vote(callSpec, tx.getSender())) {
+        if (!election.vote(callSpec, tx.accept(senderResolver))) {
             logger.warn("Unexpected federation change vote failure");
             return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
@@ -1782,7 +1786,7 @@ public class BridgeSupport {
     private boolean isLockWhitelistChangeAuthorized(Transaction tx) {
         AddressBasedAuthorizer authorizer = bridgeConstants.getLockWhitelistChangeAuthorizer();
 
-        return authorizer.isAuthorized(tx.getSender());
+        return authorizer.isAuthorized(tx.accept(senderResolver));
     }
 
     /**
@@ -1834,7 +1838,7 @@ public class BridgeSupport {
      */
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb) {
         AddressBasedAuthorizer authorizer = bridgeConstants.getFeePerKbChangeAuthorizer();
-        if (!authorizer.isAuthorized(tx.getSender())) {
+        if (!authorizer.isAuthorized(tx.accept(senderResolver))) {
             return FEE_PER_KB_GENERIC_ERROR_CODE;
         }
 
@@ -1844,7 +1848,7 @@ public class BridgeSupport {
 
         ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
         ABICallSpec feeVote = new ABICallSpec("setFeePerKb", new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
-        boolean successfulVote = feePerKbElection.vote(feeVote, tx.getSender());
+        boolean successfulVote = feePerKbElection.vote(feeVote, tx.accept(senderResolver));
         if (!successfulVote) {
             return -1;
         }

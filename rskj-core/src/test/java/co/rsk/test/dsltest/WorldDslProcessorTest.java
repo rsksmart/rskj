@@ -18,6 +18,7 @@
 
 package co.rsk.test.dsltest;
 
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
@@ -342,7 +343,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(tx01);
 
-        Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
+        Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.accept(new SenderResolverVisitor()).getBytes());
         Assert.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
         Assert.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assert.assertNotNull(tx01.getData());
@@ -369,7 +370,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(tx01);
 
-        Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
+        Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.accept(new SenderResolverVisitor()).getBytes());
         Assert.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
         Assert.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assert.assertNotNull(tx01.getData());
@@ -396,7 +397,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(tx01);
 
-        Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
+        Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.accept(new SenderResolverVisitor()).getBytes());
         Assert.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
         Assert.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assert.assertNotNull(tx01.getData());
@@ -425,7 +426,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(tx01);
 
-        Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.getSender().getBytes());
+        Assert.assertArrayEquals(acc1.getAddress().getBytes(), tx01.accept(new SenderResolverVisitor()).getBytes());
         Assert.assertArrayEquals(acc2.getAddress().getBytes(), tx01.getReceiveAddress().getBytes());
         Assert.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assert.assertNotNull(tx01.getData());

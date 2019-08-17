@@ -20,6 +20,7 @@
 package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -33,7 +34,7 @@ import org.ethereum.vm.program.Program;
  */
 public interface ProgramInvokeFactory {
 
-    ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block,
+    ProgramInvoke createProgramInvoke(Transaction tx, RskAddress sender, int txindex, Block block,
                                       Repository repository, BlockStore blockStore);
 
     ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,

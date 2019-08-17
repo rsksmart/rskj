@@ -19,6 +19,7 @@
 package co.rsk.validators;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.panic.PanicProcessor;
@@ -47,9 +48,11 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private final RepositoryLocator repositoryLocator;
+    private final SenderResolverVisitor senderResolver;
 
-    public BlockTxsValidationRule(RepositoryLocator repositoryLocator) {
+    public BlockTxsValidationRule(RepositoryLocator repositoryLocator, SenderResolverVisitor senderResolver) {
         this.repositoryLocator = repositoryLocator;
+        this.senderResolver = senderResolver;
     }
 
     @Override
@@ -70,7 +73,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
         Map<RskAddress, BigInteger> curNonce = new HashMap<>();
 
         for (Transaction tx : txs) {
-            RskAddress sender = tx.getSender();
+            RskAddress sender = tx.accept(senderResolver);
             BigInteger expectedNonce = curNonce.get(sender);
             if (expectedNonce == null) {
                 expectedNonce = parentRepo.getNonce(sender);

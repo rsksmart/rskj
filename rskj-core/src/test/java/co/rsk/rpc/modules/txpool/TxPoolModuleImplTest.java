@@ -17,6 +17,7 @@
  */
 package co.rsk.rpc.modules.txpool;
 
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,7 +47,7 @@ public class TxPoolModuleImplTest {
     @Before
     public void setup(){
         transactionPool = Web3Mocks.getMockTransactionPool();
-        txPoolModule = new TxPoolModuleImpl(transactionPool);
+        txPoolModule = new TxPoolModuleImpl(transactionPool, new SenderResolverVisitor());
         accountMap = new HashMap();
     }
 
@@ -120,7 +121,7 @@ public class TxPoolModuleImplTest {
 
         checkFieldIsEmpty(node, "queued");
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
-        JsonNode senderNode = checkFieldIsObject(pendingNode, tx.getSender().toString());
+        JsonNode senderNode = checkFieldIsObject(pendingNode, tx.accept(new SenderResolverVisitor()).toString());
         JsonNode nonceNode = checkFieldIsArray(senderNode, tx.getNonceAsInteger().toString());
         nonceNode.elements().forEachRemaining(item -> assertFullTransaction(tx, item));
     }
@@ -133,7 +134,7 @@ public class TxPoolModuleImplTest {
 
         checkFieldIsEmpty(node, "queued");
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
-        JsonNode senderNode = checkFieldIsObject(pendingNode, tx.getSender().toString());
+        JsonNode senderNode = checkFieldIsObject(pendingNode, tx.accept(new SenderResolverVisitor()).toString());
         JsonNode nonceNode = checkFieldIsArray(senderNode, tx.getNonceAsInteger().toString());
         nonceNode.elements().forEachRemaining(item -> assertSummaryTransaction(tx, item));
     }
@@ -149,7 +150,7 @@ public class TxPoolModuleImplTest {
 
         checkFieldIsEmpty(node, "queued");
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
-        JsonNode senderNode = checkFieldIsObject(pendingNode, tx1.getSender().toString());
+        JsonNode senderNode = checkFieldIsObject(pendingNode, tx1.accept(new SenderResolverVisitor()).toString());
         JsonNode nonceNode = checkFieldIsArray(senderNode, tx1.getNonceAsInteger().toString());
 
         int i = 0;
@@ -171,7 +172,7 @@ public class TxPoolModuleImplTest {
 
         checkFieldIsEmpty(node, "queued");
         JsonNode pendingNode = checkFieldIsObject(node, "pending");
-        JsonNode senderNode = checkFieldIsObject(pendingNode, tx1.getSender().toString());
+        JsonNode senderNode = checkFieldIsObject(pendingNode, tx1.accept(new SenderResolverVisitor()).toString());
         JsonNode nonceNode = checkFieldIsArray(senderNode, tx1.getNonceAsInteger().toString());
 
         int i = 0;
@@ -373,7 +374,7 @@ public class TxPoolModuleImplTest {
         Assert.assertTrue(transactionNode.has("blockNumber"));
         Assert.assertEquals(transactionNode.get("blockNumber"), jsonNodeFactory.nullNode());
         Assert.assertTrue(transactionNode.has("from"));
-        Assert.assertEquals(transactionNode.get("from").asText(), TypeConverter.toJsonHex(tx.getSender().getBytes()));
+        Assert.assertEquals(transactionNode.get("from").asText(), TypeConverter.toJsonHex(tx.accept(new SenderResolverVisitor()).getBytes()));
         Assert.assertTrue(transactionNode.has("gas"));
         Assert.assertEquals(transactionNode.get("gas").asText(), TypeConverter.toQuantityJsonHex(tx.getGasLimitAsInteger()));
         Assert.assertTrue(transactionNode.has("gasPrice"));

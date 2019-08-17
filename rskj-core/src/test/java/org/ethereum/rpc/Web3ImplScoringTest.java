@@ -19,6 +19,7 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.MiningMainchainViewImpl;
@@ -370,9 +371,9 @@ public class Web3ImplScoringTest {
                 null, new ExecutionBlockRetriever(miningMainchainView, world.getBlockChain(), null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), new SenderResolverVisitor())
         );
-        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
+        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool(), new SenderResolverVisitor());
         DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
         return new Web3RskImpl(
                 rsk,
@@ -389,6 +390,7 @@ public class Web3ImplScoringTest {
                 null,
                 Web3Mocks.getMockChannelManager(),
                 peerScoringManager,
+                null,
                 null,
                 null,
                 null,

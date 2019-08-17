@@ -21,17 +21,15 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionVisitor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.BridgeUtils;
 import co.rsk.util.ListArrayUtil;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.ECDSASignature;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
@@ -45,7 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.security.SignatureException;
 import java.util.List;
 import java.util.Objects;
 
@@ -60,11 +57,10 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * and those which result in the creation of new contracts.
  */
 public class Transaction {
-    public static final int DATAWORD_LENGTH = 32;
+
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
     private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
     private static final Profiler profiler = ProfilerFactory.getInstance();
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
     /**
      * Since EIP-155, we could encode chainId in V
@@ -72,7 +68,6 @@ public class Transaction {
     private static final byte CHAIN_ID_INC = 35;
 
     private static final byte LOWER_REAL_V = 27;
-    protected RskAddress sender;
     /* whether this is a local call transaction */
     private boolean isLocalCall;
     /* a counter used to make sure each transaction can only be processed once */
@@ -287,14 +282,12 @@ public class Transaction {
         this.signature = key.sign(raw);
         this.rlpEncoding = null;
         this.hash = null;
-        this.sender = null;
     }
 
     public void setSignature(ECDSASignature signature) {
         this.signature = signature;
         this.rlpEncoding = null;
         this.hash = null;
-        this.sender = null;
     }
 
     public boolean isContractCreation() {
@@ -326,28 +319,6 @@ public class Transaction {
         ECKey key = ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, raw, true);
         profiler.stop(metric);
         return key;
-    }
-
-    public synchronized RskAddress getSender() {
-        if (sender != null) {
-            return sender;
-        }
-
-
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
-        try {
-            ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature());
-            sender = new RskAddress(key.getAddress());
-        } catch (SignatureException e) {
-            logger.error(e.getMessage(), e);
-            panicProcessor.panic("transaction", e.getMessage());
-            sender = RskAddress.nullAddress();
-        }
-        finally {
-            profiler.stop(metric);
-        }
-
-        return sender;
     }
 
     public byte getChainId() {
@@ -494,5 +465,9 @@ public class Transaction {
         return Coin.ZERO.equals(getValue()) &&
                 BigInteger.ZERO.equals(new BigInteger(1, getGasLimit())) &&
                 Coin.ZERO.equals(getGasPrice());
+    }
+
+    public <T> T accept(TransactionVisitor<T> visitor) {
+        return visitor.visit(this);
     }
 }

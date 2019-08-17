@@ -19,6 +19,7 @@
 package co.rsk.test;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
@@ -107,7 +108,7 @@ public class World {
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), new SenderResolverVisitor());
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
@@ -119,8 +120,9 @@ public class World {
         Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());
 
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), senderResolver);
 
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
@@ -133,7 +135,8 @@ public class World {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,
-                            new PrecompiledContracts(config, bridgeSupportFactory)
+                            new PrecompiledContracts(config, bridgeSupportFactory, senderResolver),
+                            senderResolver
                     )
             );
         }

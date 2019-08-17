@@ -19,6 +19,7 @@
 package co.rsk.test;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
@@ -241,7 +242,7 @@ public class DslFilesTest {
 
         // only the third log was directly produced by the created contract
         Transaction transaction = txinfo.getReceipt().getTransaction();
-        byte[] contractAddress = HashUtil.calcNewAddr(transaction.getSender().getBytes(), transaction.getNonce()).getBytes();
+        byte[] contractAddress = HashUtil.calcNewAddr(transaction.accept(new SenderResolverVisitor()).getBytes(), transaction.getNonce()).getBytes();
 
         Assert.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(0).getAddress()));
         Assert.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(1).getAddress()));

@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
@@ -49,6 +50,11 @@ import java.util.function.Function;
 public class MinerUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("minerserver");
+    private final SenderResolverVisitor senderResolver;
+
+    public MinerUtils(SenderResolverVisitor senderResolver) {
+        this.senderResolver = senderResolver;
+    }
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, MinerWork work) {
         return getBitcoinMergedMiningCoinbaseTransaction(params, TypeConverter.stringHexToByteArray(work.getBlockHashForMergedMining()));
@@ -156,7 +162,7 @@ public class MinerUtils {
 
         List<Transaction> txs = transactionPool.getPendingTransactions();
 
-        return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs);
+        return PendingState.sortByPriceTakingIntoAccountSenderAndNonce(txs, senderResolver);
     }
 
     public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, RepositorySnapshot originalRepo, Coin minGasPrice) {
@@ -166,7 +172,7 @@ public class MinerUtils {
                 Keccak256 hash = tx.getHash();
                 Coin txValue = tx.getValue();
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
-                RskAddress txSender = tx.getSender();
+                RskAddress txSender = tx.accept(senderResolver);
                 logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
 
                 BigInteger expectedNonce;

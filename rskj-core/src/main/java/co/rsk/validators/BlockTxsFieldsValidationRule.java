@@ -20,6 +20,7 @@ package co.rsk.validators;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
@@ -36,6 +37,11 @@ import java.util.List;
  */
 public class BlockTxsFieldsValidationRule implements BlockParentDependantValidationRule {
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
+    private final SenderResolverVisitor senderResolver;
+
+    public BlockTxsFieldsValidationRule(SenderResolverVisitor senderResolver) {
+        this.senderResolver = senderResolver;
+    }
 
     @Override
     public boolean isValid(Block block, Block parent) {
@@ -57,7 +63,7 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
         return true;
     }
 
-    private static void validate(Transaction tx) {
+    private void validate(Transaction tx) {
         if (tx.getNonce().length > DataWord.BYTES) {
             throw new RuntimeException("Nonce is not valid");
         }
@@ -83,7 +89,7 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
             if (BigIntegers.asUnsignedByteArray(signature.s).length > DataWord.BYTES) {
                 throw new RuntimeException("Signature S is not valid");
             }
-            RskAddress sender = tx.getSender();
+            RskAddress sender = tx.accept(senderResolver);
             if (sender.getBytes() != null && sender.getBytes().length != Constants.getMaxAddressByteLength()) {
                 throw new RuntimeException("Sender is not valid");
             }

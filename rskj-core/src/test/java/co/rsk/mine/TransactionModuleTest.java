@@ -29,7 +29,6 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
-import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -90,7 +89,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100, new SenderResolverVisitor());
 
         Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false);
 
@@ -115,7 +114,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100, new SenderResolverVisitor());
 
         Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, true);
 
@@ -176,7 +175,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100, new SenderResolverVisitor());
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true);
 
@@ -203,7 +202,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), 10, 100, new SenderResolverVisitor());
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false);
 
@@ -343,7 +342,7 @@ public class TransactionModuleTest {
                                 transactionExecutorFactory
                         ),
                         new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
-                        new MinerUtils()
+                        new MinerUtils(new SenderResolverVisitor())
                 ),
                 minerClock,
                 blockFactory,
@@ -374,9 +373,9 @@ public class TransactionModuleTest {
                 repositoryLocator, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule,
                 new BridgeSupportFactory(
                         btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
-                        config.getActivationConfig())
+                        config.getActivationConfig(), new SenderResolverVisitor())
         );
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool, new SenderResolverVisitor());
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
 
         ChannelManager channelManager = new SimpleChannelManager();
@@ -404,21 +403,25 @@ public class TransactionModuleTest {
                 configCapabilities,
                 null,
                 null,
-                null);
+                null,
+                new SenderResolverVisitor());
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(BlockStore blockStore, ReceiptStore receiptStore) {
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(),
+                senderResolver);
         return new TransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,
                 blockFactory,
                 null,
-                new PrecompiledContracts(config, bridgeSupportFactory)
+                new PrecompiledContracts(config, bridgeSupportFactory, senderResolver),
+                senderResolver
         );
     }
 }

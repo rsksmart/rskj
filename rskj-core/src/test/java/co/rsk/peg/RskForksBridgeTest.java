@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.db.RepositoryLocator;
@@ -464,17 +465,19 @@ public class RskForksBridgeTest {
                 Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}), beforeBambooProperties.getNetworkConstants().getChainId());
         rskTx.sign(new byte[32]);
 
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 beforeBambooProperties,
                 blockStore,
                 null,
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory())
+                new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory(), senderResolver),
+                senderResolver
                 );
         Repository track = repository.startTracking();
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(rskTx, rskTx.getSender(), 0, blockChain.getBestBlock().getCoinbase(), track, blockChain.getBestBlock(), 0)
+                .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), track, blockChain.getBestBlock(), 0)
                 .setLocalCall(true);
 
         executor.init();
