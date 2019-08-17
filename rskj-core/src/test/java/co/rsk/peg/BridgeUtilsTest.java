@@ -507,7 +507,7 @@ public class BridgeUtilsTest {
         Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie())));
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(trieStore));
         bridge.init(rskTx, rskExecutionBlock, repository.startTracking(), null, null, null);
-        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
+        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, rskTx.getSender(), constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
     }
 
     private Genesis getGenesisInstance(TrieStore trieStore) {

@@ -169,7 +169,7 @@ public class BridgeUtils {
         return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
     }
 
-    public static boolean isFreeBridgeTx(Transaction rskTx, Constants constants, ActivationConfig.ForBlock activations) {
+    public static boolean isFreeBridgeTx(Transaction rskTx, RskAddress sender, Constants constants, ActivationConfig.ForBlock activations) {
         RskAddress receiveAddress = rskTx.getReceiveAddress();
         if (receiveAddress.equals(RskAddress.nullAddress())) {
             return false;
@@ -184,10 +184,10 @@ public class BridgeUtils {
                !activations.isActive(ConsensusRule.ARE_BRIDGE_TXS_PAID) &&
                rskTx.acceptTransactionSignature(constants.getChainId()) &&
                (
-                       isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation()) ||
-                       isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants) ||
-                       isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants) ||
-                       isFromFeePerKbChangeAuthorizedSender(rskTx, bridgeConstants)
+                       isFromFederateMember(sender, bridgeConstants.getGenesisFederation()) ||
+                       isFromFederationChangeAuthorizedSender(sender, bridgeConstants) ||
+                       isFromLockWhitelistChangeAuthorizedSender(sender, bridgeConstants) ||
+                       isFromFeePerKbChangeAuthorizedSender(sender, bridgeConstants)
                );
     }
 
@@ -201,22 +201,22 @@ public class BridgeUtils {
         return rskTx.getClass() == org.ethereum.vm.program.InternalTransaction.class;
     }
 
-    public static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
-        return federation.hasMemberWithRskAddress(rskTx.getSender().getBytes());
+    public static boolean isFromFederateMember(RskAddress sender, Federation federation) {
+        return federation.hasMemberWithRskAddress(sender.getBytes());
     }
 
-    private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+    private static boolean isFromFederationChangeAuthorizedSender(RskAddress sender, BridgeConstants bridgeConfiguration) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFederationChangeAuthorizer();
-        return authorizer.isAuthorized(rskTx);
+        return authorizer.isAuthorized(sender);
     }
 
-    private static boolean isFromLockWhitelistChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+    private static boolean isFromLockWhitelistChangeAuthorizedSender(RskAddress sender, BridgeConstants bridgeConfiguration) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getLockWhitelistChangeAuthorizer();
-        return authorizer.isAuthorized(rskTx);
+        return authorizer.isAuthorized(sender);
     }
 
-    private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+    private static boolean isFromFeePerKbChangeAuthorizedSender(RskAddress sender, BridgeConstants bridgeConfiguration) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFeePerKbChangeAuthorizer();
-        return authorizer.isAuthorized(rskTx);
+        return authorizer.isAuthorized(sender);
     }
 }

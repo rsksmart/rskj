@@ -59,7 +59,7 @@ public class BridgeSupportTest {
                 .thenReturn(new RskAddress(ByteUtil.leftPadBytes(new byte[]{0x43}, 20)));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx))
+        when(authorizer.isAuthorized(tx.getSender()))
                 .thenReturn(true);
 
         BridgeSupport bridgeSupport = new BridgeSupport(
@@ -93,7 +93,7 @@ public class BridgeSupportTest {
                 .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx))
+        when(authorizer.isAuthorized(tx.getSender()))
                 .thenReturn(false);
 
         BridgeSupport bridgeSupport = new BridgeSupport(
@@ -127,7 +127,7 @@ public class BridgeSupportTest {
                 .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx))
+        when(authorizer.isAuthorized(tx.getSender()))
                 .thenReturn(true);
         when(authorizer.isAuthorized(tx.getSender()))
                 .thenReturn(true);
@@ -167,8 +167,6 @@ public class BridgeSupportTest {
                 .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx))
-                .thenReturn(true);
         when(authorizer.isAuthorized(tx.getSender()))
                 .thenReturn(true);
         when(authorizer.getRequiredAuthorizedKeys())
@@ -209,7 +207,7 @@ public class BridgeSupportTest {
                 .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx))
+        when(authorizer.isAuthorized(tx.getSender()))
                 .thenReturn(true);
         when(authorizer.isAuthorized(tx.getSender()))
                 .thenReturn(true);
@@ -250,7 +248,7 @@ public class BridgeSupportTest {
                 .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx))
+        when(authorizer.isAuthorized(tx.getSender()))
                 .thenReturn(true);
         when(authorizer.isAuthorized(tx.getSender()))
                 .thenReturn(true);
