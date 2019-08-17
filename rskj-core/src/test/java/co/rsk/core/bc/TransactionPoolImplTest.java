@@ -26,6 +26,7 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RskTestContext;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
@@ -539,9 +540,9 @@ public class TransactionPoolImplTest {
 
         transactionPool.addTransaction(tx);
 
-        Assert.assertNotNull(tx.getContractAddress().getBytes());
+        Assert.assertNotNull(HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce()).getBytes());
         // Stored value at 0 position should be 1, one more than the blockChain best block
-        Assert.assertEquals(DataWord.ONE, transactionPool.getPendingState().getStorageValue(tx.getContractAddress(), DataWord.ZERO));
+        Assert.assertEquals(DataWord.ONE, transactionPool.getPendingState().getStorageValue(HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce()), DataWord.ZERO));
     }
 
     @Test

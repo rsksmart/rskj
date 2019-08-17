@@ -21,6 +21,8 @@ package co.rsk.test.dsl;
 import co.rsk.test.World;
 import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
@@ -53,8 +55,10 @@ public class TransactionBuildDslProcessor {
             this.builder.receiver(this.world.getAccountByName(cmd.getArgument(0)));
         else if (cmd.isCommand("nonce"))
             this.builder.nonce(Long.parseLong(cmd.getArgument(0)));
-        else if (cmd.isCommand("contract"))
-            this.builder.receiverAddress(this.world.getTransactionByName(cmd.getArgument(0)).getContractAddress().getBytes());
+        else if (cmd.isCommand("contract")) {
+            Transaction transaction = this.world.getTransactionByName(cmd.getArgument(0));
+            this.builder.receiverAddress(HashUtil.calcNewAddr(transaction.getSender().getBytes(), transaction.getNonce()).getBytes());
+        }
         else if (cmd.isCommand("receiverAddress"))
             if (cmd.getArgument(0).equals("0") || cmd.getArgument(0).equals("00"))
                 this.builder.receiverAddress(ByteUtil.EMPTY_BYTE_ARRAY);
