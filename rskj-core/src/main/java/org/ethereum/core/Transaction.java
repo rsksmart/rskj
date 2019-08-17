@@ -44,7 +44,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.List;
@@ -216,7 +215,7 @@ public class Transaction {
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
     public long transactionCost(Constants constants, ActivationConfig.ForBlock activations) {
         // Federators txs to the bridge are free during system setup
-        if (BridgeUtils.isFreeBridgeTx(this, constants, activations)) {
+        if (BridgeUtils.isFreeBridgeTx(this, getSender(), constants, activations)) {
             return 0;
         }
 

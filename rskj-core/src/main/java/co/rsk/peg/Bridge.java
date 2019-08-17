@@ -215,7 +215,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new NullPointerException();
         }
 
-        if (BridgeUtils.isFreeBridgeTx(rskTx, constants, activations)) {
+        if (BridgeUtils.isFreeBridgeTx(rskTx, rskTx.getSender(), constants, activations)) {
             return 0;
         }
 
@@ -1043,8 +1043,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
 
-            if (!BridgeUtils.isFromFederateMember(self.rskTx, self.bridgeSupport.getActiveFederation())
-                    && ( retiringFederation == null || (retiringFederation != null && !BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation)))) {
+            if (!BridgeUtils.isFromFederateMember(self.rskTx.getSender(), self.bridgeSupport.getActiveFederation())
+                    && ( retiringFederation == null || (retiringFederation != null && !BridgeUtils.isFromFederateMember(self.rskTx.getSender(), retiringFederation)))) {
                 String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);
                 logger.warn(errorMessage);
                 throw new RuntimeException(errorMessage);

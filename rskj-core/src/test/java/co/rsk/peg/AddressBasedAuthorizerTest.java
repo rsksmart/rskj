@@ -82,12 +82,12 @@ public class AddressBasedAuthorizerTest {
             Transaction mockedTx = mock(Transaction.class);
             when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress()));
             Assert.assertTrue(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress())));
-            Assert.assertTrue(auth.isAuthorized(mockedTx));
+            Assert.assertTrue(auth.isAuthorized(mockedTx.getSender()));
         }
 
         Assert.assertFalse(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress())));
         Transaction mockedTx = mock(Transaction.class);
         when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress()));
-        Assert.assertFalse(auth.isAuthorized(mockedTx));
+        Assert.assertFalse(auth.isAuthorized(mockedTx.getSender()));
     }
 }
