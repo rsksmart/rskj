@@ -33,7 +33,8 @@ public class TransactionExecutorTest {
         ActivationConfig activationConfig = ActivationConfigsForTest.all();
         Constants constants = mock(Constants.class);
         Transaction transaction = mock(Transaction.class);
-        RskAddress rskAddress = mock(RskAddress.class);
+        RskAddress coinbase =  mock(RskAddress.class);
+        RskAddress sender = mock(RskAddress.class);
         Repository repository = mock(Repository.class);
         BlockStore blockStore = mock(BlockStore.class);
         ReceiptStore receiptStore = mock(ReceiptStore.class);
@@ -46,7 +47,7 @@ public class TransactionExecutorTest {
         Set<DataWord> deletedAccounts = new HashSet<>();
         ExecutorService vmExecution = mock(ExecutorService.class);
         TransactionExecutor txExecutor = new TransactionExecutor(
-                constants, activationConfig, transaction, txIndex, rskAddress,
+                constants, activationConfig, transaction, sender, txIndex, coinbase,
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
                 true, true, precompiledContracts, deletedAccounts, vmExecution
@@ -57,6 +58,7 @@ public class TransactionExecutorTest {
         // and the nonces are okey
         when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(4000000).toByteArray());
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
+        when(transaction.getSender()).thenReturn(sender);
         when(repository.getNonce(transaction.getSender())).thenReturn(BigInteger.valueOf(1L));
         when(transaction.getNonce()).thenReturn(BigInteger.valueOf(1L).toByteArray());
         // more paperwork, the receiver is just someone

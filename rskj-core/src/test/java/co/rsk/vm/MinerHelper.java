@@ -101,7 +101,7 @@ public class MinerHelper {
                     null,
                     new PrecompiledContracts(config, bridgeSupportFactory));
             TransactionExecutor executor = transactionExecutorFactory
-                    .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
+                    .newInstance(tx, tx.getSender(), txindex++, block.getCoinbase(), track, block, totalGasUsed);
 
             executor.executeTransaction();
 

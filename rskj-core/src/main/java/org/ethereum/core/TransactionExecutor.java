@@ -81,6 +81,7 @@ public class TransactionExecutor {
     private final boolean playVm;
     private final boolean enableRemasc;
     private final ExecutorService vmExecutorService;
+    private final RskAddress sender;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
@@ -106,7 +107,7 @@ public class TransactionExecutor {
     private boolean localCall = false;
 
     public TransactionExecutor(
-            Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
+            Constants constants, ActivationConfig activationConfig, Transaction tx, final RskAddress sender, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
             boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts, ExecutorService vmExecution) {
@@ -129,6 +130,7 @@ public class TransactionExecutor {
         this.enableRemasc = remascEnabled;
         this.deletedAccounts = new HashSet<>(deletedAccounts);
         this.vmExecutorService = vmExecution;
+        this.sender = sender;
     }
 
     /**
@@ -154,7 +156,7 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     private boolean init() {
-        basicTxCost = TransactionUtils.getTransactionCost(tx, tx.getSender(), constants, activations);
+        basicTxCost = TransactionUtils.getTransactionCost(tx, sender, constants, activations);
 
         if (localCall) {
             return true;
@@ -171,7 +173,6 @@ public class TransactionExecutor {
             return false;
         }
 
-
         Coin totalCost = tx.getValue();
 
         if (basicTxCost > 0 ) {
@@ -180,7 +181,7 @@ public class TransactionExecutor {
             totalCost = totalCost.add(txGasCost);
         }
 
-        Coin senderBalance = track.getBalance(tx.getSender());
+        Coin senderBalance = track.getBalance(sender);
 
         if (!isCovers(senderBalance, totalCost)) {
 
@@ -228,7 +229,7 @@ public class TransactionExecutor {
     }
 
     private boolean nonceIsValid() {
-        BigInteger reqNonce = track.getNonce(tx.getSender());
+        BigInteger reqNonce = track.getNonce(sender);
         BigInteger txNonce = toBI(tx.getNonce());
 
         if (isNotEqual(reqNonce, txNonce)) {
@@ -274,17 +275,18 @@ public class TransactionExecutor {
 
         if (!localCall) {
 
-            track.increaseNonce(tx.getSender());
+            track.increaseNonce(sender);
 
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            track.addBalance(tx.getSender(), txGasCost.negate());
+            track.addBalance(sender, txGasCost.negate());
 
             logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
         }
 
         if (tx.isContractCreation()) {
-            create();
+            RskAddress newContractAddress = HashUtil.calcNewAddr(sender.getBytes(), tx.getNonce());
+            create(newContractAddress);
         } else {
             call();
         }
@@ -366,12 +368,11 @@ public class TransactionExecutor {
 
         if (result.getException() == null) {
             Coin endowment = tx.getValue();
-            cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
+            cacheTrack.transfer(sender, targetAddress, endowment);
         }
     }
 
-    private void create() {
-        RskAddress newContractAddress = HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce());
+    private void create(RskAddress newContractAddress) {
         cacheTrack.createAccount(newContractAddress); // pre-created
 
         if (isEmpty(tx.getData())) {
@@ -396,7 +397,7 @@ public class TransactionExecutor {
         }
 
         Coin endowment = tx.getValue();
-        cacheTrack.transfer(tx.getSender(), newContractAddress, endowment);
+        cacheTrack.transfer(sender, newContractAddress, endowment);
     }
 
     private void execError(Throwable err) {
@@ -426,7 +427,7 @@ public class TransactionExecutor {
             // Charge basic cost of the transaction
             long transactionCost = 0;
             // Federators txs to the bridge are free during system setup
-            if (!BridgeUtils.isFreeBridgeTx(tx, tx.getSender(), constants, activations)) {
+            if (!BridgeUtils.isFreeBridgeTx(tx, sender, constants, activations)) {
                 transactionCost = tx.transactionCost();
             }
 
@@ -491,7 +492,7 @@ public class TransactionExecutor {
         } else {
             mEndGas = GasCost.subtract(mEndGas,  returnDataGasValue);
             program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
-            cacheTrack.saveCode(HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce()), result.getHReturn());
+            cacheTrack.saveCode(HashUtil.calcNewAddr(sender.getBytes(), tx.getNonce()), result.getHReturn());
         }
     }
 
@@ -565,8 +566,8 @@ public class TransactionExecutor {
         TransactionExecutionSummary summary = summaryBuilder.build();
 
         // Refund for gas leftover
-        track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
-        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
+        track.addBalance(sender, summary.getLeftover().add(summary.getRefund()));
+        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", sender, summary.getRefund());
 
         // Transfer fees to miner
         Coin summaryFee = summary.getFee();
