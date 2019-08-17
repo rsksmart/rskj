@@ -1515,7 +1515,7 @@ public class BridgeSupport {
         AddressBasedAuthorizer authorizer = bridgeConstants.getFederationChangeAuthorizer();
 
         // Must be authorized to vote (checking for signature)
-        if (!authorizer.isAuthorized(tx)) {
+        if (!authorizer.isAuthorized(tx.getSender())) {
             return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
 
@@ -1782,7 +1782,7 @@ public class BridgeSupport {
     private boolean isLockWhitelistChangeAuthorized(Transaction tx) {
         AddressBasedAuthorizer authorizer = bridgeConstants.getLockWhitelistChangeAuthorizer();
 
-        return authorizer.isAuthorized(tx);
+        return authorizer.isAuthorized(tx.getSender());
     }
 
     /**
@@ -1834,7 +1834,7 @@ public class BridgeSupport {
      */
     public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb) {
         AddressBasedAuthorizer authorizer = bridgeConstants.getFeePerKbChangeAuthorizer();
-        if (!authorizer.isAuthorized(tx)) {
+        if (!authorizer.isAuthorized(tx.getSender())) {
             return FEE_PER_KB_GENERIC_ERROR_CODE;
         }
 
