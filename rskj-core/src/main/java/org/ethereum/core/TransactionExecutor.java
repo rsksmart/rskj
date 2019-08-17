@@ -22,10 +22,12 @@ package org.ethereum.core;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionUtils;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.BridgeUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -132,7 +134,7 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     public boolean init() {
-        basicTxCost = tx.transactionCost(constants, activations);
+        basicTxCost = TransactionUtils.getTransactionCost(tx, tx.getSender(), constants, activations);
 
         if (localCall) {
             readyToExecute = true;
@@ -382,7 +384,13 @@ public class TransactionExecutor {
         try {
 
             // Charge basic cost of the transaction
-            program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
+            long transactionCost = 0;
+            // Federators txs to the bridge are free during system setup
+            if (!BridgeUtils.isFreeBridgeTx(tx, tx.getSender(), constants, activations)) {
+                transactionCost = tx.transactionCost();
+            }
+
+            program.spendGas(transactionCost, "TRANSACTION COST");
 
             if (playVm) {
                 Future<?> vmExecution = vmExecutorService.submit(() -> vm.play(program));

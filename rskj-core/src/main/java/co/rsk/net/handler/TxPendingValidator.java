@@ -19,6 +19,7 @@
 package co.rsk.net.handler;
 
 import co.rsk.core.Coin;
+import co.rsk.core.TransactionUtils;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
 import org.ethereum.config.Constants;
@@ -64,7 +65,7 @@ public class TxPendingValidator {
         BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
         Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
         long bestBlockNumber = executionBlock.getNumber();
-        long basicTxCost = tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber));
+        long basicTxCost = TransactionUtils.getTransactionCost(tx, tx.getSender(), constants, activationConfig.forBlock(bestBlockNumber));
 
         if (state == null && basicTxCost != 0) {
             logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender());
