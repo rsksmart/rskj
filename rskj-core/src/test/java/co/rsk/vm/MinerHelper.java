@@ -20,6 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.db.RepositoryLocator;
@@ -87,10 +88,11 @@ public class MinerHelper {
 
         int txindex = 0;
 
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), senderResolver);
 
         for (Transaction tx : block.getTransactionsList()) {
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
@@ -99,9 +101,10 @@ public class MinerHelper {
                     null,
                     blockFactory,
                     null,
-                    new PrecompiledContracts(config, bridgeSupportFactory));
+                    new PrecompiledContracts(config, bridgeSupportFactory, senderResolver),
+                    senderResolver);
             TransactionExecutor executor = transactionExecutorFactory
-                    .newInstance(tx, tx.getSender(), txindex++, block.getCoinbase(), track, block, totalGasUsed);
+                    .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 
             executor.executeTransaction();
 

@@ -35,7 +35,7 @@ public class SimpleRskTransaction extends Transaction {
     public SimpleRskTransaction(byte[] hash) {
         super(null, null, null, TestUtils.randomAddress().getBytes(), null, null);
         this.hash = hash == null ? null : new Keccak256(hash);
-        this.sender = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
+        sign(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getPrivKeyBytes());
     }
 
     @Override

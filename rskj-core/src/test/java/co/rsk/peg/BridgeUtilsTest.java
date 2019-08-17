@@ -28,6 +28,7 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
@@ -491,9 +492,9 @@ public class BridgeUtilsTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
-                activationConfig);
+                activationConfig, new SenderResolverVisitor());
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, new SenderResolverVisitor());
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,
                 1,
@@ -507,7 +508,7 @@ public class BridgeUtilsTest {
         Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie())));
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(trieStore));
         bridge.init(rskTx, rskExecutionBlock, repository.startTracking(), null, null, null);
-        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, rskTx.getSender(), constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
+        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, rskTx.accept(new SenderResolverVisitor()), constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));
     }
 
     private Genesis getGenesisInstance(TrieStore trieStore) {

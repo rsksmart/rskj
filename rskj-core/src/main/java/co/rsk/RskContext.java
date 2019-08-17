@@ -234,6 +234,7 @@ public class RskContext implements NodeBootstrapper {
     private StatusResolver statusResolver;
     private Web3InformationRetriever web3InformationRetriever;
     private BootstrapImporter bootstrapImporter;
+    private SenderResolverVisitor senderResolverVisitor;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -343,7 +344,8 @@ public class RskContext implements NodeBootstrapper {
                     getCompositeEthereumListener(),
                     getTransactionExecutorFactory(),
                     rskSystemProperties.txOutdatedThreshold(),
-                    rskSystemProperties.txOutdatedTimeout()
+                    rskSystemProperties.txOutdatedTimeout(),
+                    getSenderResolverVisitor()
             );
         }
 
@@ -412,9 +414,16 @@ public class RskContext implements NodeBootstrapper {
         return blockExecutor;
     }
 
+    public SenderResolverVisitor getSenderResolverVisitor() {
+        if (senderResolverVisitor == null) {
+            senderResolverVisitor = new SenderResolverVisitor();
+        }
+        return senderResolverVisitor;
+    }
+
     public PrecompiledContracts getPrecompiledContracts() {
         if (precompiledContracts == null) {
-            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBridgeSupportFactory());
+            precompiledContracts = new PrecompiledContracts(getRskSystemProperties(), getBridgeSupportFactory(), getSenderResolverVisitor());
         }
 
         return precompiledContracts;
@@ -424,7 +433,8 @@ public class RskContext implements NodeBootstrapper {
         if (bridgeSupportFactory == null) {
             bridgeSupportFactory = new BridgeSupportFactory(getBtcBlockStoreFactory(),
                     getRskSystemProperties().getNetworkConstants().getBridgeConstants(),
-                    getRskSystemProperties().getActivationConfig());
+                    getRskSystemProperties().getActivationConfig(),
+                    getSenderResolverVisitor());
         }
 
         return bridgeSupportFactory;
@@ -479,7 +489,8 @@ public class RskContext implements NodeBootstrapper {
                     getReceiptStore(),
                     getBlockFactory(),
                     getProgramInvokeFactory(),
-                    getPrecompiledContracts()
+                    getPrecompiledContracts(),
+                    getSenderResolverVisitor()
             );
         }
 
@@ -667,7 +678,7 @@ public class RskContext implements NodeBootstrapper {
 
     public TxPoolModule getTxPoolModule() {
         if (txPoolModule == null) {
-            txPoolModule = new TxPoolModuleImpl(getTransactionPool());
+            txPoolModule = new TxPoolModuleImpl(getTransactionPool(), getSenderResolverVisitor());
         }
 
         return txPoolModule;
@@ -845,7 +856,9 @@ public class RskContext implements NodeBootstrapper {
                 getConfigCapabilities(),
                 getBuildInfo(),
                 getBlocksBloomStore(),
-                getWeb3InformationRetriever());
+                getWeb3InformationRetriever(),
+                getSenderResolverVisitor()
+        );
     }
 
     protected Web3InformationRetriever getWeb3InformationRetriever() {
@@ -1175,8 +1188,8 @@ public class RskContext implements NodeBootstrapper {
         if (blockParentDependantValidationRule == null) {
             Constants commonConstants = getRskSystemProperties().getNetworkConstants();
             blockParentDependantValidationRule = new BlockParentCompositeRule(
-                    new BlockTxsFieldsValidationRule(),
-                    new BlockTxsValidationRule(getRepositoryLocator()),
+                    new BlockTxsFieldsValidationRule(getSenderResolverVisitor()),
+                    new BlockTxsValidationRule(getRepositoryLocator(), getSenderResolverVisitor()),
                     new PrevMinGasPriceRule(),
                     new BlockParentNumberRule(),
                     new BlockDifficultyRule(getDifficultyCalculator()),
@@ -1244,7 +1257,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockFactory(),
                     getBlockExecutor(),
                     new MinimumGasPriceCalculator(Coin.valueOf(getMiningConfig().getMinGasPriceTarget())),
-                    new MinerUtils()
+                    new MinerUtils(getSenderResolverVisitor())
             );
         }
 

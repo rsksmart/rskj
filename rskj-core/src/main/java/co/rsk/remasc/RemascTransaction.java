@@ -19,6 +19,7 @@
 package co.rsk.remasc;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionVisitor;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
@@ -71,14 +72,13 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public RskAddress getSender() {
-        return REMASC_ADDRESS;
-    }
-
-    @Override
     public boolean acceptTransactionSignature(byte chainId) {
         // RemascTransaction is not signed and not signature validation should be done
         return true;
     }
 
+    @Override
+    public <T> T accept(TransactionVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }

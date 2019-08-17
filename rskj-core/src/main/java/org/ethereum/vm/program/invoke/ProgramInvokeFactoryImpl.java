@@ -47,20 +47,20 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
     // Invocation by the wire tx
     @Override
-    public ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block, Repository repository,
+    public ProgramInvoke createProgramInvoke(Transaction tx, RskAddress sender, int txindex, Block block, Repository repository,
                                              BlockStore blockStore) {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
-        RskAddress addr = tx.isContractCreation() ? HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce()) : tx.getReceiveAddress();
+        RskAddress addr = tx.isContractCreation() ? HashUtil.calcNewAddr(sender.getBytes(), tx.getNonce()) : tx.getReceiveAddress();
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
-        byte[] origin = tx.getSender().getBytes();
+        byte[] origin = sender.getBytes();
 
         /***         CALLER op       ***/
         // YP: This is the address of the account that is directly responsible for this execution.
-        byte[] caller = tx.getSender().getBytes();
+        byte[] caller = sender.getBytes();
 
         /***         BALANCE op       ***/
         Coin balance = repository.getBalance(addr);

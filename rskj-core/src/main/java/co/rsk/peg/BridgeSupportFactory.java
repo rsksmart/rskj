@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
@@ -38,13 +39,17 @@ public class BridgeSupportFactory {
     private final Factory btcBlockStoreFactory;
     private final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
+    private final SenderResolverVisitor senderResolver;
 
     public BridgeSupportFactory(Factory btcBlockStoreFactory,
-            BridgeConstants bridgeConstants, ActivationConfig activationConfig) {
+                                BridgeConstants bridgeConstants,
+                                ActivationConfig activationConfig,
+                                SenderResolverVisitor senderResolver) {
 
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.bridgeConstants = bridgeConstants;
         this.activationConfig = activationConfig;
+        this.senderResolver = senderResolver;
     }
 
 
@@ -67,10 +72,10 @@ public class BridgeSupportFactory {
         if (logs == null) {
             eventLogger = null;
         } else {
-            eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
+            eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs, senderResolver);
         }
 
         return new BridgeSupport(bridgeConstants, provider, eventLogger, repository, executionBlock, btcContext,
-                federationSupport, btcBlockStoreFactory, activations);
+                federationSupport, btcBlockStoreFactory, activations, senderResolver);
     }
 }

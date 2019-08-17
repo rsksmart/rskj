@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -39,7 +40,8 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                activations
+                activations,
+                mock(SenderResolverVisitor.class)
         );
 
         Assert.assertTrue(bridgeSupport.getActivations().isActive(ConsensusRule.RSKIP124));
@@ -55,11 +57,11 @@ public class BridgeSupportTest {
 
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(null));
-        when(tx.getSender())
+        when(tx.accept(any(SenderResolverVisitor.class)))
                 .thenReturn(new RskAddress(ByteUtil.leftPadBytes(new byte[]{0x43}, 20)));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx.getSender()))
+        when(authorizer.isAuthorized(tx.accept(new SenderResolverVisitor())))
                 .thenReturn(true);
 
         BridgeSupport bridgeSupport = new BridgeSupport(
@@ -71,7 +73,8 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class)
+                mock(ActivationConfig.ForBlock.class),
+                mock(SenderResolverVisitor.class)
         );
 
         bridgeSupport.voteFeePerKbChange(tx, null);
@@ -89,11 +92,11 @@ public class BridgeSupportTest {
 
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender())
+        when(tx.accept(any(SenderResolverVisitor.class)))
                 .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx.getSender()))
+        when(authorizer.isAuthorized(tx.accept(new SenderResolverVisitor())))
                 .thenReturn(false);
 
         BridgeSupport bridgeSupport = new BridgeSupport(
@@ -105,7 +108,8 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class)
+                mock(ActivationConfig.ForBlock.class),
+                mock(SenderResolverVisitor.class)
         );
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(-10));
@@ -123,13 +127,11 @@ public class BridgeSupportTest {
 
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender())
+        when(tx.accept(any(SenderResolverVisitor.class)))
                 .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx.getSender()))
-                .thenReturn(true);
-        when(authorizer.isAuthorized(tx.getSender()))
+        when(authorizer.isAuthorized(tx.accept(new SenderResolverVisitor())))
                 .thenReturn(true);
         when(authorizer.getRequiredAuthorizedKeys())
                 .thenReturn(2);
@@ -143,7 +145,8 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class)
+                mock(ActivationConfig.ForBlock.class),
+                mock(SenderResolverVisitor.class)
         );
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.NEGATIVE_SATOSHI), is(-1));
@@ -163,11 +166,11 @@ public class BridgeSupportTest {
 
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender())
+        when(tx.accept(any(SenderResolverVisitor.class)))
                 .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx.getSender()))
+        when(authorizer.isAuthorized(tx.accept(new SenderResolverVisitor())))
                 .thenReturn(true);
         when(authorizer.getRequiredAuthorizedKeys())
                 .thenReturn(2);
@@ -183,7 +186,8 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class)
+                mock(ActivationConfig.ForBlock.class),
+                mock(SenderResolverVisitor.class)
         );
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.valueOf(MAX_FEE_PER_KB)), is(1));
@@ -203,13 +207,11 @@ public class BridgeSupportTest {
 
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender())
+        when(tx.accept(any(SenderResolverVisitor.class)))
                 .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx.getSender()))
-                .thenReturn(true);
-        when(authorizer.isAuthorized(tx.getSender()))
+        when(authorizer.isAuthorized(tx.accept(new SenderResolverVisitor())))
                 .thenReturn(true);
         when(authorizer.getRequiredAuthorizedKeys())
                 .thenReturn(2);
@@ -225,7 +227,8 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class)
+                mock(ActivationConfig.ForBlock.class),
+                mock(SenderResolverVisitor.class)
         );
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
@@ -244,13 +247,11 @@ public class BridgeSupportTest {
 
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender())
+        when(tx.accept(any(SenderResolverVisitor.class)))
                 .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx.getSender()))
-                .thenReturn(true);
-        when(authorizer.isAuthorized(tx.getSender()))
+        when(authorizer.isAuthorized(tx.accept(new SenderResolverVisitor())))
                 .thenReturn(true);
         when(authorizer.getRequiredAuthorizedKeys())
                 .thenReturn(1);
@@ -266,7 +267,8 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class)
+                mock(ActivationConfig.ForBlock.class),
+                mock(SenderResolverVisitor.class)
         );
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));

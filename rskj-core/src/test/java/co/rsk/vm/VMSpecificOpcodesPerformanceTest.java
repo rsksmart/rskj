@@ -4,6 +4,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.helpers.PerformanceTestConstants;
 import co.rsk.helpers.Stopwatch;
 import co.rsk.test.builders.AccountBuilder;
@@ -41,7 +42,7 @@ public class VMSpecificOpcodesPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new SenderResolverVisitor());
 
     public static String padZeroesLeft(String s, int n) {
         return StringUtils.leftPad(s, n, '0');

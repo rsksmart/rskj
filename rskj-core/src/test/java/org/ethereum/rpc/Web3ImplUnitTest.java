@@ -3,6 +3,7 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
@@ -82,7 +83,8 @@ public class Web3ImplUnitTest {
                 mock(ConfigCapabilities.class),
                 mock(BuildInfo.class),
                 mock(BlocksBloomStore.class),
-                retriever);
+                retriever,
+                mock(SenderResolverVisitor.class));
     }
 
     @Test

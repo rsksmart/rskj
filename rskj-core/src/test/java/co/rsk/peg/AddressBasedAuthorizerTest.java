@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
@@ -27,6 +28,7 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.Arrays;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -78,16 +80,17 @@ public class AddressBasedAuthorizerTest {
                 ECKey.fromPrivate(BigInteger.valueOf(102L))
         ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
+        SenderResolverVisitor senderResolver = mock(SenderResolverVisitor.class);
         for (long n = 100L; n <= 102L; n++) {
             Transaction mockedTx = mock(Transaction.class);
-            when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress()));
+            when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress()));
             Assert.assertTrue(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress())));
-            Assert.assertTrue(auth.isAuthorized(mockedTx.getSender()));
+            Assert.assertTrue(auth.isAuthorized(mockedTx.accept(senderResolver)));
         }
 
         Assert.assertFalse(auth.isAuthorized(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress())));
         Transaction mockedTx = mock(Transaction.class);
-        when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress()));
-        Assert.assertFalse(auth.isAuthorized(mockedTx.getSender()));
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress()));
+        Assert.assertFalse(auth.isAuthorized(mockedTx.accept(senderResolver)));
     }
 }

@@ -5,6 +5,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -49,7 +50,7 @@ public class BridgeCostsTest {
         bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
-                activationConfig);
+                activationConfig, new SenderResolverVisitor());
     }
 
     @Test
@@ -58,7 +59,7 @@ public class BridgeCostsTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, new SenderResolverVisitor());
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
@@ -77,7 +78,7 @@ public class BridgeCostsTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, new SenderResolverVisitor());
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         final long BASE_COST = 66_000L;
@@ -102,7 +103,7 @@ public class BridgeCostsTest {
 
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, new SenderResolverVisitor());
         bridge.init(txMock, getGenesisBlock(), null, null, null, null);
 
         final long BASE_COST = 25_000L;
@@ -127,8 +128,8 @@ public class BridgeCostsTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+                activationConfig, new SenderResolverVisitor());
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, new SenderResolverVisitor());
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,
@@ -214,8 +215,8 @@ public class BridgeCostsTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
+                activationConfig, new SenderResolverVisitor());
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory, new SenderResolverVisitor());
         org.ethereum.core.Transaction rskTx;
         if (function==null) {
             rskTx = CallTransaction.createRawTransaction(

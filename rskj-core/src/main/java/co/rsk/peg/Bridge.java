@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -191,6 +192,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private final Constants constants;
     private final BridgeConstants bridgeConstants;
     private final ActivationConfig activationConfig;
+    private final SenderResolverVisitor senderResolver;
 
     private ActivationConfig.ForBlock activations;
     private org.ethereum.core.Transaction rskTx;
@@ -199,12 +201,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private BridgeSupportFactory bridgeSupportFactory;
 
     public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
-            BridgeSupportFactory bridgeSupportFactory) {
+                  BridgeSupportFactory bridgeSupportFactory, SenderResolverVisitor senderResolver) {
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.contractAddress = contractAddress;
         this.constants = constants;
         this.bridgeConstants = constants.getBridgeConstants();
         this.activationConfig = activationConfig;
+        this.senderResolver = senderResolver;
     }
 
     @Override
@@ -214,7 +217,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new NullPointerException();
         }
 
-        if (BridgeUtils.isFreeBridgeTx(rskTx, rskTx.getSender(), constants, activations)) {
+        if (BridgeUtils.isFreeBridgeTx(rskTx, rskTx.accept(senderResolver), constants, activations)) {
             return 0;
         }
 
@@ -1037,8 +1040,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
 
-            if (!BridgeUtils.isFromFederateMember(self.rskTx.getSender(), self.bridgeSupport.getActiveFederation())
-                    && ( retiringFederation == null || (retiringFederation != null && !BridgeUtils.isFromFederateMember(self.rskTx.getSender(), retiringFederation)))) {
+            if (!BridgeUtils.isFromFederateMember(self.rskTx.accept(self.senderResolver), self.bridgeSupport.getActiveFederation())
+                    && ( retiringFederation == null || (retiringFederation != null && !BridgeUtils.isFromFederateMember(self.rskTx.accept(self.senderResolver), retiringFederation)))) {
                 String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);
                 logger.warn(errorMessage);
                 throw new RuntimeException(errorMessage);

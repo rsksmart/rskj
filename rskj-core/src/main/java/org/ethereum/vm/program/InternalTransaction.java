@@ -19,6 +19,8 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionVisitor;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -34,6 +36,7 @@ public class InternalTransaction extends Transaction {
     private int index;
     private boolean rejected = false;
     private String note;
+    private final RskAddress sender;
 
     public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
@@ -84,7 +87,7 @@ public class InternalTransaction extends Transaction {
         } else {
             nonce = RLP.encodeElement(nonce);
         }
-        byte[] senderAddress = RLP.encodeElement(getSender().getBytes());
+        byte[] senderAddress = RLP.encodeElement(sender.getBytes());
         byte[] receiveAddress = RLP.encodeElement(getReceiveAddress().getBytes());
         byte[] value = RLP.encodeCoin(getValue());
         byte[] gasPrice = RLP.encodeCoin(getGasPrice());
@@ -113,5 +116,14 @@ public class InternalTransaction extends Transaction {
     @Override
     public void sign(byte[] privKeyBytes) throws ECKey.MissingPrivateKeyException {
         throw new UnsupportedOperationException("Cannot sign internal transaction.");
+    }
+
+    public RskAddress getSender() {
+        return sender;
+    }
+
+    @Override
+    public <T> T accept(TransactionVisitor<T> visitor) {
+        return visitor.visit(this);
     }
 }

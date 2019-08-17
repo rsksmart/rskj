@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc.dto;
 
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.junit.Test;
@@ -34,7 +35,8 @@ public class TransactionResultDTOTest {
     public void remascAddressSerialization() {
         RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
 
-        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction);
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction, remascTransaction.accept(senderResolver));
         assertThat(dto.from, is("0x0000000000000000000000000000000000000000"));
         assertThat(dto.r, is(nullValue()));
         assertThat(dto.s, is(nullValue()));

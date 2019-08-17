@@ -19,6 +19,7 @@
 package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.peg.Bridge;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -36,7 +37,7 @@ import static org.mockito.Mockito.when;
 public class PrecompiledContractTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new SenderResolverVisitor());
 
     @Test
     public void getBridgeContract() {

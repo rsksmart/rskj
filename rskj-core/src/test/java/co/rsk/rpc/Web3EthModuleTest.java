@@ -20,6 +20,7 @@ package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
@@ -77,7 +78,8 @@ public class Web3EthModuleTest {
                 mock(ConfigCapabilities.class),
                 mock(BuildInfo.class),
                 mock(BlocksBloomStore.class),
-                mock(Web3InformationRetriever.class));
+                mock(Web3InformationRetriever.class),
+                mock(SenderResolverVisitor.class));
 
         assertThat(web3.eth_chainId(), is("0x21"));
     }

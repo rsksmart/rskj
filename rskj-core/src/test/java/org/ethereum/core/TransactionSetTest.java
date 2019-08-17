@@ -19,6 +19,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,7 +33,7 @@ import static org.ethereum.util.TransactionFactoryHelper.*;
 public class TransactionSetTest {
     @Test
     public void getEmptyTransactionList() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(new SenderResolverVisitor());
 
         List<Transaction> result = txset.getTransactions();
 
@@ -42,7 +43,7 @@ public class TransactionSetTest {
 
     @Test
     public void transactionIsNotInEmptySet() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(new SenderResolverVisitor());
         Transaction transaction = createSampleTransaction();
 
         Assert.assertFalse(txset.hasTransaction(transaction));
@@ -54,7 +55,7 @@ public class TransactionSetTest {
 
     @Test
     public void hasTransaction() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(new SenderResolverVisitor());
         Transaction transaction1 = createSampleTransaction(10);
         Transaction transaction2 = createSampleTransaction(20);
         Transaction transaction3 = createSampleTransaction(30);
@@ -69,7 +70,7 @@ public class TransactionSetTest {
 
     @Test
     public void addAndRemoveTransactions() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(new SenderResolverVisitor());
 
         Transaction transaction1 = createSampleTransaction(1, 2, 100, 0);
         Transaction transaction2 = createSampleTransaction(2, 3, 200, 0);
@@ -79,23 +80,23 @@ public class TransactionSetTest {
         txset.addTransaction(transaction2);
         txset.addTransaction(transaction3);
 
-        txset.removeTransactionByHash(transaction1.getHash());
-        txset.removeTransactionByHash(transaction2.getHash());
-        txset.removeTransactionByHash(transaction3.getHash());
+        txset.removeTransactionByHash(transaction1.getHash(), new SenderResolverVisitor());
+        txset.removeTransactionByHash(transaction2.getHash(), new SenderResolverVisitor());
+        txset.removeTransactionByHash(transaction3.getHash(), new SenderResolverVisitor());
 
         Assert.assertFalse(txset.hasTransaction(transaction1));
         Assert.assertFalse(txset.hasTransaction(transaction2));
         Assert.assertFalse(txset.hasTransaction(transaction3));
 
         Assert.assertTrue(txset.getTransactions().isEmpty());
-        Assert.assertTrue(txset.getTransactionsWithSender(transaction1.getSender()).isEmpty());
-        Assert.assertTrue(txset.getTransactionsWithSender(transaction2.getSender()).isEmpty());
-        Assert.assertTrue(txset.getTransactionsWithSender(transaction3.getSender()).isEmpty());
+        Assert.assertTrue(txset.getTransactionsWithSender(transaction1.accept(new SenderResolverVisitor())).isEmpty());
+        Assert.assertTrue(txset.getTransactionsWithSender(transaction2.accept(new SenderResolverVisitor())).isEmpty());
+        Assert.assertTrue(txset.getTransactionsWithSender(transaction3.accept(new SenderResolverVisitor())).isEmpty());
     }
 
     @Test
     public void addTransactionAndGetListWithOneTransaction() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(new SenderResolverVisitor());
         Transaction tx = createSampleTransaction();
 
         txset.addTransaction(tx);
@@ -110,7 +111,7 @@ public class TransactionSetTest {
 
     @Test
     public void addtTransactionTwiceAndGetListWithOneTransaction() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(new SenderResolverVisitor());
         Transaction transaction = createSampleTransaction();
 
         txset.addTransaction(transaction);
@@ -126,7 +127,7 @@ public class TransactionSetTest {
 
     @Test
     public void getEmptyTransactionListByUnknownSender() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(new SenderResolverVisitor());
 
         List<Transaction> result = txset.getTransactionsWithSender(new RskAddress(new byte[20]));
 
@@ -136,12 +137,12 @@ public class TransactionSetTest {
 
     @Test
     public void addTransactionAndGetListBySenderWithOneTransaction() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(new SenderResolverVisitor());
         Transaction transaction = createSampleTransaction();
 
         txset.addTransaction(transaction);
 
-        List<Transaction> result = txset.getTransactionsWithSender(transaction.getSender());
+        List<Transaction> result = txset.getTransactionsWithSender(transaction.accept(new SenderResolverVisitor()));
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());
@@ -151,13 +152,13 @@ public class TransactionSetTest {
 
     @Test
     public void addTransactionTwiceAndGetListBySenderWithOneTransaction() {
-        TransactionSet txset = new TransactionSet();
+        TransactionSet txset = new TransactionSet(new SenderResolverVisitor());
         Transaction transaction = createSampleTransaction();
 
         txset.addTransaction(transaction);
         txset.addTransaction(transaction);
 
-        List<Transaction> result = txset.getTransactionsWithSender(transaction.getSender());
+        List<Transaction> result = txset.getTransactionsWithSender(transaction.accept(new SenderResolverVisitor()));
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());

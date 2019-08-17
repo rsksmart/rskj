@@ -19,6 +19,7 @@
 package co.rsk.rpc.modules.txpool;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -40,10 +41,12 @@ public class TxPoolModuleImpl implements TxPoolModule {
     public static final String QUEUED = "queued";
     private final JsonNodeFactory jsonNodeFactory;
     private final TransactionPool transactionPool;
+    private final SenderResolverVisitor senderResolver;
 
-    public TxPoolModuleImpl(TransactionPool transactionPool) {
+    public TxPoolModuleImpl(TransactionPool transactionPool, SenderResolverVisitor senderResolver) {
         this.transactionPool = transactionPool;
         jsonNodeFactory = JsonNodeFactory.instance;
+        this.senderResolver = senderResolver;
     }
 
     /**
@@ -89,7 +92,7 @@ public class TxPoolModuleImpl implements TxPoolModule {
         txNode.putNull("blockNumber");
         txNode.putNull("transactionIndex");
 
-        txNode.put("from", TypeConverter.toJsonHex(tx.getSender().getBytes()));
+        txNode.put("from", TypeConverter.toJsonHex(tx.accept(senderResolver).getBytes()));
         txNode.put("gas", TypeConverter.toQuantityJsonHex(tx.getGasLimitAsInteger()));
         txNode.put("gasPrice", TypeConverter.toJsonHex(tx.getGasPrice().getBytes()));
         txNode.put("hash", TypeConverter.toJsonHex(tx.getHash().toHexString()));
@@ -114,10 +117,10 @@ public class TxPoolModuleImpl implements TxPoolModule {
     private Map<RskAddress, Map<BigInteger, List<Transaction>>> groupTransactions(List<Transaction> transactions) {
         Map<RskAddress, Map<BigInteger, List<Transaction>>> groupedTransactions = new HashMap<>();
         for (Transaction tx : transactions){
-            Map<BigInteger, List<Transaction>> txsBySender = groupedTransactions.get(tx.getSender());
+            Map<BigInteger, List<Transaction>> txsBySender = groupedTransactions.get(tx.accept(senderResolver));
             if (txsBySender == null){
                 txsBySender = new HashMap<>();
-                groupedTransactions.put(tx.getSender(), txsBySender);
+                groupedTransactions.put(tx.accept(senderResolver), txsBySender);
             }
             List<Transaction> txsByNonce = txsBySender.get(tx.getNonceAsInteger());
             if (txsByNonce == null){

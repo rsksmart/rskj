@@ -21,6 +21,7 @@ package org.ethereum.jsontestsuite;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -47,7 +48,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
 
     @Override
-    public ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block, Repository repository, BlockStore blockStore) {
+    public ProgramInvoke createProgramInvoke(Transaction tx, RskAddress sender, int txindex, Block block, Repository repository, BlockStore blockStore) {
         return generalInvoke(tx, txindex, repository, blockStore);
     }
 
@@ -64,15 +65,15 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
-        RskAddress addr = tx.isContractCreation() ? HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce()) : tx.getReceiveAddress();
+        RskAddress addr = tx.isContractCreation() ? HashUtil.calcNewAddr(tx.accept(new SenderResolverVisitor()).getBytes(), tx.getNonce()) : tx.getReceiveAddress();
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
-        RskAddress origin = tx.getSender();
+        RskAddress origin = tx.accept(new SenderResolverVisitor());
 
         /***         CALLER op       ***/
         // YP: This is the address of the account that is directly responsible for this execution.
-        RskAddress caller = tx.getSender();
+        RskAddress caller = tx.accept(new SenderResolverVisitor());
 
         /***         BALANCE op       ***/
         Coin balance = repository.getBalance(addr);

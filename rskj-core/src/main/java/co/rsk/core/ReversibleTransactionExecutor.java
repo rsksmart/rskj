@@ -84,11 +84,12 @@ public class ReversibleTransactionExecutor {
                 gasLimit,
                 toAddress,
                 value,
-                data
+                data,
+                fromAddress
         );
 
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(tx, fromAddress, 0, coinbase, track, executionBlock, 0)
+                .newInstance(tx, 0, coinbase, track, executionBlock, 0)
                 .setLocalCall(true);
 
         executor.executeTransaction();
@@ -96,7 +97,9 @@ public class ReversibleTransactionExecutor {
         return executor.getResult();
     }
 
-    private static class UnsignedTransaction extends Transaction {
+    public static class UnsignedTransaction extends Transaction {
+
+        private final RskAddress sender;
 
         private UnsignedTransaction(
                 byte[] nonce,
@@ -104,8 +107,10 @@ public class ReversibleTransactionExecutor {
                 byte[] gasLimit,
                 byte[] receiveAddress,
                 byte[] value,
-                byte[] data) {
+                byte[] data,
+                RskAddress sender) {
             super(nonce, gasPrice, gasLimit, receiveAddress, value, data);
+            this.sender = sender;
         }
 
         @Override
@@ -113,6 +118,15 @@ public class ReversibleTransactionExecutor {
             // We only allow executing unsigned transactions
             // in the context of a reversible transaction execution.
             return true;
+        }
+
+        public RskAddress getSender() {
+            return sender;
+        }
+
+        @Override
+        public <T> T accept(TransactionVisitor<T> visitor) {
+            return visitor.visit(this);
         }
     }
 }

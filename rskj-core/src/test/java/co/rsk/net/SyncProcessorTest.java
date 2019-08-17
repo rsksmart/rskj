@@ -748,10 +748,11 @@ public class SyncProcessorTest {
         Block block = new BlockGenerator().createChildBlock(genesis, txs, blockChainBuilder.getRepository().getRoot());
 
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), senderResolver);
 
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
@@ -763,7 +764,8 @@ public class SyncProcessorTest {
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory)
+                        new PrecompiledContracts(config, bridgeSupportFactory, senderResolver),
+                        senderResolver
                 )
         );
         Assert.assertEquals(1, block.getTransactionsList().size());
