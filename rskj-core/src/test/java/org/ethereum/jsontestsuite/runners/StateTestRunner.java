@@ -108,7 +108,7 @@ public class StateTestRunner {
                 invokeFactory,
                 precompiledContracts);
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
+                .newInstance(transaction, transaction.getSender(), 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
 
         try{
             executor.init();

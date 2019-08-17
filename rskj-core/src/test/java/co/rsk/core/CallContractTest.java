@@ -85,7 +85,7 @@ public class CallContractTest {
                     );
 
             org.ethereum.core.TransactionExecutor executor = transactionExecutorFactory
-                    .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
+                    .newInstance(tx, tx.getSender(), 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
                     .setLocalCall(true);
 
             executor.init();

@@ -65,16 +65,18 @@ public class TransactionExecutorFactory {
 
     public TransactionExecutor newInstance(
             Transaction tx,
+            RskAddress sender,
             int txindex,
             RskAddress coinbase,
             Repository track,
             Block block,
             long totalGasUsed) {
-        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, new HashSet<>());
+        return newInstance(tx, sender, txindex, coinbase, track, block, totalGasUsed, false, new HashSet<>());
     }
 
     public TransactionExecutor newInstance(
             Transaction tx,
+            RskAddress sender,
             int txindex,
             RskAddress coinbase,
             Repository track,
@@ -99,6 +101,7 @@ public class TransactionExecutorFactory {
                 config.getNetworkConstants(),
                 config.getActivationConfig(),
                 tx,
+                sender,
                 txindex,
                 coinbase,
                 track,

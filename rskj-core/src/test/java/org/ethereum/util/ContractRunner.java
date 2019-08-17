@@ -115,7 +115,7 @@ public class ContractRunner {
     private TransactionExecutor executeTransaction(Transaction transaction, RepositorySnapshot repository) {
         Repository track = repository.startTracking();
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(transaction, 0, RskAddress.nullAddress(), track, blockchain.getBestBlock(), 0);
+                .newInstance(transaction, transaction.getSender(), 0, RskAddress.nullAddress(), track, blockchain.getBestBlock(), 0);
         executor.init();
         executor.execute();
         executor.go();

@@ -258,7 +258,7 @@ public class TransactionTest {
                             invokeFactory,
                             precompiledContracts);
                     TransactionExecutor executor = transactionExecutorFactory
-                            .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
+                            .newInstance(txConst, txConst.getSender(), 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
 
                     executor.init();
