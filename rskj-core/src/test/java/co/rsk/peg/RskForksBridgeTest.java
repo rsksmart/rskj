@@ -474,7 +474,7 @@ public class RskForksBridgeTest {
                 );
         Repository track = repository.startTracking();
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), track, blockChain.getBestBlock(), 0)
+                .newInstance(rskTx, rskTx.getSender(), 0, blockChain.getBestBlock().getCoinbase(), track, blockChain.getBestBlock(), 0)
                 .setLocalCall(true);
 
         executor.executeTransaction();

@@ -84,12 +84,11 @@ public class ReversibleTransactionExecutor {
                 gasLimit,
                 toAddress,
                 value,
-                data,
-                fromAddress
+                data
         );
 
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(tx, 0, coinbase, track, executionBlock, 0)
+                .newInstance(tx, fromAddress, 0, coinbase, track, executionBlock, 0)
                 .setLocalCall(true);
 
         executor.executeTransaction();
@@ -105,10 +104,8 @@ public class ReversibleTransactionExecutor {
                 byte[] gasLimit,
                 byte[] receiveAddress,
                 byte[] value,
-                byte[] data,
-                RskAddress fromAddress) {
+                byte[] data) {
             super(nonce, gasPrice, gasLimit, receiveAddress, value, data);
-            this.sender = fromAddress;
         }
 
         @Override

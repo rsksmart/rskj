@@ -146,6 +146,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 new TransactionSet(pendingTransactions),
                 (repository, tx) -> transactionExecutorFactory.newInstance(
                         tx,
+                        tx.getSender(),
                         0,
                         bestBlock.getCoinbase(),
                         repository,
