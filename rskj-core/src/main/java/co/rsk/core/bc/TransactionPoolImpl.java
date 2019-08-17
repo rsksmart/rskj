@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.TransactionUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
@@ -456,18 +457,11 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private Coin getTxBaseCost(Transaction tx) {
         Coin gasCost = tx.getValue();
-        if (bestBlock == null || getTransactionCost(tx, bestBlock.getNumber()) > 0) {
+        if (bestBlock == null || TransactionUtils.getTransactionCost(tx, tx.getSender(), config.getNetworkConstants(), config.getActivationConfig().forBlock(bestBlock.getNumber())) > 0) {
             BigInteger gasLimit = new BigInteger(1, tx.getGasLimit());
             gasCost = gasCost.add(tx.getGasPrice().multiply(gasLimit));
         }
 
         return gasCost;
-    }
-
-    private long getTransactionCost(Transaction tx, long number) {
-        return tx.transactionCost(
-                config.getNetworkConstants(),
-                config.getActivationConfig().forBlock(number)
-        );
     }
 }
