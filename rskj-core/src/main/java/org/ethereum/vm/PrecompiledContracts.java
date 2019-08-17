@@ -23,6 +23,7 @@ import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
@@ -111,10 +112,12 @@ public class PrecompiledContracts {
     private static BigIntegerModexp bigIntegerModexp = new BigIntegerModexp();
     private final RskSystemProperties config;
     private final BridgeSupportFactory bridgeSupportFactory;
+    private final SenderResolverVisitor senderResolver;
 
-    public PrecompiledContracts(RskSystemProperties config, BridgeSupportFactory bridgeSupportFactory) {
+    public PrecompiledContracts(RskSystemProperties config, BridgeSupportFactory bridgeSupportFactory, SenderResolverVisitor senderResolver) {
         this.config = config;
         this.bridgeSupportFactory = bridgeSupportFactory;
+        this.senderResolver = senderResolver;
     }
 
 
@@ -137,7 +140,7 @@ public class PrecompiledContracts {
         }
         if (address.equals(BRIDGE_ADDR_DW)) {
             return new Bridge(BRIDGE_ADDR, config.getNetworkConstants(), config.getActivationConfig(),
-                    bridgeSupportFactory);
+                    bridgeSupportFactory, senderResolver);
         }
         if (address.equals(BIG_INT_MODEXP_ADDR_DW)) {
             return bigIntegerModexp;

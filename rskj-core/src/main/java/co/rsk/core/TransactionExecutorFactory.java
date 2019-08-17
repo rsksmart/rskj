@@ -41,6 +41,7 @@ public class TransactionExecutorFactory {
     private final ProgramInvokeFactory programInvokeFactory;
     private final PrecompiledContracts precompiledContracts;
     private final ExecutorService vmExecutorService;
+    private final SenderResolverVisitor senderResolver;
 
     public TransactionExecutorFactory(
             RskSystemProperties config,
@@ -48,7 +49,8 @@ public class TransactionExecutorFactory {
             ReceiptStore receiptStore,
             BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory,
-            PrecompiledContracts precompiledContracts) {
+            PrecompiledContracts precompiledContracts,
+            SenderResolverVisitor senderResolver) {
         this.config = config;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
@@ -61,22 +63,21 @@ public class TransactionExecutorFactory {
             "vmExecution",
             config.getVmExecutionStackSize()
         ));
+        this.senderResolver = senderResolver;
     }
 
     public TransactionExecutor newInstance(
             Transaction tx,
-            RskAddress sender,
             int txindex,
             RskAddress coinbase,
             Repository track,
             Block block,
             long totalGasUsed) {
-        return newInstance(tx, sender, txindex, coinbase, track, block, totalGasUsed, false, 0, new HashSet<>());
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, 0, new HashSet<>());
     }
 
     public TransactionExecutor newInstance(
             Transaction tx,
-            RskAddress sender,
             int txindex,
             RskAddress coinbase,
             Repository track,
@@ -104,7 +105,7 @@ public class TransactionExecutorFactory {
                 config.getNetworkConstants(),
                 config.getActivationConfig(),
                 tx,
-                sender,
+                tx.accept(senderResolver),
                 txindex,
                 coinbase,
                 track,

@@ -65,6 +65,7 @@ public class CallContractTest {
 
         Block bestBlock = world.getBlockChain().getBestBlock();
 
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         Repository repository = world.getRepositoryLocator()
                 .startTrackingAt(world.getBlockChain().getBestBlock().getHeader());
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
@@ -72,7 +73,7 @@ public class CallContractTest {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 btcBlockStoreFactory,
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), senderResolver);
 
         try {
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
@@ -81,11 +82,12 @@ public class CallContractTest {
                     null,
                     blockFactory,
                     new ProgramInvokeFactoryImpl(),
-                    new PrecompiledContracts(config, bridgeSupportFactory)
+                    new PrecompiledContracts(config, bridgeSupportFactory, senderResolver),
+                    senderResolver
                     );
 
             org.ethereum.core.TransactionExecutor executor = transactionExecutorFactory
-                    .newInstance(tx, tx.getSender(), 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
+                    .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
                     .setLocalCall(true);
 
             executor.executeTransaction();

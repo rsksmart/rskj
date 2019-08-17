@@ -18,6 +18,7 @@
 package co.rsk.validators;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import org.bouncycastle.util.BigIntegers;
@@ -32,6 +33,7 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.Arrays;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -50,7 +52,7 @@ public class BlockTxsValidationRuleTest {
         repositorySnapshot = mock(RepositorySnapshot.class);
         when(repositoryLocator.snapshotAt(parentHeader)).thenReturn(repositorySnapshot);
 
-        rule = new BlockTxsValidationRule(repositoryLocator);
+        rule = new BlockTxsValidationRule(repositoryLocator, new SenderResolverVisitor());
     }
 
     @Test
@@ -137,7 +139,7 @@ public class BlockTxsValidationRuleTest {
 
     private Transaction transaction(RskAddress sender, int nonce) {
         Transaction transaction = mock(Transaction.class);
-        when(transaction.getSender()).thenReturn(sender);
+        when(transaction.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         when(transaction.getNonce()).thenReturn(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(nonce)));
         return transaction;
     }

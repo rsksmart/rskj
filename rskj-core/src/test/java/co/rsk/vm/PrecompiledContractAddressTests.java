@@ -20,6 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.vm.DataWord;
@@ -49,7 +50,7 @@ public class PrecompiledContractAddressTests {
 
     @Test
     public void testGetPrecompile() {
-        PrecompiledContracts pcList = new PrecompiledContracts(config, null);
+        PrecompiledContracts pcList = new PrecompiledContracts(config, null, new SenderResolverVisitor());
         checkAddr(pcList,ECRECOVER_ADDR, "ECRecover");
         checkAddr(pcList,SHA256_ADDR, "Sha256");
         checkAddr(pcList,RIPEMPD160_ADDR ,"Ripempd160");

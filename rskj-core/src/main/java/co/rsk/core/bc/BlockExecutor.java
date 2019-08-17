@@ -281,7 +281,7 @@ public class BlockExecutor {
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
-                    tx.getSender(), txindex++,
+                    txindex++,
                     block.getCoinbase(),
                     track,
                     block,

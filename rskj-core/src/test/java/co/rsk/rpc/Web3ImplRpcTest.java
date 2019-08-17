@@ -19,6 +19,7 @@
 package co.rsk.rpc;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
@@ -48,7 +49,7 @@ public class Web3ImplRpcTest {
                             null, null, null, null,
                             null, null, null, null,
                             null, null, null, null, null,
-                            null, null, null, null, null, null);
+                            null, null, null, null, null, null, null);
 
         Map<String, String> result = web3.rpc_modules();
 

@@ -21,6 +21,7 @@ package co.rsk.peg.utils;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.config.BridgeConstants;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
@@ -44,19 +45,21 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     private static final byte[] BRIDGE_CONTRACT_ADDRESS = PrecompiledContracts.BRIDGE_ADDR.getBytes();
 
     private final BridgeConstants bridgeConstants;
+    private final SenderResolverVisitor senderResolver;
 
     private List<LogInfo> logs;
 
-    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, List<LogInfo> logs) {
+    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, List<LogInfo> logs, SenderResolverVisitor senderResolver) {
         this.bridgeConstants = bridgeConstants;
         this.logs = logs;
+        this.senderResolver = senderResolver;
     }
 
     public void logUpdateCollections(Transaction rskTx) {
         this.logs.add(
                 new LogInfo(BRIDGE_CONTRACT_ADDRESS,
                             Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
-                            RLP.encodeElement(rskTx.getSender().getBytes())
+                            RLP.encodeElement(rskTx.accept(senderResolver).getBytes())
                 )
         );
     }

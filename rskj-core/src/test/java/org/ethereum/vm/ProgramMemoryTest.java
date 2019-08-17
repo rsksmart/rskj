@@ -20,6 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SenderResolverVisitor;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.util.ByteUtil;
@@ -44,7 +45,7 @@ public class ProgramMemoryTest {
     public void createProgram() {
         TestSystemProperties config = new TestSystemProperties();
 
-        program = new Program(config.getVmConfig(), new PrecompiledContracts(config, null),
+        program = new Program(config.getVmConfig(), new PrecompiledContracts(config, null, new SenderResolverVisitor()),
                 new BlockFactory(config.getActivationConfig()), mock(ActivationConfig.ForBlock.class),
                 ByteUtil.EMPTY_BYTE_ARRAY, pi, null, new HashSet<>());
     }

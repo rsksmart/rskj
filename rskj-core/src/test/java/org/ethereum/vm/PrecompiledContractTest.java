@@ -20,6 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SenderResolverVisitor;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -38,7 +39,7 @@ public class PrecompiledContractTest {
 
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new SenderResolverVisitor());
 
     @Test
     public void identityTest1() {

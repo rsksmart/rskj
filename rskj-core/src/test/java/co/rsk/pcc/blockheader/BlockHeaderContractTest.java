@@ -28,6 +28,7 @@ import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.mine.MinerUtils;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContract;
@@ -97,7 +98,7 @@ public class BlockHeaderContractTest {
     public void setUp() {
         config = new TestSystemProperties();
         blockFactory = new BlockFactory(config.getActivationConfig());
-        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
+        PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null, new SenderResolverVisitor());
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 

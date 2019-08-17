@@ -20,6 +20,7 @@ package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.*;
@@ -88,12 +89,12 @@ public class Web3RskImpl extends Web3Impl {
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
             BlocksBloomStore blocksBloomStore,
-            Web3InformationRetriever retriever) {
+            Web3InformationRetriever retriever,
+            SenderResolverVisitor senderResolver) {
             super(eth, blockchain, blockStore, receiptStore, properties, minerClient, minerServer,
                     personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, traceModule, rskModule,
                     channelManager, peerScoringManager, peerServer, nodeBlockProcessor,
-                    hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever);
-
+                    hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever, senderResolver);
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;
     }

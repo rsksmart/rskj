@@ -20,6 +20,7 @@
 package co.rsk.rpc.modules.trace;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
@@ -39,15 +40,15 @@ public class TraceTransformer {
 
     }
 
-    public static List<TransactionTrace> toTraces(SummarizedProgramTrace trace, TransactionInfo txInfo, long blockNumber) {
+    public static List<TransactionTrace> toTraces(SummarizedProgramTrace trace, TransactionInfo txInfo, long blockNumber, SenderResolverVisitor senderResolver) {
         List<TransactionTrace> traces = new ArrayList<>();
 
-        addTrace(traces, trace, txInfo, blockNumber, new TraceAddress());
+        addTrace(traces, trace, txInfo, blockNumber, new TraceAddress(), senderResolver);
 
         return traces;
     }
 
-    private static void addTrace(List<TransactionTrace> traces, SummarizedProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
+    private static void addTrace(List<TransactionTrace> traces, SummarizedProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, SenderResolverVisitor senderResolver) {
         boolean isContractCreation = txInfo.getReceipt().getTransaction().isContractCreation();
         CallType callType = isContractCreation ? CallType.NONE : CallType.CALL;
         byte[] creationInput = isContractCreation ? txInfo.getReceipt().getTransaction().getData() : null;
@@ -66,7 +67,7 @@ public class TraceTransformer {
             String outputText = trace.getResult();
             byte[] createdCode = outputText == null ? new byte[0] : Hex.decode(outputText);
             final Transaction tx = txInfo.getReceipt().getTransaction();
-            RskAddress createdAddress = HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce());
+            RskAddress createdAddress = HashUtil.calcNewAddr(tx.accept(senderResolver).getBytes(), tx.getNonce());
             creationData = new CreationData(creationInput, createdCode, createdAddress);
             traceType = TraceType.CREATE;
         }

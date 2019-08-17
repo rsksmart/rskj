@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.*;
@@ -191,12 +192,13 @@ public class BlockChainBuilder {
             listener = new BlockExecutorTest.SimpleEthereumListener();
         }
 
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         if (bridgeSupportFactory == null) {
             bridgeSupportFactory = new BridgeSupportFactory(
                     new RepositoryBtcBlockStoreWithCache.Factory(
                             config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                     config.getNetworkConstants().getBridgeConstants(),
-                    config.getActivationConfig());
+                    config.getActivationConfig(), senderResolver);
         }
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
@@ -212,12 +214,13 @@ public class BlockChainBuilder {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory)
+                new PrecompiledContracts(config, bridgeSupportFactory, senderResolver),
+                senderResolver
         );
         repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
         transactionPool = new TransactionPoolImpl(
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
-                transactionExecutorFactory, 10, 100
+                transactionExecutorFactory, 10, 100, senderResolver
         );
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),

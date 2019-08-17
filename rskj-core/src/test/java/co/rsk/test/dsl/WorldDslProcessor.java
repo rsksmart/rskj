@@ -21,6 +21,7 @@ package co.rsk.test.dsl;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -144,7 +145,7 @@ public class WorldDslProcessor {
             Transaction tx = world.getTransactionByName(accountName);
 
             if (tx != null)
-                accountAddress = HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce());
+                accountAddress = HashUtil.calcNewAddr(tx.accept(new SenderResolverVisitor()).getBytes(), tx.getNonce());
             else
                 accountAddress = new RskAddress(accountName);
         }
@@ -261,6 +262,7 @@ public class WorldDslProcessor {
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+            SenderResolverVisitor senderResolver = new SenderResolverVisitor();
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(world.getTrieStore(), stateRootHandler),
@@ -271,7 +273,8 @@ public class WorldDslProcessor {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,
-                            null
+                            null,
+                            senderResolver
                     )
             );
             executor.executeAndFill(block, parent.getHeader());

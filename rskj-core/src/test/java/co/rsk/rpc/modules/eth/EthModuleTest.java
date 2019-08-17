@@ -21,6 +21,7 @@ package co.rsk.rpc.modules.eth;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.PendingState;
 import co.rsk.db.RepositoryLocator;
@@ -73,7 +74,7 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null));
+                        null, null, null, new SenderResolverVisitor()));
 
         String result = eth.call(args, "latest");
         assertThat(result, is(TypeConverter.toJsonHex(hreturn)));
@@ -101,6 +102,7 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
+                        null,
                         null,
                         null,
                         null

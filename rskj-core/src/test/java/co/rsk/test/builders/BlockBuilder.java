@@ -20,6 +20,7 @@ package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
@@ -106,6 +107,7 @@ public class BlockBuilder {
         if (blockChain != null) {
             final TestSystemProperties config = new TestSystemProperties();
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+            SenderResolverVisitor senderResolver = new SenderResolverVisitor();
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(trieStore, stateRootHandler),
@@ -116,7 +118,8 @@ public class BlockBuilder {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl(),
-                            new PrecompiledContracts(config, bridgeSupportFactory)
+                            new PrecompiledContracts(config, bridgeSupportFactory, senderResolver),
+                            senderResolver
                     )
             );
             executor.executeAndFill(block, parent.getHeader());

@@ -19,6 +19,7 @@
 package org.ethereum.rpc.dto;
 
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -50,7 +51,7 @@ public class TransactionResultDTO {
     public String r;
     public String s;
 
-    public TransactionResultDTO(Block b, Integer index, Transaction tx) {
+    public TransactionResultDTO(Block b, Integer index, Transaction tx, RskAddress sender) {
         hash = tx.getHash().toJsonString();
 
         if (Arrays.equals(tx.getNonce(), ByteUtil.EMPTY_BYTE_ARRAY)) {
@@ -63,7 +64,7 @@ public class TransactionResultDTO {
         blockNumber = b != null ? TypeConverter.toQuantityJsonHex(b.getNumber()) : null;
         transactionIndex = index != null ? TypeConverter.toQuantityJsonHex(index) : null;
 
-        from = tx.getSender().toJsonString();
+        from = sender.toJsonString();
         to = tx.getReceiveAddress().toJsonString();
         gas = TypeConverter.toQuantityJsonHex(tx.getGasLimit());
         

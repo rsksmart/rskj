@@ -18,6 +18,7 @@
 
 package co.rsk.test.builderstest;
 
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.Account;
@@ -44,7 +45,7 @@ public class TransactionBuilderTest {
                 .build();
 
         Assert.assertNotNull(tx);
-        Assert.assertArrayEquals(sender.getAddress().getBytes(), tx.getSender().getBytes());
+        Assert.assertArrayEquals(sender.getAddress().getBytes(), tx.accept(new SenderResolverVisitor()).getBytes());
         Assert.assertArrayEquals(receiver.getAddress().getBytes(), tx.getReceiveAddress().getBytes());
         Assert.assertEquals(BigInteger.TEN, tx.getValue().asBigInteger());
         Assert.assertEquals(BigInteger.ONE, tx.getGasPrice().asBigInteger());

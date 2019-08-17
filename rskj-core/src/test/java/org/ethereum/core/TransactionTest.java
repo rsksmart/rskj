@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
@@ -319,7 +320,7 @@ public class TransactionTest {
         System.out.println("plainTx1: " + plainTx1);
         System.out.println("plainTx2: " + plainTx2);
 
-        System.out.println(tx2.getSender().toString());
+        System.out.println(tx2.accept(new SenderResolverVisitor()).toString());
     }
 
 
@@ -450,11 +451,12 @@ public class TransactionTest {
 
                     Block bestBlock = block;
 
+                    SenderResolverVisitor senderResolver = new SenderResolverVisitor();
                     BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                             new RepositoryBtcBlockStoreWithCache.Factory(
                                     config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                             config.getNetworkConstants().getBridgeConstants(),
-                            config.getActivationConfig());
+                            config.getActivationConfig(), senderResolver);
 
                     TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                             config,
@@ -462,9 +464,9 @@ public class TransactionTest {
                             null,
                             blockFactory,
                             invokeFactory,
-                            new PrecompiledContracts(config, bridgeSupportFactory));
+                            new PrecompiledContracts(config, bridgeSupportFactory, senderResolver), senderResolver);
                     TransactionExecutor executor = transactionExecutorFactory
-                            .newInstance(txConst, txConst.getSender(), 0, bestBlock.getCoinbase(), track, bestBlock, 0)
+                            .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
 
                     executor.executeTransaction();
@@ -612,7 +614,7 @@ public class TransactionTest {
         Transaction tx = createTx(sender, new byte[0], Hex.decode(code), repository);
         executeTransaction(blockchain, blockStore, tx, repository);
 
-        byte[] contractAddress = HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce()).getBytes();
+        byte[] contractAddress = HashUtil.calcNewAddr(tx.accept(new SenderResolverVisitor()).getBytes(), tx.getNonce()).getBytes();
 
         CallTransaction.Contract contract1 = new CallTransaction.Contract(abi);
         byte[] callData = contract1.getByName("multipleHomicide").encode();
@@ -698,9 +700,9 @@ public class TransactionTest {
         executeTransaction(blockchain, blockStore, tx2, repository);
 
         CallTransaction.Contract contract2 = new CallTransaction.Contract(abi2);
-        byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(HashUtil.calcNewAddr(tx1.getSender().getBytes(), tx1.getNonce()).getBytes()));
+        byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(HashUtil.calcNewAddr(tx1.accept(new SenderResolverVisitor()).getBytes(), tx1.getNonce()).getBytes()));
 
-        Transaction tx3 = createTx(sender, HashUtil.calcNewAddr(tx2.getSender().getBytes(), tx2.getNonce()).getBytes(), data, repository);
+        Transaction tx3 = createTx(sender, HashUtil.calcNewAddr(tx2.accept(new SenderResolverVisitor()).getBytes(), tx2.getNonce()).getBytes(), data, repository);
         TransactionExecutor executor = executeTransaction(blockchain, blockStore, tx3, repository);
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
         Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
@@ -730,11 +732,12 @@ public class TransactionTest {
             Transaction tx,
             Repository repository) {
         Repository track = repository.startTracking();
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
+                config.getActivationConfig(), senderResolver);
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
@@ -742,9 +745,10 @@ public class TransactionTest {
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory));
+                new PrecompiledContracts(config, bridgeSupportFactory, senderResolver),
+                senderResolver);
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(tx, tx.getSender(), 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
+                .newInstance(tx, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
 
         executor.executeTransaction();
 

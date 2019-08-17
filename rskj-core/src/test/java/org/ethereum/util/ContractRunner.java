@@ -2,6 +2,7 @@ package org.ethereum.util;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
@@ -84,7 +85,7 @@ public class ContractRunner {
         createContract(bytecode, repository);
         Transaction creationTx = contractCreateTx(bytecode, repository);
         executeTransaction(creationTx, repository);
-        return runContract(HashUtil.calcNewAddr(creationTx.getSender().getBytes(), creationTx.getNonce()).getBytes(), encodedCall, value, localCall, repository);
+        return runContract(HashUtil.calcNewAddr(creationTx.accept(new SenderResolverVisitor()).getBytes(), creationTx.getNonce()).getBytes(), encodedCall, value, localCall, repository);
     }
 
     private Transaction contractCreateTx(byte[] bytecode, RepositorySnapshot repository) {
@@ -115,7 +116,7 @@ public class ContractRunner {
     private TransactionExecutor executeTransaction(Transaction transaction, RepositorySnapshot repository) {
         Repository track = repository.startTracking();
         TransactionExecutor executor = transactionExecutorFactory
-                .newInstance(transaction, transaction.getSender(), 0, RskAddress.nullAddress(), track, blockchain.getBestBlock(), 0);
+                .newInstance(transaction, 0, RskAddress.nullAddress(), track, blockchain.getBestBlock(), 0);
         executor.executeTransaction();
         track.commit();
 

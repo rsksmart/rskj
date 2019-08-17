@@ -19,6 +19,7 @@
 package co.rsk.rpc.modules.trace;
 
 import co.rsk.config.VmConfig;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.bc.BlockExecutor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,16 +50,19 @@ public class TraceModuleImpl implements TraceModule {
     private final ReceiptStore receiptStore;
 
     private final BlockExecutor blockExecutor;
+    private final SenderResolverVisitor senderResolver;
 
     public TraceModuleImpl(
             Blockchain blockchain,
             BlockStore blockStore,
             ReceiptStore receiptStore,
-            BlockExecutor blockExecutor) {
+            BlockExecutor blockExecutor,
+            SenderResolverVisitor senderResolver) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockExecutor = blockExecutor;
+        this.senderResolver = senderResolver;
     }
 
     @Override
@@ -87,7 +91,7 @@ public class TraceModuleImpl implements TraceModule {
             return null;
         }
 
-        List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
+        List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber(), senderResolver);
         ObjectMapper mapper = Serializers.createMapper(true);
         return mapper.valueToTree(traces);
     }
@@ -121,7 +125,7 @@ public class TraceModuleImpl implements TraceModule {
                     return null;
                 }
 
-                List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
+                List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber(), senderResolver);
 
                 blockTraces.addAll(traces);
             }

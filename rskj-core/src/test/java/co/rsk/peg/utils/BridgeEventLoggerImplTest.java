@@ -22,12 +22,12 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
 import co.rsk.peg.FederationTestUtils;
 import org.ethereum.core.Block;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -42,7 +42,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -61,7 +60,7 @@ public class BridgeEventLoggerImplTest {
         BridgeConstants constantsMock = mock(BridgeConstants.class);
         when(constantsMock.getFederationActivationAge()).thenReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge());
         List<LogInfo> eventLogs = new LinkedList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(constantsMock, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(constantsMock, eventLogs, new SenderResolverVisitor());
 
         // Setup parameters for test method call
         Block executionBlock = mock(Block.class);

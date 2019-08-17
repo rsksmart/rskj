@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.TransactionUtils;
 import co.rsk.crypto.Keccak256;
@@ -55,8 +56,8 @@ public class TransactionPoolImpl implements TransactionPool {
     private static final Logger logger = LoggerFactory.getLogger("txpool");
     private static final byte[] emptyUncleHashList = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
-    private final TransactionSet pendingTransactions = new TransactionSet();
-    private final TransactionSet queuedTransactions = new TransactionSet();
+    private final TransactionSet pendingTransactions;
+    private final TransactionSet queuedTransactions;
 
     private final Map<Keccak256, Long> transactionBlocks = new HashMap<>();
     private final Map<Keccak256, Long> transactionTimes = new HashMap<>();
@@ -69,6 +70,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final int outdatedThreshold;
     private final int outdatedTimeout;
+    private final SenderResolverVisitor senderResolver;
 
     private ScheduledExecutorService cleanerTimer;
     private ScheduledFuture<?> cleanerFuture;
@@ -85,7 +87,8 @@ public class TransactionPoolImpl implements TransactionPool {
             EthereumListener listener,
             TransactionExecutorFactory transactionExecutorFactory,
             int outdatedThreshold,
-            int outdatedTimeout) {
+            int outdatedTimeout,
+            SenderResolverVisitor senderResolver) {
         this.config = config;
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
@@ -95,11 +98,14 @@ public class TransactionPoolImpl implements TransactionPool {
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
 
-        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig());
+        this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), senderResolver);
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
         }
+        this.senderResolver = senderResolver;
+        pendingTransactions = new TransactionSet(senderResolver);
+        queuedTransactions = new TransactionSet(senderResolver);
     }
 
     @Override
@@ -144,16 +150,16 @@ public class TransactionPoolImpl implements TransactionPool {
         removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
         return new PendingState(
                 currentRepository,
-                new TransactionSet(pendingTransactions),
+                new TransactionSet(pendingTransactions, senderResolver),
                 (repository, tx) -> transactionExecutorFactory.newInstance(
                         tx,
-                        tx.getSender(),
                         0,
                         bestBlock.getCoinbase(),
                         repository,
                         createFakePendingBlock(bestBlock),
                         0
-                )
+                ),
+                senderResolver
         );
     }
 
@@ -173,7 +179,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
                 while (succesor.isPresent()) {
                     Transaction found = succesor.get();
-                    queuedTransactions.removeTransactionByHash(found.getHash());
+                    queuedTransactions.removeTransactionByHash(found.getHash(), senderResolver);
 
                     if (!this.addTransaction(found).transactionWasAdded()) {
                         break;
@@ -199,7 +205,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private Optional<Transaction> getQueuedSuccesor(Transaction tx) {
         BigInteger next = tx.getNonceAsInteger().add(BigInteger.ONE);
 
-        List<Transaction> txsaccount = this.queuedTransactions.getTransactionsWithSender(tx.getSender());
+        List<Transaction> txsaccount = this.queuedTransactions.getTransactionsWithSender(tx.accept(senderResolver));
 
         if (txsaccount == null) {
             return Optional.empty();
@@ -240,7 +246,7 @@ public class TransactionPoolImpl implements TransactionPool {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         transactionTimes.put(hash, timestampSeconds);
 
-        BigInteger currentNonce = getPendingState(currentRepository).getNonce(tx.getSender());
+        BigInteger currentNonce = getPendingState(currentRepository).getNonce(tx.accept(senderResolver));
         BigInteger txNonce = tx.getNonceAsInteger();
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
@@ -266,7 +272,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private boolean isBumpingGasPriceForSameNonceTx(Transaction tx) {
-        Optional<Transaction> oldTxWithNonce = pendingTransactions.getTransactionsWithSender(tx.getSender()).stream()
+        Optional<Transaction> oldTxWithNonce = pendingTransactions.getTransactionsWithSender(tx.accept(senderResolver)).stream()
                 .filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger()))
                 .findFirst();
 
@@ -368,8 +374,8 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private void removeTransactionList(List<Keccak256> toremove) {
         for (Keccak256 key : toremove) {
-            pendingTransactions.removeTransactionByHash(key);
-            queuedTransactions.removeTransactionByHash(key);
+            pendingTransactions.removeTransactionByHash(key, senderResolver);
+            queuedTransactions.removeTransactionByHash(key, senderResolver);
 
             transactionBlocks.remove(key);
             transactionTimes.remove(key);
@@ -380,8 +386,8 @@ public class TransactionPoolImpl implements TransactionPool {
     public synchronized void removeTransactions(List<Transaction> txs) {
         for (Transaction tx : txs) {
             Keccak256 khash = tx.getHash();
-            pendingTransactions.removeTransactionByHash(khash);
-            queuedTransactions.removeTransactionByHash(khash);
+            pendingTransactions.removeTransactionByHash(khash, senderResolver);
+            queuedTransactions.removeTransactionByHash(khash, senderResolver);
 
             logger.trace("Clear transaction, hash: [{}]", khash);
         }
@@ -434,7 +440,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
-        AccountState state = currentRepository.getAccountState(tx.getSender());
+        AccountState state = currentRepository.getAccountState(tx.accept(senderResolver));
         return validator.isValid(tx, bestBlock, state);
     }
 
@@ -446,7 +452,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private boolean senderCanPayPendingTransactionsAndNewTx(
             Transaction newTx,
             RepositorySnapshot currentRepository) {
-        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.getSender());
+        List<Transaction> transactions = pendingTransactions.getTransactionsWithSender(newTx.accept(senderResolver));
 
         Coin accumTxCost = Coin.ZERO;
         for (Transaction t : transactions) {
@@ -454,12 +460,12 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         Coin costWithNewTx = accumTxCost.add(getTxBaseCost(newTx));
-        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.getSender())) <= 0;
+        return costWithNewTx.compareTo(currentRepository.getBalance(newTx.accept(senderResolver))) <= 0;
     }
 
     private Coin getTxBaseCost(Transaction tx) {
         Coin gasCost = tx.getValue();
-        if (bestBlock == null || TransactionUtils.getTransactionCost(tx, tx.getSender(), config.getNetworkConstants(), config.getActivationConfig().forBlock(bestBlock.getNumber())) > 0) {
+        if (bestBlock == null || TransactionUtils.getTransactionCost(tx, tx.accept(senderResolver), config.getNetworkConstants(), config.getActivationConfig().forBlock(bestBlock.getNumber())) > 0) {
             BigInteger gasLimit = BigInteger.valueOf(GasCost.toGas(tx.getGasLimit()));
             gasCost = gasCost.add(tx.getGasPrice().multiply(gasLimit));
         }

@@ -3,6 +3,7 @@ package org.ethereum.core;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -21,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.any;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 public class TransactionExecutorTest {
@@ -58,15 +60,15 @@ public class TransactionExecutorTest {
         // and the nonces are okey
         when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(4000000).toByteArray());
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
-        when(transaction.getSender()).thenReturn(sender);
-        when(repository.getNonce(transaction.getSender())).thenReturn(BigInteger.valueOf(1L));
+        when(transaction.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
+        when(repository.getNonce(transaction.accept(new SenderResolverVisitor()))).thenReturn(BigInteger.valueOf(1L));
         when(transaction.getNonce()).thenReturn(BigInteger.valueOf(1L).toByteArray());
         // more paperwork, the receiver is just someone
         RskAddress receiver = new RskAddress("0000000000000000000000000000000000000001");
         when(transaction.getReceiveAddress()).thenReturn(receiver);
         when(transaction.acceptTransactionSignature(constants.getChainId())).thenReturn(true);
         // sender has no balance
-        when(repository.getBalance(transaction.getSender())).thenReturn(new Coin(BigInteger.valueOf(0L)));
+        when(repository.getBalance(transaction.accept(new SenderResolverVisitor()))).thenReturn(new Coin(BigInteger.valueOf(0L)));
         // but is sending some nice value over the wire
         when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(68000)));
         // note that the transaction is free of cost

@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
@@ -104,7 +105,7 @@ public class BlockExecutorTest {
         Block parent = blockchain.getBestBlock();
 
         Transaction tx = block.getTransactionsList().get(0);
-        RskAddress account = tx.getSender();
+        RskAddress account = tx.accept(new SenderResolverVisitor());
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
 
@@ -149,7 +150,7 @@ public class BlockExecutorTest {
 
         Transaction tx1 = block.getTransactionsList().get(0);
         Transaction tx2 = block.getTransactionsList().get(1);
-        RskAddress account = tx1.getSender();
+        RskAddress account = tx1.accept(new SenderResolverVisitor());
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
 
@@ -677,8 +678,9 @@ public class BlockExecutorTest {
         Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());
 
+        SenderResolverVisitor senderResolver = new SenderResolverVisitor();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig(), senderResolver);
 
         return new BlockExecutor(
                 config.getActivationConfig(),
@@ -690,7 +692,8 @@ public class BlockExecutorTest {
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory)
+                        new PrecompiledContracts(config, bridgeSupportFactory, senderResolver),
+                        senderResolver
                 )
         );
     }

@@ -33,6 +33,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
+import co.rsk.core.SenderResolverVisitor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
@@ -236,7 +237,7 @@ public class BridgeSupportTestPowerMock {
                 bridgeConstants, provider, mock(BridgeEventLogger.class), track, null,
                 new Context(bridgeConstants.getBtcParams()),
                 new FederationSupport(bridgeConstants, provider, null),
-                btcBlockStoreFactory, mock(ActivationConfig.ForBlock.class)
+                btcBlockStoreFactory, mock(ActivationConfig.ForBlock.class), new SenderResolverVisitor()
         ) {
             @Override
             InputStream getCheckPoints() {
@@ -319,7 +320,7 @@ public class BridgeSupportTestPowerMock {
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
 
         List<LogInfo> eventLogs = new LinkedList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs, new SenderResolverVisitor());
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
@@ -909,7 +910,7 @@ public class BridgeSupportTestPowerMock {
 
         // Setup BridgeSupport
         List<LogInfo> eventLogs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs, new SenderResolverVisitor());
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, new BridgeStorageProvider(
                         track,
@@ -1007,7 +1008,7 @@ public class BridgeSupportTestPowerMock {
 
         track = repository.startTracking();
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs, new SenderResolverVisitor());
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, new BridgeStorageProvider(
                         track,
@@ -1120,7 +1121,7 @@ public class BridgeSupportTestPowerMock {
 
         track = repository.startTracking();
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs, new SenderResolverVisitor());
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, new BridgeStorageProvider(
                         track,
@@ -1272,7 +1273,7 @@ public class BridgeSupportTestPowerMock {
                 Hex.decode(DATA),
                 "");
 
-        track.saveCode(tx.getSender(), new byte[]{0x1});
+        track.saveCode(tx.accept(new SenderResolverVisitor()), new byte[]{0x1});
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, null);
 
@@ -1733,7 +1734,8 @@ public class BridgeSupportTestPowerMock {
                 btcContext,
                 mockFederationSupport,
                 mockFactory,
-                mock(ActivationConfig.ForBlock.class)
+                mock(ActivationConfig.ForBlock.class),
+                new SenderResolverVisitor()
         );
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
@@ -2330,7 +2332,7 @@ public class BridgeSupportTestPowerMock {
         );
         ABICallSpec spec = new ABICallSpec("create", new byte[][]{});
         Transaction mockedTx = mock(Transaction.class);
-        when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(12L)).getAddress()));
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(12L)).getAddress()));
         Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE, bridgeSupport.voteFederationChange(mockedTx, spec));
     }
 
@@ -2349,7 +2351,7 @@ public class BridgeSupportTestPowerMock {
             voter = new RskAddress(voterBytes);
 
             tx = mock(Transaction.class);
-            when(tx.getSender()).thenReturn(voter);
+            when(tx.accept(any(SenderResolverVisitor.class))).thenReturn(voter);
 
             spec = new ABICallSpec(function, arguments);
 
@@ -3298,7 +3300,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
@@ -3319,7 +3321,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
@@ -3336,7 +3338,7 @@ public class BridgeSupportTestPowerMock {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
@@ -3352,7 +3354,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
@@ -3368,7 +3370,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.isDisableBlockSet()).thenReturn(false);
         int bestChainHeight = 10;
@@ -3395,7 +3397,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.isDisableBlockSet()).thenReturn(false);
         int bestChainHeight = 10;
@@ -3422,7 +3424,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.isDisableBlockSet()).thenReturn(false);
         int bestChainHeight = 10;
@@ -3446,7 +3448,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.isDisableBlockSet()).thenReturn(false);
         int bestChainHeight = (Integer.MAX_VALUE / 2) + 2;
@@ -3473,7 +3475,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.isDisableBlockSet()).thenReturn(false);
         int bestChainHeight = 10;
@@ -3500,7 +3502,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.isDisableBlockSet()).thenReturn(true);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
@@ -3515,7 +3517,7 @@ public class BridgeSupportTestPowerMock {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
@@ -3532,7 +3534,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
@@ -3553,7 +3555,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
@@ -3571,7 +3573,7 @@ public class BridgeSupportTestPowerMock {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
@@ -3587,7 +3589,7 @@ public class BridgeSupportTestPowerMock {
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
-        when(mockedTx.getSender()).thenReturn(sender);
+        when(mockedTx.accept(any(SenderResolverVisitor.class))).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
@@ -4195,7 +4197,7 @@ public class BridgeSupportTestPowerMock {
                 constants, provider, eventLogger, track, executionBlock,
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, executionBlock),
-                blockStoreFactory, activations
+                blockStoreFactory, activations, new SenderResolverVisitor()
         );
     }
 
