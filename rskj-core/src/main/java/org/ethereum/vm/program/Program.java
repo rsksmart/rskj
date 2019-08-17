@@ -422,8 +422,7 @@ public class Program {
         RskAddress senderAddress = new RskAddress(getOwnerAddress());
 
         byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
-        byte[] newAddressBytes = HashUtil.calcNewAddr(getOwnerAddress().getLast20Bytes(), nonce);
-        RskAddress newAddress = new RskAddress(newAddressBytes);
+        RskAddress newAddress = HashUtil.calcNewAddr(getOwnerAddress().getLast20Bytes(), nonce);
 
         createContract(senderAddress, nonce, value, memStart, memSize, newAddress);
     }

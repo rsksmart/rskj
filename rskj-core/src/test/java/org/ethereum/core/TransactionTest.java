@@ -612,7 +612,7 @@ public class TransactionTest {
         Transaction tx = createTx(sender, new byte[0], Hex.decode(code), repository);
         executeTransaction(blockchain, blockStore, tx, repository);
 
-        byte[] contractAddress = tx.getContractAddress().getBytes();
+        byte[] contractAddress = HashUtil.calcNewAddr(tx.getSender().getBytes(), tx.getNonce()).getBytes();
 
         CallTransaction.Contract contract1 = new CallTransaction.Contract(abi);
         byte[] callData = contract1.getByName("multipleHomicide").encode();
@@ -698,9 +698,9 @@ public class TransactionTest {
         executeTransaction(blockchain, blockStore, tx2, repository);
 
         CallTransaction.Contract contract2 = new CallTransaction.Contract(abi2);
-        byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(tx1.getContractAddress().getBytes()));
+        byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(HashUtil.calcNewAddr(tx1.getSender().getBytes(), tx1.getNonce()).getBytes()));
 
-        Transaction tx3 = createTx(sender, tx2.getContractAddress().getBytes(), data, repository);
+        Transaction tx3 = createTx(sender, HashUtil.calcNewAddr(tx2.getSender().getBytes(), tx2.getNonce()).getBytes(), data, repository);
         TransactionExecutor executor = executeTransaction(blockchain, blockStore, tx3, repository);
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
         Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
