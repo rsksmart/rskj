@@ -26,6 +26,7 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
@@ -59,6 +60,7 @@ public class EthModuleTest {
                 null,
                 anyByte(),
                 null,
+                null,
                 executor,
                 retriever,
                 null,
@@ -78,6 +80,7 @@ public class EthModuleTest {
                 mock(BridgeConstants.class),
                 (byte) 33,
                 mock(Blockchain.class),
+                mock(TransactionPool.class),
                 mock(ReversibleTransactionExecutor.class),
                 mock(ExecutionBlockRetriever.class),
                 mock(RepositoryLocator.class),

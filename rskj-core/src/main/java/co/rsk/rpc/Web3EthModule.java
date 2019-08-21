@@ -88,7 +88,9 @@ public interface Web3EthModule {
 
     String eth_getUncleCountByBlockNumber(String bnOrId)throws Exception;
 
-    String eth_getCode(String addr, String bnOrId)throws Exception;
+    default String eth_getCode(String address, String blockId) {
+        return getEthModule().getCode(address, blockId);
+    }
 
     default String eth_sendRawTransaction(String rawData) {
         return getEthModule().sendRawTransaction(rawData);

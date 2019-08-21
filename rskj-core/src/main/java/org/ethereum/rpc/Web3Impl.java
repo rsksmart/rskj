@@ -529,43 +529,6 @@ public class Web3Impl implements Web3 {
         return toJsonHex(n);
     }
 
-    @Override
-    public String eth_getCode(String address, String blockId) throws Exception {
-        if (blockId == null) {
-            throw new NullPointerException();
-        }
-
-        String s = null;
-        try {
-            Block block = getByJsonBlockId(blockId);
-
-            if(block == null) {
-                return null;
-            }
-
-            RskAddress addr = new RskAddress(address);
-
-            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
-
-            if(accountInformationProvider != null) {
-                byte[] code = accountInformationProvider.getCode(addr);
-
-                // Code can be null, if there is no account.
-                if (code == null) {
-                    code = new byte[0];
-                }
-
-                s = TypeConverter.toJsonHex(code);
-            }
-
-            return s;
-        } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("eth_getCode({}, {}): {}", address, blockId, s);
-            }
-        }
-    }
-
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
         BlockInformationResult bir = new BlockInformationResult();
         bir.hash = TypeConverter.toJsonHex(blockInformation.getHash());

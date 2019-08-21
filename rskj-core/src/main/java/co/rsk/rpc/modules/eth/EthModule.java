@@ -21,6 +21,8 @@ package co.rsk.rpc.modules.eth;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.RskAddress;
+import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeState;
@@ -31,12 +33,15 @@ import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
+import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
+import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -46,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Map;
 
+import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
 // TODO add all RPC methods
@@ -55,6 +61,7 @@ public class EthModule
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
     private final Blockchain blockchain;
+    private final TransactionPool transactionPool;
     private final ReversibleTransactionExecutor reversibleTransactionExecutor;
     private final ExecutionBlockRetriever executionBlockRetriever;
     private final RepositoryLocator repositoryLocator;
@@ -69,6 +76,7 @@ public class EthModule
             BridgeConstants bridgeConstants,
             byte chainId,
             Blockchain blockchain,
+            TransactionPool transactionPool,
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
             RepositoryLocator repositoryLocator,
@@ -78,6 +86,7 @@ public class EthModule
             BridgeSupportFactory bridgeSupportFactory) {
         this.chainId = chainId;
         this.blockchain = blockchain;
+        this.transactionPool = transactionPool;
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
         this.repositoryLocator = repositoryLocator;
@@ -160,6 +169,72 @@ public class EthModule
 
     public String chainId() {
         return TypeConverter.toJsonHex(new byte[] { chainId });
+    }
+
+    public String getCode(String address, String blockId) {
+        if (blockId == null) {
+            throw new NullPointerException();
+        }
+
+        String s = null;
+        try {
+            Block block = getByJsonBlockId(blockId);
+
+            if(block == null) {
+                return null;
+            }
+
+            RskAddress addr = new RskAddress(address);
+
+            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
+
+            if(accountInformationProvider != null) {
+                byte[] code = accountInformationProvider.getCode(addr);
+
+                // Code can be null, if there is no account.
+                if (code == null) {
+                    code = new byte[0];
+                }
+
+                s = TypeConverter.toJsonHex(code);
+            }
+
+            return s;
+        } finally {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("eth_getCode({}, {}): {}", address, blockId, s);
+            }
+        }
+    }
+
+    private Block getByJsonBlockId(String id) {
+        if ("earliest".equalsIgnoreCase(id)) {
+            return this.blockchain.getBlockByNumber(0);
+        } else if ("latest".equalsIgnoreCase(id)) {
+            return this.blockchain.getBestBlock();
+        } else if ("pending".equalsIgnoreCase(id)) {
+            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
+        } else {
+            try {
+                long blockNumber = stringHexToBigInteger(id).longValue();
+                return this.blockchain.getBlockByNumber(blockNumber);
+            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                throw new JsonRpcInvalidParamException("invalid blocknumber " + id);
+            }
+        }
+    }
+
+    private AccountInformationProvider getAccountInformationProvider(String id) {
+        if ("pending".equalsIgnoreCase(id)) {
+            return transactionPool.getPendingState();
+        } else {
+            Block block = getByJsonBlockId(id);
+            if (block != null) {
+                return repositoryLocator.snapshotAt(block.getHeader());
+            } else {
+                return null;
+            }
+        }
     }
 
     private ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {
