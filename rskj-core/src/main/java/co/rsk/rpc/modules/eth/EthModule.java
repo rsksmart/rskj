@@ -41,7 +41,6 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
-import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -201,33 +200,25 @@ public class EthModule
         }
     }
 
-    private Block getByJsonBlockId(String id) {
-        if ("earliest".equalsIgnoreCase(id)) {
-            return this.blockchain.getBlockByNumber(0);
-        } else if ("latest".equalsIgnoreCase(id)) {
-            return this.blockchain.getBestBlock();
-        } else if ("pending".equalsIgnoreCase(id)) {
-            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
-        } else {
-            try {
-                long blockNumber = stringHexToBigInteger(id).longValue();
-                return this.blockchain.getBlockByNumber(blockNumber);
-            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                throw new JsonRpcInvalidParamException("invalid blocknumber " + id);
-            }
-        }
-    }
-
     private AccountInformationProvider getAccountInformationProvider(String id) {
-        if ("pending".equalsIgnoreCase(id)) {
-            return transactionPool.getPendingState();
-        } else {
-            Block block = getByJsonBlockId(id);
-            if (block != null) {
-                return repositoryLocator.snapshotAt(block.getHeader());
-            } else {
-                return null;
-            }
+        switch (id.toLowerCase()) {
+            case "pending":
+                return transactionPool.getPendingState();
+            case "earliest":
+                return repositoryLocator.snapshotAt(blockchain.getBlockByNumber(0).getHeader());
+            case "latest":
+                return repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+            default:
+                try {
+                    long blockNumber = stringHexToBigInteger(id).longValue();
+                    Block requestedBlock = blockchain.getBlockByNumber(blockNumber);
+                    if (requestedBlock != null) {
+                        return repositoryLocator.snapshotAt(requestedBlock.getHeader());
+                    }
+                    return null;
+                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                    throw new JsonRpcInvalidParamException("invalid blocknumber " + id);
+                }
         }
     }
 
