@@ -34,16 +34,14 @@ public class MinerWork {
     private final String target;
     private final String feesPaidToMiner;
     private final boolean notify;
-    private final String parentBlockHash;
 
     public MinerWork(@Nonnull final String target,
-                     final String paidFees, final boolean notify, @Nonnull final String parentBlockHash,
+                     final String paidFees, final boolean notify,
                      Keccak256 blockHashForMergedMining) {
         this.blockHashForMergedMining = blockHashForMergedMining;
         this.target = target;
         this.feesPaidToMiner = paidFees;
         this.notify = notify;
-        this.parentBlockHash = parentBlockHash;
     }
 
     public Keccak256 getBlockHashForMergedMining() {
@@ -60,9 +58,5 @@ public class MinerWork {
 
     public boolean getNotify() {
         return notify;
-    }
-
-    public String getParentBlockHash() {
-        return parentBlockHash;
     }
 }

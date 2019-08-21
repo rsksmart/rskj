@@ -350,7 +350,7 @@ public class MinerServerImpl implements MinerServer {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getTarget(),
-                        currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash(), currentWork.getBlockHashForMergedMining());
+                        currentWork.getFeesPaidToMiner(), false, currentWork.getBlockHashForMergedMining());
             }
         }
         return work;
@@ -370,7 +370,7 @@ public class MinerServerImpl implements MinerServer {
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
 
         logger.debug("Sending work for merged mining. Hash: {}", block.getShortHashForMergedMining());
-        return new MinerWork(TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString(), new Keccak256(TypeConverter.removeZeroX(blockMergedMiningHash.toJsonString())));
+        return new MinerWork(TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, blockMergedMiningHash);
     }
 
     public void setExtraData(byte[] extraData) {
