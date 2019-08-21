@@ -22,6 +22,7 @@ import co.rsk.crypto.Keccak256;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
+import java.math.BigInteger;
 
 /**
  * Work to do.
@@ -31,11 +32,11 @@ import javax.annotation.concurrent.Immutable;
 @Immutable
 public class MinerWork {
     private final Keccak256 blockHashForMergedMining;
-    private final String target;
+    private final byte[] target;
     private final boolean notify;
 
-    public MinerWork(@Nonnull final String target,
-                     final boolean notify,
+    public MinerWork(byte[] target,
+                     boolean notify,
                      Keccak256 blockHashForMergedMining) {
         this.blockHashForMergedMining = blockHashForMergedMining;
         this.target = target;
@@ -46,7 +47,7 @@ public class MinerWork {
         return blockHashForMergedMining;
     }
 
-    public String getTarget() {
+    public byte[] getTarget() {
         return target;
     }
 

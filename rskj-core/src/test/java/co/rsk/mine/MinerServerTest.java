@@ -740,7 +740,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     private void findNonce(MinerWork work, BtcBlock bitcoinMergedMiningBlock) {
-        BigInteger target = new BigInteger(TypeConverter.stringHexToByteArray(work.getTarget()));
+        BigInteger target = new BigInteger(1, work.getTarget());
 
         while (true) {
             try {

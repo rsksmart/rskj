@@ -20,8 +20,11 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.rpc.TypeConverter;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.math.BigInteger;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -48,7 +51,8 @@ public class AutoMinerClientTest {
         MinerWork work = mock(MinerWork.class);
         when(work.getBlockHashForMergedMining())
                 .thenReturn(mock(Keccak256.class));
-        when(work.getTarget()).thenReturn("0x10000000000000000000000000000000000000000000000000000000000000");
+        when(work.getTarget()).thenReturn(TypeConverter
+                .stringHexToByteArray("0x10000000000000000000000000000000000000000000000000000000000000"));
         when(minerServer.getWork()).thenReturn(work);
         autoMinerClient.start();
 

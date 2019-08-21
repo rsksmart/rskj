@@ -369,7 +369,7 @@ public class MinerServerImpl implements MinerServer {
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
 
         logger.debug("Sending work for merged mining. Hash: {}", block.getShortHashForMergedMining());
-        return new MinerWork(TypeConverter.toJsonHex(targetArray), notify, blockMergedMiningHash);
+        return new MinerWork(targetArray, notify, blockMergedMiningHash);
     }
 
     public void setExtraData(byte[] extraData) {
