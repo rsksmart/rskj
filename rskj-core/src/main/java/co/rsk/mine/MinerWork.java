@@ -32,15 +32,13 @@ import javax.annotation.concurrent.Immutable;
 public class MinerWork {
     private final Keccak256 blockHashForMergedMining;
     private final String target;
-    private final String feesPaidToMiner;
     private final boolean notify;
 
     public MinerWork(@Nonnull final String target,
-                     final String paidFees, final boolean notify,
+                     final boolean notify,
                      Keccak256 blockHashForMergedMining) {
         this.blockHashForMergedMining = blockHashForMergedMining;
         this.target = target;
-        this.feesPaidToMiner = paidFees;
         this.notify = notify;
     }
 
@@ -50,10 +48,6 @@ public class MinerWork {
 
     public String getTarget() {
         return target;
-    }
-
-    public String getFeesPaidToMiner() {
-        return feesPaidToMiner;
     }
 
     public boolean getNotify() {

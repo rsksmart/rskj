@@ -531,50 +531,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     }
 
     @Test
-    public void workWithNoTransactionsZeroFees() {
-        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
-
-        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
-        when(unclesValidationRule.isValid(any())).thenReturn(true);
-        MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                this.blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                ConfigUtils.getDefaultMiningConfig()
-        );
-
-        minerServer.start();
-        try {
-        MinerWork work = minerServer.getWork();
-
-        assertEquals("0", work.getFeesPaidToMiner());
-        } finally {
-            minerServer.stop();
-        }
-    }
-
-    @Test
     public void initialWorkTurnsNotifyFlagOn() {
         EthereumImpl ethereumImpl = mock(EthereumImpl.class);
 
