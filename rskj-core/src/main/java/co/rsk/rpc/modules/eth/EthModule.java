@@ -178,12 +178,6 @@ public class EthModule
 
         String s = null;
         try {
-            Block block = getByJsonBlockId(blockId);
-
-            if(block == null) {
-                return null;
-            }
-
             RskAddress addr = new RskAddress(address);
 
             AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);

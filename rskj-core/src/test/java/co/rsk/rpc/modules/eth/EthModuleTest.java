@@ -20,16 +20,21 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockResult;
+import co.rsk.core.bc.PendingState;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -72,6 +77,38 @@ public class EthModuleTest {
 
         String result = eth.call(args, "latest");
         assertThat(result, is(TypeConverter.toJsonHex(hreturn)));
+    }
+
+    @Test
+    public void getCode() {
+        byte[] expectedCode = new byte[] {1, 2, 3};
+
+        TransactionPool mockTransactionPool = mock(TransactionPool.class);
+        PendingState mockPendingState = mock(PendingState.class);
+
+        doReturn(expectedCode).when(mockPendingState).getCode(any(RskAddress.class));
+        doReturn(mockPendingState).when(mockTransactionPool).getPendingState();
+
+        EthModule eth = new EthModule(
+                null,
+                (byte) 0,
+                null,
+                mockTransactionPool,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null,
+                        null,
+                        null
+                )
+        );
+
+        String addr = eth.getCode(TestUtils.randomAddress().toHexString(), "pending");
+        Assert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
     }
 
     @Test
