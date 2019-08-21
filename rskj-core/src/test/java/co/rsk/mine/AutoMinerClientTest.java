@@ -19,6 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.crypto.Keccak256;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,7 +46,8 @@ public class AutoMinerClientTest {
     @Test
     public void minesBlock() {
         MinerWork work = mock(MinerWork.class);
-        when(work.getBlockHashForMergedMining()).thenReturn("0x404142");
+        when(work.getBlockHashForMergedMining())
+                .thenReturn(mock(Keccak256.class));
         when(work.getTarget()).thenReturn("0x10000000000000000000000000000000000000000000000000000000000000");
         when(minerServer.getWork()).thenReturn(work);
         autoMinerClient.start();

@@ -18,6 +18,8 @@
 
 package co.rsk.mine;
 
+import co.rsk.crypto.Keccak256;
+
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
@@ -28,14 +30,15 @@ import javax.annotation.concurrent.Immutable;
  */
 @Immutable
 public class MinerWork {
-    private final String blockHashForMergedMining;
+    private final Keccak256 blockHashForMergedMining;
     private final String target;
     private final String feesPaidToMiner;
     private final boolean notify;
     private final String parentBlockHash;
 
-    public MinerWork(@Nonnull final String blockHashForMergedMining, @Nonnull final String target,
-                     final String paidFees, final boolean notify, @Nonnull final String parentBlockHash) {
+    public MinerWork(@Nonnull final String target,
+                     final String paidFees, final boolean notify, @Nonnull final String parentBlockHash,
+                     Keccak256 blockHashForMergedMining) {
         this.blockHashForMergedMining = blockHashForMergedMining;
         this.target = target;
         this.feesPaidToMiner = paidFees;
@@ -43,7 +46,7 @@ public class MinerWork {
         this.parentBlockHash = parentBlockHash;
     }
 
-    public String getBlockHashForMergedMining() {
+    public Keccak256 getBlockHashForMergedMining() {
         return blockHashForMergedMining;
     }
 

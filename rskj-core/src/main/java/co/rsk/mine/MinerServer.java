@@ -21,6 +21,7 @@ package co.rsk.mine;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 
 import javax.annotation.Nonnull;
@@ -37,7 +38,7 @@ public interface MinerServer {
     boolean isRunning();
 
     SubmitBlockResult submitBitcoinBlockPartialMerkle(
-            String blockHashForMergedMining,
+            Keccak256 blockHashForMergedMining,
             BtcBlock blockWithOnlyHeader,
             BtcTransaction coinbase,
             List<String> merkleHashes,
@@ -45,13 +46,13 @@ public interface MinerServer {
     );
 
     SubmitBlockResult submitBitcoinBlockTransactions(
-            String blockHashForMergedMining,
+            Keccak256 blockHashForMergedMining,
             BtcBlock blockWithOnlyHeader,
             BtcTransaction coinbase,
             List<String> txHashes
     );
 
-    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock);
+    SubmitBlockResult submitBitcoinBlock(Keccak256 blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock);
 
     RskAddress getCoinbaseAddress();
 

@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.config.RskMiningConstants;
+import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerServer;
 import co.rsk.mine.MinerWork;
 import co.rsk.mine.SubmitBlockResult;
@@ -65,7 +66,7 @@ public class MnrModuleImpl implements MnrModule {
         BtcBlock bitcoinBlock = getBtcBlock(bitcoinBlockHex, params);
         BtcTransaction coinbase = bitcoinBlock.getTransactions().get(0);
 
-        String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
+        Keccak256 blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
 
         SubmitBlockResult result = minerServer.submitBitcoinBlock(blockHashForMergedMining, bitcoinBlock);
 
@@ -82,7 +83,7 @@ public class MnrModuleImpl implements MnrModule {
         BtcBlock bitcoinBlockWithHeaderOnly = getBtcBlock(blockHeaderHex, params);
         BtcTransaction coinbase = new BtcTransaction(params, Hex.decode(coinbaseHex));
 
-        String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
+        Keccak256 blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
 
         List<String> txnHashes = parseHashes(txnHashesHex);
 
@@ -105,7 +106,7 @@ public class MnrModuleImpl implements MnrModule {
         BtcBlock bitcoinBlockWithHeaderOnly = getBtcBlock(blockHeaderHex, params);
         BtcTransaction coinbase = new BtcTransaction(params, Hex.decode(coinbaseHex));
 
-        String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
+        Keccak256 blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
 
         List<String> merkleHashes = parseHashes(merkleHashesHex);
 
@@ -121,7 +122,7 @@ public class MnrModuleImpl implements MnrModule {
         return params.getDefaultSerializer().makeBlock(bitcoinBlockByteArray);
     }
 
-    private String extractBlockHashForMergedMining(BtcTransaction coinbase) {
+    private Keccak256 extractBlockHashForMergedMining(BtcTransaction coinbase) {
         byte[] coinbaseAsByteArray = coinbase.bitcoinSerialize();
         List<Byte> coinbaseAsByteList = ListArrayUtil.asByteList(coinbaseAsByteArray);
 
@@ -130,7 +131,7 @@ public class MnrModuleImpl implements MnrModule {
         int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
         byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue() / 8];
         System.arraycopy(coinbaseAsByteArray, rskTagPosition + RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
-        return TypeConverter.toJsonHex(blockHashForMergedMiningArray);
+        return new Keccak256(blockHashForMergedMiningArray);
     }
 
     private List<String> parseHashes(String txnHashesHex) {

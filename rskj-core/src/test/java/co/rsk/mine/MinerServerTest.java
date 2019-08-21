@@ -749,7 +749,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         MinerWork work = minerServer.getWork();
 
-        String hashForMergedMining = work.getBlockHashForMergedMining();
+        Keccak256 hashForMergedMining = work.getBlockHashForMergedMining();
 
         minerServer.buildBlockToMine(false);
 

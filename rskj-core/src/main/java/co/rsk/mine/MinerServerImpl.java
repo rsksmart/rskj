@@ -184,7 +184,7 @@ public class MinerServerImpl implements MinerServer {
 
     @Override
     public SubmitBlockResult submitBitcoinBlockPartialMerkle(
-            String blockHashForMergedMining,
+            Keccak256 blockHashForMergedMining,
             BtcBlock blockWithHeaderOnly,
             BtcTransaction coinbase,
             List<String> merkleHashes,
@@ -202,7 +202,7 @@ public class MinerServerImpl implements MinerServer {
 
     @Override
     public SubmitBlockResult submitBitcoinBlockTransactions(
-            String blockHashForMergedMining,
+            Keccak256 blockHashForMergedMining,
             BtcBlock blockWithHeaderOnly,
             BtcTransaction coinbase,
             List<String> txHashes) {
@@ -218,11 +218,11 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
-    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock) {
+    public SubmitBlockResult submitBitcoinBlock(Keccak256 blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock) {
         return submitBitcoinBlock(blockHashForMergedMining, bitcoinMergedMiningBlock, true);
     }
 
-    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
+    SubmitBlockResult submitBitcoinBlock(Keccak256 blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
         logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
 
         return processSolution(
@@ -235,16 +235,15 @@ public class MinerServerImpl implements MinerServer {
     }
 
     private SubmitBlockResult processSolution(
-            String blockHashForMergedMining,
+            Keccak256 blockHashForMergedMining,
             BtcBlock blockWithHeaderOnly,
             BtcTransaction coinbase,
             Function<MerkleProofBuilder, byte[]> proofBuilderFunction,
             boolean lastTag) {
         Block newBlock;
-        Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
 
         synchronized (lock) {
-            Block workingBlock = blocksWaitingforPoW.get(key);
+            Block workingBlock = blocksWaitingforPoW.get(blockHashForMergedMining);
 
             if (workingBlock == null) {
                 String message = "Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache";
@@ -350,8 +349,8 @@ public class MinerServerImpl implements MinerServer {
                 if (currentWork != work) {
                     return currentWork;
                 }
-                currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
-                        currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash());
+                currentWork = new MinerWork(currentWork.getTarget(),
+                        currentWork.getFeesPaidToMiner(), false, currentWork.getParentBlockHash(), currentWork.getBlockHashForMergedMining());
             }
         }
         return work;
@@ -371,7 +370,7 @@ public class MinerServerImpl implements MinerServer {
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
 
         logger.debug("Sending work for merged mining. Hash: {}", block.getShortHashForMergedMining());
-        return new MinerWork(blockMergedMiningHash.toJsonString(), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString());
+        return new MinerWork(TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString(), new Keccak256(TypeConverter.removeZeroX(blockMergedMiningHash.toJsonString())));
     }
 
     public void setExtraData(byte[] extraData) {

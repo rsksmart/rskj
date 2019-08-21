@@ -51,7 +51,7 @@ public class MinerUtils {
     private static final Logger logger = LoggerFactory.getLogger("minerserver");
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, MinerWork work) {
-        return getBitcoinMergedMiningCoinbaseTransaction(params, TypeConverter.stringHexToByteArray(work.getBlockHashForMergedMining()));
+        return getBitcoinMergedMiningCoinbaseTransaction(params, work.getBlockHashForMergedMining().getBytes());
     }
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, byte[] blockHashForMergedMining) {
@@ -82,8 +82,8 @@ public class MinerUtils {
             MinerWork work2) {
         return getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
                 params,
-                TypeConverter.stringHexToByteArray(work.getBlockHashForMergedMining()),
-                TypeConverter.stringHexToByteArray(work2.getBlockHashForMergedMining()));
+                work.getBlockHashForMergedMining().getBytes(),
+                work2.getBlockHashForMergedMining().getBytes());
     }
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransactionWithTwoTags(
