@@ -100,7 +100,7 @@ public class TransactionPoolImplTest {
     @Test
     public void usingStart() {
         Assert.assertFalse(transactionPool.hasCleanerFuture());
-        transactionPool.start(blockChain.getBestBlock());
+        transactionPool.start();
         Assert.assertTrue(transactionPool.hasCleanerFuture());
     }
 

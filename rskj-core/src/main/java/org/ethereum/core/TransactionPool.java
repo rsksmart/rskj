@@ -19,14 +19,12 @@
 
 package org.ethereum.core;
 
+import co.rsk.config.InternalService;
 import co.rsk.core.bc.PendingState;
 
 import java.util.List;
 
-public interface TransactionPool {
-
-    void start(Block initialBestBlock);
-
+public interface TransactionPool extends InternalService {
     /**
      * Adds transaction to the list of pending or queued state txs  <br>
      * Triggers an update of pending state

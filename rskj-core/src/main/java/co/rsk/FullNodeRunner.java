@@ -26,8 +26,6 @@ import co.rsk.net.MessageHandler;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.rpc.netty.Web3WebSocketServer;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
@@ -52,13 +50,11 @@ public class FullNodeRunner implements NodeRunner {
     private final RskSystemProperties rskSystemProperties;
     private final Web3HttpServer web3HttpServer;
     private final Web3WebSocketServer web3WebSocketServer;
-    private final Blockchain blockchain;
     private final ChannelManager channelManager;
     private final SyncPool syncPool;
     private final MessageHandler messageHandler;
 
     private final Web3 web3Service;
-    private final TransactionPool transactionPool;
     private final PeerServer peerServer;
     private final SyncPool.PeerClientFactory peerClientFactory;
     private final BuildInfo buildInfo;
@@ -73,11 +69,9 @@ public class FullNodeRunner implements NodeRunner {
             Web3 web3Service,
             Web3HttpServer web3HttpServer,
             Web3WebSocketServer web3WebSocketServer,
-            Blockchain blockchain,
             ChannelManager channelManager,
             SyncPool syncPool,
             MessageHandler messageHandler,
-            TransactionPool transactionPool,
             PeerServer peerServer,
             SyncPool.PeerClientFactory peerClientFactory,
             BuildInfo buildInfo) {
@@ -90,11 +84,9 @@ public class FullNodeRunner implements NodeRunner {
         this.web3HttpServer = web3HttpServer;
         this.web3Service = web3Service;
         this.web3WebSocketServer = web3WebSocketServer;
-        this.blockchain = blockchain;
         this.channelManager = channelManager;
         this.syncPool = syncPool;
         this.messageHandler = messageHandler;
-        this.transactionPool = transactionPool;
         this.peerServer = peerServer;
         this.peerClientFactory = peerClientFactory;
         this.buildInfo = buildInfo;
@@ -116,8 +108,6 @@ public class FullNodeRunner implements NodeRunner {
             internalService.start();
         }
 
-        // this should be the genesis block at this point
-        transactionPool.start(blockchain.getBestBlock());
         channelManager.start();
         messageHandler.start();
         peerServer.start();
