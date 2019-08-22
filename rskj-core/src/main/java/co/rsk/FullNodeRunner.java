@@ -122,11 +122,6 @@ public class FullNodeRunner implements NodeRunner {
             logger.info("Capability eth version: [{}]", versions);
         }
 
-        if (!"".equals(rskSystemProperties.blocksLoader())) {
-            rskSystemProperties.setSyncEnabled(Boolean.FALSE);
-            rskSystemProperties.setDiscoveryEnabled(Boolean.FALSE);
-        }
-
         startWeb3(rskSystemProperties);
 
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {

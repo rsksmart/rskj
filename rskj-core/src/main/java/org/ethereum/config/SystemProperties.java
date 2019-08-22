@@ -85,7 +85,6 @@ public abstract class SystemProperties {
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
-    private static final String DEFAULT_BLOCKS_LOADER = "";
 
     protected final Config configFromFiles;
 
@@ -97,9 +96,6 @@ public abstract class SystemProperties {
     private String genesisInfo = null;
 
     private String publicIp = null;
-
-    private Boolean syncEnabled = null;
-    private Boolean discoveryEnabled = null;
 
     private ActivationConfig activationConfig;
     private Constants constants;
@@ -179,11 +175,7 @@ public abstract class SystemProperties {
     }
 
     public boolean isPeerDiscoveryEnabled() {
-        return discoveryEnabled == null ? configFromFiles.getBoolean("peer.discovery.enabled") : discoveryEnabled;
-    }
-
-    public void setDiscoveryEnabled(Boolean discoveryEnabled) {
-        this.discoveryEnabled = discoveryEnabled;
+        return configFromFiles.getBoolean("peer.discovery.enabled");
     }
 
     public int peerConnectionTimeout() {
@@ -474,11 +466,7 @@ public abstract class SystemProperties {
     }
 
     public boolean isSyncEnabled() {
-        return this.syncEnabled == null ? configFromFiles.getBoolean("sync.enabled") : syncEnabled;
-    }
-
-    public void setSyncEnabled(Boolean syncEnabled) {
-        this.syncEnabled = syncEnabled;
+        return configFromFiles.getBoolean("sync.enabled");
     }
 
     public String genesisInfo() {
@@ -565,11 +553,6 @@ public abstract class SystemProperties {
     public boolean vmTestLoadLocal() {
         return configFromFiles.hasPath("GitHubTests.VMTest.loadLocal") ?
                 configFromFiles.getBoolean("GitHubTests.VMTest.loadLocal") : DEFAULT_VMTEST_LOAD_LOCAL;
-    }
-
-    public String blocksLoader() {
-        return configFromFiles.hasPath("blocks.loader") ?
-                configFromFiles.getString("blocks.loader") : DEFAULT_BLOCKS_LOADER;
     }
 
     public String customSolcPath() {
