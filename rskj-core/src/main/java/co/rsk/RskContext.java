@@ -184,7 +184,6 @@ public class RskContext implements NodeBootstrapper {
     private MiningConfig miningConfig;
     private NetworkStateExporter networkStateExporter;
     private PeerExplorer peerExplorer;
-    private UDPServer udpServer;
     private SyncPool.PeerClientFactory peerClientFactory;
     private EthereumChannelInitializerFactory ethereumChannelInitializerFactory;
     private HashRateCalculator hashRateCalculator;
@@ -677,7 +676,6 @@ public class RskContext implements NodeBootstrapper {
         return new FullNodeRunner(
                 buildInternalServices(),
                 getRsk(),
-                getUdpServer(),
                 getMinerServer(),
                 getMinerClient(),
                 getRskSystemProperties(),
@@ -704,6 +702,13 @@ public class RskContext implements NodeBootstrapper {
         }
         if (rpcWebSocketEnabled) {
             internalServices.add(getWeb3WebSocketServer());
+        }
+        if (getRskSystemProperties().isPeerDiscoveryEnabled()) {
+            internalServices.add(new UDPServer(
+                    getRskSystemProperties().getBindAddress().getHostAddress(),
+                    getRskSystemProperties().getPeerPort(),
+                    getPeerExplorer()
+            ));
         }
         return Collections.unmodifiableList(internalServices);
     }
@@ -1039,19 +1044,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return minerServerBlockValidationRule;
-    }
-
-    private UDPServer getUdpServer() {
-        if (udpServer == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            udpServer = new UDPServer(
-                    rskSystemProperties.getBindAddress().getHostAddress(),
-                    rskSystemProperties.getPeerPort(),
-                    getPeerExplorer()
-            );
-        }
-
-        return udpServer;
     }
 
     public BlockParentDependantValidationRule getBlockParentDependantValidationRule() {

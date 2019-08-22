@@ -21,15 +21,16 @@ package co.rsk.net.discovery;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
+import org.ethereum.net.server.Channel;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
+import org.powermock.reflect.Whitebox;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.OptionalInt;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -55,6 +56,15 @@ public class UDPServerTest {
     private static final long TIMEOUT = 30000;
     private static final long UPDATE = 60000;
     private static final long CLEAN = 60000;
+
+    @Test
+    public void port0DoesntCreateANewChannel() throws InterruptedException {
+        UDPServer udpServer = new UDPServer(HOST, 0, null);
+        Channel channel = Whitebox.getInternalState(udpServer, "channel");
+        udpServer.start();
+        TimeUnit.SECONDS.sleep(2);
+        Assert.assertNull(channel);
+    }
 
     @Test
     public void run3NodesFullTest() throws InterruptedException {

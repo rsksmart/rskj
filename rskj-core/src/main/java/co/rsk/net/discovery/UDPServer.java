@@ -18,6 +18,7 @@
 
 package co.rsk.net.discovery;
 
+import co.rsk.config.InternalService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -32,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by mario on 10/02/17.
  */
-public class UDPServer {
+public class UDPServer implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger(UDPServer.class);
 
     private int port;
@@ -49,6 +50,7 @@ public class UDPServer {
         this.peerExplorer = peerExplorer;
     }
 
+    @Override
     public void start() {
         if (port == 0) {
             logger.error("Discovery can't be started while listen port == 0");
@@ -84,7 +86,8 @@ public class UDPServer {
         group.shutdownGracefully().sync();
     }
 
-    public void stop() throws InterruptedException {
+    @Override
+    public void stop()  {
         logger.info("Closing UDPListener...");
         shutdown = true;
 
@@ -92,8 +95,8 @@ public class UDPServer {
             try {
                 channel.close().await(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                logger.warn("Problems closing UDPServer", e);
-                throw e;
+                logger.error("Couldn't stop the UDP Server", e);
+                Thread.currentThread().interrupt();
             }
         }
     }

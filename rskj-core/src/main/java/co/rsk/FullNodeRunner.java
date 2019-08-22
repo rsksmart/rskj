@@ -22,7 +22,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
-import co.rsk.net.discovery.UDPServer;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
@@ -38,7 +37,6 @@ public class FullNodeRunner implements NodeRunner {
 
     private final List<InternalService> internalServices;
     private final Rsk rsk;
-    private final UDPServer udpServer;
     private final MinerServer minerServer;
     private final MinerClient minerClient;
     private final RskSystemProperties rskSystemProperties;
@@ -50,7 +48,6 @@ public class FullNodeRunner implements NodeRunner {
     public FullNodeRunner(
             List<InternalService> internalServices,
             Rsk rsk,
-            UDPServer udpServer,
             MinerServer minerServer,
             MinerClient minerClient,
             RskSystemProperties rskSystemProperties,
@@ -59,7 +56,6 @@ public class FullNodeRunner implements NodeRunner {
             BuildInfo buildInfo) {
         this.internalServices = Collections.unmodifiableList(internalServices);
         this.rsk = rsk;
-        this.udpServer = udpServer;
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.rskSystemProperties = rskSystemProperties;
@@ -87,10 +83,6 @@ public class FullNodeRunner implements NodeRunner {
         if (logger.isInfoEnabled()) {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
             logger.info("Capability eth version: [{}]", versions);
-        }
-
-        if (rskSystemProperties.isPeerDiscoveryEnabled()) {
-            udpServer.start();
         }
 
         if (rskSystemProperties.isSyncEnabled()) {
@@ -133,15 +125,6 @@ public class FullNodeRunner implements NodeRunner {
             minerServer.stop();
             if (rskSystemProperties.isMinerClientEnabled()) {
                 minerClient.stop();
-            }
-        }
-
-        if (rskSystemProperties.isPeerDiscoveryEnabled()) {
-            try {
-                udpServer.stop();
-            } catch (InterruptedException e) {
-                logger.error("Couldn't stop the updServer", e);
-                Thread.currentThread().interrupt();
             }
         }
 
