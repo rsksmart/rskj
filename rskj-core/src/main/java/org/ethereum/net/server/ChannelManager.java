@@ -19,6 +19,7 @@
 
 package org.ethereum.net.server;
 
+import co.rsk.config.InternalService;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.MessageWithId;
@@ -39,10 +40,7 @@ import java.util.Set;
  * Added to make unit testing easier
  */
 
-public interface ChannelManager {
-
-    void start();
-    void stop();
+public interface ChannelManager extends InternalService {
 
     boolean isRecentlyDisconnected(InetAddress peerAddr);
 
