@@ -24,8 +24,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -150,6 +149,8 @@ public class BlockChainBuilder {
     }
 
     public BlockChainImpl build() {
+        BlocksIndex blocksIndex = new HashMapBlocksIndex();
+
         if (config == null){
             config = new TestSystemProperties();
         }
@@ -177,7 +178,7 @@ public class BlockChainBuilder {
 
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         if (blockStore == null) {
-            blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+            blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), blocksIndex);
         }
 
         if (receiptStore == null) {

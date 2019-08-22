@@ -23,6 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -41,6 +42,9 @@ import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.util.*;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 04/08/2016.
@@ -81,7 +85,7 @@ public class BlockValidatorTest {
 
     @Test
     public void getBlockOneAncestorSet() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
@@ -95,7 +99,7 @@ public class BlockValidatorTest {
 
     @Test
     public void getThreeAncestorSet() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
@@ -124,7 +128,7 @@ public class BlockValidatorTest {
 
     @Test
     public void getUsedUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
@@ -182,7 +186,7 @@ public class BlockValidatorTest {
 
     @Test
     public void validUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -212,7 +216,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidSiblingUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -239,7 +243,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUnclesUncleIncludedMultipeTimes () {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -264,7 +268,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidPOWUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -279,8 +283,8 @@ public class BlockValidatorTest {
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
         store.saveBlock(uncle1a, TEST_DIFFICULTY, false);
 
-        BlockHeaderParentDependantValidationRule parentValidationRule = Mockito.mock(BlockHeaderParentDependantValidationRule.class);
-        Mockito.when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
+        BlockHeaderParentDependantValidationRule parentValidationRule = mock(BlockHeaderParentDependantValidationRule.class);
+        when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
       
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store, new ProofOfWorkRule(config).setFallbackMiningEnabled(false), parentValidationRule)
@@ -292,7 +296,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleIsAncestor() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -317,7 +321,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleHasNoSavedParent() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -340,7 +344,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleHasNoCommonAncestor() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -375,7 +379,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleHasParentThatIsNotAncestor() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -407,7 +411,7 @@ public class BlockValidatorTest {
 
     @Test
     public void invalidUncleAlreadyUsed() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -445,7 +449,7 @@ public class BlockValidatorTest {
 
     @Test
     public void tooManyUncles() {
-        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore store = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
@@ -484,10 +488,10 @@ public class BlockValidatorTest {
 
     @Test
     public void processBlockWithInvalidMGPTxs() {
-        BlockStore blockStore = Mockito.mock(org.ethereum.db.BlockStore.class);
-        Repository repository = Mockito.mock(Repository.class);
+        BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
+        Repository repository = mock(Repository.class);
 
-        Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
+        when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
 
         Block parent = new BlockBuilder(null, null, null).minGasPrice(BigInteger.ZERO)
                 .parent(new BlockGenerator().getGenesisBlock()).build();
@@ -499,7 +503,7 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder(null, null, null).minGasPrice(BigInteger.TEN).transactions(txs)
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
+        when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addTxsMinGasPriceRule()
@@ -511,10 +515,10 @@ public class BlockValidatorTest {
 
     @Test
     public void processBlockWithInvalidPrevMGP() {
-        BlockStore blockStore = Mockito.mock(org.ethereum.db.BlockStore.class);
-        Repository repository = Mockito.mock(Repository.class);
+        BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
+        Repository repository = mock(Repository.class);
 
-        Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
+        when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
 
         Block parent = new BlockBuilder(null, null, null).minGasPrice(BigInteger.ZERO)
                 .parent(new BlockGenerator().getGenesisBlock()).build();
@@ -522,7 +526,7 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder(null, null, null).minGasPrice(BigInteger.TEN)
                 .parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
+        when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addPrevMinGasPriceRule()
@@ -534,10 +538,10 @@ public class BlockValidatorTest {
 
     @Test
     public void processValidMGPBlock() {
-        BlockStore blockStore = Mockito.mock(org.ethereum.db.BlockStore.class);
-        Repository repository = Mockito.mock(Repository.class);
+        BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
+        Repository repository = mock(Repository.class);
 
-        Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
+        when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
 
         Block parent = new BlockBuilder(null, null, null).minGasPrice(BigInteger.TEN)
                 .parent(new BlockGenerator().getGenesisBlock()).build();
@@ -550,7 +554,7 @@ public class BlockValidatorTest {
         Block block = new BlockBuilder(null, null,null)
                 .transactions(txs).minGasPrice(BigInteger.valueOf(11L)).parent(parent).build();
 
-        Mockito.when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
+        when(blockStore.getBlockByHash(block.getParentHash().getBytes())).thenReturn(parent);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addPrevMinGasPriceRule()
@@ -630,13 +634,13 @@ public class BlockValidatorTest {
 
         int validPeriod = 6000;
 
-        BlockHeader header = Mockito.mock(BlockHeader.class);
-        Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHeader()).thenReturn(header);
-        Mockito.when(header.getTimestamp())
+        BlockHeader header = mock(BlockHeader.class);
+        Block block = mock(Block.class);
+        when(block.getHeader()).thenReturn(header);
+        when(header.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + 2*validPeriod);
 
-        Mockito.when(header.getParentHash()).thenReturn(genesis.getHash());
+        when(header.getParentHash()).thenReturn(genesis.getHash());
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockTimeStampValidationRule(validPeriod)
@@ -644,7 +648,7 @@ public class BlockValidatorTest {
 
         Assert.assertFalse(validator.isValid(block));
 
-        Mockito.when(header.getTimestamp())
+        when(header.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + validPeriod);
 
         Assert.assertTrue(validator.isValid(block));
@@ -658,11 +662,11 @@ public class BlockValidatorTest {
 
         int validPeriod = 0;
 
-        Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getTimestamp())
+        Block block = mock(Block.class);
+        when(block.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + 2000);
 
-        Mockito.when(block.getParentHash()).thenReturn(genesis.getHash());
+        when(block.getParentHash()).thenReturn(genesis.getHash());
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockTimeStampValidationRule(validPeriod)
@@ -670,7 +674,7 @@ public class BlockValidatorTest {
 
         Assert.assertTrue(validator.isValid(block));
 
-        Mockito.when(block.getTimestamp())
+        when(block.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + 2000);
 
         Assert.assertTrue(validator.isValid(block));
