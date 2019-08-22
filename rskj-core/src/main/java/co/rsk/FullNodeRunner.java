@@ -17,6 +17,7 @@
  */
 package co.rsk;
 
+import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.mine.MinerClient;
@@ -37,11 +38,14 @@ import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class FullNodeRunner implements NodeRunner {
     private static Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
+    private final List<InternalService> internalServices;
     private final Rsk rsk;
     private final UDPServer udpServer;
     private final MinerServer minerServer;
@@ -62,6 +66,7 @@ public class FullNodeRunner implements NodeRunner {
     private final BuildInfo buildInfo;
 
     public FullNodeRunner(
+            List<InternalService> internalServices,
             Rsk rsk,
             UDPServer udpServer,
             MinerServer minerServer,
@@ -79,6 +84,7 @@ public class FullNodeRunner implements NodeRunner {
             SyncPool.PeerClientFactory peerClientFactory,
             TransactionGateway transactionGateway,
             BuildInfo buildInfo) {
+        this.internalServices = Collections.unmodifiableList(internalServices);
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
@@ -109,6 +115,10 @@ public class FullNodeRunner implements NodeRunner {
                 rskSystemProperties.projectVersionModifier()
         );
         buildInfo.printInfo(logger);
+
+        for (InternalService internalService : internalServices) {
+            internalService.start();
+        }
 
         transactionGateway.start();
         // this should be the genesis block at this point
@@ -224,6 +234,10 @@ public class FullNodeRunner implements NodeRunner {
                 logger.error("Couldn't stop the updServer", e);
                 Thread.currentThread().interrupt();
             }
+        }
+
+        for (int i = internalServices.size() - 1; i >= 0; i--) {
+            internalServices.get(i).stop();
         }
 
         logger.info("RSK node Shut down");

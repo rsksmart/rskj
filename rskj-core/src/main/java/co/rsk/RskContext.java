@@ -71,7 +71,10 @@ import co.rsk.validators.*;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
@@ -110,9 +113,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Creates the initial object graph without a DI framework.
@@ -674,6 +675,7 @@ public class RskContext implements NodeBootstrapper {
 
     protected NodeRunner buildNodeRunner() {
         return new FullNodeRunner(
+                buildInternalServices(),
                 getRsk(),
                 getUdpServer(),
                 getMinerServer(),
@@ -692,6 +694,11 @@ public class RskContext implements NodeBootstrapper {
                 getTransactionGateway(),
                 getBuildInfo()
         );
+    }
+
+    public List<InternalService> buildInternalServices() {
+        List<InternalService> internalServices = new ArrayList<>();
+        return Collections.unmodifiableList(internalServices);
     }
 
     protected SolidityCompiler buildSolidityCompiler() {
