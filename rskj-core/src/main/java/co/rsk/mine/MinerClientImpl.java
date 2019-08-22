@@ -18,8 +18,8 @@
 
 package co.rsk.mine;
 
+import co.rsk.net.NodeBlockProcessor;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.core.Rsk;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +42,7 @@ public class MinerClientImpl implements MinerClient {
     private static final Logger logger = LoggerFactory.getLogger("minerClient");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final Rsk rsk;
+    private final NodeBlockProcessor nodeBlockProcessor;
     private final MinerServer minerServer;
     private final Duration delayBetweenBlocks;
     private final Duration delayBetweenRefreshes;
@@ -56,8 +56,8 @@ public class MinerClientImpl implements MinerClient {
     private volatile MinerWork work;
     private Timer aTimer;
 
-    public MinerClientImpl(Rsk rsk, MinerServer minerServer, Duration delayBetweenBlocks, Duration delayBetweenRefreshes) {
-        this.rsk = rsk;
+    public MinerClientImpl(NodeBlockProcessor nodeBlockProcessor, MinerServer minerServer, Duration delayBetweenBlocks, Duration delayBetweenRefreshes) {
+        this.nodeBlockProcessor = nodeBlockProcessor;
         this.minerServer = minerServer;
         this.delayBetweenBlocks = delayBetweenBlocks;
         this.delayBetweenRefreshes = delayBetweenRefreshes;
@@ -109,8 +109,8 @@ public class MinerClientImpl implements MinerClient {
 
     @Override
     public boolean mineBlock() {
-        if (this.rsk != null) {
-            if (this.rsk.hasBetterBlockToSync()) {
+        if (this.nodeBlockProcessor != null) {
+            if (this.nodeBlockProcessor.hasBetterBlockToSync()) {
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException ex) {

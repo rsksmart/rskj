@@ -20,7 +20,6 @@ package co.rsk.rpc;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.NetworkStateExporter;
-import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.MiningMainchainView;
@@ -41,6 +40,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
+import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Mocks;
@@ -59,7 +59,7 @@ public class Web3RskImplTest {
 
     @Test
     public void web3_ext_dumpState() throws Exception {
-        Rsk rsk = Mockito.mock(Rsk.class);
+        Ethereum rsk = Mockito.mock(Ethereum.class);
         Blockchain blockchain = Mockito.mock(Blockchain.class);
         MiningMainchainView mainchainView = Mockito.mock(MiningMainchainView.class);
 

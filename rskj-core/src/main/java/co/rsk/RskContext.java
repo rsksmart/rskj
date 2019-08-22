@@ -85,6 +85,8 @@ import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.NodeManager;
@@ -157,7 +159,7 @@ public class RskContext implements NodeBootstrapper {
     private EvmModule evmModule;
     private BlockToMineBuilder blockToMineBuilder;
     private BlockNodeInformation blockNodeInformation;
-    private Rsk rsk;
+    private Ethereum rsk;
     private PeerScoringManager peerScoringManager;
     private NodeBlockProcessor nodeBlockProcessor;
     private SyncProcessor syncProcessor;
@@ -376,13 +378,12 @@ public class RskContext implements NodeBootstrapper {
         return blockStore;
     }
 
-    public Rsk getRsk() {
+    public Ethereum getRsk() {
         if (rsk == null) {
-            rsk = new RskImpl(
+            rsk = new EthereumImpl(
                     getChannelManager(),
                     getTransactionPool(),
                     getCompositeEthereumListener(),
-                    getNodeBlockProcessor(),
                     getBlockchain()
             );
         }
@@ -618,7 +619,7 @@ public class RskContext implements NodeBootstrapper {
                 minerClient = new AutoMinerClient(getMinerServer());
             } else {
                 minerClient = new MinerClientImpl(
-                        getRsk(),
+                        getNodeBlockProcessor(),
                         getMinerServer(),
                         rskSystemProperties.minerClientDelayBetweenBlocks(),
                         rskSystemProperties.minerClientDelayBetweenRefreshes()
@@ -1236,7 +1237,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockchain(),
                     getRskSystemProperties(),
                     getNodeManager(),
-                    getRsk(), // TODO(mc) this is a circular dependency :'(
+                    getNodeBlockProcessor(),
                     () -> new PeerClient(
                             getRskSystemProperties(),
                             getCompositeEthereumListener(),

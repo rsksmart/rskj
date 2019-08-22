@@ -22,7 +22,7 @@ package org.ethereum.sync;
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
-import co.rsk.core.Rsk;
+import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.NodeID;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Blockchain;
@@ -75,7 +75,7 @@ public class SyncPool implements InternalService {
     private final Blockchain blockchain;
     private final RskSystemProperties config;
     private final NodeManager nodeManager;
-    private final Rsk rsk;
+    private final NodeBlockProcessor nodeBlockProcessor;
     private final PeerClientFactory peerClientFactory;
 
     private ScheduledExecutorService syncPoolExecutor;
@@ -85,13 +85,13 @@ public class SyncPool implements InternalService {
             Blockchain blockchain,
             RskSystemProperties config,
             NodeManager nodeManager,
-            Rsk rsk,
+            NodeBlockProcessor nodeBlockProcessor,
             PeerClientFactory peerClientFactory) {
         this.ethereumListener = ethereumListener;
         this.blockchain = blockchain;
         this.config = config;
         this.nodeManager = nodeManager;
-        this.rsk = rsk;
+        this.nodeBlockProcessor = nodeBlockProcessor;
         this.peerClientFactory = peerClientFactory;
     }
 
@@ -117,7 +117,7 @@ public class SyncPool implements InternalService {
 
         if (config.waitForSync()) {
             try {
-                while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync()) {
+                while (nodeBlockProcessor.getBestBlockNumber() == 0 || nodeBlockProcessor.hasBetterBlockToSync()) {
                     Thread.sleep(10000);
                 }
             } catch (InterruptedException e) {

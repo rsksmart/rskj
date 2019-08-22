@@ -20,7 +20,6 @@ package org.ethereum.rpc;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
-import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.MiningMainchainView;
@@ -46,6 +45,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.util.RskTestFactory;
@@ -95,7 +95,7 @@ public class Web3ImplLogsTest {
 	private MiningMainchainView mainchainView;
     private RepositoryLocator repositoryLocator;
     private TransactionPool transactionPool;
-    private Rsk eth;
+    private Ethereum eth;
     private ReceiptStore receiptStore;
     private Web3Impl web3;
     private TrieStore trieStore;
