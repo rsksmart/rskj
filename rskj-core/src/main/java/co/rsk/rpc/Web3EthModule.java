@@ -100,7 +100,11 @@ public interface Web3EthModule {
 
     Web3.BlockResult eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception;
 
+    String eth_getEncodedBlockByHash(String bnOrId) throws Exception;
+
     Web3.BlockResult eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) throws Exception;
+
+    String eth_getEncodedBlockByNumber(String bnOrId) throws Exception;
 
     TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception;
 

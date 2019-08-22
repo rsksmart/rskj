@@ -20,6 +20,7 @@ package org.ethereum.rpc;
 
 import org.ethereum.util.ByteUtil;
 import org.bouncycastle.util.encoders.Hex;
+import co.rsk.core.Coin;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -73,6 +74,10 @@ public class TypeConverter {
         }
 
         return result;
+    }
+
+    public static String toJsonHex(Coin x) {
+        return x != null ? x.asBigInteger().toString() : "" ;
     }
 
     public static String toJsonHex(String x) {

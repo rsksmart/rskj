@@ -19,7 +19,6 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
@@ -599,11 +598,15 @@ public class Web3Impl implements Web3 {
         br.extraData = TypeConverter.toJsonHex(b.getExtraData());
         br.size = TypeConverter.toJsonHex(b.getEncoded().length);
         br.gasLimit = TypeConverter.toJsonHex(b.getGasLimit());
-        Coin mgp = b.getMinimumGasPrice();
-        br.minimumGasPrice = mgp != null ? mgp.asBigInteger().toString() : "";
+        br.minimumGasPrice = TypeConverter.toJsonHex(b.getMinimumGasPrice());
         br.gasUsed = TypeConverter.toJsonHex(b.getGasUsed());
         br.timestamp = TypeConverter.toJsonHex(b.getTimestamp());
-
+        br.paidFees = TypeConverter.toJsonHex(b.getFeesPaidToMiner());
+        br.bitcoinMergedMiningHeader = TypeConverter.toJsonHex(b.getBitcoinMergedMiningHeader());
+        if(!config.getActivationConfig().isActive(ConsensusRule.RSKIP92, b.getNumber())) {
+            br.bitcoinMergedMiningMerkleProof = TypeConverter.toJsonHex(b.getBitcoinMergedMiningMerkleProof());
+            br.bitcoinMergedMiningCoinbaseTransaction = TypeConverter.toJsonHex(b.getBitcoinMergedMiningCoinbaseTransaction());
+        }
         List<Object> txes = new ArrayList<>();
 
         if (fullTx) {
@@ -655,10 +658,24 @@ public class Web3Impl implements Web3 {
         try {
             Block b = getBlockByJSonHash(blockHash);
 
-            return getBlockResult(b, fullTransactionObjects);
+            return s = (b == null ? null : getBlockResult(b, fullTransactionObjects));
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getBlockByHash({}, {}): {}", blockHash, fullTransactionObjects, s);
+            }
+        }
+    }
+
+    @Override
+    public String eth_getEncodedBlockByHash(String blockHash) throws Exception {
+        String s = null;
+        try {
+            Block b = getBlockByJSonHash(blockHash);
+
+            return s = (b == null ? null : b.getEncodedForBlockHashJsonString());
+        } finally {
+            if (logger.isDebugEnabled()) {
+                logger.debug("eth_getEncodedBlockByHash({}): {}", blockHash, s);
             }
         }
     }
@@ -673,6 +690,20 @@ public class Web3Impl implements Web3 {
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getBlockByNumber({}, {}): {}", bnOrId, fullTransactionObjects, s);
+            }
+        }
+    }
+
+    @Override
+    public String eth_getEncodedBlockByNumber(String bnOrId) throws Exception {
+        String s = null;
+        try {
+            Block b = getByJsonBlockId(bnOrId);
+
+            return s = (b == null ? null : b.getEncodedForBlockHashJsonString());
+        } finally {
+            if (logger.isDebugEnabled()) {
+                logger.debug("eth_getEncodedBlockByNumber({}): {}", bnOrId, s);
             }
         }
     }

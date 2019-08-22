@@ -18,10 +18,12 @@
 
 package org.ethereum.rpc.converters;
 
+import co.rsk.core.Coin;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.math.BigInteger;
 
 /**
  * Created by martin.medina on 3/7/17.
@@ -56,5 +58,15 @@ public class TypeConverterTest {
     @Test
     public void toJsonHexNullInput() {
         Assert.assertEquals("0x00", TypeConverter.toJsonHex((byte[])null));
+    }
+
+    @Test
+    public void toJsonHexCoin() {
+        Assert.assertEquals("1234", TypeConverter.toJsonHex(new Coin(new BigInteger("1234"))));
+    }
+
+    @Test
+    public void toJsonHexNullCoin() {
+        Assert.assertEquals("", TypeConverter.toJsonHex((Coin) null));
     }
 }

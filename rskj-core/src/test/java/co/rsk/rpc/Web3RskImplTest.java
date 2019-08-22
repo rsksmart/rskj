@@ -172,13 +172,27 @@ public class Web3RskImplTest {
         blockResult.extraData = "extraData";
         blockResult.size = "size";
         blockResult.gasLimit = "gasLimit";
+        blockResult.minimumGasPrice = "minimumGasPrice";
         blockResult.gasUsed = "gasUsed";
         blockResult.timestamp = "timestamp";
+        blockResult.paidFees = "paidFees";
+        blockResult.bitcoinMergedMiningHeader = "bitcoinMergedMiningHeader";
+        blockResult.bitcoinMergedMiningMerkleProof = "bitcoinMergedMiningMerkleProof";
+        blockResult.bitcoinMergedMiningCoinbaseTransaction = "bitcoinMergedMiningCoinbaseTransaction";
         blockResult.transactions = new Object[] {"tx1", "tx2"};
         blockResult.uncles = new String[] {"uncle1", "uncle2"};
-        blockResult.minimumGasPrice = "minimumGasPrice";
 
-        Assert.assertEquals(blockResult.toString(), "BlockResult{number='number', hash='hash', parentHash='parentHash', sha3Uncles='sha3Uncles', logsBloom='logsBloom', transactionsRoot='transactionsRoot', stateRoot='stateRoot', receiptsRoot='receiptsRoot', miner='miner', difficulty='difficulty', totalDifficulty='totalDifficulty', extraData='extraData', size='size', gasLimit='gasLimit', minimumGasPrice='minimumGasPrice', gasUsed='gasUsed', timestamp='timestamp', transactions=[tx1, tx2], uncles=[uncle1, uncle2]}");
+
+
+        Assert.assertEquals(blockResult.toString(), "BlockResult{number='number', hash='hash', " +
+                "parentHash='parentHash', sha3Uncles='sha3Uncles', logsBloom='logsBloom', " +
+                "transactionsRoot='transactionsRoot', stateRoot='stateRoot', receiptsRoot='receiptsRoot', " +
+                "miner='miner', difficulty='difficulty', totalDifficulty='totalDifficulty', extraData='extraData', " +
+                "size='size', gasLimit='gasLimit', minimumGasPrice='minimumGasPrice', gasUsed='gasUsed', " +
+                "timestamp='timestamp', paidFees='paidFees', bitcoinMergedMiningHeader='bitcoinMergedMiningHeader', " +
+                "bitcoinMergedMiningMerkleProof='bitcoinMergedMiningMerkleProof', " +
+                "bitcoinMergedMiningCoinbaseTransaction='bitcoinMergedMiningCoinbaseTransaction', " +
+                "transactions=[tx1, tx2], uncles=[uncle1, uncle2]}");
     }
 
     @Test

@@ -21,7 +21,11 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
-import co.rsk.core.bc.*;
+import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.bc.MiningMainchainViewImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -47,6 +51,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -682,11 +687,16 @@ public class Web3ImplTest {
                                         world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByNumber("earliest", false);
+        String bnOrId = "earliest";
+        Web3.BlockResult blockResult = web3.eth_getBlockByNumber(bnOrId, false);
 
         Assert.assertNotNull(blockResult);
         String blockHash = genesis.getHashJsonString();
         org.junit.Assert.assertEquals(blockHash, blockResult.hash);
+
+        String hexString = web3.eth_getEncodedBlockByNumber(bnOrId).replace("0x","");
+        Keccak256  obtainedBlockHash = new Keccak256(HashUtil.keccak256(Hex.decode(hexString)));
+        Assert.assertEquals(blockHash, obtainedBlockHash.toJsonString());
     }
 
     @Test
@@ -695,9 +705,13 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByNumber("0x1234", false);
+        String bnOrId = "0x1234";
+        Web3.BlockResult blockResult = web3.eth_getBlockByNumber(bnOrId, false);
 
         Assert.assertNull(blockResult);
+
+        String hexString = web3.eth_getEncodedBlockByNumber(bnOrId);
+        Assert.assertNull(hexString);
     }
 
     @Test
@@ -737,10 +751,18 @@ public class Web3ImplTest {
         Assert.assertNotNull(bresult);
         org.junit.Assert.assertEquals(block1bHashString, bresult.hash);
 
+        String hexString = web3.eth_getEncodedBlockByHash(block1bHashString).replace("0x","");
+        Keccak256  blockHash = new Keccak256(HashUtil.keccak256(Hex.decode(hexString)));
+        Assert.assertEquals(blockHash.toJsonString(), block1bHashString);
+
         bresult = web3.eth_getBlockByHash(block2bHashString, true);
 
         Assert.assertNotNull(bresult);
         org.junit.Assert.assertEquals(block2bHashString, bresult.hash);
+
+        hexString = web3.eth_getEncodedBlockByHash(block2bHashString).replace("0x","");
+        blockHash = new Keccak256(HashUtil.keccak256(Hex.decode(hexString)));
+        Assert.assertEquals(blockHash.toJsonString(), block2bHashString);
     }
 
     @Test
@@ -807,9 +829,13 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByHash("0x1234000000000000000000000000000000000000000000000000000000000000", false);
+        String blockHash = "0x1234000000000000000000000000000000000000000000000000000000000000";
+        Web3.BlockResult blockResult = web3.eth_getBlockByHash(blockHash, false);
 
         Assert.assertNull(blockResult);
+
+        String hexString = web3.eth_getEncodedBlockByHash(blockHash);
+        Assert.assertNull(hexString);
     }
 
     @Test

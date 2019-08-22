@@ -321,6 +321,10 @@ public class Block {
         return TypeConverter.toJsonHex(getHash().getBytes());
     }
 
+    public String getEncodedForBlockHashJsonString() {
+        return TypeConverter.toJsonHex(this.header.getEncodedForBlockHash());
+    }
+
     public String getParentHashJsonString() {
         return getParentHash().toJsonString();
     }

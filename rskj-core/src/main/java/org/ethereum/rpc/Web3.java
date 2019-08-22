@@ -80,6 +80,10 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
         public Object[] transactions; //: Array - Array of transaction objects, or 32 Bytes transaction hashes depending on the last given parameter.
         public String[] uncles; //: Array - Array of uncle hashes.
         public String minimumGasPrice;
+        public String paidFees;
+        public String bitcoinMergedMiningHeader;
+        public String bitcoinMergedMiningMerkleProof;
+        public String bitcoinMergedMiningCoinbaseTransaction;
 
         @Override
         public String toString() {
@@ -101,6 +105,10 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
                     ", minimumGasPrice='" + minimumGasPrice + '\'' +
                     ", gasUsed='" + gasUsed + '\'' +
                     ", timestamp='" + timestamp + '\'' +
+                    ", paidFees='" + paidFees + '\'' +
+                    ", bitcoinMergedMiningHeader='" + bitcoinMergedMiningHeader + '\'' +
+                    ", bitcoinMergedMiningMerkleProof='" + bitcoinMergedMiningMerkleProof + '\'' +
+                    ", bitcoinMergedMiningCoinbaseTransaction='" + bitcoinMergedMiningCoinbaseTransaction + '\'' +
                     ", transactions=" + Arrays.toString(transactions) +
                     ", uncles=" + Arrays.toString(uncles) +
                     '}';
