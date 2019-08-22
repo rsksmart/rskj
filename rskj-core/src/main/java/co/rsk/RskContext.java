@@ -685,7 +685,6 @@ public class RskContext implements NodeBootstrapper {
                 getWeb3HttpServer(),
                 getWeb3WebSocketServer(),
                 getSyncPool(),
-                getPeerServer(),
                 getPeerClientFactory(),
                 getBuildInfo()
         );
@@ -697,6 +696,7 @@ public class RskContext implements NodeBootstrapper {
         internalServices.add(getTransactionPool());
         internalServices.add(getChannelManager());
         internalServices.add(getNodeMessageHandler());
+        internalServices.add(getPeerServer());
         return Collections.unmodifiableList(internalServices);
     }
 

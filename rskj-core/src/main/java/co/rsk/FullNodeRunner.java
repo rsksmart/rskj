@@ -26,7 +26,6 @@ import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.rpc.netty.Web3WebSocketServer;
 import org.ethereum.net.eth.EthVersion;
-import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
@@ -51,7 +50,6 @@ public class FullNodeRunner implements NodeRunner {
     private final SyncPool syncPool;
 
     private final Web3 web3Service;
-    private final PeerServer peerServer;
     private final SyncPool.PeerClientFactory peerClientFactory;
     private final BuildInfo buildInfo;
 
@@ -66,7 +64,6 @@ public class FullNodeRunner implements NodeRunner {
             Web3HttpServer web3HttpServer,
             Web3WebSocketServer web3WebSocketServer,
             SyncPool syncPool,
-            PeerServer peerServer,
             SyncPool.PeerClientFactory peerClientFactory,
             BuildInfo buildInfo) {
         this.internalServices = Collections.unmodifiableList(internalServices);
@@ -79,7 +76,6 @@ public class FullNodeRunner implements NodeRunner {
         this.web3Service = web3Service;
         this.web3WebSocketServer = web3WebSocketServer;
         this.syncPool = syncPool;
-        this.peerServer = peerServer;
         this.peerClientFactory = peerClientFactory;
         this.buildInfo = buildInfo;
     }
@@ -99,8 +95,6 @@ public class FullNodeRunner implements NodeRunner {
         for (InternalService internalService : internalServices) {
             internalService.start();
         }
-
-        peerServer.start();
 
         if (logger.isInfoEnabled()) {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
@@ -196,8 +190,6 @@ public class FullNodeRunner implements NodeRunner {
                 minerClient.stop();
             }
         }
-
-        peerServer.stop();
 
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {
             try {
