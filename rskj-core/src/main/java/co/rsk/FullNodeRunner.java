@@ -23,7 +23,6 @@ import co.rsk.core.Rsk;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.MessageHandler;
-import co.rsk.net.TransactionGateway;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.rpc.netty.Web3WebSocketServer;
@@ -62,7 +61,6 @@ public class FullNodeRunner implements NodeRunner {
     private final TransactionPool transactionPool;
     private final PeerServer peerServer;
     private final SyncPool.PeerClientFactory peerClientFactory;
-    private final TransactionGateway transactionGateway;
     private final BuildInfo buildInfo;
 
     public FullNodeRunner(
@@ -82,7 +80,6 @@ public class FullNodeRunner implements NodeRunner {
             TransactionPool transactionPool,
             PeerServer peerServer,
             SyncPool.PeerClientFactory peerClientFactory,
-            TransactionGateway transactionGateway,
             BuildInfo buildInfo) {
         this.internalServices = Collections.unmodifiableList(internalServices);
         this.rsk = rsk;
@@ -100,7 +97,6 @@ public class FullNodeRunner implements NodeRunner {
         this.transactionPool = transactionPool;
         this.peerServer = peerServer;
         this.peerClientFactory = peerClientFactory;
-        this.transactionGateway = transactionGateway;
         this.buildInfo = buildInfo;
     }
 
@@ -120,7 +116,6 @@ public class FullNodeRunner implements NodeRunner {
             internalService.start();
         }
 
-        transactionGateway.start();
         // this should be the genesis block at this point
         transactionPool.start(blockchain.getBestBlock());
         channelManager.start();
@@ -225,7 +220,6 @@ public class FullNodeRunner implements NodeRunner {
         peerServer.stop();
         messageHandler.stop();
         channelManager.stop();
-        transactionGateway.stop();
 
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {
             try {

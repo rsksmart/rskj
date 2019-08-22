@@ -691,13 +691,13 @@ public class RskContext implements NodeBootstrapper {
                 getTransactionPool(),
                 getPeerServer(),
                 getPeerClientFactory(),
-                getTransactionGateway(),
                 getBuildInfo()
         );
     }
 
     public List<InternalService> buildInternalServices() {
         List<InternalService> internalServices = new ArrayList<>();
+        internalServices.add(getTransactionGateway());
         return Collections.unmodifiableList(internalServices);
     }
 
