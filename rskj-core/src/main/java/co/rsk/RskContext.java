@@ -675,8 +675,6 @@ public class RskContext implements NodeBootstrapper {
     protected NodeRunner buildNodeRunner() {
         return new FullNodeRunner(
                 buildInternalServices(),
-                getMinerServer(),
-                getMinerClient(),
                 getRskSystemProperties(),
                 getBuildInfo()
         );
@@ -709,6 +707,13 @@ public class RskContext implements NodeBootstrapper {
         }
         if (getRskSystemProperties().isSyncEnabled()) {
             internalServices.add(getSyncPool());
+        }
+        if (getRskSystemProperties().isMinerServerEnabled()) {
+            internalServices.add(getMinerServer());
+
+            if (getRskSystemProperties().isMinerClientEnabled()) {
+                internalServices.add(getMinerClient());
+            }
         }
         return Collections.unmodifiableList(internalServices);
     }

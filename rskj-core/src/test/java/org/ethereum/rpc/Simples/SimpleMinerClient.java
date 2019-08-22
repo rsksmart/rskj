@@ -27,6 +27,7 @@ public class SimpleMinerClient implements MinerClient {
 
     public boolean isMining = false;
 
+    @Override
     public void start() {
         isMining = true;
     }
@@ -36,6 +37,7 @@ public class SimpleMinerClient implements MinerClient {
         return false;
     }
 
+    @Override
     public void stop() {
         isMining = false;
     }

@@ -63,6 +63,7 @@ public class MinerClientImpl implements MinerClient {
         this.delayBetweenRefreshes = delayBetweenRefreshes;
     }
 
+    @Override
     public void start() {
         aTimer = new Timer("Refresh work for mining");
         aTimer.schedule(createRefreshWork(), 0, this.delayBetweenRefreshes.toMillis());
@@ -174,6 +175,7 @@ public class MinerClientImpl implements MinerClient {
         return false; // couldn't find a valid nonce
     }
 
+    @Override
     public void stop() {
         stop = true;
 

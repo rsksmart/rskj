@@ -20,6 +20,7 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.config.InternalService;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 
@@ -28,12 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 
-public interface MinerServer {
-
-    void start();
-
-    void stop();
-
+public interface MinerServer extends InternalService {
     boolean isRunning();
 
     SubmitBlockResult submitBitcoinBlockPartialMerkle(

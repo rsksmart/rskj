@@ -18,13 +18,11 @@
 
 package co.rsk.mine;
 
-public interface MinerClient {
-    void start();
+import co.rsk.config.InternalService;
 
+public interface MinerClient extends InternalService {
     // Mines a PoW block
     boolean mineBlock();
-
-    void stop();
 
     boolean isMining();
 }

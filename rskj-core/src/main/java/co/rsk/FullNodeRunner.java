@@ -19,8 +19,6 @@ package co.rsk;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
@@ -34,20 +32,14 @@ public class FullNodeRunner implements NodeRunner {
     private static Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
     private final List<InternalService> internalServices;
-    private final MinerServer minerServer;
-    private final MinerClient minerClient;
     private final RskSystemProperties rskSystemProperties;
     private final BuildInfo buildInfo;
 
     public FullNodeRunner(
             List<InternalService> internalServices,
-            MinerServer minerServer,
-            MinerClient minerClient,
             RskSystemProperties rskSystemProperties,
             BuildInfo buildInfo) {
         this.internalServices = Collections.unmodifiableList(internalServices);
-        this.minerServer = minerServer;
-        this.minerClient = minerClient;
         this.rskSystemProperties = rskSystemProperties;
         this.buildInfo = buildInfo;
     }
@@ -73,27 +65,12 @@ public class FullNodeRunner implements NodeRunner {
             logger.info("Capability eth version: [{}]", versions);
         }
 
-        if (rskSystemProperties.isMinerServerEnabled()) {
-            minerServer.start();
-
-            if (rskSystemProperties.isMinerClientEnabled()) {
-                minerClient.start();
-            }
-        }
-
         logger.info("done");
     }
 
     @Override
     public void stop() {
         logger.info("Shutting down RSK node");
-
-        if (rskSystemProperties.isMinerServerEnabled()) {
-            minerServer.stop();
-            if (rskSystemProperties.isMinerClientEnabled()) {
-                minerClient.stop();
-            }
-        }
 
         for (int i = internalServices.size() - 1; i >= 0; i--) {
             internalServices.get(i).stop();
