@@ -297,7 +297,22 @@ public class TransactionModuleTest {
 
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
         CompositeEthereumListener compositeEthereumListener = new CompositeEthereumListener();
-        Ethereum eth = new EthereumImpl(new ChannelManagerImpl(config, new SyncPool(compositeEthereumListener, blockchain, config, null)), transactionPool, compositeEthereumListener, blockchain);
+        Ethereum eth = new EthereumImpl(
+                new ChannelManagerImpl(
+                        config,
+                        new SyncPool(
+                                compositeEthereumListener,
+                                blockchain,
+                                config,
+                                null,
+                                null,
+                                null
+                        )
+                ),
+                transactionPool,
+                compositeEthereumListener,
+                blockchain
+        );
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
 
         transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, receiptStore);

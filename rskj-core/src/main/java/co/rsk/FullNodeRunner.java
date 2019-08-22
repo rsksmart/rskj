@@ -19,11 +19,9 @@ package co.rsk;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Rsk;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import org.ethereum.net.eth.EthVersion;
-import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,36 +34,26 @@ public class FullNodeRunner implements NodeRunner {
     private static Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
     private final List<InternalService> internalServices;
-    private final Rsk rsk;
     private final MinerServer minerServer;
     private final MinerClient minerClient;
     private final RskSystemProperties rskSystemProperties;
-    private final SyncPool syncPool;
-
-    private final SyncPool.PeerClientFactory peerClientFactory;
     private final BuildInfo buildInfo;
 
     public FullNodeRunner(
             List<InternalService> internalServices,
-            Rsk rsk,
             MinerServer minerServer,
             MinerClient minerClient,
             RskSystemProperties rskSystemProperties,
-            SyncPool syncPool,
-            SyncPool.PeerClientFactory peerClientFactory,
             BuildInfo buildInfo) {
         this.internalServices = Collections.unmodifiableList(internalServices);
-        this.rsk = rsk;
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.rskSystemProperties = rskSystemProperties;
-        this.syncPool = syncPool;
-        this.peerClientFactory = peerClientFactory;
         this.buildInfo = buildInfo;
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         logger.info("Starting RSK");
 
         logger.info(
@@ -85,14 +73,6 @@ public class FullNodeRunner implements NodeRunner {
             logger.info("Capability eth version: [{}]", versions);
         }
 
-        if (rskSystemProperties.isSyncEnabled()) {
-            syncPool.updateLowerUsefulDifficulty();
-            syncPool.start(peerClientFactory);
-            if (rskSystemProperties.waitForSync()) {
-                waitRskSyncDone();
-            }
-        }
-
         if (rskSystemProperties.isMinerServerEnabled()) {
             minerServer.start();
 
@@ -104,22 +84,9 @@ public class FullNodeRunner implements NodeRunner {
         logger.info("done");
     }
 
-    private void waitRskSyncDone() throws InterruptedException {
-        while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync()) {
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e1) {
-                logger.trace("Wait sync done was interrupted", e1);
-                throw e1;
-            }
-        }
-    }
-
     @Override
     public void stop() {
         logger.info("Shutting down RSK node");
-
-        syncPool.stop();
 
         if (rskSystemProperties.isMinerServerEnabled()) {
             minerServer.stop();

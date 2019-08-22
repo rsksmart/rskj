@@ -184,7 +184,6 @@ public class RskContext implements NodeBootstrapper {
     private MiningConfig miningConfig;
     private NetworkStateExporter networkStateExporter;
     private PeerExplorer peerExplorer;
-    private SyncPool.PeerClientFactory peerClientFactory;
     private EthereumChannelInitializerFactory ethereumChannelInitializerFactory;
     private HashRateCalculator hashRateCalculator;
     private EthModule ethModule;
@@ -675,12 +674,9 @@ public class RskContext implements NodeBootstrapper {
     protected NodeRunner buildNodeRunner() {
         return new FullNodeRunner(
                 buildInternalServices(),
-                getRsk(),
                 getMinerServer(),
                 getMinerClient(),
                 getRskSystemProperties(),
-                getSyncPool(),
-                getPeerClientFactory(),
                 getBuildInfo()
         );
     }
@@ -709,6 +705,9 @@ public class RskContext implements NodeBootstrapper {
                     getRskSystemProperties().getPeerPort(),
                     getPeerExplorer()
             ));
+        }
+        if (getRskSystemProperties().isSyncEnabled()) {
+            internalServices.add(getSyncPool());
         }
         return Collections.unmodifiableList(internalServices);
     }
@@ -942,18 +941,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return blockValidator;
-    }
-
-    private SyncPool.PeerClientFactory getPeerClientFactory() {
-        if (peerClientFactory == null) {
-            peerClientFactory = () -> new PeerClient(
-                    getRskSystemProperties(),
-                    getCompositeEthereumListener(),
-                    getEthereumChannelInitializerFactory()
-            );
-        }
-
-        return peerClientFactory;
     }
 
     private EthereumChannelInitializerFactory getEthereumChannelInitializerFactory() {
@@ -1248,7 +1235,13 @@ public class RskContext implements NodeBootstrapper {
                     getCompositeEthereumListener(),
                     getBlockchain(),
                     getRskSystemProperties(),
-                    getNodeManager()
+                    getNodeManager(),
+                    getRsk(), // TODO(mc) this is a circular dependency :'(
+                    () -> new PeerClient(
+                            getRskSystemProperties(),
+                            getCompositeEthereumListener(),
+                            getEthereumChannelInitializerFactory()
+                    )
             );
         }
 

@@ -19,10 +19,12 @@
 
 package org.ethereum.sync;
 
+import co.rsk.config.InternalService;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Rsk;
 import co.rsk.net.NodeID;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.NodeHandler;
@@ -55,7 +57,7 @@ import static org.ethereum.util.BIUtil.isIn20PercentRange;
  * @author Mikhail Kalinin
  * @since 10.08.2015
  */
-public class SyncPool {
+public class SyncPool implements InternalService {
 
     public static final Logger logger = LoggerFactory.getLogger("sync");
 
@@ -71,34 +73,61 @@ public class SyncPool {
 
     private final EthereumListener ethereumListener;
     private final Blockchain blockchain;
-    private final SystemProperties config;
+    private final RskSystemProperties config;
     private final NodeManager nodeManager;
-    private final ScheduledExecutorService syncPoolExecutor;
+    private final Rsk rsk;
+    private final PeerClientFactory peerClientFactory;
 
-    public SyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager) {
+    private ScheduledExecutorService syncPoolExecutor;
+
+    public SyncPool(
+            EthereumListener ethereumListener,
+            Blockchain blockchain,
+            RskSystemProperties config,
+            NodeManager nodeManager,
+            Rsk rsk,
+            PeerClientFactory peerClientFactory) {
         this.ethereumListener = ethereumListener;
         this.blockchain = blockchain;
         this.config = config;
         this.nodeManager = nodeManager;
-        this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
+        this.rsk = rsk;
+        this.peerClientFactory = peerClientFactory;
     }
 
-    public void start(PeerClientFactory peerClientFactory) {
+    @Override
+    public void start() {
+        this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
+
+        updateLowerUsefulDifficulty();
+
         syncPoolExecutor.scheduleWithFixedDelay(
             () -> {
                 try {
                     heartBeat();
                     processConnections();
                     updateLowerUsefulDifficulty();
-                    fillUp(peerClientFactory);
+                    fillUp();
                     prepareActive();
                 } catch (Throwable t) {
                     logger.error("Unhandled exception", t);
                 }
             }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS
         );
+
+        if (config.waitForSync()) {
+            try {
+                while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync()) {
+                    Thread.sleep(10000);
+                }
+            } catch (InterruptedException e) {
+                logger.error("The SyncPool service couldn't be started", e);
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
+    @Override
     public void stop() {
         syncPoolExecutor.shutdown();
     }
@@ -154,7 +183,7 @@ public class SyncPool {
         logger.info("Peer {}: disconnected", peer.getPeerIdShort());
     }
 
-    private void connect(Node node, PeerClientFactory peerClientFactory) {
+    private void connect(Node node) {
         if (logger.isTraceEnabled()) {
             logger.trace(
                 "Peer {}: initiate connection",
@@ -211,7 +240,7 @@ public class SyncPool {
         }
     }
 
-    private void fillUp(PeerClientFactory peerClientFactory) {
+    private void fillUp() {
         int lackSize = config.maxActivePeers() - peers.size();
         if(lackSize <= 0) {
             return;
@@ -226,7 +255,7 @@ public class SyncPool {
         }
 
         for(NodeHandler n : newNodes) {
-            connect(n.getNode(), peerClientFactory);
+            connect(n.getNode());
         }
     }
 
@@ -282,7 +311,7 @@ public class SyncPool {
         );
     }
 
-    public void updateLowerUsefulDifficulty() {
+    private void updateLowerUsefulDifficulty() {
         BlockDifficulty td = blockchain.getTotalDifficulty();
 
         if (td.compareTo(lowerUsefulDifficulty) > 0) {
