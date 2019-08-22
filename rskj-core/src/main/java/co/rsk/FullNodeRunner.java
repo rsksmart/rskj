@@ -22,7 +22,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
-import co.rsk.net.MessageHandler;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.rpc.netty.Web3WebSocketServer;
@@ -50,7 +49,6 @@ public class FullNodeRunner implements NodeRunner {
     private final Web3HttpServer web3HttpServer;
     private final Web3WebSocketServer web3WebSocketServer;
     private final SyncPool syncPool;
-    private final MessageHandler messageHandler;
 
     private final Web3 web3Service;
     private final PeerServer peerServer;
@@ -68,7 +66,6 @@ public class FullNodeRunner implements NodeRunner {
             Web3HttpServer web3HttpServer,
             Web3WebSocketServer web3WebSocketServer,
             SyncPool syncPool,
-            MessageHandler messageHandler,
             PeerServer peerServer,
             SyncPool.PeerClientFactory peerClientFactory,
             BuildInfo buildInfo) {
@@ -82,7 +79,6 @@ public class FullNodeRunner implements NodeRunner {
         this.web3Service = web3Service;
         this.web3WebSocketServer = web3WebSocketServer;
         this.syncPool = syncPool;
-        this.messageHandler = messageHandler;
         this.peerServer = peerServer;
         this.peerClientFactory = peerClientFactory;
         this.buildInfo = buildInfo;
@@ -104,7 +100,6 @@ public class FullNodeRunner implements NodeRunner {
             internalService.start();
         }
 
-        messageHandler.start();
         peerServer.start();
 
         if (logger.isInfoEnabled()) {
@@ -203,7 +198,6 @@ public class FullNodeRunner implements NodeRunner {
         }
 
         peerServer.stop();
-        messageHandler.stop();
 
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {
             try {
