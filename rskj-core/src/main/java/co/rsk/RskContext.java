@@ -482,6 +482,7 @@ public class RskContext implements NodeBootstrapper {
                     networkConstants.getBridgeConstants(),
                     networkConstants.getChainId(),
                     getBlockchain(),
+                    getTransactionPool(),
                     getReversibleTransactionExecutor(),
                     getExecutionBlockRetriever(),
                     getRepositoryLocator(),
