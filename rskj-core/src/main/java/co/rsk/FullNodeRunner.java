@@ -23,10 +23,7 @@ import co.rsk.core.Rsk;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.discovery.UDPServer;
-import co.rsk.rpc.netty.Web3HttpServer;
-import co.rsk.rpc.netty.Web3WebSocketServer;
 import org.ethereum.net.eth.EthVersion;
-import org.ethereum.rpc.Web3;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
@@ -45,11 +42,8 @@ public class FullNodeRunner implements NodeRunner {
     private final MinerServer minerServer;
     private final MinerClient minerClient;
     private final RskSystemProperties rskSystemProperties;
-    private final Web3HttpServer web3HttpServer;
-    private final Web3WebSocketServer web3WebSocketServer;
     private final SyncPool syncPool;
 
-    private final Web3 web3Service;
     private final SyncPool.PeerClientFactory peerClientFactory;
     private final BuildInfo buildInfo;
 
@@ -60,9 +54,6 @@ public class FullNodeRunner implements NodeRunner {
             MinerServer minerServer,
             MinerClient minerClient,
             RskSystemProperties rskSystemProperties,
-            Web3 web3Service,
-            Web3HttpServer web3HttpServer,
-            Web3WebSocketServer web3WebSocketServer,
             SyncPool syncPool,
             SyncPool.PeerClientFactory peerClientFactory,
             BuildInfo buildInfo) {
@@ -72,9 +63,6 @@ public class FullNodeRunner implements NodeRunner {
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.rskSystemProperties = rskSystemProperties;
-        this.web3HttpServer = web3HttpServer;
-        this.web3Service = web3Service;
-        this.web3WebSocketServer = web3WebSocketServer;
         this.syncPool = syncPool;
         this.peerClientFactory = peerClientFactory;
         this.buildInfo = buildInfo;
@@ -101,8 +89,6 @@ public class FullNodeRunner implements NodeRunner {
             logger.info("Capability eth version: [{}]", versions);
         }
 
-        startWeb3(rskSystemProperties);
-
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {
             udpServer.start();
         }
@@ -126,29 +112,6 @@ public class FullNodeRunner implements NodeRunner {
         logger.info("done");
     }
 
-    private void startWeb3(RskSystemProperties rskSystemProperties) throws InterruptedException {
-        boolean rpcHttpEnabled = rskSystemProperties.isRpcHttpEnabled();
-        boolean rpcWebSocketEnabled = rskSystemProperties.isRpcWebSocketEnabled();
-
-        if (rpcHttpEnabled || rpcWebSocketEnabled) {
-            web3Service.start();
-        }
-
-        if (rpcHttpEnabled) {
-            logger.info("RPC HTTP enabled");
-            web3HttpServer.start();
-        } else {
-            logger.info("RPC HTTP disabled");
-        }
-
-        if (rpcWebSocketEnabled) {
-            logger.info("RPC WebSocket enabled");
-            web3WebSocketServer.start();
-        } else {
-            logger.info("RPC WebSocket disabled");
-        }
-    }
-
     private void waitRskSyncDone() throws InterruptedException {
         while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync()) {
             try {
@@ -165,24 +128,6 @@ public class FullNodeRunner implements NodeRunner {
         logger.info("Shutting down RSK node");
 
         syncPool.stop();
-
-        boolean rpcHttpEnabled = rskSystemProperties.isRpcHttpEnabled();
-        boolean rpcWebSocketEnabled = rskSystemProperties.isRpcWebSocketEnabled();
-        if (rpcHttpEnabled) {
-            web3HttpServer.stop();
-        }
-        if (rpcWebSocketEnabled) {
-            try {
-                web3WebSocketServer.stop();
-            } catch (InterruptedException e) {
-                logger.error("Couldn't stop the WebSocket server", e);
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        if (rpcHttpEnabled || rpcWebSocketEnabled) {
-            web3Service.stop();
-        }
 
         if (rskSystemProperties.isMinerServerEnabled()) {
             minerServer.stop();

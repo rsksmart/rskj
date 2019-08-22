@@ -681,9 +681,6 @@ public class RskContext implements NodeBootstrapper {
                 getMinerServer(),
                 getMinerClient(),
                 getRskSystemProperties(),
-                getWeb3(),
-                getWeb3HttpServer(),
-                getWeb3WebSocketServer(),
                 getSyncPool(),
                 getPeerClientFactory(),
                 getBuildInfo()
@@ -697,6 +694,17 @@ public class RskContext implements NodeBootstrapper {
         internalServices.add(getChannelManager());
         internalServices.add(getNodeMessageHandler());
         internalServices.add(getPeerServer());
+        boolean rpcHttpEnabled = getRskSystemProperties().isRpcHttpEnabled();
+        boolean rpcWebSocketEnabled = getRskSystemProperties().isRpcWebSocketEnabled();
+        if (rpcHttpEnabled || rpcWebSocketEnabled) {
+            internalServices.add(getWeb3());
+        }
+        if (rpcHttpEnabled) {
+            internalServices.add(getWeb3HttpServer());
+        }
+        if (rpcWebSocketEnabled) {
+            internalServices.add(getWeb3WebSocketServer());
+        }
         return Collections.unmodifiableList(internalServices);
     }
 
