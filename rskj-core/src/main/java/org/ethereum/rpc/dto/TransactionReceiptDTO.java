@@ -57,11 +57,11 @@ public class TransactionReceiptDTO {
 
         RskAddress contractAddress = receipt.getTransaction().getContractAddress();
         if (contractAddress != null) {
-            this.contractAddress = toUnformattedJsonHex(contractAddress.getBytes());
+            this.contractAddress = contractAddress.toJsonString();
         }
 
         cumulativeGasUsed = toQuantityJsonHex(receipt.getCumulativeGas());
-        from = toUnformattedJsonHex(receipt.getTransaction().getSender().getBytes());
+        from = receipt.getTransaction().getSender().toJsonString();
         gasUsed = toQuantityJsonHex(receipt.getGasUsed());
 
         logs = new LogFilterElement[receipt.getLogInfoList().size()];
@@ -72,7 +72,7 @@ public class TransactionReceiptDTO {
         }
 
         root = toUnformattedJsonHex(receipt.getPostTxState());
-        to = toUnformattedJsonHex(receipt.getTransaction().getReceiveAddress().getBytes());
+        to = receipt.getTransaction().getReceiveAddress().toJsonString();
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = toQuantityJsonHex(txInfo.getIndex());
     }
