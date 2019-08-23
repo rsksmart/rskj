@@ -736,9 +736,11 @@ public class Web3ImplTest {
 
         Assert.assertNotNull(bresult);
         org.junit.Assert.assertEquals(block1HashString, bresult.getHash());
-        org.junit.Assert.assertEquals("0x00", bresult.getExtraData());
+        org.junit.Assert.assertEquals("0x", bresult.getExtraData());
         org.junit.Assert.assertEquals(0, bresult.getTransactions().size());
         org.junit.Assert.assertEquals(0, bresult.getUncles().size());
+        org.junit.Assert.assertEquals("0xa", bresult.getDifficulty());
+        org.junit.Assert.assertEquals("0xb", bresult.getTotalDifficulty());
 
         bresult = web3.eth_getBlockByHash(block1bHashString, true);
 
