@@ -77,7 +77,6 @@ public class BlockChainImpl implements Blockchain {
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final BlockChainFlusher flusher;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
@@ -94,15 +93,13 @@ public class BlockChainImpl implements Blockchain {
     private final BlockExecutor blockExecutor;
     private boolean noValidation;
 
-    public BlockChainImpl(BlockChainFlusher flusher,
-                          BlockStore blockStore,
+    public BlockChainImpl(BlockStore blockStore,
                           ReceiptStore receiptStore,
                           TransactionPool transactionPool,
                           EthereumListener listener,
                           BlockValidator blockValidator,
                           BlockExecutor blockExecutor,
                           StateRootHandler stateRootHandler) {
-        this.flusher = flusher;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.listener = listener;
@@ -285,7 +282,6 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("Start onBlock");
             onBlock(block, result);
             logger.trace("Start flushData");
-            flusher.flush();
 
             logger.trace("Better block {} {}", block.getNumber(), block.getShortHash());
 
@@ -312,7 +308,6 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("Start onBlock");
             onBlock(block, result);
             logger.trace("Start flushData");
-            flusher.flush();
 
             if (bestBlock != null && block.getNumber() > bestBlock.getNumber()) {
                 logger.warn("Strange block number state");
