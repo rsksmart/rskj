@@ -40,10 +40,10 @@ public class LogFilterElement {
     public String[] topics;
 
     public LogFilterElement(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
-        logIndex = toJsonHex(logIdx);
-        blockNumber = b == null ? null : toJsonHex(b.getNumber());
+        logIndex = TypeConverter.toQuantityJsonHex(logIdx);
+        blockNumber = b == null ? null : TypeConverter.toQuantityJsonHex(b.getNumber());
         blockHash = b == null ? null : toJsonHex(b.getHash().getBytes());
-        transactionIndex = b == null ? null : toJsonHex(txIndex);
+        transactionIndex = b == null ? null : TypeConverter.toQuantityJsonHex(txIndex);
         transactionHash = tx.getHash().toJsonString();
         address = toJsonHex(logInfo.getAddress());
         data = toJsonHex(logInfo.getData());

@@ -61,8 +61,8 @@ public class TransactionResultDTO {
         }
 
         blockHash = b != null ? b.getHashJsonString() : null;
-        blockNumber = b != null ? TypeConverter.toJsonHex(b.getNumber()) : null;
-        transactionIndex = index != null ? TypeConverter.toJsonHex(index) : null;
+        blockNumber = b != null ? TypeConverter.toQuantityJsonHex(b.getNumber()) : null;
+        transactionIndex = index != null ? TypeConverter.toQuantityJsonHex(index) : null;
         from = addressToJsonHex(tx.getSender());
         to = addressToJsonHex(tx.getReceiveAddress());
         gas = TypeConverter.toJsonHex(tx.getGasLimit()); // Todo: unclear if it's the gas limit or gas consumed what is asked
@@ -84,8 +84,8 @@ public class TransactionResultDTO {
         } else {
             ECKey.ECDSASignature signature = tx.getSignature();
             v = String.format("0x%02x", signature.v);
-            r = TypeConverter.toJsonHex(signature.r);
-            s = TypeConverter.toJsonHex(signature.s);
+            r = TypeConverter.toQuantityJsonHex(signature.r);
+            s = TypeConverter.toQuantityJsonHex(signature.s);
         }
     }
 

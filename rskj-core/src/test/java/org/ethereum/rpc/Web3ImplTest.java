@@ -1126,8 +1126,8 @@ public class Web3ImplTest {
         args.from = addr1;
         args.to = addr2;
         args.data = data;
-        args.gas = TypeConverter.toJsonHex(gasLimit);
-        args.gasPrice= TypeConverter.toJsonHex(gasPrice);
+        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
+        args.gasPrice= TypeConverter.toQuantityJsonHex(gasPrice);
         args.value = value.toString();
         args.nonce = nonce.toString();
 
@@ -1243,8 +1243,8 @@ public class Web3ImplTest {
         args.from = addr1;
         args.to = addr2;
         args.data = data;
-        args.gas = TypeConverter.toJsonHex(gasLimit);
-        args.gasPrice= TypeConverter.toJsonHex(gasPrice);
+        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
+        args.gasPrice= TypeConverter.toQuantityJsonHex(gasPrice);
         args.value = value.toString();
         args.nonce = nonce.toString();
 

@@ -79,11 +79,17 @@ public class TypeConverter {
         return "0x"+x;
     }
 
-    public static String toJsonHex(long n) {
+    /**
+     * @return A Hex representation of n WITHOUT leading zeroes
+     */
+    public static String toQuantityJsonHex(long n) {
         return "0x" + Long.toHexString(n);
     }
 
-    public static String toJsonHex(BigInteger n) {
+    /**
+     * @return A Hex representation of n WITHOUT leading zeroes
+     */
+    public static String toQuantityJsonHex(BigInteger n) {
         return "0x"+ n.toString(16);
     }
 

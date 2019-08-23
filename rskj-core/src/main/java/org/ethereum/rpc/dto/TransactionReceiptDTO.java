@@ -23,6 +23,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.LogFilterElement;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.LogInfo;
 
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
@@ -52,7 +53,7 @@ public class TransactionReceiptDTO {
 
         status = toJsonHex(txInfo.getReceipt().getStatus());
         blockHash = toJsonHex(txInfo.getBlockHash());
-        blockNumber = toJsonHex(block.getNumber());
+        blockNumber = TypeConverter.toQuantityJsonHex(block.getNumber());
 
         RskAddress contractAddress = receipt.getTransaction().getContractAddress();
         if (contractAddress != null) {
@@ -73,6 +74,6 @@ public class TransactionReceiptDTO {
         root = toJsonHex(receipt.getPostTxState());
         to = toJsonHex(receipt.getTransaction().getReceiveAddress().getBytes());
         transactionHash = receipt.getTransaction().getHash().toJsonString();
-        transactionIndex = toJsonHex(txInfo.getIndex());
+        transactionIndex = TypeConverter.toQuantityJsonHex(txInfo.getIndex());
     }
 }

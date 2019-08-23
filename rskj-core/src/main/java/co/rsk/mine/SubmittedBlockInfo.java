@@ -36,7 +36,7 @@ public class SubmittedBlockInfo {
     SubmittedBlockInfo(ImportResult blockImportedResult, byte[] blockHash, long blockIncludedHeight) {
         this.blockImportedResult = TypeConverter.toJsonHex(TypeConverter.stringToByteArray(blockImportedResult.toString()));
         this.blockHash = TypeConverter.toJsonHex(blockHash);
-        this.blockIncludedHeight = TypeConverter.toJsonHex(blockIncludedHeight);
+        this.blockIncludedHeight = TypeConverter.toQuantityJsonHex(blockIncludedHeight);
     }
 
     public String getBlockImportedResult() {
