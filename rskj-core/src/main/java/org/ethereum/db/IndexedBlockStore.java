@@ -98,11 +98,11 @@ public class IndexedBlockStore implements BlockStore {
 
     @Override
     public synchronized Block getBestBlock() {
-        Long maxLevel = getMaxNumber();
-        if (maxLevel < 0) {
+        if (index.isEmpty()) {
             return null;
         }
 
+        long maxLevel = index.getMaxNumber();
         Block bestBlock = getChainBlockByNumber(maxLevel);
         if (bestBlock != null) {
             return  bestBlock;
