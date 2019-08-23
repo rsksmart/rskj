@@ -406,7 +406,7 @@ public class Web3ImplTest {
         String blockHashString = "0x" + block1.getHash();
         org.junit.Assert.assertEquals(blockHashString, tr.blockHash);
 
-        org.junit.Assert.assertEquals("0x00", tr.input);
+        org.junit.Assert.assertEquals("0x", tr.input);
         org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
 
         Assert.assertArrayEquals(new byte[] {tx.getSignature().v}, TypeConverter.stringHexToByteArray(tr.v));
@@ -441,7 +441,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals("0", tr.nonce);
         org.junit.Assert.assertEquals(null, tr.blockHash);
         org.junit.Assert.assertEquals(null, tr.transactionIndex);
-        org.junit.Assert.assertEquals("0x00", tr.input);
+        org.junit.Assert.assertEquals("0x", tr.input);
         org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
     }
 
@@ -780,6 +780,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(1, bresult.getTransactions().size());
         org.junit.Assert.assertEquals(block1HashString, ((TransactionResultDTO) bresult.getTransactions().get(0)).blockHash);
         org.junit.Assert.assertEquals(0, bresult.getUncles().size());
+        org.junit.Assert.assertEquals("0x0", ((TransactionResultDTO) bresult.getTransactions().get(0)).value);
     }
 
     @Test
