@@ -19,7 +19,6 @@
 package co.rsk;
 
 import co.rsk.config.NodeCliFlags;
-import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.util.RskTestContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,13 +35,6 @@ import static org.powermock.api.mockito.PowerMockito.*;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(RskContext.class)
 public class RskContextTest {
-
-    @Test
-    public void getNodeRunnerSmokeTest() {
-        RskTestContext rskContext = new RskTestContext(new String[0]);
-        assertThat(rskContext.getNodeRunner(), notNullValue());
-    }
-
     @Test
     public void getCliArgsSmokeTest() {
         RskTestContext rskContext = new RskTestContext(new String[] { "--devnet" });
