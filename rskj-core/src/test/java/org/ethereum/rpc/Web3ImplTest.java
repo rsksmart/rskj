@@ -21,7 +21,10 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
-import co.rsk.core.bc.*;
+import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.bc.MiningMainchainViewImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -57,6 +60,7 @@ import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Simples.*;
+import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
@@ -607,19 +611,19 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
-        Web3.BlockResult bresult = web3.eth_getBlockByNumber("0x1", false);
+        BlockResultDTO bresult = web3.eth_getBlockByNumber("0x1", false);
 
         Assert.assertNotNull(bresult);
 
         String blockHash = "0x" + block1b.getHash();
-        org.junit.Assert.assertEquals(blockHash, bresult.hash);
+        org.junit.Assert.assertEquals(blockHash, bresult.getHash());
 
         bresult = web3.eth_getBlockByNumber("0x2", true);
 
         Assert.assertNotNull(bresult);
 
         blockHash = "0x" + block2b.getHash();
-        org.junit.Assert.assertEquals(blockHash, bresult.hash);
+        org.junit.Assert.assertEquals(blockHash, bresult.getHash());
     }
 
     @Test
@@ -643,11 +647,14 @@ public class Web3ImplTest {
 
         Web3.BlockInformationResult[] bresult = web3.eth_getBlocksByNumber("0x1");
 
+        String hashBlock1String = block1.getHashJsonString();
+        String hashBlock1bString = block1b.getHashJsonString();
+
         Assert.assertNotNull(bresult);
 
         org.junit.Assert.assertEquals(2, bresult.length);
-        org.junit.Assert.assertEquals(block1.getHashJsonString(), bresult[0].hash);
-        org.junit.Assert.assertEquals(block1b.getHashJsonString(), bresult[1].hash);
+        org.junit.Assert.assertEquals(hashBlock1String, bresult[0].hash);
+        org.junit.Assert.assertEquals(hashBlock1bString, bresult[1].hash);
     }
 
     @Test
@@ -663,11 +670,11 @@ public class Web3ImplTest {
         block1.setBitcoinMergedMiningHeader(new byte[] { 0x01 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByNumber("latest", false);
+        BlockResultDTO blockResult = web3.eth_getBlockByNumber("latest", false);
 
         Assert.assertNotNull(blockResult);
         String blockHash = TypeConverter.toJsonHex(block1.getHash().toString());
-        org.junit.Assert.assertEquals(blockHash, blockResult.hash);
+        org.junit.Assert.assertEquals(blockHash, blockResult.getHash());
     }
 
     @Test
@@ -682,11 +689,12 @@ public class Web3ImplTest {
                                         world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByNumber("earliest", false);
+        BlockResultDTO blockResult = web3.eth_getBlockByNumber("earliest", false);
 
         Assert.assertNotNull(blockResult);
+
         String blockHash = genesis.getHashJsonString();
-        org.junit.Assert.assertEquals(blockHash, blockResult.hash);
+        org.junit.Assert.assertEquals(blockHash, blockResult.getHash());
     }
 
     @Test
@@ -695,7 +703,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByNumber("0x1234", false);
+        BlockResultDTO blockResult = web3.eth_getBlockByNumber("0x1234", false);
 
         Assert.assertNull(blockResult);
     }
@@ -724,23 +732,23 @@ public class Web3ImplTest {
         String block1bHashString = "0x" + block1b.getHash();
         String block2bHashString = "0x" + block2b.getHash();
 
-        Web3.BlockResult bresult = web3.eth_getBlockByHash(block1HashString, false);
+        BlockResultDTO bresult = web3.eth_getBlockByHash(block1HashString, false);
 
         Assert.assertNotNull(bresult);
-        org.junit.Assert.assertEquals(block1HashString, bresult.hash);
-        org.junit.Assert.assertEquals("0x00", bresult.extraData);
-        org.junit.Assert.assertEquals(0, bresult.transactions.length);
-        org.junit.Assert.assertEquals(0, bresult.uncles.length);
+        org.junit.Assert.assertEquals(block1HashString, bresult.getHash());
+        org.junit.Assert.assertEquals("0x00", bresult.getExtraData());
+        org.junit.Assert.assertEquals(0, bresult.getTransactions().size());
+        org.junit.Assert.assertEquals(0, bresult.getUncles().size());
 
         bresult = web3.eth_getBlockByHash(block1bHashString, true);
 
         Assert.assertNotNull(bresult);
-        org.junit.Assert.assertEquals(block1bHashString, bresult.hash);
+        org.junit.Assert.assertEquals(block1bHashString, bresult.getHash());
 
         bresult = web3.eth_getBlockByHash(block2bHashString, true);
 
         Assert.assertNotNull(bresult);
-        org.junit.Assert.assertEquals(block2bHashString, bresult.hash);
+        org.junit.Assert.assertEquals(block2bHashString, bresult.getHash());
     }
 
     @Test
@@ -763,13 +771,13 @@ public class Web3ImplTest {
 
         String block1HashString = block1.getHashJsonString();
 
-        Web3.BlockResult bresult = web3.eth_getBlockByHash(block1HashString, true);
+        BlockResultDTO bresult = web3.eth_getBlockByHash(block1HashString, true);
 
         Assert.assertNotNull(bresult);
-        org.junit.Assert.assertEquals(block1HashString, bresult.hash);
-        org.junit.Assert.assertEquals(1, bresult.transactions.length);
-        org.junit.Assert.assertEquals(block1HashString, ((TransactionResultDTO) bresult.transactions[0]).blockHash);
-        org.junit.Assert.assertEquals(0, bresult.uncles.length);
+        org.junit.Assert.assertEquals(block1HashString, bresult.getHash());
+        org.junit.Assert.assertEquals(1, bresult.getTransactions().size());
+        org.junit.Assert.assertEquals(block1HashString, ((TransactionResultDTO) bresult.getTransactions().get(0)).blockHash);
+        org.junit.Assert.assertEquals(0, bresult.getUncles().size());
     }
 
     @Test
@@ -792,13 +800,13 @@ public class Web3ImplTest {
 
         String block1HashString = block1.getHashJsonString();
 
-        Web3.BlockResult bresult = web3.eth_getBlockByHash(block1HashString, false);
+        BlockResultDTO bresult = web3.eth_getBlockByHash(block1HashString, false);
 
         Assert.assertNotNull(bresult);
-        org.junit.Assert.assertEquals(block1HashString, bresult.hash);
-        org.junit.Assert.assertEquals(1, bresult.transactions.length);
-        org.junit.Assert.assertEquals(tx.getHash().toJsonString(), bresult.transactions[0]);
-        org.junit.Assert.assertEquals(0, bresult.uncles.length );
+        org.junit.Assert.assertEquals(block1HashString, bresult.getHash());
+        org.junit.Assert.assertEquals(1, bresult.getTransactions().size());
+        org.junit.Assert.assertEquals(tx.getHash().toJsonString(), bresult.getTransactions().get(0));
+        org.junit.Assert.assertEquals(0, bresult.getUncles().size());
     }
 
     @Test
@@ -807,7 +815,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByHash("0x1234000000000000000000000000000000000000000000000000000000000000", false);
+        BlockResultDTO blockResult = web3.eth_getBlockByHash("0x1234000000000000000000000000000000000000000000000000000000000000", false);
 
         Assert.assertNull(blockResult);
     }
