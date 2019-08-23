@@ -94,11 +94,6 @@ public class SimpleBlockProcessor implements BlockProcessor {
         return null;
     }
 
-    @Override
-    public Blockchain getBlockchain() {
-        return null;
-    }
-
     public List<Block> getBlocks() {
         return this.blocks;
     }

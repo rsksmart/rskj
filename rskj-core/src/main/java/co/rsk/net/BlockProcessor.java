@@ -21,7 +21,6 @@ package co.rsk.net;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
 
 import java.util.List;
 
@@ -34,8 +33,6 @@ public interface BlockProcessor {
     void processGetBlock(MessageChannel sender, byte[] hash);
 
     BlockNodeInformation getNodeInformation();
-
-    Blockchain getBlockchain();
 
     long getLastKnownBlockNumber();
 
