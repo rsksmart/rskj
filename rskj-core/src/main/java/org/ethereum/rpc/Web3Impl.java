@@ -296,7 +296,8 @@ public class Web3Impl implements Web3 {
     public String eth_coinbase() {
         String s = null;
         try {
-            return s = toJsonHex(minerServer.getCoinbaseAddress().getBytes());
+            s = minerServer.getCoinbaseAddress().toJsonString();
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_coinbase(): {}", s);
@@ -421,7 +422,8 @@ public class Web3Impl implements Web3 {
             DataWord storageValue = accountInformationProvider.
                     getStorageValue(addr, DataWord.valueOf(stringHexToByteArray(storageIdx)));
             if (storageValue != null) {
-                return s = TypeConverter.toJsonHex(storageValue.getData());
+                s = toUnformattedJsonHex(storageValue.getData());
+                return s;
             } else {
                 return null;
             }
@@ -536,8 +538,8 @@ public class Web3Impl implements Web3 {
 
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
         BlockInformationResult bir = new BlockInformationResult();
-        bir.hash = TypeConverter.toJsonHex(blockInformation.getHash());
-        bir.totalDifficulty = TypeConverter.toQuantityJsonHex(blockInformation.getTotalDifficulty().asBigInteger());
+        bir.hash = toUnformattedJsonHex(blockInformation.getHash());
+        bir.totalDifficulty = toQuantityJsonHex(blockInformation.getTotalDifficulty().asBigInteger());
         bir.inMainChain = blockInformation.isInMainChain();
 
         return bir;
