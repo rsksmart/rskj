@@ -28,7 +28,6 @@ import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 
 import javax.annotation.Nonnull;
@@ -318,7 +317,7 @@ public class Block {
     }
 
     public String getHashJsonString() {
-        return TypeConverter.toJsonHex(getHash().getBytes());
+        return getHash().toJsonString();
     }
 
     public String getParentHashJsonString() {

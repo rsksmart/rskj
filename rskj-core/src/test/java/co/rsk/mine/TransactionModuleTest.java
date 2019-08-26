@@ -262,8 +262,8 @@ public class TransactionModuleTest {
         args.from = TypeConverter.toJsonHex(addr1.getBytes());
         args.to = addr2;
         args.data = data;
-        args.gas = TypeConverter.toJsonHex(gasLimit);
-        args.gasPrice = TypeConverter.toJsonHex(gasPrice);
+        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
+        args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
         args.value = value.toString();
         args.nonce = repository.getAccountState(addr1).getNonce().toString();
 

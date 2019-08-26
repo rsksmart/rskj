@@ -56,7 +56,7 @@ public class DebugModuleImpl implements DebugModule {
     @Override
     public String wireProtocolQueueSize() {
         long n = messageHandler.getMessageQueueSize();
-        return TypeConverter.toJsonHex(n);
+        return TypeConverter.toQuantityJsonHex(n);
     }
 
     @Override

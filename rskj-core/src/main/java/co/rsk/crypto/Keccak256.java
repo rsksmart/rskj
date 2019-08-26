@@ -48,7 +48,7 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
     }
 
     public String toJsonString() {
-        return TypeConverter.toJsonHex(this.bytes);
+        return TypeConverter.toUnformattedJsonHex(this.bytes);
     }
 
     public String toHexString() {

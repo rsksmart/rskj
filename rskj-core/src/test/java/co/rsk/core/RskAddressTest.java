@@ -53,6 +53,19 @@ public class RskAddressTest {
         Assert.assertArrayEquals(RskAddress.nullAddress().getBytes(), new byte[0]);
     }
 
+    @Test
+    public void jsonString_nullAddress() {
+        Assert.assertNull(RskAddress.nullAddress().toJsonString());
+    }
+
+    @Test
+    public void jsonString_otherAddress() {
+        String address = "0x0000000000000000000000000000000000000001";
+        RskAddress rskAddress = new RskAddress(address);
+
+        Assert.assertEquals(address, rskAddress.toJsonString());
+    }
+
     @Test(expected = RuntimeException.class)
     public void invalidLongAddress() {
         new RskAddress("00000000000000000000000000000000010000060");
@@ -92,5 +105,4 @@ public class RskAddressTest {
     public void invalidLongAddressBytes() {
         new RskAddress(new byte[21]);
     }
-
 }

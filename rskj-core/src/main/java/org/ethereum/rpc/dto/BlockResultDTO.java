@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
 public class BlockResultDTO {
     private final String number; // QUANTITY - the block number. null when its pending block.
@@ -83,32 +82,32 @@ public class BlockResultDTO {
             byte[] bitcoinMergedMiningCoinbaseTransaction,
             byte[] bitcoinMergedMiningMerkleProof,
             byte[] hashForMergedMining) {
-        this.number = number != null ? TypeConverter.toJsonHex(number) : null;
-        this.hash = hash != null ? TypeConverter.toJsonHex(hash.getBytes()) : null;
-        this.parentHash = TypeConverter.toJsonHex(parentHash.getBytes());
-        this.sha3Uncles = TypeConverter.toJsonHex(sha3Uncles);
-        this.logsBloom = logsBloom != null ? TypeConverter.toJsonHex(logsBloom) : null;
-        this.transactionsRoot = TypeConverter.toJsonHex(transactionsRoot);
-        this.stateRoot = TypeConverter.toJsonHex(stateRoot);
-        this.receiptsRoot = TypeConverter.toJsonHex(receiptsRoot);
-        this.miner = miner != null ? TypeConverter.toJsonHex(miner.getBytes()) : null;
-        this.difficulty = TypeConverter.toJsonHex(difficulty.getBytes());
+        this.number = number != null ? TypeConverter.toQuantityJsonHex(number) : null;
+        this.hash = hash != null ? hash.toJsonString() : null;
+        this.parentHash = parentHash.toJsonString();
+        this.sha3Uncles = TypeConverter.toUnformattedJsonHex(sha3Uncles);
+        this.logsBloom = logsBloom != null ? TypeConverter.toUnformattedJsonHex(logsBloom) : null;
+        this.transactionsRoot = TypeConverter.toUnformattedJsonHex(transactionsRoot);
+        this.stateRoot = TypeConverter.toUnformattedJsonHex(stateRoot);
+        this.receiptsRoot = TypeConverter.toUnformattedJsonHex(receiptsRoot);
+        this.miner = miner != null ? TypeConverter.toUnformattedJsonHex(miner.getBytes()) : null;
+        this.difficulty = TypeConverter.toQuantityJsonHex(difficulty.getBytes());
 
-        this.totalDifficulty = TypeConverter.toJsonHex(totalDifficulty.getBytes());
-        this.extraData = TypeConverter.toJsonHex(extraData);
-        this.size = TypeConverter.toJsonHex(size);
-        this.gasLimit = TypeConverter.toJsonHex(gasLimit);
-        this.gasUsed = TypeConverter.toJsonHex(gasUsed);
-        this.timestamp = TypeConverter.toJsonHex(timestamp);
+        this.totalDifficulty = TypeConverter.toQuantityJsonHex(totalDifficulty.getBytes());
+        this.extraData = TypeConverter.toUnformattedJsonHex(extraData);
+        this.size = TypeConverter.toQuantityJsonHex(size);
+        this.gasLimit = TypeConverter.toQuantityJsonHex(gasLimit);
+        this.gasUsed = TypeConverter.toQuantityJsonHex(gasUsed);
+        this.timestamp = TypeConverter.toQuantityJsonHex(timestamp);
 
         this.transactions = Collections.unmodifiableList(transactions);
         this.uncles = Collections.unmodifiableList(uncles);
 
-        this.minimumGasPrice = minimumGasPrice != null ? TypeConverter.toJsonHex(minimumGasPrice.getBytes()) : null;
-        this.bitcoinMergedMiningHeader = TypeConverter.toJsonHex(bitcoinMergedMiningHeader);
-        this.bitcoinMergedMiningCoinbaseTransaction = TypeConverter.toJsonHex(bitcoinMergedMiningCoinbaseTransaction);
-        this.bitcoinMergedMiningMerkleProof = TypeConverter.toJsonHex(bitcoinMergedMiningMerkleProof);
-        this.hashForMergedMining = TypeConverter.toJsonHex(hashForMergedMining);
+        this.minimumGasPrice = minimumGasPrice != null ? TypeConverter.toQuantityJsonHex(minimumGasPrice.getBytes()) : null;
+        this.bitcoinMergedMiningHeader = TypeConverter.toUnformattedJsonHex(bitcoinMergedMiningHeader);
+        this.bitcoinMergedMiningCoinbaseTransaction = TypeConverter.toUnformattedJsonHex(bitcoinMergedMiningCoinbaseTransaction);
+        this.bitcoinMergedMiningMerkleProof = TypeConverter.toUnformattedJsonHex(bitcoinMergedMiningMerkleProof);
+        this.hashForMergedMining = TypeConverter.toUnformattedJsonHex(hashForMergedMining);
     }
 
     public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore) {
@@ -136,7 +135,7 @@ public class BlockResultDTO {
         List<String> uncles = new ArrayList<>();
 
         for (BlockHeader header : b.getUncleList()) {
-            uncles.add(toJsonHex(header.getHash().getBytes()));
+            uncles.add(header.getHash().toJsonString());
         }
 
         return new BlockResultDTO(

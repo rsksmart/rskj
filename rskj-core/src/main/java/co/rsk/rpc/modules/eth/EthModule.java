@@ -145,7 +145,7 @@ public class EthModule
         String s = null;
         try {
             ProgramResult res = callConstant(args, blockchain.getBestBlock());
-            return s = toJsonHex(res.getGasUsed());
+            return s = TypeConverter.toQuantityJsonHex(res.getGasUsed());
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
         }

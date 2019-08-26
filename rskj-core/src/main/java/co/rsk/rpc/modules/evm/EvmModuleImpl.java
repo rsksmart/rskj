@@ -54,7 +54,7 @@ public class EvmModuleImpl implements EvmModule {
     public String evm_snapshot() {
         int snapshotId = snapshotManager.takeSnapshot();
         logger.debug("evm_snapshot(): {}", snapshotId);
-        return toJsonHex(snapshotId);
+        return toQuantityJsonHex(snapshotId);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class EvmModuleImpl implements EvmModule {
     public String evm_increaseTime(String seconds) {
         try {
             long nseconds = stringNumberAsBigInt(seconds).longValue();
-            String result = toJsonHex(minerClock.increaseTime(nseconds));
+            String result = toQuantityJsonHex(minerClock.increaseTime(nseconds));
             logger.debug("evm_increaseTime({}): {}", nseconds, result);
             return result;
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {

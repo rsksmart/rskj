@@ -19,7 +19,6 @@
 package org.ethereum.rpc.dto;
 
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -61,38 +60,28 @@ public class TransactionResultDTO {
         }
 
         blockHash = b != null ? b.getHashJsonString() : null;
-        blockNumber = b != null ? TypeConverter.toJsonHex(b.getNumber()) : null;
-        transactionIndex = index != null ? TypeConverter.toJsonHex(index) : null;
-        from = addressToJsonHex(tx.getSender());
-        to = addressToJsonHex(tx.getReceiveAddress());
-        gas = TypeConverter.toJsonHex(tx.getGasLimit()); // Todo: unclear if it's the gas limit or gas consumed what is asked
+        blockNumber = b != null ? TypeConverter.toQuantityJsonHex(b.getNumber()) : null;
+        transactionIndex = index != null ? TypeConverter.toQuantityJsonHex(index) : null;
 
-        gasPrice = TypeConverter.toJsonHex(tx.getGasPrice().getBytes());
+        from = tx.getSender().toJsonString();
+        to = tx.getReceiveAddress().toJsonString();
+        gas = TypeConverter.toQuantityJsonHex(tx.getGasLimit());
+        
+        gasPrice = TypeConverter.toQuantityJsonHex(tx.getGasPrice().getBytes());
 
         if (Coin.ZERO.equals(tx.getValue())) {
-            value = "0";
+            value = "0x0";
         } else {
-            value = TypeConverter.toJsonHex(tx.getValue().getBytes());
+            value = TypeConverter.toQuantityJsonHex(tx.getValue().getBytes());
         }
 
-        input = TypeConverter.toJsonHex(tx.getData());
+        input = TypeConverter.toUnformattedJsonHex(tx.getData());
 
-        if (tx instanceof RemascTransaction) {
-            // Web3.js requires the address to be valid (20 bytes),
-            // so we have to serialize the Remasc sender as a valid address.
-            from = TypeConverter.toJsonHex(new byte[20]);
-        } else {
+        if (!(tx instanceof RemascTransaction)) {
             ECKey.ECDSASignature signature = tx.getSignature();
             v = String.format("0x%02x", signature.v);
-            r = TypeConverter.toJsonHex(signature.r);
-            s = TypeConverter.toJsonHex(signature.s);
+            r = TypeConverter.toQuantityJsonHex(signature.r);
+            s = TypeConverter.toQuantityJsonHex(signature.s);
         }
-    }
-
-    private String addressToJsonHex(RskAddress address) {
-        if (RskAddress.nullAddress().equals(address)) {
-            return null;
-        }
-        return TypeConverter.toJsonHex(address.getBytes());
     }
 }
