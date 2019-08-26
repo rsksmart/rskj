@@ -181,6 +181,7 @@ public class RskContext implements NodeBootstrapper {
     private EthModuleTransaction ethModuleTransaction;
     private MinerClient minerClient;
     private SyncConfiguration syncConfiguration;
+    private GarbageCollectorConfig garbageCollectorConfig;
     private TransactionGateway transactionGateway;
     private BuildInfo buildInfo;
     private MinerClock minerClock;
@@ -918,6 +919,14 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return syncConfiguration;
+    }
+
+    private GarbageCollectorConfig getGarbageCollectorConfig() {
+        if (garbageCollectorConfig == null) {
+            garbageCollectorConfig = getRskSystemProperties().garbageCollectorConfig();
+        }
+
+        return garbageCollectorConfig;
     }
 
     public Wallet getWallet() {
