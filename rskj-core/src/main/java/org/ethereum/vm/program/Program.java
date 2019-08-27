@@ -733,6 +733,9 @@ public class Program {
         Coin endowment = new Coin(msg.getEndowment().getData());
         Coin senderBalance = track.getBalance(senderAddress);
         if (isNotCovers(senderBalance, endowment)) {
+            // reset return data buffer when call did not create a new call frame
+            // *TODO*: set check to activate only after a certain release
+            returnDataBuffer = null;
             stackPushZero();
             refundGas(msg.getGas().longValue(), "refund gas from message call");
             return;
@@ -769,6 +772,7 @@ public class Program {
             track.commit();
             callResult = true;
             refundGas(GasCost.toGas(msg.getGas().longValue()), "remaining gas from the internal call");
+            returnDataBuffer = null;            
 
             DataWord callerAddress = DataWord.valueOf(senderAddress.getBytes());
             DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
@@ -851,6 +855,7 @@ public class Program {
             // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
             track.commit();
         }
+
 
 
         // 3. APPLY RESULTS: childResult.getHReturn() into out_memory allocated
