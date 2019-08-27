@@ -148,6 +148,10 @@ public class EthModule
         String s = null;
         try {
             ProgramResult res = callConstant(args, blockchain.getBestBlock());
+
+            // gasUsed cannot be greater than the gas passed, which should not
+            // be higher than the block gas limit, so we don't expect any overflow
+            // in these operations unless the user provides a malicius gasLimit value.
             long gasUsed = res.getGasUsed();
             long gasNeeded = gasUsed + res.getDeductedRefund();
 
