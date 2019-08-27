@@ -59,8 +59,12 @@ public class UDPServer {
                     try {
                         UDPServer.this.startUDPServer();
                     } catch (Exception e) {
-                        logger.error("Discovery can't be started. ", e);
-                        throw new PeerDiscoveryException("Discovery can't be started. ", e);
+                        String errorMessage = String.format(
+                                "Discovery can't be started on address '%s' and port '%d' \n" +
+                                "KB Reference: https://kb.rsk.co/?e=22001",
+                                address, port);
+                        logger.error(errorMessage, e);
+                        throw new PeerDiscoveryException(errorMessage, e);
                     }
                 }
             }.start();
