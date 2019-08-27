@@ -98,8 +98,10 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         String s = null;
 
         try {
-            byte[] address = this.wallet.addAccount(passphrase).getBytes();
-            return s = TypeConverter.toJsonHex(address);
+            RskAddress address = this.wallet.addAccount(passphrase);
+            // Unlock immediately with no specified duration
+            unlockAccount(address, passphrase, null);
+            return s = address.toJsonString();
         } finally {
             LOGGER.debug("personal_newAccount(*****): {}", s);
         }
@@ -119,8 +121,9 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     public String importRawKey(String key, String passphrase) {
         String s = null;
         try {
-            byte[] address = this.wallet.addAccountWithPrivateKey(Hex.decode(key), passphrase);
-            return s = TypeConverter.toJsonHex(address);
+            RskAddress address = this.wallet.addAccountWithPrivateKey(Hex.decode(key), passphrase);
+            unlockAccount(address, passphrase, null);
+            return s = address.toJsonString();
         } finally {
             LOGGER.debug("personal_importRawKey(*****): {}", s);
         }
@@ -138,6 +141,10 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
 
     @Override
     public boolean unlockAccount(String address, String passphrase, String duration) {
+        return unlockAccount(new RskAddress(address), passphrase, duration);
+    }
+
+    private boolean unlockAccount(RskAddress addr, String passphrase, String duration) {
         long dur = (long) 1000 * 60 * 30;
         if (duration != null && duration.length() > 0) {
             try {
@@ -147,7 +154,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
             }
         }
 
-        return this.wallet.unlockAccount(new RskAddress(address), passphrase, dur);
+        return this.wallet.unlockAccount(addr, passphrase, dur);
     }
 
     @Override

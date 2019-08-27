@@ -183,12 +183,12 @@ public class Wallet {
         }
     }
 
-    public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes, String passphrase) {
+    public RskAddress addAccountWithPrivateKey(byte[] privateKeyBytes, String passphrase) {
         Account account = new Account(ECKey.fromPrivate(privateKeyBytes));
 
         saveAccount(account, passphrase);
 
-        return account.getAddress().getBytes();
+        return account.getAddress();
     }
 
     private void saveAccount(Account account) {
