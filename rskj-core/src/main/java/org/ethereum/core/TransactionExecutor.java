@@ -522,8 +522,7 @@ public class TransactionExecutor {
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
         result.addDeductedRefund(gasRefund);
 
-        if (program != null) {
-            if (program.getCallWithValuePerformed())
+        if ((program != null) && (program.getCallWithValuePerformed())) {
                 result.markCallWithValuePerformed();
         }
 

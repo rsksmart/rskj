@@ -158,7 +158,8 @@ public class EthModule
             if (res.getCallWithValuePerformed()) {
                 gasNeeded += GasCost.STIPEND_CALL;
             }
-            return s = TypeConverter.toQuantityJsonHex(gasNeeded);
+            s = TypeConverter.toQuantityJsonHex(gasNeeded);
+            return s;
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
         }

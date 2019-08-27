@@ -52,6 +52,14 @@ public class ProgramResult {
     private long deductedRefund =0;
     private boolean callWithValuePerformed;
 
+
+    /*
+     * for testing runs ,
+     * call/create is not executed
+     * but dummy recorded
+     */
+    private List<CallCreate> callCreateList;
+
     public boolean getCallWithValuePerformed() {
         return callWithValuePerformed;
     }
@@ -60,12 +68,6 @@ public class ProgramResult {
         callWithValuePerformed =true;
     }
 
-    /*
-     * for testing runs ,
-     * call/create is not executed
-     * but dummy recorded
-     */
-    private List<CallCreate> callCreateList;
 
     public void clearUsedGas() {
         gasUsed = 0;
