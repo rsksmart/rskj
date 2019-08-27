@@ -24,14 +24,26 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import sun.util.resources.cldr.chr.CalendarData_chr_US;
+
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
+import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_UPPER;
 
 public class Web3ResultHttpResponseHandler extends SimpleChannelInboundHandler<Web3Result> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Web3Result msg) {
+        HttpResponseStatus responseStatus;
+        int web3ResultCode = msg.getCode();
+        if(CUSTOM_SERVER_ERROR_UPPER >= web3ResultCode && web3ResultCode >= CUSTOM_SERVER_ERROR_LOWER) {
+            responseStatus = HttpResponseStatus.OK;
+        } else {
+            responseStatus = HttpResponseStatus.valueOf(DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(msg.getCode()));
+        }
+
         ctx.write(new DefaultFullHttpResponse(
             HttpVersion.HTTP_1_1,
-            HttpResponseStatus.valueOf(DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(msg.getCode())),
+            responseStatus,
             msg.getContent()
         )).addListener(ChannelFutureListener.CLOSE);
     }
