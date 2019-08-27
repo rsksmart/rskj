@@ -21,11 +21,12 @@ package org.ethereum.datasource;
 
 import org.ethereum.db.ByteArrayWrapper;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Set;
 
 public interface KeyValueDataSource extends DataSource {
-
+    @Nullable
     byte[] get(byte[] key);
 
     /**

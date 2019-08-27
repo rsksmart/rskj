@@ -375,7 +375,7 @@ public class TxPoolModuleImplTest {
         Assert.assertTrue(transactionNode.has("from"));
         Assert.assertEquals(transactionNode.get("from").asText(), TypeConverter.toJsonHex(tx.getSender().getBytes()));
         Assert.assertTrue(transactionNode.has("gas"));
-        Assert.assertEquals(transactionNode.get("gas").asText(), TypeConverter.toJsonHex(tx.getGasLimitAsInteger()));
+        Assert.assertEquals(transactionNode.get("gas").asText(), TypeConverter.toQuantityJsonHex(tx.getGasLimitAsInteger()));
         Assert.assertTrue(transactionNode.has("gasPrice"));
         Assert.assertEquals(transactionNode.get("gasPrice").asText(), TypeConverter.toJsonHex(tx.getGasPrice().getBytes()));
         Assert.assertTrue(transactionNode.has("hash"));
@@ -383,7 +383,7 @@ public class TxPoolModuleImplTest {
         Assert.assertTrue(transactionNode.has("input"));
         Assert.assertEquals(transactionNode.get("input").asText(), TypeConverter.toJsonHex(tx.getData()));
         Assert.assertTrue(transactionNode.has("nonce"));
-        Assert.assertEquals(transactionNode.get("nonce").asText(), TypeConverter.toJsonHex(tx.getNonceAsInteger()));
+        Assert.assertEquals(transactionNode.get("nonce").asText(), TypeConverter.toQuantityJsonHex(tx.getNonceAsInteger()));
         Assert.assertTrue(transactionNode.has("to"));
         Assert.assertEquals(transactionNode.get("to").asText(), TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes()));
         Assert.assertTrue(transactionNode.has("transactionIndex"));

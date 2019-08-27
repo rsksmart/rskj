@@ -19,22 +19,30 @@
 package co.rsk.net.simples;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
+import co.rsk.test.World;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockStore;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 5/14/2016.
  */
 public class SimpleNode {
     private MessageHandler handler;
+    private final Blockchain blockchain;
     private NodeID nodeID = new NodeID(HashUtil.randomPeerId());
 
-    public SimpleNode(MessageHandler handler) {
+    public SimpleNode(MessageHandler handler, Blockchain blockchain) {
         this.handler = handler;
+        this.blockchain = blockchain;
     }
 
     public MessageHandler getHandler() {
@@ -47,11 +55,11 @@ public class SimpleNode {
     }
 
     public Block getBestBlock() {
-        return ((NodeMessageHandler)handler).getBlockProcessor().getBlockchain().getBestBlock();
+        return blockchain.getBestBlock();
     }
 
     public BlockDifficulty getTotalDifficulty() {
-        return ((NodeMessageHandler)this.handler).getBlockProcessor().getBlockchain().getTotalDifficulty();
+        return blockchain.getTotalDifficulty();
     }
 
     public void sendStatusTo(SimpleNode peer) {
@@ -77,7 +85,9 @@ public class SimpleNode {
     public NodeID getNodeID() { return nodeID; }
 
     public static SimpleNode createNode() {
-        NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler(new DummyBlockValidationRule());
-        return new SimpleNode(handler);
+        final World world = new World();
+        BlockChainImpl blockChain = world.getBlockChain();
+        NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler(new DummyBlockValidationRule(), blockChain);
+        return new SimpleNode(handler, blockChain);
     }
 }

@@ -123,4 +123,11 @@ public class RskAddress {
     public String toString() {
         return toHexString();
     }
+
+    public String toJsonString() {
+        if (NULL_ADDRESS.equals(this)) {
+            return null;
+        }
+        return TypeConverter.toUnformattedJsonHex(this.getBytes());
+    }
 }

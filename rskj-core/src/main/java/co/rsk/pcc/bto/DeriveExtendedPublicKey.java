@@ -118,7 +118,7 @@ public class DeriveExtendedPublicKey extends NativeMethod {
 
     @Override
     public long getGas(Object[] parsedArguments, byte[] originalData) {
-        return 55_000L;
+        return 107_000L;
     }
 
     private void throwInvalidPath(String path) {

@@ -214,7 +214,8 @@ public class TrieConverterTest {
 
     @Test
     public void getOrchidAccountTrieRootWithCompressedStorageKeys() {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
 
         Repository track = repository.startTracking();
 
@@ -255,7 +256,8 @@ public class TrieConverterTest {
 
     @Test
     public void test1Simple() {
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
 
         Repository track = repository.startTracking();
 

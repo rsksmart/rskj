@@ -21,15 +21,12 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
-import co.rsk.mine.TxBuilder;
-import co.rsk.net.BlockProcessor;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.TransactionGateway;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.rpc.netty.Web3WebSocketServer;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
@@ -52,14 +49,12 @@ public class FullNodeRunner implements NodeRunner {
     private final RskSystemProperties rskSystemProperties;
     private final Web3HttpServer web3HttpServer;
     private final Web3WebSocketServer web3WebSocketServer;
-    private final Repository repository;
     private final Blockchain blockchain;
     private final ChannelManager channelManager;
     private final SyncPool syncPool;
     private final MessageHandler messageHandler;
 
     private final Web3 web3Service;
-    private final BlockProcessor nodeBlockProcessor;
     private final TransactionPool transactionPool;
     private final PeerServer peerServer;
     private final SyncPool.PeerClientFactory peerClientFactory;
@@ -75,12 +70,10 @@ public class FullNodeRunner implements NodeRunner {
             Web3 web3Service,
             Web3HttpServer web3HttpServer,
             Web3WebSocketServer web3WebSocketServer,
-            Repository repository,
             Blockchain blockchain,
             ChannelManager channelManager,
             SyncPool syncPool,
             MessageHandler messageHandler,
-            BlockProcessor nodeBlockProcessor,
             TransactionPool transactionPool,
             PeerServer peerServer,
             SyncPool.PeerClientFactory peerClientFactory,
@@ -94,12 +87,10 @@ public class FullNodeRunner implements NodeRunner {
         this.web3HttpServer = web3HttpServer;
         this.web3Service = web3Service;
         this.web3WebSocketServer = web3WebSocketServer;
-        this.repository = repository;
         this.blockchain = blockchain;
         this.channelManager = channelManager;
         this.syncPool = syncPool;
         this.messageHandler = messageHandler;
-        this.nodeBlockProcessor = nodeBlockProcessor;
         this.transactionPool = transactionPool;
         this.peerServer = peerServer;
         this.peerClientFactory = peerClientFactory;
@@ -134,10 +125,6 @@ public class FullNodeRunner implements NodeRunner {
         if (!"".equals(rskSystemProperties.blocksLoader())) {
             rskSystemProperties.setSyncEnabled(Boolean.FALSE);
             rskSystemProperties.setDiscoveryEnabled(Boolean.FALSE);
-        }
-
-        if (rskSystemProperties.simulateTxs()) {
-            enableSimulateTxs();
         }
 
         startWeb3(rskSystemProperties);
@@ -186,10 +173,6 @@ public class FullNodeRunner implements NodeRunner {
         } else {
             logger.info("RPC WebSocket disabled");
         }
-    }
-
-    private void enableSimulateTxs() {
-        new TxBuilder(rskSystemProperties.getNetworkConstants(), rsk, nodeBlockProcessor, repository).simulateTxs();
     }
 
     private void waitRskSyncDone() throws InterruptedException {

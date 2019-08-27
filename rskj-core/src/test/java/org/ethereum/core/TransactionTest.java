@@ -22,20 +22,24 @@ package org.ethereum.core;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
+import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
@@ -591,10 +595,16 @@ public class TransactionTest {
          */
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
-        MutableRepository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
-        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
-                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true, true),
-                                                                 config, repository);
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
+        Blockchain blockchain = ImportLightTest.createBlockchain(
+                new TestGenesisLoader(
+                        trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        false, true, true
+                ).load(),
+                config, repository, blockStore, trieStore
+        );
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -603,7 +613,7 @@ public class TransactionTest {
         String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"homicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"multipleHomicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"payable\":true,\"type\":\"fallback\"}]";
 
         Transaction tx = createTx(sender, new byte[0], Hex.decode(code), repository);
-        executeTransaction(blockchain, tx, repository);
+        executeTransaction(blockchain, blockStore, tx, repository);
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
 
@@ -629,7 +639,7 @@ public class TransactionTest {
         }
 
         Transaction tx1 = createTx(sender, contractAddress, callData, repository);
-        ProgramResult programResult = executeTransaction(blockchain, tx1, repository).getResult();
+        ProgramResult programResult = executeTransaction(blockchain, blockStore, tx1, repository).getResult();
 
         // suicide of a single account should be counted only once
         Assert.assertEquals(24000, programResult.getFutureRefund());
@@ -663,10 +673,16 @@ public class TransactionTest {
          */
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
-        MutableRepository repository = new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
-        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
-                getClass().getResourceAsStream("/genesis/genesis-light.json"), false, true, true),
-                                                                 config, repository);
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
+        Blockchain blockchain = ImportLightTest.createBlockchain(
+                new TestGenesisLoader(
+                        trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
+                        false, true, true
+                ).load(),
+                config, repository, blockStore, trieStore
+        );
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
@@ -679,18 +695,18 @@ public class TransactionTest {
         String abi2 = "[{\"constant\":false,\"inputs\":[{\"name\":\"invokedAddress\",\"type\":\"address\"}],\"name\":\"doIt\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"externalEvent\",\"type\":\"event\"}]";
 
         Transaction tx1 = createTx(sender, new byte[0], Hex.decode(code1), repository);
-        executeTransaction(blockchain, tx1, repository);
+        executeTransaction(blockchain, blockStore, tx1, repository);
 
         Transaction tx2 = createTx(sender, new byte[0], Hex.decode(code2), repository);
-        executeTransaction(blockchain, tx2, repository);
+        executeTransaction(blockchain, blockStore, tx2, repository);
 
         CallTransaction.Contract contract2 = new CallTransaction.Contract(abi2);
         byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(tx1.getContractAddress().getBytes()));
 
         Transaction tx3 = createTx(sender, tx2.getContractAddress().getBytes(), data, repository);
-        TransactionExecutor executor = executeTransaction(blockchain, tx3, repository);
+        TransactionExecutor executor = executeTransaction(blockchain, blockStore, tx3, repository);
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
-        Assert.assertEquals(false, executor.getResult().getLogInfoList().get(0).isRejected());
+        Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
     }
 
@@ -711,7 +727,11 @@ public class TransactionTest {
         return tx;
     }
 
-    private TransactionExecutor executeTransaction(Blockchain blockchain, Transaction tx, Repository repository) {
+    private TransactionExecutor executeTransaction(
+            Blockchain blockchain,
+            BlockStore blockStore,
+            Transaction tx,
+            Repository repository) {
         Repository track = repository.startTracking();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
@@ -721,7 +741,7 @@ public class TransactionTest {
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
-                blockchain.getBlockStore(),
+                blockStore,
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),

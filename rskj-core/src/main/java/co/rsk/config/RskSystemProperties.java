@@ -29,8 +29,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 
 import javax.annotation.Nullable;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -150,10 +148,6 @@ public class RskSystemProperties extends SystemProperties {
 
     public double minerMinFeesNotifyInDollars() {
         return getDouble("miner.minFeesNotifyInDollars", 0);
-    }
-
-    public boolean simulateTxs() {
-        return getBoolean("simulateTxs.enabled", false);
     }
 
     public boolean waitForSync() {
@@ -321,19 +315,6 @@ public class RskSystemProperties extends SystemProperties {
 
     public int getStatesCacheSize() {
         return configFromFiles.getInt("cache.states.max-elements");
-    }
-
-    public long getDatabaseMigrationMinimumHeight() {
-        return configFromFiles.getLong("database.unitrie-migration.minimum-height");
-    }
-
-    public URL getDatabaseMissingStorageKeysUrl() {
-        String missingKeysUrl = configFromFiles.getString("database.unitrie-migration.missing-keys-url");
-        try {
-            return new URL(missingKeysUrl);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(e);
-        }
     }
 
     public long getVmExecutionStackSize() {

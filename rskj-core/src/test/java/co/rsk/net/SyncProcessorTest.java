@@ -789,11 +789,11 @@ public class SyncProcessorTest {
 
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
-                new RepositoryLocator(blockChainBuilder.getRepository(), stateRootHandler),
+                new RepositoryLocator(blockChainBuilder.getTrieStore(), stateRootHandler),
                 stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
-                        blockchain.getBlockStore(),
+                        blockChainBuilder.getBlockStore(),
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),

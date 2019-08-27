@@ -55,4 +55,9 @@ public class SkeletonRequestMessage extends MessageWithId {
     public long getStartNumber() {
         return this.startNumber;
     }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

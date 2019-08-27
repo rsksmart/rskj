@@ -8,7 +8,9 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.*;
+import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.program.ProgramResult;
 
@@ -20,6 +22,7 @@ import java.math.BigInteger;
 public class ContractRunner {
     private final RepositoryLocator repositoryLocator;
     private final Blockchain blockchain;
+    private final BlockStore blockStore;
     private final TransactionExecutorFactory transactionExecutorFactory;
 
     public final Account sender;
@@ -29,33 +32,35 @@ public class ContractRunner {
     }
 
     public ContractRunner(RskTestFactory factory) {
-        this(factory.getRepositoryLocator(), factory.getBlockchain(), factory.getTransactionExecutorFactory(), factory.getRepository());
+        this(factory.getRepositoryLocator(), factory.getBlockchain(), factory.getBlockStore(), factory.getTransactionExecutorFactory(), factory.getTrieStore());
     }
 
     private ContractRunner(RepositoryLocator repositoryLocator,
                            Blockchain blockchain,
+                           BlockStore blockStore,
                            TransactionExecutorFactory transactionExecutorFactory,
-                           Repository repository) {
+                           TrieStore trieStore) {
         this.blockchain = blockchain;
         this.repositoryLocator = repositoryLocator;
+        this.blockStore = blockStore;
         this.transactionExecutorFactory = transactionExecutorFactory;
 
         // we build a new block with high gas limit because Genesis' is too low
-        Block block = new BlockBuilder(blockchain, null)
-                .repository(repository)
+        Block block = new BlockBuilder(blockchain, null, blockStore)
+                .trieStore(trieStore)
                 .parent(blockchain.getBestBlock())
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .build();
         blockchain.setStatus(block, block.getCumulativeDifficulty());
         // create a test sender account with a large balance for running any contract
-        this.sender = new AccountBuilder(blockchain, repositoryLocator)
+        this.sender = new AccountBuilder(blockchain, blockStore, repositoryLocator)
                 .name("sender")
                 .balance(Coin.valueOf(1_000_000_000_000L))
                 .build();
     }
 
     public RskAddress addContract(String runtimeBytecode) {
-        Account contractAccount = new AccountBuilder(blockchain, repositoryLocator)
+        Account contractAccount = new AccountBuilder(blockchain, blockStore, repositoryLocator)
                         .name(runtimeBytecode)
                         .balance(Coin.valueOf(10))
                         .code(TypeConverter.stringHexToByteArray(runtimeBytecode))

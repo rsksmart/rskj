@@ -52,4 +52,9 @@ public class BlockResponseMessage extends MessageWithId {
 
         return RLP.encodeList(rlpBlock);
     }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

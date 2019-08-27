@@ -23,8 +23,6 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerClock;
 import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,20 +42,19 @@ public class EvmModuleImpl implements EvmModule {
             MinerServer minerServer,
             MinerClient minerClient,
             MinerClock minerClock,
-            Blockchain blockchain,
-            TransactionPool transactionPool) {
+            SnapshotManager snapshotManager) {
         this.minerManager = new MinerManager();
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.minerClock = minerClock;
-        this.snapshotManager = new SnapshotManager(blockchain, transactionPool, minerServer);
+        this.snapshotManager = snapshotManager;
     }
 
     @Override
     public String evm_snapshot() {
         int snapshotId = snapshotManager.takeSnapshot();
         logger.debug("evm_snapshot(): {}", snapshotId);
-        return toJsonHex(snapshotId);
+        return toQuantityJsonHex(snapshotId);
     }
 
     @Override
@@ -100,7 +97,7 @@ public class EvmModuleImpl implements EvmModule {
     public String evm_increaseTime(String seconds) {
         try {
             long nseconds = stringNumberAsBigInt(seconds).longValue();
-            String result = toJsonHex(minerClock.increaseTime(nseconds));
+            String result = toQuantityJsonHex(minerClock.increaseTime(nseconds));
             logger.debug("evm_increaseTime({}): {}", nseconds, result);
             return result;
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {

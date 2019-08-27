@@ -24,15 +24,15 @@ import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.bc.BlockChainFlusher;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -130,9 +130,10 @@ public class TestRunner {
         ValidationStats vStats = new ValidationStats();
 
         Block genesis = build(testCase.getGenesisBlockHeader(), null, null);
-        Repository repository = RepositoryBuilder.build(testCase.getPre());
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        Repository repository = RepositoryBuilder.build(trieStore, testCase.getPre());
 
-        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
@@ -149,22 +150,20 @@ public class TestRunner {
                 new ProgramInvokeFactoryImpl(),
                 null);
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
-        RepositoryLocator repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
+        RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
 
         BlockChainImpl blockchain = new BlockChainImpl(
-                repository,
+                new BlockChainFlusher(false, 1, trieStore, blockStore),
                 blockStore,
                 receiptStore,
                 transactionPool,
                 null,
                 new DummyBlockValidator(),
-                false,
-                1,
                 new BlockExecutor(
                         config.getActivationConfig(),
-                        new RepositoryLocator(repository, stateRootHandler),
+                        new RepositoryLocator(trieStore, stateRootHandler),
                         stateRootHandler,
                         transactionExecutorFactory
                 ),
@@ -677,7 +676,7 @@ public class TestRunner {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
     public Block build(

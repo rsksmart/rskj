@@ -21,6 +21,8 @@ package co.rsk.net.messages;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.mockito.Mockito.*;
+
 public class BlockHashRequestMessageTest {
     @Test
     public void createMessage() {
@@ -31,5 +33,18 @@ public class BlockHashRequestMessageTest {
         Assert.assertEquals(someId, message.getId());
         Assert.assertEquals(someHeight, message.getHeight());
         Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+    }
+
+    @Test
+    public void accept() {
+        long someId = 42;
+        long someHeight = 99;
+        BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
+
+        MessageVisitor visitor = mock(MessageVisitor.class);
+
+        message.accept(visitor);
+
+        verify(visitor, times(1)).apply(message);
     }
 }

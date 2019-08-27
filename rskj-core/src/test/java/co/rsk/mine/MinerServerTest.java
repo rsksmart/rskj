@@ -27,6 +27,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -65,7 +66,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     private final DifficultyCalculator difficultyCalculator;
     private MiningMainchainView blockchain;
-    private Repository repository;
     private RepositoryLocator repositoryLocator;
     private BlockStore blockStore;
     private TransactionPool transactionPool;
@@ -83,17 +83,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
     public void setUp() {
         RskTestFactory factory = new RskTestFactory(config) {
             @Override
-            protected Repository buildRepository() {
-                return Mockito.spy(super.buildRepository());
-            }
-
-            @Override
             protected RepositoryLocator buildRepositoryLocator() {
                 return Mockito.spy(super.buildRepositoryLocator());
             }
         };
         blockchain = factory.getMiningMainchainView();
-        repository = factory.getRepository();
         repositoryLocator = factory.getRepositoryLocator();
         blockStore = factory.getBlockStore();
         transactionPool = factory.getTransactionPool();
@@ -111,6 +105,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(tx1.getHash()).thenReturn(new Keccak256(s1));
         when(tx1.getEncoded()).thenReturn(new byte[32]);
 
+        Repository repository = repositoryLocator.startTrackingAt(blockStore.getBestBlock().getHeader());
         Repository track = mock(Repository.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
         Mockito.doReturn(repository.getTrie()).when(track).getTrie();
@@ -678,15 +673,21 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(block1.getHashForMergedMining()).thenReturn(TestUtils.randomHash().getBytes());
         when(block1.getHash()).thenReturn(TestUtils.randomHash());
         when(block1.getDifficulty()).thenReturn(BlockDifficulty.ZERO);
+        when(block1.getParentHashJsonString()).thenReturn(TestUtils.randomHash().toJsonString());
 
         Block block2 = mock(Block.class);
         when(block2.getFeesPaidToMiner()).thenReturn(new Coin(BigInteger.valueOf(24)));
         when(block2.getHashForMergedMining()).thenReturn(TestUtils.randomHash().getBytes());
         when(block2.getHash()).thenReturn(TestUtils.randomHash());
         when(block2.getDifficulty()).thenReturn(BlockDifficulty.ZERO);
+        when(block2.getParentHashJsonString()).thenReturn(TestUtils.randomHash().toJsonString());
 
         BlockToMineBuilder builder = mock(BlockToMineBuilder.class);
-        when(builder.build(any(), any())).thenReturn(block1).thenReturn(block2);
+        BlockResult blockResult = mock(BlockResult.class);
+        BlockResult blockResult2 = mock(BlockResult.class);
+        when(blockResult.getBlock()).thenReturn(block1);
+        when(blockResult2.getBlock()).thenReturn(block2);
+        when(builder.build(any(), any())).thenReturn(blockResult).thenReturn(blockResult2);
 
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         MinerServer minerServer = new MinerServerImpl(

@@ -474,7 +474,7 @@ public class BridgeSupportTest {
 
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
+            builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
@@ -544,11 +544,11 @@ public class BridgeSupportTest {
         Blockchain blockchain = builder.setTesting(true).build();
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
+            builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = null;
-        org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
+        org.ethereum.db.BlockStore rskBlockStore = builder.getBlockStore();
         Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         tx.sign(new ECKey().getPrivKeyBytes());
 
@@ -678,7 +678,7 @@ public class BridgeSupportTest {
         Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
+            builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
 
@@ -775,7 +775,7 @@ public class BridgeSupportTest {
         Blockchain blockchain = builder.setTesting(true).build();
 
         for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
+            builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         Transaction rskTx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
@@ -4176,7 +4176,7 @@ public class BridgeSupportTest {
         args[3] = new Object[]{};
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
 
-        Assert.assertEquals(13_600 + 10*70, cost);
+        Assert.assertEquals(27_000 + 10 * 315, cost);
     }
 
     @Test
@@ -4208,7 +4208,7 @@ public class BridgeSupportTest {
         args[1] = blockHash.getBytes();
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
 
-        Assert.assertEquals(13_600, cost);
+        Assert.assertEquals(27_000, cost);
     }
 
     @Test
@@ -4238,7 +4238,7 @@ public class BridgeSupportTest {
         args[1] = blockHash.getBytes();
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
 
-        Assert.assertEquals(13_600, cost);
+        Assert.assertEquals(27_000, cost);
     }
 
     @Test
@@ -4272,7 +4272,7 @@ public class BridgeSupportTest {
         args[1] = blockHash.getBytes();
         long cost = bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
 
-        Assert.assertEquals(13_600, cost);
+        Assert.assertEquals(27_000, cost);
     }
 
     @Test
@@ -4487,6 +4487,6 @@ public class BridgeSupportTest {
     }
 
     public static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 }

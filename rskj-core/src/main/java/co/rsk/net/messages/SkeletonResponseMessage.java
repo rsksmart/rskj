@@ -57,4 +57,8 @@ public class SkeletonResponseMessage extends MessageWithId {
         return blockIdentifiers;
     }
 
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

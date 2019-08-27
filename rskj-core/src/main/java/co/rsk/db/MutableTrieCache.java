@@ -193,11 +193,6 @@ public class MutableTrieCache implements MutableTrie {
     }
 
     @Override
-    public void flush() {
-        trie.flush();
-    }
-
-    @Override
     public void rollback() {
         cache.clear();
         deleteRecursiveLog.clear();
@@ -230,17 +225,6 @@ public class MutableTrieCache implements MutableTrie {
         if (!deleteRecursiveLog.isEmpty()) {
             throw new IllegalStateException();
         }
-    }
-
-    @Override
-    public MutableTrie getSnapshotTo(Keccak256 hash) {
-        assertNoCache();
-        return new MutableTrieCache(trie.getSnapshotTo(hash));
-    }
-
-    @Override
-    public boolean hasStore() {
-        return trie.hasStore();
     }
 
     @Override

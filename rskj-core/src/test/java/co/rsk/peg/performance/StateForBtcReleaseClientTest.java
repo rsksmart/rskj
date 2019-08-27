@@ -19,6 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
@@ -59,7 +60,7 @@ public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
         final int minNumInputs = 1;
         final int maxNumInputs = 10;
 
-        return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+        return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             Map<Keccak256, BtcTransaction> txsWaitingForSignatures;
             try {
                 txsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();

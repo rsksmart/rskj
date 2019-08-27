@@ -27,7 +27,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.BlockNodeInformation;
-import co.rsk.net.BlockStore;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
@@ -36,8 +35,10 @@ import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -56,6 +57,8 @@ public class World {
     private Map<String, Account> accounts = new HashMap<>();
     private Map<String, Transaction> transactions = new HashMap<>();
     private StateRootHandler stateRootHandler;
+    private BlockStore blockStore;
+    private TrieStore trieStore;
     private Repository repository;
     private TransactionPool transactionPool;
     private BridgeSupportFactory bridgeSupportFactory;
@@ -64,30 +67,34 @@ public class World {
         this(new BlockChainBuilder());
     }
 
-    public World(Repository repository) {
-        this(new BlockChainBuilder().setRepository(repository));
-    }
-
     public World(ReceiptStore receiptStore) {
         this(new BlockChainBuilder().setReceiptStore(receiptStore));
     }
 
     private World(BlockChainBuilder blockChainBuilder) {
-        this(blockChainBuilder.build(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null);
+        this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getTrieStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null);
     }
 
-    public World(BlockChainImpl blockChain, Repository repository, TransactionPool transactionPool, Genesis genesis) {
+    public World(
+            BlockChainImpl blockChain,
+            BlockStore blockStore,
+            TrieStore trieStore,
+            Repository repository,
+            TransactionPool transactionPool,
+            Genesis genesis) {
         this.blockChain = blockChain;
+        this.blockStore = blockStore;
+        this.trieStore = trieStore;
         this.repository = repository;
         this.transactionPool = transactionPool;
 
         if (genesis == null) {
-            genesis = (Genesis) BlockChainImplTest.getGenesisBlock(repository);
+            genesis = (Genesis) BlockChainImplTest.getGenesisBlock(trieStore);
             this.blockChain.setStatus(genesis, genesis.getCumulativeDifficulty());
         }
         this.saveBlock("g00", genesis);
 
-        BlockStore store = new BlockStore();
+        co.rsk.net.BlockStore store = new co.rsk.net.BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
@@ -117,11 +124,11 @@ public class World {
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
                     config.getActivationConfig(),
-                    new RepositoryLocator(this.getRepository(), stateRootHandler),
+                    new RepositoryLocator(getTrieStore(), stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
-                            this.getBlockChain().getBlockStore(),
+                            blockStore,
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,
@@ -170,7 +177,11 @@ public class World {
     }
 
     public RepositoryLocator getRepositoryLocator() {
-        return new RepositoryLocator(getRepository(), getStateRootHandler());
+        return new RepositoryLocator(getTrieStore(), getStateRootHandler());
+    }
+
+    public TrieStore getTrieStore() {
+        return trieStore;
     }
 
     public TransactionPool getTransactionPool() {
@@ -179,5 +190,9 @@ public class World {
 
     public BridgeSupportFactory getBridgeSupportFactory() {
         return bridgeSupportFactory;
+    }
+
+    public BlockStore getBlockStore() {
+        return blockStore;
     }
 }

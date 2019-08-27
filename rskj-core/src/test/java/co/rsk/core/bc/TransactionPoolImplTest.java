@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.Coin;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
@@ -52,8 +53,8 @@ public class TransactionPoolImplTest {
     public void setUp() {
         RskTestContext rskTestContext = new RskTestContext(new String[]{"--regtest"}) {
             @Override
-            protected Genesis buildGenesis() {
-                return GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true, true, true);
+            protected GenesisLoader buildGenesisLoader() {
+                return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
             }
 
             @Override
@@ -62,8 +63,8 @@ public class TransactionPoolImplTest {
             }
         };
         blockChain = rskTestContext.getBlockchain();
-        repository = rskTestContext.getRepository();
         RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
+        repository = repositoryLocator.startTrackingAt(blockChain.getBestBlock().getHeader());
         transactionPool = new TransactionPoolImpl(
                 rskTestContext.getRskSystemProperties(),
                 repositoryLocator,
@@ -406,7 +407,7 @@ public class TransactionPoolImplTest {
         btxs.add(tx3);
 
         Block genesis = blockChain.getBestBlock();
-        Block block = new BlockBuilder(null, null).parent(genesis).transactions(btxs).build();
+        Block block = new BlockBuilder(null, null, null).parent(genesis).transactions(btxs).build();
 
         transactionPool.processBest(block);
 
@@ -439,7 +440,8 @@ public class TransactionPoolImplTest {
         txs.add(tx3);
         txs.add(tx4);
 
-        Block block = new BlockBuilder(null, null).parent(new BlockGenerator().getGenesisBlock()).transactions(txs).build();
+        Block block = new BlockBuilder(null, null,null)
+                .parent(new BlockGenerator().getGenesisBlock()).transactions(txs).build();
 
         transactionPool.retractBlock(block);
 
@@ -631,7 +633,8 @@ public class TransactionPoolImplTest {
 
     @Test
     public void checkTxWithLowGasPriceIsRejected() {
-        Block newBest = new BlockBuilder(null, null).parent(transactionPool.getBestBlock()).minGasPrice(BigInteger.valueOf(100)).build();
+        Block newBest = new BlockBuilder(null, null,null)
+                .parent(transactionPool.getBestBlock()).minGasPrice(BigInteger.valueOf(100)).build();
         transactionPool.processBest(newBest);
 
         Coin balance = Coin.valueOf(1000000);

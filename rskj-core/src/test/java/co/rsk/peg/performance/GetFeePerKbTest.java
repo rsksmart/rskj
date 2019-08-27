@@ -19,6 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
@@ -53,7 +54,7 @@ public class GetFeePerKbTest extends BridgePerformanceTestCase {
     }
 
     private BridgeStorageProviderInitializer buildInitializer(boolean genesis) {
-        return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+        return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             if (!genesis) {
                 provider.setFeePerKb(Helper.randomCoin(Coin.MILLICOIN, 1, 100));
             } else {

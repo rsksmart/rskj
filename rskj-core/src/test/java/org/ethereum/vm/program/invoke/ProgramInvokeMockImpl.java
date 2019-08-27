@@ -62,7 +62,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     public ProgramInvokeMockImpl(byte[] contractCode, RskAddress contractAddress) {
-        this.repository = new MutableRepository(new MutableTrieImpl(new Trie()));
+        this.repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         this.repository.createAccount(ownerAddress);
         //Defaults to defaultContractAddress constant defined in this mock

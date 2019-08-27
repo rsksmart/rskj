@@ -77,7 +77,7 @@ public class BlockChainImpl implements Blockchain {
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final Repository repository;
+    private final BlockChainFlusher flusher;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final TransactionPool transactionPool;
@@ -91,35 +91,26 @@ public class BlockChainImpl implements Blockchain {
     private final Object accessLock = new Object();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private final boolean flushEnabled;
-    private final int flushNumberOfBlocks;
     private final BlockExecutor blockExecutor;
     private boolean noValidation;
 
-    public BlockChainImpl(Repository repository,
+    public BlockChainImpl(BlockChainFlusher flusher,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
                           TransactionPool transactionPool,
                           EthereumListener listener,
                           BlockValidator blockValidator,
-                          boolean flushEnabled,
-                          int flushNumberOfBlocks,
                           BlockExecutor blockExecutor,
                           StateRootHandler stateRootHandler) {
-        this.repository = repository;
+        this.flusher = flusher;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.listener = listener;
         this.blockValidator = blockValidator;
-        this.flushEnabled = flushEnabled;
-        this.flushNumberOfBlocks = flushNumberOfBlocks;
         this.blockExecutor = blockExecutor;
         this.transactionPool = transactionPool;
         this.stateRootHandler = stateRootHandler;
     }
-
-    @Override
-    public BlockStore getBlockStore() { return blockStore; }
 
     @VisibleForTesting
     public void setBlockValidator(BlockValidator validator) {
@@ -294,7 +285,7 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("Start onBlock");
             onBlock(block, result);
             logger.trace("Start flushData");
-            flushData();
+            flusher.flush();
 
             logger.trace("Better block {} {}", block.getNumber(), block.getShortHash());
 
@@ -321,7 +312,7 @@ public class BlockChainImpl implements Blockchain {
             logger.trace("Start onBlock");
             onBlock(block, result);
             logger.trace("Start flushData");
-            flushData();
+            flusher.flush();
 
             if (bestBlock != null && block.getNumber() > bestBlock.getNumber()) {
                 logger.warn("Strange block number state");
@@ -495,24 +486,5 @@ public class BlockChainImpl implements Blockchain {
         boolean validation =  blockValidator.isValid(block);
         profiler.stop(metric);
         return validation;
-    }
-
-    // Rolling counter that helps doing flush every RskSystemProperties.CONFIG.flushNumberOfBlocks() flush attempts
-    // We did this because flush is slow, and doing flush for every block degrades the node performance.
-    private int nFlush = 0;
-
-    private void flushData() {
-        if (flushEnabled && nFlush == 0)  {
-            long saveTime = System.nanoTime();
-            repository.flush();
-            long totalTime = System.nanoTime() - saveTime;
-            logger.trace("repository flush: [{}]nano", totalTime);
-            saveTime = System.nanoTime();
-            blockStore.flush();
-            totalTime = System.nanoTime() - saveTime;
-            logger.trace("blockstore flush: [{}]nano", totalTime);
-        }
-        nFlush++;
-        nFlush = nFlush % flushNumberOfBlocks;
     }
 }

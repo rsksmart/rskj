@@ -101,10 +101,6 @@ public interface Repository extends RepositorySnapshot {
      */
     Coin addBalance(RskAddress addr, Coin value);
 
-    void flush();
-
-    void flushNoReconnect();
-
     /**
      * Store all the temporary changes made
      * to the repository in the actual database

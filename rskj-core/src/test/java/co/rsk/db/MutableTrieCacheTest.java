@@ -21,7 +21,6 @@ package co.rsk.db;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieKeySlice;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TrieKeyMapper;
@@ -67,7 +66,7 @@ public class MutableTrieCacheTest {
 
     @Test
     public void testPuts() {
-        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
 
         // First put some strings in the base
         baseMutableTrie.put("ALICE",toBytes("alice"));
@@ -101,7 +100,7 @@ public class MutableTrieCacheTest {
 
     @Test
     public void testAccountBehavior(){
-        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         // when account is deleted any key in that account is deleted
@@ -124,7 +123,7 @@ public class MutableTrieCacheTest {
 
     @Test
     public void testNestedCaches() {
-        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         // when account is deleted any key in that account is deleted
@@ -179,7 +178,7 @@ public class MutableTrieCacheTest {
     @Test
     public void testStorageKeysMixOneLevel() {
         // SUTs
-        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
         MutableTrieCache otherCache = new MutableTrieCache(mtCache);
 
@@ -235,7 +234,7 @@ public class MutableTrieCacheTest {
     @Test
     public void testStorageKeysNoCache() {
         // SUTs
-        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         // setup
@@ -262,7 +261,7 @@ public class MutableTrieCacheTest {
     @Test
     public void testStorageKeysNoTrie() {
         // SUTs
-        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         // setup
@@ -292,7 +291,7 @@ public class MutableTrieCacheTest {
     @Test
     public void testStorageKeysDeletedAccount() {
         // SUTs
-        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(new Trie());
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         // setup

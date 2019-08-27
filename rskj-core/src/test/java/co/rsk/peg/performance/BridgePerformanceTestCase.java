@@ -19,6 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.BenchmarkedRepository;
@@ -27,6 +28,7 @@ import co.rsk.peg.*;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -124,12 +126,12 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
         }
 
         public static BridgeStorageProviderInitializer buildNoopInitializer() {
-            return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {};
+            return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore btcBlockStore) -> {};
         }
     }
 
     protected interface BridgeStorageProviderInitializer {
-        void initialize(BridgeStorageProvider provider, Repository repository, int executionIndex);
+        void initialize(BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore);
     }
 
     protected interface PostInitCallback {
@@ -182,18 +184,20 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             private Bridge bridge;
             private RepositoryTrackWithBenchmarking benchmarkerTrack;
 
-            private Repository createRepository() {
-                return new MutableRepository(new Trie(new TrieStoreImpl(new HashMapDB())));
+            private TrieStore createTrieStore() {
+                return new TrieStoreImpl(new HashMapDB());
             }
 
             @Override
             public Environment build(int executionIndex, TxBuilder txBuilder, int height) {
-                Repository repository = createRepository();
+                TrieStore trieStore = createTrieStore();
+                Trie trie = new Trie(trieStore);
+                Repository repository = new MutableRepository(trieStore, trie);
                 BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(activationConfig.forBlock((long) executionIndex));
 
-                benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
+                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, trie);
                 BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
-                storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex);
+                storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex, btcBlockStoreFactory.newInstance(repository));
                 try {
                     storageProvider.save();
                 } catch (Exception e) {
@@ -201,7 +205,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 }
                 benchmarkerTrack.commit();
 
-                benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
+                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, trie);
                 List<LogInfo> logs = new ArrayList<>();
 
                 Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
@@ -211,13 +215,14 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
 
                 bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                         bridgeSupportFactory);
-                Blockchain blockchain = new BlockChainBuilder().ofSize(height);
+                BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+                Blockchain blockchain = blockChainBuilder.ofSize(height);
                 Transaction tx = txBuilder.build(executionIndex);
                 bridge.init(
                         tx,
                         blockchain.getBestBlock(),
                         benchmarkerTrack,
-                        blockchain.getBlockStore(),
+                        blockChainBuilder.getBlockStore(),
                         null,
                         logs
                 );

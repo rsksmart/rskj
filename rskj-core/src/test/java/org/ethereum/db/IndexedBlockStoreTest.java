@@ -22,6 +22,8 @@ package org.ethereum.db;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.HashMapBlocksIndex;
+import co.rsk.db.MapDBBlocksIndex;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -31,7 +33,6 @@ import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.util.FileUtil;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mapdb.DB;
@@ -49,8 +50,9 @@ import java.util.*;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 
 public class IndexedBlockStoreTest {
@@ -61,7 +63,7 @@ public class IndexedBlockStoreTest {
     private TestSystemProperties config;
     private BlockFactory blockFactory;
 
-    @Before
+//    @Before
     public void setup() throws URISyntaxException, IOException {
 
         URL scenario1 = ClassLoader
@@ -97,7 +99,7 @@ public class IndexedBlockStoreTest {
     @Test // save some load, and check it exist
     @Ignore
     public void test1(){
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
         for (Block block : blocks){
@@ -203,7 +205,7 @@ public class IndexedBlockStoreTest {
     @Test // save some load, and check it exist
     @Ignore
     public void test2(){
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
         for (Block block : blocks){
@@ -311,7 +313,7 @@ public class IndexedBlockStoreTest {
     @Test
     @Ignore
     public void test3(){
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
 
@@ -419,18 +421,17 @@ public class IndexedBlockStoreTest {
 
     @Test // leveldb + mapdb, save some load, flush to disk, and check it exist
     @Ignore
-    public void test4() throws IOException {
+    public void test4() {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
-        Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
 
         KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, indexMap, blocksDB, indexDB);
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB));
 
         BlockDifficulty cummDiff = BlockDifficulty.ZERO;
         for (Block block : blocks){
@@ -540,12 +541,11 @@ public class IndexedBlockStoreTest {
         // testing after: REOPEN
 
         indexDB = createMapDB(testDir);
-        indexMap = createIndexMap(indexDB);
 
         blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
-        indexedBlockStore = new IndexedBlockStore(blockFactory, indexMap, blocksDB, indexDB);
+        indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB));
 
         //  testing: getListHashesStartWith(long, long)
 
@@ -565,19 +565,18 @@ public class IndexedBlockStoreTest {
 
     @Test // leveldb + mapdb, save part to disk part to cache, and check it exist
     @Ignore
-    public void test5() throws IOException {
+    public void test5() {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
-        Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
 
         KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, indexMap, blocksDB, indexDB);
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB));
 
             BlockDifficulty cummDiff = BlockDifficulty.ZERO;
             int preloadSize = blocks.size() / 2;
@@ -699,12 +698,11 @@ public class IndexedBlockStoreTest {
             // testing after: REOPEN
 
             indexDB = createMapDB(testDir);
-            indexMap = createIndexMap(indexDB);
 
             blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
             blocksDB.init();
 
-            indexedBlockStore = new IndexedBlockStore(blockFactory, indexMap, blocksDB, indexDB);
+            indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB));
 
             //  testing: getListHashesStartWith(long, long)
 
@@ -732,13 +730,12 @@ public class IndexedBlockStoreTest {
         config.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
-        Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
 
         KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, indexMap, blocksDB, indexDB);
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB));
 
             Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(blockFactory, genesis.getHash().getBytes(), 1, 100);
@@ -836,13 +833,12 @@ public class IndexedBlockStoreTest {
         config.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
-        Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
 
         KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, indexMap, blocksDB, indexDB);
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB));
 
             Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(blockFactory, genesis.getHash().getBytes(), 1, 100);
@@ -884,19 +880,18 @@ public class IndexedBlockStoreTest {
 
     @Test // leveldb + mapdb, multi branch, total re-branch test
     @Ignore("Ethereum block format")
-    public void test8() throws IOException {
+    public void test8() {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
-        Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
 
         KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, indexMap, blocksDB, indexDB);
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB));
 
             Block genesis = RskTestFactory.getGenesisInstance(config);
             List<Block> bestLine = getRandomChain(blockFactory, genesis.getHash().getBytes(), 1, 100);
@@ -961,7 +956,7 @@ public class IndexedBlockStoreTest {
     @Test // test index merging during the flush
     @Ignore("Ethereum block format")
     public void test9() {
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
 
         // blocks with the same block number
         Block block1 = blockFactory.decodeBlock(Hex.decode(
@@ -1012,4 +1007,30 @@ public class IndexedBlockStoreTest {
         assertEquals(block2.getCumulativeDifficulty(), indexedBlockStore.getTotalDifficultyForHash(block2.getHash().getBytes()));
     }
 
+    @Test
+    public void rewind() {
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(
+                mock(BlockFactory.class),
+                mock(KeyValueDataSource.class),
+                new HashMapBlocksIndex());
+
+        long blocksToGenerate = 14;
+        for (long i = 0; i < blocksToGenerate; i++) {
+            Block block = mock(Block.class);
+            Keccak256 blockHash = randomHash();
+            when(block.getHash()).thenReturn(blockHash);
+            when(block.getNumber()).thenReturn(i);
+
+            indexedBlockStore.saveBlock(block, ZERO, true);
+        }
+
+        Block bestBlock = indexedBlockStore.getBestBlock();
+        assertThat(bestBlock.getNumber(), is(blocksToGenerate - 1));
+
+        long blockToRewind = blocksToGenerate / 2;
+        indexedBlockStore.rewind(blockToRewind);
+
+        bestBlock = indexedBlockStore.getBestBlock();
+        assertThat(bestBlock.getNumber(), is(blockToRewind));
+    }
 }

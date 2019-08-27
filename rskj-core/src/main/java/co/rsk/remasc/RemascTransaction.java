@@ -25,6 +25,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 
+import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
+
 /**
  * Tx that invokes Remasc's processMinersFees method.
  * @author Oscar Guindzberg
@@ -40,8 +42,13 @@ public class RemascTransaction extends Transaction {
      */
     public static final RskAddress REMASC_ADDRESS = new RskAddress(new byte[20]) {
         @Override
+        public String toJsonString() {
+            return toUnformattedJsonHex(new byte[20]);
+        }
+
+        @Override
         public byte[] getBytes() {
-            return ZERO_BYTE_ARRAY;
+            return new byte[]{0};
         }
     };
 
@@ -75,4 +82,5 @@ public class RemascTransaction extends Transaction {
         // RemascTransaction is not signed and not signature validation should be done
         return true;
     }
+
 }

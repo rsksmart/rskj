@@ -48,10 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -371,10 +368,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public long receiveHeadersGetCost(Object[] args) {
         // Old, private method fixed cost. Only applies before the corresponding RSKIP
         if (!activations.isActive(ConsensusRule.RSKIP124)) {
-            return 22000L;
+            return 22_000L;
         }
 
-        final long BASE_COST = 66_000L;
+        final long BASE_COST = activations.isActive(ConsensusRule.RSKIP132) ? 25_000L : 66_000L;
         if (args == null) {
             return BASE_COST;
         }
@@ -386,7 +383,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
         // Dynamic cost based on the number of headers
         // We add each additional header times 1650 to the base cost
-        return BASE_COST + (numberOfHeaders - 1) * 1650;
+        final long COST_PER_ADDITIONAL_HEADER = activations.isActive(ConsensusRule.RSKIP132) ? 3_500 : 1_650;
+        return BASE_COST + (numberOfHeaders - 1) * COST_PER_ADDITIONAL_HEADER;
     }
 
     public void receiveHeaders(Object[] args)

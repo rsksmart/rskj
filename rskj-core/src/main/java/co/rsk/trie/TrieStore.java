@@ -21,10 +21,9 @@ package co.rsk.trie;
 public interface TrieStore {
     void save(Trie trie);
 
-    void saveValue(Trie trie);
-
     void flush();
 
+    /** Retrieve a trie node with the specified hash from this store */
     Trie retrieve(byte[] hash);
 
     byte[] retrieveValue(byte[] hash);

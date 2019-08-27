@@ -23,7 +23,6 @@ import org.ethereum.crypto.Keccak256Helper;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
-import java.util.Objects;
 import java.util.Optional;
 
 public class NodeReference {
@@ -50,19 +49,6 @@ public class NodeReference {
     }
 
     /**
-     * If the node is not present, this is either an empty reference, or the hash points to a node already in storage.
-     */
-    public void save() {
-        if (lazyNode != null) {
-            if (!isEmbeddable()) {
-                lazyNode.save();
-            } else if (lazyNode.hasLongValue()) {
-                store.saveValue(lazyNode);
-            }
-        }
-    }
-
-    /**
      * The node or empty if this is an empty reference.
      * If the node is not present but its hash is known, it will be retrieved from the store.
      */
@@ -75,10 +61,7 @@ public class NodeReference {
             return Optional.empty();
         }
 
-        lazyNode = Objects.requireNonNull(
-                store.retrieve(lazyHash.getBytes()),
-                "The node with this hash is not present in the trie store"
-        );
+        lazyNode = store.retrieve(lazyHash.getBytes());
         return Optional.of(lazyNode);
     }
 
@@ -155,7 +138,12 @@ public class NodeReference {
      * Do not use.
      */
     public long referenceSize() {
-        return getNode().map(trie -> trie.getTreeSize().value).orElse(0L) + serializedLength();
+        return getNode().map(this::nodeSize).orElse(0L);
+    }
+
+    private long nodeSize(Trie trie) {
+        long externalValueLength = trie.hasLongValue() ? trie.getValueLength().intValue() : 0L;
+        return trie.getChildrenSize().value + externalValueLength + trie.getMessageLength();
     }
 
     public static NodeReference empty() {

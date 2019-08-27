@@ -44,15 +44,15 @@ public class BlockHeaderNotification {
         difficulty = TypeConverter.toJsonHex(block.getDifficulty().getBytes());
         extraData = TypeConverter.toJsonHex(block.getExtraData());
         gasLimit = TypeConverter.toJsonHex(block.getGasLimit());
-        gasUsed = TypeConverter.toJsonHex(block.getGasUsed());
+        gasUsed = TypeConverter.toQuantityJsonHex(block.getGasUsed());
         logsBloom = TypeConverter.toJsonHex(block.getLogBloom());
         miner = TypeConverter.toJsonHex(block.getCoinbase().getBytes());
-        number = TypeConverter.toJsonHex(block.getNumber());
+        number = TypeConverter.toQuantityJsonHex(block.getNumber());
         parentHash = block.getParentHashJsonString();
         receiptsRoot = TypeConverter.toJsonHex(block.getReceiptsRoot());
         sha3Uncles = TypeConverter.toJsonHex(block.getUnclesHash());
         stateRoot = TypeConverter.toJsonHex(block.getStateRoot());
-        timestamp = TypeConverter.toJsonHex(block.getTimestamp());
+        timestamp = TypeConverter.toQuantityJsonHex(block.getTimestamp());
         transactionsRoot = TypeConverter.toJsonHex(block.getTxTrieRoot());
         hash = block.getHashJsonString();
     }

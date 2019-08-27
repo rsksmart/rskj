@@ -50,18 +50,12 @@ public interface MutableTrie {
 
     void save();
 
-    void flush();
-
     void commit();
 
     void rollback();
 
     // TODO(mc) this method is only used from tests
     Set<ByteArrayWrapper> collectKeys(int size);
-
-    MutableTrie getSnapshotTo(Keccak256 hash);
-
-    boolean hasStore();
 
     Trie getTrie();
 

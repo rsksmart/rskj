@@ -26,13 +26,10 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.RLP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -60,12 +57,8 @@ public class Trie {
     private static final int ARITY = 2;
     private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 44;
 
-    private static final Logger logger = LoggerFactory.getLogger("newtrie");
     private static final Profiler profiler = ProfilerFactory.getInstance();
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private static final String PANIC_TOPIC = "newtrie";
     private static final String INVALID_ARITY = "Invalid arity";
-    private static final String ERROR_NON_EXISTENT_TRIE = "Error non existent trie with hash %s";
 
     private static final int MESSAGE_HEADER_LENGTH = 2 + Short.BYTES * 2;
     private static final String INVALID_VALUE_LENGTH = "Invalid value length";
@@ -87,9 +80,6 @@ public class Trie {
     // we need to cache it, otherwise TrieConverter is prohibitively slow.
     private Keccak256 hashOrchid;
 
-    // it is saved to store
-    private boolean saved;
-
     // temporary storage of encoding. Removed after save()
     private byte[] encoded;
 
@@ -108,7 +98,7 @@ public class Trie {
 
     // the size of this node along with its children (in bytes)
     // note that we use a long because an int would allow only up to 4GB of state to be stored.
-    private VarInt treeSize;
+    private VarInt childrenSize;
 
     // associated store, to store or retrieve nodes in the trie
     private TrieStore store;
@@ -135,7 +125,7 @@ public class Trie {
     }
 
     // full constructor
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt treeSize) {
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -143,7 +133,7 @@ public class Trie {
         this.sharedPath = sharedPath;
         this.valueLength = valueLength;
         this.valueHash = valueHash;
-        this.treeSize = treeSize;
+        this.childrenSize = childrenSize;
         checkValueLength();
     }
 
@@ -153,10 +143,6 @@ public class Trie {
      * recognize the old serialization format.
      */
     public static Trie fromMessage(byte[] message, TrieStore store) {
-        if (message == null) {
-            return null;
-        }
-
         Trie trie;
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
         if (message[0] == ARITY) {
@@ -246,13 +232,7 @@ public class Trie {
         }
 
         // it doesn't need to clone value since it's retrieved from store or created from message
-        Trie trie = new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
-
-        if (store != null) {
-            trie.saved = true;
-        }
-
-        return trie;
+        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
     }
 
     private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store) {
@@ -305,9 +285,9 @@ public class Trie {
             }
         }
 
-        VarInt treeSize = new VarInt(0);
+        VarInt childrenSize = new VarInt(0);
         if (leftNodePresent || rightNodePresent) {
-            treeSize = readVarInt(message);
+            childrenSize = readVarInt(message);
         }
 
         byte[] value;
@@ -340,13 +320,7 @@ public class Trie {
             throw new IllegalArgumentException("The message had more data than expected");
         }
 
-        Trie trie = new Trie(store, sharedPath, value, left, right, lvalue, valueHash, treeSize);
-
-        if (store != null) {
-            trie.saved = true;
-        }
-
-        return trie;
+        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize);
     }
 
     /**
@@ -585,42 +559,10 @@ public class Trie {
         return buffer.array();
     }
 
-    /**
-     * sends all data to disk. This applies to the store and all keys saved into the
-     * store, not only to this node.
-     */
-    public void flush() {
-        if (this.store==null) {
-            return;
-        }
-        this.store.flush();
-    }
-
     // This method should only be called DURING save(). It should not be called in other places
     // because it will expand the node encoding in a memory cache that is ONLY removed after save()
     public boolean isEmbeddable() {
         return isTerminal() && getMessageLength() <= MAX_EMBEDDED_NODE_SIZE_IN_BYTES;
-    }
-    /**
-     * save saves the unsaved current trie and subnodes to their associated store
-     *
-     */
-    public void save() {
-        if (this.saved) {
-            return;
-        }
-
-        // Without store, nodes cannot be saved. Abort silently
-        if (this.store == null) {
-            return;
-        }
-
-        this.left.save();
-        this.right.save();
-
-        this.store.save(this);
-        this.saved = true;
-        this.encoded = null;
     }
 
     // key is the key with exactly collectKeyLen bytes.
@@ -714,14 +656,14 @@ public class Trie {
         boolean hasLongVal = this.hasLongValue();
 
         SharedPathSerializer sharedPathSerializer = new SharedPathSerializer(this.sharedPath);
-        VarInt treeSize = getTreeSize();
+        VarInt childrenSize = getChildrenSize();
 
         ByteBuffer buffer = ByteBuffer.allocate(
                 1 + // flags
                         sharedPathSerializer.serializedLength() +
                         this.left.serializedLength() +
                         this.right.serializedLength() +
-                        (this.isTerminal() ? 0 : treeSize.getSizeInBytes()) +
+                        (this.isTerminal() ? 0 : childrenSize.getSizeInBytes()) +
                         (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue())
         );
 
@@ -760,7 +702,7 @@ public class Trie {
         this.right.serializeInto(buffer);
 
         if (!this.isTerminal()) {
-            buffer.put(treeSize.encode());
+            buffer.put(childrenSize.encode());
         }
 
         if (hasLongVal) {
@@ -781,17 +723,12 @@ public class Trie {
         return implicitByte == 0 ? this.left : this.right;
     }
 
-    private static Trie internalRetrieve(TrieStore store, byte[] root) {
-        Trie newTrie = store.retrieve(root);
+    public NodeReference getLeft() {
+        return left;
+    }
 
-        if (newTrie == null) {
-            String log = String.format(ERROR_NON_EXISTENT_TRIE, Hex.toHexString(root));
-            logger.error(log);
-            panicProcessor.panic(PANIC_TOPIC, log);
-            throw new IllegalArgumentException(log);
-        }
-
-        return newTrie;
+    public NodeReference getRight() {
+        return right;
     }
 
     /**
@@ -960,10 +897,6 @@ public class Trie {
         return new Trie(this.store, commonPath, null, newLeft, newRight, Uint24.ZERO, null);
     }
 
-    public boolean hasStore() {
-        return this.store != null;
-    }
-
     public boolean isTerminal() {
         return this.left.isEmpty() && this.right.isEmpty();
     }
@@ -987,23 +920,6 @@ public class Trie {
         }
 
         return left.isEmpty() && right.isEmpty();
-    }
-
-    public Trie getSnapshotTo(Keccak256 hash) {
-        if (emptyHash.equals(hash)) {
-            return new Trie(this.store);
-        }
-
-        // check if saved to only return this when we know it is in disk storage
-        if (this.saved && getHash().equals(hash)) {
-            return this;
-        }
-
-        return internalRetrieve(this.store, hash.getBytes());
-    }
-
-    public TrieStore getStore() {
-        return this.store;
     }
 
     public boolean hasLongValue() {
@@ -1040,16 +956,16 @@ public class Trie {
      * It shouldn't be called from outside. It's still public for NodeReference call
      *
      */
-    public VarInt getTreeSize() {
-        if (treeSize == null) {
+    public VarInt getChildrenSize() {
+        if (childrenSize == null) {
             if (isTerminal()) {
-                treeSize = new VarInt(0);
+                childrenSize = new VarInt(0);
             } else {
-                treeSize = new VarInt(this.left.referenceSize() + this.right.referenceSize());
+                childrenSize = new VarInt(this.left.referenceSize() + this.right.referenceSize());
             }
         }
 
-        return treeSize;
+        return childrenSize;
     }
 
     private byte[] retrieveLongValue() {
@@ -1117,6 +1033,25 @@ public class Trie {
         }
 
         return new Keccak256(Arrays.copyOfRange(bytes, position, position + keccakSize));
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getHash());
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        }
+
+        Trie otherTrie = (Trie) other;
+        return getHash().equals(otherTrie.getHash());
     }
 
     @Override

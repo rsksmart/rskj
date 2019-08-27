@@ -26,9 +26,11 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
@@ -42,7 +44,7 @@ import java.util.List;
 public class BlockBuilder {
     private final Blockchain blockChain;
     private final BlockGenerator blockGenerator;
-    private Repository repository;
+    private TrieStore trieStore;
     private Block parent;
     private long difficulty;
     private List<Transaction> txs;
@@ -50,11 +52,13 @@ public class BlockBuilder {
     private BigInteger minGasPrice;
     private byte[] gasLimit;
     private final BridgeSupportFactory bridgeSupportFactory;
+    private BlockStore blockStore;
 
-    public BlockBuilder(Blockchain blockChain, BridgeSupportFactory bridgeSupportFactory) {
+    public BlockBuilder(Blockchain blockChain, BridgeSupportFactory bridgeSupportFactory, BlockStore blockStore) {
         this.blockChain = blockChain;
         this.blockGenerator = new BlockGenerator();
         this.bridgeSupportFactory = bridgeSupportFactory;
+        this.blockStore = blockStore;
     }
 
     public BlockBuilder parent(Block parent) {
@@ -91,8 +95,8 @@ public class BlockBuilder {
         return this;
     }
 
-    public BlockBuilder repository(Repository repository) {
-        this.repository = repository;
+    public BlockBuilder trieStore(TrieStore store) {
+        this.trieStore = store;
         return this;
     }
 
@@ -104,11 +108,11 @@ public class BlockBuilder {
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
-                    new RepositoryLocator(repository, stateRootHandler),
+                    new RepositoryLocator(trieStore, stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
-                            blockChain.getBlockStore(),
+                            blockStore,
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl(),

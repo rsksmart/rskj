@@ -21,6 +21,7 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
@@ -41,7 +42,7 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
         int maxCentsBtc = 100;
 
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
+        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             ReleaseRequestQueue queue;
 
             try {

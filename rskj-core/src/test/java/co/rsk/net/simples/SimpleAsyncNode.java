@@ -51,12 +51,15 @@ public class SimpleAsyncNode extends SimpleNode {
     private SyncProcessor syncProcessor;
     private SimpleChannelManager simpleChannelManager;
 
-    public SimpleAsyncNode(MessageHandler handler) {
-        super(handler);
+    public SimpleAsyncNode(MessageHandler handler, Blockchain blockchain) {
+        super(handler, blockchain);
     }
 
-    public SimpleAsyncNode(MessageHandler handler, SyncProcessor syncProcessor, SimpleChannelManager simpleChannelManager) {
-        super(handler);
+    public SimpleAsyncNode(MessageHandler handler,
+                           Blockchain blockchain,
+                           SyncProcessor syncProcessor,
+                           SimpleChannelManager simpleChannelManager) {
+        super(handler, blockchain);
         this.syncProcessor = syncProcessor;
         this.simpleChannelManager = simpleChannelManager;
     }
@@ -130,8 +133,9 @@ public class SimpleAsyncNode extends SimpleNode {
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants())
         );
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
-        return new SimpleAsyncNode(handler, syncProcessor, channelManager);
+        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
+
+        return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }
 
     // TODO(mc) find out why the following two work differently

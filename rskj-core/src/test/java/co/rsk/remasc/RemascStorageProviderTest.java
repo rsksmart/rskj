@@ -120,7 +120,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setSaveRetrieveAndGetRewardBalance() throws IOException {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie()));
+        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -158,7 +158,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setSaveRetrieveAndGetBurnedBalance() throws IOException {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie()));
+        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -196,7 +196,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setSaveRetrieveAndGetBrokenSelectionRule() throws IOException {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie()));
+        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -454,7 +454,7 @@ public class RemascStorageProviderTest {
                 stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
-                        blockchain.getBlockStore(),
+                        builder.getBlockStore(),
                         null,
                         new BlockFactory(config.getActivationConfig()),
                         new ProgramInvokeFactoryImpl(),
@@ -479,6 +479,6 @@ public class RemascStorageProviderTest {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 }

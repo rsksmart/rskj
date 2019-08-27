@@ -42,20 +42,6 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void hasStore() {
-        Trie trie = new Trie(store).put("foo", "bar".getBytes());
-
-        Assert.assertTrue(trie.hasStore());
-    }
-
-    @Test
-    public void hasNoStore() {
-        Trie trie = new Trie(null).put("foo", "bar".getBytes());
-
-        Assert.assertFalse(trie.hasStore());
-    }
-
-    @Test
     public void saveTrieNode() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
@@ -106,7 +92,7 @@ public class TrieStoreImplTest {
     public void saveFullTrie() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
-        trie.save();
+        store.save(trie);
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
         verifyNoMoreInteractions(map);
@@ -116,7 +102,7 @@ public class TrieStoreImplTest {
     public void saveFullTrieWithLongValue() {
         Trie trie = new Trie(store).put("foo", TrieValueTest.makeValue(100));
 
-        trie.save();
+        store.save(trie);
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
         verify(map, times(1)).put(trie.getValueHash().getBytes(), trie.getValue());
@@ -129,7 +115,7 @@ public class TrieStoreImplTest {
                 .put("foo", TrieValueTest.makeValue(100))
                 .put("bar", TrieValueTest.makeValue(200));
 
-        trie.save();
+        store.save(trie);
 
         verify(map, times(trie.trieSize())).put(any(), any());
         verifyNoMoreInteractions(map);
@@ -139,11 +125,11 @@ public class TrieStoreImplTest {
     public void saveFullTrieTwice() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
-        trie.save();
+        store.save(trie);
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
 
-        trie.save();
+        store.save(trie);
 
         verifyNoMoreInteractions(map);
     }
@@ -152,13 +138,13 @@ public class TrieStoreImplTest {
     public void saveFullTrieUpdateAndSaveAgainUsingBinaryTrie() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
-        trie.save();
+        store.save(trie);
 
         verify(map, times(trie.trieSize())).put(any(), any());
 
         trie = trie.put("foo", "bar2".getBytes());
 
-        trie.save();
+        store.save(trie);
 
         verify(map, times(trie.trieSize() + 1)).put(any(), any());
         verifyNoMoreInteractions(map);
@@ -168,21 +154,21 @@ public class TrieStoreImplTest {
     public void saveFullTrieUpdateAndSaveAgain() {
         Trie trie = new Trie(store).put("foo", "bar".getBytes());
 
-        trie.save();
+        store.save(trie);
 
         verify(map, times(trie.trieSize())).put(any(), any());
 
         trie = trie.put("foo", "bar2".getBytes());
 
-        trie.save();
+        store.save(trie);
 
         verify(map, times(trie.trieSize() + 1)).put(any(), any());
         verifyNoMoreInteractions(map);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void retrieveUnknownHash() {
-        Assert.assertNull(store.retrieve(new byte[] { 0x01, 0x02, 0x03, 0x04 }));
+        store.retrieve(new byte[] { 0x01, 0x02, 0x03, 0x04 });
     }
 
     @Test
@@ -191,7 +177,7 @@ public class TrieStoreImplTest {
                 .put("bar", "foo".getBytes())
                 .put("foo", "bar".getBytes());
 
-        trie.save();
+        store.save(trie);
         int size = trie.trieSize();
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
@@ -209,7 +195,7 @@ public class TrieStoreImplTest {
                 .put("baaaaaaaaaaaaaaaaaaaaar", "foooooooooooooooooooooo".getBytes())
                 .put("foooooooooooooooooooooo", "baaaaaaaaaaaaaaaaaaaaar".getBytes());
 
-        trie.save();
+        store.save(trie);
         int size = trie.trieSize();
 
         Trie trie2 = store.retrieve(trie.getHash().getBytes());
@@ -227,7 +213,7 @@ public class TrieStoreImplTest {
                 .put("bar", TrieValueTest.makeValue(100))
                 .put("foo", TrieValueTest.makeValue(200));
 
-        trie.save();
+        store.save(trie);
 
         store.retrieve(trie.getHash().getBytes());
 

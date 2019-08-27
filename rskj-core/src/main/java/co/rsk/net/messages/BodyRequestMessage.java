@@ -37,4 +37,9 @@ public class BodyRequestMessage extends MessageWithId {
         byte[] rlpHash = RLP.encodeElement(this.hash);
         return RLP.encodeList(rlpHash);
     }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

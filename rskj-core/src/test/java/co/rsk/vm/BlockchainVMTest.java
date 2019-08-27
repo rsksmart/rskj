@@ -119,7 +119,7 @@ public class BlockchainVMTest {
         binfo.faucetKey = createFaucetAccount(world);
         binfo.blockchain = world.getBlockChain();
         binfo.repository = world.getRepository();
-        binfo.repositoryLocator = new RepositoryLocator(world.getRepository(), world.getStateRootHandler());
+        binfo.repositoryLocator = new RepositoryLocator(world.getTrieStore(), world.getStateRootHandler());
         return binfo;
     }
 

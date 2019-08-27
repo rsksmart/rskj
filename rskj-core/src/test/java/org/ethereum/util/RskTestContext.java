@@ -19,13 +19,15 @@ package org.ethereum.util;
 
 import co.rsk.RskContext;
 import co.rsk.core.Wallet;
-import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.StateRootHandler;
-import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.*;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
 
 import java.util.HashMap;
 
@@ -45,12 +47,12 @@ public class RskTestContext extends RskContext {
 
     @Override
     protected BlockStore buildBlockStore() {
-        return new IndexedBlockStore(getBlockFactory(), new HashMap<>(), new HashMapDB(), null);
+        return new IndexedBlockStore(getBlockFactory(), new HashMapDB(), new HashMapBlocksIndex());
     }
 
     @Override
-    protected Repository buildRepository() {
-        return new MutableRepository(new MutableTrieImpl(new Trie(new TrieStoreImpl(new HashMapDB()))));
+    protected TrieStore buildTrieStore() {
+        return new TrieStoreImpl(new HashMapDB());
     }
 
     @Override

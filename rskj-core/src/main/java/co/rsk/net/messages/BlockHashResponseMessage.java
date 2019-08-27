@@ -47,4 +47,9 @@ public class BlockHashResponseMessage extends MessageWithId {
     public long getId() { return this.id; }
 
     public byte[] getHash() { return this.hash; }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

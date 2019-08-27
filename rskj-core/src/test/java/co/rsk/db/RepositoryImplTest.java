@@ -23,12 +23,9 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieHashTest;
-import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.TestUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
@@ -330,7 +327,7 @@ public class RepositoryImplTest {
     public void setAndGetStorageValueUsingNewRepositoryForTest() {
         RskAddress accAddress = randomAccountAddress();
 
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie()));
+        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         repository.addStorageRow(accAddress, DataWord.ONE, DataWord.ONE);
 
@@ -415,20 +412,6 @@ public class RepositoryImplTest {
     }
 
     @Test
-    public void flushNoReconnect() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(new Trie(store)));
-
-        RskAddress accAddress = randomAccountAddress();
-        byte[] initialRoot = repository.getRoot();
-
-        repository.createAccount(accAddress);
-        repository.flushNoReconnect();
-
-        Assert.assertTrue(repository.isExist(accAddress));
-    }
-
-    @Test
     public void isContract() {
         Repository repository = createRepository();
         RskAddress rskAddress = TestUtils.randomAddress();
@@ -450,10 +433,10 @@ public class RepositoryImplTest {
     }
 
     private static Repository createRepositoryWithCache() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(new Trie())));
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieImpl(new Trie()));
+        return new MutableRepository(new MutableTrieImpl(null, new Trie()));
     }
 }

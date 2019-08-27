@@ -21,7 +21,10 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
-import co.rsk.core.bc.*;
+import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.bc.MiningMainchainViewImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -57,6 +60,7 @@ import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Simples.*;
+import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
@@ -201,7 +205,7 @@ public class Web3ImplTest {
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
         Block genesis = world.getBlockByName("g00");
 
-        Block block1 = new BlockBuilder(null, null).parent(genesis).build();
+        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
         world.getBlockChain().tryToConnect(block1);
 
         Web3Impl web3 = createWeb3(world);
@@ -224,7 +228,8 @@ public class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(10000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Web3Impl web3 = createWeb3(world, transactionPool, null);
@@ -322,7 +327,8 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         String hashString = tx.getHash().toHexString();
@@ -355,11 +361,14 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).difficulty(3l).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).difficulty(3l).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis)
+        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                         world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis)
                 .difficulty(block1.getDifficulty().asBigInteger().longValue()-1).build();
-        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(2).parent(block1b).build();
+        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                         world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(2).parent(block1b).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
@@ -383,7 +392,8 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         String hashString = tx.getHash().toHexString();
@@ -396,7 +406,7 @@ public class Web3ImplTest {
         String blockHashString = "0x" + block1.getHash();
         org.junit.Assert.assertEquals(blockHashString, tr.blockHash);
 
-        org.junit.Assert.assertEquals("0x00", tr.input);
+        org.junit.Assert.assertEquals("0x", tr.input);
         org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
 
         Assert.assertArrayEquals(new byte[] {tx.getSignature().v}, TypeConverter.stringHexToByteArray(tr.v));
@@ -410,8 +420,9 @@ public class Web3ImplTest {
         World world = new World(receiptStore);
 
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockChain);
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockChain.getBlockStore(), blockFactory, null, transactionExecutorFactory, 10, 100);
+        BlockStore blockStore = world.getBlockStore();
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore );
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, 10, 100);
         transactionPool.processBest(blockChain.getBestBlock());
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
@@ -430,7 +441,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals("0", tr.nonce);
         org.junit.Assert.assertEquals(null, tr.blockHash);
         org.junit.Assert.assertEquals(null, tr.transactionIndex);
-        org.junit.Assert.assertEquals("0x00", tr.input);
+        org.junit.Assert.assertEquals("0x", tr.input);
         org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
     }
 
@@ -447,10 +458,13 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(10).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(10).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(block1.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
-        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(block1.getDifficulty().asBigInteger().longValue()+1).parent(block1b).build();
+        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                         world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(block1.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
+        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                         world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(block1.getDifficulty().asBigInteger().longValue()+1).parent(block1b).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
@@ -473,7 +487,8 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         String hashString = tx.getHash().toHexString();
@@ -494,7 +509,8 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(world);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         String blockHashString = block1.getHash().toString();
@@ -516,7 +532,8 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         String hashString = tx.getHash().toHexString();
@@ -537,7 +554,8 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(world);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockNumberAndIndex("0x1", "0x0");
@@ -557,7 +575,8 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         String accountAddress = Hex.toHexString(acc1.getAddress().getBytes());
@@ -580,28 +599,31 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(world);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(10).parent(genesis).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(2).parent(genesis).build();
+        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                         world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(2).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[]{0x01});
-        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(11).parent(block1b).build();
+        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                         world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(11).parent(block1b).build();
         block2b.setBitcoinMergedMiningHeader(new byte[] { 0x02 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
-        Web3.BlockResult bresult = web3.eth_getBlockByNumber("0x1", false);
+        BlockResultDTO bresult = web3.eth_getBlockByNumber("0x1", false);
 
         Assert.assertNotNull(bresult);
 
         String blockHash = "0x" + block1b.getHash();
-        org.junit.Assert.assertEquals(blockHash, bresult.hash);
+        org.junit.Assert.assertEquals(blockHash, bresult.getHash());
 
         bresult = web3.eth_getBlockByNumber("0x2", true);
 
         Assert.assertNotNull(bresult);
 
         blockHash = "0x" + block2b.getHash();
-        org.junit.Assert.assertEquals(blockHash, bresult.hash);
+        org.junit.Assert.assertEquals(blockHash, bresult.getHash());
     }
 
     @Test
@@ -611,22 +633,28 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(world);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(10).parent(genesis).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(block1.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
+        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                         world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(block1.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[]{0x01});
-        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(2).parent(block1b).build();
+        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                         world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(2).parent(block1b).build();
         block2b.setBitcoinMergedMiningHeader(new byte[] { 0x02 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
         Web3.BlockInformationResult[] bresult = web3.eth_getBlocksByNumber("0x1");
 
+        String hashBlock1String = block1.getHashJsonString();
+        String hashBlock1bString = block1b.getHashJsonString();
+
         Assert.assertNotNull(bresult);
 
         org.junit.Assert.assertEquals(2, bresult.length);
-        org.junit.Assert.assertEquals(block1.getHashJsonString(), bresult[0].hash);
-        org.junit.Assert.assertEquals(block1b.getHashJsonString(), bresult[1].hash);
+        org.junit.Assert.assertEquals(hashBlock1String, bresult[0].hash);
+        org.junit.Assert.assertEquals(hashBlock1bString, bresult[1].hash);
     }
 
     @Test
@@ -637,15 +665,16 @@ public class Web3ImplTest {
 
         Block genesis = world.getBlockChain().getBestBlock();
 
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         block1.setBitcoinMergedMiningHeader(new byte[] { 0x01 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByNumber("latest", false);
+        BlockResultDTO blockResult = web3.eth_getBlockByNumber("latest", false);
 
         Assert.assertNotNull(blockResult);
         String blockHash = TypeConverter.toJsonHex(block1.getHash().toString());
-        org.junit.Assert.assertEquals(blockHash, blockResult.hash);
+        org.junit.Assert.assertEquals(blockHash, blockResult.getHash());
     }
 
     @Test
@@ -656,14 +685,16 @@ public class Web3ImplTest {
 
         Block genesis = world.getBlockChain().getBestBlock();
 
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByNumber("earliest", false);
+        BlockResultDTO blockResult = web3.eth_getBlockByNumber("earliest", false);
 
         Assert.assertNotNull(blockResult);
+
         String blockHash = genesis.getHashJsonString();
-        org.junit.Assert.assertEquals(blockHash, blockResult.hash);
+        org.junit.Assert.assertEquals(blockHash, blockResult.getHash());
     }
 
     @Test
@@ -672,7 +703,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByNumber("0x1234", false);
+        BlockResultDTO blockResult = web3.eth_getBlockByNumber("0x1234", false);
 
         Assert.assertNull(blockResult);
     }
@@ -684,12 +715,15 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(world);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(10).parent(genesis).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
         block1.setBitcoinMergedMiningHeader(new byte[] { 0x01 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(block1.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
+        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                         world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(block1.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[] { 0x01 });
-        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).difficulty(2).parent(block1b).build();
+        Block block2b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                         world.getBlockStore()).trieStore(world.getTrieStore()).difficulty(2).parent(block1b).build();
         block2b.setBitcoinMergedMiningHeader(new byte[] { 0x02 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
@@ -698,23 +732,25 @@ public class Web3ImplTest {
         String block1bHashString = "0x" + block1b.getHash();
         String block2bHashString = "0x" + block2b.getHash();
 
-        Web3.BlockResult bresult = web3.eth_getBlockByHash(block1HashString, false);
+        BlockResultDTO bresult = web3.eth_getBlockByHash(block1HashString, false);
 
         Assert.assertNotNull(bresult);
-        org.junit.Assert.assertEquals(block1HashString, bresult.hash);
-        org.junit.Assert.assertEquals("0x00", bresult.extraData);
-        org.junit.Assert.assertEquals(0, bresult.transactions.length);
-        org.junit.Assert.assertEquals(0, bresult.uncles.length);
+        org.junit.Assert.assertEquals(block1HashString, bresult.getHash());
+        org.junit.Assert.assertEquals("0x", bresult.getExtraData());
+        org.junit.Assert.assertEquals(0, bresult.getTransactions().size());
+        org.junit.Assert.assertEquals(0, bresult.getUncles().size());
+        org.junit.Assert.assertEquals("0xa", bresult.getDifficulty());
+        org.junit.Assert.assertEquals("0xb", bresult.getTotalDifficulty());
 
         bresult = web3.eth_getBlockByHash(block1bHashString, true);
 
         Assert.assertNotNull(bresult);
-        org.junit.Assert.assertEquals(block1bHashString, bresult.hash);
+        org.junit.Assert.assertEquals(block1bHashString, bresult.getHash());
 
         bresult = web3.eth_getBlockByHash(block2bHashString, true);
 
         Assert.assertNotNull(bresult);
-        org.junit.Assert.assertEquals(block2bHashString, bresult.hash);
+        org.junit.Assert.assertEquals(block2bHashString, bresult.getHash());
     }
 
     @Test
@@ -730,19 +766,21 @@ public class Web3ImplTest {
         txs.add(tx);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         block1.setBitcoinMergedMiningHeader(new byte[]{0x01});
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         String block1HashString = block1.getHashJsonString();
 
-        Web3.BlockResult bresult = web3.eth_getBlockByHash(block1HashString, true);
+        BlockResultDTO bresult = web3.eth_getBlockByHash(block1HashString, true);
 
         Assert.assertNotNull(bresult);
-        org.junit.Assert.assertEquals(block1HashString, bresult.hash);
-        org.junit.Assert.assertEquals(1, bresult.transactions.length);
-        org.junit.Assert.assertEquals(block1HashString, ((TransactionResultDTO) bresult.transactions[0]).blockHash);
-        org.junit.Assert.assertEquals(0, bresult.uncles.length);
+        org.junit.Assert.assertEquals(block1HashString, bresult.getHash());
+        org.junit.Assert.assertEquals(1, bresult.getTransactions().size());
+        org.junit.Assert.assertEquals(block1HashString, ((TransactionResultDTO) bresult.getTransactions().get(0)).blockHash);
+        org.junit.Assert.assertEquals(0, bresult.getUncles().size());
+        org.junit.Assert.assertEquals("0x0", ((TransactionResultDTO) bresult.getTransactions().get(0)).value);
     }
 
     @Test
@@ -758,19 +796,20 @@ public class Web3ImplTest {
         txs.add(tx);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         block1.setBitcoinMergedMiningHeader(new byte[] { 0x01 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         String block1HashString = block1.getHashJsonString();
 
-        Web3.BlockResult bresult = web3.eth_getBlockByHash(block1HashString, false);
+        BlockResultDTO bresult = web3.eth_getBlockByHash(block1HashString, false);
 
         Assert.assertNotNull(bresult);
-        org.junit.Assert.assertEquals(block1HashString, bresult.hash);
-        org.junit.Assert.assertEquals(1, bresult.transactions.length);
-        org.junit.Assert.assertEquals(tx.getHash().toJsonString(), bresult.transactions[0]);
-        org.junit.Assert.assertEquals(0, bresult.uncles.length );
+        org.junit.Assert.assertEquals(block1HashString, bresult.getHash());
+        org.junit.Assert.assertEquals(1, bresult.getTransactions().size());
+        org.junit.Assert.assertEquals(tx.getHash().toJsonString(), bresult.getTransactions().get(0));
+        org.junit.Assert.assertEquals(0, bresult.getUncles().size());
     }
 
     @Test
@@ -779,7 +818,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Web3.BlockResult blockResult = web3.eth_getBlockByHash("0x1234000000000000000000000000000000000000000000000000000000000000", false);
+        BlockResultDTO blockResult = web3.eth_getBlockByHash("0x1234000000000000000000000000000000000000000000000000000000000000", false);
 
         Assert.assertNull(blockResult);
     }
@@ -796,8 +835,9 @@ public class Web3ImplTest {
         Block genesis = world.getBlockChain().getBestBlock();
         genesis.setStateRoot(world.getRepository().getRoot());
         genesis.flushRLP();
-        world.getBlockChain().getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).build();
+        world.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
         String accountAddress = Hex.toHexString(acc1.getAddress().getBytes());
@@ -823,7 +863,8 @@ public class Web3ImplTest {
                 .build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         world.getBlockChain().tryToConnect(block1);
 
         Web3Impl web3 = createWeb3Mocked(world);
@@ -865,7 +906,8 @@ public class Web3ImplTest {
                 .build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory()).repository(world.getRepository()).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         world.getBlockChain().tryToConnect(block1);
 
         Web3Impl web3 = createWeb3Mocked(world);
@@ -1087,8 +1129,8 @@ public class Web3ImplTest {
         args.from = addr1;
         args.to = addr2;
         args.data = data;
-        args.gas = TypeConverter.toJsonHex(gasLimit);
-        args.gasPrice= TypeConverter.toJsonHex(gasPrice);
+        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
+        args.gasPrice= TypeConverter.toQuantityJsonHex(gasPrice);
         args.value = value.toString();
         args.nonce = nonce.toString();
 
@@ -1182,8 +1224,9 @@ public class Web3ImplTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockChain);
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockChain.getBlockStore(), blockFactory, null, transactionExecutorFactory, 10, 100);
+        BlockStore blockStore = world.getBlockStore();
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, 10, 100);
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
         // **** Initializes data ******************
@@ -1203,8 +1246,8 @@ public class Web3ImplTest {
         args.from = addr1;
         args.to = addr2;
         args.data = data;
-        args.gas = TypeConverter.toJsonHex(gasLimit);
-        args.gasPrice= TypeConverter.toJsonHex(gasPrice);
+        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
+        args.gasPrice= TypeConverter.toQuantityJsonHex(gasPrice);
         args.value = value.toString();
         args.nonce = nonce.toString();
 
@@ -1239,11 +1282,12 @@ public class Web3ImplTest {
     private Web3Impl createWeb3(SimpleEthereum eth, PeerServer peerServer) {
         wallet = WalletFactory.createWallet();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
-        MiningMainchainView mainchainView = new MiningMainchainViewImpl(blockchain.getBlockStore(), 449);
+        BlockStore blockStore = Web3Mocks.getMockBlockStore();
+        MiningMainchainView mainchainView = new MiningMainchainViewImpl(blockStore, 449);
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), blockchain,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
                 null, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
@@ -1282,27 +1326,31 @@ public class Web3ImplTest {
     }
 
     private Web3Impl createWeb3(Ethereum eth, World world, ReceiptStore receiptStore) {
-        BlockChainImpl blockChain = world.getBlockChain();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockChain);
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockChain.getBlockStore(), blockFactory, null, transactionExecutorFactory, 10, 100);
+        BlockStore blockStore = world.getBlockStore();
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore,
+                                                                  blockFactory, null, transactionExecutorFactory, 10, 100);
         return createWeb3(eth, world, transactionPool, receiptStore);
     }
 
     private Web3Impl createWeb3(Ethereum eth, World world, TransactionPool transactionPool, ReceiptStore receiptStore) {
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
         return createWeb3(
-                eth, world.getBlockChain(), repositoryLocator, transactionPool, world.getBlockChain().getBlockStore(),
+                eth, world.getBlockChain(), repositoryLocator, transactionPool, world.getBlockStore(),
                 null, new SimpleConfigCapabilities(), receiptStore
         );
     }
 
     private Web3Impl createWeb3(World world, BlockProcessor blockProcessor, ReceiptStore receiptStore) {
         BlockChainImpl blockChain = world.getBlockChain();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockChain);
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockChain.getBlockStore(), blockFactory, null, transactionExecutorFactory, 10, 100);
-        RepositoryLocator repositoryLocator = new RepositoryLocator(world.getRepository(), world.getStateRootHandler());
+        BlockStore blockStore = world.getBlockStore();
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(),
+                                                                  blockStore, blockFactory, null, transactionExecutorFactory, 10, 100);
+        RepositoryLocator repositoryLocator = new RepositoryLocator(world.getTrieStore(), world.getStateRootHandler());
         return createWeb3(
-                Web3Mocks.getMockEthereum(), blockChain, repositoryLocator, transactionPool, blockChain.getBlockStore(), blockProcessor,
+                Web3Mocks.getMockEthereum(), blockChain, repositoryLocator, transactionPool,
+                blockStore, blockProcessor,
                 new SimpleConfigCapabilities(), receiptStore
         );
     }
@@ -1324,7 +1372,7 @@ public class Web3ImplTest {
         res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
         when(executor.executeTransaction(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(res);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), blockchain, executor,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
                 new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator,
                 new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool),
@@ -1373,7 +1421,7 @@ public class Web3ImplTest {
         when(systemProperties.customSolcPath()).thenReturn(solc);
         Ethereum eth = mock(Ethereum.class);
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), null,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), null, null,
                 null, new ExecutionBlockRetriever(null, null, null, null), null,
                 new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null, null,
                 new BridgeSupportFactory(
@@ -1436,7 +1484,7 @@ public class Web3ImplTest {
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), blockchain,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
                 null, new ExecutionBlockRetriever(null, null, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
@@ -1478,10 +1526,11 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(0, result.size());
     }
 
-    private TransactionExecutorFactory buildTransactionExecutorFactory(BlockChainImpl blockChain) {
+    private TransactionExecutorFactory buildTransactionExecutorFactory(
+            BlockStore blockStore) {
         return new TransactionExecutorFactory(
                 config,
-                blockChain.getBlockStore(),
+                blockStore,
                 null,
                 blockFactory,
                 null,

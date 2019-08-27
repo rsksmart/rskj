@@ -3,12 +3,17 @@ package org.ethereum.util;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.datasource.HashMapDB;
 
 /**
  * @deprecated use {@link RskTestContext} instead which builds the same graph of dependencies than the productive code
@@ -37,8 +42,12 @@ public class RskTestFactory extends RskTestContext {
     }
 
     @Override
-    public Genesis buildGenesis() {
-        return new BlockGenerator().getGenesisBlock();
+    protected GenesisLoader buildGenesisLoader() {
+        return () -> {
+            Genesis genesis = new BlockGenerator().getGenesisBlock();
+            getStateRootHandler().register(genesis.getHeader(), new Trie());
+            return genesis;
+        };
     }
 
     @Override
@@ -49,6 +58,7 @@ public class RskTestFactory extends RskTestContext {
     public static Genesis getGenesisInstance(RskSystemProperties config) {
         boolean useRskip92Encoding = config.getActivationConfig().isActive(ConsensusRule.RSKIP92, 0L);
         boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, 0L);
-        return GenesisLoader.loadGenesis(config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, useRskip92Encoding, isRskip126Enabled);
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        return new TestGenesisLoader(trieStore, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, useRskip92Encoding, isRskip126Enabled).load();
     }
 }

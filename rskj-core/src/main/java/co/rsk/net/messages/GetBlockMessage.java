@@ -45,4 +45,9 @@ public class GetBlockMessage extends Message {
     public byte[] getBlockHash() {
         return this.hash;
     }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
+    }
 }

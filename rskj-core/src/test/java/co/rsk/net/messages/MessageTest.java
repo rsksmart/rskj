@@ -80,39 +80,6 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeGetBlockHeaderMessage() {
-        Block block = new BlockGenerator().getBlock(1);
-        GetBlockHeadersMessage message = new GetBlockHeadersMessage(block.getHash().getBytes(), 1);
-
-        byte[] encoded = message.getEncoded();
-
-        Message result = Message.create(blockFactory, encoded);
-
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.GET_BLOCK_HEADERS_MESSAGE, result.getMessageType());
-
-        GetBlockHeadersMessage newmessage = (GetBlockHeadersMessage) result;
-
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
-        Assert.assertEquals(newmessage.getMaxHeaders(), 1);
-
-        message = new GetBlockHeadersMessage(0, block.getHash().getBytes(), 10, 5, true);
-        encoded = message.getEncoded();
-        result = Message.create(blockFactory, encoded);
-
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.GET_BLOCK_HEADERS_MESSAGE, result.getMessageType());
-        newmessage = (GetBlockHeadersMessage) result;
-
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
-        Assert.assertEquals(newmessage.getMaxHeaders(), 10);
-        Assert.assertEquals(newmessage.getSkipBlocks(), 5);
-        Assert.assertTrue(newmessage.isReverse());
-    }
-
-    @Test
     public void encodeDecodeStatusMessage() {
         Block block = new BlockGenerator().getBlock(1);
         Status status = new Status(block.getNumber(), block.getHash().getBytes());

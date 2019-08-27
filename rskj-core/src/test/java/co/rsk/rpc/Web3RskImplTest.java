@@ -44,6 +44,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Mocks;
+import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.Assert;
@@ -52,6 +53,7 @@ import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalLong;
 
 public class Web3RskImplTest {
 
@@ -78,7 +80,7 @@ public class Web3RskImplTest {
         TestSystemProperties config = new TestSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), blockchain,
+                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, null,
                 null, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
                 null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
@@ -152,33 +154,6 @@ public class Web3RskImplTest {
         callArguments.nonce = "0";
 
         Assert.assertEquals(callArguments.toString(), "CallArguments{from='0x1', to='0x2', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0'}");
-    }
-
-    @Test
-    public void web3_BlockResult_toString() {
-        Web3.BlockResult blockResult = new Web3.BlockResult();
-
-        blockResult.number = "number";
-        blockResult.hash = "hash";
-        blockResult.parentHash = "parentHash";
-        blockResult.sha3Uncles = "sha3Uncles";
-        blockResult.logsBloom = "logsBloom";
-        blockResult.transactionsRoot = "transactionsRoot";
-        blockResult.stateRoot = "stateRoot";
-        blockResult.receiptsRoot = "receiptsRoot";
-        blockResult.miner = "miner";
-        blockResult.difficulty = "difficulty";
-        blockResult.totalDifficulty = "totalDifficulty";
-        blockResult.extraData = "extraData";
-        blockResult.size = "size";
-        blockResult.gasLimit = "gasLimit";
-        blockResult.gasUsed = "gasUsed";
-        blockResult.timestamp = "timestamp";
-        blockResult.transactions = new Object[] {"tx1", "tx2"};
-        blockResult.uncles = new String[] {"uncle1", "uncle2"};
-        blockResult.minimumGasPrice = "minimumGasPrice";
-
-        Assert.assertEquals(blockResult.toString(), "BlockResult{number='number', hash='hash', parentHash='parentHash', sha3Uncles='sha3Uncles', logsBloom='logsBloom', transactionsRoot='transactionsRoot', stateRoot='stateRoot', receiptsRoot='receiptsRoot', miner='miner', difficulty='difficulty', totalDifficulty='totalDifficulty', extraData='extraData', size='size', gasLimit='gasLimit', minimumGasPrice='minimumGasPrice', gasUsed='gasUsed', timestamp='timestamp', transactions=[tx1, tx2], uncles=[uncle1, uncle2]}");
     }
 
     @Test

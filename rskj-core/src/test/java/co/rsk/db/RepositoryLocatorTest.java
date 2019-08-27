@@ -20,9 +20,9 @@ package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Repository;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -39,12 +39,10 @@ public class RepositoryLocatorTest {
 
         Trie underlyingTrie = mock(Trie.class);
         when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash());
-        Trie trie = mock(Trie.class);
-        when(trie.getSnapshotTo(stateRoot)).thenReturn(underlyingTrie);
-        Repository repository = mock(Repository.class);
-        when(repository.getTrie()).thenReturn(trie);
+        TrieStore trieStore = mock(TrieStore.class);
+        when(trieStore.retrieve(stateRoot.getBytes())).thenReturn(underlyingTrie);
 
-        RepositoryLocator repositoryLocator = new RepositoryLocator(repository, stateRootHandler);
+        RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
         RepositorySnapshot actualRepository = repositoryLocator.snapshotAt(header);
         assertEquals(underlyingTrie.getHash(), new Keccak256(actualRepository.getRoot()));
     }

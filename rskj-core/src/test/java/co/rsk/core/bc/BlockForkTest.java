@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.db.HashMapBlocksIndex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -31,7 +32,6 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -169,6 +169,6 @@ public class BlockForkTest {
     }
 
     private static BlockStore createBlockStore() {
-        return new IndexedBlockStore(blockFactory, new HashMap<>(), new HashMapDB(), null);
+        return new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
     }
 }

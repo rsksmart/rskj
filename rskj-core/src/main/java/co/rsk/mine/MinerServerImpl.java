@@ -156,8 +156,10 @@ public class MinerServerImpl implements MinerServer {
         synchronized (lock) {
             started = false;
             ethereum.removeListener(blockListener);
-            refreshWorkTimer.cancel();
-            refreshWorkTimer = null;
+            if (refreshWorkTimer != null) {
+                refreshWorkTimer.cancel();
+                refreshWorkTimer = null;
+            }
         }
     }
 
@@ -412,7 +414,7 @@ public class MinerServerImpl implements MinerServer {
         logger.info("Starting block to mine from parent {} {}", newBlockParentHeader.getNumber(), newBlockParentHeader.getHash());
 
         List<BlockHeader> mainchainHeaders = mainchainView.get();
-        final Block newBlock = builder.build(mainchainHeaders, extraData);
+        final Block newBlock = builder.build(mainchainHeaders, extraData).getBlock();
         clock.clearIncreaseTime();
 
         synchronized (lock) {
