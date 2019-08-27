@@ -269,7 +269,10 @@ public class TransactionPoolImpl implements TransactionPool {
 
         if (!senderCanPayPendingTransactionsAndNewTx(tx, currentRepository)) {
             // discard this tx to prevent spam
-            return TransactionPoolAddResult.withError("insufficient funds to pay for pending and new transaction");
+            return TransactionPoolAddResult.withError(
+                    "insufficient funds to pay for base fees for pending and new transaction\n" +
+                            "KB reference: https://kb.rsk.co/?e=260203"
+            );
         }
 
         pendingTransactions.addTransaction(tx);

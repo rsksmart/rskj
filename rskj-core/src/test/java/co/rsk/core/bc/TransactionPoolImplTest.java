@@ -727,7 +727,11 @@ public class TransactionPoolImplTest {
         TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
 
         Assert.assertFalse(result.transactionWasAdded());
-        result.ifTransactionWasNotAdded(msg -> Assert.assertEquals("insufficient funds to pay for pending and new transaction", msg));
+        result.ifTransactionWasNotAdded(msg -> Assert.assertEquals(
+                "insufficient funds to pay for base fees for pending and new transaction\n" +
+                        "KB reference: https://kb.rsk.co/?e=260203",
+                msg
+        ));
 
         Assert.assertEquals(1, transactionPool.getPendingTransactions().size());
         Assert.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
