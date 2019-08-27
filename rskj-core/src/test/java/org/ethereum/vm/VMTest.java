@@ -55,8 +55,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
+import static java.lang.StrictMath.exp;
 import static java.lang.StrictMath.min;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
+import static org.ethereum.util.ByteUtil.toHexString;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -223,8 +225,10 @@ public class VMTest {
         assertTrue(program.getStack().isEmpty());
     }
 
-    @Test
-    public void TestReturnDatBufferDataIsZeroAfterFailedCall() {
+    // This test should throw an exception because we are reading from the RETURNDATABUFFER
+    // in a non-existent position. This results in an error according to EIP 211
+    @Test(expected = RuntimeException.class)
+    public void TestReturnDatBufferDataIsZeroAfterCallToNonExistentContract() {
         invoke = new ProgramInvokeMockImpl(compile( "PUSH1 0x10" +
                 " PUSH1 0x05 " +
                 " ADD" +
@@ -235,33 +239,35 @@ public class VMTest {
                 " RETURN"
         ), null);
         program = getProgram(compile(" PUSH1 0x20" +  // return size is 32 bytes
-                " PUSH1 0x40" +  // on free memory pointer
-                " PUSH1 0x00" +  // no argument
-                " PUSH1 0x00" +  // no argument size
+                " PUSH1 0x40" +       // on free memory pointer
+                " PUSH1 0x00" +       // no argument
+                " PUSH1 0x00" +       // no argument size
                 " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
                 " PUSH4 0x005B8D80" + // with some gas
-                " STATICCALL" +  // call it! result should be 0x15
-                " PUSH1 0x20" +  // now do the same...
+                " STATICCALL" +       // call it! result should be 0x15
+                " PUSH1 0x20" +       // now do the same...
                 " PUSH1 0x40" +
                 " PUSH1 0x00" +
                 " PUSH1 0x00" +
-                " PUSH1 0x00" + // but call a non-existent contract
+                " PUSH1 0x00" +     // but call a non-existent contract
                 " PUSH4 0x005B8D80" +
                 " STATICCALL" +
-                " PUSH1 0x20 " + // now put the 32 bytes
-                " PUSH1 0x00 " + // from the beginning of the return databuffer
-                " PUSH1 0x40" + //  to the 0x40 position on memory
+                " PUSH1 0x20 " +    // now put the 32 bytes
+                " PUSH1 0x00 " +    // from the beginning of the return databuffer
+                " PUSH1 0x40" +     //  to the 0x40 position on memory
                 " RETURNDATACOPY" + // do it!
-                " PUSH1 0x20" +  // and return 32 bytes
-                " PUSH1 0x40" +  // from the 0x40 position on memory
-                " RETURN"  // the return value of the contract should be zero (as last call failed)
+                " PUSH1 0x20" +     // and return 32 bytes
+                " PUSH1 0x40" +     // from the 0x40 position on memory
+                " RETURN"           // the return value of the contract should be zero (as last call failed)
         ));
         vm.steps(program, Long.MAX_VALUE);
-        assertEquals(program.getResult().getHReturn(), new byte[32]);
+        byte[] expected = new byte[32];
+        Arrays.fill(expected, (byte) 0);
+        assertEquals(expected, program.getResult().getHReturn());
     }
 
     @Test
-    public void TestReturnDataBufferSizeIsZeroAfterFailedCall() {
+    public void TestReturnDataBufferSizeIsZeroAfterCallToNonExistent() {
        invoke = new ProgramInvokeMockImpl(compile( "PUSH1 0x10" +
                        " PUSH1 0x05 " +
                        " ADD" +
@@ -285,15 +291,10 @@ public class VMTest {
                " PUSH1 0x00" + // but call a non-existent contract
                " PUSH4 0x005B8D80" +
                " STATICCALL" +
-               " RETURNDATASIZE" + // push the return data size to the stack
-               " PUSH1 0x40" +
-               " MSTORE" +  // and store the value in the 0x40 position
-               " PUSH1 0x20" +
-               " PUSH1 0x40" +
-               " RETURN"  // the return value of the return data size (should be zero)
+               " RETURNDATASIZE" // push the return data size to the stack
        ));
        vm.steps(program, Long.MAX_VALUE);
-       assertEquals(program.getResult().getHReturn(), new byte[32]);
+       assertEquals(0, program.stackPop().intValue());
     }
 
     @Test
