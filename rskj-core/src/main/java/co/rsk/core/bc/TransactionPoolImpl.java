@@ -243,8 +243,16 @@ public class TransactionPoolImpl implements TransactionPool {
             );
         }
 
-        if (!isBumpingGasPriceForSameNonceTx(tx)) {
-            return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
+        Optional<Transaction> unbumpedTx = txFailedToBump(tx);
+        if (unbumpedTx.isPresent()) {
+            return TransactionPoolAddResult.withError(
+                    String.format(
+                            "gas price not enough to bump transaction\n" +
+                                    "not bumped tx hash: %s\n" +
+                                    "KB reference: https://kb.rsk.co/?e=260202",
+                            unbumpedTx.get().getHash().toHexString()
+                    )
+            );
         }
 
         transactionBlocks.put(hash, bnumber);
@@ -276,7 +284,14 @@ public class TransactionPoolImpl implements TransactionPool {
         return TransactionPoolAddResult.ok();
     }
 
-    private boolean isBumpingGasPriceForSameNonceTx(Transaction tx) {
+    /**
+     * determines whether the gasPrice is enough to bump a transaction or not
+     * bumping a tx means sending one with same nonce as a tx already existent
+     * bumped tx will be removed
+     * @param tx the new tx trying to bump another one
+     * @return tx that could not be bumped, empty if no tx is bumped or there is a successful bumping
+     */
+    private Optional<Transaction> txFailedToBump (Transaction tx) {
         Optional<Transaction> oldTxWithNonce = pendingTransactions.getTransactionsWithSender(tx.getSender()).stream()
                 .filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger()))
                 .findFirst();
@@ -289,10 +304,10 @@ public class TransactionPoolImpl implements TransactionPool {
                     .divide(BigInteger.valueOf(100));
 
             if (oldGasPrice.compareTo(tx.getGasPrice()) >= 0 || gasPriceBumped.compareTo(tx.getGasPrice()) > 0) {
-                return false;
+                return oldTxWithNonce;
             }
         }
-        return true;
+        return Optional.empty();
     }
 
     @Override

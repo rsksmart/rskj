@@ -571,7 +571,15 @@ public class TransactionPoolImplTest {
         TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
 
         Assert.assertFalse(result.transactionWasAdded());
-        result.ifTransactionWasNotAdded(msg -> Assert.assertEquals("gas price not enough to bump transaction", msg));
+        result.ifTransactionWasNotAdded(msg -> Assert.assertEquals(
+                String.format(
+                        "gas price not enough to bump transaction\n" +
+                                "not bumped tx hash: %s\n" +
+                                "KB reference: https://kb.rsk.co/?e=260202",
+                        tx.getHash().toHexString()
+                ),
+                msg
+        ));
     }
 
     @Test
