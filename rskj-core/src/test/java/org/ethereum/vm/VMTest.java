@@ -171,7 +171,7 @@ public class VMTest {
                 " RETURN"  // the return value of the contract should be zero (as last call failed)
         ));
         vm.steps(program, Long.MAX_VALUE);
-        assertEquals(program.getResult().getHReturn(), new byte[0]);
+        assertEquals(program.getResult().getHReturn(), new byte[32]);
     }
 
     @Test
@@ -207,7 +207,7 @@ public class VMTest {
                " RETURN"  // the return value of the return data size (should be zero)
        ));
        vm.steps(program, Long.MAX_VALUE);
-       assertEquals(program.getResult().getHReturn(), new byte[0]);
+       assertEquals(program.getResult().getHReturn(), new byte[32]);
     }
 
     @Test(expected = EmptyStackException.class)
