@@ -153,7 +153,7 @@ public class Web3RskImplTest {
         callArguments.data = "data";
         callArguments.nonce = "0";
 
-        Assert.assertEquals(callArguments.toString(), "CallArguments{from='0x1', to='0x2', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0'}");
+        Assert.assertEquals(callArguments.toString(), "CallArguments{from='0x1', to='0x2', gas='21000', gasLimit='null', gasPrice='100', value='1', data='data', nonce='0'}");
     }
 
     @Test

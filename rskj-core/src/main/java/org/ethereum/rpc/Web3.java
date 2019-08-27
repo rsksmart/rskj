@@ -35,7 +35,7 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
         public String from;
         public String to;
         public String gas;
-        public String gasLimit;
+        public String gasLimit; // gasLimit is a non-standard name kept for backwards compatibility
         public String gasPrice;
         public String value;
         public String data; // compiledCode
