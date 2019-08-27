@@ -45,9 +45,8 @@ import java.util.stream.Collectors;
  */
 public class MessageVisitor {
 
-    private static final Logger logger = LoggerFactory.getLogger("messagehandler");
-    private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
-
+    private static final Logger LOGGER = LoggerFactory.getLogger("messagehandler");
+    private static final Logger LOGGERMessageProcess = LoggerFactory.getLogger("messageProcess");
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
     private final TransactionGateway transactionGateway;
@@ -85,33 +84,33 @@ public class MessageVisitor {
     public void apply(BlockMessage message) {
         final Block block = message.getBlock();
 
-        logger.trace("Process block {} {}", block.getNumber(), block.getShortHash());
+        LOGGER.trace("Process block {} {}", block.getNumber(), block.getShortHash());
 
         if (block.isGenesis()) {
-            logger.trace("Skip block processing {} {}", block.getNumber(), block.getShortHash());
+            LOGGER.trace("Skip block processing {} {}", block.getNumber(), block.getShortHash());
             return;
         }
 
         long blockNumber = block.getNumber();
 
         if (this.blockProcessor.isAdvancedBlock(blockNumber)) {
-            logger.trace("Too advanced block {} {}", blockNumber, block.getShortHash());
+            LOGGER.trace("Too advanced block {} {}", blockNumber, block.getShortHash());
             return;
         }
 
         if (!isValidBlock(block)) {
-            logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
+            LOGGER.trace("Invalid block {} {}", blockNumber, block.getShortHash());
             recordEvent(sender, EventType.INVALID_BLOCK);
             return;
         }
 
         if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
-            logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
+            LOGGER.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
             return;
         }
 
         if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())){
-            logger.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getShortHash());
+            LOGGER.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getShortHash());
             return;
         }
 
@@ -122,7 +121,7 @@ public class MessageVisitor {
 
     public void apply(StatusMessage message) {
         final Status status = message.getStatus();
-        logger.trace("Process status {}", status.getBestBlockNumber());
+        LOGGER.trace("Process status {}", status.getBestBlockNumber());
         this.syncProcessor.processStatus(sender, status);
     }
 
@@ -182,7 +181,7 @@ public class MessageVisitor {
 
     public void apply(NewBlockHashesMessage message) {
         if (blockProcessor.hasBetterBlockToSync()) {
-            loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
+            LOGGERMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
             return;
         }
         blockProcessor.processNewBlockHashesMessage(sender, message);
@@ -190,12 +189,12 @@ public class MessageVisitor {
 
     public void apply(TransactionsMessage message) {
         if (blockProcessor.hasBetterBlockToSync()) {
-            loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
+            LOGGERMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
             return;
         }
 
         long start = System.nanoTime();
-        loggerMessageProcess.debug("Tx message about to be process: {}", message.getMessageContentInfo());
+        LOGGERMessageProcess.debug("Tx message about to be process: {}", message.getMessageContentInfo());
 
         List<Transaction> messageTxs = message.getTransactions();
         List<Transaction> txs = new LinkedList<>();
@@ -211,7 +210,7 @@ public class MessageVisitor {
 
         transactionGateway.receiveTransactionsFrom(txs, sender.getPeerNodeID());
 
-        loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
+        LOGGERMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }
 
     private void recordEvent(MessageChannel sender, EventType event) {
@@ -233,7 +232,7 @@ public class MessageVisitor {
         try {
             return blockValidationRule.isValid(block);
         } catch (Exception e) {
-            logger.error("Failed to validate PoW from block {}: {}", block.getShortHash(), e);
+            LOGGER.error("Failed to validate PoW from block {}: {}", block.getShortHash(), e);
             return false;
         }
     }
