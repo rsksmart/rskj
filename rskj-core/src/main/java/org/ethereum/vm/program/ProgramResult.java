@@ -50,6 +50,15 @@ public class ProgramResult {
     private List<LogInfo> logInfoList;
     private long futureRefund = 0;
     private long deductedRefund =0;
+    private boolean callWithValuePerformed;
+
+    public boolean getCallWithValuePerformed() {
+        return callWithValuePerformed;
+    }
+
+    public void markCallWithValuePerformed() {
+        callWithValuePerformed =true;
+    }
 
     /*
      * for testing runs ,

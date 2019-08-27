@@ -37,6 +37,7 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -149,6 +150,10 @@ public class EthModule
             ProgramResult res = callConstant(args, blockchain.getBestBlock());
             long gasUsed = res.getGasUsed();
             long gasNeeded = gasUsed + res.getDeductedRefund();
+
+            if (res.getCallWithValuePerformed()) {
+                gasNeeded += GasCost.STIPEND_CALL;
+            }
             return s = TypeConverter.toQuantityJsonHex(gasNeeded);
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);

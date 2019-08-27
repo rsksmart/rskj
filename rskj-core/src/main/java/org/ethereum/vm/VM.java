@@ -1484,6 +1484,12 @@ public class VM {
 
         PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
 
+        // For gas Exactimation, mark this program execution if it requires
+        // at least one call with value
+        if (!msg.getEndowment().isZero()) {
+            program.markCallWithValuePerformed();
+        }
+
         if (precompiledContract != null) {
             program.callToPrecompiledAddress(msg, precompiledContract);
         } else {

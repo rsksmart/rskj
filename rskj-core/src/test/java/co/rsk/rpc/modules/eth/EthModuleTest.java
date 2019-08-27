@@ -323,6 +323,7 @@ public class EthModuleTest {
         ProgramResult programResult = new ProgramResult();
         programResult.addDeductedRefund(10000);
         programResult.spendGas(30000);
+        programResult.markCallWithValuePerformed();
         doReturn(programResult).when(executor).executeTransaction(any(),any(),
                 any(),any(),any(),any(),any(),any());
 
@@ -347,7 +348,7 @@ public class EthModuleTest {
         Web3.CallArguments args = getTransactionParameters();
         String gas = eth.estimateGas(args);
         byte[] gasReturned = Hex.decode(gas.substring("0x".length()));
-        Assert.assertThat(gasReturned, is(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(40000))));
+        Assert.assertThat(gasReturned, is(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(42300))));
     }
 
     @Test
