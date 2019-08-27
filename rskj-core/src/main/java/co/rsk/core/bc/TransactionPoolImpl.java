@@ -233,7 +233,14 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         if (queuedTransactions.hasTransaction(tx)) {
-            return TransactionPoolAddResult.withError("queued transaction with same hash already exists");
+            return TransactionPoolAddResult.withError(
+                    String.format(
+                            "queued transaction with same hash already exists\n" +
+                                    "tx hash: %s\n" +
+                                    "KB reference: https://kb.rsk.co/?e=260201",
+                            hash.toHexString()
+                    )
+            );
         }
 
         if (!isBumpingGasPriceForSameNonceTx(tx)) {
