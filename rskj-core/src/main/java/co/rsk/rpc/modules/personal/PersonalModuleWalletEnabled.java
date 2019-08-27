@@ -98,8 +98,10 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         String s = null;
 
         try {
-            byte[] address = this.wallet.addAccount(passphrase).getBytes();
-            return s = TypeConverter.toJsonHex(address);
+            RskAddress address = this.wallet.addAccount(passphrase);
+            // Unlock immediately with no specified duration
+            this.unlockAccount(address.toJsonString(), passphrase, null);
+            return s = TypeConverter.toJsonHex(address.getBytes());
         } finally {
             LOGGER.debug("personal_newAccount(*****): {}", s);
         }
