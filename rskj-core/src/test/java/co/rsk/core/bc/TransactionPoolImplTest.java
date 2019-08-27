@@ -491,7 +491,15 @@ public class TransactionPoolImplTest {
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
         Assert.assertFalse(result.transactionWasAdded());
-        result.ifTransactionWasNotAdded(msg -> Assert.assertEquals("pending transaction with same hash already exists", msg));
+        result.ifTransactionWasNotAdded(msg -> Assert.assertEquals(
+                String.format(
+                        "pending transaction with same hash already exists\n" +
+                                "tx hash: %s\n" +
+                                "KB reference: https://kb.rsk.co/?e=260200",
+                        tx.getHash().toHexString()
+                ),
+                msg
+        ));
 
         List<Transaction> transactions = transactionPool.getPendingTransactions();
 

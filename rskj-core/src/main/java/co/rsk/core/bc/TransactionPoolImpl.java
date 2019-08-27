@@ -222,7 +222,14 @@ public class TransactionPoolImpl implements TransactionPool {
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
         if (pendingTransactions.hasTransaction(tx)) {
-            return TransactionPoolAddResult.withError("pending transaction with same hash already exists");
+            return TransactionPoolAddResult.withError(
+                    String.format(
+                            "pending transaction with same hash already exists\n" +
+                                    "tx hash: %s\n" +
+                                    "KB reference: https://kb.rsk.co/?e=260200",
+                            hash.toHexString()
+                    )
+            );
         }
 
         if (queuedTransactions.hasTransaction(tx)) {
