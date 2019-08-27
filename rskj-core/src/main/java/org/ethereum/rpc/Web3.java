@@ -35,6 +35,7 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
         public String from;
         public String to;
         public String gas;
+        public String gasLimit;
         public String gasPrice;
         public String value;
         public String data; // compiledCode
@@ -45,7 +46,8 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
             return "CallArguments{" +
                     "from='" + from + '\'' +
                     ", to='" + to + '\'' +
-                    ", gasLimit='" + gas + '\'' +
+                    ", gas='" + gas + '\'' +
+                    ", gasLimit='" + gasLimit + '\'' +
                     ", gasPrice='" + gasPrice + '\'' +
                     ", value='" + value + '\'' +
                     ", data='" + data + '\'' +
