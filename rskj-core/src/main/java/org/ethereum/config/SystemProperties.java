@@ -171,7 +171,16 @@ public abstract class SystemProperties {
                     );
                     break;
                 default:
-                    throw new RuntimeException(String.format("Unknown network name '%s'", netName()));
+                    String[] networkNames = {"main", "testnet", "devnet", "regtest"};
+
+                    String errorMessage = String.format(
+                            "Unknown network name '%s' \n" +
+                            "Valid network names: %s \n" +
+                            "KB Reference: https://kb.rsk.co/?e=22002",
+                            netName(),
+                            Arrays.toString(networkNames));
+
+                    throw new RuntimeException(errorMessage);
             }
         }
 
