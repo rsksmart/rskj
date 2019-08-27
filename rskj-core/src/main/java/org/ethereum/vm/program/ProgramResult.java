@@ -49,6 +49,7 @@ public class ProgramResult {
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
     private long futureRefund = 0;
+    private long deductedRefund =0;
 
     /*
      * for testing runs ,
@@ -137,6 +138,7 @@ public class ProgramResult {
             codeChanges.clear();
         }
         resetFutureRefund();
+        resetDeductedRefund();
     }
 
 
@@ -224,6 +226,22 @@ public class ProgramResult {
         }
     }
 
+    // This is the actual refunded amount of gas.
+    // It should never be higher than half of the amount of gas consumed.
+    public void addDeductedRefund(long gasValue) {
+        deductedRefund += gasValue;
+    }
+
+    public long getDeductedRefund() {
+        return deductedRefund;
+    }
+
+    public void resetDeductedRefund() {
+        deductedRefund = 0;
+    }
+
+    // This is the maximum possible future Refund. This is NOT the actual amount
+    // deducted, because this value is restricted by half of the consumed gas.
     public void addFutureRefund(long gasValue) {
         futureRefund += gasValue;
     }
@@ -242,6 +260,7 @@ public class ProgramResult {
             addDeleteAccounts(another.getDeleteAccounts());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
+            addDeductedRefund(another.getDeductedRefund());
         }
     }
     

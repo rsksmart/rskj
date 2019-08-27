@@ -518,7 +518,9 @@ public class TransactionExecutor {
 
         // Accumulate refunds for suicides
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
+        // The actual gas subtracted is equal to half of the future refund
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+        result.addDeductedRefund(gasRefund);
         mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                 GasCost.add(mEndGas, gasRefund) :
                 mEndGas + gasRefund;
