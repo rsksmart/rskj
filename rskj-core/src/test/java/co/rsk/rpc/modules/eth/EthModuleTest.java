@@ -19,24 +19,35 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.config.BridgeConstants;
+import co.rsk.core.Coin;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.PendingState;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.Web3Impl;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigInteger;
+import java.util.Collections;
+import java.util.List;
+
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
@@ -109,6 +120,74 @@ public class EthModuleTest {
 
         String addr = eth.getCode(TestUtils.randomAddress().toHexString(), "pending");
         Assert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
+    }
+
+    String anyAddress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+    private Web3.CallArguments getTransactionParameters() {
+        //
+        RskAddress addr1 = new RskAddress(anyAddress);
+        BigInteger value = BigInteger.valueOf(0); // do not pass value
+        BigInteger gasPrice = BigInteger.valueOf(8);
+        BigInteger gasLimit = BigInteger.valueOf(500000); // large enough
+        String data = "0xff";
+
+        Web3.CallArguments args = new Web3.CallArguments();
+        args.from = TypeConverter.toJsonHex(addr1.getBytes());
+        args.to = args.from;  // same account
+        args.data = data;
+        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
+        args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
+        args.value = value.toString();
+        // Nonce doesn't matter
+        args.nonce = "0";
+
+        return args;
+    }
+
+
+    @Test
+    public void estimateGas() {
+
+        TransactionPool mockTransactionPool = mock(TransactionPool.class);
+        PendingState mockPendingState = mock(PendingState.class);
+
+        doReturn(mockPendingState).when(mockTransactionPool).getPendingState();
+        Blockchain blockchain = mock(Blockchain.class);
+        Block block = mock(Block.class);
+        doReturn(block).when(blockchain).getBestBlock();
+        RskAddress coinbase = new RskAddress(anyAddress);
+        doReturn(coinbase).when(block).getCoinbase();
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        ProgramResult programResult = new ProgramResult();
+        programResult.addDeductedRefund(10000);
+        programResult.spendGas(30000);
+        doReturn(programResult).when(executor).executeTransaction(any(),any(),
+                any(),any(),any(),any(),any(),any());
+
+        EthModule eth = new EthModule(
+                null,
+                (byte) 0,
+                blockchain,
+                mockTransactionPool,
+                executor ,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null,
+                        null,
+                        null
+                )
+        );
+
+        Web3.CallArguments args = getTransactionParameters();
+        String gas = eth.estimateGas(args);
+        byte[] gasReturned = Hex.decode(gas.substring("0x".length()));
+        Assert.assertThat(gasReturned, is(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(40000))));
     }
 
     @Test
