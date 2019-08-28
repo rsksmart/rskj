@@ -25,6 +25,7 @@ import org.ethereum.core.Block;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Roman Mandeleil
@@ -62,7 +63,15 @@ public interface BlockStore extends RemascCache {
 
     Block getBestBlock();
 
+    /**
+     * @return The highest block number stored. Throws an exception if the blockstore is empty.
+     */
     long getMaxNumber();
+
+    /**
+     * @return The smallest block number stored. Throws an exception if the blockstore is empty.
+     */
+    long getMinNumber();
 
     void flush();
 
