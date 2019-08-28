@@ -65,7 +65,7 @@ public class PeersInformation {
         peerScoringManager.recordEvent(peerId, null, eventType);
     }
 
-    public void reportErrorEvent(String message, NodeID peerId, EventType eventType, Object... arguments) {
+    public void reportErrorEvent(NodeID peerId, String message, EventType eventType, Object... arguments) {
         logger.trace(message, arguments);
         failedPeers.put(peerId, Instant.now());
         peerScoringManager.recordEvent(peerId, null, eventType);

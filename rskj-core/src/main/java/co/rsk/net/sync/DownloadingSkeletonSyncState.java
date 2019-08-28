@@ -63,7 +63,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 syncEventsHandler.stopSyncing();
                 return;
             }
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peerId);
         }
     }
 
@@ -84,8 +84,14 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 return;
             }
 
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeerId);
         }
+    }
+
+    @Override
+    protected void onMessageTimeOut() {
+        syncEventsHandler.onErrorSyncing(selectedPeerId,
+                "Timeout waiting requests {}", EventType.TIMEOUT_MESSAGE, this.getClass(), selectedPeerId);
     }
 
     @Override

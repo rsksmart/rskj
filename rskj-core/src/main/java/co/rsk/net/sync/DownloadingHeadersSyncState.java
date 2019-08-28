@@ -8,6 +8,7 @@ import co.rsk.validators.BlockHeaderValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.validator.DependentBlockHeaderRule;
 
@@ -50,8 +51,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
                 || chunk.size() != currentChunk.get().getCount()
                 || !ByteUtil.fastEquals(chunk.get(0).getHash().getBytes(), currentChunk.get().getHash())) {
             syncEventsHandler.onErrorSyncing(
+                    selectedPeerId,
                     "Invalid chunk received from node {} {}", EventType.INVALID_MESSAGE,
-                    selectedPeerId, currentChunk.get().getHash());
+                    currentChunk.map(c -> TypeConverter.toUnformattedJsonHex(c.getHash())).orElse("Empty chunk"));
             return;
         }
 
@@ -67,9 +69,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             BlockHeader header = chunk.get(chunk.size() - k - 1);
 
             if (!blockHeaderIsValid(header, parentHeader)) {
-                syncEventsHandler.onErrorSyncing(
+                syncEventsHandler.onErrorSyncing(selectedPeerId,
                         "Invalid header received from node {} {} {}", EventType.INVALID_HEADER,
-                        selectedPeerId, header.getNumber(), header.getShortHash());
+                        header.getNumber(), header.getShortHash());
                 return;
             }
 
@@ -81,7 +83,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
 
         if (!chunksDownloadHelper.hasNextChunk()) {
             // Finished verifying headers
-            syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons);
+            syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons, selectedPeerId);
             return;
         }
 
@@ -100,11 +102,17 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
     }
 
     private void trySendRequest() {
-        boolean sent = syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk());
+        boolean sent = syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk(), selectedPeerId);
         if (!sent) {
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
                     this.getClass(), selectedPeerId);
         }
+    }
+
+    @Override
+    protected void onMessageTimeOut() {
+        syncEventsHandler.onErrorSyncing(selectedPeerId,
+                "Timeout waiting requests {}", EventType.TIMEOUT_MESSAGE, this.getClass(), selectedPeerId);
     }
 
     private boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader) {

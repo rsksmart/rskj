@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+
 import java.time.Duration;
 
 public class DecidingSyncState extends BaseSyncState {

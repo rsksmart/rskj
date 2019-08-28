@@ -338,7 +338,7 @@ public class SyncProcessorTest {
 
         // is null when we're not syncing
         Assert.assertEquals(0, processor.getExpectedResponses().size());
-        Assert.assertFalse(processor.isPeerSyncing(sender.getPeerNodeID()));
+        Assert.assertFalse(processor.isSyncing());
     }
 
     @Test
@@ -365,7 +365,6 @@ public class SyncProcessorTest {
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager())
         );
 
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         processor.sendSkeletonRequest(sender.getPeerNodeID(), 0);
 
         Message message = msg[0];
@@ -406,10 +405,7 @@ public class SyncProcessorTest {
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager())
         );
 
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
-        Assert.assertFalse(processor.isPeerSyncing(sender.getPeerNodeID()));
-
-        processor.sendBlockHashRequest(100);
+        processor.sendBlockHashRequest(100, sender.getPeerNodeID());
 
         Message message = msg[0];
 
@@ -460,7 +456,6 @@ public class SyncProcessorTest {
         );
 
         List<BlockHeader> headers = new ArrayList<>();
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(new Random().nextLong(), headers);
         processor.registerExpectedMessage(response);
@@ -487,7 +482,6 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -517,7 +511,6 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockHeader> headers = new ArrayList<>();
 
@@ -550,7 +543,6 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -579,7 +571,6 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), null, null);
         processor.registerExpectedMessage(response);
@@ -615,7 +606,6 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         long lastRequestId = new Random().nextLong();
@@ -631,7 +621,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender.getPeerNodeID());
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
@@ -667,8 +657,6 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
-        List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         Account senderAccount = createAccount("sender");
         Account receiverAccount = createAccount("receiver");
@@ -691,7 +679,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender.getPeerNodeID());
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
         processor.processBodyResponse(sender, response);
 
@@ -730,7 +718,6 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         long lastRequestId = new Random().nextLong();
@@ -747,8 +734,7 @@ public class SyncProcessorTest {
         int linkCount = 1;
         processor.startDownloadingBodies(headers,
                 Collections.singletonMap(sender.getPeerNodeID(),
-                        buildSkeleton(extended, connectionPoint, step, linkCount)));
-//        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+                        buildSkeleton(extended, connectionPoint, step, linkCount)), sender.getPeerNodeID());
 
         processor.processBodyResponse(sender, response);
 
@@ -822,7 +808,6 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         List<Transaction> transactions = block.getTransactionsList();
         List<BlockHeader> uncles = block.getUncleList();
         long lastRequestId = new Random().nextLong();
@@ -838,7 +823,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender.getPeerNodeID());
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
@@ -874,7 +859,6 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         BlockResponseMessage response = new BlockResponseMessage(new Random().nextLong(), block);
         processor.registerExpectedMessage(response);
 
@@ -1039,8 +1023,7 @@ public class SyncProcessorTest {
         int connectionPoint = 0;
         int step = 10;
         int linkCount = 9;
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), connectionPoint);
-        processor.startDownloadingSkeleton(connectionPoint);
+        processor.startDownloadingSkeleton(connectionPoint, sender.getPeerNodeID());
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
         SkeletonResponseMessage response = new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
@@ -1080,7 +1063,6 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
 
@@ -1088,7 +1070,7 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
         processor.processSkeletonResponse(sender, response);
 
-        Assert.assertFalse(processor.isPeerSyncing(sender.getPeerNodeID()));
+        Assert.assertFalse(processor.isSyncing());
         Assert.assertTrue(sender.getMessages().isEmpty());
         Assert.assertTrue(processor.getExpectedResponses().isEmpty());
     }
@@ -1125,8 +1107,7 @@ public class SyncProcessorTest {
         int connectionPoint = 25;
         int step = 10;
         int linkCount = 10;
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), connectionPoint);
-        processor.startDownloadingSkeleton(connectionPoint);
+        processor.startDownloadingSkeleton(connectionPoint, sender.getPeerNodeID());
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
         SkeletonResponseMessage response = new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
