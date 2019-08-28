@@ -1078,19 +1078,25 @@ public class Web3ImplTest {
 
         ECKey eckey = new ECKey();
 
-        String address = web3.personal_importRawKey(Hex.toHexString(eckey.getPrivKeyBytes()), "passphrase1");
+        byte[] privKeyBytes = eckey.getPrivKeyBytes();
+
+        ECKey privKey = ECKey.fromPrivate(privKeyBytes);
+
+        RskAddress addr = new RskAddress(privKey.getAddress());
+
+        Account account = wallet.getAccount(addr);
+
+        org.junit.Assert.assertNull(account);
+
+        String address = web3.personal_importRawKey(Hex.toHexString(privKeyBytes), "passphrase1");
 
         org.junit.Assert.assertNotNull(address);
 
-        Account account0 = wallet.getAccount(new RskAddress(address));
-
-        org.junit.Assert.assertNull(account0);
-
-        Account account = wallet.getAccount(new RskAddress(address), "passphrase1");
+        account = wallet.getAccount(addr);
 
         org.junit.Assert.assertNotNull(account);
         org.junit.Assert.assertEquals(address, "0x" + Hex.toHexString(account.getAddress().getBytes()));
-        org.junit.Assert.assertArrayEquals(eckey.getPrivKeyBytes(), account.getEcKey().getPrivKeyBytes());
+        org.junit.Assert.assertArrayEquals(privKeyBytes, account.getEcKey().getPrivKeyBytes());
     }
 
     @Test
@@ -1159,9 +1165,7 @@ public class Web3ImplTest {
 
         String addr = web3.personal_newAccount("passphrase1");
 
-        Account account0 = wallet.getAccount(new RskAddress(addr));
-
-        org.junit.Assert.assertNull(account0);
+        web3.personal_lockAccount(addr);
 
         org.junit.Assert.assertTrue(web3.personal_unlockAccount(addr, "passphrase1", ""));
 
@@ -1177,9 +1181,7 @@ public class Web3ImplTest {
 
         String addr = web3.personal_newAccount("passphrase1");
 
-        Account account0 = wallet.getAccount(new RskAddress(addr));
-
-        org.junit.Assert.assertNull(account0);
+        web3.personal_lockAccount(addr);
 
         web3.personal_unlockAccount(addr, "passphrase1", "K");
 
@@ -1192,12 +1194,6 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3();
 
         String addr = web3.personal_newAccount("passphrase1");
-
-        Account account0 = wallet.getAccount(new RskAddress(addr));
-
-        org.junit.Assert.assertNull(account0);
-
-        org.junit.Assert.assertTrue(web3.personal_unlockAccount(addr, "passphrase1", ""));
 
         Account account = wallet.getAccount(new RskAddress(addr));
 
