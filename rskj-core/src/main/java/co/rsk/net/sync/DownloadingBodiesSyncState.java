@@ -10,12 +10,16 @@ import co.rsk.validators.BlockCompositeRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class DownloadingBodiesSyncState  extends BaseSyncState {
+
+    private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     private final PeersInformation peersInformation;
     private final Blockchain blockchain;
@@ -58,7 +62,8 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                                       PeersInformation peersInformation,
                                       Blockchain blockchain,
                                       BlockFactory blockFactory,
-                                      BlockSyncService blockSyncService, BlockCompositeRule blockValidationRule,
+                                      BlockSyncService blockSyncService,
+                                      BlockCompositeRule blockValidationRule,
                                       List<Deque<BlockHeader>> pendingHeaders,
                                       Map<NodeID, List<BlockIdentifier>> skeletons) {
 
@@ -125,7 +130,9 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         if (chunksBeingDownloaded.isEmpty() &&
                 pendingHeaders.stream().allMatch(Collection::isEmpty)) {
             // Finished syncing
-            syncEventsHandler.onCompletedSyncing();
+            logger.info("Completed syncing phase");
+            syncEventsHandler.stopSyncing();
+
         }
     }
 

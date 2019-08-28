@@ -35,20 +35,26 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
         BlockHeader header = chunk.get(0);
         if (!ByteUtil.fastEquals(header.getHash().getBytes(), miniChunk.getHash()) ||
                 !blockHeaderValidationRule.isValid(header)) {
-            syncEventsHandler.onErrorSyncing(
+            syncEventsHandler.onErrorSyncing(selectedPeerId,
                     "Invalid chunk received from node {}", EventType.INVALID_HEADER,
-                    this.getClass(), selectedPeerId);
+                    this.getClass());
             return;
         }
 
-        syncEventsHandler.startFindingConnectionPoint();
+        syncEventsHandler.startFindingConnectionPoint(selectedPeerId);
     }
 
     private void trySendRequest() {
-        boolean sent = syncEventsHandler.sendBlockHeadersRequest(miniChunk);
+        boolean sent = syncEventsHandler.sendBlockHeadersRequest(miniChunk, selectedPeerId);
         if (!sent) {
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
                     this.getClass(), selectedPeerId);
         }
+    }
+
+    @Override
+    protected void onMessageTimeOut() {
+        syncEventsHandler.onErrorSyncing(selectedPeerId,
+                "Timeout waiting requests {}", EventType.TIMEOUT_MESSAGE, this.getClass(), selectedPeerId);
     }
 }

@@ -16,6 +16,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     private final Map<NodeID, List<BlockIdentifier>> skeletons;
     private final Map<NodeID, Boolean> availables;
     private final NodeID selectedPeerId;
+    private final List<NodeID> candidates;
     private long connectionPoint;
     private long expectedSkeletons;
     private boolean selectedPeerAnswered;
@@ -33,6 +34,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
         this.availables = new HashMap<>();
         this.selectedPeerAnswered = false;
         this.peersInformation = peersInformation;
+        this.candidates = peersInformation.getPeerCandidates();
         this.expectedSkeletons = 0;
     }
 
@@ -63,7 +65,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 syncEventsHandler.stopSyncing();
                 return;
             }
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peerId);
         }
     }
 
@@ -71,7 +73,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     public void tick(Duration duration) {
         timeElapsed = timeElapsed.plus(duration);
         if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0) {
-            peersInformation.getPeerCandidates().stream()
+            candidates.stream()
                     .filter(availables::get)
                     .filter(c -> !skeletons.containsKey(c))
                     .forEach(p ->
@@ -84,8 +86,14 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 return;
             }
 
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeerId);
         }
+    }
+
+    @Override
+    protected void onMessageTimeOut() {
+        syncEventsHandler.onErrorSyncing(selectedPeerId,
+                "Timeout waiting requests {}", EventType.TIMEOUT_MESSAGE, this.getClass(), selectedPeerId);
     }
 
     @Override

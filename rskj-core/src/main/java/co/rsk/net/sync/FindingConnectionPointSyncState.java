@@ -1,7 +1,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
-import com.google.common.annotations.VisibleForTesting;
+import co.rsk.scoring.EventType;
 import org.ethereum.core.Blockchain;
 
 import java.util.Optional;
@@ -38,7 +38,7 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
         }
 
         // connection point found
-        syncEventsHandler.startDownloadingSkeleton(cp.get());
+        syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId);
     }
 
     private boolean isKnownBlock(byte[] hash) {
@@ -46,7 +46,7 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
     }
 
     private void trySendRequest() {
-        boolean sent = syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
+        boolean sent = syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight(), selectedPeerId);
         if (!sent) {
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
                     this.getClass(), selectedPeerId);
@@ -58,8 +58,9 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
         trySendRequest();
     }
 
-    @VisibleForTesting
-    public void setConnectionPoint(long height) {
-        connectionPointFinder.setConnectionPoint(height);
+    @Override
+    protected void onMessageTimeOut() {
+        syncEventsHandler.onErrorSyncing(selectedPeerId,
+                "Timeout waiting requests {}", EventType.TIMEOUT_MESSAGE, this.getClass(), selectedPeerId);
     }
 }
