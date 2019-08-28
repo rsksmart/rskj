@@ -11,6 +11,7 @@ import co.rsk.validators.BlockHeaderValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockStore;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.validator.DifficultyRule;
 import org.slf4j.Logger;
@@ -29,6 +30,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     private final SyncConfiguration syncConfiguration;
     private final Blockchain blockchain;
+    private final BlockStore blockStore;
     private final ConsensusValidationMainchainView consensusValidationMainchainView;
     private final BlockSyncService blockSyncService;
     private final ChannelManager channelManager;
@@ -44,6 +46,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private long lastRequestId;
 
     public SyncProcessor(Blockchain blockchain,
+                         BlockStore blockStore,
                          ConsensusValidationMainchainView consensusValidationMainchainView,
                          BlockSyncService blockSyncService,
                          ChannelManager channelManager,
@@ -54,6 +57,7 @@ public class SyncProcessor implements SyncEventsHandler {
                          DifficultyCalculator difficultyCalculator,
                          PeersInformation peersInformation) {
         this.blockchain = blockchain;
+        this.blockStore = blockStore;
         this.consensusValidationMainchainView = consensusValidationMainchainView;
         this.blockSyncService = blockSyncService;
         this.channelManager = channelManager;
@@ -264,7 +268,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.debug("Find connection point with node {}", peerId);
         long bestBlockNumber = peersInformation.getPeer(peerId).getStatus().getBestBlockNumber();
         setSyncState(new FindingConnectionPointSyncState(
-                syncConfiguration, this, blockchain, peerId, bestBlockNumber));
+                syncConfiguration, this, blockStore, peerId, bestBlockNumber));
     }
 
     @Override
