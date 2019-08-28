@@ -40,10 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
@@ -319,6 +316,11 @@ public class IndexedBlockStore implements BlockStore {
     @Override
     public long getMaxNumber() {
         return index.getMaxNumber();
+    }
+
+    @Override
+    public long getMinNumber() {
+        return index.getMinNumber();
     }
 
     @Override
