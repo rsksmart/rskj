@@ -214,8 +214,8 @@ public class TransactionExecutor {
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             panicProcessor.panic("invalidsignature",
-                                 String.format("Transaction %s signature not accepted: %s",
-                                               tx.getHash(), tx.getSignature()));
+                    String.format("Transaction %s signature not accepted: %s",
+                            tx.getHash(), tx.getSignature()));
             execError(String.format("Transaction signature not accepted: %s", tx.getSignature()));
 
             return false;
@@ -487,7 +487,7 @@ public class TransactionExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
             receipt.setGasUsed(getGasUsed());
-            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
+            receipt.setStatus(executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS);
         }
         return receipt;
     }
@@ -496,6 +496,15 @@ public class TransactionExecutor {
     private void finalization() {
         // RSK if local call gas balances must not be changed
         if (localCall) {
+            // This should change in the future.
+            // It's preferable that if localCall==true it continues executing normally,
+            // performing the expected commit() and returning the correct program result.
+            // Now it will have invalid deletedAccounts data.
+            // It's better that in this case the track used is a cache that does not
+            // allow flush, so that guarantees no side effects.
+
+            // Informing the CallWithValue is required for gas estimation
+            informOfCallWithValuePerformed();
             return;
         }
 
@@ -516,15 +525,14 @@ public class TransactionExecutor {
                 .logs(notRejectedLogInfos)
                 .result(result.getHReturn());
 
+
         // Accumulate refunds for suicides
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
         // The actual gas subtracted is equal to half of the future refund
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
         result.addDeductedRefund(gasRefund);
 
-        if ((program != null) && (program.getCallWithValuePerformed())) {
-                result.markCallWithValuePerformed();
-        }
+        informOfCallWithValuePerformed();
 
         mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                 GasCost.add(mEndGas, gasRefund) :
@@ -552,7 +560,7 @@ public class TransactionExecutor {
         Coin summaryFee = summary.getFee();
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if(enableRemasc) {
+        if (enableRemasc) {
             logger.trace("Adding fee to remasc contract account");
             track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
         } else {
@@ -572,6 +580,13 @@ public class TransactionExecutor {
 
         logger.trace("tx finalization done");
     }
+
+    public void informOfCallWithValuePerformed() {
+        if ((program != null) && (program.getCallWithValuePerformed())) {
+            result.markCallWithValuePerformed();
+        }
+    }
+
 
     /**
      * This extracts the trace to an object in memory.

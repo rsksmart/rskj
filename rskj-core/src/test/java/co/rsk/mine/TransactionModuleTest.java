@@ -30,6 +30,7 @@ import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.TransactionGateway;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -44,8 +45,11 @@ import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -64,12 +68,15 @@ import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.time.Clock;
+
+import static org.hamcrest.CoreMatchers.is;
 
 public class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
@@ -219,6 +226,83 @@ public class TransactionModuleTest {
         Assert.assertEquals(txHash, transactionPool.getPendingTransactions().get(0).getHash().toJsonString());
     }
 
+    @Test
+    public void testGasEstimation() {
+        World world = new World();
+        BlockChainImpl blockchain = world.getBlockChain();
+
+        TrieStore trieStore = world.getTrieStore();
+
+        RepositoryLocator repositoryLocator = world.getRepositoryLocator();
+        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        //RskAddress c = new RskAddress("0101010101010101010101010101010101010101");
+        //Repository repo2 = repository.startTracking();
+        //.setupContract(c);
+
+        BlockStore blockStore = world.getBlockStore();
+
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100);
+
+        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, true);
+        RskAddress srcAddr = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
+
+        // Create the transaction that creates the destination contract
+        String tx = sendContractCreationTransaction(srcAddr, web3, repository);
+        // Compute contract destination address
+
+        BigInteger nonce = repository.getAccountState(srcAddr).getNonce();
+        RskAddress contractAddress = new RskAddress(HashUtil.calcNewAddr(srcAddr.getBytes(), nonce.toByteArray()));
+        int gasLimit = 5000000; // start with 5M
+        int consumed = checkEstimateGas(callCallWithValue, 33557,gasLimit,srcAddr,contractAddress,web3, repository);
+        // Now that I know the estimation, call again using the estimated value
+        // it should not fail. We set the gasLimit to the expected value plus 1 to
+        // differentiate betweem OOG and success.
+        int consumed2 = checkEstimateGas(callCallWithValue,33557,consumed+1, srcAddr,contractAddress,web3, repository);
+        Assert.assertEquals(consumed,consumed2);
+
+        consumed = checkEstimateGas(callUnfill, 46942,
+                gasLimit,srcAddr,contractAddress,web3, repository);
+        consumed2 = checkEstimateGas(callUnfill, 46942,
+                consumed+1,srcAddr,contractAddress,web3, repository);
+        Assert.assertEquals(consumed,consumed2);
+    }
+
+    // We check that the transaction does not fail!
+    // This is clearly missing for estimateGas. It should return a tuple
+    // (success,gasConsumed)
+    public int  checkEstimateGas(int method,int expectedValue,int gasLimit,
+                                 RskAddress srcAddr,RskAddress contractAddress,Web3Impl web3,RepositorySnapshot repository) {
+        // If expected value given is the gasLimit we must fail because estimateGas cannot
+        // differentiate between transaction failure (OOG) and success.
+        Assert.assertNotEquals(expectedValue,gasLimit);
+
+        Web3.CallArguments args = getContractCallTransactionParameters(method,gasLimit,srcAddr,contractAddress,web3, repository);
+        String gas = web3.eth_estimateGas(args);
+        byte[] gasReturnedBytes = Hex.decode(gas.substring("0x".length()));
+        BigInteger gasReturned =BigIntegers.fromUnsignedByteArray(gasReturnedBytes);
+        int gasReturnedInt = gasReturned.intValueExact();
+        Assert.assertNotEquals(gasReturnedInt,gasLimit);
+        Assert.assertEquals(gasReturnedInt, expectedValue);
+        return gasReturnedInt;
+    }
+
+    private String getGasEstimationTransactionRawData(Web3Impl web3,int gasLimit) {
+        Account sender = new AccountBuilder().name("cow").build();
+        Account receiver = new AccountBuilder().name("addr2").build();
+
+        Transaction tx = new TransactionBuilder()
+                .sender(sender)
+                .receiver(receiver)
+                .gasPrice(BigInteger.valueOf(8))
+                .gasLimit(BigInteger.valueOf(gasLimit))
+                .value(BigInteger.valueOf(7))
+                .nonce(0)
+                .build();
+
+        String rawData = Hex.toHexString(tx.getEncoded());
+        return rawData;
+    }
+
     private String sendRawTransaction(Web3Impl web3) {
         Account sender = new AccountBuilder().name("cow").build();
         Account receiver = new AccountBuilder().name("addr2").build();
@@ -249,10 +333,117 @@ public class TransactionModuleTest {
         return txInBlock;
     }
 
+    private String sendContractCreationTransaction(RskAddress srcaddr,Web3Impl web3, RepositorySnapshot repository) {
+
+        Web3.CallArguments args = getContractCreationTransactionParameters(srcaddr,web3, repository);
+
+        return web3.eth_sendTransaction(args);
+    }
+
     private String sendTransaction(Web3Impl web3, RepositorySnapshot repository) {
         CallArguments args = getTransactionParameters(web3, repository);
 
         return web3.eth_sendTransaction(args);
+    }
+
+    ////////////////////////////////////////////////
+    // This is the contract that is being created
+    //  by getContractCreationTransactionParameters
+    /* pragma solidity ^0.5.8;
+
+    contract GasExactimation {
+        mapping(uint256 => uint256) filled;
+        constructor() public payable {
+            fill();
+        }
+        function fill() public {
+            filled[1] = 1;
+            filled[2] = 2;
+            filled[3] = 3;
+            filled[4] = 4;
+            filled[5] = 5;
+        }
+        function unfill() public {
+            filled[1] = 0;
+            filled[2] = 0;
+            filled[3] = 0;
+            filled[4] = 0;
+            filled[5] = 0;
+        }
+        function getFilled() public view returns(uint) {
+          return filled[1];
+        }
+        function () external payable  {
+        }
+        function callWithValue() public payable {
+            address(this).transfer(100);
+        }
+
+        function callAndUnfill() public  {
+            address(this).transfer(100);
+            unfill();
+        }
+
+    }
+    //////////////////////////////// */
+    private Web3.CallArguments getContractCreationTransactionParameters(
+            RskAddress addr1,Web3Impl web3, RepositorySnapshot repository) {
+
+        BigInteger value = BigInteger.valueOf(7);
+        BigInteger gasPrice = BigInteger.valueOf(8);
+        BigInteger gasLimit = BigInteger.valueOf(500000);
+        String data = "0x608060405261001261001760201b60201c565b610096565b6001600080600181526020019081526020016000208190555060026000806002815260200190815260200160002081905550600360008060038152602001908152602001600020819055506004600080600481526020019081526020016000208190555060056000806005815260200190815260200160002081905550565b6102a7806100a56000396000f3fe60806040526004361061004a5760003560e01c8063742392c51461004c5780639a1e180f14610077578063c3cefd361461008e578063d9c55ce114610098578063dfd2d2c2146100af575b005b34801561005857600080fd5b506100616100c6565b6040518082815260200191505060405180910390f35b34801561008357600080fd5b5061008c6100e1565b005b610096610133565b005b3480156100a457600080fd5b506100ad61017d565b005b3480156100bb57600080fd5b506100c46101fc565b005b60008060006001815260200190815260200160002054905090565b3073ffffffffffffffffffffffffffffffffffffffff166108fc60649081150290604051600060405180830381858888f19350505050158015610128573d6000803e3d6000fd5b506101316101fc565b565b3073ffffffffffffffffffffffffffffffffffffffff166108fc60649081150290604051600060405180830381858888f1935050505015801561017a573d6000803e3d6000fd5b50565b6001600080600181526020019081526020016000208190555060026000806002815260200190815260200160002081905550600360008060038152602001908152602001600020819055506004600080600481526020019081526020016000208190555060056000806005815260200190815260200160002081905550565b600080600060018152602001908152602001600020819055506000806000600281526020019081526020016000208190555060008060006003815260200190815260200160002081905550600080600060048152602001908152602001600020819055506000806000600581526020019081526020016000208190555056fea165627a7a72305820545214f6b1b9d3a4928fb579044851ba06a9ff28b7d588b175847b7116d7b7c00029";
+
+        Web3.CallArguments args = new Web3.CallArguments();
+        args.from = TypeConverter.toJsonHex(addr1.getBytes());
+        args.to = ""; // null?
+        args.data = data;
+        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
+        args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
+        args.value = value.toString();
+        args.nonce = repository.getAccountState(addr1).getNonce().toString();
+
+        return args;
+    }
+    public final int callUnfill =0;
+    public final int callCallWithValue = 1;
+
+    private Web3.CallArguments getContractCallTransactionParameters(
+            int methodToCall,int gasLimitInt,RskAddress addr1,RskAddress destContract,Web3Impl web3, RepositorySnapshot repository) {
+
+        BigInteger value;
+        BigInteger gasPrice = BigInteger.valueOf(8);
+        BigInteger gasLimit = BigInteger.valueOf(gasLimitInt);
+        String data ="";
+        byte[] encoded = null;
+        if (methodToCall==callUnfill) {
+            value = BigInteger.valueOf(0);
+            CallTransaction.Function func = CallTransaction.Function.fromSignature(
+                    "unfill",
+                    new String[]{},
+                    new String[]{});
+
+            encoded = func.encode();
+        } else {
+            value = BigInteger.valueOf(101);
+            CallTransaction.Function func = CallTransaction.Function.fromSignature(
+                    "callWithValue",
+                    new String[]{},
+                    new String[]{});
+
+            encoded = func.encode();
+        }
+        data = Hex.toHexString(encoded);
+        Web3.CallArguments args = new Web3.CallArguments();
+        args.from = TypeConverter.toJsonHex(addr1.getBytes());
+        args.to = TypeConverter.toJsonHex(destContract.getBytes());
+        args.data = data;
+        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
+        args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
+        args.value = value.toString();
+        args.nonce = repository.getAccountState(addr1).getNonce().toString();
+
+        return args;
     }
 
     private CallArguments getTransactionParameters(Web3Impl web3, RepositorySnapshot repository) {
