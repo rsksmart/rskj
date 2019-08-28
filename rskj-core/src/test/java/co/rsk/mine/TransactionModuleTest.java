@@ -235,9 +235,6 @@ public class TransactionModuleTest {
 
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
         RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
-        //RskAddress c = new RskAddress("0101010101010101010101010101010101010101");
-        //Repository repo2 = repository.startTracking();
-        //.setupContract(c);
 
         BlockStore blockStore = world.getBlockStore();
 
@@ -256,7 +253,7 @@ public class TransactionModuleTest {
         int consumed = checkEstimateGas(callCallWithValue, 33557,gasLimit,srcAddr,contractAddress,web3, repository);
         // Now that I know the estimation, call again using the estimated value
         // it should not fail. We set the gasLimit to the expected value plus 1 to
-        // differentiate betweem OOG and success.
+        // differentiate between OOG and success.
         int consumed2 = checkEstimateGas(callCallWithValue,33557,consumed+1, srcAddr,contractAddress,web3, repository);
         Assert.assertEquals(consumed,consumed2);
 
