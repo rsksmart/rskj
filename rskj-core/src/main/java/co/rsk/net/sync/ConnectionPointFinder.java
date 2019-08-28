@@ -9,7 +9,6 @@ import java.util.Optional;
  */
 public class ConnectionPointFinder {
 
-    // Status used to find connection point
     private long start;
     private long end;
 

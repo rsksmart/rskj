@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import java.util.Random;
 
+
 public class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
@@ -86,7 +87,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void synchronizeNewNodeWithBestChain() throws InterruptedException {
+    public void synchronizeNewNodeWithBestChain() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(30,false, false);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(50,false, false);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, false);

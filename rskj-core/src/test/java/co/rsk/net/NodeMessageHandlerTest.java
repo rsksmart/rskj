@@ -326,7 +326,7 @@ public class NodeMessageHandlerTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         final SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain,
-                mock(ConsensusValidationMainchainView.class),
+                mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class),
                 blockSyncService,
                 RskMockFactory.getChannelManager(),
                 syncConfiguration,

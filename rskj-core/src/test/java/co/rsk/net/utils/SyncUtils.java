@@ -27,6 +27,7 @@ public final class SyncUtils {
     private static int binarySearchExpectedRequests(long bestBlock, long currentBestBlock) {
         ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(bestBlock);
         int i = 0;
+
         while (!connectionPointFinder.getConnectionPoint().isPresent()) {
             i++;
             if (connectionPointFinder.getFindingHeight() <= currentBestBlock)

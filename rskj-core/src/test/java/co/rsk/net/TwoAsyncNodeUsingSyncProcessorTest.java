@@ -195,10 +195,14 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void stopSyncingAfter5SkeletonChunks() {
-        Blockchain b1 = new BlockChainBuilder().ofSize(30, false);
+        BlockChainBuilder builder = new BlockChainBuilder();
+        Blockchain b1 = builder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 2000, false);
 
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1,
+                SyncConfiguration.IMMEDIATE_FOR_TESTING,
+                builder.getBlockStore());
+
         SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
@@ -225,10 +229,11 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void syncInMultipleStepsWithLongBlockchain() {
-        Blockchain b1 = new BlockChainBuilder().ofSize(300, false);
+        BlockChainBuilder builder = new BlockChainBuilder();
+        Blockchain b1 = builder.ofSize(300, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 4000, false);
 
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING, builder.getBlockStore());
         SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         Assert.assertEquals(300, node1.getBestBlock().getNumber());
