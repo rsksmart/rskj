@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.config.InternalService;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
@@ -34,7 +35,7 @@ import java.util.Set;
  * Centralizes receiving and relaying transactions, so we can only distribute information to nodes that don't already
  * have it.
  */
-public class TransactionGateway {
+public class TransactionGateway implements InternalService {
     private final ChannelManager channelManager;
     private final CompositeEthereumListener emitter;
     private final TransactionPool transactionPool;
@@ -51,10 +52,12 @@ public class TransactionGateway {
         this.emitter = Objects.requireNonNull(emitter);
     }
 
+    @Override
     public void start() {
         emitter.addListener(listener);
     }
 
+    @Override
     public void stop() {
         emitter.removeListener(listener);
     }

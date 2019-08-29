@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
@@ -40,7 +41,7 @@ import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-public class NodeMessageHandler implements MessageHandler, Runnable {
+public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
     public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;

@@ -19,6 +19,8 @@
 
 package org.ethereum.net.server;
 
+import co.rsk.config.InternalService;
+
 /**
  * This class establishes a listener for incoming connections.
  * See <a href="http://netty.io">http://netty.io</a>.
@@ -27,11 +29,6 @@ package org.ethereum.net.server;
  * @since 01.11.2014
  */
 
-public interface PeerServer {
-
-    void start();
-
-    void stop();
-
+public interface PeerServer extends InternalService {
     boolean isListening();
 }

@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,22 +15,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
-package org.ethereum.rpc.Simples;
-
-import co.rsk.core.Rsk;
+package co.rsk.config;
 
 /**
- * Created by ajlopez on 12/07/2017.
+ * Defines the interface that services must implement to be started and stopped along with the application
  */
-public class SimpleRsk extends SimpleEthereum implements Rsk {
-    @Override
-    public boolean hasBetterBlockToSync() {
-        return false;
-    }
+public interface InternalService {
+    void start();
 
-    @Override
-    public boolean isBlockchainEmpty() {
-        return false;
-    }
+    void stop();
 }

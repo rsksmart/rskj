@@ -71,7 +71,10 @@ import co.rsk.validators.*;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
@@ -82,6 +85,8 @@ import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.NodeManager;
@@ -110,9 +115,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Creates the initial object graph without a DI framework.
@@ -156,7 +159,7 @@ public class RskContext implements NodeBootstrapper {
     private EvmModule evmModule;
     private BlockToMineBuilder blockToMineBuilder;
     private BlockNodeInformation blockNodeInformation;
-    private Rsk rsk;
+    private Ethereum rsk;
     private PeerScoringManager peerScoringManager;
     private NodeBlockProcessor nodeBlockProcessor;
     private SyncProcessor syncProcessor;
@@ -183,8 +186,6 @@ public class RskContext implements NodeBootstrapper {
     private MiningConfig miningConfig;
     private NetworkStateExporter networkStateExporter;
     private PeerExplorer peerExplorer;
-    private UDPServer udpServer;
-    private SyncPool.PeerClientFactory peerClientFactory;
     private EthereumChannelInitializerFactory ethereumChannelInitializerFactory;
     private HashRateCalculator hashRateCalculator;
     private EthModule ethModule;
@@ -377,13 +378,12 @@ public class RskContext implements NodeBootstrapper {
         return blockStore;
     }
 
-    public Rsk getRsk() {
+    public Ethereum getRsk() {
         if (rsk == null) {
-            rsk = new RskImpl(
+            rsk = new EthereumImpl(
                     getChannelManager(),
                     getTransactionPool(),
                     getCompositeEthereumListener(),
-                    getNodeBlockProcessor(),
                     getBlockchain()
             );
         }
@@ -619,7 +619,7 @@ public class RskContext implements NodeBootstrapper {
                 minerClient = new AutoMinerClient(getMinerServer());
             } else {
                 minerClient = new MinerClientImpl(
-                        getRsk(),
+                        getNodeBlockProcessor(),
                         getMinerServer(),
                         rskSystemProperties.minerClientDelayBetweenBlocks(),
                         rskSystemProperties.minerClientDelayBetweenRefreshes()
@@ -674,24 +674,48 @@ public class RskContext implements NodeBootstrapper {
 
     protected NodeRunner buildNodeRunner() {
         return new FullNodeRunner(
-                getRsk(),
-                getUdpServer(),
-                getMinerServer(),
-                getMinerClient(),
+                buildInternalServices(),
                 getRskSystemProperties(),
-                getWeb3(),
-                getWeb3HttpServer(),
-                getWeb3WebSocketServer(),
-                getBlockchain(),
-                getChannelManager(),
-                getSyncPool(),
-                getNodeMessageHandler(),
-                getTransactionPool(),
-                getPeerServer(),
-                getPeerClientFactory(),
-                getTransactionGateway(),
                 getBuildInfo()
         );
+    }
+
+    public List<InternalService> buildInternalServices() {
+        List<InternalService> internalServices = new ArrayList<>();
+        internalServices.add(getTransactionGateway());
+        internalServices.add(getTransactionPool());
+        internalServices.add(getChannelManager());
+        internalServices.add(getNodeMessageHandler());
+        internalServices.add(getPeerServer());
+        boolean rpcHttpEnabled = getRskSystemProperties().isRpcHttpEnabled();
+        boolean rpcWebSocketEnabled = getRskSystemProperties().isRpcWebSocketEnabled();
+        if (rpcHttpEnabled || rpcWebSocketEnabled) {
+            internalServices.add(getWeb3());
+        }
+        if (rpcHttpEnabled) {
+            internalServices.add(getWeb3HttpServer());
+        }
+        if (rpcWebSocketEnabled) {
+            internalServices.add(getWeb3WebSocketServer());
+        }
+        if (getRskSystemProperties().isPeerDiscoveryEnabled()) {
+            internalServices.add(new UDPServer(
+                    getRskSystemProperties().getBindAddress().getHostAddress(),
+                    getRskSystemProperties().getPeerPort(),
+                    getPeerExplorer()
+            ));
+        }
+        if (getRskSystemProperties().isSyncEnabled()) {
+            internalServices.add(getSyncPool());
+        }
+        if (getRskSystemProperties().isMinerServerEnabled()) {
+            internalServices.add(getMinerServer());
+
+            if (getRskSystemProperties().isMinerClientEnabled()) {
+                internalServices.add(getMinerClient());
+            }
+        }
+        return Collections.unmodifiableList(internalServices);
     }
 
     protected SolidityCompiler buildSolidityCompiler() {
@@ -925,18 +949,6 @@ public class RskContext implements NodeBootstrapper {
         return blockValidator;
     }
 
-    private SyncPool.PeerClientFactory getPeerClientFactory() {
-        if (peerClientFactory == null) {
-            peerClientFactory = () -> new PeerClient(
-                    getRskSystemProperties(),
-                    getCompositeEthereumListener(),
-                    getEthereumChannelInitializerFactory()
-            );
-        }
-
-        return peerClientFactory;
-    }
-
     private EthereumChannelInitializerFactory getEthereumChannelInitializerFactory() {
         if (ethereumChannelInitializerFactory == null) {
             ethereumChannelInitializerFactory = remoteId -> new EthereumChannelInitializer(
@@ -1025,19 +1037,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return minerServerBlockValidationRule;
-    }
-
-    private UDPServer getUdpServer() {
-        if (udpServer == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            udpServer = new UDPServer(
-                    rskSystemProperties.getBindAddress().getHostAddress(),
-                    rskSystemProperties.getPeerPort(),
-                    getPeerExplorer()
-            );
-        }
-
-        return udpServer;
     }
 
     public BlockParentDependantValidationRule getBlockParentDependantValidationRule() {
@@ -1242,7 +1241,13 @@ public class RskContext implements NodeBootstrapper {
                     getCompositeEthereumListener(),
                     getBlockchain(),
                     getRskSystemProperties(),
-                    getNodeManager()
+                    getNodeManager(),
+                    getNodeBlockProcessor(),
+                    () -> new PeerClient(
+                            getRskSystemProperties(),
+                            getCompositeEthereumListener(),
+                            getEthereumChannelInitializerFactory()
+                    )
             );
         }
 

@@ -18,13 +18,14 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.config.InternalService;
 import co.rsk.rpc.*;
 import co.rsk.scoring.PeerScoringInformation;
 
 import java.util.Arrays;
 import java.util.Map;
 
-public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule {
+public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule {
     class SyncingResult {
         public String startingBlock;
         public String currentBlock;
@@ -76,10 +77,6 @@ public interface Web3 extends Web3TxPoolModule, Web3EthModule, Web3EvmModule, We
                     '}';
         }
     }
-
-    void start();
-
-    void stop();
 
     String web3_clientVersion();
     String web3_sha3(String data) throws Exception;

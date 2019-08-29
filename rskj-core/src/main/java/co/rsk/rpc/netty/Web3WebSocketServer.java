@@ -17,6 +17,7 @@
  */
 package co.rsk.rpc.netty;
 
+import co.rsk.config.InternalService;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -28,11 +29,14 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.net.InetAddress;
 
-public class Web3WebSocketServer {
+public class Web3WebSocketServer implements InternalService {
+    private static final Logger logger = LoggerFactory.getLogger(Web3WebSocketServer.class);
 
     private final InetAddress host;
     private final int port;
@@ -55,7 +59,9 @@ public class Web3WebSocketServer {
         this.workerGroup = new NioEventLoopGroup();
     }
 
-    public void start() throws InterruptedException {
+    @Override
+    public void start() {
+        logger.info("RPC WebSocket enabled");
         ServerBootstrap b = new ServerBootstrap();
         b.group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel.class)
@@ -72,12 +78,21 @@ public class Web3WebSocketServer {
                 }
             });
         webSocketChannel = b.bind(host, port);
-        webSocketChannel.sync();
+        try {
+            webSocketChannel.sync();
+        } catch (InterruptedException e) {
+            logger.error("The RPC WebSocket server couldn't be started", e);
+            Thread.currentThread().interrupt();
+        }
     }
 
-    public void stop() throws InterruptedException {
-        if (webSocketChannel != null) {
+    @Override
+    public void stop() {
+        try {
             webSocketChannel.channel().close().sync();
+        } catch (InterruptedException e) {
+            logger.error("Couldn't stop the RPC WebSocket server", e);
+            Thread.currentThread().interrupt();
         }
         this.bossGroup.shutdownGracefully();
         this.workerGroup.shutdownGracefully();

@@ -23,11 +23,11 @@ import co.rsk.config.MiningConfig;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.net.NodeBlockProcessor;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
@@ -37,7 +37,6 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
-import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
@@ -47,6 +46,9 @@ import org.junit.Test;
 import java.time.Clock;
 import java.util.List;
 import java.util.concurrent.Callable;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 15/04/2017.
@@ -161,14 +163,10 @@ public class MinerManagerTest {
     public void mineBlockWhileSyncingBlocks() {
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        RskImplForTest rsk = new RskImplForTest() {
-            @Override
-            public boolean hasBetterBlockToSync() {
-                return true;
-            }
-        };
+        NodeBlockProcessor nodeBlockProcessor = mock(NodeBlockProcessor.class);
+        when(nodeBlockProcessor.hasBetterBlockToSync()).thenReturn(true);
         MinerServerImpl minerServer = getMinerServer();
-        MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
+        MinerClientImpl minerClient = getMinerClient(nodeBlockProcessor, minerServer);
 
         minerServer.buildBlockToMine( false);
 
@@ -264,16 +262,11 @@ public class MinerManagerTest {
     }
 
     private static MinerClientImpl getMinerClient(MinerServerImpl minerServer) {
-        return getMinerClient(new RskImplForTest() {
-            @Override
-            public boolean hasBetterBlockToSync() {
-                return false;
-            }
-        }, minerServer);
+        return getMinerClient(null, minerServer);
     }
 
-    private static MinerClientImpl getMinerClient(RskImplForTest rsk, MinerServerImpl minerServer) {
-        return new MinerClientImpl(rsk, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
+    private static MinerClientImpl getMinerClient(NodeBlockProcessor nodeBlockProcessor, MinerServerImpl minerServer) {
+        return new MinerClientImpl(nodeBlockProcessor, minerServer, config.minerClientDelayBetweenBlocks(), config.minerClientDelayBetweenRefreshes());
     }
 
     private MinerServerImpl getMinerServer() {
@@ -314,12 +307,6 @@ public class MinerManagerTest {
         @Override
         public boolean isValid(Block block) {
             return true;
-        }
-    }
-
-    private static class RskImplForTest extends RskImpl {
-        public RskImplForTest() {
-            super(null, null, new TestCompositeEthereumListener(), null, null);
         }
     }
 }

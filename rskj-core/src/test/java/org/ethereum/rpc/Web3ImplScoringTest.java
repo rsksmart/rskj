@@ -39,7 +39,7 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.scoring.*;
 import co.rsk.test.World;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.rpc.Simples.SimpleRsk;
+import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -351,7 +351,7 @@ public class Web3ImplScoringTest {
     }
 
     private static Web3Impl createWeb3(PeerScoringManager peerScoringManager) {
-        SimpleRsk rsk = new SimpleRsk();
+        SimpleEthereum rsk = new SimpleEthereum();
 
         World world = new World();
         rsk.blockchain = world.getBlockChain();

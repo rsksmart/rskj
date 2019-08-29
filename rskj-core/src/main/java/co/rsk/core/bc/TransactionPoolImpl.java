@@ -101,14 +101,19 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public void start(Block initialBestBlock) {
-        processBest(initialBestBlock);
+    public void start() {
+        processBest(blockStore.getBestBlock());
 
         if (this.outdatedTimeout <= 0 || this.cleanerTimer == null) {
             return;
         }
 
         this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void stop() {
+        // consider cleaning up cleanerTimer/cleanerFuture
     }
 
     public boolean hasCleanerFuture() {

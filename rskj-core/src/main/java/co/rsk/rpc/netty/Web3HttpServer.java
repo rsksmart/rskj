@@ -1,5 +1,6 @@
 package co.rsk.rpc.netty;
 
+import co.rsk.config.InternalService;
 import co.rsk.rpc.CorsConfiguration;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -14,10 +15,13 @@ import io.netty.handler.codec.http.cors.CorsConfig;
 import io.netty.handler.codec.http.cors.CorsHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 
-public class Web3HttpServer {
+public class Web3HttpServer implements InternalService {
+    private static final Logger logger = LoggerFactory.getLogger(Web3HttpServer.class);
 
     private final InetAddress bindAddress;
     private final int port;
@@ -47,7 +51,10 @@ public class Web3HttpServer {
         this.workerGroup = new NioEventLoopGroup();
     }
 
-    public void start() throws InterruptedException {
+    @Override
+    public void start() {
+        logger.info("RPC HTTP enabled");
+
         ServerBootstrap b = new ServerBootstrap();
         b.option(ChannelOption.SO_LINGER, socketLinger);
         b.option(ChannelOption.SO_REUSEADDR, reuseAddress);
@@ -77,9 +84,15 @@ public class Web3HttpServer {
                     p.addLast(new Web3ResultHttpResponseHandler());
                 }
             });
-        b.bind(bindAddress, port).sync();
+        try {
+            b.bind(bindAddress, port).sync();
+        } catch (InterruptedException e) {
+            logger.error("The RPC HTTP server couldn't be started", e);
+            Thread.currentThread().interrupt();
+        }
     }
 
+    @Override
     public void stop() {
         bossGroup.shutdownGracefully();
         workerGroup.shutdownGracefully();

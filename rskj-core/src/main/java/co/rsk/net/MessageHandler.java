@@ -29,9 +29,5 @@ public interface MessageHandler {
 
     void postMessage(MessageChannel sender, Message message) throws InterruptedException;
 
-    void start();
-
-    void stop();
-
     long getMessageQueueSize();
 }
