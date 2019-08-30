@@ -22,6 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
+import co.rsk.net.syncrefactor.SyncMessager;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
@@ -53,6 +54,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final TransactionGateway transactionGateway;
     private final PeerScoringManager peerScoringManager;
     private final BlockStore continuousBlockStore;
+    private final SyncMessager syncMessager;
 
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
@@ -68,6 +70,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     /**
      * @param continuousBlockStore This block store is used to report the current node status.
      *                             It should have every block from genesis to best block.
+     * @param syncMessager
      */
     public NodeMessageHandler(RskSystemProperties config,
                               BlockStore continuousBlockStore,
@@ -76,7 +79,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                               @Nullable final ChannelManager channelManager,
                               @Nullable final TransactionGateway transactionGateway,
                               @Nullable final PeerScoringManager peerScoringManager,
-                              @Nonnull BlockValidationRule blockValidationRule) {
+                              @Nonnull BlockValidationRule blockValidationRule,
+                              SyncMessager syncMessager) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
@@ -84,6 +88,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         this.transactionGateway = transactionGateway;
         this.blockValidationRule = blockValidationRule;
         this.continuousBlockStore = continuousBlockStore;
+        this.syncMessager = syncMessager;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
     }
@@ -99,6 +104,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         logger.trace("Process message type: {}", message.getMessageType());
 
         MessageVisitor mv = new MessageVisitor(config,
+                syncMessager,
                 blockProcessor,
                 syncProcessor,
                 transactionGateway,
@@ -198,7 +204,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         // TODO(lsebrie): handle timeouts properly
         lastTickSent = now;
         if (queue.isEmpty()) {
-            this.syncProcessor.onTimePassed(timeTick);
+            //this.syncProcessor.onTimePassed(timeTick);
+            this.syncMessager.tick(timeTick);
         }
 
         //Refresh status to peers every 10 seconds or so

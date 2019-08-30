@@ -25,6 +25,7 @@ import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.net.syncrefactor.SyncMessager;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -134,7 +135,7 @@ public class SimpleAsyncNode extends SimpleNode {
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()), new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager)
         );
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
+        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule, mock(SyncMessager.class));
 
         return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }

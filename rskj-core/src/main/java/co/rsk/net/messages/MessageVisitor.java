@@ -21,6 +21,7 @@ package co.rsk.net.messages;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
+import co.rsk.net.syncrefactor.SyncMessager;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
@@ -52,13 +53,14 @@ public class MessageVisitor {
     private final SyncProcessor syncProcessor;
     private final TransactionGateway transactionGateway;
     private final MessageChannel sender;
+    private final SyncMessager syncMessager;
     private final PeerScoringManager peerScoringManager;
     private final RskSystemProperties config;
     private final BlockValidationRule blockValidationRule;
     private final ChannelManager channelManager;
 
     public MessageVisitor(RskSystemProperties config,
-                          BlockProcessor blockProcessor,
+                          SyncMessager syncMessager, BlockProcessor blockProcessor,
                           SyncProcessor syncProcessor,
                           TransactionGateway transactionGateway,
                           PeerScoringManager peerScoringManager,
@@ -74,6 +76,7 @@ public class MessageVisitor {
         this.blockValidationRule = blockValidationRule;
         this.config = config;
         this.sender = sender;
+        this.syncMessager = syncMessager;
     }
 
     /**
@@ -149,6 +152,7 @@ public class MessageVisitor {
         final byte[] hash = message.getHash();
         final int count = message.getCount();
         this.blockProcessor.processBlockHeadersRequest(sender, message.getId(), hash, count);
+        syncMessager.receiveMessage(sender.getPeerNodeID(), message);
     }
 
     public void apply(BlockHashRequestMessage message) {

@@ -24,6 +24,7 @@ import co.rsk.mine.MinerServer;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.TransactionGateway;
 import co.rsk.net.discovery.UDPServer;
+import co.rsk.net.syncrefactor.LongSync;
 import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.rpc.netty.Web3WebSocketServer;
 import org.ethereum.core.Blockchain;
@@ -60,6 +61,7 @@ public class FullNodeRunner implements NodeRunner {
     private final SyncPool.PeerClientFactory peerClientFactory;
     private final TransactionGateway transactionGateway;
     private final BuildInfo buildInfo;
+    private final LongSync longSync;
 
     public FullNodeRunner(
             Rsk rsk,
@@ -78,7 +80,8 @@ public class FullNodeRunner implements NodeRunner {
             PeerServer peerServer,
             SyncPool.PeerClientFactory peerClientFactory,
             TransactionGateway transactionGateway,
-            BuildInfo buildInfo) {
+            BuildInfo buildInfo,
+            LongSync longSync) {
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
@@ -96,6 +99,7 @@ public class FullNodeRunner implements NodeRunner {
         this.peerClientFactory = peerClientFactory;
         this.transactionGateway = transactionGateway;
         this.buildInfo = buildInfo;
+        this.longSync = longSync;
     }
 
     @Override
@@ -132,6 +136,8 @@ public class FullNodeRunner implements NodeRunner {
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {
             udpServer.start();
         }
+
+        longSync.start();
 
         if (rskSystemProperties.isSyncEnabled()) {
             syncPool.updateLowerUsefulDifficulty();

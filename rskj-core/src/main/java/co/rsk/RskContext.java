@@ -44,6 +44,9 @@ import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.net.syncrefactor.LongSync;
+import co.rsk.net.syncrefactor.SyncMessager;
+import co.rsk.net.syncrefactor.SyncStateFactory;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -212,6 +215,9 @@ public class RskContext implements NodeBootstrapper {
     private PrecompiledContracts precompiledContracts;
     private BridgeSupportFactory bridgeSupportFactory;
     private PeersInformation peersInformation;
+    private SyncStateFactory syncStateFactory;
+    private SyncMessager syncMessager;
+    private LongSync longSync;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -692,8 +698,8 @@ public class RskContext implements NodeBootstrapper {
                 getPeerServer(),
                 getPeerClientFactory(),
                 getTransactionGateway(),
-                getBuildInfo()
-        );
+                getBuildInfo(),
+                getLongSync());
     }
 
     protected SolidityCompiler buildSolidityCompiler() {
@@ -956,6 +962,32 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return ethereumChannelInitializerFactory;
+    }
+
+    private LongSync getLongSync() {
+        if (longSync == null) {
+            longSync = new LongSync(getSyncStateFactory());
+        }
+        return longSync;
+    }
+
+    private SyncStateFactory getSyncStateFactory() {
+        if (syncStateFactory == null) {
+            syncStateFactory = new SyncStateFactory(
+                    getSyncConfiguration(),
+                    getPeersInformation(),
+                    getSyncMessager(),
+                    getProofOfWorkRule());
+        }
+        return syncStateFactory;
+    }
+
+    private SyncMessager getSyncMessager() {
+        if (syncMessager == null) {
+            syncMessager = new SyncMessager(getChannelManager(), getPeersInformation());
+        }
+
+        return syncMessager;
     }
 
     private Eth62MessageFactory getEth62MessageFactory() {
@@ -1368,8 +1400,8 @@ public class RskContext implements NodeBootstrapper {
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),
-                    getBlockValidationRule()
-            );
+                    getBlockValidationRule(),
+                    getSyncMessager());
         }
 
         return nodeMessageHandler;

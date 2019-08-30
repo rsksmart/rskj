@@ -5,6 +5,7 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.net.syncrefactor.SyncMessager;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.validators.*;
@@ -39,7 +40,7 @@ public class NodeMessageHandlerUtil {
         );
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        return new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule);
+        return new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule, mock(SyncMessager.class));
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor() {
@@ -77,6 +78,6 @@ public class NodeMessageHandlerUtil {
                 blockValidationRule, new BlockCompositeRule(new BlockUnclesHashValidationRule(),
                 new BlockRootValidationRule(config.getActivationConfig())), DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager)
         );
-        return new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, null, blockValidationRule);
+        return new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, null, blockValidationRule, mock(SyncMessager.class));
     }
 }

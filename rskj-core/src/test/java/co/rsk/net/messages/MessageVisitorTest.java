@@ -3,6 +3,7 @@ package co.rsk.net.messages;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
+import co.rsk.net.syncrefactor.SyncMessager;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
@@ -49,7 +50,7 @@ public class MessageVisitorTest {
 
         target = new MessageVisitor(
                 config,
-                blockProcessor,
+                mock(SyncMessager.class), blockProcessor,
                 syncProcessor,
                 transactionGateway,
                 peerScoringManager,
