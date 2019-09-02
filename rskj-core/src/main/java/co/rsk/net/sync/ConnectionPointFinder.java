@@ -15,9 +15,9 @@ public class ConnectionPointFinder {
     // Connection point found or not
     private Long connectionPoint = null;
 
-    public ConnectionPointFinder(long height) {
-        this.start = 0;
-        this.end = height;
+    public ConnectionPointFinder(long fromHeight, long toHeight) {
+        this.start = fromHeight;
+        this.end = toHeight;
     }
 
     public Optional<Long> getConnectionPoint() {

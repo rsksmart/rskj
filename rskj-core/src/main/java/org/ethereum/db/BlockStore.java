@@ -25,7 +25,6 @@ import org.ethereum.core.Block;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * @author Roman Mandeleil

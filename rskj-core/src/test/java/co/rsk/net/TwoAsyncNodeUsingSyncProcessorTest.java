@@ -122,7 +122,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void buildBlockchainPartialAndSynchronize() throws InterruptedException {
+    public void buildBlockchainPartialAndSynchronize() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
