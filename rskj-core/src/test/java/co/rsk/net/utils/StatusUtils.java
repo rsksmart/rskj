@@ -12,8 +12,4 @@ public class StatusUtils {
                 blockchain.getTotalDifficulty()
         );
     }
-
-    public static Status getFakeStatus() {
-        return new Status(0, null);
-    }
 }

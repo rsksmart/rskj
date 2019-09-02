@@ -13,27 +13,25 @@ import java.util.Map;
 public interface SyncEventsHandler {
     boolean sendSkeletonRequest(NodeID nodeID, long height);
 
-    boolean sendBlockHashRequest(long height);
+    boolean sendBlockHashRequest(long height, NodeID peerId);
 
-    boolean sendBlockHeadersRequest(ChunkDescriptor chunk);
+    boolean sendBlockHeadersRequest(ChunkDescriptor chunk, NodeID peerId);
 
     Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId);
 
-    void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons);
+    void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, NodeID peerId);
 
-    void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint);
+    void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, NodeID peerId);
 
-    void startDownloadingSkeleton(long connectionPoint);
+    void startDownloadingSkeleton(long connectionPoint, NodeID peerId);
 
     void startSyncing(NodeID nodeID);
 
     void stopSyncing();
 
+    void onErrorSyncing(NodeID peerId, String message, EventType eventType, Object... arguments);
+
     void onSyncIssue(String message, Object... arguments);
 
-    void onErrorSyncing(String message, EventType eventType, Object... arguments);
-
-    void onCompletedSyncing();
-
-    void startFindingConnectionPoint();
+    void startFindingConnectionPoint(NodeID peerId);
 }

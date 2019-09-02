@@ -1,20 +1,30 @@
 package co.rsk.net.sync;
 
-import com.google.common.annotations.VisibleForTesting;
+import co.rsk.net.NodeID;
+import co.rsk.scoring.EventType;
+import org.ethereum.core.Blockchain;
 
 import java.util.Optional;
 
 public class FindingConnectionPointSyncState extends BaseSyncState {
+    private final Blockchain blockchain;
+    private final NodeID selectedPeerId;
     private ConnectionPointFinder connectionPointFinder;
 
-    public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, long bestBlockNumber) {
-        super(syncInformation, syncEventsHandler, syncConfiguration);
+    public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration,
+                                           SyncEventsHandler syncEventsHandler,
+                                           Blockchain blockchain,
+                                           NodeID selectedPeerId,
+                                           long bestBlockNumber) {
+        super(syncEventsHandler, syncConfiguration);
+        this.blockchain = blockchain;
+        this.selectedPeerId = selectedPeerId;
         this.connectionPointFinder = new ConnectionPointFinder(bestBlockNumber);
     }
 
     @Override
     public void newConnectionPointData(byte[] hash) {
-        if (this.syncInformation.isKnownBlock(hash)) {
+        if (isKnownBlock(hash)) {
             connectionPointFinder.updateFound();
         } else {
             connectionPointFinder.updateNotFound();
@@ -28,14 +38,18 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
         }
 
         // connection point found
-        syncEventsHandler.startDownloadingSkeleton(cp.get());
+        syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId);
+    }
+
+    private boolean isKnownBlock(byte[] hash) {
+        return blockchain.getBlockByHash(hash) != null;
     }
 
     private void trySendRequest() {
-        boolean sent = syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
+        boolean sent = syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight(), selectedPeerId);
         if (!sent) {
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), syncInformation.getSelectedPeerId());
+                    this.getClass(), selectedPeerId);
         }
     }
 
@@ -44,8 +58,9 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
         trySendRequest();
     }
 
-    @VisibleForTesting
-    public void setConnectionPoint(long height) {
-        connectionPointFinder.setConnectionPoint(height);
+    @Override
+    protected void onMessageTimeOut() {
+        syncEventsHandler.onErrorSyncing(selectedPeerId,
+                "Timeout waiting requests {}", EventType.TIMEOUT_MESSAGE, this.getClass(), selectedPeerId);
     }
 }

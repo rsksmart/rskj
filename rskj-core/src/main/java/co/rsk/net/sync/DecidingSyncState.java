@@ -1,12 +1,15 @@
 package co.rsk.net.sync;
 
+
 import java.time.Duration;
 
 public class DecidingSyncState extends BaseSyncState {
     private PeersInformation knownPeers;
 
-    public DecidingSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, PeersInformation knownPeers) {
-        super(syncInformation, syncEventsHandler, syncConfiguration);
+    public DecidingSyncState(SyncConfiguration syncConfiguration,
+                             SyncEventsHandler syncEventsHandler,
+                             PeersInformation knownPeers) {
+        super(syncEventsHandler, syncConfiguration);
 
         this.knownPeers = knownPeers;
     }
