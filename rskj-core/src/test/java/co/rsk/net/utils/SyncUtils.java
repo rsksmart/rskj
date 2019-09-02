@@ -25,7 +25,7 @@ public final class SyncUtils {
     }
 
     private static int binarySearchExpectedRequests(long bestBlock, long currentBestBlock) {
-        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(bestBlock);
+        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(0L, bestBlock);
         int i = 0;
 
         while (!connectionPointFinder.getConnectionPoint().isPresent()) {
@@ -36,6 +36,11 @@ public final class SyncUtils {
                 connectionPointFinder.updateNotFound();
         }
 
-        return i;
+        // Genesis makes one less request
+        if (currentBestBlock == 0L) {
+            return i;
+        }
+
+        return i + 1;
     }
 }

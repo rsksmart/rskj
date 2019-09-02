@@ -234,6 +234,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processBlockHashRequest(@Nonnull final MessageChannel sender, long requestId, long height) {
         logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getPeerNodeID());
+
         if (height == 0){
             return;
         }

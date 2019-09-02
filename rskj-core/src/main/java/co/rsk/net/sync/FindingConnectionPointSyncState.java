@@ -18,28 +18,43 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
                                            NodeID selectedPeerId,
                                            long peerBestBlockNumber) {
         super(syncEventsHandler, syncConfiguration);
+        long minNumber = blockStore.getMinNumber();
+
         this.blockStore = blockStore;
         this.selectedPeerId = selectedPeerId;
-        this.connectionPointFinder = new ConnectionPointFinder(peerBestBlockNumber);
+        this.connectionPointFinder = new ConnectionPointFinder(
+                minNumber,
+                peerBestBlockNumber);
     }
 
     @Override
     public void newConnectionPointData(byte[] hash) {
-        if (isKnownBlock(hash)) {
+        boolean knownBlock = isKnownBlock(hash);
+        Optional<Long> cp = connectionPointFinder.getConnectionPoint();
+        if (cp.isPresent()) {
+            if (knownBlock) {
+                syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId);
+            } else {
+                syncEventsHandler.onSyncIssue("Connection point not found with node {}", selectedPeerId);
+            }
+             return;
+        }
+
+        if (knownBlock) {
             connectionPointFinder.updateFound();
         } else {
             connectionPointFinder.updateNotFound();
         }
 
-        Optional<Long> cp = connectionPointFinder.getConnectionPoint();
-        if (!cp.isPresent()) {
-            this.resetTimeElapsed();
-            trySendRequest();
+        cp = connectionPointFinder.getConnectionPoint();
+        // No need to ask for genesis hash
+        if (cp.isPresent() && cp.get() == 0L) {
+            syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId);
             return;
         }
 
-        // connection point found
-        syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId);
+        this.resetTimeElapsed();
+        trySendRequest();
     }
 
     private boolean isKnownBlock(byte[] hash) {

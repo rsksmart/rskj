@@ -871,7 +871,8 @@ public class SyncProcessorTest {
 
     @Test
     public void findConnectionPointBlockchainWithGenesisVsBlockchainWith100Blocks() {
-        Blockchain blockchain = new BlockChainBuilder().ofSize(0);
+        BlockChainBuilder builder = new BlockChainBuilder();
+        Blockchain blockchain = builder.ofSize(0);
         Blockchain advancedBlockchain = new BlockChainBuilder().ofSize(100);
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
@@ -891,7 +892,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
+                blockchain, builder.getBlockStore(), mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory, new DummyBlockValidationRule(),
                 new BlockCompositeRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
@@ -903,7 +904,7 @@ public class SyncProcessorTest {
         BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage)messages.get(0);
         processor.processBlockHeadersResponse(sender, new BlockHeadersResponseMessage(requestMessage.getId(), Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
 
-        long[] expectedHeights = new long[] { 50, 25, 12, 6, 3, 1 };
+        long[] expectedHeights = new long[] { 50, 25, 12, 6, 3, 1};
 
         for (int k = 0; k < expectedHeights.length; k++) {
             Assert.assertEquals( k + 2, messages.size());
@@ -924,7 +925,7 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
 
-        SkeletonRequestMessage request = (SkeletonRequestMessage)message;
+        SkeletonRequestMessage request = (SkeletonRequestMessage) message;
 
         Assert.assertEquals(0, request.getStartNumber());
         Assert.assertEquals(1, processor.getExpectedResponses().size());
@@ -967,7 +968,7 @@ public class SyncProcessorTest {
         BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage)messages.get(0);
         processor.processBlockHeadersResponse(sender, new BlockHeadersResponseMessage(requestMessage.getId(), Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
 
-        long[] binarySearchHeights = new long[] { 50, 25, 37, 31, 28, 29, 30 };
+        long[] binarySearchHeights = new long[] { 50, 25, 37, 31, 28, 29, 30, 30 };
         for (int k = 0; k < binarySearchHeights.length; k++) {
             Assert.assertEquals(k + 2, messages.size());
             Message message = messages.get(k + 1);
