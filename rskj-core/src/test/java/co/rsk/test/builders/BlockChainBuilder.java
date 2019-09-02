@@ -242,6 +242,7 @@ public class BlockChainBuilder {
         }
 
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+
         if (this.blocks != null) {
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock().getHeader());
@@ -265,6 +266,7 @@ public class BlockChainBuilder {
         Genesis genesis = blockGenerator.getGenesisBlock(accounts);
         BlockChainImpl blockChain = setGenesis(genesis).build();
 
+        blockChain.tryToConnect(genesis);
         if (size > 0) {
             List<Block> blocks = mining ? blockGenerator.getMinedBlockChain(genesis, size) : blockGenerator.getBlockChain(genesis, size);
 
