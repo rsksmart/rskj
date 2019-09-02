@@ -50,13 +50,17 @@ public class RepositoryLocator {
         return new MutableRepository(new MutableTrieCache(mutableTrieSnapshotAt(header)));
     }
 
-    private MutableTrie mutableTrieSnapshotAt(BlockHeader header) {
+    public Trie trieAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
 
         if (EMPTY_HASH.equals(stateRoot)) {
-            return new MutableTrieImpl(trieStore, new Trie(trieStore));
+            return new Trie(trieStore);
         }
 
-        return new MutableTrieImpl(trieStore, trieStore.retrieve(stateRoot.getBytes()));
+        return trieStore.retrieve(stateRoot.getBytes());
+    }
+
+    private MutableTrie mutableTrieSnapshotAt(BlockHeader header) {
+        return new MutableTrieImpl(trieStore, trieAt(header));
     }
 }

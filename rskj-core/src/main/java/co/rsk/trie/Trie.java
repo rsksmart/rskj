@@ -101,7 +101,7 @@ public class Trie {
     private VarInt childrenSize;
 
     // associated store, to store or retrieve nodes in the trie
-    private TrieStore store;
+    private final TrieStore store;
 
     // shared Path
     private final TrieKeySlice sharedPath;

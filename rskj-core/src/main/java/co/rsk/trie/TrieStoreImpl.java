@@ -92,6 +92,11 @@ public class TrieStoreImpl implements TrieStore {
     }
 
     @Override
+    public void collect(Trie lastFrontierTrie, long lastEpoch) {
+        // this TrieStore implementation doesn't support garbage collection
+    }
+
+    @Override
     public Trie retrieve(byte[] hash) {
         byte[] message = this.store.get(hash);
         if (message == null) {

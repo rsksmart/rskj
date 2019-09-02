@@ -24,6 +24,7 @@ import co.rsk.config.*;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.GarbageCollector;
 import co.rsk.db.MapDBBlocksIndex;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
@@ -64,6 +65,7 @@ import co.rsk.rpc.netty.*;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
+import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -718,12 +720,24 @@ public class RskContext implements NodeBootstrapper {
                 internalServices.add(getMinerClient());
             }
         }
-        internalServices.add(new BlockChainFlusher(
-                getRskSystemProperties().flushNumberOfBlocks(),
-                getCompositeEthereumListener(),
-                getTrieStore(),
-                getBlockStore()
-        ));
+        GarbageCollectorConfig garbageCollectorConfig = getGarbageCollectorConfig();
+        if (garbageCollectorConfig.enabled()) {
+            internalServices.add(new GarbageCollector(
+                    garbageCollectorConfig.blocksPerEpoch(),
+                    garbageCollectorConfig.blocksPerFlush(),
+                    getCompositeEthereumListener(),
+                    getRepositoryLocator(),
+                    getTrieStore(),
+                    getBlockStore()
+            ));
+        } else {
+            internalServices.add(new BlockChainFlusher(
+                    getRskSystemProperties().flushNumberOfBlocks(),
+                    getCompositeEthereumListener(),
+                    getTrieStore(),
+                    getBlockStore()
+            ));
+        }
         return Collections.unmodifiableList(internalServices);
     }
 
@@ -793,6 +807,12 @@ public class RskContext implements NodeBootstrapper {
         String databaseDir = rskSystemProperties.databaseDir();
         if (rskSystemProperties.databaseReset()) {
             FileUtil.recursiveDelete(databaseDir);
+        }
+
+        GarbageCollectorConfig garbageCollectorConfig = getGarbageCollectorConfig();
+        if (garbageCollectorConfig.enabled()) {
+            long currentEpoch = getBlockStore().getMaxNumber() / garbageCollectorConfig.blocksPerEpoch();
+            return new MultiTrieStore(databaseDir, currentEpoch);
         }
 
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
