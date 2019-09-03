@@ -3818,6 +3818,8 @@ public class BridgeSupportTest {
                 null
         );
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
+        assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.NEGATIVE_SATOSHI), is(-1));
+        assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.ZERO), is(-1));
         verify(provider, never()).setFeePerKb(any());
     }
 
