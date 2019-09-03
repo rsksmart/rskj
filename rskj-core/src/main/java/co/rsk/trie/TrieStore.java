@@ -23,8 +23,8 @@ public interface TrieStore {
 
     void flush();
 
-    /** Garbage-collect this trie store ensuring no node of the lastFrontierTrie is lost */
-    void collect(Trie lastFrontierTrie, long lastEpoch);
+    /** Garbage-collect this trie store ensuring no node of the oldestAccessibleTrie is lost */
+    void collect(Trie oldestAccessibleTrie, long oldestAccessibleEpoch);
 
     /** Retrieve a trie node with the specified hash from this store
      * @throws IllegalArgumentException if the node can't be found

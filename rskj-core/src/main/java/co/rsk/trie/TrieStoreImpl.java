@@ -92,7 +92,7 @@ public class TrieStoreImpl implements TrieStore {
     }
 
     @Override
-    public void collect(Trie lastFrontierTrie, long lastEpoch) {
+    public void collect(Trie oldestAccessibleTrie, long oldestAccessibleEpoch) {
         // this TrieStore implementation doesn't support garbage collection
     }
 

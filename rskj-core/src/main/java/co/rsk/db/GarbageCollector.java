@@ -22,7 +22,6 @@ import co.rsk.config.InternalService;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -73,18 +72,23 @@ public class GarbageCollector implements InternalService {
         blockStore.flush();
     }
 
-    private void collect(Trie lastFrontierTrie, long lastEpoch) {
-        trieStore.collect(lastFrontierTrie, lastEpoch);
+    private void collect(Trie oldestAccessibleTrie, long oldestAccessibleEpoch) {
+        trieStore.collect(oldestAccessibleTrie, oldestAccessibleEpoch);
     }
 
     private class OnBestBlockListener extends EthereumListenerAdapter {
         @Override
         public void onBestBlock(Block block, List<TransactionReceipt> receipts) {
             if (isFrontierBlock(block.getNumber())) {
-                long previousFrontierBlock = previousFrontierBlock(block.getNumber());
-                BlockHeader lastFrontierHeader = blockStore.getChainBlockByNumber(previousFrontierBlock).getHeader();
-                Trie lastFrontierTrie = repositoryLocator.trieAt(lastFrontierHeader);
-                collect(lastFrontierTrie, previousFrontierBlock / blocksPerEpoch);
+                long firstBlockInOldestAccessibleEpoch = block.getNumber() - 2 * blocksPerEpoch;
+                // TODO(mc) compare with blockStore.getMinNumber() when available
+                if (firstBlockInOldestAccessibleEpoch < 0) {
+                    return;
+                }
+
+                Trie oldestAccessibleTrie = repositoryLocator.trieAt(
+                        blockStore.getChainBlockByNumber(firstBlockInOldestAccessibleEpoch).getHeader());
+                collect(oldestAccessibleTrie, firstBlockInOldestAccessibleEpoch / blocksPerEpoch);
             } else if (isFlushBlock(block.getNumber())) {
                 flush();
             }
@@ -92,10 +96,6 @@ public class GarbageCollector implements InternalService {
 
         private boolean isFrontierBlock(long blockNumber) {
             return blockNumber != 0 && blockNumber % blocksPerEpoch == 0;
-        }
-
-        private long previousFrontierBlock(long frontierBlockNumber) {
-            return frontierBlockNumber - blocksPerEpoch;
         }
 
         private boolean isFlushBlock(long blockNumber) {

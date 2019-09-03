@@ -31,9 +31,10 @@ import java.util.WeakHashMap;
 /**
  * Implements TrieStore with multiple backing stores as specified on RSKIP64.
  * <p>
- * There will be generally 2 active databases at the same time for states, although when a new frontier block is being
- * executed or during the epoch migration process, which is fully asynchronous, the number of active databases can be up
- * to 3. This is done to allow garbage collection with no long-lived write locks.
+ * Invariants:
+ * - children nodes are stored in the same or an older database than their parent
+ * - all nodes of a trie saved in epoch N are fully contained in d(N) and d(N - 1), ensuring that all tries from epoch N
+ *   survive after discarding d(N - 2).
  // TODO(mc) handle concurrency with a RW Lock
  */
 public class MultiTrieStore implements TrieStore {
@@ -69,10 +70,7 @@ public class MultiTrieStore implements TrieStore {
      * @param forceSaveRoot allows saving the root node even if it's embeddable
      */
     private void save(Trie trie, boolean forceSaveRoot) {
-        // Invariant: a trie saved in epoch N is fully contained in d(N) and d(N - 1).
-        // This ensures all epoch N tries survive after discarding d(N - 2).
         if (epochNSavedTries.contains(trie) || epochN1SavedTries.contains(trie)) {
-            // TODO(mc): can we return? could its children be in d(N - 2)?
             return;
         }
 
@@ -141,15 +139,14 @@ public class MultiTrieStore implements TrieStore {
 
     // TODO(mc) collect in the background
     @Override
-    public synchronized void collect(Trie lastFrontierTrie, long lastEpoch) {
+    public synchronized void collect(Trie oldestAccessibleTrie, long oldestAccessibleEpoch) {
         // TODO(mc) could it be greater?
-        if (lastEpoch < currentEpoch) {
-            logger.warn("Skipping collection with epoch {} lower than current epoch {}", lastEpoch, currentEpoch);
+        if (oldestAccessibleEpoch < currentEpoch - 1) {
+            logger.warn("Trying to collect epoch {} which was already collected", oldestAccessibleEpoch);
             return;
         }
 
-        // TODO(mc) is this necessary with the save invariant?
-        ensureTrieForCollection(lastFrontierTrie, true);
+        ensureTrieForCollection(oldestAccessibleTrie, true);
 
         epochN.close();
         epochN1.close();
@@ -164,6 +161,7 @@ public class MultiTrieStore implements TrieStore {
     }
 
     // TODO(mc) deduplicate
+    // TODO(mc) don't save unnecessary nodes
     private void ensureTrieForCollection(Trie trie, boolean forceSaveRoot) {
         trie.getLeft().getNode().ifPresent(t -> ensureTrieForCollection(t, false));
         trie.getRight().getNode().ifPresent(t -> ensureTrieForCollection(t, false));
@@ -183,6 +181,10 @@ public class MultiTrieStore implements TrieStore {
     // TODO(mc): handle negative values
     private void openStores(long currentEpoch) {
         logger.info("Opening unitrie stores for epoch {}", currentEpoch);
+
+        if (currentEpoch < 2) {
+            currentEpoch = 2;
+        }
 
         this.epochN = new LevelDbDataSource("unitrie_" + currentEpoch, databaseDir);
         this.epochN1 = new LevelDbDataSource("unitrie_" + (currentEpoch - 1), databaseDir);
