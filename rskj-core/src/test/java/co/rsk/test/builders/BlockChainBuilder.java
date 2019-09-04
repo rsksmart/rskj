@@ -226,7 +226,6 @@ public class BlockChainBuilder {
                 transactionExecutorFactory
         );
         BlockChainImpl blockChain = new BlockChainLoader(
-                new BlockChainFlusher(config.isFlushEnabled(), config.flushNumberOfBlocks(), trieStore, blockStore),
                 blockStore,
                 receiptStore,
                 transactionPool,

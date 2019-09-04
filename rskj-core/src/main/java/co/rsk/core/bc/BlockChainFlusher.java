@@ -17,37 +17,56 @@
  */
 package co.rsk.core.bc;
 
+import co.rsk.config.InternalService;
 import co.rsk.trie.TrieStore;
+import org.ethereum.core.Block;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * Flushes the repository and block store after every flushNumberOfBlocks invocations
  */
-public class BlockChainFlusher {
+public class BlockChainFlusher implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger(BlockChainFlusher.class);
 
-    private final boolean flushEnabled;
     private final int flushNumberOfBlocks;
+    private final CompositeEthereumListener emitter;
     private final TrieStore trieStore;
     private final BlockStore blockStore;
+
+    private final OnBestBlockListener listener = new OnBestBlockListener();
 
     private int nFlush = 1;
 
     public BlockChainFlusher(
-            boolean flushEnabled,
             int flushNumberOfBlocks,
+            CompositeEthereumListener emitter,
             TrieStore trieStore,
             BlockStore blockStore) {
-        this.flushEnabled = flushEnabled;
         this.flushNumberOfBlocks = flushNumberOfBlocks;
+        this.emitter = emitter;
         this.trieStore = trieStore;
         this.blockStore = blockStore;
     }
 
-    public void flush() {
-        if (flushEnabled && nFlush == 0) {
+    @Override
+    public void start() {
+        emitter.addListener(listener);
+    }
+
+    @Override
+    public void stop() {
+        emitter.removeListener(listener);
+    }
+
+    private void flush() {
+        if (nFlush == 0) {
             long saveTime = System.nanoTime();
             trieStore.flush();
             long totalTime = System.nanoTime() - saveTime;
@@ -60,5 +79,12 @@ public class BlockChainFlusher {
 
         nFlush++;
         nFlush = nFlush % flushNumberOfBlocks;
+    }
+
+    private class OnBestBlockListener extends EthereumListenerAdapter {
+        @Override
+        public void onBestBlock(Block block, List<TransactionReceipt> receipts) {
+            flush();
+        }
     }
 }

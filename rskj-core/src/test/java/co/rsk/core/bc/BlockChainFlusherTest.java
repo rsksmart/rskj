@@ -19,25 +19,53 @@ package co.rsk.core.bc;
 
 import co.rsk.trie.TrieStore;
 import org.ethereum.db.BlockStore;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListener;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import static org.mockito.Mockito.*;
 
 public class BlockChainFlusherTest {
+    private CompositeEthereumListener emitter;
+    private TrieStore trieStore;
+    private BlockStore blockStore;
+    private BlockChainFlusher flusher;
+
+    private EthereumListener listener;
+
+    @Before
+    public void setUp() {
+        this.emitter = mock(CompositeEthereumListener.class);
+        this.trieStore = mock(TrieStore.class);
+        this.blockStore = mock(BlockStore.class);
+        this.flusher = new BlockChainFlusher(7, emitter, trieStore, blockStore);
+        this.flusher.start();
+
+        ArgumentCaptor<EthereumListener> argument = ArgumentCaptor.forClass(EthereumListener.class);
+        verify(emitter, times(1)).addListener(argument.capture());
+        this.listener = argument.getValue();
+    }
+
+    @After
+    public void tearDown() {
+        verify(emitter, times(0)).removeListener(listener);
+        flusher.stop();
+        verify(emitter, times(1)).removeListener(listener);
+    }
+
     @Test
     public void flushesAfterNInvocations() {
-        TrieStore trieStore = mock(TrieStore.class);
-        BlockStore blockStore = mock(BlockStore.class);
-        BlockChainFlusher flusher = new BlockChainFlusher(true, 7, trieStore, blockStore);
-
         for (int i = 0; i < 6; i++) {
-            flusher.flush();
+            listener.onBestBlock(null, null);
         }
 
         verify(trieStore, never()).flush();
         verify(blockStore, never()).flush();
 
-        flusher.flush();
+        listener.onBestBlock(null, null);
 
         verify(trieStore).flush();
         verify(blockStore).flush();

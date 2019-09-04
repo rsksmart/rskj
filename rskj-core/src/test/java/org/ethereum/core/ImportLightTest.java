@@ -22,7 +22,6 @@ package org.ethereum.core;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.core.bc.BlockChainFlusher;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
@@ -75,7 +74,6 @@ public class ImportLightTest {
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
 
         BlockChainImpl blockchain = new BlockChainImpl(
-                new BlockChainFlusher(false, 1, trieStore, blockStore),
                 blockStore,
                 receiptStore,
                 transactionPool,

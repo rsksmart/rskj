@@ -717,6 +717,12 @@ public class RskContext implements NodeBootstrapper {
                 internalServices.add(getMinerClient());
             }
         }
+        internalServices.add(new BlockChainFlusher(
+                getRskSystemProperties().flushNumberOfBlocks(),
+                getCompositeEthereumListener(),
+                getTrieStore(),
+                getBlockStore()
+        ));
         return Collections.unmodifiableList(internalServices);
     }
 
@@ -891,14 +897,7 @@ public class RskContext implements NodeBootstrapper {
 
     private BlockChainLoader getBlockChainLoader() {
         if (blockChainLoader == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties();
             blockChainLoader = new BlockChainLoader(
-                    new BlockChainFlusher(
-                            rskSystemProperties.isFlushEnabled(),
-                            rskSystemProperties.flushNumberOfBlocks(),
-                            getTrieStore(),
-                            getBlockStore()
-                    ),
                     getBlockStore(),
                     getReceiptStore(),
                     getTransactionPool(),
