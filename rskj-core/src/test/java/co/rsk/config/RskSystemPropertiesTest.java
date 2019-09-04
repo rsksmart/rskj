@@ -37,7 +37,6 @@ public class RskSystemPropertiesTest {
         Assert.assertEquals(0, config.minerMinGasPrice());
         Assert.assertEquals(0, config.minerGasUnitInDollars(), 0.001);
         Assert.assertEquals(0, config.minerMinFeesNotifyInDollars(), 0.001);
-        Assert.assertTrue(config.isFlushEnabled());
     }
 
     @Test

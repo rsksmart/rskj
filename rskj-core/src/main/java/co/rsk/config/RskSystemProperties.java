@@ -180,10 +180,6 @@ public class RskSystemProperties extends SystemProperties {
         return ret;
     }
 
-    public boolean isFlushEnabled() {
-        return getBoolean("blockchain.flush", true);
-    }
-
     public int flushNumberOfBlocks() {
         return configFromFiles.hasPath("blockchain.flushNumberOfBlocks") && configFromFiles.getInt("blockchain.flushNumberOfBlocks") > 0 ?
                 configFromFiles.getInt("blockchain.flushNumberOfBlocks") : 20;
