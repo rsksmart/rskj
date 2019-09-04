@@ -50,6 +50,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -67,12 +68,14 @@ import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.util.BuildInfo;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -1034,6 +1037,76 @@ public class Web3ImplTest {
     }
 
     @Test
+    public void eth_sign_fail()
+    {
+        BigInteger r = BigInteger.valueOf(400);
+        BigInteger s = BigInteger.valueOf(10000);
+        byte v = 27;
+
+        byte[] account = new byte[]{0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9};
+
+        ECKey.ECDSASignature signatureMock = ECKey.ECDSASignature.fromComponents(ByteUtil.bigIntegerToBytes(r, 32), ByteUtil.bigIntegerToBytes(s, 32), v);
+
+        ECKey ecKeyMock = mock(ECKey.class);
+        when(ecKeyMock.sign(any())).thenReturn(signatureMock);
+
+        Account accountMock = mock(Account.class);
+        when(accountMock.getEcKey()).thenReturn(ecKeyMock);
+
+        Wallet walletMock = mock(Wallet.class);
+        when(walletMock.getAccount(any(RskAddress.class))).thenReturn(accountMock);
+        when(walletMock.addAccountWithSeed(any())).thenReturn(account);
+
+        Web3Impl web3 = createWeb3(walletMock);
+
+        String address = web3.personal_newAccountWithSeed("sampleSeed1");
+        byte[] hash = Keccak256Helper.keccak256("this is the data to hash".getBytes());
+
+        String signature = web3.eth_sign(address, "0x" + Hex.toHexString(hash));
+
+
+        String paddedSignature = signPadded(address, "0x" + Hex.toHexString(hash), walletMock);
+
+        Assert.assertNotEquals(
+            signature,
+            paddedSignature
+        );
+
+        Assert.assertEquals(
+                Hex.decode(signature.replace("0x", "")).length,
+                65
+        );
+
+        Assert.assertNotEquals(
+                signature.length(),
+                paddedSignature.length()
+        );
+
+    }
+
+    private String signPadded(String address, String data, Wallet wallet) {
+        Account account = wallet.getAccount(new RskAddress(address));
+
+
+        byte[] dataHash = TypeConverter.stringHexToByteArray(data);
+        // 0x19 = 25, length should be an ascii decimals, message - original
+        String prefix = (char) 25 + "Ethereum Signed Message:\n" + dataHash.length;
+
+        byte[] messageHash = HashUtil.keccak256(ByteUtil.merge(
+                prefix.getBytes(StandardCharsets.UTF_8),
+                dataHash
+        ));
+        ECKey.ECDSASignature signature = account.getEcKey().sign(messageHash);
+
+
+        return TypeConverter.toJsonHex(ByteUtil.merge(
+                ByteUtil.bigIntegerToBytes(signature.r),
+                ByteUtil.bigIntegerToBytes(signature.s),
+                new byte[] {signature.v}
+        ));
+    }
+
+    @Test
     public void createNewAccount()
     {
         Web3Impl web3 = createWeb3();
@@ -1217,6 +1290,13 @@ public class Web3ImplTest {
         );
     }
 
+    private Web3Impl createWeb3(Wallet wallet) {
+        return createWeb3(
+                Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockRepositoryLocator(), Web3Mocks.getMockTransactionPool(),
+                Web3Mocks.getMockBlockStore(), null, null, null, wallet
+        );
+    }
+
     @Test
     public void eth_sendTransaction()
     {
@@ -1355,6 +1435,18 @@ public class Web3ImplTest {
         );
     }
 
+    private Web3Impl createWeb3(Ethereum eth,
+                                 Blockchain blockchain,
+                                 RepositoryLocator repositoryLocator,
+                                 TransactionPool transactionPool,
+                                 BlockStore blockStore,
+                                 BlockProcessor nodeBlockProcessor,
+                                 ConfigCapabilities configCapabilities,
+                                 ReceiptStore receiptStore) {
+        return createWeb3(eth, blockchain, repositoryLocator, transactionPool, blockStore, nodeBlockProcessor,
+                configCapabilities, receiptStore, WalletFactory.createWallet());
+    }
+
     private Web3Impl createWeb3(
             Ethereum eth,
             Blockchain blockchain,
@@ -1363,9 +1455,11 @@ public class Web3ImplTest {
             BlockStore blockStore,
             BlockProcessor nodeBlockProcessor,
             ConfigCapabilities configCapabilities,
-            ReceiptStore receiptStore) {
+            ReceiptStore receiptStore,
+            Wallet wallet
+            ) {
         MiningMainchainView miningMainchainViewMock = mock(MiningMainchainView.class);
-        wallet = WalletFactory.createWallet();
+        this.wallet = wallet;
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
         ProgramResult res = new ProgramResult();
