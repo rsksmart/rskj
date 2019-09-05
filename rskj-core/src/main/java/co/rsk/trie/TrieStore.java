@@ -23,7 +23,9 @@ public interface TrieStore {
 
     void flush();
 
-    /** Retrieve a trie node with the specified hash from this store */
+    /** Retrieve a trie node with the specified hash from this store
+     * @throws IllegalArgumentException if the node can't be found
+     */
     Trie retrieve(byte[] hash);
 
     byte[] retrieveValue(byte[] hash);
