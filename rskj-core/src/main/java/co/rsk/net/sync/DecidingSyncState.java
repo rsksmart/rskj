@@ -4,28 +4,29 @@ package co.rsk.net.sync;
 import java.time.Duration;
 
 public class DecidingSyncState extends BaseSyncState {
-    private PeersInformation knownPeers;
+
+    private PeersInformation peersInformation;
 
     public DecidingSyncState(SyncConfiguration syncConfiguration,
                              SyncEventsHandler syncEventsHandler,
-                             PeersInformation knownPeers) {
+                             PeersInformation peersInformation) {
         super(syncEventsHandler, syncConfiguration);
 
-        this.knownPeers = knownPeers;
+        this.peersInformation = peersInformation;
     }
 
     @Override
     public void newPeerStatus() {
-        if (knownPeers.count() >= syncConfiguration.getExpectedPeers()) {
+        if (peersInformation.count() >= syncConfiguration.getExpectedPeers()) {
             tryStartSyncing();
         }
     }
 
     @Override
     public void tick(Duration duration) {
-        knownPeers.cleanExpired();
+        peersInformation.cleanExpired();
         timeElapsed = timeElapsed.plus(duration);
-        if (knownPeers.count() > 0 &&
+        if (peersInformation.count() > 0 &&
                 timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingPeers()) >= 0) {
 
             tryStartSyncing();
@@ -33,6 +34,6 @@ public class DecidingSyncState extends BaseSyncState {
     }
 
     private void tryStartSyncing() {
-        knownPeers.getBestPeer().ifPresent(syncEventsHandler::startSyncing);
+        peersInformation.getBestPeer().ifPresent(syncEventsHandler::startSyncing);
     }
 }

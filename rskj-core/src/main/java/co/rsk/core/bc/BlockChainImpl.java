@@ -272,7 +272,7 @@ public class BlockChainImpl implements Blockchain {
             }
 
             logger.trace("Start switchToBlockChain");
-            switchToBlockChain(block, totalDifficulty);
+            setStatus(block, totalDifficulty);
             logger.trace("Start saveReceipts");
             saveReceipts(block, result);
             logger.trace("Start processBest");
@@ -430,10 +430,6 @@ public class BlockChainImpl implements Blockchain {
     @Override @VisibleForTesting
     public byte[] getBestBlockHash() {
         return getBestBlock().getHash().getBytes();
-    }
-
-    private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
-        setStatus(block, totalDifficulty);
     }
 
     private void extendAlternativeBlockChain(Block block, BlockDifficulty totalDifficulty) {
