@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
+import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -110,6 +111,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
     public Genesis load() {
         Genesis incompleteGenesis = readFromJson();
         Trie genesisTrie = loadGenesisTrie(incompleteGenesis);
+        ((MultiTrieStore)trieStore).checkInvariant(genesisTrie);
         updateGenesisStateRoot(genesisTrie, incompleteGenesis);
         return incompleteGenesis;
     }

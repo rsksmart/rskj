@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -71,6 +72,7 @@ public class MultiTrieStore implements TrieStore {
      */
     private void save(Trie trie, boolean forceSaveRoot) {
         if (epochNSavedTries.contains(trie) || epochN1SavedTries.contains(trie)) {
+            checkInvariant(trie);
             return;
         }
 
@@ -87,6 +89,22 @@ public class MultiTrieStore implements TrieStore {
 
         epochN.put(trie.getHash().getBytes(), trie.toMessage());
         epochNSavedTries.add(trie);
+    }
+
+    public void checkInvariant(Trie trie) {
+        if (trie.isEmbeddable()) {
+            return;
+        }
+
+        trie.getLeft().getNode().ifPresent(this::checkInvariant);
+        trie.getRight().getNode().ifPresent(this::checkInvariant);
+        if (!epochNSavedTries.contains(trie) && !epochN1SavedTries.contains(trie)) {
+            if (epochN.get(trie.getHash().getBytes()) == null) {
+                if (epochN1.get(trie.getHash().getBytes()) == null) {
+                    throw new IllegalStateException(trie.getHash().toHexString());
+                }
+            }
+        }
     }
 
     @Override
@@ -158,6 +176,18 @@ public class MultiTrieStore implements TrieStore {
         epochN2SavedTries = epochN1SavedTries;
         epochN1SavedTries = epochNSavedTries;
         epochNSavedTries = Collections.newSetFromMap(new WeakHashMap<>());
+
+        // TODO(mc): remove.
+        //           this code is here only to verify the trie is fully accessible after collection.
+        int count = 0;
+        for (Iterator<Trie.IterationElement> it = oldestAccessibleTrie.getPreOrderIterator(); it.hasNext(); ) {
+            Trie.IterationElement x = it.next();
+            if (x.getNode().hasLongValue()) {
+                count++;
+            }
+        }
+
+        logger.error("Nodes with long value: {}", count);
     }
 
     // TODO(mc) deduplicate

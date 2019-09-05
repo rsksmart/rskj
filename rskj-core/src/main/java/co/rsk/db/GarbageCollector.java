@@ -72,23 +72,24 @@ public class GarbageCollector implements InternalService {
         blockStore.flush();
     }
 
-    private void collect(Trie oldestAccessibleTrie, long oldestAccessibleEpoch) {
-        trieStore.collect(oldestAccessibleTrie, oldestAccessibleEpoch);
+    private void collect(long frontierBlockNumber) {
+        long firstBlockInOldestAccessibleEpoch = frontierBlockNumber - blocksPerEpoch;
+        // TODO(mc) compare with blockStore.getMinNumber() when available
+        if (firstBlockInOldestAccessibleEpoch < 0) {
+            return;
+        }
+
+        Trie oldestAccessibleTrie = repositoryLocator.trieAt(
+                blockStore.getChainBlockByNumber(firstBlockInOldestAccessibleEpoch).getHeader());
+        trieStore.collect(oldestAccessibleTrie, firstBlockInOldestAccessibleEpoch / blocksPerEpoch);
     }
 
     private class OnBestBlockListener extends EthereumListenerAdapter {
         @Override
         public void onBestBlock(Block block, List<TransactionReceipt> receipts) {
             if (isFrontierBlock(block.getNumber())) {
-                long firstBlockInOldestAccessibleEpoch = block.getNumber() - 2 * blocksPerEpoch;
-                // TODO(mc) compare with blockStore.getMinNumber() when available
-                if (firstBlockInOldestAccessibleEpoch < 0) {
-                    return;
-                }
-
-                Trie oldestAccessibleTrie = repositoryLocator.trieAt(
-                        blockStore.getChainBlockByNumber(firstBlockInOldestAccessibleEpoch).getHeader());
-                collect(oldestAccessibleTrie, firstBlockInOldestAccessibleEpoch / blocksPerEpoch);
+                flush();
+                collect(block.getNumber());
             } else if (isFlushBlock(block.getNumber())) {
                 flush();
             }
