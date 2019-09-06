@@ -822,14 +822,22 @@ public class RskContext implements NodeBootstrapper {
     private TrieStore buildMultiTrieStore(int numberOfEpochs) {
         String multiTrieStoreNamePrefix = "unitrie_";
         File databaseDir = new File(getRskSystemProperties().databaseDir());
-        int currentEpoch = numberOfEpochs;
-        if (!getRskSystemProperties().databaseReset()) {
-            currentEpoch = Stream.of(databaseDir.listFiles((d, name) -> name.startsWith(multiTrieStoreNamePrefix)))
+        int currentEpoch;
+        if (getRskSystemProperties().databaseReset()) {
+            currentEpoch = 0;
+        } else {
+            Optional<Integer> currentEpochOpt = Stream.of(databaseDir.listFiles((d, name) -> name.startsWith(multiTrieStoreNamePrefix)))
                     .map(File::getName)
                     .map(multiTrieStoreName -> multiTrieStoreName.replaceFirst(multiTrieStoreNamePrefix, ""))
                     .map(Integer::valueOf)
-                    .max(Comparator.naturalOrder())
-                    .orElse(numberOfEpochs);
+                    .max(Comparator.naturalOrder());
+            if (currentEpochOpt.isPresent()) {
+                currentEpoch = currentEpochOpt.get();
+            } else {
+                // TODO(mc) mover carpeta a unitrie_currentEpoch
+                logger.error("TODO mover unitrie a unitrie_0 (si es que existe)");
+                currentEpoch = 0;
+            }
         }
 
         return new MultiTrieStore(

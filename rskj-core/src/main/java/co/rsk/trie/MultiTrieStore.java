@@ -27,17 +27,20 @@ import java.util.List;
 public class MultiTrieStore implements TrieStore {
 
     private int currentEpoch;
+    private final int numberOfEpochs;
     private final List<TrieStore> epochs;
     private final TrieStoreFactory trieStoreFactory;
     private final OnEpochDispose disposer;
 
     public MultiTrieStore(int currentEpoch, int numberOfEpochs, TrieStoreFactory trieStoreFactory, OnEpochDispose disposer) {
         this.currentEpoch = currentEpoch;
+        this.numberOfEpochs = numberOfEpochs;
         this.trieStoreFactory = trieStoreFactory;
         this.disposer = disposer;
         this.epochs = new ArrayList<>(numberOfEpochs);
-        for (int i = 1; i <= numberOfEpochs; i++) { // starting in 1 so it's easier to calculate epoch according index
-            epochs.add(trieStoreFactory.newInstance(String.valueOf(currentEpoch - i)));
+        int minimumEpoch = Math.max(0, currentEpoch - numberOfEpochs);
+        for (int i = currentEpoch; i >= minimumEpoch; i--) {
+            epochs.add(trieStoreFactory.newInstance(String.valueOf(i)));
         }
     }
 
@@ -107,13 +110,17 @@ public class MultiTrieStore implements TrieStore {
      * @param oldestTrieHashToKeep a trie root hash to ensure epoch survival
      */
     public void collect(byte[] oldestTrieHashToKeep) {
-        Trie oldestTrieToKeep = retrieve(oldestTrieHashToKeep);
-        epochs.get(epochs.size() - 2).save(oldestTrieToKeep); // save into the upcoming last epoch
-        epochs.get(epochs.size() - 1).dispose(); // dispose last epoch
-        disposer.callback(currentEpoch - epochs.size());
-        Collections.rotate(epochs, 1); // move last epoch to first place
-        epochs.set(0, trieStoreFactory.newInstance(String.valueOf(currentEpoch + 1))); // update current epoch
         currentEpoch++;
+        if (currentEpoch < numberOfEpochs) {
+            epochs.add(0, trieStoreFactory.newInstance(String.valueOf(currentEpoch)));
+        } else {
+            Trie oldestTrieToKeep = retrieve(oldestTrieHashToKeep);
+            epochs.get(numberOfEpochs - 2).save(oldestTrieToKeep); // save into the upcoming last epoch
+            epochs.get(numberOfEpochs - 1).dispose(); // dispose last epoch
+            disposer.callback(currentEpoch - numberOfEpochs);
+            Collections.rotate(epochs, 1); // move last epoch to first place
+            epochs.set(0, trieStoreFactory.newInstance(String.valueOf(currentEpoch))); // update current epoch
+        }
     }
 
     private TrieStore getCurrentStore() {
