@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,15 +18,7 @@
 
 package co.rsk.trie;
 
-public interface TrieStore {
-    void save(Trie trie);
+public interface TrieStoreFactory {
 
-    void flush();
-
-    /** Retrieve a trie node with the specified hash from this store */
-    Trie retrieve(byte[] hash);
-
-    byte[] retrieveValue(byte[] hash);
-
-    void dispose();
+    TrieStore newInstance(String name);
 }

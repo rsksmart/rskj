@@ -64,9 +64,7 @@ import co.rsk.rpc.netty.*;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
-import co.rsk.trie.TrieConverter;
-import co.rsk.trie.TrieStore;
-import co.rsk.trie.TrieStoreImpl;
+import co.rsk.trie.*;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.ethereum.config.Constants;
@@ -117,6 +115,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Creates the initial object graph without a DI framework.
@@ -326,7 +325,12 @@ public class RskContext implements NodeBootstrapper {
 
     public TrieStore getTrieStore() {
         if (trieStore == null) {
-            trieStore = buildTrieStore("unitrie");
+            GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
+            if (gcConfig.enabled()) {
+                trieStore = buildMultiTrieStore(gcConfig.numberOfEpochs());
+            } else {
+                trieStore = buildTrieStore("unitrie");
+            }
         }
 
         return trieStore;
@@ -723,6 +727,16 @@ public class RskContext implements NodeBootstrapper {
                 getTrieStore(),
                 getBlockStore()
         ));
+        GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
+        if (gcConfig.enabled()) {
+            internalServices.add(new GarbageCollector(
+                    getCompositeEthereumListener(),
+                    gcConfig.blocksPerEpoch(),
+                    (MultiTrieStore) getTrieStore(),
+                    getBlockStore(),
+                    getRepositoryLocator()
+            ));
+        }
         return Collections.unmodifiableList(internalServices);
     }
 
@@ -803,6 +817,30 @@ public class RskContext implements NodeBootstrapper {
 
         return new TrieStoreImpl(ds);
     }
+
+    private TrieStore buildMultiTrieStore(int numberOfEpochs) {
+        String multiTrieStoreNamePrefix = "unitrie_";
+        File databaseDir = new File(getRskSystemProperties().databaseDir());
+        int currentEpoch = numberOfEpochs;
+        if (!getRskSystemProperties().databaseReset()) {
+            currentEpoch = Stream.of(databaseDir.listFiles((d, name) -> name.startsWith(multiTrieStoreNamePrefix)))
+                    .map(File::getName)
+                    .map(multiTrieStoreName -> multiTrieStoreName.replaceFirst(multiTrieStoreNamePrefix, ""))
+                    .map(Integer::valueOf)
+                    .max(Comparator.naturalOrder())
+                    .orElse(numberOfEpochs);
+        }
+
+        return new MultiTrieStore(
+                currentEpoch,
+                numberOfEpochs,
+                name -> buildTrieStore(multiTrieStoreNamePrefix + name),
+                disposedEpoch -> {
+                    FileUtil.recursiveDelete(databaseDir.toPath().resolve(multiTrieStoreNamePrefix + disposedEpoch).toString());
+                }
+        );
+    }
+
 
     protected RepositoryLocator buildRepositoryLocator() {
         return new RepositoryLocator(getTrieStore(), getStateRootHandler());
