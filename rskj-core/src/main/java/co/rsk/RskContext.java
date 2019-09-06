@@ -326,7 +326,7 @@ public class RskContext implements NodeBootstrapper {
 
     public TrieStore getTrieStore() {
         if (trieStore == null) {
-            trieStore = buildTrieStore();
+            trieStore = buildTrieStore("unitrie");
         }
 
         return trieStore;
@@ -787,7 +787,7 @@ public class RskContext implements NodeBootstrapper {
         );
     }
 
-    protected TrieStore buildTrieStore() {
+    protected TrieStore buildTrieStore(String name) {
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
         if (rskSystemProperties.databaseReset()) {
@@ -795,7 +795,7 @@ public class RskContext implements NodeBootstrapper {
         }
 
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = makeDataSource("unitrie", databaseDir);
+        KeyValueDataSource ds = makeDataSource(name, databaseDir);
 
         if (statesCacheSize != 0) {
             ds = new DataSourceWithCache(ds, statesCacheSize);
