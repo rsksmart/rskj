@@ -732,6 +732,7 @@ public class RskContext implements NodeBootstrapper {
             internalServices.add(new GarbageCollector(
                     getCompositeEthereumListener(),
                     gcConfig.blocksPerEpoch(),
+                    gcConfig.numberOfEpochs(),
                     (MultiTrieStore) getTrieStore(),
                     getBlockStore(),
                     getRepositoryLocator()

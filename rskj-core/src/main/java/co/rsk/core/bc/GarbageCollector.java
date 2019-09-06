@@ -40,6 +40,7 @@ public class GarbageCollector implements InternalService {
 
     public GarbageCollector(CompositeEthereumListener emitter,
                             int blocksPerEpoch,
+                            int numberOfEpochs,
                             MultiTrieStore multiTrieStore,
                             BlockStore blockStore,
                             RepositoryLocator repositoryLocator) {
@@ -47,7 +48,7 @@ public class GarbageCollector implements InternalService {
         this.multiTrieStore = multiTrieStore;
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
-        this.garbageCollectorInvoker = new GarbageCollectorInvoker(blocksPerEpoch);
+        this.garbageCollectorInvoker = new GarbageCollectorInvoker(blocksPerEpoch, numberOfEpochs);
     }
 
     @Override
@@ -67,15 +68,26 @@ public class GarbageCollector implements InternalService {
 
     private class GarbageCollectorInvoker extends EthereumListenerAdapter {
         private final int blocksPerEpoch;
+        private final int numberOfEpochs;
 
-        public GarbageCollectorInvoker(int blocksPerEpoch) {
+        public GarbageCollectorInvoker(int blocksPerEpoch, int numberOfEpochs) {
             this.blocksPerEpoch = blocksPerEpoch;
+            this.numberOfEpochs = numberOfEpochs;
         }
 
+        /**
+         * It'll collect all states older than <code>blocksPerEpoch * numberOfEpochs - 1</code> from
+         * the store (if there are enough blocks)
+         *
+         * @param block
+         * @param receipts
+         */
         @Override
         public void onBestBlock(Block block, List<TransactionReceipt> receipts) {
-            if(block.getNumber() % blocksPerEpoch == 0) {
-                collect(block.getNumber() - blocksPerEpoch);
+            int statesToKeep = blocksPerEpoch * numberOfEpochs - 1;
+            long currentBlockNumber = block.getNumber();
+            if(currentBlockNumber % blocksPerEpoch == 0 && currentBlockNumber >= statesToKeep) {
+                collect(currentBlockNumber - statesToKeep);
             }
         }
     }
