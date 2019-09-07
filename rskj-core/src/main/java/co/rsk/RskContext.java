@@ -838,6 +838,15 @@ public class RskContext implements NodeBootstrapper {
                         .max(Comparator.naturalOrder())
                         .orElse(numberOfEpochs);
             }
+            Path unitriePath = databasePath.resolve("unitrie");
+            if(Files.exists(unitriePath)) {
+                // moves the unitrie directory as the currentEpoch. It "knows" the internals of the MultiTrieStore constructor
+                // to assign currentEpoch - 1 as the name
+                Files.move(
+                        unitriePath,
+                        databasePath.resolve(multiTrieStoreNamePrefix + (currentEpoch - 1))
+                );
+            }
         }
 
         return new MultiTrieStore(
