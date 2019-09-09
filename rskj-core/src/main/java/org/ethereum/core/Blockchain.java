@@ -58,6 +58,8 @@ public interface Blockchain {
 
     long getSize();
 
+    long getFirstBlockNumber();
+
     ImportResult tryToConnect(Block block);
 
     void setStatus(Block block, BlockDifficulty totalDifficulty);

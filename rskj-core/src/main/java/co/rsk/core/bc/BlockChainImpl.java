@@ -119,6 +119,11 @@ public class BlockChainImpl implements Blockchain {
         return status.getBestBlock().getNumber() + 1;
     }
 
+    @Override
+    public long getFirstBlockNumber() {
+        return blockStore.getMinNumber();
+    }
+
     /**
      * Try to add a block to a blockchain
      *

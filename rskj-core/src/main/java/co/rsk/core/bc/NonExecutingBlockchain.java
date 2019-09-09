@@ -66,6 +66,11 @@ public class NonExecutingBlockchain implements Blockchain {
         return bestBlock.getNumber() + 1;
     }
 
+    @Override
+    public long getFirstBlockNumber() {
+        return blockStore.getMinNumber();
+    }
+
     /**
      * Connects a block to the current best block.
      * @param newBestBlock Must be a children of best block.
