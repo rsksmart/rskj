@@ -35,7 +35,7 @@ public class BlockSyncServiceTest {
     public void sendBlockMessagesAndAddThemToBlockchain() {
         for (int i = 0; i < 50; i += 5) {
             Blockchain blockchain = new BlockChainBuilder().ofSize(10 * i);
-            BlockStore store = new BlockStore();
+            NetBlockStore store = new NetBlockStore();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             TestSystemProperties config = new TestSystemProperties();
             BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -54,7 +54,7 @@ public class BlockSyncServiceTest {
     public void sendBlockMessagesAndAddThemToBlockchainInReverseOrder() {
         for (int i = 1; i < 52; i += 5) {
             Blockchain blockchain = new BlockChainBuilder().ofSize(10 * i);
-            BlockStore store = new BlockStore();
+            NetBlockStore store = new NetBlockStore();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             TestSystemProperties config = new TestSystemProperties();
             BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -83,7 +83,7 @@ public class BlockSyncServiceTest {
     @Test
     public void sendBlockMessageAndAddItToBlockchainWithCommonAncestors() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);

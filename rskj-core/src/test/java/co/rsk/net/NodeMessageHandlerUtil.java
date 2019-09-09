@@ -26,7 +26,7 @@ public class NodeMessageHandlerUtil {
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
     public static NodeMessageHandler createHandler(BlockValidationRule validationRule, Blockchain blockchain) {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -64,7 +64,7 @@ public class NodeMessageHandlerUtil {
             Blockchain blockchain,
             SyncConfiguration syncConfiguration,
             ChannelManager channelManager) {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);

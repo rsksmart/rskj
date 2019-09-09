@@ -50,7 +50,7 @@ import static org.mockito.Mockito.mock;
 public class OneAsyncNodeTest {
     private static SimpleAsyncNode createNode() {
         final World world = new World();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
         TestSystemProperties config = new TestSystemProperties();

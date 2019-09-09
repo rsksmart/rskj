@@ -41,7 +41,7 @@ import static org.mockito.Mockito.mock;
 public class TwoNodeTest {
     private static SimpleNode createNode(int size) {
         final World world = new World();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
