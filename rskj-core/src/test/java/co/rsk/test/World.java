@@ -29,6 +29,7 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.NetBlockStore;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
@@ -94,7 +95,7 @@ public class World {
         }
         this.saveBlock("g00", genesis);
 
-        co.rsk.net.BlockStore store = new co.rsk.net.BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();

@@ -36,18 +36,18 @@ import java.util.List;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class BlockStoreTest {
+public class NetBlockStoreTest {
     private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
     @Test
     public void getUnknownBlockAsNull() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Assert.assertNull(store.getBlockByHash(TestUtils.randomBytes(32)));
     }
 
     @Test
     public void minimalAndMaximumHeightInEmptyStore() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
 
         Assert.assertEquals(0, store.minimalHeight());
         Assert.assertEquals(0, store.maximumHeight());
@@ -55,7 +55,7 @@ public class BlockStoreTest {
 
     @Test
     public void saveAndGetBlockByHash() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().getGenesisBlock();
 
         store.saveBlock(block);
@@ -67,7 +67,7 @@ public class BlockStoreTest {
 
     @Test
     public void saveRemoveAndGetBlockByHash() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().getBlock(1);
 
         store.saveBlock(block);
@@ -85,7 +85,7 @@ public class BlockStoreTest {
 
     @Test
     public void saveRemoveAndGetBlockByHashWithUncles() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block parent = blockGenerator.getGenesisBlock();
         Block son1 = blockGenerator.createChildBlock(parent);
@@ -110,7 +110,7 @@ public class BlockStoreTest {
 
     @Test
     public void saveTwoBlocksRemoveOne() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block parent = blockGenerator.getGenesisBlock();
         Block adam = blockGenerator.createChildBlock(parent);
@@ -151,7 +151,7 @@ public class BlockStoreTest {
 
     @Test
     public void saveAndGetBlocksByNumber() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -171,7 +171,7 @@ public class BlockStoreTest {
 
     @Test
     public void releaseRange() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         final BlockGenerator generator = new BlockGenerator();
         Block genesis = generator.getGenesisBlock();
 
@@ -192,7 +192,7 @@ public class BlockStoreTest {
 
     @Test
     public void saveAndGetBlocksByParentHash() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
@@ -210,7 +210,7 @@ public class BlockStoreTest {
 
     @Test
     public void getNoBlocksByNumber() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
 
         List<Block> blocks = store.getBlocksByNumber(42);
 
@@ -220,7 +220,7 @@ public class BlockStoreTest {
 
     @Test
     public void saveHeader() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockHeader blockHeader = blockFactory.newHeader(new byte[]{},
                 new byte[]{},
                 TestUtils.randomAddress().getBytes(),
@@ -245,7 +245,7 @@ public class BlockStoreTest {
 
     @Test
     public void removeHeader() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockHeader blockHeader = blockFactory.newHeader(new byte[]{},
                 new byte[]{},
                 TestUtils.randomAddress().getBytes(),

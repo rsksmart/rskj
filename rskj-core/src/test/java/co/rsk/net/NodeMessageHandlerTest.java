@@ -260,7 +260,7 @@ public class NodeMessageHandlerTest {
     public void processStatusMessageUsingNodeBlockProcessor() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
@@ -317,7 +317,7 @@ public class NodeMessageHandlerTest {
     public void processStatusMessageWithKnownBestBlock() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -356,7 +356,7 @@ public class NodeMessageHandlerTest {
         final Block block = new BlockGenerator().getBlock(3);
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
 
         store.saveBlock(block);
@@ -389,7 +389,7 @@ public class NodeMessageHandlerTest {
     public void processGetBlockMessageUsingBlockInBlockchain() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 10);
 
@@ -426,7 +426,7 @@ public class NodeMessageHandlerTest {
 
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -448,7 +448,7 @@ public class NodeMessageHandlerTest {
 
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         store.saveBlock(block);
 
@@ -480,7 +480,7 @@ public class NodeMessageHandlerTest {
     public void processBlockHeaderRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 10);
 
@@ -515,7 +515,7 @@ public class NodeMessageHandlerTest {
     public void processNewBlockHashesMessage() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         final List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 15);
         final List<Block> bcBlocks = blocks.subList(0, 10);

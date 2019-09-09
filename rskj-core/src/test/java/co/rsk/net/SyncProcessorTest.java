@@ -52,7 +52,7 @@ public class SyncProcessorTest {
 
     @Test
     public void noPeers() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
@@ -75,7 +75,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processStatusWithAdvancedPeers() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
@@ -129,7 +129,7 @@ public class SyncProcessorTest {
 
     @Test
     public void syncWithAdvancedPeerAfterTimeoutWaitingPeers() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
@@ -189,7 +189,7 @@ public class SyncProcessorTest {
 
     @Test
     public void dontSyncWithoutAdvancedPeerAfterTimeoutWaitingPeers() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
@@ -229,7 +229,7 @@ public class SyncProcessorTest {
 
     @Test
     public void syncWithAdvancedStatusAnd5Peers() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
@@ -308,7 +308,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processStatusWithPeerWithSameDifficulty() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         byte[] hash = HashUtil.randomHash();
@@ -444,7 +444,7 @@ public class SyncProcessorTest {
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
                 syncConfiguration, blockFactory,
@@ -472,7 +472,7 @@ public class SyncProcessorTest {
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
                 syncConfiguration, blockFactory,
@@ -501,7 +501,7 @@ public class SyncProcessorTest {
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
                 syncConfiguration, blockFactory,
@@ -533,7 +533,7 @@ public class SyncProcessorTest {
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
                 syncConfiguration, blockFactory,
@@ -561,7 +561,7 @@ public class SyncProcessorTest {
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
                 syncConfiguration, blockFactory,
@@ -582,7 +582,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processBodyResponseAddsToBlockchain() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
@@ -633,7 +633,7 @@ public class SyncProcessorTest {
 
     @Test
     public void doesntProcessInvalidBodyResponse() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
@@ -691,7 +691,7 @@ public class SyncProcessorTest {
 
     @Test
     public void doesntProcessUnexpectedBodyResponse() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
 
@@ -753,7 +753,7 @@ public class SyncProcessorTest {
         accounts.put(senderAccount.getAddress(), new AccountState(BigInteger.ZERO, Coin.valueOf(20000000)));
         accounts.put(receiverAccount.getAddress(), new AccountState(BigInteger.ZERO, Coin.ZERO));
 
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         Blockchain blockchain = blockChainBuilder.ofSize(0, false, accounts);
 
@@ -835,7 +835,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processBlockResponseAddsToBlockchain() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
@@ -886,7 +886,7 @@ public class SyncProcessorTest {
             return true;
         });
 
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -949,7 +949,7 @@ public class SyncProcessorTest {
             return true;
         });
 
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -996,7 +996,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processSkeletonResponseWithTenBlockIdentifiers() {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
@@ -1057,7 +1057,7 @@ public class SyncProcessorTest {
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, new BlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
                 syncConfiguration, blockFactory, new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
@@ -1082,7 +1082,7 @@ public class SyncProcessorTest {
     public void processSkeletonResponseWithConnectionPoint() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(25);
 
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);

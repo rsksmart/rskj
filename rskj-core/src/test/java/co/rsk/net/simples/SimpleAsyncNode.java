@@ -127,7 +127,7 @@ public class SimpleAsyncNode extends SimpleNode {
             Blockchain blockchain,
             SyncConfiguration syncConfiguration,
             org.ethereum.db.BlockStore indexedBlockStore) {
-        BlockStore blockStore = new BlockStore();
+        NetBlockStore blockStore = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(config, blockStore, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(blockStore, blockchain, nodeInformation, blockSyncService, syncConfiguration);

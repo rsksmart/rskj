@@ -44,7 +44,7 @@ import java.util.List;
 public class NodeBlockProcessorTest {
     @Test
     public void processBlockSavingInStore() throws UnknownHostException {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final MessageChannel sender = new SimpleMessageChannel();
 
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -67,7 +67,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockWithTooMuchHeight() throws UnknownHostException {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final MessageChannel sender = new SimpleMessageChannel();
 
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -88,7 +88,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void advancedBlock() throws UnknownHostException {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final MessageChannel sender = new SimpleMessageChannel();
 
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -107,7 +107,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void canBeIgnoredForUncles() throws UnknownHostException {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final MessageChannel sender = new SimpleMessageChannel();
 
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -131,7 +131,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Block genesis = blockchain.getBlockByNumber(0);
         store.saveBlock(genesis);
         Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
@@ -156,7 +156,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processTenBlocksAddingToBlockchain() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Block genesis = blockchain.getBestBlock();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(genesis, 10);
@@ -180,7 +180,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processTwoBlockListsAddingToBlockchain() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Block genesis = blockchain.getBestBlock();
         BlockGenerator blockGenerator = new BlockGenerator();
         List<Block> blocks = blockGenerator.getBlockChain(genesis, 10);
@@ -206,7 +206,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processTwoBlockListsAddingToBlockchainWithFork() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         Block genesis = blockchain.getBestBlock();
 
@@ -234,7 +234,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void noSyncingWithEmptyBlockchain() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -248,7 +248,7 @@ public class NodeBlockProcessorTest {
 
     @Test @Ignore("Ignored when Process status deleted on block processor")
     public void noSyncingWithEmptyBlockchainAndLowBestBlock() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().createBlock(10, 0);
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
@@ -268,7 +268,7 @@ public class NodeBlockProcessorTest {
 
     @Test @Ignore("Ignored when Process status deleted on block processor")
     public void syncingWithEmptyBlockchainAndHighBestBlock() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().createBlock(30, 0);
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
@@ -288,7 +288,7 @@ public class NodeBlockProcessorTest {
 
     @Test @Ignore("Ignored when Process status deleted on block processor")
     public void syncingThenNoSyncing() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Block block = new BlockGenerator().createBlock(30, 0);
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
@@ -321,7 +321,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processTenBlocksGenesisAtLastAddingToBlockchain() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         Block genesis = blockchain.getBestBlock();
         List<Block> blocks = new BlockGenerator().getBlockChain(genesis, 10);
@@ -344,7 +344,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processTenBlocksInverseOrderAddingToBlockchain() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Block genesis = blockchain.getBestBlock();
         List<Block> blocks = new BlockGenerator().getBlockChain(genesis, 10);
 
@@ -366,7 +366,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processTenBlocksWithHoleAddingToBlockchain() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         Block genesis = blockchain.getBestBlock();
         List<Block> blocks = new BlockGenerator().getBlockChain(genesis, 10);
 
@@ -389,7 +389,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockAddingToBlockchainUsingItsParent() {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         store.saveBlock(genesis);
@@ -424,7 +424,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockRetrievingParentUsingSender() throws UnknownHostException {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -458,7 +458,7 @@ public class NodeBlockProcessorTest {
 
     @Test @Ignore("Ignored when Process status deleted on block processor")
     public void processStatusRetrievingBestBlockUsingSender() throws UnknownHostException {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -491,7 +491,7 @@ public class NodeBlockProcessorTest {
 
     @Test @Ignore("Ignored when Process status deleted on block processor")
     public void processStatusHavingBestBlockInStore() throws UnknownHostException {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -514,7 +514,7 @@ public class NodeBlockProcessorTest {
 
     @Test @Ignore("Ignored when Process status deleted on block processor")
     public void processStatusHavingBestBlockAsBestBlockInBlockchain() throws UnknownHostException {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(2);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -539,7 +539,7 @@ public class NodeBlockProcessorTest {
 
     @Test @Ignore("Ignored when Process status deleted on block processor")
     public void processStatusHavingBestBlockInBlockchainStore() throws UnknownHostException {
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(2);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -567,7 +567,7 @@ public class NodeBlockProcessorTest {
     public void processGetBlockHeaderMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = new BlockGenerator().getBlock(3);
 
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         store.saveBlock(block);
 
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -596,7 +596,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processGetBlockHeaderMessageUsingEmptyStore() throws UnknownHostException {
         final Block block = new BlockGenerator().getBlock(3);
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -620,7 +620,7 @@ public class NodeBlockProcessorTest {
     public void processGetBlockHeaderMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -649,7 +649,7 @@ public class NodeBlockProcessorTest {
         final Block block = new BlockGenerator().getBlock(3);
         final Keccak256 blockHash = block.getHash();
 
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         store.saveBlock(block);
 
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -682,7 +682,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processGetBlockMessageUsingEmptyStore() throws UnknownHostException {
         final Block block = new BlockGenerator().getBlock(3);
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -707,7 +707,7 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final Keccak256 blockHash = block.getHash();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -740,7 +740,7 @@ public class NodeBlockProcessorTest {
         final Block block = new BlockGenerator().getBlock(3);
         final Keccak256 blockHash = block.getHash();
 
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         store.saveBlock(block);
 
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -775,7 +775,7 @@ public class NodeBlockProcessorTest {
     public void processBodyRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         final Block block = blockchain.getBlockByNumber(3);
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
@@ -804,7 +804,7 @@ public class NodeBlockProcessorTest {
     public void processBlockHashRequestMessageUsingEmptyStore() throws UnknownHostException {
         final Block block = new BlockGenerator().getBlock(3);
         final Keccak256 blockHash = block.getHash();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -829,7 +829,7 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final Keccak256 blockHash = block.getHash();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -861,7 +861,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockHashRequestMessageUsingOutOfBoundsHeight() throws UnknownHostException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
@@ -879,7 +879,7 @@ public class NodeBlockProcessorTest {
     public void processBlockHeadersRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         final Block block = blockchain.getBlockByNumber(60);
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -911,7 +911,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockHeadersRequestMessageUsingUnknownHash() throws UnknownHostException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(100);
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -932,7 +932,7 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(skeletonStep / 2);
         final Block blockStart = blockchain.getBlockByNumber(5);
         final Block blockEnd = blockchain.getBlockByNumber(skeletonStep / 2);
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -968,7 +968,7 @@ public class NodeBlockProcessorTest {
     public void processSkeletonRequestWithThreeResults() throws UnknownHostException {
         int skeletonStep = 192;
         final Blockchain blockchain = new BlockChainBuilder().ofSize(300);
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -1006,7 +1006,7 @@ public class NodeBlockProcessorTest {
     public void processSkeletonRequestNotIncludingGenesis() throws UnknownHostException {
         int skeletonStep = 192;
         final Blockchain blockchain = new BlockChainBuilder().ofSize(400);
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;

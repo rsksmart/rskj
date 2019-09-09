@@ -138,7 +138,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
     private org.ethereum.db.BlockStore blockStore;
-    private co.rsk.net.BlockStore netBlockStore;
+    private NetBlockStore netBlockStore;
     private TrieStore trieStore;
     private GenesisLoader genesisLoader;
     private Genesis genesis;
@@ -1344,9 +1344,9 @@ public class RskContext implements NodeBootstrapper {
         return jacksonBasedRpcSerializer;
     }
 
-    private co.rsk.net.BlockStore getNetBlockStore() {
+    private NetBlockStore getNetBlockStore() {
         if (netBlockStore == null) {
-            netBlockStore = new co.rsk.net.BlockStore();
+            netBlockStore = new NetBlockStore();
         }
 
         return netBlockStore;

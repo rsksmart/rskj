@@ -43,7 +43,7 @@ import java.util.*;
 public class NodeBlockProcessor implements BlockProcessor {
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
 
-    private final BlockStore store;
+    private final NetBlockStore store;
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation;
     // keep tabs on which nodes know which blocks.
@@ -61,7 +61,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param blockSyncService
      */
     public NodeBlockProcessor(
-            @Nonnull final BlockStore store,
+            @Nonnull final NetBlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final BlockSyncService blockSyncService,
