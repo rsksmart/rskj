@@ -10,6 +10,7 @@ import java.util.List;
 
 public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncState {
     private final BlockHeaderValidationRule blockHeaderValidationRule;
+    private final boolean forwardSync;
     private final NodeID selectedPeerId;
     private final ChunkDescriptor miniChunk;
 
@@ -17,10 +18,12 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
             SyncConfiguration syncConfiguration,
             SyncEventsHandler syncEventsHandler,
             BlockHeaderValidationRule blockHeaderValidationRule,
+            boolean forwardSync,
             NodeID selectedPeerId,
             byte[] bestBlockHash) {
         super(syncEventsHandler, syncConfiguration);
         this.blockHeaderValidationRule = blockHeaderValidationRule;
+        this.forwardSync = forwardSync;
         this.selectedPeerId = selectedPeerId;
         this.miniChunk = new ChunkDescriptor(bestBlockHash, 1);
     }
@@ -41,7 +44,7 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
             return;
         }
 
-        syncEventsHandler.startFindingConnectionPoint(selectedPeerId);
+        syncEventsHandler.startFindingConnectionPoint(selectedPeerId, forwardSync);
     }
 
     private void trySendRequest() {

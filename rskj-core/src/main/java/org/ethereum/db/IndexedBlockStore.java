@@ -291,7 +291,14 @@ public class IndexedBlockStore implements BlockStore {
 
     @Override
     public synchronized boolean isBlockExist(byte[] hash) {
-        return getBlockByHash(hash) != null;
+        Block block = getBlockByHash(hash);
+        if (block == null) {
+            return false;
+        }
+
+        return index
+                .getBlocksByNumber(block.getNumber()).stream()
+                .anyMatch(info -> Arrays.equals(block.getHash().getBytes(), info.hash));
     }
 
     @Override

@@ -136,7 +136,7 @@ public class SimpleAsyncNode extends SimpleNode {
         SimpleChannelManager channelManager = new SimpleChannelManager();
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration, blockFactory,
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), channelManager, syncConfiguration, blockFactory,
                 blockValidationRule,
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()), new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager)

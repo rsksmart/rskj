@@ -1,6 +1,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
+import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockStore;
 import org.junit.Before;
@@ -12,27 +13,30 @@ import static org.mockito.Mockito.*;
 
 public class FindingConnectionPointSyncStateTest {
 
-    private BlockStore blockStore;
+    private Blockchain blockchain;
     private SyncEventsHandler syncEventsHandler;
     private NodeID nodeId;
 
     @Before
     public void setUp() {
         syncEventsHandler = mock(SyncEventsHandler.class);
-        blockStore = mock(BlockStore.class);
         nodeId = mock(NodeID.class);
+        blockchain = mock(Blockchain.class);
     }
 
     @Test
     public void noConnectionPoint() {
-        when(blockStore.getMinNumber()).thenReturn(0L);
+        when(blockchain.getFirstBlockNumber()).thenReturn(0L);
         FindingConnectionPointSyncState target =
                 new FindingConnectionPointSyncState(
                         SyncConfiguration.IMMEDIATE_FOR_TESTING,
                         syncEventsHandler,
-                        mock(Blockchain.class), nodeId, 10L);
+                        blockchain,
+                        true,
+                        nodeId,
+                        10L);
 
-        when(blockStore.isBlockExist(any())).thenReturn(false);
+        when(blockchain.hasBlockInSomeBlockchain(any())).thenReturn(false);
         when(syncEventsHandler.sendBlockHashRequest(anyLong(), any())).thenReturn(true);
 
         target.onEnter();

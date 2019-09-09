@@ -225,7 +225,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private boolean isKnownBlock(Keccak256 hash) {
-        return blockchain.getBlockByHash(hash.getBytes()) != null;
+        return blockchain.hasBlockInSomeBlockchain(hash.getBytes());
     }
 
     private Optional<BlockHeader> tryFindBlockHeader(NodeID peerId) {
@@ -239,7 +239,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                 BlockHeader header = headers.poll();
                 while (header != null) {
                     // we double check if the header was not downloaded or obtained by another way
-                    if (!isBlockKnown(header.getHash())) {
+                    if (!isKnownBlock(header.getHash())) {
                         chunksBeingDownloaded.put(peerId, chunkNumber);
                         segmentsBeingDownloaded.put(peerId, segmentNumber);
                         return Optional.of(header);
@@ -249,10 +249,6 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
             }
         }
         return Optional.empty();
-    }
-
-    private boolean isBlockKnown(Keccak256 hash) {
-        return blockchain.getBlockByHash(hash.getBytes()) != null;
     }
 
     @Override

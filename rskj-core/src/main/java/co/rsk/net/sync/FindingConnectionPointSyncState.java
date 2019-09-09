@@ -11,14 +11,17 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
     private final NodeID selectedPeerId;
     private final ConnectionPointFinder connectionPointFinder;
     private final Blockchain blockchain;
+    private final boolean forwardSync;
 
     public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration,
                                            SyncEventsHandler syncEventsHandler,
                                            Blockchain blockchain,
+                                           boolean forwardSync,
                                            NodeID selectedPeerId,
                                            long peerBestBlockNumber) {
         super(syncEventsHandler, syncConfiguration);
         this.blockchain = blockchain;
+        this.forwardSync = forwardSync;
         long minNumber = blockchain.getFirstBlockNumber();
 
         this.selectedPeerId = selectedPeerId;
@@ -33,7 +36,7 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
         Optional<Long> cp = connectionPointFinder.getConnectionPoint();
         if (cp.isPresent()) {
             if (knownBlock) {
-                syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId);
+                syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId, forwardSync);
             } else {
                 syncEventsHandler.onSyncIssue("Connection point not found with node {}", selectedPeerId);
             }
@@ -49,7 +52,7 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
         cp = connectionPointFinder.getConnectionPoint();
         // No need to ask for genesis hash
         if (cp.isPresent() && cp.get() == 0L) {
-            syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId);
+            syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId, forwardSync);
             return;
         }
 

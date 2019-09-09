@@ -19,7 +19,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public boolean sendBlockHeadersRequest(ChunkDescriptor chunk, NodeID peerId) { return true;}
 
     @Override
-    public void startFindingConnectionPoint(NodeID peerId) {
+    public void startFindingConnectionPoint(NodeID peerId, boolean forwardSync) {
 
     }
 
@@ -27,7 +27,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) { return 0L; }
 
     @Override
-    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, NodeID peerId) {
+    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, NodeID peerId, boolean forwardSync) {
 
     }
 
@@ -40,15 +40,15 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, NodeID peerId) { }
+    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, NodeID peerId, boolean forwardSync) { }
 
     @Override
-    public void startSyncing(NodeID nodeID) {
+    public void startSyncing(NodeID nodeID, boolean forwardSync) {
         this.startSyncingWasCalled_ = true;
     }
 
     @Override
-    public void startDownloadingSkeleton(long connectionPoint, NodeID peerId) { }
+    public void startDownloadingSkeleton(long connectionPoint, NodeID peerId, boolean forwardSync) { }
 
     @Override
     public void stopSyncing() { this.stopSyncingWasCalled_ = true; }

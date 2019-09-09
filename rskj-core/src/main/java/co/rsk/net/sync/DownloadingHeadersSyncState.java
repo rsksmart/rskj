@@ -22,6 +22,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
     private final ChunksDownloadHelper chunksDownloadHelper;
     private final DependentBlockHeaderRule blockParentValidationRule;
     private final BlockHeaderValidationRule blockHeaderValidationRule;
+    private final boolean forwardSync;
     private final NodeID selectedPeerId;
     private Map<Keccak256, BlockHeader> pendingHeadersByHash;
 
@@ -31,12 +32,14 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             ConsensusValidationMainchainView mainchainView,
             DependentBlockHeaderRule blockParentValidationRule,
             BlockHeaderValidationRule blockHeaderValidationRule,
+            boolean forwardSync,
             NodeID selectedPeerId,
             Map<NodeID, List<BlockIdentifier>> skeletons,
             long connectionPoint) {
         super(syncEventsHandler, syncConfiguration);
         this.blockParentValidationRule = blockParentValidationRule;
         this.blockHeaderValidationRule = blockHeaderValidationRule;
+        this.forwardSync = forwardSync;
         this.selectedPeerId = selectedPeerId;
         this.pendingHeaders = new ArrayList<>();
         this.skeletons = skeletons;
@@ -89,7 +92,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
 
         if (!chunksDownloadHelper.hasNextChunk()) {
             // Finished verifying headers
-            syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons, selectedPeerId);
+            syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons, selectedPeerId, forwardSync);
             return;
         }
 

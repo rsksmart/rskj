@@ -29,8 +29,10 @@ public class SyncProcessor implements SyncEventsHandler {
 
     private final SyncConfiguration syncConfiguration;
     private final Blockchain blockchain;
+    private final Blockchain continuousBlockchain;
     private final ConsensusValidationMainchainView consensusValidationMainchainView;
     private final BlockSyncService blockSyncService;
+    private final BlockSyncService continuousBlockSyncService;
     private final ChannelManager channelManager;
     private final BlockFactory blockFactory;
     private final BlockHeaderValidationRule blockHeaderValidationRule;
@@ -44,8 +46,10 @@ public class SyncProcessor implements SyncEventsHandler {
     private long lastRequestId;
 
     public SyncProcessor(Blockchain blockchain,
+                         Blockchain continuousBlockchain,
                          ConsensusValidationMainchainView consensusValidationMainchainView,
                          BlockSyncService blockSyncService,
+                         BlockSyncService continuousBlockSyncService,
                          ChannelManager channelManager,
                          SyncConfiguration syncConfiguration,
                          BlockFactory blockFactory,
@@ -54,8 +58,10 @@ public class SyncProcessor implements SyncEventsHandler {
                          DifficultyCalculator difficultyCalculator,
                          PeersInformation peersInformation) {
         this.blockchain = blockchain;
+        this.continuousBlockchain = continuousBlockchain;
         this.consensusValidationMainchainView = consensusValidationMainchainView;
         this.blockSyncService = blockSyncService;
+        this.continuousBlockSyncService = continuousBlockSyncService;
         this.channelManager = channelManager;
         this.syncConfiguration = syncConfiguration;
         this.blockFactory = blockFactory;
@@ -74,7 +80,11 @@ public class SyncProcessor implements SyncEventsHandler {
         };
 
         this.peersInformation = peersInformation;
-        setSyncState(new DecidingSyncState(syncConfiguration, this, peersInformation));
+        setSyncState(new DecidingSyncState(
+                syncConfiguration,
+                this,
+                peersInformation,
+                blockchain));
     }
 
     public void processStatus(MessageChannel sender, Status status) {
@@ -208,63 +218,88 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startSyncing(NodeID peerId) {
+    public void startSyncing(NodeID peerId, boolean forwardSync) {
         logger.info("Start syncing with node {}", peerId);
         byte[] bestBlockHash = peersInformation.getPeer(peerId).getStatus().getBestBlockHash();
-        setSyncState(new CheckingBestHeaderSyncState(syncConfiguration,
-                this, blockHeaderValidationRule, peerId, bestBlockHash));
+        setSyncState(new CheckingBestHeaderSyncState(
+                syncConfiguration,
+                this,
+                blockHeaderValidationRule,
+                forwardSync,
+                peerId,
+                bestBlockHash));
     }
 
     @Override
-    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, NodeID peerId) {
+    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, NodeID peerId, boolean forwardSync) {
         // we keep track of best known block and we start to trust it when all headers are validated
         List<BlockIdentifier> selectedSkeleton = skeletons.get(peerId);
         final long peerBestBlockNumber = selectedSkeleton.get(selectedSkeleton.size() - 1).getNumber();
 
-        if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber()) {
-            blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
+        BlockSyncService syncService = continuousBlockSyncService;
+        Blockchain blockchainToSync = continuousBlockchain;
+        if (forwardSync) {
+            syncService = blockSyncService;
+            blockchainToSync = blockchain;
+        }
+
+        if (peerBestBlockNumber > syncService.getLastKnownBlockNumber()) {
+            syncService.setLastKnownBlockNumber(peerBestBlockNumber);
         }
 
         setSyncState(new DownloadingBodiesSyncState(syncConfiguration,
                 this,
                 peersInformation,
-                blockchain,
+                blockchainToSync,
                 blockFactory,
-                blockSyncService,
+                syncService,
                 blockValidationRule,
                 pendingHeaders,
                 skeletons));
     }
 
     @Override
-    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, NodeID peerId) {
+    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, NodeID peerId, boolean forwardSync) {
         setSyncState(new DownloadingHeadersSyncState(
                 syncConfiguration,
                 this,
                 consensusValidationMainchainView,
                 difficultyRule,
                 blockHeaderValidationRule,
+                forwardSync,
                 peerId,
                 skeletons,
                 connectionPoint));
     }
 
     @Override
-    public void startDownloadingSkeleton(long connectionPoint, NodeID peerId) {
+    public void startDownloadingSkeleton(long connectionPoint, NodeID peerId, boolean forwardSync) {
         setSyncState(new DownloadingSkeletonSyncState(
                 syncConfiguration,
                 this,
                 peersInformation,
+                forwardSync,
                 peerId,
                 connectionPoint));
     }
 
     @Override
-    public void startFindingConnectionPoint(NodeID peerId) {
+    public void startFindingConnectionPoint(NodeID peerId, boolean forwardSync) {
         logger.debug("Find connection point with node {}", peerId);
         long bestBlockNumber = peersInformation.getPeer(peerId).getStatus().getBestBlockNumber();
+
+        Blockchain toSynchronize = continuousBlockchain;
+        if (forwardSync) {
+            toSynchronize = blockchain;
+        }
+
         setSyncState(new FindingConnectionPointSyncState(
-                syncConfiguration, this, blockchain, peerId, bestBlockNumber));
+                syncConfiguration,
+                this,
+                toSynchronize,
+                forwardSync,
+                peerId,
+                bestBlockNumber));
     }
 
     @Override
@@ -274,8 +309,14 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.trace("Pending {} CLEAR", pendingMessagesCount);
         // always that a syncing process ends unexpectedly the best block number is reset
         blockSyncService.setLastKnownBlockNumber(blockchain.getBestBlock().getNumber());
+        continuousBlockSyncService.setLastKnownBlockNumber(continuousBlockchain.getBestBlock().getNumber());
+
         peersInformation.clearOldFailedPeers();
-        setSyncState(new DecidingSyncState(syncConfiguration, this, peersInformation));
+        setSyncState(new DecidingSyncState(
+                syncConfiguration,
+                this,
+                peersInformation,
+                blockchain));
     }
 
     @Override

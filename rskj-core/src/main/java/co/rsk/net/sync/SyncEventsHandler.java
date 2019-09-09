@@ -19,13 +19,18 @@ public interface SyncEventsHandler {
 
     Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId);
 
-    void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, NodeID peerId);
+    void startDownloadingBodies(
+            List<Deque<BlockHeader>> pendingHeaders,
+            Map<NodeID, List<BlockIdentifier>> skeletons,
+            NodeID peerId,
+            boolean forwardSync);
 
-    void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, NodeID peerId);
+    void startDownloadingHeaders(
+            Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, NodeID peerId, boolean forwardSync);
 
-    void startDownloadingSkeleton(long connectionPoint, NodeID peerId);
+    void startDownloadingSkeleton(long connectionPoint, NodeID peerId, boolean forwardSync);
 
-    void startSyncing(NodeID nodeID);
+    void startSyncing(NodeID nodeID, boolean forwardSync);
 
     void stopSyncing();
 
@@ -33,5 +38,5 @@ public interface SyncEventsHandler {
 
     void onSyncIssue(String message, Object... arguments);
 
-    void startFindingConnectionPoint(NodeID peerId);
+    void startFindingConnectionPoint(NodeID peerId, boolean forwardSync);
 }

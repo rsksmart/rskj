@@ -389,6 +389,12 @@ public class RskContext implements NodeBootstrapper {
     public BlockStore getContinuousBlockStore() {
         if (continuousBlockStore == null) {
             continuousBlockStore = buildBlockStore(getRskSystemProperties().databaseDir(), "indexGenesis");
+            if (continuousBlockStore.getBestBlock() == null) {
+                continuousBlockStore.saveBlock(
+                        genesis,
+                        genesis.getCumulativeDifficulty(),
+                        true);
+            }
         }
 
         return continuousBlockStore;
@@ -1250,8 +1256,10 @@ public class RskContext implements NodeBootstrapper {
         if (syncProcessor == null) {
             syncProcessor = new SyncProcessor(
                     getBlockchain(),
+                    getContinuousBlockchain(),
                     getConsensusValidationMainchainView(),
                     getBlockSyncService(),
+                    getContinuousBlockSyncService(),
                     getChannelManager(),
                     getSyncConfiguration(),
                     getBlockFactory(),

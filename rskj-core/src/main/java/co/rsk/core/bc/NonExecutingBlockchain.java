@@ -78,7 +78,7 @@ public class NonExecutingBlockchain implements Blockchain {
      */
     @Override
     public synchronized ImportResult tryToConnect(Block newBestBlock) {
-        if (bestBlock.getHash() != newBestBlock.getParentHash()) {
+        if (!bestBlock.isParentOf(newBestBlock)) {
             return ImportResult.NO_PARENT;
         }
 
@@ -87,7 +87,7 @@ public class NonExecutingBlockchain implements Blockchain {
         totalDifficulty = newDifficulty;
         bestBlock = newBestBlock;
         blockStore.saveBlock(newBestBlock, newDifficulty, true);
-
+        blockStore.flush();
         return ImportResult.IMPORTED_BEST;
     }
 

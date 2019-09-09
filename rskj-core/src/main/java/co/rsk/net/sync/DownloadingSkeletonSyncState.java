@@ -18,6 +18,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     private final NodeID selectedPeerId;
     private final List<NodeID> candidates;
     private long connectionPoint;
+    private final boolean forwardSync;
     private long expectedSkeletons;
     private boolean selectedPeerAnswered;
 
@@ -25,11 +26,13 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     public DownloadingSkeletonSyncState(SyncConfiguration syncConfiguration,
                                         SyncEventsHandler syncEventsHandler,
                                         PeersInformation peersInformation,
+                                        boolean forwardSync,
                                         NodeID selectedPeerId,
                                         long connectionPoint) {
         super(syncEventsHandler, syncConfiguration);
         this.selectedPeerId = selectedPeerId;
         this.connectionPoint = connectionPoint;
+        this.forwardSync = forwardSync;
         this.skeletons = new HashMap<>();
         this.availables = new HashMap<>();
         this.selectedPeerAnswered = false;
@@ -65,7 +68,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 syncEventsHandler.stopSyncing();
                 return;
             }
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peerId);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peerId, forwardSync);
         }
     }
 
@@ -86,7 +89,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 return;
             }
 
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeerId);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeerId, forwardSync);
         }
     }
 

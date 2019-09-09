@@ -58,7 +58,7 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -98,7 +98,7 @@ public class SyncProcessorTest {
         });
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), channelManager,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -153,7 +153,7 @@ public class SyncProcessorTest {
         });
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), channelManager,
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -201,7 +201,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 SyncConfiguration.DEFAULT, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -242,7 +242,7 @@ public class SyncProcessorTest {
 
         final ChannelManager channelManager = mock(ChannelManager.class);
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), channelManager,
                 SyncConfiguration.DEFAULT, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -321,7 +321,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -356,7 +356,7 @@ public class SyncProcessorTest {
         });
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), null, channelManager,
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), null, mock(BlockSyncService.class), channelManager,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -396,7 +396,7 @@ public class SyncProcessorTest {
         });
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), null, channelManager,
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), null, mock(BlockSyncService.class), channelManager,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -427,7 +427,7 @@ public class SyncProcessorTest {
 
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), null, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), null, mock(BlockSyncService.class), getChannelManager(),
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -446,7 +446,7 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -474,7 +474,7 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -503,7 +503,7 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -535,7 +535,7 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -563,7 +563,7 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -598,7 +598,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -621,7 +621,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender.getPeerNodeID());
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender.getPeerNodeID(), true);
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
@@ -649,7 +649,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -679,7 +679,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender.getPeerNodeID());
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender.getPeerNodeID(), true);
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
         processor.processBodyResponse(sender, response);
 
@@ -710,7 +710,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -734,7 +734,7 @@ public class SyncProcessorTest {
         int linkCount = 1;
         processor.startDownloadingBodies(headers,
                 Collections.singletonMap(sender.getPeerNodeID(),
-                        buildSkeleton(extended, connectionPoint, step, linkCount)), sender.getPeerNodeID());
+                        buildSkeleton(extended, connectionPoint, step, linkCount)), sender.getPeerNodeID(), true);
 
         processor.processBodyResponse(sender, response);
 
@@ -800,7 +800,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -823,7 +823,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender.getPeerNodeID());
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender.getPeerNodeID(), true);
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
@@ -851,7 +851,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -892,7 +892,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), channelManager,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory, new DummyBlockValidationRule(),
                 new BlockCompositeRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
@@ -955,7 +955,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), channelManager,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory, new DummyBlockValidationRule(),
                 new BlockCompositeRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
@@ -1014,7 +1014,7 @@ public class SyncProcessorTest {
         });
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), channelManager,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -1026,7 +1026,7 @@ public class SyncProcessorTest {
         int connectionPoint = 0;
         int step = 10;
         int linkCount = 9;
-        processor.startDownloadingSkeleton(connectionPoint, sender.getPeerNodeID());
+        processor.startDownloadingSkeleton(connectionPoint, sender.getPeerNodeID(), true);
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
         SkeletonResponseMessage response = new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
@@ -1059,7 +1059,7 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, getChannelManager(),
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), getChannelManager(),
                 syncConfiguration, blockFactory, new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
@@ -1098,7 +1098,7 @@ public class SyncProcessorTest {
             return true;
         });
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
+                blockchain, mock(Blockchain.class), mock(ConsensusValidationMainchainView.class), blockSyncService, mock(BlockSyncService.class), channelManager,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new BlockCompositeRule(
@@ -1110,7 +1110,7 @@ public class SyncProcessorTest {
         int connectionPoint = 25;
         int step = 10;
         int linkCount = 10;
-        processor.startDownloadingSkeleton(connectionPoint, sender.getPeerNodeID());
+        processor.startDownloadingSkeleton(connectionPoint, sender.getPeerNodeID(), true);
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
         SkeletonResponseMessage response = new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
