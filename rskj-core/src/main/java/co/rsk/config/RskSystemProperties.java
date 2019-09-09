@@ -180,6 +180,10 @@ public class RskSystemProperties extends SystemProperties {
         return ret;
     }
 
+    public GarbageCollectorConfig garbageCollectorConfig() {
+        return GarbageCollectorConfig.fromConfig(configFromFiles.getConfig("blockchain.gc"));
+    }
+
     public int flushNumberOfBlocks() {
         return configFromFiles.hasPath("blockchain.flushNumberOfBlocks") && configFromFiles.getInt("blockchain.flushNumberOfBlocks") > 0 ?
                 configFromFiles.getInt("blockchain.flushNumberOfBlocks") : 20;

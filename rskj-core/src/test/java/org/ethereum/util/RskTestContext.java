@@ -51,7 +51,7 @@ public class RskTestContext extends RskContext {
     }
 
     @Override
-    protected TrieStore buildTrieStore() {
+    protected TrieStore buildTrieStore(String name) {
         return new TrieStoreImpl(new HashMapDB());
     }
 

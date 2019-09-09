@@ -109,4 +109,9 @@ public class TrieStoreImpl implements TrieStore {
     public byte[] retrieveValue(byte[] hash) {
         return this.store.get(hash);
     }
+
+    @Override
+    public void dispose() {
+        store.close();
+    }
 }
