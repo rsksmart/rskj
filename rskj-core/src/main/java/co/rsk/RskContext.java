@@ -83,6 +83,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
@@ -213,7 +214,11 @@ public class RskContext implements NodeBootstrapper {
     private PrecompiledContracts precompiledContracts;
     private BridgeSupportFactory bridgeSupportFactory;
     private PeersInformation peersInformation;
+    private BlockStore continuousBlockStore;
     private static Map<String, KeyValueDataSource> dataSources = new HashMap<>();
+    private NonExecutingBlockchain continuousBlockchain;
+    private BlockSyncService continuousBlockSyncService;
+    private NetBlockStore continuousNetBlockStore;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -233,6 +238,14 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return nodeRunner;
+    }
+
+    private NonExecutingBlockchain getContinuousBlockchain() {
+        if (continuousBlockchain == null) {
+            continuousBlockchain = new NonExecutingBlockchain(getContinuousBlockStore());
+        }
+
+        return continuousBlockchain;
     }
 
     public Blockchain getBlockchain() {
@@ -373,9 +386,17 @@ public class RskContext implements NodeBootstrapper {
         return btcBlockStoreFactory;
     }
 
-    public org.ethereum.db.BlockStore getBlockStore() {
+    public BlockStore getContinuousBlockStore() {
+        if (continuousBlockStore == null) {
+            continuousBlockStore = buildBlockStore(getRskSystemProperties().databaseDir(), "indexGenesis");
+        }
+
+        return continuousBlockStore;
+    }
+
+    public BlockStore getBlockStore() {
         if (blockStore == null) {
-            blockStore = buildBlockStore();
+            blockStore = buildBlockStore(getRskSystemProperties().databaseDir(), "index");
         }
 
         return blockStore;
@@ -809,10 +830,6 @@ public class RskContext implements NodeBootstrapper {
         return new RepositoryLocator(getTrieStore(), getStateRootHandler());
     }
 
-    protected org.ethereum.db.BlockStore buildBlockStore() {
-        return buildBlockStore(getRskSystemProperties().databaseDir(), "index");
-    }
-
     protected RskSystemProperties buildRskSystemProperties() {
         return new RskSystemProperties(new ConfigLoader(cliArgs));
     }
@@ -927,6 +944,20 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return wallet;
+    }
+
+    private BlockSyncService getContinuousBlockSyncService() {
+        if (continuousBlockSyncService == null) {
+            continuousBlockSyncService = new BlockSyncService(
+                    getRskSystemProperties(),
+                    getContinuousNetBlockStore(),
+                    getContinuousBlockchain(),
+                    getBlockNodeInformation(),
+                    getSyncConfiguration()
+            );
+        }
+
+        return continuousBlockSyncService;
     }
 
     private BlockSyncService getBlockSyncService() {
@@ -1343,6 +1374,14 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return jacksonBasedRpcSerializer;
+    }
+
+    private NetBlockStore getContinuousNetBlockStore() {
+        if (continuousNetBlockStore == null) {
+            continuousNetBlockStore = new NetBlockStore();
+        }
+
+        return continuousNetBlockStore;
     }
 
     private NetBlockStore getNetBlockStore() {
