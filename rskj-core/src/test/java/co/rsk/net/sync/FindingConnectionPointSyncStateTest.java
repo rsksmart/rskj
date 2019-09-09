@@ -1,11 +1,10 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
+import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockStore;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -31,8 +30,7 @@ public class FindingConnectionPointSyncStateTest {
                 new FindingConnectionPointSyncState(
                         SyncConfiguration.IMMEDIATE_FOR_TESTING,
                         syncEventsHandler,
-                        blockStore,
-                        nodeId, 10L);
+                        mock(Blockchain.class), nodeId, 10L);
 
         when(blockStore.isBlockExist(any())).thenReturn(false);
         when(syncEventsHandler.sendBlockHashRequest(anyLong(), any())).thenReturn(true);

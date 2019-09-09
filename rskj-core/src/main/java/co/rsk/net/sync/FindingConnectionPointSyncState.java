@@ -2,25 +2,25 @@ package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
-import org.ethereum.db.BlockStore;
+import org.ethereum.core.Blockchain;
 
 import java.util.Optional;
 
 public class FindingConnectionPointSyncState extends BaseSyncState {
 
-    private final BlockStore blockStore;
     private final NodeID selectedPeerId;
     private final ConnectionPointFinder connectionPointFinder;
+    private final Blockchain blockchain;
 
     public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration,
                                            SyncEventsHandler syncEventsHandler,
-                                           BlockStore blockStore,
+                                           Blockchain blockchain,
                                            NodeID selectedPeerId,
                                            long peerBestBlockNumber) {
         super(syncEventsHandler, syncConfiguration);
-        long minNumber = blockStore.getMinNumber();
+        this.blockchain = blockchain;
+        long minNumber = blockchain.getFirstBlockNumber();
 
-        this.blockStore = blockStore;
         this.selectedPeerId = selectedPeerId;
         this.connectionPointFinder = new ConnectionPointFinder(
                 minNumber,
@@ -58,7 +58,7 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
     }
 
     private boolean isKnownBlock(byte[] hash) {
-        return blockStore.isBlockExist(hash);
+        return blockchain.hasBlockInSomeBlockchain(hash);
     }
 
     private void trySendRequest() {
