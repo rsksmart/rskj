@@ -51,7 +51,7 @@ public class BodyResponseMessageTest {
         Assert.assertEquals(uncles.size(), message.getUncles().size());
 
         for (int k = 0; k < uncles.size(); k++)
-            Assert.assertArrayEquals(uncles.get(k).getEncoded(), message.getUncles().get(k).getEncoded());
+            Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), message.getUncles().get(k).getFullEncoded());
     }
 
     private static Transaction createTransaction(int number) {

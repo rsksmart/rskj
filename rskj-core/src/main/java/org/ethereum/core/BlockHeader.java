@@ -294,13 +294,18 @@ public class BlockHeader {
     }
 
     public Keccak256 getHash() {
-        return new Keccak256(HashUtil.keccak256(getEncoded(true, !useRskip92Encoding)));
+        return new Keccak256(HashUtil.keccak256(getEncoded()));
     }
 
-    public byte[] getEncoded() {
+    public byte[] getFullEncoded() {
         // the encoded block header must include all fields, even the bitcoin PMT and coinbase which are not used for
         // calculating RSKIP92 block hashes
         return this.getEncoded(true, true);
+    }
+
+    public byte[] getEncoded() {
+        // the encoded block header used for calculating block hashes including RSKIP92
+        return this.getEncoded(true, !useRskip92Encoding);
     }
 
     @Nullable
@@ -370,7 +375,7 @@ public class BlockHeader {
         byte[][] unclesEncoded = new byte[uncleList.size()][];
         int i = 0;
         for (BlockHeader uncle : uncleList) {
-            unclesEncoded[i] = uncle.getEncoded();
+            unclesEncoded[i] = uncle.getFullEncoded();
             ++i;
         }
         return RLP.encodeList(unclesEncoded);
@@ -396,7 +401,7 @@ public class BlockHeader {
         byte[][] unclesEncoded = new byte[uncleList.size()][];
         int i = 0;
         for (BlockHeader uncle : uncleList) {
-            unclesEncoded[i] = uncle.getEncoded();
+            unclesEncoded[i] = uncle.getFullEncoded();
             ++i;
         }
         return RLP.encodeList(unclesEncoded);

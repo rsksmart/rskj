@@ -28,6 +28,7 @@ import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 
 import javax.annotation.Nonnull;
@@ -264,7 +265,7 @@ public class Block {
         byte[][] unclesEncoded = new byte[uncleList.size()][];
         int i = 0;
         for (BlockHeader uncle : uncleList) {
-            unclesEncoded[i] = uncle.getEncoded();
+            unclesEncoded[i] = uncle.getFullEncoded();
             ++i;
         }
         return RLP.encodeList(unclesEncoded);
@@ -272,7 +273,7 @@ public class Block {
 
     public byte[] getEncoded() {
         if (rlpEncoded == null) {
-            byte[] header = this.header.getEncoded();
+            byte[] header = this.header.getFullEncoded();
 
             List<byte[]> block = getBodyElements();
             block.add(0, header);

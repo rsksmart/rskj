@@ -93,7 +93,7 @@ public class BlockHeaderTest {
     public void getEncodedWithMergedMiningFields() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false);
 
-        byte[] headerEncoded = header.getEncoded();
+        byte[] headerEncoded = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
 
         assertThat(headerRLP.size(), is(19));
@@ -103,7 +103,7 @@ public class BlockHeaderTest {
     public void getEncodedWithoutMergedMiningFields() {
         BlockHeader header = createBlockHeader(new byte[0], false);
 
-        byte[] headerEncoded = header.getEncoded();
+        byte[] headerEncoded = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
 
         assertThat(headerRLP.size(), is(16));

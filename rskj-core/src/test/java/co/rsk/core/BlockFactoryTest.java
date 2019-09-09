@@ -76,7 +76,7 @@ public class BlockFactoryTest {
 
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0]);
 
-        byte[] encodedHeader = header.getEncoded();
+        byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(19));
 
@@ -92,7 +92,7 @@ public class BlockFactoryTest {
 
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0]);
 
-        byte[] encodedHeader = header.getEncoded();
+        byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(19));
 
@@ -108,7 +108,7 @@ public class BlockFactoryTest {
 
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0]);
 
-        byte[] encodedHeader = header.getEncoded();
+        byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(19));
 
@@ -132,7 +132,7 @@ public class BlockFactoryTest {
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
 
-        byte[] encodedHeader = header.getEncoded();
+        byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
         assertThat(headerRLP.size(), is(19));
 
