@@ -213,6 +213,7 @@ public class RskContext implements NodeBootstrapper {
     private PrecompiledContracts precompiledContracts;
     private BridgeSupportFactory bridgeSupportFactory;
     private PeersInformation peersInformation;
+    private static Map<String, KeyValueDataSource> dataSources = new HashMap<>();
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -760,7 +761,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected ReceiptStore buildReceiptStore() {
-        KeyValueDataSource ds = makeDataSource("receipts", getRskSystemProperties().databaseDir());
+        KeyValueDataSource ds = getDataSource("receipts", getRskSystemProperties().databaseDir());
         return new ReceiptStoreImpl(ds);
     }
 
@@ -795,7 +796,7 @@ public class RskContext implements NodeBootstrapper {
         }
 
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = makeDataSource("unitrie", databaseDir);
+        KeyValueDataSource ds = getDataSource("unitrie", databaseDir);
 
         if (statesCacheSize != 0) {
             ds = new DataSourceWithCache(ds, statesCacheSize);
@@ -809,7 +810,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected org.ethereum.db.BlockStore buildBlockStore() {
-        return buildBlockStore(getRskSystemProperties().databaseDir());
+        return buildBlockStore(getRskSystemProperties().databaseDir(), "index");
     }
 
     protected RskSystemProperties buildRskSystemProperties() {
@@ -829,7 +830,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected StateRootHandler buildStateRootHandler() {
-        KeyValueDataSource stateRootsDB = makeDataSource("stateRoots", getRskSystemProperties().databaseDir());
+        KeyValueDataSource stateRootsDB = getDataSource("stateRoots", getRskSystemProperties().databaseDir());
         return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB, new HashMap<>());
     }
 
@@ -875,7 +876,7 @@ public class RskContext implements NodeBootstrapper {
             return null;
         }
 
-        KeyValueDataSource ds = makeDataSource("wallet", rskSystemProperties.databaseDir());
+        KeyValueDataSource ds = getDataSource("wallet", rskSystemProperties.databaseDir());
         return new Wallet(ds);
     }
 
@@ -1463,9 +1464,10 @@ public class RskContext implements NodeBootstrapper {
         return minerClock;
     }
 
-    public org.ethereum.db.BlockStore buildBlockStore(String databaseDir) {
+
+    public org.ethereum.db.BlockStore buildBlockStore(String databaseDir, String indexName) {
         File blockIndexDirectory = new File(databaseDir + "/blocks/");
-        File dbFile = new File(blockIndexDirectory, "index");
+        File dbFile = new File(blockIndexDirectory, indexName);
         if (!blockIndexDirectory.exists()) {
             if (!blockIndexDirectory.mkdirs()) {
                 throw new IllegalArgumentException(String.format(
@@ -1478,14 +1480,27 @@ public class RskContext implements NodeBootstrapper {
                 .closeOnJvmShutdown()
                 .make();
 
-        KeyValueDataSource blocksDB = makeDataSource("blocks", databaseDir);
+        KeyValueDataSource blocksDB = getDataSource("blocks", databaseDir);
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
     }
 
-    public static KeyValueDataSource makeDataSource(String name, String databaseDir) {
-        KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir);
-        ds.init();
-        return ds;
+    /**
+     * Creates a dataSource with name + databaseDir as identifier. If it already exists, the same instance will be
+     * retrieved.
+     * @param name
+     * @param databaseDir
+     * @return The dataSource existing or new instance.
+     */
+    private static KeyValueDataSource getDataSource(String name, String databaseDir) {
+        String dataSourceIdentifier = name + databaseDir;
+
+        if (dataSources.get(dataSourceIdentifier) == null) {
+            KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir);
+            dataSources.put(dataSourceIdentifier, ds);
+            ds.init();
+        }
+
+        return dataSources.get(dataSourceIdentifier);
     }
 }
