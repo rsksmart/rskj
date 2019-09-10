@@ -44,7 +44,6 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Mocks;
-import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.Assert;
@@ -53,7 +52,6 @@ import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.OptionalLong;
 
 public class Web3RskImplTest {
 
@@ -101,6 +99,7 @@ public class Web3RskImplTest {
                 tpm,
                 null,
                 dm,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepositoryLocator(),
                 null,

@@ -58,6 +58,8 @@ import co.rsk.rpc.modules.mnr.MnrModuleImpl;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
+import co.rsk.rpc.modules.rsk.RskModule;
+import co.rsk.rpc.modules.rsk.RskModuleImpl;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.rpc.netty.*;
@@ -196,6 +198,7 @@ public class RskContext implements NodeBootstrapper {
     private DebugModule debugModule;
     private MnrModule mnrModule;
     private TxPoolModule txPoolModule;
+    private RskModule rskModule;
     private RskWireProtocol.Factory rskWireProtocolFactory;
     private Eth62MessageFactory eth62MessageFactory;
     private GasLimitCalculator gasLimitCalculator;
@@ -619,6 +622,17 @@ public class RskContext implements NodeBootstrapper {
         return txPoolModule;
     }
 
+    public RskModule getRskModule() {
+        if (rskModule == null) {
+            rskModule = new RskModuleImpl(
+                    getBlockchain(),
+                    getBlockStore(),
+                    getReceiptStore());
+        }
+
+        return rskModule;
+    }
+
     public NetworkStateExporter getNetworkStateExporter() {
         if (networkStateExporter == null) {
             networkStateExporter = new NetworkStateExporter(getRepositoryLocator(), getBlockchain());
@@ -768,6 +782,7 @@ public class RskContext implements NodeBootstrapper {
                 getTxPoolModule(),
                 getMnrModule(),
                 getDebugModule(),
+                getRskModule(),
                 getChannelManager(),
                 getRepositoryLocator(),
                 getPeerScoringManager(),

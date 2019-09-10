@@ -354,7 +354,7 @@ public class Web3ImplLogsTest {
         String txhash = ((LogFilterElement)logs[0]).transactionHash;
         TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
 
-        Assert.assertEquals(txdto.contractAddress,((LogFilterElement)logs[0]).address);
+        Assert.assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[0]).address);
     }
 
     @Test
@@ -372,7 +372,7 @@ public class Web3ImplLogsTest {
         String txhash = ((LogFilterElement)logs[0]).transactionHash;
         TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
 
-        Assert.assertEquals(txdto.contractAddress,((LogFilterElement)logs[0]).address);
+        Assert.assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[0]).address);
     }
 
     @Test
@@ -389,8 +389,8 @@ public class Web3ImplLogsTest {
         String txhash = ((LogFilterElement)logs[0]).transactionHash;
         TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
 
-        Assert.assertEquals(txdto.contractAddress,((LogFilterElement)logs[0]).address);
-        Assert.assertEquals(txdto.contractAddress,((LogFilterElement)logs[1]).address);
+        Assert.assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[0]).address);
+        Assert.assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[1]).address);
     }
 
 
@@ -409,8 +409,8 @@ public class Web3ImplLogsTest {
         String txhash = ((LogFilterElement)logs[0]).transactionHash;
         TransactionReceiptDTO txdto = web3.eth_getTransactionReceipt(txhash);
 
-        Assert.assertEquals(txdto.contractAddress,((LogFilterElement)logs[0]).address);
-        Assert.assertEquals(txdto.contractAddress,((LogFilterElement)logs[1]).address);
+        Assert.assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[0]).address);
+        Assert.assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[1]).address);
     }
 
     @Test
@@ -1018,6 +1018,7 @@ public class Web3ImplLogsTest {
                 txPoolModule,
                 null,
                 debugModule,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 repositoryLocator,
                 null,

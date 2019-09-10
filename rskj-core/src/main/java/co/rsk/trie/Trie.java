@@ -1370,4 +1370,56 @@ public class Trie {
             return TrieKeySlice.fromEncoded(encodedKey, 0, lshared, lencoded);
         }
     }
+
+    // Additional auxiliary methods for Merkle Proof
+
+    @Nullable
+    public List<Trie> getNodes(byte[] key) {
+        return findNodes(key);
+    }
+
+    @Nullable
+    public List<Trie> getNodes(String key) {
+        return this.getNodes(key.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Nullable
+    private List<Trie> findNodes(byte[] key) {
+        return findNodes(TrieKeySlice.fromKey(key));
+    }
+
+    @Nullable
+    private List<Trie> findNodes(TrieKeySlice key) {
+        if (sharedPath.length() > key.length()) {
+            return null;
+        }
+
+        int commonPathLength = key.commonPath(sharedPath).length();
+
+        if (commonPathLength < sharedPath.length()) {
+            return null;
+        }
+
+        if (commonPathLength == key.length()) {
+            List<Trie> nodes = new ArrayList<>();
+            nodes.add(this);
+            return nodes;
+        }
+
+        Trie node = this.retrieveNode(key.get(commonPathLength));
+
+        if (node == null) {
+            return null;
+        }
+
+        List<Trie> subnodes = node.findNodes(key.slice(commonPathLength + 1, key.length()));
+
+        if (subnodes == null) {
+            return null;
+        }
+
+        subnodes.add(this);
+
+        return subnodes;
+    }
 }

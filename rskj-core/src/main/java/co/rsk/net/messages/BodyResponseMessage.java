@@ -37,7 +37,7 @@ public class BodyResponseMessage extends MessageWithId {
         }
 
         for (int k = 0; k < this.uncles.size(); k++) {
-            rlpUncles[k] = this.uncles.get(k).getEncoded();
+            rlpUncles[k] = this.uncles.get(k).getFullEncoded();
         }
 
         return RLP.encodeList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));

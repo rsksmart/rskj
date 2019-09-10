@@ -212,7 +212,7 @@ public class MessageTest {
         for (int k = 0; k < headers.size(); k++) {
             Assert.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
             Assert.assertEquals(headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
-            Assert.assertArrayEquals(headers.get(k).getEncoded(), newmessage.getBlockHeaders().get(k).getEncoded());
+            Assert.assertArrayEquals(headers.get(k).getFullEncoded(), newmessage.getBlockHeaders().get(k).getFullEncoded());
         }
     }
 
@@ -492,7 +492,7 @@ public class MessageTest {
         Assert.assertEquals(uncles.size(), newmessage.getUncles().size());
 
         for (int k = 0; k < uncles.size(); k++)
-            Assert.assertArrayEquals(uncles.get(k).getEncoded(), newmessage.getUncles().get(k).getEncoded());
+            Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getUncles().get(k).getFullEncoded());
     }
 
     private static Transaction createTransaction(int number) {

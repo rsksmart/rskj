@@ -33,18 +33,19 @@ import static org.ethereum.rpc.TypeConverter.*;
  */
 public class TransactionReceiptDTO {
 
-    public String transactionHash;      // hash of the transaction.
-    public String transactionIndex;     // integer of the transactions index position in the block.
-    public String blockHash;            // hash of the block where this transaction was in.
-    public String blockNumber;          // block number where this transaction was in.
-    public String cumulativeGasUsed;    // The total amount of gas used when this transaction was executed in the block.
-    public String gasUsed;              //The amount of gas used by this specific transaction alone.
-    public String contractAddress;      // The contract address created, if the transaction was a contract creation, otherwise  null .
-    public LogFilterElement[] logs;  // Array of log objects, which this transaction generated.
-    public String from;
-    public String to;
-    public String root;
-    public String status;
+    private String transactionHash;      // hash of the transaction.
+    private String transactionIndex;     // integer of the transactions index position in the block.
+    private String blockHash;            // hash of the block where this transaction was in.
+    private String blockNumber;          // block number where this transaction was in.
+    private String cumulativeGasUsed;    // The total amount of gas used when this transaction was executed in the block.
+    private String gasUsed;              // The amount of gas used by this specific transaction alone.
+    private String contractAddress;      // The contract address created, if the transaction was a contract creation, otherwise  null .
+    private LogFilterElement[] logs;     // Array of log objects, which this transaction generated.
+    private String from;                 // address of the sender.
+    private String to;                   // address of the receiver. null when it's a contract creation transaction.
+    private String root;                 // post-transaction stateroot
+    private String status;               // either 1 (success) or 0 (failure)
+    private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
 
 
     public  TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
@@ -75,5 +76,58 @@ public class TransactionReceiptDTO {
         to = receipt.getTransaction().getReceiveAddress().toJsonString();
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = toQuantityJsonHex(txInfo.getIndex());
+        logsBloom = toUnformattedJsonHex(txInfo.getReceipt().getBloomFilter().getData());
+    }
+
+    public String getTransactionHash() {
+        return transactionHash;
+    }
+
+    public String getTransactionIndex() {
+        return transactionIndex;
+    }
+
+    public String getBlockHash() {
+        return blockHash;
+    }
+
+    public String getBlockNumber() {
+        return blockNumber;
+    }
+
+    public String getCumulativeGasUsed() {
+        return cumulativeGasUsed;
+    }
+
+    public String getGasUsed() {
+        return gasUsed;
+    }
+
+    public String getContractAddress() {
+        return contractAddress;
+    }
+
+    public LogFilterElement[] getLogs() {
+        return logs.clone();
+    }
+
+    public String getFrom() {
+        return from;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public String getRoot() {
+        return root;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public String getLogsBloom() {
+        return logsBloom;
     }
 }

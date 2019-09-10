@@ -21,7 +21,6 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
-import co.rsk.core.bc.BlockResult;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
@@ -35,6 +34,7 @@ import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.InvalidInetAddressException;
 import co.rsk.scoring.PeerScoringInformation;
@@ -108,6 +108,7 @@ public class Web3Impl implements Web3 {
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
     private final DebugModule debugModule;
+    private final RskModule rskModule;
 
     protected Web3Impl(
             Ethereum eth,
@@ -124,6 +125,7 @@ public class Web3Impl implements Web3 {
             TxPoolModule txPoolModule,
             MnrModule mnrModule,
             DebugModule debugModule,
+            RskModule rskModule,
             ChannelManager channelManager,
             RepositoryLocator repositoryLocator,
             PeerScoringManager peerScoringManager,
@@ -146,6 +148,7 @@ public class Web3Impl implements Web3 {
         this.txPoolModule = txPoolModule;
         this.mnrModule = mnrModule;
         this.debugModule = debugModule;
+        this.rskModule = rskModule;
         this.channelManager = channelManager;
         this.repositoryLocator = repositoryLocator;
         this.peerScoringManager = peerScoringManager;
@@ -571,11 +574,11 @@ public class Web3Impl implements Web3 {
 
     @Override
     public BlockResultDTO eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception {
-        BlockResult s = null;
+        BlockResultDTO s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
 
-            return getBlockResult(b, fullTransactionObjects);
+            return s = (b == null ? null : getBlockResult(b, fullTransactionObjects));
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getBlockByHash({}, {}): {}", blockHash, fullTransactionObjects, s);
@@ -705,6 +708,7 @@ public class Web3Impl implements Web3 {
 
         return new TransactionReceiptDTO(block, txInfo);
     }
+
 
     @Override
     public BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) throws Exception {
@@ -1038,6 +1042,11 @@ public class Web3Impl implements Web3 {
         return debugModule;
     }
 
+    @Override
+    public RskModule getRskModule() {
+        return rskModule;
+    }
+
     /**
      * Adds an address or block to the list of banned addresses
      * It supports IPV4 and IPV6 addresses with an optional number of bits to ignore
@@ -1106,4 +1115,5 @@ public class Web3Impl implements Web3 {
     public String[] sco_bannedAddresses() {
         return this.peerScoringManager.getBannedAddresses().toArray(new String[0]);
     }
+    
 }
