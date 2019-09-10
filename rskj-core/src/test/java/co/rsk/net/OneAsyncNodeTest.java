@@ -34,6 +34,7 @@ import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
@@ -64,7 +65,9 @@ public class OneAsyncNodeTest {
                 new BlockFactory(config.getActivationConfig()),
                 new DummyBlockValidationRule(),
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()), new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
+                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
+                new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
+                mock(Genesis.class)
         );
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule(), mock(StatusResolver.class));
 
@@ -78,7 +81,7 @@ public class OneAsyncNodeTest {
     }
 
     @Test
-    public void buildBlockchain() throws InterruptedException {
+    public void buildBlockchain() {
         SimpleAsyncNode node = createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
@@ -94,7 +97,7 @@ public class OneAsyncNodeTest {
     }
 
     @Test
-    public void buildBlockchainInReverse() throws InterruptedException {
+    public void buildBlockchainInReverse() {
         SimpleAsyncNode node = createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);

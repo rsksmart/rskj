@@ -10,10 +10,10 @@ import co.rsk.test.World;
 import co.rsk.validators.*;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
+import org.ethereum.db.BlockStore;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.ChannelManagerImpl;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
-import org.ethereum.sync.SyncPool;
 import org.ethereum.util.RskMockFactory;
 import org.mockito.Mockito;
 
@@ -35,35 +35,24 @@ public class NodeMessageHandlerUtil {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 RskMockFactory.getChannelManager(), syncConfiguration, blockFactory, new DummyBlockValidationRule(),
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
-        );
+                DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
+                mock(Genesis.class));
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule, mock(StatusResolver.class));
     }
 
-    public static NodeMessageHandler createHandlerWithSyncProcessor() {
-        return createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING);
-    }
-
-    public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration) {
-        return createHandlerWithSyncProcessor(syncConfiguration, new ChannelManagerImpl(config, mock(SyncPool.class)));
-    }
-
-    public static NodeMessageHandler createHandlerWithSyncProcessor(ChannelManager channelManager) {
-        return createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
-    }
-
     public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration, ChannelManager channelManager) {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        return createHandlerWithSyncProcessor(blockchain, syncConfiguration, channelManager);
+        final BlockStore blockStore = world.getBlockStore();
+        return createHandlerWithSyncProcessor(blockchain, syncConfiguration, channelManager, blockStore);
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor(
             Blockchain blockchain,
             SyncConfiguration syncConfiguration,
-            ChannelManager channelManager) {
+            ChannelManager channelManager, BlockStore blockStore) {
         final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -73,9 +62,12 @@ public class NodeMessageHandlerUtil {
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration, blockFactory,
+                blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration, blockFactory,
                 blockValidationRule, new BlockCompositeRule(new BlockUnclesHashValidationRule(),
-                new BlockRootValidationRule(config.getActivationConfig())), DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager)
+                new BlockRootValidationRule(config.getActivationConfig())),
+                DIFFICULTY_CALCULATOR,
+                new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
+                mock(Genesis.class)
         );
         return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, blockValidationRule, mock(StatusResolver.class));
     }

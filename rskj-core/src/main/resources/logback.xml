@@ -28,12 +28,12 @@
                 %date{yyyy-MM-dd-HH:mm:ss.SSS} %p [%c{1}]  %m%n
             </Pattern>
         </encoder>
-    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-        <fileNamePattern>./logs/rskj-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
-        <maxFileSize>100MB</maxFileSize>
-        <maxHistory>7</maxHistory>
-        <totalSizeCap>1GB</totalSizeCap>
-    </rollingPolicy>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>./logs/rskj-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
     </appender>
 
     <logger name="execute" level="INFO"/>

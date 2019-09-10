@@ -34,6 +34,7 @@ import co.rsk.validators.BlockUnclesHashValidationRule;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
@@ -139,7 +140,9 @@ public class SimpleAsyncNode extends SimpleNode {
                 blockchain, indexedBlockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration, blockFactory,
                 blockValidationRule,
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()), new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager)
+                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
+                new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
+                mock(Genesis.class)
         );
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule, mock(StatusResolver.class));
 

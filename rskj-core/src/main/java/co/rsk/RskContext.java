@@ -1302,8 +1302,8 @@ public class RskContext implements NodeBootstrapper {
                             new BlockRootValidationRule(getRskSystemProperties().getActivationConfig())
                     ),
                     getDifficultyCalculator(),
-                    getPeersInformation()
-            );
+                    getPeersInformation(),
+                    getGenesis());
         }
 
         return syncProcessor;

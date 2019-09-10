@@ -288,7 +288,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test()
-    public void processStatusMessageUsingSyncProcessor() throws UnknownHostException {
+    public void processStatusMessageUsingSyncProcessor() {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final ChannelManager channelManager = mock(ChannelManager.class);
@@ -333,7 +333,7 @@ public class NodeMessageHandlerTest {
                 new DummyBlockValidationRule(),
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 null,
-                new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()));
+                new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()), mock(Genesis.class));
         final NodeMessageHandler handler = new NodeMessageHandler(config,
                 bp, syncProcessor, null, null,
                 null, new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
