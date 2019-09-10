@@ -22,7 +22,7 @@ public class BlockHashesHelper {
         return trie.getHashOrchid(false).getBytes();
     }
 
-    private static Trie calculateReceiptsTrieRootFor(List<TransactionReceipt> receipts) {
+    public static Trie calculateReceiptsTrieRootFor(List<TransactionReceipt> receipts) {
         Trie receiptsTrie = new Trie();
         for (int i = 0; i < receipts.size(); i++) {
             receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());

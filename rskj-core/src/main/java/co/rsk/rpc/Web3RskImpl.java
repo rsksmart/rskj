@@ -30,6 +30,7 @@ import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.core.*;
@@ -76,6 +77,7 @@ public class Web3RskImpl extends Web3Impl {
             TxPoolModule txPoolModule,
             MnrModule mnrModule,
             DebugModule debugModule,
+            RskModule rskModule,
             ChannelManager channelManager,
             RepositoryLocator repositoryLocator,
             PeerScoringManager peerScoringManager,
@@ -89,7 +91,7 @@ public class Web3RskImpl extends Web3Impl {
             BuildInfo buildInfo,
             BlocksBloomStore blocksBloomStore) {
         super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
-              personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule,
+              personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, rskModule,
               channelManager, repositoryLocator, peerScoringManager, peerServer, nodeBlockProcessor,
               hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore);
 

@@ -25,6 +25,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -39,6 +40,8 @@ import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
+import co.rsk.rpc.modules.rsk.RskModule;
+import co.rsk.rpc.modules.rsk.RskModuleImpl;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.test.World;
@@ -50,6 +53,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -268,6 +272,7 @@ public class Web3ImplTest {
                 txPoolModule,
                 null,
                 debugModule,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepositoryLocator(),
                 null,
@@ -313,6 +318,7 @@ public class Web3ImplTest {
         String hashString = tx.getHash().toHexString();
 
         Assert.assertNull(web3.eth_getTransactionReceipt(hashString));
+        Assert.assertNull(web3.rsk_getRawTransactionReceiptByHash(hashString));
     }
 
     @Test
@@ -336,17 +342,27 @@ public class Web3ImplTest {
         TransactionReceiptDTO tr = web3.eth_getTransactionReceipt(hashString);
 
         org.junit.Assert.assertNotNull(tr);
-        org.junit.Assert.assertEquals("0x" + hashString, tr.transactionHash);
+        org.junit.Assert.assertEquals("0x" + hashString, tr.getTransactionHash());
         String trxFrom = TypeConverter.toJsonHex(tx.getSender().getBytes());
-        org.junit.Assert.assertEquals(trxFrom, tr.from);
+        org.junit.Assert.assertEquals(trxFrom, tr.getFrom());
         String trxTo = TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes());
-        org.junit.Assert.assertEquals(trxTo, tr.to);
+        org.junit.Assert.assertEquals(trxTo, tr.getTo());
 
         String blockHashString = "0x" + block1.getHash();
-        org.junit.Assert.assertEquals(blockHashString, tr.blockHash);
+        org.junit.Assert.assertEquals(blockHashString, tr.getBlockHash());
 
         String blockNumberAsHex = "0x" + Long.toHexString(block1.getNumber());
-        org.junit.Assert.assertEquals(blockNumberAsHex, tr.blockNumber);
+        org.junit.Assert.assertEquals(blockNumberAsHex, tr.getBlockNumber());
+
+        String rawTransactionReceipt = web3.rsk_getRawTransactionReceiptByHash(hashString);
+        String expectedRawTxReceipt = "0xf9010c01825208b9010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c082520801";
+        Assert.assertEquals(expectedRawTxReceipt, rawTransactionReceipt);
+
+        String[] transactionReceiptNodes = web3.rsk_getTransactionReceiptNodesByHash(blockHashString, hashString);
+        ArrayList<String> expectedRawTxReceiptNodes = new ArrayList<>();
+        expectedRawTxReceiptNodes.add("0x70078048ee76b19fc451dba9dbee8b3e73084f79ea540d3940b3b36b128e8024e9302500010f");
+        Assert.assertEquals(1, transactionReceiptNodes.length);
+        Assert.assertEquals(expectedRawTxReceiptNodes.get(0), transactionReceiptNodes[0]);
     }
 
     @Test
@@ -618,12 +634,17 @@ public class Web3ImplTest {
         String blockHash = "0x" + block1b.getHash();
         org.junit.Assert.assertEquals(blockHash, bresult.getHash());
 
+        String bnOrId = "0x2";
         bresult = web3.eth_getBlockByNumber("0x2", true);
 
         Assert.assertNotNull(bresult);
 
         blockHash = "0x" + block2b.getHash();
         org.junit.Assert.assertEquals(blockHash, bresult.getHash());
+
+        String hexString = web3.rsk_getRawBlockHeaderByNumber(bnOrId).replace("0x","");
+        Keccak256  obtainedBlockHash = new Keccak256(HashUtil.keccak256(Hex.decode(hexString)));
+        Assert.assertEquals(blockHash, obtainedBlockHash.toJsonString());
     }
 
     @Test
@@ -689,12 +710,17 @@ public class Web3ImplTest {
                                         world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        BlockResultDTO blockResult = web3.eth_getBlockByNumber("earliest", false);
+        String bnOrId = "earliest";
+        BlockResultDTO blockResult = web3.eth_getBlockByNumber(bnOrId, false);
 
         Assert.assertNotNull(blockResult);
 
         String blockHash = genesis.getHashJsonString();
         org.junit.Assert.assertEquals(blockHash, blockResult.getHash());
+
+        String hexString = web3.rsk_getRawBlockHeaderByNumber(bnOrId).replace("0x","");
+        Keccak256  obtainedBlockHash = new Keccak256(HashUtil.keccak256(Hex.decode(hexString)));
+        Assert.assertEquals(blockHash, obtainedBlockHash.toJsonString());
     }
 
     @Test
@@ -703,9 +729,13 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        BlockResultDTO blockResult = web3.eth_getBlockByNumber("0x1234", false);
+        String bnOrId = "0x1234";
+        BlockResultDTO blockResult = web3.eth_getBlockByNumber(bnOrId, false);
 
         Assert.assertNull(blockResult);
+
+        String hexString = web3.rsk_getRawBlockHeaderByNumber(bnOrId);
+        Assert.assertNull(hexString);
     }
 
     @Test
@@ -741,16 +771,23 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(0, bresult.getUncles().size());
         org.junit.Assert.assertEquals("0xa", bresult.getDifficulty());
         org.junit.Assert.assertEquals("0xb", bresult.getTotalDifficulty());
-
         bresult = web3.eth_getBlockByHash(block1bHashString, true);
 
         Assert.assertNotNull(bresult);
         org.junit.Assert.assertEquals(block1bHashString, bresult.getHash());
 
+        String hexString = web3.rsk_getRawBlockHeaderByHash(block1bHashString).replace("0x","");
+        Keccak256  blockHash = new Keccak256(HashUtil.keccak256(Hex.decode(hexString)));
+        Assert.assertEquals(blockHash.toJsonString(), block1bHashString);
+
         bresult = web3.eth_getBlockByHash(block2bHashString, true);
 
         Assert.assertNotNull(bresult);
         org.junit.Assert.assertEquals(block2bHashString, bresult.getHash());
+
+        hexString = web3.rsk_getRawBlockHeaderByHash(block2bHashString).replace("0x","");
+        blockHash = new Keccak256(HashUtil.keccak256(Hex.decode(hexString)));
+        Assert.assertEquals(blockHash.toJsonString(), block2bHashString);
     }
 
     @Test
@@ -818,9 +855,13 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        BlockResultDTO blockResult = web3.eth_getBlockByHash("0x1234000000000000000000000000000000000000000000000000000000000000", false);
+        String blockHash = "0x1234000000000000000000000000000000000000000000000000000000000000";
+        BlockResultDTO blockResult = web3.eth_getBlockByHash(blockHash, false);
 
         Assert.assertNull(blockResult);
+
+        String hexString = web3.rsk_getRawBlockHeaderByHash(blockHash);
+        Assert.assertNull(hexString);
     }
 
     @Test
@@ -979,6 +1020,7 @@ public class Web3ImplTest {
                 null,
                 minerServerMock,
                 personalModule,
+                null,
                 null,
                 null,
                 null,
@@ -1306,6 +1348,7 @@ public class Web3ImplTest {
                 txPoolModule,
                 null,
                 debugModule,
+                null,
                 channelManager,
                 Web3Mocks.getMockRepositoryLocator(),
                 null,
@@ -1376,6 +1419,7 @@ public class Web3ImplTest {
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()));
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
+        RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
@@ -1391,6 +1435,7 @@ public class Web3ImplTest {
                 txPoolModule,
                 null,
                 debugModule,
+                rskModule,
                 channelManager,
                 repositoryLocator,
                 null,
@@ -1439,6 +1484,7 @@ public class Web3ImplTest {
                 txPoolModule,
                 null,
                 debugModule,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepositoryLocator(),
                 null,
@@ -1500,6 +1546,7 @@ public class Web3ImplTest {
                 txPoolModule,
                 null,
                 debugModule,
+                null,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepositoryLocator(),
                 null,

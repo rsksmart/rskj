@@ -31,6 +31,7 @@ import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.core.Blockchain;
@@ -41,13 +42,11 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
-import org.ethereum.rpc.Web3Impl;
 import org.ethereum.util.BuildInfo;
 import org.junit.Test;
-import org.mockito.MockSettings;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class Web3EthModuleTest {
@@ -69,6 +68,7 @@ public class Web3EthModuleTest {
                 mock(TxPoolModule.class),
                 mock(MnrModule.class),
                 mock(DebugModule.class),
+                mock(RskModule.class),
                 mock(ChannelManager.class),
                 mock(RepositoryLocator.class),
                 mock(PeerScoringManager.class),
