@@ -227,6 +227,11 @@ public class RskContext implements NodeBootstrapper {
     @Override
     public NodeRunner getNodeRunner() {
         if (nodeRunner == null) {
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            if (rskSystemProperties.databaseReset()) {
+                FileUtil.recursiveDelete(rskSystemProperties.databaseDir());
+            }
+
             nodeRunner = buildNodeRunner();
         }
 
@@ -809,10 +814,6 @@ public class RskContext implements NodeBootstrapper {
     protected TrieStore buildTrieStore(String name) {
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
-        if (rskSystemProperties.databaseReset()) {
-            FileUtil.recursiveDelete(databaseDir);
-        }
-
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
         KeyValueDataSource ds = makeDataSource(name, databaseDir);
 
