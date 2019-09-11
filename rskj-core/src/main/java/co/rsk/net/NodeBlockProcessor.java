@@ -180,6 +180,12 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processBlockHeadersRequest(@Nonnull final MessageChannel sender, long requestId, @Nonnull final byte[] hash, int count) {
         logger.trace("Processing headers request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
+
+        if (count > syncConfiguration.getChunkSize()) {
+            logger.trace("Headers request from {} failed because size {}", sender.getPeerNodeID(), count);
+            return;
+        }
+
         Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
@@ -279,7 +285,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         }
 
         // We always include the best block as part of the Skeleton response
-        skeletonNumber = Math.min(this.getBestBlockNumber(), skeletonNumber + skeletonStep);
+        skeletonNumber = Math.min(this.getBestBlockNumber(), skeletonNumber);
         byte[] skeletonHash = getSkeletonHash(skeletonNumber);
         blockIdentifiers.add(new BlockIdentifier(skeletonHash, skeletonNumber));
         SkeletonResponseMessage responseMessage = new SkeletonResponseMessage(requestId, blockIdentifiers);
