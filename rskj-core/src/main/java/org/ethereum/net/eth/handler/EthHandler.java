@@ -22,23 +22,16 @@ package org.ethereum.net.eth.handler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionReceipt;
 import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.listener.EthereumListener;
-import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.eth.message.EthMessageCodes;
-import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 
 /**
  * Process the messages between peers with 'eth' capability on the network<br>
@@ -57,24 +50,16 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
 
     protected EthVersion version;
 
-    protected Block bestBlock;
-    protected EthereumListener listener = new EthereumListenerAdapter() {
-        @Override
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
-            bestBlock = block;
-        }
-    };
-
     protected int maxHashesAsk;
 
     protected boolean processTransactions = false;
 
-    protected EthHandler(Blockchain blockchain, SystemProperties config, CompositeEthereumListener ethereumListener, EthVersion version) {
+    protected EthHandler(SystemProperties config,
+                         CompositeEthereumListener ethereumListener,
+                         EthVersion version) {
         this.ethereumListener = ethereumListener;
         this.version = version;
         maxHashesAsk = config.maxHashesAsk();
-        bestBlock = blockchain.getBestBlock();
-        ethereumListener.addListener(listener);
         // when sync enabled we delay transactions processing until sync is complete
         processTransactions = !config.isSyncEnabled();
     }
@@ -95,15 +80,14 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         logger.error("Eth handling failed", cause);
         ctx.close();
     }
 
     @Override
-    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+    public void handlerRemoved(ChannelHandlerContext ctx) {
         logger.debug("handlerRemoved: kill timers in EthHandler");
-        ethereumListener.removeListener(listener);
         onShutdown();
     }
 
@@ -124,10 +108,6 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
 
         msgQueue.sendMessage(message);
         channel.getNodeStatistics().ethOutbound.add();
-    }
-
-    public StatusMessage getHandshakeStatusMessage() {
-        return channel.getNodeStatistics().getEthLastInboundStatusMsg();
     }
 
     public void setMsgQueue(MessageQueue msgQueue) {

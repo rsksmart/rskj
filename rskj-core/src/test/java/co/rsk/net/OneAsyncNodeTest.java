@@ -66,7 +66,7 @@ public class OneAsyncNodeTest {
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()), new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
         );
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule(), mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }

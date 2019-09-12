@@ -215,6 +215,7 @@ public class RskContext implements NodeBootstrapper {
     private PrecompiledContracts precompiledContracts;
     private BridgeSupportFactory bridgeSupportFactory;
     private PeersInformation peersInformation;
+    private StatusResolver statusResolver;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -1438,17 +1439,23 @@ public class RskContext implements NodeBootstrapper {
         if (nodeMessageHandler == null) {
             nodeMessageHandler = new NodeMessageHandler(
                     getRskSystemProperties(),
-                    getBlockStore(),
                     getNodeBlockProcessor(),
                     getSyncProcessor(),
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),
-                    getBlockValidationRule()
-            );
+                    getBlockValidationRule(),
+                    getStatusResolver());
         }
 
         return nodeMessageHandler;
+    }
+
+    private StatusResolver getStatusResolver() {
+        if (statusResolver == null) {
+            statusResolver = new StatusResolver(getBlockStore(), getGenesis());
+        }
+        return statusResolver;
     }
 
     private RskWireProtocol.Factory getRskWireProtocolFactory() {
@@ -1457,10 +1464,10 @@ public class RskContext implements NodeBootstrapper {
                     getRskSystemProperties(),
                     getPeerScoringManager(),
                     getNodeMessageHandler(),
-                    getBlockchain(),
                     getCompositeEthereumListener(),
                     getGenesis(),
-                    getMessageRecorder());
+                    getMessageRecorder(),
+                    getStatusResolver());
         }
 
         return rskWireProtocolFactory;

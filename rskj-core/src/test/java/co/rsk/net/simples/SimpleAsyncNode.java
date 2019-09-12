@@ -141,7 +141,7 @@ public class SimpleAsyncNode extends SimpleNode {
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()), new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager)
         );
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule, mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }
