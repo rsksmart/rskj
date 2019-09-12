@@ -37,7 +37,7 @@ import java.util.List;
 /**
  * Created by ajlopez on 09/08/2016.
  */
-public class BlockForkTest {
+public class BlockchainBranchComparatorTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
     private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
@@ -52,9 +52,9 @@ public class BlockForkTest {
         store.saveBlock(genesis, TEST_DIFFICULTY, true);
         store.saveBlock(block, TEST_DIFFICULTY, true);
 
-        BlockFork fork = new BlockFork();
+        BlockchainBranchComparator comparator = new BlockchainBranchComparator(store);
 
-        fork.calculate(genesis, block, store);
+        BlockFork fork = comparator.calculateFork(genesis, block);
 
         Assert.assertSame(genesis, fork.getCommonAncestor());
         Assert.assertTrue(fork.getOldBlocks().isEmpty());
@@ -76,9 +76,9 @@ public class BlockForkTest {
         List<Block> oldBranch = makeChain(parent, 2, store, blockGenerator);
         List<Block> newBranch = makeChain(parent, 2, store, blockGenerator);
 
-        BlockFork fork = new BlockFork();
+        BlockchainBranchComparator comparator = new BlockchainBranchComparator(store);
 
-        fork.calculate(oldBranch.get(1), newBranch.get(1) , store);
+        BlockFork fork = comparator.calculateFork(oldBranch.get(1), newBranch.get(1));
 
         Assert.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
 
@@ -106,9 +106,9 @@ public class BlockForkTest {
         List<Block> oldBranch = makeChain(parent, 2, store, blockGenerator);
         List<Block> newBranch = makeChain(parent, 3, store, blockGenerator);
 
-        BlockFork fork = new BlockFork();
+        BlockchainBranchComparator comparator = new BlockchainBranchComparator(store);
 
-        fork.calculate(oldBranch.get(1), newBranch.get(2) , store);
+        BlockFork fork = comparator.calculateFork(oldBranch.get(1), newBranch.get(2));
 
         Assert.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
 
@@ -137,9 +137,9 @@ public class BlockForkTest {
         List<Block> oldBranch = makeChain(parent, 3, store, blockGenerator);
         List<Block> newBranch = makeChain(parent, 2, store, blockGenerator);
 
-        BlockFork fork = new BlockFork();
+        BlockchainBranchComparator comparator = new BlockchainBranchComparator(store);
 
-        fork.calculate(oldBranch.get(2), newBranch.get(1) , store);
+        BlockFork fork = comparator.calculateFork(oldBranch.get(2), newBranch.get(1));
 
         Assert.assertEquals(parent.getHash(), fork.getCommonAncestor().getHash());
 
