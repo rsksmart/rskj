@@ -13,12 +13,23 @@ public class HashMapBlocksIndex implements BlocksIndex {
     }
 
     @Override
+    public boolean isEmpty() {
+        return index.isEmpty();
+    }
+
+    @Override
     public long getMaxNumber() {
         if (index.isEmpty()) {
             return -1;
         }
 
         return index.keySet().stream().max(Long::compare).get();
+    }
+
+    @Override
+    public long getMinNumber() {
+        return index.keySet().stream().min(Long::compare)
+                .orElseThrow(() -> new IllegalStateException("Index is empty"));
     }
 
     @Override

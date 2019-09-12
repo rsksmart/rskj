@@ -26,10 +26,7 @@ import org.mapdb.DB;
 import org.mapdb.HTreeMap;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -69,10 +66,24 @@ public class MapDBBlocksIndexTest {
         metadataF.set(target, metadata);
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void getMinNumber_emptyIndex() {
+        target.getMinNumber();
+    }
+
     @Test
+    public void getMinNumber_nonEmptyIndex() {
+        metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(9));
+        index.put(9L, new ArrayList<>());
+        index.put(8L, new ArrayList<>());
+
+        assertEquals(8L, target.getMinNumber());
+    }
+
+    @Test(expected = IllegalStateException.class)
     public void getMaxNumber_emptyIndex() {
         metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(9));
-        assertEquals(target.getMaxNumber(),-1);
+        target.getMaxNumber();
     }
 
     @Test
@@ -149,6 +160,20 @@ public class MapDBBlocksIndexTest {
     }
 
     @Test
+    public void isEmpty_empty() {
+        assertTrue(target.isEmpty());
+    }
+
+    @Test
+    public void isEmpty_notEmpty() {
+        long blockNumber = 20;
+        List<IndexedBlockStore.BlockInfo> putBlocks = mock(List.class);
+        target.putBlocks(blockNumber, putBlocks);
+
+        assertFalse(target.isEmpty());
+    }
+
+    @Test
     public void putBlocks_emptyIndex() {
         long blockNumber = 20;
         List<IndexedBlockStore.BlockInfo> putBlocks = mock(List.class);
@@ -165,7 +190,7 @@ public class MapDBBlocksIndexTest {
         byte[] byteNumber = ByteUtil.longToBytes(blockNumber);
         List<IndexedBlockStore.BlockInfo> putBlocks = mock(List.class);
 
-        List<IndexedBlockStore.BlockInfo> result = target.removeLast();
+        target.removeLast();
 
         metadata.put(MAX_BLOCK_NUMBER_KEY, byteNumber);
 
@@ -190,17 +215,17 @@ public class MapDBBlocksIndexTest {
         assertEquals(19L, target.getMaxNumber());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void removeLastBlock_emptyIndex() {
         metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(-1));
 
         List<IndexedBlockStore.BlockInfo> result = target.removeLast();
 
         assertTrue(result.isEmpty());
-        assertEquals(-1, target.getMaxNumber());
+        target.getMaxNumber();
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void removeLastBlock_nowEmptyIndex() {
         List<IndexedBlockStore.BlockInfo> expectedResult = mock(List.class);
 
@@ -211,7 +236,7 @@ public class MapDBBlocksIndexTest {
 
         assertEquals(expectedResult, result);
         assertFalse(index.containsKey(1L));
-        assertEquals(-1, target.getMaxNumber());
+        target.getMaxNumber();
     }
 
     @Test

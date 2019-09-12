@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Roman Mandeleil
@@ -94,6 +95,11 @@ public class BlockStoreDummy implements BlockStore {
     @Override
     public long getMaxNumber() {
         return 0;
+    }
+
+    @Override
+    public long getMinNumber() {
+        return 0L;
     }
 
 

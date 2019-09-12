@@ -56,6 +56,7 @@ public class MapDBBlocksIndex implements BlocksIndex {
                 .valueSerializer(Serializer.BYTE_ARRAY)
                 .makeOrGet();
 
+        // Max block number initialization assumes an index without gap
         if (!metadata.containsKey(MAX_BLOCK_NUMBER_KEY)) {
             long maxBlockNumber = (long) index.size() - 1;
             metadata.put(MAX_BLOCK_NUMBER_KEY,  ByteUtil.longToBytes(maxBlockNumber));
@@ -63,12 +64,26 @@ public class MapDBBlocksIndex implements BlocksIndex {
     }
 
     @Override
+    public boolean isEmpty() {
+        return index.isEmpty();
+    }
+
+    @Override
     public long getMaxNumber() {
         if (index.isEmpty()) {
-            return -1;
+            throw new IllegalStateException("Index is empty");
         }
 
         return ByteUtil.byteArrayToLong(metadata.get(MAX_BLOCK_NUMBER_KEY));
+    }
+
+    @Override
+    public long getMinNumber() {
+        if (index.isEmpty()) {
+            throw new IllegalStateException("Index is empty");
+        }
+
+        return getMaxNumber() - index.size() + 1;
     }
 
     @Override
@@ -87,7 +102,11 @@ public class MapDBBlocksIndex implements BlocksIndex {
             throw new IllegalArgumentException("Block list cannot be empty nor null.");
         }
 
-        if (blockNumber > getMaxNumber()) {
+        long maxNumber = -1;
+        if (index.size() > 0) {
+            maxNumber = getMaxNumber();
+        }
+        if (blockNumber > maxNumber) {
             metadata.put(MAX_BLOCK_NUMBER_KEY, ByteUtil.longToBytes(blockNumber));
         }
 
@@ -96,7 +115,11 @@ public class MapDBBlocksIndex implements BlocksIndex {
 
     @Override
     public List<IndexedBlockStore.BlockInfo> removeLast() {
-        long lastBlockNumber = getMaxNumber();
+        long lastBlockNumber = -1;
+        if (index.size() > 0) {
+            lastBlockNumber = getMaxNumber();
+        }
+
         List<IndexedBlockStore.BlockInfo> result = index.remove(lastBlockNumber);
 
         if (result == null) {
