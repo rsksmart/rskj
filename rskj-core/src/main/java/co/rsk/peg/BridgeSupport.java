@@ -327,7 +327,7 @@ public class BridgeSupport {
             if (retiringFederationWallet != null) {
                 amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet);
             }
-            Coin totalAmount = amountToActive.add(amountToRetiring);
+            Coin totalAmount = amountToActive.add(Coin.NEGATIVE_SATOSHI);
 
             // Get the sender public key
             byte[] data = scriptSig.get().getChunks().get(1).data;
