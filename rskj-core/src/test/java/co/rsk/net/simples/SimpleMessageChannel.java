@@ -42,6 +42,19 @@ public class SimpleMessageChannel implements MessageChannel {
     private NodeID nodeID;
     private InetAddress address;
 
+    public SimpleMessageChannel(NodeID nodeID) {
+        this.nodeID = nodeID;
+
+        try {
+            byte[] bytes = new byte[32];
+            byte[] addressBytes = new byte[4];
+            random.nextBytes(bytes);
+            this.address = InetAddress.getByAddress(addressBytes);
+        } catch (UnknownHostException e) {
+            Assert.fail("SimpleMessageChannel creation failed");
+        }
+    }
+
     public SimpleMessageChannel() {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
@@ -86,13 +99,5 @@ public class SimpleMessageChannel implements MessageChannel {
     }
 
     @Override
-    public void setPeerNodeID(NodeID peerNodeId) {
-        this.nodeID = peerNodeId;
-    }
-
-    @Override
     public InetAddress getAddress() { return this.address; }
-
-    @Override
-    public void setAddress(InetAddress address) { this.address = address; }
 }

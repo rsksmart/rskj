@@ -656,10 +656,8 @@ public class NodeMessageHandlerTest {
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, scoring,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
-        sender.setPeerNodeID(new NodeID(new byte[] {1}));
-        final SimpleMessageChannel sender2 = new SimpleMessageChannel();
-        sender2.setPeerNodeID(new NodeID(new byte[] {2}));
+        final SimpleMessageChannel sender = new SimpleMessageChannel(new NodeID(new byte[] {1}));
+        final SimpleMessageChannel sender2 = new SimpleMessageChannel(new NodeID(new byte[] {2}));
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         final TransactionsMessage message = new TransactionsMessage(txs);
@@ -767,10 +765,8 @@ public class NodeMessageHandlerTest {
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
-        sender.setPeerNodeID(new NodeID(new byte[] {1}));
-        final SimpleMessageChannel sender2 = new SimpleMessageChannel();
-        sender2.setPeerNodeID(new NodeID(new byte[] {2}));
+        final SimpleMessageChannel sender = new SimpleMessageChannel(new NodeID(new byte[] {1}));
+        final SimpleMessageChannel sender2 = new SimpleMessageChannel(new NodeID(new byte[] {2}));
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         final TransactionsMessage message = new TransactionsMessage(txs);

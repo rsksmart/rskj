@@ -26,11 +26,6 @@ import org.ethereum.net.eth.handler.Eth;
 import javax.annotation.Nonnull;
 import java.net.InetAddress;
 
-/**
- * EthMessageSender implements the MessageChannel interface.
- * <p>
- * Created by ajlopez on 5/16/2016.
- */
 public class EthMessageSender implements MessageChannel {
     private final Eth eth;
     private NodeID nodeID;
@@ -41,8 +36,10 @@ public class EthMessageSender implements MessageChannel {
      *
      * @param eth the underlying ethereum peer interface
      */
-    public EthMessageSender(@Nonnull final Eth eth) {
+    public EthMessageSender(@Nonnull final Eth eth, NodeID nodeID, InetAddress address) {
         this.eth = eth;
+        this.nodeID = nodeID;
+        this.address = address;
     }
 
 
@@ -65,16 +62,7 @@ public class EthMessageSender implements MessageChannel {
         return this.nodeID;
     }
 
-    @Override
-    public void setPeerNodeID(@Nonnull final NodeID peerNodeId) {
-        this.nodeID = peerNodeId;
-    }
-
-    @Override
     public InetAddress getAddress() { return this.address; }
-
-    @Override
-    public void setAddress(InetAddress address) { this.address = address; }
 
     @Override
     public String toString() {

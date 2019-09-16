@@ -91,9 +91,10 @@ public class RskWireProtocol extends EthHandler {
         this.messageRecorder = messageRecorder;
         this.genesis = genesis;
 
-        this.messageSender = new EthMessageSender(this);
-        this.messageSender.setPeerNodeID(this.channel.getNodeId());
-        this.messageSender.setAddress(this.channel.getInetSocketAddress().getAddress());
+        this.messageSender = new EthMessageSender(
+                this,
+                channel.getNodeId(),
+                channel.getInetSocketAddress().getAddress());
     }
 
     @Override
