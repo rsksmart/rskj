@@ -33,7 +33,6 @@ import org.ethereum.net.eth.handler.Eth;
 import org.ethereum.net.eth.handler.EthAdapter;
 import org.ethereum.net.eth.handler.EthHandler;
 import org.ethereum.net.eth.message.Eth62MessageFactory;
-import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.p2p.HelloMessage;
@@ -116,16 +115,13 @@ public class Channel {
             throw new IllegalArgumentException(String.format("Eth version %s is not supported", version));
         }
 
-        EthHandler handler = rskWireProtocolFactory.newInstance();
         messageCodec.setEthVersion(version);
         messageCodec.setEthMessageFactory(eth62MessageFactory);
 
+        EthHandler handler = rskWireProtocolFactory.newInstance(msgQueue, this);
         logger.info("Eth{} [ address = {} | id = {} ]", handler.getVersion(), inetSocketAddress, getPeerIdShort());
 
         ctx.pipeline().addLast(Capability.RSK, handler);
-
-        handler.setMsgQueue(msgQueue);
-        handler.setChannel(this);
 
         handler.activate();
 

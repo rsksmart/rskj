@@ -30,6 +30,7 @@ import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.core.*;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.net.MessageQueue;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.handler.EthHandler;
 import org.ethereum.net.eth.message.EthMessage;
@@ -61,10 +62,9 @@ public class RskWireProtocol extends EthHandler {
      * or in case when peer is disconnected
      */
     private final PeerScoringManager peerScoringManager;
-    protected final SyncStatistics syncStats = new SyncStatistics();
-    protected EthState ethState = EthState.INIT;
-    protected SyncState syncState = SyncState.IDLE;
-    protected boolean syncDone = false;
+    private final SyncStatistics syncStats = new SyncStatistics();
+    private EthState ethState = EthState.INIT;
+    private SyncState syncState = SyncState.IDLE;
 
     private final RskSystemProperties config;
     private final StatusResolver statusResolver;
@@ -79,27 +79,21 @@ public class RskWireProtocol extends EthHandler {
                            CompositeEthereumListener ethereumListener,
                            Genesis genesis,
                            MessageRecorder messageRecorder,
-                           StatusResolver statusResolver) {
-        super(config, ethereumListener, V62);
+                           StatusResolver statusResolver,
+                           MessageQueue msgQueue,
+                           Channel channel) {
+        super(config, ethereumListener, V62, msgQueue, channel);
         this.peerScoringManager = peerScoringManager;
         this.messageHandler = messageHandler;
         this.config = config;
         this.statusResolver = statusResolver;
-        this.messageSender = new EthMessageSender(this);
+        this.channel = channel;
         this.messageRecorder = messageRecorder;
         this.genesis = genesis;
-    }
 
-    @Override
-    public void setChannel(Channel channel) {
-        super.setChannel(channel);
-
-        if (channel == null) {
-            return;
-        }
-
-        this.messageSender.setPeerNodeID(channel.getNodeId());
-        this.messageSender.setAddress(channel.getInetSocketAddress().getAddress());
+        this.messageSender = new EthMessageSender(this);
+        this.messageSender.setPeerNodeID(this.channel.getNodeId());
+        this.messageSender.setAddress(this.channel.getInetSocketAddress().getAddress());
     }
 
     @Override
@@ -312,7 +306,6 @@ public class RskWireProtocol extends EthHandler {
 
     @Override
     public void onSyncDone(boolean done) {
-        syncDone = done;
     }
 
     @Override
@@ -337,6 +330,6 @@ public class RskWireProtocol extends EthHandler {
     }
 
     public interface Factory {
-        RskWireProtocol newInstance();
+        RskWireProtocol newInstance(MessageQueue messageQueue, Channel channel);
     }
 }

@@ -44,24 +44,25 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
     private static final Logger logger = LoggerFactory.getLogger("net");
 
     protected final CompositeEthereumListener ethereumListener;
-    protected Channel channel;
 
-    private MessageQueue msgQueue = null;
+    protected Channel channel;
+    private MessageQueue msgQueue;
 
     protected EthVersion version;
-
-    protected int maxHashesAsk;
 
     protected boolean processTransactions = false;
 
     protected EthHandler(SystemProperties config,
                          CompositeEthereumListener ethereumListener,
-                         EthVersion version) {
+                         EthVersion version,
+                         MessageQueue msgQueue,
+                         Channel channel) {
         this.ethereumListener = ethereumListener;
         this.version = version;
-        maxHashesAsk = config.maxHashesAsk();
         // when sync enabled we delay transactions processing until sync is complete
         processTransactions = !config.isSyncEnabled();
+        this.msgQueue = msgQueue;
+        this.channel = channel;
     }
 
     @Override
@@ -108,13 +109,5 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
 
         msgQueue.sendMessage(message);
         channel.getNodeStatistics().ethOutbound.add();
-    }
-
-    public void setMsgQueue(MessageQueue msgQueue) {
-        this.msgQueue = msgQueue;
-    }
-
-    public void setChannel(Channel channel) {
-        this.channel = channel;
     }
 }
