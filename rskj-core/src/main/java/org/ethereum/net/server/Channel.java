@@ -20,6 +20,7 @@
 package org.ethereum.net.server;
 
 import co.rsk.net.NodeID;
+import co.rsk.net.eth.RskMessage;
 import co.rsk.net.eth.RskWireProtocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -257,7 +258,7 @@ public class Channel {
         return String.format("%s | %s", getPeerIdShort(), inetSocketAddress);
     }
 
-    public void sendMessage(EthMessage message) {
+    public void sendMessage(RskMessage message) {
         eth.sendMessage(message);
     }
 }
