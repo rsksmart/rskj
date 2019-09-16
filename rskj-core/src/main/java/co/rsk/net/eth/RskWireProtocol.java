@@ -28,12 +28,14 @@ import co.rsk.net.messages.StatusMessage;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import org.ethereum.core.*;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.eth.EthVersion;
-import org.ethereum.net.eth.handler.EthHandler;
+import org.ethereum.net.eth.handler.Eth;
 import org.ethereum.net.eth.message.EthMessage;
+import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
 import org.ethereum.sync.SyncState;
@@ -51,10 +53,11 @@ import java.util.NoSuchElementException;
 import static org.ethereum.net.eth.EthVersion.V62;
 import static org.ethereum.net.message.ReasonCode.USELESS_PEER;
 
-public class RskWireProtocol extends EthHandler {
+public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> implements Eth {
 
     private static final Logger logger = LoggerFactory.getLogger("sync");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
+    private final CompositeEthereumListener ethereumListener;
     /**
      * Header list sent in GET_BLOCK_BODIES message,
      * used to create blocks from headers and bodies
@@ -63,6 +66,8 @@ public class RskWireProtocol extends EthHandler {
      */
     private final PeerScoringManager peerScoringManager;
     private final SyncStatistics syncStats = new SyncStatistics();
+    private final Channel channel;
+    private final EthVersion version;
     private EthState ethState = EthState.INIT;
     private SyncState syncState = SyncState.IDLE;
 
@@ -72,6 +77,7 @@ public class RskWireProtocol extends EthHandler {
     private final MessageHandler messageHandler;
     private final MessageRecorder messageRecorder;
     private final Genesis genesis;
+    private final MessageQueue msgQueue;
 
     public RskWireProtocol(RskSystemProperties config,
                            PeerScoringManager peerScoringManager,
@@ -82,12 +88,15 @@ public class RskWireProtocol extends EthHandler {
                            StatusResolver statusResolver,
                            MessageQueue msgQueue,
                            Channel channel) {
-        super(config, ethereumListener, V62, msgQueue, channel);
+        this.ethereumListener = ethereumListener;
+        this.version = V62;
+
+        this.msgQueue = msgQueue;
+        this.channel = channel;
         this.peerScoringManager = peerScoringManager;
         this.messageHandler = messageHandler;
         this.config = config;
         this.statusResolver = statusResolver;
-        this.channel = channel;
         this.messageRecorder = messageRecorder;
         this.genesis = genesis;
 
@@ -99,7 +108,17 @@ public class RskWireProtocol extends EthHandler {
 
     @Override
     public void channelRead0(final ChannelHandlerContext ctx, EthMessage msg) throws InterruptedException {
-        super.channelRead0(ctx, msg);
+        loggerNet.debug("Read message: {}", msg);
+
+        if (EthMessageCodes.inRange(msg.getCommand().asByte(), version)) {
+            loggerNet.trace("EthHandler invoke: [{}]", msg.getCommand());
+        }
+
+        ethereumListener.trace(String.format("EthHandler invoke: [%s]", msg.getCommand()));
+
+        channel.getNodeStatistics().ethInbound.add();
+
+        msgQueue.receivedMessage(msg);
 
         if (this.messageRecorder != null) {
             this.messageRecorder.recordMessage(messageSender.getPeerNodeID(), msg);
@@ -287,12 +306,10 @@ public class RskWireProtocol extends EthHandler {
 
     @Override
     public void enableTransactions() {
-        processTransactions = true;
     }
 
     @Override
     public void disableTransactions() {
-        processTransactions = false;
     }
 
     @Override
@@ -321,6 +338,37 @@ public class RskWireProtocol extends EthHandler {
     @Override
     public boolean isUsingNewProtocol() {
         return true;
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        loggerNet.error("Eth handling failed", cause);
+        ctx.close();
+    }
+
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) {
+        loggerNet.debug("handlerRemoved: kill timers in EthHandler");
+        onShutdown();
+    }
+
+    public void activate() {
+        loggerNet.info("RSK protocol activated");
+        ethereumListener.trace("RSK protocol activated");
+        sendStatus();
+    }
+
+    protected void disconnect(ReasonCode reason) {
+        msgQueue.disconnect(reason);
+        channel.getNodeStatistics().nodeDisconnectedLocal(reason);
+    }
+
+    @Override
+    public void sendMessage(EthMessage message) {
+        loggerNet.debug("Send message: {}", message);
+
+        msgQueue.sendMessage(message);
+        channel.getNodeStatistics().ethOutbound.add();
     }
 
     protected enum EthState {

@@ -31,7 +31,6 @@ import org.ethereum.net.client.Capability;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.handler.Eth;
 import org.ethereum.net.eth.handler.EthAdapter;
-import org.ethereum.net.eth.handler.EthHandler;
 import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.message.StaticMessages;
@@ -118,7 +117,7 @@ public class Channel {
         messageCodec.setEthVersion(version);
         messageCodec.setEthMessageFactory(eth62MessageFactory);
 
-        EthHandler handler = rskWireProtocolFactory.newInstance(msgQueue, this);
+        RskWireProtocol handler = rskWireProtocolFactory.newInstance(msgQueue, this);
         logger.info("Eth{} [ address = {} | id = {} ]", handler.getVersion(), inetSocketAddress, getPeerIdShort());
 
         ctx.pipeline().addLast(Capability.RSK, handler);
