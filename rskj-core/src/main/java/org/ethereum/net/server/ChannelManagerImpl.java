@@ -22,7 +22,6 @@ package org.ethereum.net.server;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
-import co.rsk.net.eth.RskMessage;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.InetAddressBlock;
 import com.google.common.annotations.VisibleForTesting;
@@ -186,8 +185,8 @@ public class ChannelManagerImpl implements ChannelManager {
 
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
         final BlockIdentifier bi = new BlockIdentifier(block.getHash().getBytes(), block.getNumber());
-        final RskMessage newBlock = new RskMessage(new BlockMessage(block));
-        final RskMessage newBlockHashes = new RskMessage(new NewBlockHashesMessage(Arrays.asList(bi)));
+        final Message newBlock = new BlockMessage(block);
+        final Message newBlockHashes = new NewBlockHashesMessage(Arrays.asList(bi));
         synchronized (activePeersLock){
             // Get a randomized list with all the peers that don't have the block yet.
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
@@ -214,7 +213,7 @@ public class ChannelManagerImpl implements ChannelManager {
     @Nonnull
     public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, final Set<NodeID> targets) {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
-        final RskMessage newBlockHash = new RskMessage(new NewBlockHashesMessage(identifiers));
+        final Message newBlockHash = new NewBlockHashesMessage(identifiers);
 
         synchronized (activePeersLock){
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
@@ -243,7 +242,7 @@ public class ChannelManagerImpl implements ChannelManager {
         List<Transaction> transactions = Collections.singletonList(transaction);
 
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
-        final RskMessage newTransactions = new RskMessage(new TransactionsMessage(transactions));
+        final Message newTransactions = new TransactionsMessage(transactions);
 
         activePeers.values().stream()
             .filter(p -> !skip.contains(p.getNodeId()))
@@ -257,7 +256,7 @@ public class ChannelManagerImpl implements ChannelManager {
 
     @Override
     public int broadcastStatus(Status status) {
-        final RskMessage message = new RskMessage(new StatusMessage(status));
+        final Message message = new StatusMessage(status);
         synchronized (activePeersLock){
             if (activePeers.isEmpty()) {
                 return 0;
@@ -310,8 +309,7 @@ public class ChannelManagerImpl implements ChannelManager {
         if (channel == null){
             return false;
         }
-        RskMessage msg = new RskMessage(message);
-        channel.sendMessage(msg);
+        channel.sendMessage(message);
         return true;
     }
 

@@ -23,6 +23,7 @@ import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.eth.RskMessage;
 import co.rsk.net.eth.RskWireProtocol;
+import co.rsk.net.messages.Message;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.net.MessageQueue;
@@ -226,10 +227,8 @@ public class Channel implements MessageChannel {
 
         Channel channel = (Channel) o;
 
-        if (!Objects.equals(inetSocketAddress, channel.inetSocketAddress)) {
-            return false;
-        }
-        return Objects.equals(node, channel.node);
+        return Objects.equals(inetSocketAddress, channel.inetSocketAddress) &&
+                Objects.equals(node, channel.node);
 
     }
 
@@ -245,8 +244,8 @@ public class Channel implements MessageChannel {
         return String.format("%s | %s", getPeerIdShort(), inetSocketAddress);
     }
 
-    public void sendMessage(RskMessage message) {
-        eth.sendMessage(message);
+    public void sendMessage(Message message) {
+        eth.sendMessage(new RskMessage(message));
     }
 
     @Override
