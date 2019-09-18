@@ -60,6 +60,7 @@ public class ActivationConfigTest {
             "    rskip125: wasabi100",
             "    rskip126: wasabi100",
             "    rskip132: wasabi100",
+            "    rskip134: wasabiPlusOne",
             "    rskip136: bahamas",
             "    rskip140: wasabiPlusOne",
             "    rskip152: wasabiPlusOne",

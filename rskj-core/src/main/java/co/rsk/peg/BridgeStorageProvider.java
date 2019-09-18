@@ -34,8 +34,7 @@ import org.ethereum.vm.DataWord;
 import java.io.IOException;
 import java.util.*;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP123;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP87;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
@@ -58,6 +57,7 @@ public class BridgeStorageProvider {
     private static final DataWord LOCK_UNLIMITED_WHITELIST_KEY = DataWord.fromString("unlimitedLockWhitelist");
     private static final DataWord FEE_PER_KB_KEY = DataWord.fromString("feePerKb");
     private static final DataWord FEE_PER_KB_ELECTION_KEY = DataWord.fromString("feePerKbElection");
+    private static final DataWord LOCKING_CAP_KEY = DataWord.fromString("lockingCap");
 
     // Version keys and versions
     private static final DataWord NEW_FEDERATION_FORMAT_VERSION = DataWord.fromString("newFederationFormatVersion");
@@ -97,6 +97,8 @@ public class BridgeStorageProvider {
 
     private Coin feePerKb;
     private ABICallElection feePerKbElection;
+
+    private Coin lockingCap;
 
     private HashMap<DataWord, Optional<Integer>> storageVersion;
 
@@ -438,6 +440,23 @@ public class BridgeStorageProvider {
         return feePerKbElection;
     }
 
+    public void saveLockingCap() {
+        if (activations.isActive(RSKIP134)) {
+            safeSaveToRepository(LOCKING_CAP_KEY, this.lockingCap, BridgeSerializationUtils::serializeCoin);
+        }
+    }
+
+    public void setLockingCap(Coin lockingCap) {
+        this.lockingCap = lockingCap;
+    }
+
+    public Coin getLockingCap() {
+        if (activations.isActive(RSKIP134)) {
+            return safeGetFromRepository(LOCKING_CAP_KEY, BridgeSerializationUtils::deserializeCoin);
+        }
+        return null;
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -459,6 +478,8 @@ public class BridgeStorageProvider {
 
         saveFeePerKb();
         saveFeePerKbElection();
+
+        saveLockingCap();
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {

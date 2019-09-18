@@ -32,6 +32,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -203,6 +204,17 @@ public class BridgeUtils {
 
     public static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
         return federation.hasMemberWithRskAddress(rskTx.getSender().getBytes());
+    }
+
+    public static Coin getCoinFromBigInteger(BigInteger value) throws BridgeIllegalArgumentException {
+        if (value == null) {
+            throw new BridgeIllegalArgumentException("value cannot be null");
+        }
+        try {
+            return Coin.valueOf(value.longValueExact());
+        } catch(ArithmeticException e) {
+            throw new BridgeIllegalArgumentException(e.getMessage(), e);
+        }
     }
 
     private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {

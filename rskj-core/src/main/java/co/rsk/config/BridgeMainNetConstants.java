@@ -112,6 +112,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         genesisFeePerKb = Coin.MILLICOIN.multiply(5);
 
         maxFeePerKb = Coin.valueOf(5_000_000L);
+
+        // TODO: define increaseLockingCapAuthorizer and initialLockingCap values
     }
 
     public static BridgeMainNetConstants getInstance() {

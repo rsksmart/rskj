@@ -63,8 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -766,7 +765,7 @@ public class BridgeStorageProviderTest {
             // Make sure the bytes are set to the correct address in the repo and that what's saved is null
             Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
             Assert.assertEquals(DataWord.fromString("oldFederation"), address);
-            Assert.assertNull(data);
+            assertNull(data);
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
 
@@ -807,7 +806,7 @@ public class BridgeStorageProviderTest {
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is null
                 Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
                 Assert.assertEquals(DataWord.fromString("oldFederation"), address);
-                Assert.assertNull(data);
+                assertNull(data);
             }
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
@@ -1025,7 +1024,7 @@ public class BridgeStorageProviderTest {
             // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
             Assert.assertEquals(DataWord.fromString("pendingFederation"), address);
-            Assert.assertNull(data);
+            assertNull(data);
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
 
@@ -1111,7 +1110,7 @@ public class BridgeStorageProviderTest {
                 Assert.assertEquals(2, storageBytesCalls.size());
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                 Assert.assertEquals(DataWord.fromString("pendingFederation"), address);
-                Assert.assertNull(data);
+                assertNull(data);
             }
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
@@ -1564,6 +1563,104 @@ public class BridgeStorageProviderTest {
         ABICallElection result = storageProvider.getFeePerKbElection(authorizerMock);
         assertThat(result.getVotes(), is(electionVotes));
         assertThat(result.getWinner(), is(expectedWinner));
+    }
+
+    @Test
+    public void setLockingCap_before_fork() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider0.setLockingCap(Coin.ZERO);
+        provider0.saveLockingCap();
+
+        // If the network upgrade is not enabled we shouldn't be writing in the repository
+        verify(repository, never()).addStorageBytes(any(), any(), any());
+    }
+
+    @Test
+    public void setLockingCap_after_fork() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider0.setLockingCap(Coin.ZERO);
+        provider0.saveLockingCap();
+
+        // Once the network upgrade is active, we will store the locking cap in the repository
+        verify(repository, times(1)).addStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromString("lockingCap"),
+                BridgeSerializationUtils.serializeCoin(Coin.ZERO)
+        );
+    }
+
+    @Test
+    public void getLockingCap_before_fork() {
+        Repository repository = mock(Repository.class);
+        // If by chance the repository is called I want to force the tests to fail
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"))).thenReturn(new byte[] { 1 });
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertNull(provider0.getLockingCap());
+
+        // If the network upgrade is not enabled we shouldn't be reading the repository
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"));
+    }
+
+    @Test
+    public void getLockingCap_after_fork() {
+        Repository repository = mock(Repository.class);
+        // If by chance the repository is called I want to force the tests to fail
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"))).thenReturn(new byte[] { 1 });
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertEquals(Coin.SATOSHI, provider0.getLockingCap());
+
+        // If the network upgrade is not enabled we shouldn't be reading the repository
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"));
+    }
+
+    @Test
+    public void setLockingCapAndGetLockingCap() {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        Coin expectedCoin = Coin.valueOf(666);
+
+        // We store the locking cap
+        provider0.setLockingCap(expectedCoin);
+        provider0.saveLockingCap();
+        track.commit();
+
+        track = repository.startTracking();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        // And then we get it back
+        assertThat(provider.getLockingCap(), is(expectedCoin));
     }
 
     private BtcTransaction createTransaction() {

@@ -439,6 +439,28 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getStateForDebugging,
             true
     ),
+    GET_LOCKING_CAP(
+            CallTransaction.Function.fromSignature(
+                    "getLockingCap",
+                    new String[]{},
+                    new String[]{"int256"}
+            ),
+            fixedCost(23000L), // TODO: ESTIMATE GAS
+            (BridgeMethodExecutorTyped) Bridge::getLockingCap,
+            activations -> activations.isActive(RSKIP134),
+            true
+    ),
+    INCREASE_LOCKING_CAP(
+            CallTransaction.Function.fromSignature(
+                    "increaseLockingCap",
+                    new String[]{"int256"},
+                    new String[]{"bool"}
+            ),
+            fixedCost(23000L), // TODO: ESTIMATE GAS
+            (BridgeMethodExecutorTyped) Bridge::increaseLockingCap,
+            activations -> activations.isActive(RSKIP134),
+            false
+    ),
     IS_BTC_TX_HASH_ALREADY_PROCESSED(
             CallTransaction.Function.fromSignature(
                     "isBtcTxHashAlreadyProcessed",

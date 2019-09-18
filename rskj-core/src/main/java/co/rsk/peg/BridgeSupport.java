@@ -44,6 +44,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -1946,6 +1947,35 @@ public class BridgeSupport {
         }
         lockWhitelist.setDisableBlockHeight(bestChainHeight + disableBlockDelay);
         return 1;
+    }
+
+    public Coin getLockingCap() {
+        // Before returning the locking cap, check if it was already set
+        if (activations.isActive(ConsensusRule.RSKIP134) && this.provider.getLockingCap() == null) {
+            // Set the initial locking cap value
+            this.provider.setLockingCap(bridgeConstants.getInitialLockingCap());
+        }
+
+        return this.provider.getLockingCap();
+    }
+
+    public boolean increaseLockingCap(Transaction tx, Coin newCap) {
+        // Only pre configured addresses can modify locking cap
+        AddressBasedAuthorizer authorizer = bridgeConstants.getIncreaseLockingCapAuthorizer();
+        if (!authorizer.isAuthorized(tx)) {
+            logger.warn("not authorized address tried to increase locking cap. Address: " + tx.getSender());
+            return false;
+        }
+        // new locking cap must be bigger than current locking cap
+        Coin currentLockingCap = this.getLockingCap();
+        if (newCap.compareTo(currentLockingCap) < 0) {
+            logger.warn("attempted value doesn't increase locking cap. Attempted: " + newCap.value);
+            return false;
+        }
+
+        this.provider.setLockingCap(newCap);
+
+        return true;
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {
