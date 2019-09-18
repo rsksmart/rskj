@@ -45,12 +45,6 @@ public interface Eth {
     boolean hasStatusSucceeded();
 
     /**
-     * Executes cleanups required to be done
-     * during shutdown, e.g. disconnect
-     */
-    void onShutdown();
-
-    /**
      * @return true if syncState is IDLE, false otherwise
      */
     boolean isIdle();
@@ -61,27 +55,9 @@ public interface Eth {
     SyncStatistics getStats();
 
     /**
-     * Disables pending transaction processing
-     */
-    void disableTransactions();
-
-    /**
-     * Enables pending transaction processing
-     */
-    void enableTransactions();
-
-    /**
      * @return protocol version
      */
     EthVersion getVersion();
-
-    /**
-     * Fires inner logic related to long sync done or undone event
-     *
-     * @param done true notifies that long sync is finished,
-     *             false notifies that it's enabled again
-     */
-    void onSyncDone(boolean done);
 
     /**
      * Sends {@link EthMessageCodes#STATUS} message

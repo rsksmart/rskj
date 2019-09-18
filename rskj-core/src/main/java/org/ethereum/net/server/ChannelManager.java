@@ -75,8 +75,6 @@ public interface ChannelManager extends InternalService {
 
     void notifyDisconnect(Channel channel);
 
-    void onSyncDone(boolean done) ;
-
     Collection<Channel> getActivePeers();
 
     boolean sendMessageTo(NodeID nodeID, MessageWithId message);

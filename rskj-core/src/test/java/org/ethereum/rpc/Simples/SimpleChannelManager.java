@@ -45,7 +45,6 @@ import static org.mockito.Mockito.when;
  */
 public class SimpleChannelManager implements ChannelManager {
     private List<Transaction> transactions = new ArrayList<>();
-    private Set<NodeID> lastSkip;
     private Map<NodeID, MessageChannel> simpleChannels = new ConcurrentHashMap<>();
 
     @Override
@@ -77,7 +76,6 @@ public class SimpleChannelManager implements ChannelManager {
     @Override
     public Set<NodeID> broadcastTransaction(@Nonnull Transaction transaction, @Nullable Set<NodeID> skip) {
         this.transactions.add(transaction);
-        this.lastSkip = skip;
         return new HashSet<>();
     }
 
@@ -108,18 +106,8 @@ public class SimpleChannelManager implements ChannelManager {
     }
 
     @Override
-    public void onSyncDone(boolean done) {
-
-    }
-
-    @Override
     public Collection<Channel> getActivePeers() {
         return simpleChannels.values().stream().map(this::getMockedChannel).collect(Collectors.toList());
-
-//        Collection<Channel> channels = new ArrayList<Channel>();
-//        channels.add(new Channel(null, null, null, null, null, null, null, null));
-//        channels.add(new Channel(null, null, null, null, null, null, null, null));
-//        return channels;
     }
 
     private Channel getMockedChannel(MessageChannel mc) {
@@ -130,7 +118,6 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Override
     public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
-//        simpleChannels.get(nodeID).sendMessage(message);
         MessageChannel channel = simpleChannels.get(nodeID);
         // TODO(lsebrie): handle better tests where channels are not initialized
         if (channel != null){
@@ -147,10 +134,4 @@ public class SimpleChannelManager implements ChannelManager {
     public List<Transaction> getTransactions() {
         return transactions;
     }
-
-    public Set<NodeID> getLastSkip() {
-        return lastSkip;
-    }
-
-    public void setLastSkip(Set<NodeID> value) { lastSkip = value; }
 }

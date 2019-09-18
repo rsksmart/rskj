@@ -297,10 +297,6 @@ public class ChannelManagerImpl implements ChannelManager {
         }
     }
 
-    public void onSyncDone(boolean done) {
-        activePeers.values().forEach(channel -> channel.onSyncDone(done));
-    }
-
     public Collection<Channel> getActivePeers() {
         // from the docs: it is imperative to synchronize when iterating
         synchronized (activePeersLock){

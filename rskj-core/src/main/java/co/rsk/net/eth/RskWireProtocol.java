@@ -272,11 +272,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
 
     @Override
-    public void onShutdown() {
-
-    }
-
-    @Override
     public boolean hasStatusPassed() {
         return ethState.ordinal() > EthState.STATUS_SENT.ordinal();
     }
@@ -292,14 +287,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     }
 
     @Override
-    public void enableTransactions() {
-    }
-
-    @Override
-    public void disableTransactions() {
-    }
-
-    @Override
     public SyncStatistics getStats() {
         return syncStats;
     }
@@ -307,10 +294,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     @Override
     public EthVersion getVersion() {
         return version;
-    }
-
-    @Override
-    public void onSyncDone(boolean done) {
     }
 
     @Override
@@ -336,7 +319,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
         loggerNet.debug("handlerRemoved: kill timers in EthHandler");
-        onShutdown();
     }
 
     public void activate() {

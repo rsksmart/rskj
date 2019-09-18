@@ -65,11 +65,6 @@ public class EthereumListenerAdapter implements EthereumListener {
     public void onTransactionPoolChanged(TransactionPool transactionPool) {
     }
 
-    @Deprecated
-    @Override
-    public void onSyncDone() {
-    }
-
     @Override
     public void onHandShakePeer(Channel channel, HelloMessage helloMessage) {
 

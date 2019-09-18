@@ -162,17 +162,6 @@ public class Channel implements MessageChannel {
     public void onDisconnect() {
     }
 
-    public void onSyncDone(boolean done) {
-
-        if (done) {
-            eth.enableTransactions();
-        } else {
-            eth.disableTransactions();
-        }
-
-        eth.onSyncDone(done);
-    }
-
     public String getPeerId() {
         return node == null ? "<null>" : node.getHexId();
     }
