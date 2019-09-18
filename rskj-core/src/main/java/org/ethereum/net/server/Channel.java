@@ -19,6 +19,7 @@
 
 package org.ethereum.net.server;
 
+import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.eth.RskMessage;
 import co.rsk.net.eth.RskWireProtocol;
@@ -45,10 +46,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Objects;
 
-public class Channel {
+public class Channel implements MessageChannel {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
@@ -234,10 +237,10 @@ public class Channel {
 
         Channel channel = (Channel) o;
 
-        if (inetSocketAddress != null ? !inetSocketAddress.equals(channel.inetSocketAddress) : channel.inetSocketAddress != null) {
+        if (!Objects.equals(inetSocketAddress, channel.inetSocketAddress)) {
             return false;
         }
-        return node != null ? node.equals(channel.node) : channel.node == null;
+        return Objects.equals(node, channel.node);
 
     }
 
@@ -255,5 +258,15 @@ public class Channel {
 
     public void sendMessage(RskMessage message) {
         eth.sendMessage(message);
+    }
+
+    @Override
+    public NodeID getPeerNodeID() {
+        return node.getId();
+    }
+
+    @Override
+    public InetAddress getAddress() {
+        return inetSocketAddress.getAddress();
     }
 }
