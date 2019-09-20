@@ -44,7 +44,7 @@ public class TwoAsyncNodeTest {
 
     private static SimpleAsyncNode createNode(int size) {
         final World world = new World();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
@@ -56,14 +56,14 @@ public class TwoAsyncNodeTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, null, null, null, null, new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, new DummyBlockValidationRule(), mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain);
     }
 
     private static SimpleAsyncNode createNodeWithUncles(int size) {
         final World world = new World();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size, 0, true);
@@ -75,7 +75,7 @@ public class TwoAsyncNodeTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, null, null, null, null, new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, new DummyBlockValidationRule(), mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain);
     }

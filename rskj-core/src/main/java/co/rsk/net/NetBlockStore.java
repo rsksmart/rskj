@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class BlockStore {
+public class NetBlockStore {
     private Map<Keccak256, Block> blocks = new HashMap<>();
     private Map<Long, Set<Block>> blocksbynumber = new HashMap<>();
     private Map<Keccak256, Set<Block>> blocksbyparent = new HashMap<>();

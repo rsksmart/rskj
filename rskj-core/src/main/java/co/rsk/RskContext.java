@@ -139,7 +139,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
     private org.ethereum.db.BlockStore blockStore;
-    private co.rsk.net.BlockStore netBlockStore;
+    private NetBlockStore netBlockStore;
     private TrieStore trieStore;
     private GenesisLoader genesisLoader;
     private Genesis genesis;
@@ -215,6 +215,7 @@ public class RskContext implements NodeBootstrapper {
     private PrecompiledContracts precompiledContracts;
     private BridgeSupportFactory bridgeSupportFactory;
     private PeersInformation peersInformation;
+    private StatusResolver statusResolver;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -894,8 +895,9 @@ public class RskContext implements NodeBootstrapper {
                 rskSystemProperties.getTimeoutWaitingRequest(),
                 rskSystemProperties.getExpirationTimePeerStatus(),
                 rskSystemProperties.getMaxSkeletonChunks(),
-                rskSystemProperties.getChunkSize()
-        );
+                rskSystemProperties.getChunkSize(),
+                rskSystemProperties.getMaxRequestedBodies(),
+                rskSystemProperties.getLongSyncLimit());
     }
 
     protected StateRootHandler buildStateRootHandler() {
@@ -1300,8 +1302,8 @@ public class RskContext implements NodeBootstrapper {
                             new BlockRootValidationRule(getRskSystemProperties().getActivationConfig())
                     ),
                     getDifficultyCalculator(),
-                    getPeersInformation()
-            );
+                    getPeersInformation(),
+                    getGenesis());
         }
 
         return syncProcessor;
@@ -1414,9 +1416,9 @@ public class RskContext implements NodeBootstrapper {
         return jacksonBasedRpcSerializer;
     }
 
-    private co.rsk.net.BlockStore getNetBlockStore() {
+    private NetBlockStore getNetBlockStore() {
         if (netBlockStore == null) {
-            netBlockStore = new co.rsk.net.BlockStore();
+            netBlockStore = new NetBlockStore();
         }
 
         return netBlockStore;
@@ -1438,17 +1440,23 @@ public class RskContext implements NodeBootstrapper {
         if (nodeMessageHandler == null) {
             nodeMessageHandler = new NodeMessageHandler(
                     getRskSystemProperties(),
-                    getBlockStore(),
                     getNodeBlockProcessor(),
                     getSyncProcessor(),
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),
-                    getBlockValidationRule()
-            );
+                    getBlockValidationRule(),
+                    getStatusResolver());
         }
 
         return nodeMessageHandler;
+    }
+
+    private StatusResolver getStatusResolver() {
+        if (statusResolver == null) {
+            statusResolver = new StatusResolver(getBlockStore(), getGenesis());
+        }
+        return statusResolver;
     }
 
     private RskWireProtocol.Factory getRskWireProtocolFactory() {
@@ -1457,10 +1465,10 @@ public class RskContext implements NodeBootstrapper {
                     getRskSystemProperties(),
                     getPeerScoringManager(),
                     getNodeMessageHandler(),
-                    getBlockchain(),
                     getCompositeEthereumListener(),
                     getGenesis(),
-                    getMessageRecorder());
+                    getMessageRecorder(),
+                    getStatusResolver());
         }
 
         return rskWireProtocolFactory;
