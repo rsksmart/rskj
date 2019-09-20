@@ -21,5 +21,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public enum EthSubscribeTypes {
     @JsonProperty("newHeads")
-    NEW_HEADS
+    NEW_HEADS {
+        @Override
+        public Class<? extends EthSubscribeParams> requestClass() {
+            return EthSubscribeNewHeadsParams.class;
+        }
+    };
+
+    public abstract Class<? extends EthSubscribeParams> requestClass();
 }

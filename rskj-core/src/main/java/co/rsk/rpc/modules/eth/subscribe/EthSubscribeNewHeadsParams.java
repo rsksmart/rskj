@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,25 +15,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package co.rsk.rpc.modules.eth.subscribe;
 
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import java.util.Objects;
-
-@JsonDeserialize(using = EthSubscribeParamsDeserializer.class)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public abstract class EthSubscribeParams {
-
-    private final EthSubscribeTypes subscription;
+@JsonDeserialize
+public class EthSubscribeNewHeadsParams extends EthSubscribeParams {
 
     @JsonCreator
-    public EthSubscribeParams(EthSubscribeTypes subscription) {
-        this.subscription = Objects.requireNonNull(subscription);
-    }
-
-    public EthSubscribeTypes getSubscription() {
-        return subscription;
+    public EthSubscribeNewHeadsParams() {
+        super(EthSubscribeTypes.NEW_HEADS);
     }
 }

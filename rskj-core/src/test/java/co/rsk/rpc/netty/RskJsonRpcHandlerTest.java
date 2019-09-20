@@ -43,7 +43,7 @@ public class RskJsonRpcHandlerTest {
             JsonRpcVersion.V2_0,
             RskJsonRpcMethod.ETH_SUBSCRIBE,
             35,
-            new EthSubscribeParams(EthSubscribeTypes.NEW_HEADS)
+            new EthSubscribeNewHeadsParams()
 
     );
 
