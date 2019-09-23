@@ -20,8 +20,10 @@ package co.rsk.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TrieKeyMapper;
@@ -385,5 +387,58 @@ public class MutableTrieCacheTest {
 
         Uint24 cacheValueLength = mtCache.getValueLength(wrongKey);
         assertEquals(Uint24.ZERO, cacheValueLength);
+    }
+
+    @Test
+    public void testStoreValueOnTrieAndGetHash() {
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
+        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+
+        byte[] value = toBytes("11111111112222222222333333333344");
+        byte[] key = toBytes("ALICE");
+        byte[] keyForCache = toBytes("ALICE2");
+
+        Keccak256 expectedHash = new Keccak256(Keccak256Helper.keccak256(value));
+
+        baseMutableTrie.put(key, value);
+        mtCache.put(keyForCache, value);
+
+        getValueHashAndAssert(baseMutableTrie, key, expectedHash);
+        getValueHashAndAssert(mtCache, keyForCache, expectedHash);
+    }
+
+    @Test
+    public void testStoreEmptyValueOnTrieAndGetHash() {
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
+        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+
+        byte[] emptyValue = new byte[0];
+        byte[] key = toBytes("ALICE");
+        byte[] keyForCache = toBytes("ALICE2");
+
+        Keccak256 emptyHash = new Keccak256(Keccak256Helper.keccak256(emptyValue));
+
+        baseMutableTrie.put(key, emptyValue);
+        mtCache.put(keyForCache, emptyValue);
+
+        getValueHashAndAssert(baseMutableTrie, key, Keccak256.ZERO_HASH);
+        getValueHashAndAssert(mtCache, keyForCache, emptyHash);
+    }
+
+    @Test
+    public void testGetValueNotStoredAndGetHash() {
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
+        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+
+        byte[] wrongKey = toBytes("BOB");
+        Keccak256 zeroHash = Keccak256.ZERO_HASH;
+
+        getValueHashAndAssert(baseMutableTrie, wrongKey, zeroHash);
+        getValueHashAndAssert(mtCache, wrongKey, zeroHash);
+    }
+
+    private void getValueHashAndAssert(MutableTrie trie, byte[] key, Keccak256 expectedHash) {
+        Keccak256 hash = trie.getValueHash(key);
+        assertEquals(expectedHash, hash);
     }
 }
