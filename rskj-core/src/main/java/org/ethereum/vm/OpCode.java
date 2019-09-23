@@ -229,6 +229,12 @@ public enum OpCode {
     RETURNDATASIZE(0x3d, 0, 1, BASE_TIER),
     RETURNDATACOPY(0x3e, 3, 0, VERY_LOW_TIER),
 
+    /**
+     * (0x3f) Get hash of code running in current
+     * environment
+     */
+    EXTCODEHASH(0x3f, 1, 1, EXT_TIER),
+
     /*  Block Information   */
 
     /**

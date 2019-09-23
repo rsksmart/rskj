@@ -227,6 +227,12 @@ public class OpCodes {
     static final byte OP_RETURNDATASIZE = 0x3d;
     static final byte OP_RETURNDATACOPY = 0x3e;
 
+    /**
+     * (0x3f) Get hash of code running in current
+     * environment
+     */
+    public static final byte OP_EXTCODEHASH = 0x3f;
+
     /*  Block Information   */
 
     /**
