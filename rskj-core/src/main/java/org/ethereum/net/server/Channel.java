@@ -208,10 +208,6 @@ public class Channel implements MessageChannel {
         return eth.getStats();
     }
 
-    public boolean isIdle() {
-        return eth.isIdle();
-    }
-
     public void dropConnection() {
         eth.dropConnection();
     }

@@ -45,11 +45,6 @@ public interface Eth {
     boolean hasStatusSucceeded();
 
     /**
-     * @return true if syncState is IDLE, false otherwise
-     */
-    boolean isIdle();
-
-    /**
      * @return sync statistics
      */
     SyncStatistics getStats();

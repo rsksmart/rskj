@@ -51,11 +51,6 @@ public class EthAdapter implements Eth {
     }
 
     @Override
-    public boolean isIdle() {
-        return true;
-    }
-
-    @Override
     public SyncStatistics getStats() {
         return syncStats;
     }

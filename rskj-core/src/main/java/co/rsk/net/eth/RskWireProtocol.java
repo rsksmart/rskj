@@ -38,7 +38,6 @@ import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
-import org.ethereum.sync.SyncState;
 import org.ethereum.sync.SyncStatistics;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
@@ -69,7 +68,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     private final Channel channel;
     private final EthVersion version;
     private EthState ethState = EthState.INIT;
-    private SyncState syncState = SyncState.IDLE;
 
     private final RskSystemProperties config;
     private final StatusResolver statusResolver;
@@ -279,11 +277,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
     @Override
     public boolean hasStatusSucceeded() {
         return ethState == EthState.STATUS_SUCCEEDED;
-    }
-
-    @Override
-    public boolean isIdle() {
-        return syncState == SyncState.IDLE;
     }
 
     @Override
