@@ -108,7 +108,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
         ethereumListener.trace(String.format("EthHandler invoke: [%s]", msg.getCommand()));
 
-        channel.getNodeStatistics().ethInbound.add();
+        channel.getNodeStatistics().getEthInbound().add();
 
         msgQueue.receivedMessage(msg);
 
@@ -330,7 +330,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         loggerNet.debug("Send message: {}", message);
 
         msgQueue.sendMessage(message);
-        channel.getNodeStatistics().ethOutbound.add();
+        channel.getNodeStatistics().getEthOutbound().add();
     }
 
     private enum EthState {

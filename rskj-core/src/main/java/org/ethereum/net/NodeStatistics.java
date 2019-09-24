@@ -44,6 +44,14 @@ import static java.lang.Math.min;
 public class NodeStatistics {
     public static final int REPUTATION_PREDEFINED = 1000500;
 
+    public StatHandler getEthInbound() {
+        return ethInbound;
+    }
+
+    public StatHandler getEthOutbound() {
+        return ethOutbound;
+    }
+
     public class StatHandler {
         AtomicInteger count = new AtomicInteger(0);
         public void add() {count.incrementAndGet(); }
@@ -101,8 +109,8 @@ public class NodeStatistics {
 
     // Eth stat
     public final StatHandler ethHandshake = new StatHandler();
-    public final StatHandler ethInbound = new StatHandler();
-    public final StatHandler ethOutbound = new StatHandler();
+    private final StatHandler ethInbound = new StatHandler();
+    private final StatHandler ethOutbound = new StatHandler();
     private StatusMessage ethLastInboundStatusMsg = null;
     private BigInteger ethTotalDifficulty = BigInteger.ZERO;
 
@@ -206,7 +214,7 @@ public class NodeStatistics {
                 discoverOutNeighbours + "/" + discoverInFind + " " +
                 ", rlpx: " + rlpxHandshake + "/" + rlpxAuthMessagesSent + "/" + rlpxConnectionAttempts + " " +
                 rlpxInMessages + "/" + rlpxOutMessages +
-                ", eth: " + ethHandshake + "/" + ethInbound + "/" + ethOutbound + " " +
+                ", eth: " + ethHandshake + "/" + getEthInbound() + "/" + getEthOutbound() + " " +
                 (ethLastInboundStatusMsg != null ? ByteUtil.toHexString(ethLastInboundStatusMsg.getTotalDifficulty()) : "-") + " " +
                 (disconnected ? "X " : "") +
                 (rlpxLastLocalDisconnectReason != null ? ("<=" + rlpxLastLocalDisconnectReason) : " ") +
