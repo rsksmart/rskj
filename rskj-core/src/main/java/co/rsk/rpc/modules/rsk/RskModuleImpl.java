@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
@@ -62,8 +63,8 @@ public class RskModuleImpl implements RskModule {
 
         try {
             Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
-            byte[] bhash = stringHexToByteArray(blockHash);
-            Block block = this.blockchain.getBlockByHash(bhash);
+            Keccak256 bhash = new Keccak256(stringHexToByteArray(blockHash));
+            Block block = this.blockchain.getBlockByHash(bhash.getBytes());
             List<Transaction> transactions = block.getTransactionsList();
             List<TransactionReceipt> receipts = new ArrayList<>();
 
@@ -74,7 +75,13 @@ public class RskModuleImpl implements RskModule {
                 Transaction transaction = transactions.get(k);
                 Keccak256 txh = transaction.getHash();
 
-                TransactionInfo txinfo = this.receiptStore.get(txh.getBytes(), bhash, this.blockStore);
+                Optional<TransactionInfo> txinfoOpt = this.receiptStore.get(txh, bhash);
+                if (!txinfoOpt.isPresent()) {
+                    logger.error("Missing receipt for transaction {} in block {}", txh, bhash);
+                    continue;
+                }
+
+                TransactionInfo txinfo = txinfoOpt.get();
                 receipts.add(txinfo.getReceipt());
 
                 if (txh.equals(txHash)) {
