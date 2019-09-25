@@ -17,10 +17,7 @@
  */
 package co.rsk.rpc;
 
-import co.rsk.rpc.modules.eth.subscribe.BlockHeaderNotification;
-import co.rsk.rpc.modules.eth.subscribe.EthSubscriptionNotification;
-import co.rsk.rpc.modules.eth.subscribe.EthSubscriptionParams;
-import co.rsk.rpc.modules.eth.subscribe.SubscriptionId;
+import co.rsk.rpc.modules.eth.subscribe.*;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.core.Block;
@@ -39,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * This manages subscriptions and emits events to interested clients.
  * Can only be used with the WebSockets transport.
  */
-public class EthSubscriptionNotificationEmitter {
+public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVisitor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EthSubscriptionNotificationEmitter.class);
 
     private final Map<SubscriptionId, Channel> subscriptions = new ConcurrentHashMap<>();
@@ -55,11 +52,8 @@ public class EthSubscriptionNotificationEmitter {
         this.jsonRpcSerializer = jsonRpcSerializer;
     }
 
-    /**
-     * @param channel a Netty channel to subscribe notifications to.
-     * @return a subscription id which should be used as an unsubscribe parameter.
-     */
-    public SubscriptionId subscribe(Channel channel) {
+    @Override
+    public SubscriptionId visit(EthSubscribeNewHeadsParams params, Channel channel) {
         SubscriptionId subscriptionId = new SubscriptionId();
         subscriptions.put(subscriptionId, channel);
         return subscriptionId;

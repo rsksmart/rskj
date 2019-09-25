@@ -18,6 +18,7 @@
 package co.rsk.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.rpc.modules.eth.subscribe.EthSubscribeNewHeadsParams;
 import co.rsk.rpc.modules.eth.subscribe.SubscriptionId;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.channel.Channel;
@@ -56,13 +57,14 @@ public class EthSubscriptionNotificationEmitterTest {
     public void subscribeReturnsSubscriptionId() {
         Channel channel = mock(Channel.class);
 
-        assertThat(emitter.subscribe(channel), notNullValue());
+        EthSubscribeNewHeadsParams params = mock(EthSubscribeNewHeadsParams.class);
+        assertThat(emitter.visit(params, channel), notNullValue());
     }
 
     @Test
     public void ethereumOnBlockEventTriggersMessageToChannel() throws JsonProcessingException {
         Channel channel = mock(Channel.class);
-        emitter.subscribe(channel);
+        emitter.visit(new EthSubscribeNewHeadsParams(), channel);
         when(serializer.serializeMessage(any()))
                 .thenReturn("serialized");
 
@@ -73,7 +75,7 @@ public class EthSubscriptionNotificationEmitterTest {
     @Test
     public void unsubscribeSucceedsForExistingSubscriptionId() {
         Channel channel = mock(Channel.class);
-        SubscriptionId subscriptionId = emitter.subscribe(channel);
+        SubscriptionId subscriptionId = emitter.visit(new EthSubscribeNewHeadsParams(), channel);
 
         assertThat(emitter.unsubscribe(new SubscriptionId()), is(false));
         assertThat(emitter.unsubscribe(subscriptionId), is(true));

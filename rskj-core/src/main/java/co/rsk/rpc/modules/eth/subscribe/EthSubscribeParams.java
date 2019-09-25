@@ -17,23 +17,12 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-
-import java.util.Objects;
+import io.netty.channel.Channel;
 
 @JsonDeserialize(using = EthSubscribeParamsDeserializer.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public abstract class EthSubscribeParams {
-
-    private final EthSubscribeTypes subscription;
-
-    @JsonCreator
-    public EthSubscribeParams(EthSubscribeTypes subscription) {
-        this.subscription = Objects.requireNonNull(subscription);
-    }
-
-    public EthSubscribeTypes getSubscription() {
-        return subscription;
-    }
+public interface EthSubscribeParams {
+    SubscriptionId accept(EthSubscribeParamsVisitor visitor, Channel channel);
 }

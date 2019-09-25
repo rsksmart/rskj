@@ -28,8 +28,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class EthSubscribeRequestTest {
     private JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();
@@ -43,7 +42,7 @@ public class EthSubscribeRequestTest {
 
         assertThat(request, instanceOf(EthSubscribeRequest.class));
         EthSubscribeRequest subscribeRequest = (EthSubscribeRequest) request;
-        assertThat(subscribeRequest.getParams().getSubscription(), is(EthSubscribeTypes.NEW_HEADS));
+        assertThat(subscribeRequest.getParams(), instanceOf(EthSubscribeNewHeadsParams.class));
     }
 
     @Test(expected = JsonMappingException.class)

@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,16 +17,16 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.netty.channel.Channel;
 
-public enum EthSubscribeTypes {
-    @JsonProperty("newHeads")
-    NEW_HEADS {
-        @Override
-        public Class<? extends EthSubscribeParams> requestClass() {
-            return EthSubscribeNewHeadsParams.class;
-        }
-    };
-
-    public abstract Class<? extends EthSubscribeParams> requestClass();
+/**
+ * Classes implementing this interface know how to handle JSON-RPC eth_subscribe requests.
+ */
+public interface EthSubscribeParamsVisitor {
+    /**
+     * @param params new heads subscription request parameters.
+     * @param channel a Netty channel to subscribe notifications to.
+     * @return a subscription id which should be used as an unsubscribe parameter.
+     */
+    SubscriptionId visit(EthSubscribeNewHeadsParams params, Channel channel);
 }

@@ -83,7 +83,7 @@ public class RskJsonRpcHandlerTest {
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
         when(ctx.channel())
                 .thenReturn(channel);
-        when(emitter.subscribe(channel))
+        when(emitter.visit(any(EthSubscribeNewHeadsParams.class), eq(channel)))
             .thenReturn(SAMPLE_SUBSCRIPTION_ID);
 
         assertThat(
@@ -101,7 +101,7 @@ public class RskJsonRpcHandlerTest {
 
         when(serializer.deserializeRequest(any()))
                 .thenReturn(SAMPLE_SUBSCRIBE_REQUEST);
-        when(emitter.subscribe(channel))
+        when(emitter.visit(any(EthSubscribeNewHeadsParams.class), eq(channel)))
                 .thenReturn(SAMPLE_SUBSCRIPTION_ID);
         when(serializer.serializeMessage(any()))
                 .thenReturn("serialized");
