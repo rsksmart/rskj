@@ -17,23 +17,8 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import io.netty.channel.Channel;
-
 /**
- * Classes implementing this interface know how to handle JSON-RPC eth_subscribe requests.
+ * A marker interface for the actual notification contents
  */
-public interface EthSubscribeParamsVisitor {
-    /**
-     * @param params new heads subscription request parameters.
-     * @param channel a Netty channel to subscribe notifications to.
-     * @return a subscription id which should be used as an unsubscribe parameter.
-     */
-    SubscriptionId visit(EthSubscribeNewHeadsParams params, Channel channel);
-
-    /**
-     * @param params logs subscription request parameters.
-     * @param channel a Netty channel to subscribe notifications to.
-     * @return a subscription id which should be used as an unsubscribe parameter.
-     */
-    SubscriptionId visit(EthSubscribeLogsParams params, Channel channel);
+public interface EthSubscriptionNotificationDTO {
 }
