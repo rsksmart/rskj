@@ -91,7 +91,7 @@ public class Web3RskImpl extends Web3Impl {
             BuildInfo buildInfo,
             BlocksBloomStore blocksBloomStore) {
         super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
-              personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, rskModule,
+              personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, null, rskModule,
               channelManager, repositoryLocator, peerScoringManager, peerServer, nodeBlockProcessor,
               hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore);
 
