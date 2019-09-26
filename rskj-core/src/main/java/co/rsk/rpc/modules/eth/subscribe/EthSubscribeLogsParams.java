@@ -20,6 +20,7 @@ package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.core.RskAddress;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.netty.channel.Channel;
@@ -30,24 +31,24 @@ import java.util.Arrays;
 @JsonDeserialize
 public class EthSubscribeLogsParams implements EthSubscribeParams {
 
-    private final RskAddress address;
+    private final RskAddress[] addresses;
     private final Topic[] topics;
 
     public EthSubscribeLogsParams() {
-        this(null, new Topic[0]);
+        this(new RskAddress[0], new Topic[0]);
     }
 
     @JsonCreator
     public EthSubscribeLogsParams(
-            @JsonProperty("address") RskAddress address,
+            @JsonProperty("address") @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) RskAddress[] addresses,
             @JsonProperty("topics") Topic[] topics
     ) {
-        this.address = address;
+        this.addresses = addresses == null? new RskAddress[0]: addresses;
         this.topics = topics == null? new Topic[0]: topics;
     }
 
-    public RskAddress getAddress() {
-        return address;
+    public RskAddress[] getAddresses() {
+        return Arrays.copyOf(addresses, addresses.length);
     }
 
     public Topic[] getTopics() {

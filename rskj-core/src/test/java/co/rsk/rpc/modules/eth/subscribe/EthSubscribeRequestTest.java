@@ -54,7 +54,7 @@ public class EthSubscribeRequestTest {
 
         EthSubscribeLogsParams logsParams = validateParams(request, EthSubscribeLogsParams.class);
 
-        assertThat(logsParams.getAddress(), is(nullValue()));
+        assertThat(logsParams.getAddresses(), is(arrayWithSize(0)));
         assertThat(logsParams.getTopics(), is(arrayWithSize(0)));
     }
 
@@ -67,7 +67,7 @@ public class EthSubscribeRequestTest {
 
         EthSubscribeLogsParams logsParams = validateParams(request, EthSubscribeLogsParams.class);
 
-        assertThat(logsParams.getAddress(), is(nullValue()));
+        assertThat(logsParams.getAddresses(), is(arrayWithSize(0)));
         assertThat(logsParams.getTopics(), is(arrayWithSize(0)));
     }
 
@@ -82,7 +82,8 @@ public class EthSubscribeRequestTest {
 
         EthSubscribeLogsParams logsParams = validateParams(request, EthSubscribeLogsParams.class);
 
-        assertThat(logsParams.getAddress(), is(logAddress));
+        assertThat(logsParams.getAddresses(), is(arrayWithSize(1)));
+        assertThat(logsParams.getAddresses(), hasItemInArray(logAddress));
         assertThat(logsParams.getTopics(), is(arrayWithSize(1)));
         assertThat(logsParams.getTopics(), hasItemInArray(logTopic));
     }
