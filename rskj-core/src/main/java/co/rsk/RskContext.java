@@ -1474,14 +1474,16 @@ public class RskContext implements NodeBootstrapper {
 
     private RskWireProtocol.Factory getRskWireProtocolFactory() {
         if (rskWireProtocolFactory == null) {
-            rskWireProtocolFactory = () -> new RskWireProtocol(
+            rskWireProtocolFactory = (messageQueue, channel) -> new RskWireProtocol(
                     getRskSystemProperties(),
                     getPeerScoringManager(),
                     getNodeMessageHandler(),
                     getCompositeEthereumListener(),
                     getGenesis(),
                     getMessageRecorder(),
-                    getStatusResolver());
+                    getStatusResolver(),
+                    messageQueue,
+                    channel);
         }
 
         return rskWireProtocolFactory;

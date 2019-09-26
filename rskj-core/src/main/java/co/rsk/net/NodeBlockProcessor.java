@@ -126,7 +126,6 @@ public class NodeBlockProcessor implements BlockProcessor {
 
     private void processBlockHeader(@Nonnull final MessageChannel sender, @Nonnull final BlockHeader header) {
         sender.sendMessage(new GetBlockMessage(header.getHash().getBytes()));
-
         this.store.saveHeader(header);
     }
 

@@ -51,34 +51,13 @@ public class EthAdapter implements Eth {
     }
 
     @Override
-    public void onShutdown() {
-    }
-
-    @Override
-    public boolean isIdle() {
-        return true;
-    }
-
-    @Override
     public SyncStatistics getStats() {
         return syncStats;
     }
 
     @Override
-    public void disableTransactions() {
-    }
-
-    @Override
-    public void enableTransactions() {
-    }
-
-    @Override
     public EthVersion getVersion() {
         return fromCode(UPPER);
-    }
-
-    @Override
-    public void onSyncDone(boolean done) {
     }
 
     @Override
