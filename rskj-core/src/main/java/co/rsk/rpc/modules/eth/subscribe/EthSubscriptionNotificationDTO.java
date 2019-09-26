@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,12 +17,8 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.netty.channel.Channel;
-
-@JsonDeserialize(using = EthSubscribeParamsDeserializer.class)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public interface EthSubscribeParams {
-    SubscriptionId accept(EthSubscribeParamsVisitor visitor, Channel channel);
+/**
+ * A marker interface for the actual notification contents
+ */
+public interface EthSubscriptionNotificationDTO {
 }

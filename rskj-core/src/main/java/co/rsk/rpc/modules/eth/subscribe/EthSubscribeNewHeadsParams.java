@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,11 +15,16 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package co.rsk.rpc.modules.eth.subscribe;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.netty.channel.Channel;
 
-public enum EthSubscribeTypes {
-    @JsonProperty("newHeads")
-    NEW_HEADS
+@JsonDeserialize
+public class EthSubscribeNewHeadsParams implements EthSubscribeParams {
+    @Override
+    public SubscriptionId accept(EthSubscribeParamsVisitor visitor, Channel channel) {
+        return visitor.visit(this, channel);
+    }
 }

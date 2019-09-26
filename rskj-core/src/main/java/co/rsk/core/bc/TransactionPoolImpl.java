@@ -286,8 +286,8 @@ public class TransactionPoolImpl implements TransactionPool {
         logger.trace("Processing best block {} {}", block.getNumber(), block.getShortHash());
 
         if (bestBlock != null) {
-            BlockFork fork = new BlockFork();
-            fork.calculate(bestBlock, block, blockStore);
+            BlockchainBranchComparator branchComparator = new BlockchainBranchComparator(blockStore);
+            BlockFork fork = branchComparator.calculateFork(bestBlock, block);
 
             for (Block blk : fork.getOldBlocks()) {
                 retractBlock(blk);

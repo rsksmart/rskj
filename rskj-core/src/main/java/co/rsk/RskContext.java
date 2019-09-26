@@ -51,6 +51,8 @@ import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.*;
+import co.rsk.rpc.modules.eth.subscribe.BlockHeaderNotificationEmitter;
+import co.rsk.rpc.modules.eth.subscribe.LogsNotificationEmitter;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.evm.EvmModuleImpl;
 import co.rsk.rpc.modules.mnr.MnrModule;
@@ -66,7 +68,10 @@ import co.rsk.rpc.netty.*;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
-import co.rsk.trie.*;
+import co.rsk.trie.MultiTrieStore;
+import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.ethereum.config.Constants;
@@ -114,7 +119,9 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.*;
 import java.util.stream.Stream;
@@ -1375,9 +1382,15 @@ public class RskContext implements NodeBootstrapper {
         if (web3WebSocketServer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             JsonRpcSerializer jsonRpcSerializer = getJsonRpcSerializer();
+            Ethereum rsk = getRsk();
             EthSubscriptionNotificationEmitter emitter = new EthSubscriptionNotificationEmitter(
-                    getRsk(),
-                    jsonRpcSerializer
+                    new BlockHeaderNotificationEmitter(rsk, jsonRpcSerializer),
+                    new LogsNotificationEmitter(
+                            rsk,
+                            jsonRpcSerializer,
+                            getReceiptStore(),
+                            new BlockchainBranchComparator(getBlockStore())
+                    )
             );
             RskJsonRpcHandler jsonRpcHandler = new RskJsonRpcHandler(emitter, jsonRpcSerializer);
             web3WebSocketServer = new Web3WebSocketServer(

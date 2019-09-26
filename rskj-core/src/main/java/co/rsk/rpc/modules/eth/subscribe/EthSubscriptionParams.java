@@ -26,9 +26,9 @@ import java.util.Objects;
  */
 public class EthSubscriptionParams {
     private final SubscriptionId subscription;
-    private final BlockHeaderNotification result;
+    private final EthSubscriptionNotificationDTO result;
 
-    public EthSubscriptionParams(SubscriptionId subscription, BlockHeaderNotification result) {
+    public EthSubscriptionParams(SubscriptionId subscription, EthSubscriptionNotificationDTO result) {
         this.subscription = Objects.requireNonNull(subscription);
         this.result = Objects.requireNonNull(result);
     }
@@ -39,7 +39,7 @@ public class EthSubscriptionParams {
     }
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public BlockHeaderNotification getResult() {
+    public EthSubscriptionNotificationDTO getResult() {
         return result;
     }
 }
