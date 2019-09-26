@@ -60,6 +60,8 @@ import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.rsk.RskModuleImpl;
+import co.rsk.rpc.modules.trace.TraceModule;
+import co.rsk.rpc.modules.trace.TraceModuleImpl;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.rpc.netty.*;
@@ -196,6 +198,7 @@ public class RskContext implements NodeBootstrapper {
     private NodeMessageHandler nodeMessageHandler;
     private ConfigCapabilities configCapabilities;
     private DebugModule debugModule;
+    private TraceModule traceModule;
     private MnrModule mnrModule;
     private TxPoolModule txPoolModule;
     private RskModule rskModule;
@@ -606,6 +609,19 @@ public class RskContext implements NodeBootstrapper {
         return debugModule;
     }
 
+    public TraceModule getTraceModule() {
+        if (traceModule == null) {
+            traceModule = new TraceModuleImpl(
+                    getBlockchain(),
+                    getBlockStore(),
+                    getReceiptStore(),
+                    getBlockExecutor()
+            );
+        }
+
+        return traceModule;
+    }
+
     public MnrModule getMnrModule() {
         if (mnrModule == null) {
             mnrModule = new MnrModuleImpl(getMinerServer());
@@ -783,6 +799,7 @@ public class RskContext implements NodeBootstrapper {
                 getTxPoolModule(),
                 getMnrModule(),
                 getDebugModule(),
+                getTraceModule(),
                 getRskModule(),
                 getChannelManager(),
                 getRepositoryLocator(),

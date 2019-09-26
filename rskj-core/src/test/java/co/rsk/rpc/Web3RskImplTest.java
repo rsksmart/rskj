@@ -101,7 +101,7 @@ public class Web3RskImplTest {
                 tpm,
                 null,
                 dm,
-                null,
+                null, null,
                 Web3Mocks.getMockChannelManager(),
                 Web3Mocks.getMockRepositoryLocator(),
                 null,

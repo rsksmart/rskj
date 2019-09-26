@@ -190,7 +190,7 @@ public class Web3ImplSnapshotTest {
                 tpm,
                 null,
                 dm,
-                null,
+                null, null,
                 Web3Mocks.getMockChannelManager(),
                 factory.getRepositoryLocator(),
                 null,

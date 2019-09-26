@@ -26,6 +26,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -36,8 +37,10 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
+import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,6 +92,7 @@ public class TransactionExecutor {
 
     private VM vm;
     private Program program;
+    private List<ProgramSubtrace> subtraces;
 
     private PrecompiledContracts.PrecompiledContract precompiledContract;
 
@@ -269,6 +273,8 @@ public class TransactionExecutor {
         // But init() will detect this earlier
         precompiledContract = precompiledContracts.getContractForAddress(activations, DataWord.valueOf(targetAddress.getBytes()));
 
+        this.subtraces = new ArrayList<>();
+
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -294,6 +300,7 @@ public class TransactionExecutor {
             // FIXME: save return for vm trace
             try {
                 byte[] out = precompiledContract.execute(tx.getData());
+                this.subtraces = precompiledContract.getSubtraces();
                 result.setHReturn(out);
                 if (!track.isExist(targetAddress)) {
                     track.createAccount(targetAddress);
@@ -551,7 +558,21 @@ public class TransactionExecutor {
      */
     public void extractTrace(ProgramTraceProcessor programTraceProcessor) {
         if (program != null) {
-            ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
+            // TODO improve this settings; the trace should already have the values
+            ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException()).revert(result.isRevert());
+            programTraceProcessor.processProgramTrace(trace, tx.getHash());
+        }
+        else {
+            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender().getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
+
+            SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
+
+            if (this.subtraces != null) {
+                for (ProgramSubtrace subtrace : this.subtraces) {
+                    trace.addSubTrace(subtrace);
+                }
+            }
+
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
     }

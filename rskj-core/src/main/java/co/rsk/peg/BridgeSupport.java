@@ -38,6 +38,8 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import co.rsk.rpc.modules.trace.CallType;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
@@ -45,8 +47,11 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.ProgramResult;
+import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +107,7 @@ public class BridgeSupport {
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
     private final BridgeEventLogger eventLogger;
+    private final List<ProgramSubtrace> subtraces = new ArrayList<>();
 
     private final FederationSupport federationSupport;
 
@@ -128,6 +134,10 @@ public class BridgeSupport {
         this.btcContext = btcContext;
         this.federationSupport = federationSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
+    }
+
+    public List<ProgramSubtrace> getSubtraces() {
+        return Collections.unmodifiableList(this.subtraces);
     }
 
     @VisibleForTesting
@@ -376,12 +386,9 @@ public class BridgeSupport {
             } else {
                 org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
                 RskAddress sender = new RskAddress(key.getAddress());
+                co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(totalAmount);
 
-                rskRepository.transfer(
-                        PrecompiledContracts.BRIDGE_ADDR,
-                        sender,
-                        co.rsk.core.Coin.fromBitcoin(totalAmount)
-                );
+                this.transferTo(sender, amount);
 
                 logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, sender);
 
@@ -417,6 +424,32 @@ public class BridgeSupport {
             saveNewUTXOs(btcTx);
         }
         logger.info("BTC Tx {} processed in RSK", btcTxHash);
+    }
+
+    /**
+     * Internal method to transfer RSK to an RSK account
+     * It also produce the appropiate internal transaction subtrace if needed
+     *
+     * @param receiver  address that receives the amount
+     * @param amount    amount to transfer
+     */
+    private void transferTo(RskAddress receiver, co.rsk.core.Coin amount) {
+        rskRepository.transfer(
+                PrecompiledContracts.BRIDGE_ADDR,
+                receiver,
+                amount
+        );
+
+        DataWord from = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
+        DataWord to = DataWord.valueOf(receiver.getBytes());
+        long gas = 0L;
+        DataWord value = DataWord.valueOf(amount.getBytes());
+
+        TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
+        ProgramResult result     = ProgramResult.empty();
+        ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
+
+        this.subtraces.add(subtrace);
     }
 
     /*
@@ -756,7 +789,7 @@ public class BridgeSupport {
         Coin spentByFederation = sumInputs.subtract(change);
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
-            rskRepository.transfer(PrecompiledContracts.BRIDGE_ADDR, BURN_ADDRESS, co.rsk.core.Coin.fromBitcoin(coinsToBurn));
+            this.transferTo(BURN_ADDRESS, co.rsk.core.Coin.fromBitcoin(coinsToBurn));
         }
     }
 

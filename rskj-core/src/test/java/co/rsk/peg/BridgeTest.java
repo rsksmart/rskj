@@ -303,6 +303,9 @@ public class BridgeTest {
         bridge.execute(Bridge.RECEIVE_HEADERS.encode());
 
         track.commit();
+
+        // TODO improve test
+        Assert.assertNotNull(track.getRoot());
     }
 
     @Test
@@ -334,6 +337,9 @@ public class BridgeTest {
         bridge.execute(Bridge.RECEIVE_HEADERS.encode(new Object[]{objectArray}));
 
         track.commit();
+
+        // TODO improve test
+        Assert.assertNotNull(track.getRoot());
     }
 
     @Test
@@ -2464,6 +2470,10 @@ public class BridgeTest {
 
         byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
         bridge.execute(data);
+        bridge.execute(data);
+
+        // TODO improve test
+        Assert.assertNotNull(data);
     }
 
     @Test
