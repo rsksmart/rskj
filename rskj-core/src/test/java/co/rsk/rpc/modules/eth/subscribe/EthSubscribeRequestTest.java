@@ -17,10 +17,12 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.core.RskAddress;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import org.ethereum.rpc.Topic;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -71,9 +73,9 @@ public class EthSubscribeRequestTest {
 
     @Test
     public void deserializeLogs() throws IOException {
-        String logAddress = "0x3e1127bf1a673d378a8570f7a79cea4f10e20489";
-        String logTopic = "0x2809c7e17bf978fbc7194c0a694b638c4215e9140cacc6c38ca36010b45697df";
-        String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\", {\"address\":\"" + logAddress + "\",\"topics\":[\"" + logTopic + "\"]}]}";
+        RskAddress logAddress = new RskAddress("0x3e1127bf1a673d378a8570f7a79cea4f10e20489");
+        Topic logTopic = new Topic("0x2809c7e17bf978fbc7194c0a694b638c4215e9140cacc6c38ca36010b45697df");
+        String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\", {\"address\":\"" + logAddress.toJsonString() + "\",\"topics\":[\"" + logTopic.toJsonString() + "\"]}]}";
         RskJsonRpcRequest request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
         );
