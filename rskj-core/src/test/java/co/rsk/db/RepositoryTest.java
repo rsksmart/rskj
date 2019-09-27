@@ -429,7 +429,7 @@ public class RepositoryTest {
 
         final CountDownLatch failSema = new CountDownLatch(2);
 
-        Repository snap = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()));
+        Repository snap = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()).get());
         new Thread(() -> {
             try {
                 int cnt = 1;
@@ -503,7 +503,7 @@ public class RepositoryTest {
         // this new repository to read all nodes from the store. The results must
         // be the same: lazy evaluation of the value must work.
 
-        Repository repository2 = new MutableRepository(trieStore, trieStore.retrieve(prevRoot));
+        Repository repository2 = new MutableRepository(trieStore, trieStore.retrieve(prevRoot).get());
         // Now try to get the size
         codeSize = repository2.getCodeLength(COW);
         assertEquals(codeLongerThan32bytes.length, codeSize);

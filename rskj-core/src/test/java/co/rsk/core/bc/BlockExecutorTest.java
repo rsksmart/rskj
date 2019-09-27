@@ -133,7 +133,8 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = new MutableRepository(trieStore, trieStore.retrieve(result.getFinalState().getHash().getBytes()));
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         accountState = finalRepository.getAccountState(account);
 
@@ -190,7 +191,8 @@ public class BlockExecutorTest {
 
         // here is the papa. my commit changes stateroot while previous commit did not.
 
-        Repository finalRepository = new MutableRepository(trieStore, trieStore.retrieve(result.getFinalState().getHash().getBytes()));
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         accountState = finalRepository.getAccountState(account);
 
@@ -529,7 +531,8 @@ public class BlockExecutorTest {
         Block block = objects.getBlock();
         TrieStore trieStore = objects.getTrieStore();
         BlockExecutor executor = buildBlockExecutor(trieStore);
-        Repository repository = new MutableRepository(trieStore, trieStore.retrieve(objects.getParent().getStateRoot()));
+        Repository repository = new MutableRepository(trieStore,
+                trieStore.retrieve(objects.getParent().getStateRoot()).get());
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
 
@@ -576,7 +579,8 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = new MutableRepository(trieStore, trieStore.retrieve(result.getFinalState().getHash().getBytes()));
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         accountState = finalRepository.getAccountState(account.getAddress());
 

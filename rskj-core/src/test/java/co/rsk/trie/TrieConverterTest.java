@@ -309,7 +309,7 @@ public class TrieConverterTest {
         byte[] root = Arrays.copyOfRange(bytes, Short.BYTES, expectedSize);
         TrieStore store = trieStoreDeserialization(bytes, expectedSize, new HashMapDB());
 
-        return store.retrieve(root);
+        return store.retrieve(root).get();
     }
 
     private static TrieStore trieStoreDeserialization(byte[] bytes, int offset, KeyValueDataSource ds) {

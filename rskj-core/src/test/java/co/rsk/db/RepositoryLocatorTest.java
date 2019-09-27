@@ -25,6 +25,8 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
 import org.junit.Test;
 
+import java.util.Optional;
+
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,7 +42,7 @@ public class RepositoryLocatorTest {
         Trie underlyingTrie = mock(Trie.class);
         when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash());
         TrieStore trieStore = mock(TrieStore.class);
-        when(trieStore.retrieve(stateRoot.getBytes())).thenReturn(underlyingTrie);
+        when(trieStore.retrieve(stateRoot.getBytes())).thenReturn(Optional.of(underlyingTrie));
 
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
         RepositorySnapshot actualRepository = repositoryLocator.snapshotAt(header);

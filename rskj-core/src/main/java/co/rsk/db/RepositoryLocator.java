@@ -22,11 +22,14 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.RLP;
+
+import java.util.Optional;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -57,6 +60,12 @@ public class RepositoryLocator {
             return new MutableTrieImpl(trieStore, new Trie(trieStore));
         }
 
-        return new MutableTrieImpl(trieStore, trieStore.retrieve(stateRoot.getBytes()));
+        Optional<Trie> trie = trieStore.retrieve(stateRoot.getBytes());
+
+        return trie.map(t -> new MutableTrieImpl(trieStore, t))
+                .orElseThrow(() ->
+                        new IllegalArgumentException(String.format(
+                                "The trie with root %s is missing in this store", stateRoot
+        )));
     }
 }

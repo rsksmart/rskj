@@ -18,10 +18,10 @@
 
 package co.rsk.trie;
 
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.datasource.KeyValueDataSource;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -92,17 +92,15 @@ public class TrieStoreImpl implements TrieStore {
     }
 
     @Override
-    public Trie retrieve(byte[] hash) {
+    public Optional<Trie> retrieve(byte[] hash) {
         byte[] message = this.store.get(hash);
         if (message == null) {
-            throw new IllegalArgumentException(String.format(
-                    "The trie with root %s is missing in this store", Hex.toHexString(hash)
-            ));
+            return Optional.empty();
         }
 
         Trie trie = Trie.fromMessage(message, this);
         savedTries.add(trie);
-        return trie;
+        return Optional.of(trie);
     }
 
     @Override

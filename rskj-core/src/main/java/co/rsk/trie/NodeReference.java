@@ -61,8 +61,10 @@ public class NodeReference {
             return Optional.empty();
         }
 
-        lazyNode = store.retrieve(lazyHash.getBytes());
-        return Optional.of(lazyNode);
+        Optional<Trie> node = store.retrieve(lazyHash.getBytes());
+
+        lazyNode = node.orElse(null);
+        return node;
     }
 
     /**
