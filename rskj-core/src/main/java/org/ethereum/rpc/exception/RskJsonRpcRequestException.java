@@ -1,9 +1,6 @@
 package org.ethereum.rpc.exception;
 
-/**
- * Created by mario on 17/10/2016.
- */
-public class RskJsonRpcRequestException extends RuntimeException{
+public class RskJsonRpcRequestException extends RuntimeException {
 
     private final Integer code;
 
@@ -47,5 +44,13 @@ public class RskJsonRpcRequestException extends RuntimeException{
 
     public static RskJsonRpcRequestException unimplemented(String message) {
         return new RskJsonRpcRequestException(-32201, message);
+    }
+
+    public static RskJsonRpcRequestException blockNotFound(String message) {
+        return new RskJsonRpcRequestException(-32600, message);
+    }
+
+    public static RskJsonRpcRequestException stateNotFound(String message) {
+        return new RskJsonRpcRequestException(-32600, message);
     }
 }

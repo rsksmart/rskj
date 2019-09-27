@@ -41,7 +41,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class ExecutionBlockRetrieverTest {
+public class ExecutionFoundBlockRetrieverTest {
 
     private MiningMainchainView miningMainchainView;
     private Blockchain blockchain;
