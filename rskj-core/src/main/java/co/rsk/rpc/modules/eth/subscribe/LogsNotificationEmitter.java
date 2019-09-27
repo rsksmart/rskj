@@ -29,6 +29,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.rpc.AddressesTopicsFilter;
 import org.ethereum.vm.LogInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,7 @@ public class LogsNotificationEmitter {
     private final ReceiptStore receiptStore;
     private final BlockchainBranchComparator branchComparator;
 
-    private final Map<SubscriptionId, Channel> subscriptions = new ConcurrentHashMap<>();
+    private final Map<SubscriptionId, Subscription> subscriptions = new ConcurrentHashMap<>();
     private Block lastEmitted;
 
     public LogsNotificationEmitter(
@@ -67,7 +68,7 @@ public class LogsNotificationEmitter {
     }
 
     public void subscribe(SubscriptionId subscriptionId, Channel channel, EthSubscribeLogsParams params) {
-        subscriptions.put(subscriptionId, channel);
+        subscriptions.put(subscriptionId, new Subscription(channel, params));
     }
 
     public boolean unsubscribe(SubscriptionId subscriptionId) {
@@ -75,7 +76,7 @@ public class LogsNotificationEmitter {
     }
 
     public void unsubscribe(Channel channel) {
-        subscriptions.values().removeIf(channel::equals);
+        subscriptions.values().removeIf(s -> channel.equals(s.channel));
     }
 
     private void emitLogs(Block block) {
@@ -100,20 +101,23 @@ public class LogsNotificationEmitter {
     }
 
     private void emitLogs(List<LogsNotification> notifications) {
-        for (Map.Entry<SubscriptionId, Channel> entry : subscriptions.entrySet()) {
+        for (Map.Entry<SubscriptionId, Subscription> entry : subscriptions.entrySet()) {
             SubscriptionId id = entry.getKey();
-            Channel channel = entry.getValue();
+            Channel channel = entry.getValue().channel;
+            AddressesTopicsFilter filter = entry.getValue().filter;
 
             for (LogsNotification notification : notifications) {
-                EthSubscriptionNotification request = new EthSubscriptionNotification(
-                        new EthSubscriptionParams(id, notification)
-                );
+                if (filter.matchesExactly(notification.getLogInfo())) {
+                    EthSubscriptionNotification request = new EthSubscriptionNotification(
+                            new EthSubscriptionParams(id, notification)
+                    );
 
-                try {
-                    String msg = jsonRpcSerializer.serializeMessage(request);
-                    channel.write(new TextWebSocketFrame(msg));
-                } catch (IOException e) {
-                    logger.error("Couldn't serialize block header result for notification", e);
+                    try {
+                        String msg = jsonRpcSerializer.serializeMessage(request);
+                        channel.write(new TextWebSocketFrame(msg));
+                    } catch (IOException e) {
+                        logger.error("Couldn't serialize block header result for notification", e);
+                    }
                 }
             }
 
@@ -143,5 +147,15 @@ public class LogsNotificationEmitter {
         }
 
         return notifications;
+    }
+
+    private static class Subscription {
+        private final Channel channel;
+        private final AddressesTopicsFilter filter;
+
+        private Subscription(Channel channel, EthSubscribeLogsParams params) {
+            this.channel = channel;
+            this.filter = new AddressesTopicsFilter(params.getAddresses(), params.getTopics());
+        }
     }
 }

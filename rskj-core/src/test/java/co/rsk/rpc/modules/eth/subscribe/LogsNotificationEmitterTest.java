@@ -17,11 +17,13 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockFork;
 import co.rsk.core.bc.BlockchainBranchComparator;
 import co.rsk.jsonrpc.JsonRpcMessage;
 import co.rsk.rpc.JsonRpcSerializer;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.TestUtils;
@@ -106,6 +108,32 @@ public class LogsNotificationEmitterTest {
         verify(channel2).write(new TextWebSocketFrame("serializedLog1"));
         verify(channel2).write(new TextWebSocketFrame("serializedLog2"));
         verify(channel2).flush();
+    }
+
+    @Test
+    public void filterEmittedLog() throws JsonProcessingException {
+        SubscriptionId subscriptionId = mock(SubscriptionId.class);
+        Channel channel = mock(Channel.class);
+        EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
+        RskAddress logSender = TestUtils.randomAddress();
+        when(params.getAddresses()).thenReturn(new RskAddress[] { logSender });
+        emitter.subscribe(subscriptionId, channel, params);
+
+        byte[] log1Data = {0x1};
+        byte[] log2Data = {0x2};
+        Block block1 = testBlock(logInfo(logSender, log1Data));
+        Block block2 = testBlock(logInfo(log2Data));
+
+        listener.onBestBlock(block1, null);
+        verifyLogsData(log1Data);
+
+        BlockFork blockFork = mock(BlockFork.class);
+        when(blockFork.getNewBlocks()).thenReturn(Collections.singletonList(block2));
+        when(comparator.calculateFork(block1, block2)).thenReturn(blockFork);
+
+        clearInvocations(channel);
+        listener.onBestBlock(block2, null);
+        verify(channel, never()).write(any(ByteBufHolder.class));
     }
 
     @Test
@@ -202,7 +230,12 @@ public class LogsNotificationEmitterTest {
     }
 
     private LogInfo logInfo(byte... data) {
+        return logInfo(TestUtils.randomAddress(), data);
+    }
+
+    private LogInfo logInfo(final RskAddress logSource, byte... data) {
         LogInfo logInfo = mock(LogInfo.class);
+        when(logInfo.getAddress()).thenReturn(logSource.getBytes());
         when(logInfo.getData()).thenReturn(data);
         return logInfo;
     }

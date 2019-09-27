@@ -30,7 +30,7 @@ import java.util.List;
 
 public class AddressesTopicsFilter {
     private List<Topic[]> topics = new ArrayList<>();  //  [[addr1, addr2], null, [A, B], [C]]
-    private RskAddress[] addresses = new RskAddress[0];
+    private RskAddress[] addresses;
     private Bloom[][] filterBlooms;
 
     public AddressesTopicsFilter(RskAddress[] addresses, Topic[][] topics) {
@@ -40,7 +40,7 @@ public class AddressesTopicsFilter {
             }
         }
 
-        this.addresses = addresses;
+        this.addresses = addresses == null? new RskAddress[0]: addresses;
 
         initBlooms();
     }
