@@ -22,7 +22,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
@@ -45,27 +44,54 @@ public class RepositoryLocator {
         this.stateRootHandler = stateRootHandler;
     }
 
+    /**
+     * Similar to snapshotAt but retrieves an optional instead of throwing an exception
+     * @return an optional {@link RepositorySnapshot}
+     */
+    public Optional<RepositorySnapshot> findSnapshotAt(BlockHeader header) {
+        return mutableTrieSnapshotAt(header).map(MutableRepository::new);
+    }
+
+    /**
+     * Retrieves a snapshot of the state at a particular header
+     * @param header the header to retrieve the state from
+     * @return a read-only {@link RepositorySnapshot}
+     * @throws IllegalArgumentException if the state is not found.
+     */
     public RepositorySnapshot snapshotAt(BlockHeader header) {
-        return new MutableRepository(mutableTrieSnapshotAt(header));
+        return mutableTrieSnapshotAt(header)
+                .map(MutableRepository::new)
+                .orElseThrow(() -> trieNotFoundException(header));
     }
 
+    /**
+     * Retrieves a repository of the state at a particular header
+     * @param header the header to retrieve the state from
+     * @return a modifiable {@link Repository}
+     * @throws IllegalArgumentException if the state is not found.
+     */
     public Repository startTrackingAt(BlockHeader header) {
-        return new MutableRepository(new MutableTrieCache(mutableTrieSnapshotAt(header)));
+        return mutableTrieSnapshotAt(header)
+                .map(MutableTrieCache::new)
+                .map(MutableRepository::new)
+                .orElseThrow(() -> trieNotFoundException(header));
     }
 
-    private MutableTrie mutableTrieSnapshotAt(BlockHeader header) {
+    private IllegalArgumentException trieNotFoundException(BlockHeader header) {
+        return new IllegalArgumentException(String.format(
+                "The trie with root %s is missing in this store", header.getHash()
+        ));
+    }
+
+    private Optional<MutableTrie> mutableTrieSnapshotAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
 
         if (EMPTY_HASH.equals(stateRoot)) {
-            return new MutableTrieImpl(trieStore, new Trie(trieStore));
+            return Optional.of(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         }
 
         Optional<Trie> trie = trieStore.retrieve(stateRoot.getBytes());
 
-        return trie.map(t -> new MutableTrieImpl(trieStore, t))
-                .orElseThrow(() ->
-                        new IllegalArgumentException(String.format(
-                                "The trie with root %s is missing in this store", stateRoot
-        )));
+        return trie.map(t -> new MutableTrieImpl(trieStore, t));
     }
 }

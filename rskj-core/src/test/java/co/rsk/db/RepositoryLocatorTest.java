@@ -23,29 +23,68 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockHeader;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RepositoryLocatorTest {
+
+    private StateRootHandler stateRootHandler;
+    private TrieStore trieStore;
+    private RepositoryLocator target;
+
+    @Before
+    public void setup() {
+        stateRootHandler = mock(StateRootHandler.class);
+        trieStore = mock(TrieStore.class);
+        target = new RepositoryLocator(trieStore, stateRootHandler);
+    }
+
     @Test
     public void getsSnapshotFromTranslatedStateRoot() {
         BlockHeader header = mock(BlockHeader.class);
         Keccak256 stateRoot = TestUtils.randomHash();
-        StateRootHandler stateRootHandler = mock(StateRootHandler.class);
         when(stateRootHandler.translate(header)).thenReturn(stateRoot);
 
         Trie underlyingTrie = mock(Trie.class);
         when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash());
-        TrieStore trieStore = mock(TrieStore.class);
         when(trieStore.retrieve(stateRoot.getBytes())).thenReturn(Optional.of(underlyingTrie));
 
-        RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
-        RepositorySnapshot actualRepository = repositoryLocator.snapshotAt(header);
+        RepositorySnapshot actualRepository = target.snapshotAt(header);
         assertEquals(underlyingTrie.getHash(), new Keccak256(actualRepository.getRoot()));
+    }
+
+    @Test
+    public void findSnapshotAt_notFound() {
+        BlockHeader header = mock(BlockHeader.class);
+        Keccak256 stateRoot = TestUtils.randomHash();
+        when(stateRootHandler.translate(header)).thenReturn(stateRoot);
+
+        Trie underlyingTrie = mock(Trie.class);
+        when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash());
+        when(trieStore.retrieve(stateRoot.getBytes())).thenReturn(Optional.empty());
+
+        Optional<RepositorySnapshot> result = target.findSnapshotAt(header);
+
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void findSnapshotAt_found() {
+        BlockHeader header = mock(BlockHeader.class);
+        Keccak256 stateRoot = TestUtils.randomHash();
+        when(stateRootHandler.translate(header)).thenReturn(stateRoot);
+
+        Trie underlyingTrie = mock(Trie.class);
+        when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash());
+        when(trieStore.retrieve(stateRoot.getBytes())).thenReturn(Optional.of(mock(Trie.class)));
+
+        Optional<RepositorySnapshot> result = target.findSnapshotAt(header);
+        assertTrue(result.isPresent());
     }
 }
