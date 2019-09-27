@@ -57,7 +57,6 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
@@ -71,6 +70,7 @@ import java.util.*;
 
 import static java.lang.Math.max;
 import static org.ethereum.rpc.TypeConverter.*;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -558,7 +558,7 @@ public class Web3Impl implements Web3 {
         try {
             blockNumber = TypeConverter.stringNumberAsBigInt(number).longValue();
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-            throw new JsonRpcInvalidParamException("invalid blocknumber " + number);
+            throw invalidParamError(String.format("invalid blocknumber %s", number));
         }
 
         List<BlockInformationResult> result = new ArrayList<>();
@@ -691,7 +691,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception {
+    public TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) {
         logger.trace("eth_getTransactionReceipt({})", transactionHash);
 
         byte[] hash = stringHexToByteArray(transactionHash);
@@ -959,7 +959,7 @@ public class Web3Impl implements Web3 {
                 long blockNumber = stringHexToBigInteger(id).longValue();
                 return this.blockchain.getBlockByNumber(blockNumber);
             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                throw new JsonRpcInvalidParamException("invalid blocknumber " + id);
+                throw invalidParamError("invalid blocknumber " + id);
             }
         }
     }
@@ -1065,7 +1065,7 @@ public class Web3Impl implements Web3 {
         try {
             this.peerScoringManager.banAddress(address);
         } catch (InvalidInetAddressException e) {
-            throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
+            throw invalidParamError("invalid banned address " + address, e);
         }
     }
 
@@ -1087,7 +1087,7 @@ public class Web3Impl implements Web3 {
         try {
             this.peerScoringManager.unbanAddress(address);
         } catch (InvalidInetAddressException e) {
-            throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
+            throw invalidParamError("invalid banned address " + address, e);
         }
     }
 

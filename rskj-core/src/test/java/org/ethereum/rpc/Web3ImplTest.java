@@ -50,6 +50,7 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.TestContract;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -68,7 +69,7 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.program.ProgramResult;
@@ -81,6 +82,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -98,7 +100,7 @@ public class Web3ImplTest {
 
         String clientVersion = web3.web3_clientVersion();
 
-        Assert.assertTrue("client version is not including rsk!", clientVersion.toLowerCase().contains("rsk"));
+        assertTrue("client version is not including rsk!", clientVersion.toLowerCase().contains("rsk"));
     }
 
     @Test
@@ -107,7 +109,7 @@ public class Web3ImplTest {
 
         String netVersion = web3.net_version();
 
-        Assert.assertTrue("RSK net version different than expected", netVersion.compareTo(Byte.toString(config.getNetworkConstants().getChainId())) == 0);
+        assertTrue("RSK net version different than expected", netVersion.compareTo(Byte.toString(config.getNetworkConstants().getChainId())) == 0);
     }
 
     @Test
@@ -117,7 +119,7 @@ public class Web3ImplTest {
 
         String netVersion = web3.eth_protocolVersion();
 
-        Assert.assertTrue("RSK net version different than one", netVersion.compareTo("1") == 0);
+        assertTrue("RSK net version different than one", netVersion.compareTo("1") == 0);
     }
 
     @Test
@@ -141,7 +143,7 @@ public class Web3ImplTest {
 
         // Function must apply the Keccak-256 algorithm
         // Result taken from https://emn178.github.io/online-tools/keccak_256.html
-        Assert.assertTrue("hash does not match", result.compareTo("0x80553b6b348ae45ab8e8bf75e77064818c0a772f13cf8d3a175d3815aec59b56") == 0);
+        assertTrue("hash does not match", result.compareTo("0x80553b6b348ae45ab8e8bf75e77064818c0a772f13cf8d3a175d3815aec59b56") == 0);
     }
 
     @Test
@@ -153,7 +155,7 @@ public class Web3ImplTest {
 
         Object result = web3.eth_syncing();
 
-        Assert.assertTrue("Node is not syncing, must return false", !(boolean)result);
+        assertTrue("Node is not syncing, must return false", !(boolean)result);
     }
 
     @Test
@@ -165,9 +167,9 @@ public class Web3ImplTest {
 
         Object result = web3.eth_syncing();
 
-        Assert.assertTrue("Node is syncing, must return sync manager", result instanceof Web3.SyncingResult);
-        Assert.assertTrue("Highest block is 5", ((Web3.SyncingResult)result).highestBlock.compareTo("0x5") == 0);
-        Assert.assertTrue("Simple blockchain starts from genesis block", ((Web3.SyncingResult)result).currentBlock.compareTo("0x0") == 0);
+        assertTrue("Node is syncing, must return sync manager", result instanceof Web3.SyncingResult);
+        assertTrue("Highest block is 5", ((Web3.SyncingResult)result).highestBlock.compareTo("0x5") == 0);
+        assertTrue("Simple blockchain starts from genesis block", ((Web3.SyncingResult)result).currentBlock.compareTo("0x0") == 0);
     }
 
     @Test
@@ -284,16 +286,16 @@ public class Web3ImplTest {
                 null
         );
 
-        Assert.assertTrue("Node is not mining", !web3.eth_mining());
+        assertTrue("Node is not mining", !web3.eth_mining());
         try {
             minerClient.start();
 
-            Assert.assertTrue("Node is mining", web3.eth_mining());
+            assertTrue("Node is mining", web3.eth_mining());
         } finally {
             minerClient.stop();
         }
 
-        Assert.assertTrue("Node is not mining", !web3.eth_mining());
+        assertTrue("Node is not mining", !web3.eth_mining());
     }
 
     @Test
@@ -341,7 +343,7 @@ public class Web3ImplTest {
 
         TransactionReceiptDTO tr = web3.eth_getTransactionReceipt(hashString);
 
-        org.junit.Assert.assertNotNull(tr);
+        assertNotNull(tr);
         org.junit.Assert.assertEquals("0x" + hashString, tr.getTransactionHash());
         String trxFrom = TypeConverter.toJsonHex(tx.getSender().getBytes());
         org.junit.Assert.assertEquals(trxFrom, tr.getFrom());
@@ -416,7 +418,7 @@ public class Web3ImplTest {
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
-        Assert.assertNotNull(tr);
+        assertNotNull(tr);
         org.junit.Assert.assertEquals("0x" + hashString, tr.hash);
 
         String blockHashString = "0x" + block1.getHash();
@@ -451,7 +453,7 @@ public class Web3ImplTest {
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
-        Assert.assertNotNull(tr);
+        assertNotNull(tr);
 
         org.junit.Assert.assertEquals("0x" + hashString, tr.hash);
         org.junit.Assert.assertEquals("0", tr.nonce);
@@ -512,7 +514,7 @@ public class Web3ImplTest {
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockHashAndIndex(blockHashString, "0x0");
 
-        Assert.assertNotNull(tr);
+        assertNotNull(tr);
         org.junit.Assert.assertEquals("0x" + hashString, tr.hash);
 
         org.junit.Assert.assertEquals("0x" + blockHashString, tr.blockHash);
@@ -557,7 +559,7 @@ public class Web3ImplTest {
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockNumberAndIndex("0x01", "0x0");
 
-        Assert.assertNotNull(tr);
+        assertNotNull(tr);
         org.junit.Assert.assertEquals("0x" + hashString, tr.hash);
 
         org.junit.Assert.assertEquals("0x" + blockHashString, tr.blockHash);
@@ -599,12 +601,12 @@ public class Web3ImplTest {
 
         String count = web3.eth_getTransactionCount(accountAddress, "0x1");
 
-        Assert.assertNotNull(count);
+        assertNotNull(count);
         org.junit.Assert.assertEquals("0x1", count);
 
         count = web3.eth_getTransactionCount(accountAddress, "0x0");
 
-        Assert.assertNotNull(count);
+        assertNotNull(count);
         org.junit.Assert.assertEquals("0x0", count);
     }
 
@@ -629,7 +631,7 @@ public class Web3ImplTest {
 
         BlockResultDTO bresult = web3.eth_getBlockByNumber("0x1", false);
 
-        Assert.assertNotNull(bresult);
+        assertNotNull(bresult);
 
         String blockHash = "0x" + block1b.getHash();
         org.junit.Assert.assertEquals(blockHash, bresult.getHash());
@@ -637,7 +639,7 @@ public class Web3ImplTest {
         String bnOrId = "0x2";
         bresult = web3.eth_getBlockByNumber("0x2", true);
 
-        Assert.assertNotNull(bresult);
+        assertNotNull(bresult);
 
         blockHash = "0x" + block2b.getHash();
         org.junit.Assert.assertEquals(blockHash, bresult.getHash());
@@ -671,7 +673,7 @@ public class Web3ImplTest {
         String hashBlock1String = block1.getHashJsonString();
         String hashBlock1bString = block1b.getHashJsonString();
 
-        Assert.assertNotNull(bresult);
+        assertNotNull(bresult);
 
         org.junit.Assert.assertEquals(2, bresult.length);
         org.junit.Assert.assertEquals(hashBlock1String, bresult[0].hash);
@@ -693,7 +695,7 @@ public class Web3ImplTest {
 
         BlockResultDTO blockResult = web3.eth_getBlockByNumber("latest", false);
 
-        Assert.assertNotNull(blockResult);
+        assertNotNull(blockResult);
         String blockHash = TypeConverter.toJsonHex(block1.getHash().toString());
         org.junit.Assert.assertEquals(blockHash, blockResult.getHash());
     }
@@ -713,7 +715,7 @@ public class Web3ImplTest {
         String bnOrId = "earliest";
         BlockResultDTO blockResult = web3.eth_getBlockByNumber(bnOrId, false);
 
-        Assert.assertNotNull(blockResult);
+        assertNotNull(blockResult);
 
         String blockHash = genesis.getHashJsonString();
         org.junit.Assert.assertEquals(blockHash, blockResult.getHash());
@@ -764,7 +766,7 @@ public class Web3ImplTest {
 
         BlockResultDTO bresult = web3.eth_getBlockByHash(block1HashString, false);
 
-        Assert.assertNotNull(bresult);
+        assertNotNull(bresult);
         org.junit.Assert.assertEquals(block1HashString, bresult.getHash());
         org.junit.Assert.assertEquals("0x", bresult.getExtraData());
         org.junit.Assert.assertEquals(0, bresult.getTransactions().size());
@@ -773,7 +775,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals("0xb", bresult.getTotalDifficulty());
         bresult = web3.eth_getBlockByHash(block1bHashString, true);
 
-        Assert.assertNotNull(bresult);
+        assertNotNull(bresult);
         org.junit.Assert.assertEquals(block1bHashString, bresult.getHash());
 
         String hexString = web3.rsk_getRawBlockHeaderByHash(block1bHashString).replace("0x","");
@@ -782,7 +784,7 @@ public class Web3ImplTest {
 
         bresult = web3.eth_getBlockByHash(block2bHashString, true);
 
-        Assert.assertNotNull(bresult);
+        assertNotNull(bresult);
         org.junit.Assert.assertEquals(block2bHashString, bresult.getHash());
 
         hexString = web3.rsk_getRawBlockHeaderByHash(block2bHashString).replace("0x","");
@@ -812,7 +814,7 @@ public class Web3ImplTest {
 
         BlockResultDTO bresult = web3.eth_getBlockByHash(block1HashString, true);
 
-        Assert.assertNotNull(bresult);
+        assertNotNull(bresult);
         org.junit.Assert.assertEquals(block1HashString, bresult.getHash());
         org.junit.Assert.assertEquals(1, bresult.getTransactions().size());
         org.junit.Assert.assertEquals(block1HashString, ((TransactionResultDTO) bresult.getTransactions().get(0)).blockHash);
@@ -842,7 +844,7 @@ public class Web3ImplTest {
 
         BlockResultDTO bresult = web3.eth_getBlockByHash(block1HashString, false);
 
-        Assert.assertNotNull(bresult);
+        assertNotNull(bresult);
         org.junit.Assert.assertEquals(block1HashString, bresult.getHash());
         org.junit.Assert.assertEquals(1, bresult.getTransactions().size());
         org.junit.Assert.assertEquals(tx.getHash().toJsonString(), bresult.getTransactions().get(0));
@@ -885,7 +887,7 @@ public class Web3ImplTest {
 
         String scode = web3.eth_getCode(accountAddress, "0x1");
 
-        Assert.assertNotNull(scode);
+        assertNotNull(scode);
         org.junit.Assert.assertEquals("0x" + Hex.toHexString(code), scode);
     }
 
@@ -992,10 +994,10 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(eth, peerServer);
 
-        Assert.assertTrue("Node is not listening", !web3.net_listening());
+        assertTrue("Node is not listening", !web3.net_listening());
 
         peerServer.isListening = true;
-        Assert.assertTrue("Node is listening", web3.net_listening());
+        assertTrue("Node is listening", web3.net_listening());
     }
 
     @Test
@@ -1054,8 +1056,8 @@ public class Web3ImplTest {
 
         Assert.assertEquals("Not all accounts are being retrieved", originalAccounts + 2, accounts.size());
 
-        Assert.assertTrue(accounts.contains(addr1));
-        Assert.assertTrue(accounts.contains(addr2));
+        assertTrue(accounts.contains(addr1));
+        assertTrue(accounts.contains(addr2));
     }
 
     @Test
@@ -1092,7 +1094,7 @@ public class Web3ImplTest {
             return;
         }
 
-        org.junit.Assert.assertNotNull(account);
+        assertNotNull(account);
         org.junit.Assert.assertEquals(addr, "0x" + Hex.toHexString(account.getAddress().getBytes()));
     }
 
@@ -1107,10 +1109,10 @@ public class Web3ImplTest {
 
         Set<String> addresses = Arrays.stream(web3.personal_listAccounts()).collect(Collectors.toSet());
 
-        org.junit.Assert.assertNotNull(addresses);
+        assertNotNull(addresses);
         org.junit.Assert.assertEquals(originalAccounts + 2, addresses.size());
-        org.junit.Assert.assertTrue(addresses.contains(addr1));
-        org.junit.Assert.assertTrue(addresses.contains(addr2));
+        assertTrue(addresses.contains(addr1));
+        assertTrue(addresses.contains(addr2));
     }
 
     @Test
@@ -1132,11 +1134,11 @@ public class Web3ImplTest {
 
         String address = web3.personal_importRawKey(Hex.toHexString(privKeyBytes), "passphrase1");
 
-        org.junit.Assert.assertNotNull(address);
+        assertNotNull(address);
 
         account = wallet.getAccount(addr);
 
-        org.junit.Assert.assertNotNull(account);
+        assertNotNull(account);
         org.junit.Assert.assertEquals(address, "0x" + Hex.toHexString(account.getAddress().getBytes()));
         org.junit.Assert.assertArrayEquals(privKeyBytes, account.getEcKey().getPrivKeyBytes());
     }
@@ -1148,7 +1150,7 @@ public class Web3ImplTest {
         ECKey eckey = new ECKey();
 
         String address = web3.personal_importRawKey(Hex.toHexString(eckey.getPrivKeyBytes()), "passphrase1");
-        org.junit.Assert.assertTrue(web3.personal_unlockAccount(address, "passphrase1", ""));
+        assertTrue(web3.personal_unlockAccount(address, "passphrase1", ""));
 
         String rawKey = web3.personal_dumpRawKey(address).substring(2);
 
@@ -1197,7 +1199,7 @@ public class Web3ImplTest {
 
         String expectedHash = tx.getHash().toJsonString();
 
-        Assert.assertTrue("Method is not creating the expected transaction", expectedHash.compareTo(txHash) == 0);
+        assertEquals("Method is not creating the expected transaction", 0, expectedHash.compareTo(txHash));
     }
 
     @Test
@@ -1209,14 +1211,14 @@ public class Web3ImplTest {
 
         web3.personal_lockAccount(addr);
 
-        org.junit.Assert.assertTrue(web3.personal_unlockAccount(addr, "passphrase1", ""));
+        assertTrue(web3.personal_unlockAccount(addr, "passphrase1", ""));
 
         Account account = wallet.getAccount(new RskAddress(addr));
 
-        org.junit.Assert.assertNotNull(account);
+        assertNotNull(account);
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void unlockAccountInvalidDuration()
     {
         Web3Impl web3 = createWeb3();
@@ -1225,9 +1227,9 @@ public class Web3ImplTest {
 
         web3.personal_lockAccount(addr);
 
-        web3.personal_unlockAccount(addr, "passphrase1", "K");
-
-        org.junit.Assert.fail("This should fail");
+        RskJsonRpcRequestException e = TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                () -> web3.personal_unlockAccount(addr, "passphrase1", "K"));
+        assertEquals(-32602, (int) e.getCode());
     }
 
     @Test
@@ -1239,9 +1241,9 @@ public class Web3ImplTest {
 
         Account account = wallet.getAccount(new RskAddress(addr));
 
-        org.junit.Assert.assertNotNull(account);
+        assertNotNull(account);
 
-        org.junit.Assert.assertTrue(web3.personal_lockAccount(addr));
+        assertTrue(web3.personal_lockAccount(addr));
 
         Account account1 = wallet.getAccount(new RskAddress(addr));
 
@@ -1297,7 +1299,7 @@ public class Web3ImplTest {
 
         String expectedHash = tx.getHash().toJsonString();
 
-        Assert.assertTrue("Method is not creating the expected transaction", expectedHash.compareTo(txHash) == 0);
+        assertTrue("Method is not creating the expected transaction", expectedHash.compareTo(txHash) == 0);
     }
 
     private Web3Impl createWeb3(World world) {
@@ -1502,7 +1504,7 @@ public class Web3ImplTest {
 
         Map<String, CompilationResultDTO> result = web3.eth_compileSolidity(contract);
 
-        org.junit.Assert.assertNotNull(result);
+        assertNotNull(result);
 
         CompilationResultDTO dto = result.get("rsk");
 
@@ -1565,7 +1567,7 @@ public class Web3ImplTest {
 
         Map<String, CompilationResultDTO> result = web3.eth_compileSolidity(contract);
 
-        org.junit.Assert.assertNotNull(result);
+        assertNotNull(result);
         org.junit.Assert.assertEquals(0, result.size());
     }
 

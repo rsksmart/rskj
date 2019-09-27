@@ -23,10 +23,12 @@ import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,6 +48,7 @@ public class ExecutionBlockRetrieverTest {
     private MinerServer minerServer;
     private BlockToMineBuilder builder;
     private ExecutionBlockRetriever retriever;
+    private final static int INVALID_PARAM_ERROR_CODE = -32602;
 
     @Before
     public void setUp() {
@@ -210,39 +213,56 @@ public class ExecutionBlockRetrieverTest {
         assertThat(retriever.getExecutionBlock("123"), is(myBlock));
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void getByNumberInvalidBlockNumberHex() {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(null);
 
-        retriever.getExecutionBlock("0x7B");
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.getExecutionBlock("0x7B"));
+        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void getByNumberInvalidBlockNumberDec() {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(null);
 
-        retriever.getExecutionBlock("123");
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.getExecutionBlock("123"));
+        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void getByNumberInvalidHex() {
-        retriever.getExecutionBlock("0xzz");
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.getExecutionBlock("0xzz"));
+        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
 
         verify(blockchain, never()).getBlockByNumber(any(long.class));
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void getByNumberInvalidDec() {
-        retriever.getExecutionBlock("zz");
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.getExecutionBlock("zz"));
+        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
 
         verify(blockchain, never()).getBlockByNumber(any(long.class));
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void getOtherThanPendingLatestOrNumberThrows() {
-        retriever.getExecutionBlock("other");
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.getExecutionBlock("other"));
+
+        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
 
     @Test
@@ -401,38 +421,51 @@ public class ExecutionBlockRetrieverTest {
         assertThat(retriever.getExecutionBlock_workaround("123").getBlock(), is(myBlock));
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void getByNumberInvalidBlockNumberHex_workaround() {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(null);
 
-        retriever.getExecutionBlock_workaround("0x7B");
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.getExecutionBlock_workaround("0x7B"));
+        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void getByNumberInvalidBlockNumberDec_workaround() {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(null);
-
-        retriever.getExecutionBlock_workaround("123");
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.getExecutionBlock_workaround("123"));
+        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void getByNumberInvalidHex_workaround() {
-        retriever.getExecutionBlock_workaround("0xzz");
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.getExecutionBlock_workaround("0xzz"));
+        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
 
         verify(blockchain, never()).getBlockByNumber(any(long.class));
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void getByNumberInvalidDec_workaround() {
-        retriever.getExecutionBlock_workaround("zz");
-
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.getExecutionBlock_workaround("zz"));
+        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
         verify(blockchain, never()).getBlockByNumber(any(long.class));
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void getOtherThanPendingLatestOrNumberThrows_workaround() {
-        retriever.getExecutionBlock_workaround("other");
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> retriever.getExecutionBlock_workaround("other"));
+        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
 }

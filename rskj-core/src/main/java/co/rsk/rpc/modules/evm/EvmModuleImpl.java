@@ -23,11 +23,11 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerClock;
 import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.ethereum.rpc.TypeConverter.*;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
 public class EvmModuleImpl implements EvmModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -63,7 +63,7 @@ public class EvmModuleImpl implements EvmModule {
             int sid = stringHexToBigInteger(snapshotId).intValue();
             return snapshotManager.revertToSnapshot(sid);
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-            throw new JsonRpcInvalidParamException("invalid snapshot id " + snapshotId, e);
+            throw invalidParamError("invalid snapshot id " + snapshotId, e);
         } finally {
             logger.debug("evm_revert({})", snapshotId);
         }
@@ -101,7 +101,7 @@ public class EvmModuleImpl implements EvmModule {
             logger.debug("evm_increaseTime({}): {}", nseconds, result);
             return result;
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-            throw new JsonRpcInvalidParamException("invalid number of seconds " + seconds, e);
+            throw invalidParamError("invalid number of seconds " + seconds, e);
         }
     }
 }

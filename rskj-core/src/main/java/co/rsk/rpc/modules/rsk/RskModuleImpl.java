@@ -11,7 +11,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
@@ -24,6 +23,7 @@ import java.util.Optional;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class RskModuleImpl implements RskModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -149,7 +149,7 @@ public class RskModuleImpl implements RskModule {
                 long blockNumber = stringHexToBigInteger(id).longValue();
                 return this.blockchain.getBlockByNumber(blockNumber);
             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                throw new JsonRpcInvalidParamException("invalid blocknumber " + id);
+                throw invalidParamError("invalid blocknumber " + id);
             }
         }
     }
