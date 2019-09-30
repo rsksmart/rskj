@@ -47,6 +47,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
+import org.ethereum.vm.trace.ProgramSubTrace;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceListener;
 import org.slf4j.Logger;
@@ -787,6 +788,10 @@ public class Program {
         }
     }
 
+    public ProgramInvoke getProgramInvoke() {
+        return this.invoke;
+    }
+
     private boolean executeCode(
             MessageCall msg,
             RskAddress contextAddress,
@@ -812,6 +817,8 @@ public class Program {
 
         vm.play(program);
         childResult  = program.getResult();
+
+        getTrace().addSubTrace(new ProgramSubTrace(program.getProgramInvoke(), program.getResult()));
 
         getTrace().merge(program.getTrace());
         getResult().merge(childResult);
