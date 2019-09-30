@@ -11,7 +11,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +23,7 @@ import java.util.Optional;
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
 
 public class RskModuleImpl implements RskModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -143,7 +143,7 @@ public class RskModuleImpl implements RskModule {
         } else if ("latest".equalsIgnoreCase(id)) {
             return this.blockchain.getBestBlock();
         } else if ("pending".equalsIgnoreCase(id)) {
-            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
+            throw unimplemented("The method don't support 'pending' as a parameter yet");
         } else {
             try {
                 long blockNumber = stringHexToBigInteger(id).longValue();

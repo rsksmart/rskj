@@ -57,7 +57,6 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -485,7 +484,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    public static Block getBlockByNumberOrStr(String bnOrId, Blockchain blockchain) throws Exception {
+    public static Block getBlockByNumberOrStr(String bnOrId, Blockchain blockchain) {
         Block b;
 
         if ("latest".equals(bnOrId)) {
@@ -493,7 +492,7 @@ public class Web3Impl implements Web3 {
         } else if ("earliest".equals(bnOrId)) {
             b = blockchain.getBlockByNumber(0);
         } else if ("pending".equals(bnOrId)) {
-            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
+            throw unimplemented("The method don't support 'pending' as a parameter yet");
         } else {
             long bn = JSonHexToLong(bnOrId);
             b = blockchain.getBlockByNumber(bn);
@@ -953,7 +952,7 @@ public class Web3Impl implements Web3 {
         } else if ("latest".equalsIgnoreCase(id)) {
             return this.blockchain.getBestBlock();
         } else if ("pending".equalsIgnoreCase(id)) {
-            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
+            throw unimplemented("The method don't support 'pending' as a parameter yet");
         } else {
             try {
                 long blockNumber = stringHexToBigInteger(id).longValue();
