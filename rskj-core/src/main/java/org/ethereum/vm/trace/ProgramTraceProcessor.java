@@ -38,6 +38,10 @@ public class ProgramTraceProcessor {
         this.traces.put(txHash, programTrace);
     }
 
+    public ProgramTrace getProgramTrace(Keccak256 txHash) {
+        return traces.get(txHash);
+    }
+
     public JsonNode getProgramTraceAsJsonNode(Keccak256 txHash) {
         ProgramTrace trace = traces.get(txHash);
 
