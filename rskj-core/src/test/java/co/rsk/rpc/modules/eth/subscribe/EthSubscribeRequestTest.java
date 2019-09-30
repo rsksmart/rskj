@@ -95,6 +95,7 @@ public class EthSubscribeRequestTest {
     }
 
     private <T extends EthSubscribeParams> T validateParams(JsonRpcRequest<RskJsonRpcRequestParams> request, Class<T> paramsClass) {
+        assertThat(request.getMethod(), is("eth_subscribe"));
         RskJsonRpcRequestParams params = request.getParams();
         assertThat(params, instanceOf(paramsClass));
         return paramsClass.cast(params);

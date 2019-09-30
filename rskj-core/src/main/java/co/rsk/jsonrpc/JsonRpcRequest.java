@@ -17,11 +17,8 @@
  */
 package co.rsk.jsonrpc;
 
-import co.rsk.rpc.modules.eth.subscribe.EthSubscribeParams;
-import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.Objects;
@@ -31,19 +28,23 @@ import java.util.Objects;
  * Inheritors should define the methods it accepts and how to map to different specific implementations.
  */
 public class JsonRpcRequest<T extends JsonRpcRequestParams> extends JsonRpcIdentifiableMessage {
+    private final String method;
     private final T params;
 
     public JsonRpcRequest(
             @JsonProperty("jsonrpc") JsonRpcVersion version,
             @JsonProperty("id") Integer id,
+            @JsonProperty("method") String method,
             @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY, property = "method", visible = true)
-            @JsonSubTypes({
-                    @JsonSubTypes.Type(value = EthSubscribeParams.class, name = "eth_subscribe"),
-                    @JsonSubTypes.Type(value = EthUnsubscribeParams.class, name = "eth_unsubscribe"),
-            })
             @JsonProperty("params") T params) {
         super(version, id);
+        this.method = Objects.requireNonNull(method);
         this.params = Objects.requireNonNull(params);
+    }
+
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public String getMethod() {
+        return method;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

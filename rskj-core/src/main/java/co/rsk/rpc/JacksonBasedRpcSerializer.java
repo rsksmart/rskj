@@ -20,8 +20,11 @@ package co.rsk.rpc;
 import co.rsk.jsonrpc.JsonRpcMessage;
 import co.rsk.jsonrpc.JsonRpcRequest;
 import co.rsk.rpc.modules.RskJsonRpcRequestParams;
+import co.rsk.rpc.modules.eth.subscribe.EthSubscribeParams;
+import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +35,15 @@ import java.io.InputStream;
 public class JacksonBasedRpcSerializer implements JsonRpcSerializer {
     //From https://fasterxml.github.io/jackson-databind/javadoc/2.5/com/fasterxml/jackson/databind/ObjectMapper.html
     // ObjectMapper is thread-safe as long as the config methods are not called after the serialiation begins.
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper;
+
+    public JacksonBasedRpcSerializer() {
+        mapper = new ObjectMapper();
+        mapper.registerSubtypes(
+                new NamedType(EthSubscribeParams.class, "eth_subscribe"),
+                new NamedType(EthUnsubscribeParams.class, "eth_unsubscribe")
+        );
+    }
 
     @Override
     public String serializeMessage(JsonRpcMessage message) throws JsonProcessingException {

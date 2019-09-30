@@ -41,6 +41,7 @@ public class EthUnsubscribeRequestTest {
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
         );
 
+        assertThat(request.getMethod(), is("eth_unsubscribe"));
         assertThat(request.getParams(), instanceOf(EthUnsubscribeParams.class));
         EthUnsubscribeParams unsubscribeParams = (EthUnsubscribeParams) request.getParams();
         assertThat(unsubscribeParams.getSubscriptionId(), is(new SubscriptionId("0x0204")));
