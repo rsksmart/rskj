@@ -30,6 +30,7 @@ import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
+import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.core.*;
@@ -75,7 +76,7 @@ public class Web3RskImpl extends Web3Impl {
             TxPoolModule txPoolModule,
             MnrModule mnrModule,
             DebugModule debugModule,
-            RskModule rskModule,
+            TraceModule traceModule, RskModule rskModule,
             ChannelManager channelManager,
             PeerScoringManager peerScoringManager,
             NetworkStateExporter networkStateExporter,
@@ -89,7 +90,7 @@ public class Web3RskImpl extends Web3Impl {
         BlocksBloomStore blocksBloomStore,
         Web3InformationRetriever retriever) {
             super(eth, blockchain, blockStore, receiptStore, properties, minerClient, minerServer,
-                    personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, null, rskModule,
+                    personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, traceModule, rskModule,
                     channelManager, peerScoringManager, peerServer, nodeBlockProcessor,
                     hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever);
 

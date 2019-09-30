@@ -392,7 +392,7 @@ public class TransactionModuleTest {
                 txPoolModule,
                 null,
                 debugModule,
-                null,
+                null, null,
                 channelManager,
                 null,
                 null,
