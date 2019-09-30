@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public interface Web3TraceModule {
 
-    default JsonNode trace_Transaction(String transactionHash) throws Exception {
+    default JsonNode trace_transaction(String transactionHash) throws Exception {
         return getTraceModule().traceTransaction(transactionHash);
     }
 

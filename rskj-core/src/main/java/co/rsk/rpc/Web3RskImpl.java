@@ -87,8 +87,8 @@ public class Web3RskImpl extends Web3Impl {
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
-        BlocksBloomStore blocksBloomStore,
-        Web3InformationRetriever retriever) {
+            BlocksBloomStore blocksBloomStore,
+            Web3InformationRetriever retriever) {
             super(eth, blockchain, blockStore, receiptStore, properties, minerClient, minerServer,
                     personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, traceModule, rskModule,
                     channelManager, peerScoringManager, peerServer, nodeBlockProcessor,
