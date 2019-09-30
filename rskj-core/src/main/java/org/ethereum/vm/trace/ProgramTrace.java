@@ -60,7 +60,15 @@ public class ProgramTrace {
     @JsonIgnore
     private DataWord storageKey;
 
+    @JsonIgnore
+    private final ProgramInvoke programInvoke;
+
+    @JsonIgnore
+    private final List<ProgramSubTrace> subtraces = new ArrayList<>();
+
     public ProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
+        this.programInvoke = programInvoke;
+
         if (config.vmTrace() && programInvoke != null) {
             contractAddress = Hex.toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
 
@@ -216,6 +224,14 @@ public class ProgramTrace {
         structLogs.add(op);
 
         return op;
+    }
+
+    public void addSubTrace(ProgramSubTrace programSubTrace) {
+        this.subtraces.add(programSubTrace);
+    }
+
+    public List<ProgramSubTrace> getSubTraces() {
+        return this.subtraces;
     }
 
     /**
