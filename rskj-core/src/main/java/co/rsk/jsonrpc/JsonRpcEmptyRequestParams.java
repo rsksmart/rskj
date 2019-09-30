@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,29 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.rpc.modules.eth.subscribe;
+package co.rsk.jsonrpc;
 
-import co.rsk.jsonrpc.JsonRpcRequestParams;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
-import java.util.Objects;
 
 @JsonFormat(shape=JsonFormat.Shape.ARRAY)
-@JsonPropertyOrder({"subscriptionId"})
-public class EthUnsubscribeParams implements JsonRpcRequestParams {
-
-    private final SubscriptionId subscriptionId;
-
-    @JsonCreator
-    public EthUnsubscribeParams(
-            @JsonProperty("subscriptionId") SubscriptionId subscriptionId) {
-        this.subscriptionId = Objects.requireNonNull(subscriptionId);
-    }
-
-    public SubscriptionId getSubscriptionId() {
-        return subscriptionId;
-    }
+public class JsonRpcEmptyRequestParams implements JsonRpcRequestParams {
+    // helper class to deserialize empty parameter lists
 }

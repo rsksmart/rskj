@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,18 +17,27 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import co.rsk.jsonrpc.JsonRpcRequestParams;
+import co.rsk.jsonrpc.JsonRpcBooleanResult;
 import co.rsk.jsonrpc.JsonRpcResultOrError;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import co.rsk.rpc.EthSubscriptionNotificationEmitter;
+import co.rsk.rpc.netty.JsonRpcRequestTypedHandler;
 import io.netty.channel.ChannelHandlerContext;
 
-@JsonDeserialize(using = EthSubscribeParamsDeserializer.class)
-public interface EthSubscribeParams extends JsonRpcRequestParams {
-    JsonRpcResultOrError resolve(ChannelHandlerContext ctx, Visitor api);
+public class EthUnsubscribe implements JsonRpcRequestTypedHandler<EthUnsubscribeParams> {
+    private final EthSubscriptionNotificationEmitter emitter;
 
-    interface Visitor {
-        JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthSubscribeNewHeadsParams params);
+    public EthUnsubscribe(EthSubscriptionNotificationEmitter emitter) {
+        this.emitter = emitter;
+    }
 
-        JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthSubscribeLogsParams params);
+    @Override
+    public JsonRpcResultOrError handle(ChannelHandlerContext ctx, EthUnsubscribeParams params) {
+        boolean unsubscribed = emitter.unsubscribe(params.getSubscriptionId());
+        return new JsonRpcBooleanResult(unsubscribed);
+    }
+
+    @Override
+    public Class<EthUnsubscribeParams> paramsClass() {
+        return EthUnsubscribeParams.class;
     }
 }

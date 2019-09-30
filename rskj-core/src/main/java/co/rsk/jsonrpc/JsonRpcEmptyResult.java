@@ -15,17 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package co.rsk.jsonrpc;
 
-package co.rsk.rpc.modules.eth.subscribe;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import co.rsk.jsonrpc.JsonRpcResultOrError;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.netty.channel.ChannelHandlerContext;
-
-@JsonDeserialize
-public class EthSubscribeNewHeadsParams implements EthSubscribeParams {
-    @Override
-    public JsonRpcResultOrError resolve(ChannelHandlerContext ctx, Visitor api) {
-        return api.respond(ctx, this);
-    }
+@JsonSerialize
+public class JsonRpcEmptyResult extends JsonRpcResult {
+    // helper class to serialize empty results
 }

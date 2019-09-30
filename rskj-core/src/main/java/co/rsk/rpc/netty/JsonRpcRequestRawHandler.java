@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,17 +15,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.rpc.modules;
+package co.rsk.rpc.netty;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import co.rsk.jsonrpc.JsonRpcRequest;
+import co.rsk.jsonrpc.JsonRpcResultOrError;
+import io.netty.channel.ChannelHandlerContext;
+
+import java.io.IOException;
 
 /**
- * The methods handled by the node.
- * It could be extended to support other RSK methods.
+ * Low level interface for RPC method handlers.
+ * This helps glue typed handlers and decouple them from the Jackson framework.
+ * Users should implement the higher-level @{@link JsonRpcRequestTypedHandler} interface.
  */
-public enum RskJsonRpcMethod {
-    @JsonProperty("eth_subscribe")
-    ETH_SUBSCRIBE,
-    @JsonProperty("eth_unsubscribe")
-    ETH_UNSUBSCRIBE
+public interface JsonRpcRequestRawHandler {
+    JsonRpcResultOrError handle(ChannelHandlerContext ctx, JsonRpcRequest request) throws IOException;
 }

@@ -21,11 +21,11 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockFork;
 import co.rsk.core.bc.BlockchainBranchComparator;
 import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.rpc.JsonRpcSerializer;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import co.rsk.jsonrpc.JsonRpcSerializer;
 import io.netty.buffer.ByteBufHolder;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -39,7 +39,10 @@ import org.ethereum.vm.LogInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.stubbing.Stubber;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
@@ -71,22 +74,22 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void onBestBlockEventTriggersMessageToChannel() throws JsonProcessingException {
+    public void onBestBlockEventTriggersMessageToChannel() throws IOException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
         emitter.subscribe(subscriptionId, channel, params);
-        when(serializer.serializeMessage(any()))
-                .thenReturn("serialized");
+        byte[] serialized = "serialized".getBytes();
+        mockSerialize(serialized);
 
         listener.onBestBlock(testBlock(logInfo()), null);
 
-        verify(channel).write(new TextWebSocketFrame("serialized"));
+        verify(channel).write(new BinaryWebSocketFrame(Unpooled.copiedBuffer(serialized)));
         verify(channel).flush();
     }
 
     @Test
-    public void onBestBlockEventTriggersOneMessageToChannelPerLogInfoAndSubscription() throws JsonProcessingException {
+    public void onBestBlockEventTriggersOneMessageToChannelPerLogInfoAndSubscription() throws IOException {
         SubscriptionId subscriptionId1 = mock(SubscriptionId.class);
         SubscriptionId subscriptionId2 = mock(SubscriptionId.class);
         Channel channel1 = mock(Channel.class);
@@ -94,24 +97,22 @@ public class LogsNotificationEmitterTest {
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
         emitter.subscribe(subscriptionId1, channel1, params);
         emitter.subscribe(subscriptionId2, channel2, params);
-        when(serializer.serializeMessage(any()))
-                .thenReturn("serializedLog1")
-                .thenReturn("serializedLog2")
-                .thenReturn("serializedLog1")
-                .thenReturn("serializedLog2");
+        byte[] serializedLog1 = "serializedLog1".getBytes();
+        byte[] serializedLog2 = "serializedLog2".getBytes();
+        mockSerialize(serializedLog1, serializedLog2, serializedLog1, serializedLog2);
 
         listener.onBestBlock(testBlock(logInfo(), logInfo()), null);
 
-        verify(channel1).write(new TextWebSocketFrame("serializedLog1"));
-        verify(channel1).write(new TextWebSocketFrame("serializedLog2"));
+        verify(channel1).write(new BinaryWebSocketFrame(Unpooled.copiedBuffer(serializedLog1)));
+        verify(channel1).write(new BinaryWebSocketFrame(Unpooled.copiedBuffer(serializedLog2)));
         verify(channel1).flush();
-        verify(channel2).write(new TextWebSocketFrame("serializedLog1"));
-        verify(channel2).write(new TextWebSocketFrame("serializedLog2"));
+        verify(channel2).write(new BinaryWebSocketFrame(Unpooled.copiedBuffer(serializedLog1)));
+        verify(channel2).write(new BinaryWebSocketFrame(Unpooled.copiedBuffer(serializedLog2)));
         verify(channel2).flush();
     }
 
     @Test
-    public void filterEmittedLog() throws JsonProcessingException {
+    public void filterEmittedLog() throws IOException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -137,7 +138,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void emitsNewAndRemovedLogs() throws JsonProcessingException {
+    public void emitsNewAndRemovedLogs() throws IOException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -189,18 +190,18 @@ public class LogsNotificationEmitterTest {
         verifyNoMoreInteractions(channel);
     }
 
-    private void verifyLogsData(byte[]... results) throws JsonProcessingException {
+    private void verifyLogsData(byte[]... results) throws IOException {
         verifyLogs((ln, d) -> assertThat(ln.getData(), is(TypeConverter.toJsonHex(d))), results);
     }
 
-    private void verifyLogsRemovedStatus(Boolean... results) throws JsonProcessingException {
+    private void verifyLogsRemovedStatus(Boolean... results) throws IOException {
         verifyLogs((ln, r) -> assertThat(ln.getRemoved(), is(r)), results);
     }
 
     private <T> void verifyLogs(BiConsumer<LogsNotification, T> checker, T... results)
-            throws JsonProcessingException {
+            throws IOException {
         ArgumentCaptor<JsonRpcMessage> captor = ArgumentCaptor.forClass(JsonRpcMessage.class);
-        verify(serializer, times(results.length)).serializeMessage(captor.capture());
+        verify(serializer, times(results.length)).serializeMessage(any(), captor.capture());
         assertThat(captor.getAllValues(), hasSize(results.length));
         for (int i = 0; i < results.length; i++) {
             EthSubscriptionNotification subscriptionNotification = (EthSubscriptionNotification) captor.getAllValues().get(i);
@@ -247,5 +248,19 @@ public class LogsNotificationEmitterTest {
         when(receipt.getLogInfoList()).thenReturn(Arrays.asList(logInfos));
         when(receiptStore.get(transaction.getHash(), block.getHash()))
                 .thenReturn(Optional.of(transactionInfo));
+    }
+
+    private void mockSerialize(byte[] firstSerialized, byte[]... otherSerialized) throws IOException {
+        Stubber answerBuilder = doAnswer(invocation -> {
+            invocation.<OutputStream>getArgument(0).write(firstSerialized);
+            return null;
+        });
+        for (byte[] serialized : otherSerialized) {
+            answerBuilder = answerBuilder.doAnswer(invocation -> {
+                invocation.<OutputStream>getArgument(0).write(serialized);
+                return null;
+            });
+        }
+        answerBuilder.when(serializer).serializeMessage(any(), any());
     }
 }

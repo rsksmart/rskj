@@ -43,17 +43,14 @@ public class JsonRpcMethodFilter implements RequestInterceptor {
     @Override
     public void interceptRequest(JsonNode node) throws IOException {
         if (node.hasNonNull(JsonRpcBasicServer.METHOD)) {
-            checkMethod(node.get(JsonRpcBasicServer.METHOD).asText());
+            String methodName = node.get(JsonRpcBasicServer.METHOD).asText();
+            if (!checkMethod(methodName)) {
+                throw new IOException("Method not supported: " + methodName);
+            }
         }
     }
 
-    private void checkMethod(String methodName) throws IOException {
-        for (ModuleDescription module: this.modules) {
-            if (module.methodIsEnable(methodName)) {
-                return;
-            }
-        }
-
-        throw new IOException("Method not supported: " + methodName);
+    public boolean checkMethod(String methodName) {
+        return this.modules.stream().anyMatch(module -> module.methodIsEnable(methodName));
     }
 }

@@ -18,16 +18,19 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.rpc.JsonRpcSerializer;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import co.rsk.jsonrpc.JsonRpcSerializer;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.ethereum.core.Block;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+
+import java.io.IOException;
+import java.io.OutputStream;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -52,16 +55,16 @@ public class BlockHeaderNotificationEmitterTest {
     }
 
     @Test
-    public void ethereumOnBlockEventTriggersMessageToChannel() throws JsonProcessingException {
+    public void ethereumOnBlockEventTriggersMessageToChannel() throws IOException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);
-        when(serializer.serializeMessage(any()))
-                .thenReturn("serialized");
+        byte[] serialized = "serialized".getBytes();
+        mockSerialize(serialized);
 
         listener.onBlock(TEST_BLOCK, null);
 
-        verify(channel).writeAndFlush(new TextWebSocketFrame("serialized"));
+        verify(channel).writeAndFlush(new BinaryWebSocketFrame(Unpooled.copiedBuffer(serialized)));
     }
 
     @Test
@@ -84,5 +87,12 @@ public class BlockHeaderNotificationEmitterTest {
 
         listener.onBlock(TEST_BLOCK, null);
         verifyNoMoreInteractions(channel);
+    }
+
+    private void mockSerialize(byte[] serialized) throws IOException {
+        doAnswer(invocation -> {
+            invocation.<OutputStream>getArgument(0).write(serialized);
+            return null;
+        }).when(serializer).serializeMessage(any(), any());
     }
 }

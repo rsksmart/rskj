@@ -17,9 +17,12 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import co.rsk.rpc.JsonRpcSerializer;
+import co.rsk.jsonrpc.JsonRpcSerializer;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
@@ -69,16 +72,19 @@ public class BlockHeaderNotificationEmitter {
         BlockHeaderNotification header = new BlockHeaderNotification(block);
 
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            EthSubscriptionNotification request = new EthSubscriptionNotification(
+            EthSubscriptionNotification notification = new EthSubscriptionNotification(
                     new EthSubscriptionParams(id, header)
             );
 
-            try {
-                String msg = jsonRpcSerializer.serializeMessage(request);
-                channel.writeAndFlush(new TextWebSocketFrame(msg));
+            ByteBuf notificationContent = Unpooled.buffer();
+            try (ByteBufOutputStream os = new ByteBufOutputStream(notificationContent)) {
+                jsonRpcSerializer.serializeMessage(os, notification);
             } catch (IOException e) {
                 logger.error("Couldn't serialize block header result for notification", e);
+                return;
             }
+
+            channel.writeAndFlush(new BinaryWebSocketFrame(notificationContent));
         });
     }
 }

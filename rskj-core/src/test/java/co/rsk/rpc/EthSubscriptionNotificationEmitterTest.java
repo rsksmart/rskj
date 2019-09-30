@@ -42,9 +42,8 @@ public class EthSubscriptionNotificationEmitterTest {
     @Test
     public void subscribeToNewHeads() {
         Channel channel = mock(Channel.class);
-        EthSubscribeNewHeadsParams params = mock(EthSubscribeNewHeadsParams.class);
 
-        SubscriptionId subscriptionId = emitter.visit(params, channel);
+        SubscriptionId subscriptionId = emitter.subscribeNewHeads(channel);
 
         assertThat(subscriptionId, notNullValue());
         verify(newHeads).subscribe(subscriptionId, channel);
@@ -55,7 +54,7 @@ public class EthSubscriptionNotificationEmitterTest {
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
 
-        SubscriptionId subscriptionId = emitter.visit(params, channel);
+        SubscriptionId subscriptionId = emitter.subscribeLogs(params, channel);
 
         assertThat(subscriptionId, notNullValue());
         verify(logs).subscribe(subscriptionId, channel, params);

@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,20 +15,18 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.rpc.modules.eth.subscribe;
+package co.rsk.rpc.netty;
 
 import co.rsk.jsonrpc.JsonRpcRequestParams;
 import co.rsk.jsonrpc.JsonRpcResultOrError;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.netty.channel.ChannelHandlerContext;
 
-@JsonDeserialize(using = EthSubscribeParamsDeserializer.class)
-public interface EthSubscribeParams extends JsonRpcRequestParams {
-    JsonRpcResultOrError resolve(ChannelHandlerContext ctx, Visitor api);
+/**
+ * Base interface for all RPC method handlers. All implementations must be registered with the
+ * {@link JsonRpcRequestHandlerManager}.
+ */
+public interface JsonRpcRequestTypedHandler<T extends JsonRpcRequestParams> {
+    JsonRpcResultOrError handle(ChannelHandlerContext ctx, T params);
 
-    interface Visitor {
-        JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthSubscribeNewHeadsParams params);
-
-        JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthSubscribeLogsParams params);
-    }
+    Class<T> paramsClass();
 }

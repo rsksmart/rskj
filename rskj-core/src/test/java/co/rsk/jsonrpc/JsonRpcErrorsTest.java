@@ -29,10 +29,28 @@ public class JsonRpcErrorsTest {
     private ObjectMapper serializer = new ObjectMapper();
 
     @Test
+    public void serializeInvalidParams() throws IOException {
+        String message = "{\"code\":-32602,\"message\":\"Invalid params\"}";
+        assertThat(
+                serializer.writeValueAsString(JsonRpcErrors.invalidParams()),
+                is(message)
+        );
+    }
+
+    @Test
     public void serializeInternalError() throws IOException {
         String message = "{\"code\":-32603,\"message\":\"Internal error\"}";
         assertThat(
                 serializer.writeValueAsString(JsonRpcErrors.internal()),
+                is(message)
+        );
+    }
+
+    @Test
+    public void serializeMethodNotEnabled() throws IOException {
+        String message = "{\"code\":-32604,\"message\":\"Method not enabled\"}";
+        assertThat(
+                serializer.writeValueAsString(JsonRpcErrors.methodNotEnabled()),
                 is(message)
         );
     }

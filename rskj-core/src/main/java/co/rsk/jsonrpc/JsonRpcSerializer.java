@@ -15,28 +15,32 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.rpc;
-
-import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.rpc.modules.RskJsonRpcRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
+package co.rsk.jsonrpc;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Basic JSON-RPC serialization methods.
  */
 public interface JsonRpcSerializer {
     /**
-     * @return a JsonRpcMessage serialized into a JSON string
-     * @throws JsonProcessingException when serialization fails
+     * @param os the destination of the JsonRpcMessage serialized into a JSON string as bytes
+     * @throws IOException when serialization fails
      */
-    String serializeMessage(JsonRpcMessage message) throws JsonProcessingException;
+    void serializeMessage(OutputStream os, JsonRpcMessage message) throws IOException;
 
     /**
-     * @return an RskJsonRpcRequest deserialized from a JSON string in the source stream
+     * @return a request deserialized from a JSON string in the source stream
      * @throws IOException when deserialization fails
      */
-    RskJsonRpcRequest deserializeRequest(InputStream source) throws IOException;
+    JsonRpcRequest deserializeRequest(InputStream source) throws IOException;
+
+    /**
+     * @return request parameters deserialized from JsonRpcRequest content
+     * @throws IOException when deserialization fails
+     */
+    <T extends JsonRpcRequestParams> T deserializeRequestParams(JsonRpcRequest request, Class<T> tClass)
+            throws IOException;
 }

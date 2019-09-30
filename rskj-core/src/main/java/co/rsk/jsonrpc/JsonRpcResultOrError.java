@@ -30,4 +30,10 @@ public interface JsonRpcResultOrError {
      */
     @JsonIgnore
     JsonRpcIdentifiableMessage responseFor(int messageId);
+
+    /**
+     * @return a status code according to the result or error state of this object.
+     */
+    @JsonIgnore
+    int httpStatusCode();
 }

@@ -18,12 +18,14 @@
 package co.rsk.rpc;
 
 import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.rpc.modules.RskJsonRpcRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import co.rsk.jsonrpc.JsonRpcRequest;
+import co.rsk.jsonrpc.JsonRpcRequestParams;
+import co.rsk.jsonrpc.JsonRpcSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * This implements basic JSON-RPC serialization using Jackson.
@@ -34,12 +36,18 @@ public class JacksonBasedRpcSerializer implements JsonRpcSerializer {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public String serializeMessage(JsonRpcMessage message) throws JsonProcessingException {
-        return mapper.writeValueAsString(message);
+    public void serializeMessage(OutputStream os, JsonRpcMessage message) throws IOException {
+        mapper.writeValue(os, message);
     }
 
     @Override
-    public RskJsonRpcRequest deserializeRequest(InputStream source) throws IOException {
-        return mapper.readValue(source, RskJsonRpcRequest.class);
+    public JsonRpcRequest deserializeRequest(InputStream source) throws IOException {
+        return mapper.readValue(source, JsonRpcRequest.class);
+    }
+
+    @Override
+    public <T extends JsonRpcRequestParams> T deserializeRequestParams(JsonRpcRequest request, Class<T> tClass)
+            throws IOException {
+        return mapper.treeToValue(request.getParams(), tClass);
     }
 }

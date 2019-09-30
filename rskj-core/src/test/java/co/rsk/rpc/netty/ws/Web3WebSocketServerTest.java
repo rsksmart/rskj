@@ -18,9 +18,11 @@
 package co.rsk.rpc.netty.ws;
 
 import co.rsk.rpc.JacksonBasedRpcSerializer;
+import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.rpc.netty.JsonRpcRequestHandler;
+import co.rsk.rpc.netty.JsonRpcRequestHandlerManager;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
-import co.rsk.rpc.netty.RskJsonRpcHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +41,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -72,11 +73,13 @@ public class Web3WebSocketServerTest {
 
         int randomPort = 9998;//new ServerSocket(0).getLocalPort();
 
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
-        RskJsonRpcHandler handler = new RskJsonRpcHandler(null, new JacksonBasedRpcSerializer());
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
+        JsonRpcMethodFilter methodFilter = new JsonRpcMethodFilter(Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList())));
+        JacksonBasedRpcSerializer serializer = new JacksonBasedRpcSerializer();
+        JsonRpcRequestHandlerManager handlers = new JsonRpcRequestHandlerManager(null, serializer);
+        JsonRpcRequestHandler.Factory requestHandlerFactory = d -> new JsonRpcRequestHandler(null, serializer, methodFilter, handlers, d);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, methodFilter);
 
-        Web3WebSocketServer websocketServer = new Web3WebSocketServer(InetAddress.getLoopbackAddress(), randomPort, handler, serverHandler);
+        Web3WebSocketServer websocketServer = new Web3WebSocketServer(InetAddress.getLoopbackAddress(), randomPort, requestHandlerFactory, serverHandler);
         websocketServer.start();
 
         OkHttpClient wsClient = new OkHttpClient();

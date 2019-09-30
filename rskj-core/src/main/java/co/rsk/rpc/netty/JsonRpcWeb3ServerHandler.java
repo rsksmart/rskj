@@ -19,7 +19,6 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.rpc.JsonRpcMethodFilter;
-import co.rsk.rpc.ModuleDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @ChannelHandler.Sharable
@@ -47,9 +45,9 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
 
-    public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules) {
+    public JsonRpcWeb3ServerHandler(Web3 service, JsonRpcMethodFilter methodFilter) {
         this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
-        jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
+        jsonRpcServer.setRequestInterceptor(methodFilter);
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
     }
 

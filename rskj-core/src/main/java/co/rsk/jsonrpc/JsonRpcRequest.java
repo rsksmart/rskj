@@ -18,26 +18,38 @@
 package co.rsk.jsonrpc;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Objects;
 
 /**
  * This is the base class for JSON-RPC requests.
- * Inheritors should define the methods it accepts and how to map to different specific implementations.
+ * We could use Jackson advanced deserialization features to automatically decode the parameters, but this would not
+ * allow us to differentiate between different kind of errors. It would also make extensibility a lot harder.
+ * We therefore keep the parameters in a raw format ({@link JsonNode}) and let handlers deal with this value.
  */
-public abstract class JsonRpcRequest<T extends Enum<T>> extends JsonRpcIdentifiableMessage {
-    private final T method;
+public class JsonRpcRequest extends JsonRpcIdentifiableMessage {
+    private final String method;
+    private final JsonNode params;
 
     public JsonRpcRequest(
-            JsonRpcVersion version,
-            T method,
-            int id) {
+            @JsonProperty("jsonrpc") JsonRpcVersion version,
+            @JsonProperty("id") Integer id,
+            @JsonProperty("method") String method,
+            @JsonProperty("params") JsonNode params) {
         super(version, id);
         this.method = Objects.requireNonNull(method);
+        this.params = Objects.requireNonNull(params);
     }
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public T getMethod() {
+    public String getMethod() {
         return method;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public JsonNode getParams() {
+        return params;
     }
 }

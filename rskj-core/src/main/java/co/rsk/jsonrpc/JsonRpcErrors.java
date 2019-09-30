@@ -25,7 +25,15 @@ public class JsonRpcErrors {
         // Utility class
     }
 
+    public static JsonRpcError invalidParams() {
+        return new JsonRpcError(-32602, "Invalid params");
+    }
+
     public static JsonRpcError internal() {
         return new JsonRpcError(-32603, "Internal error");
+    }
+
+    public static JsonRpcError methodNotEnabled() {
+        return new JsonRpcError(-32604, "Method not enabled");
     }
 }

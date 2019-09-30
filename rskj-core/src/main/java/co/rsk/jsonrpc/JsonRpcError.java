@@ -43,4 +43,10 @@ public class JsonRpcError implements JsonRpcResultOrError {
     public JsonRpcIdentifiableMessage responseFor(int messageId) {
         return new JsonRpcErrorResponse(messageId, this);
     }
+
+    @Override
+    public int httpStatusCode() {
+        // by default we return BAD REQUEST, but we could consider parameterizing this value
+        return 400;
+    }
 }

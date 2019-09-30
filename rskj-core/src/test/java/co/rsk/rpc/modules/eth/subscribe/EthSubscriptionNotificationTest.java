@@ -18,11 +18,12 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.jsonrpc.JsonRpcSerializer;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
-import co.rsk.rpc.JsonRpcSerializer;
 import org.ethereum.core.Block;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -45,6 +46,16 @@ public class EthSubscriptionNotificationTest {
         );
 
         String expected = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_subscription\",\"params\":{\"subscription\":\"0x7392\",\"result\":" + TEST_BLOCK_RESULT_JSON + "}}";
-        assertThat(serializer.serializeMessage(notification), is(expected));
+        String actual = serialize(notification);
+        assertThat(actual, is(expected));
+    }
+
+    private String serialize(EthSubscriptionNotification notification) throws IOException {
+        String actual;
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            serializer.serializeMessage(os, notification);
+            actual = os.toString();
+        }
+        return actual;
     }
 }

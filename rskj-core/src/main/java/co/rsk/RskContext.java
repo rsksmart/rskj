@@ -64,8 +64,9 @@ import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.rsk.RskModuleImpl;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
+import co.rsk.rpc.netty.JsonRpcRequestHandler;
+import co.rsk.rpc.netty.JsonRpcRequestHandlerManager;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
-import co.rsk.rpc.netty.RskJsonRpcHandler;
 import co.rsk.rpc.netty.http.JsonRpcWeb3FilterHandler;
 import co.rsk.rpc.netty.http.Web3HttpServer;
 import co.rsk.rpc.netty.ws.Web3WebSocketServer;
@@ -182,7 +183,6 @@ public class RskContext implements NodeBootstrapper {
     private JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
     private Web3WebSocketServer web3WebSocketServer;
-    private JacksonBasedRpcSerializer jacksonBasedRpcSerializer;
     private Web3HttpServer web3HttpServer;
     private WriterMessageRecorder writerMessageRecorder;
     private Wallet wallet;
@@ -228,6 +228,8 @@ public class RskContext implements NodeBootstrapper {
     private PeersInformation peersInformation;
     private StatusResolver statusResolver;
     private Web3InformationRetriever web3InformationRetriever;
+    private JsonRpcMethodFilter jsonRpcMethodFilter;
+    private JsonRpcRequestHandler.Factory jsonRpcRequestHandlerFactory;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -782,34 +784,6 @@ public class RskContext implements NodeBootstrapper {
         return new SolidityCompiler(getRskSystemProperties());
     }
 
-    protected Web3 buildWeb3() {
-        return new Web3RskImpl(
-                getRsk(),
-                getBlockchain(),
-                getRskSystemProperties(),
-                getMinerClient(),
-                getMinerServer(),
-                getPersonalModule(),
-                getEthModule(),
-                getEvmModule(),
-                getTxPoolModule(),
-                getMnrModule(),
-                getDebugModule(),
-                getRskModule(),
-                getChannelManager(),
-                getPeerScoringManager(),
-                getNetworkStateExporter(),
-                getBlockStore(),
-                getReceiptStore(),
-                getPeerServer(),
-                getNodeBlockProcessor(),
-                getHashRateCalculator(),
-                getConfigCapabilities(),
-                getBuildInfo(),
-                getBlocksBloomStore(),
-                getWeb3InformationRetriever());
-    }
-
     protected Web3InformationRetriever getWeb3InformationRetriever() {
         if (web3InformationRetriever == null) {
             web3InformationRetriever = new Web3InformationRetriever(
@@ -1362,7 +1336,32 @@ public class RskContext implements NodeBootstrapper {
 
     private Web3 getWeb3() {
         if (web3 == null) {
-            web3 = buildWeb3();
+            web3 = new Web3RskImpl(
+                    getRsk(),
+                    getBlockchain(),
+                    getRskSystemProperties(),
+                    getMinerClient(),
+                    getMinerServer(),
+                    getPersonalModule(),
+                    getEthModule(),
+                    getEvmModule(),
+                    getTxPoolModule(),
+                    getMnrModule(),
+                    getDebugModule(),
+                    getRskModule(),
+                    getChannelManager(),
+                    getPeerScoringManager(),
+                    getNetworkStateExporter(),
+                    getBlockStore(),
+                    getReceiptStore(),
+                    getPeerServer(),
+                    getNodeBlockProcessor(),
+                    getHashRateCalculator(),
+                    getConfigCapabilities(),
+                    getBuildInfo(),
+                    getBlocksBloomStore(),
+                    getWeb3InformationRetriever()
+            );
         }
 
         return web3;
@@ -1383,19 +1382,41 @@ public class RskContext implements NodeBootstrapper {
 
     private JsonRpcWeb3ServerHandler getJsonRpcWeb3ServerHandler() {
         if (jsonRpcWeb3ServerHandler == null) {
-            jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(
-                    getWeb3(),
-                    getRskSystemProperties().getRpcModules()
-            );
+            jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(getWeb3(), getJsonRpcMethodFilter());
         }
 
         return jsonRpcWeb3ServerHandler;
     }
 
+    private JsonRpcMethodFilter getJsonRpcMethodFilter() {
+        if (jsonRpcMethodFilter == null) {
+            jsonRpcMethodFilter = new JsonRpcMethodFilter(getRskSystemProperties().getRpcModules());
+        }
+
+        return jsonRpcMethodFilter;
+    }
+
+    public void addExtraHandlers(JsonRpcRequestHandlerManager manager) {
+        // This is an extension point for adding new RPC request handlers
+    }
+
     private Web3WebSocketServer getWeb3WebSocketServer() {
         if (web3WebSocketServer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            JsonRpcSerializer jsonRpcSerializer = getJsonRpcSerializer();
+            web3WebSocketServer = new Web3WebSocketServer(
+                    rskSystemProperties.rpcWebSocketBindAddress(),
+                    rskSystemProperties.rpcWebSocketPort(),
+                    getJsonRpcRequestHandlerFactory(),
+                    getJsonRpcWeb3ServerHandler()
+            );
+        }
+
+        return web3WebSocketServer;
+    }
+
+    public JsonRpcRequestHandler.Factory getJsonRpcRequestHandlerFactory() {
+        if (jsonRpcRequestHandlerFactory == null) {
+            JacksonBasedRpcSerializer jsonRpcSerializer = new JacksonBasedRpcSerializer();
             Ethereum rsk = getRsk();
             EthSubscriptionNotificationEmitter emitter = new EthSubscriptionNotificationEmitter(
                     new BlockHeaderNotificationEmitter(rsk, jsonRpcSerializer),
@@ -1406,16 +1427,14 @@ public class RskContext implements NodeBootstrapper {
                             new BlockchainBranchComparator(getBlockStore())
                     )
             );
-            RskJsonRpcHandler jsonRpcHandler = new RskJsonRpcHandler(emitter, jsonRpcSerializer);
-            web3WebSocketServer = new Web3WebSocketServer(
-                    rskSystemProperties.rpcWebSocketBindAddress(),
-                    rskSystemProperties.rpcWebSocketPort(),
-                    jsonRpcHandler,
-                    getJsonRpcWeb3ServerHandler()
-            );
+            JsonRpcRequestHandlerManager manager = new JsonRpcRequestHandlerManager(emitter, jsonRpcSerializer);
+            addExtraHandlers(manager);
+            JsonRpcMethodFilter jsonRpcMethodFilter = getJsonRpcMethodFilter();
+            jsonRpcRequestHandlerFactory = disabledMethods -> new JsonRpcRequestHandler(
+                    emitter, jsonRpcSerializer, jsonRpcMethodFilter, manager, disabledMethods);
         }
 
-        return web3WebSocketServer;
+        return jsonRpcRequestHandlerFactory;
     }
 
     private Web3HttpServer getWeb3HttpServer() {
@@ -1427,20 +1446,13 @@ public class RskContext implements NodeBootstrapper {
                     rskSystemProperties.soLingerTime(),
                     true,
                     new CorsConfiguration(rskSystemProperties.corsDomains()),
+                    getJsonRpcRequestHandlerFactory(),
                     getJsonRpcWeb3FilterHandler(),
                     getJsonRpcWeb3ServerHandler()
             );
         }
 
         return web3HttpServer;
-    }
-
-    private JsonRpcSerializer getJsonRpcSerializer() {
-        if (jacksonBasedRpcSerializer == null) {
-            jacksonBasedRpcSerializer = new JacksonBasedRpcSerializer();
-        }
-
-        return jacksonBasedRpcSerializer;
     }
 
     private NetBlockStore getNetBlockStore() {

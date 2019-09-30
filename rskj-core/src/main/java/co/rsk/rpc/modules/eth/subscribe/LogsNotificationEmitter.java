@@ -19,9 +19,12 @@ package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.core.bc.BlockFork;
 import co.rsk.core.bc.BlockchainBranchComparator;
-import co.rsk.rpc.JsonRpcSerializer;
+import co.rsk.jsonrpc.JsonRpcSerializer;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -106,18 +109,21 @@ public class LogsNotificationEmitter {
             Channel channel = entry.getValue().channel;
             AddressesTopicsFilter filter = entry.getValue().filter;
 
-            for (LogsNotification notification : notifications) {
-                if (filter.matchesExactly(notification.getLogInfo())) {
-                    EthSubscriptionNotification request = new EthSubscriptionNotification(
-                            new EthSubscriptionParams(id, notification)
+            for (LogsNotification logsNotification : notifications) {
+                if (filter.matchesExactly(logsNotification.getLogInfo())) {
+                    EthSubscriptionNotification notification = new EthSubscriptionNotification(
+                            new EthSubscriptionParams(id, logsNotification)
                     );
 
-                    try {
-                        String msg = jsonRpcSerializer.serializeMessage(request);
-                        channel.write(new TextWebSocketFrame(msg));
+                    ByteBuf notificationContent = Unpooled.buffer();
+                    try (ByteBufOutputStream os = new ByteBufOutputStream(notificationContent)) {
+                        jsonRpcSerializer.serializeMessage(os, notification);
                     } catch (IOException e) {
                         logger.error("Couldn't serialize block header result for notification", e);
+                        continue;
                     }
+
+                    channel.write(new BinaryWebSocketFrame(notificationContent));
                 }
             }
 

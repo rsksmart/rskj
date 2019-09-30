@@ -19,11 +19,12 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.core.RskAddress;
+import co.rsk.jsonrpc.JsonRpcResultOrError;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.rpc.Topic;
 
 import java.util.Arrays;
@@ -57,7 +58,7 @@ public class EthSubscribeLogsParams implements EthSubscribeParams {
     }
 
     @Override
-    public SubscriptionId accept(EthSubscribeParamsVisitor visitor, Channel channel) {
-        return visitor.visit(this, channel);
+    public JsonRpcResultOrError resolve(ChannelHandlerContext ctx, Visitor api) {
+        return api.respond(ctx, this);
     }
 }
