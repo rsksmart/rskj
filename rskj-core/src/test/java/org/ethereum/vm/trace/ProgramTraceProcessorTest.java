@@ -43,7 +43,23 @@ public class ProgramTraceProcessorTest {
         ProgramTrace trace = buildTestTrace(DataWord.valueOf(42));
         processor.processProgramTrace(trace, hash);
 
+        Assert.assertNull(processor.getProgramTrace(otherHash));
         Assert.assertNull(processor.getProgramTraceAsJsonNode(otherHash));
+    }
+
+    @Test
+    public void setAndGetTrace() {
+        Keccak256 hash = TestUtils.randomHash();
+        ProgramTraceProcessor processor = new ProgramTraceProcessor();
+
+        DataWord ownerDW = DataWord.valueOf(42);
+        ProgramTrace trace = buildTestTrace(ownerDW);
+        processor.processProgramTrace(trace, hash);
+
+        ProgramTrace result = processor.getProgramTrace(hash);
+
+        Assert.assertNotNull(result);
+        Assert.assertSame(trace, result);
     }
 
     @Test
