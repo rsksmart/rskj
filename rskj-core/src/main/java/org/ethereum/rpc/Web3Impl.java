@@ -19,16 +19,17 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.evm.EvmModule;
@@ -83,7 +84,6 @@ public class Web3Impl implements Web3 {
     private final MinerClient minerClient;
     protected MinerServer minerServer;
     private final ChannelManager channelManager;
-    private final RepositoryLocator repositoryLocator;
     private final PeerScoringManager peerScoringManager;
     private final PeerServer peerServer;
 
@@ -93,13 +93,13 @@ public class Web3Impl implements Web3 {
     private final HashRateCalculator hashRateCalculator;
     private final ConfigCapabilities configCapabilities;
     private final BlockStore blockStore;
-    private final TransactionPool transactionPool;
     private final RskSystemProperties config;
 
     private final FilterManager filterManager;
     private final BuildInfo buildInfo;
 
     private final BlocksBloomStore blocksBloomStore;
+    private final Web3InformationRetriever web3InformationRetriever;
 
     private final PersonalModule personalModule;
     private final EthModule ethModule;
@@ -112,7 +112,6 @@ public class Web3Impl implements Web3 {
     protected Web3Impl(
             Ethereum eth,
             Blockchain blockchain,
-            TransactionPool transactionPool,
             BlockStore blockStore,
             ReceiptStore receiptStore,
             RskSystemProperties config,
@@ -126,20 +125,19 @@ public class Web3Impl implements Web3 {
             DebugModule debugModule,
             RskModule rskModule,
             ChannelManager channelManager,
-            RepositoryLocator repositoryLocator,
             PeerScoringManager peerScoringManager,
             PeerServer peerServer,
             BlockProcessor nodeBlockProcessor,
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
-            BlocksBloomStore blocksBloomStore) {
+            BlocksBloomStore blocksBloomStore,
+            Web3InformationRetriever web3InformationRetriever) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.evmModule = evmModule;
-        this.transactionPool = transactionPool;
         this.minerClient = minerClient;
         this.minerServer = minerServer;
         this.personalModule = personalModule;
@@ -149,7 +147,6 @@ public class Web3Impl implements Web3 {
         this.debugModule = debugModule;
         this.rskModule = rskModule;
         this.channelManager = channelManager;
-        this.repositoryLocator = repositoryLocator;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
         this.nodeBlockProcessor = nodeBlockProcessor;
@@ -159,6 +156,7 @@ public class Web3Impl implements Web3 {
         this.filterManager = new FilterManager(eth);
         this.buildInfo = buildInfo;
         this.blocksBloomStore = blocksBloomStore;
+        this.web3InformationRetriever = web3InformationRetriever;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
         personalModule.init();
@@ -174,9 +172,9 @@ public class Web3Impl implements Web3 {
         hashRateCalculator.stop();
     }
 
-    public int JSonHexToInt(String x) throws Exception {
+    private int JSonHexToInt(String x) {
         if (!x.startsWith("0x")) {
-            throw new Exception("Incorrect hex syntax");
+            throw invalidParamError("Incorrect hex syntax");
         }
         x = x.substring(2);
         return Integer.parseInt(x, 16);
@@ -377,58 +375,45 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getBalance(String address, String block) throws Exception {
+    public String eth_getBalance(String address, String block) {
         /* HEX String  - an integer block number
         *  String "earliest"  for the earliest/genesis block
         *  String "latest"  - for the latest mined block
         *  String "pending"  - for the pending state/transactions
         */
-        AccountInformationProvider accountInformationProvider = getAccountInformationProvider(block);
 
-        if (accountInformationProvider == null) {
-            throw new NullPointerException();
-        }
+        AccountInformationProvider accountInformationProvider = web3InformationRetriever.getInformationProvider(block);
 
         RskAddress addr = new RskAddress(address);
-        BigInteger balance = accountInformationProvider.getBalance(addr).asBigInteger();
+        Coin balance = accountInformationProvider.getBalance(addr);
 
-        return toQuantityJsonHex(balance);
+        return toQuantityJsonHex(balance.asBigInteger());
     }
 
     @Override
-    public String eth_getBalance(String address) throws Exception {
-        AccountInformationProvider accountInformationProvider = getAccountInformationProvider("latest");
-
-        if (accountInformationProvider == null) {
-            throw new NullPointerException();
-        }
-
-        RskAddress addr = new RskAddress(address);
-        BigInteger balance = accountInformationProvider.getBalance(addr).asBigInteger();
-
-        return toQuantityJsonHex(balance);
+    public String eth_getBalance(String address) {
+        return eth_getBalance(address, "latest");
     }
 
     @Override
-    public String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception {
+    public String eth_getStorageAt(String address, String storageIdx, String blockId) {
         String s = null;
 
         try {
             RskAddress addr = new RskAddress(address);
-            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
+            AccountInformationProvider accountInformationProvider =
+                    web3InformationRetriever.getInformationProvider(blockId);
 
-            if(accountInformationProvider == null) {
-                return null;
-            }
+            DataWord sv = accountInformationProvider
+                    .getStorageValue(addr, DataWord.valueOf(stringHexToByteArray(storageIdx)));
 
-            DataWord storageValue = accountInformationProvider.
-                    getStorageValue(addr, DataWord.valueOf(stringHexToByteArray(storageIdx)));
-            if (storageValue != null) {
-                s = toUnformattedJsonHex(storageValue.getData());
-                return s;
+            if (sv == null) {
+                s = null;
             } else {
-                return null;
+                s = toUnformattedJsonHex(sv.getData());
             }
+
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getStorageAt({}, {}, {}): {}", address, storageIdx, blockId, s);
@@ -441,16 +426,11 @@ public class Web3Impl implements Web3 {
         String s = null;
         try {
             RskAddress addr = new RskAddress(address);
-
-            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
-
-            if (accountInformationProvider != null) {
-                BigInteger nonce = accountInformationProvider.getNonce(addr);
-                s = TypeConverter.toQuantityJsonHex(nonce);
-                return s;
-            } else {
-                return null;
-            }
+            AccountInformationProvider accountInformationProvider = web3InformationRetriever
+                    .getInformationProvider(blockId);
+            BigInteger nonce = accountInformationProvider.getNonce(addr);
+            s = toQuantityJsonHex(nonce);
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getTransactionCount({}, {}): {}", address, blockId, s);
@@ -458,13 +438,13 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    public Block getBlockByJSonHash(String blockHash) throws Exception {
+    public Block getBlockByJSonHash(String blockHash) {
         byte[] bhash = stringHexToByteArray(blockHash);
         return this.blockchain.getBlockByHash(bhash);
     }
 
     @Override
-    public String eth_getBlockTransactionCountByHash(String blockHash) throws Exception {
+    public String eth_getBlockTransactionCountByHash(String blockHash) {
         String s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
@@ -505,15 +485,10 @@ public class Web3Impl implements Web3 {
     public String eth_getBlockTransactionCountByNumber(String bnOrId) {
         String s = null;
         try {
-            List<Transaction> list = getTransactionsByJsonBlockId(bnOrId);
 
-            if (list == null) {
-                return null;
-            }
+            List<Transaction> txs = web3InformationRetriever.getTransactions(bnOrId);
 
-            long n = list.size();
-
-            s = TypeConverter.toQuantityJsonHex(n);
+            s = toQuantityJsonHex(txs.size());
             return s;
         } finally {
             if (logger.isDebugEnabled()) {
@@ -523,7 +498,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getUncleCountByBlockHash(String blockHash) throws Exception {
+    public String eth_getUncleCountByBlockHash(String blockHash) {
         Block b = getBlockByJSonHash(blockHash);
         long n = b.getUncleList().size();
 
@@ -531,7 +506,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getUncleCountByBlockNumber(String bnOrId) throws Exception {
+    public String eth_getUncleCountByBlockNumber(String bnOrId) {
         Block b = getBlockByNumberOrStr(bnOrId, blockchain);
         long n = b.getUncleList().size();
 
@@ -572,7 +547,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public BlockResultDTO eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception {
+    public BlockResultDTO eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) {
         BlockResultDTO s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
@@ -586,12 +561,15 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public BlockResultDTO eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) throws Exception {
+    public BlockResultDTO eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) {
         BlockResultDTO s = null;
         try {
-            Block b = getByJsonBlockId(bnOrId);
 
-            return s = (b == null ? null : getBlockResult(b, fullTransactionObjects));
+            s = web3InformationRetriever.getBlock(bnOrId)
+                    .map(b -> getBlockResult(b, fullTransactionObjects))
+                    .orElse(null);
+
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getBlockByNumber({}, {}): {}", bnOrId, fullTransactionObjects, s);
@@ -600,7 +578,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception {
+    public TransactionResultDTO eth_getTransactionByHash(String transactionHash) {
         TransactionResultDTO s = null;
         try {
             Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
@@ -609,7 +587,7 @@ public class Web3Impl implements Web3 {
             TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore);
 
             if (txInfo == null) {
-                List<Transaction> txs = this.getTransactionsByJsonBlockId("pending");
+                List<Transaction> txs = web3InformationRetriever.getTransactions("pending");
 
                 for (Transaction tx : txs) {
                     if (tx.getHash().equals(txHash)) {
@@ -637,7 +615,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public TransactionResultDTO eth_getTransactionByBlockHashAndIndex(String blockHash, String index) throws Exception {
+    public TransactionResultDTO eth_getTransactionByBlockHashAndIndex(String blockHash, String index) {
         TransactionResultDTO s = null;
         try {
             Block b = getBlockByJSonHash(blockHash);
@@ -663,25 +641,22 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(String bnOrId, String index) throws Exception {
+    public TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(String bnOrId, String index) {
         TransactionResultDTO s = null;
         try {
-            Block b = getByJsonBlockId(bnOrId);
-            List<Transaction> txs = getTransactionsByJsonBlockId(bnOrId);
-
-            if (txs == null) {
+            Optional<Block> block = web3InformationRetriever.getBlock(bnOrId);
+            if (!block.isPresent()) {
                 return null;
             }
 
             int idx = JSonHexToInt(index);
-
+            List<Transaction> txs = web3InformationRetriever.getTransactions(bnOrId);
             if (idx >= txs.size()) {
                 return null;
             }
 
-            Transaction tx = txs.get(idx);
-
-            return s = new TransactionResultDTO(b, idx, tx);
+            s = new TransactionResultDTO(block.get(), idx, txs.get(idx));
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getTransactionByBlockNumberAndIndex({}, {}): {}", bnOrId, index, s);
@@ -710,7 +685,7 @@ public class Web3Impl implements Web3 {
 
 
     @Override
-    public BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) throws Exception {
+    public BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) {
         BlockResultDTO s = null;
         try {
             Block block = blockchain.getBlockByHash(stringHexToByteArray(blockHash));
@@ -742,13 +717,13 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public BlockResultDTO eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) throws Exception {
+    public BlockResultDTO eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) {
         BlockResultDTO s = null;
         try {
-            Block block = getByJsonBlockId(blockId);
-
-            return s = block == null ? null :
-                    eth_getUncleByBlockHashAndIndex(Hex.toHexString(block.getHash().getBytes()), uncleIdx);
+            s = web3InformationRetriever.getBlock(blockId)
+                    .map(b -> eth_getUncleByBlockHashAndIndex(Hex.toHexString(b.getHash().getBytes()), uncleIdx))
+                    .orElse(null);
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getUncleByBlockNumberAndIndex({}, {}): {}", blockId, uncleIdx, s);
@@ -935,45 +910,6 @@ public class Web3Impl implements Web3 {
 
     @Override
     public void db_getHex() {
-    }
-
-    private List<Transaction> getTransactionsByJsonBlockId(String id) {
-        if ("pending".equalsIgnoreCase(id)) {
-            return transactionPool.getPendingTransactions();
-        } else {
-            Block block = getByJsonBlockId(id);
-            return block != null ? block.getTransactionsList() : null;
-        }
-    }
-
-    private Block getByJsonBlockId(String id) {
-        if ("earliest".equalsIgnoreCase(id)) {
-            return this.blockchain.getBlockByNumber(0);
-        } else if ("latest".equalsIgnoreCase(id)) {
-            return this.blockchain.getBestBlock();
-        } else if ("pending".equalsIgnoreCase(id)) {
-            throw unimplemented("The method don't support 'pending' as a parameter yet");
-        } else {
-            try {
-                long blockNumber = stringHexToBigInteger(id).longValue();
-                return this.blockchain.getBlockByNumber(blockNumber);
-            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                throw invalidParamError("invalid blocknumber " + id);
-            }
-        }
-    }
-
-    private AccountInformationProvider getAccountInformationProvider(String id) {
-        if ("pending".equalsIgnoreCase(id)) {
-            return transactionPool.getPendingState();
-        } else {
-            Block block = getByJsonBlockId(id);
-            if (block != null) {
-                return repositoryLocator.snapshotAt(block.getHeader());
-            } else {
-                return null;
-            }
-        }
     }
 
     @Override

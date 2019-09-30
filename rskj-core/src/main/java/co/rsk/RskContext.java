@@ -223,6 +223,7 @@ public class RskContext implements NodeBootstrapper {
     private BridgeSupportFactory bridgeSupportFactory;
     private PeersInformation peersInformation;
     private StatusResolver statusResolver;
+    private Web3InformationRetriever web3InformationRetriever;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -635,7 +636,8 @@ public class RskContext implements NodeBootstrapper {
             rskModule = new RskModuleImpl(
                     getBlockchain(),
                     getBlockStore(),
-                    getReceiptStore());
+                    getReceiptStore(),
+                    getWeb3InformationRetriever());
         }
 
         return rskModule;
@@ -780,7 +782,6 @@ public class RskContext implements NodeBootstrapper {
         return new Web3RskImpl(
                 getRsk(),
                 getBlockchain(),
-                getTransactionPool(),
                 getRskSystemProperties(),
                 getMinerClient(),
                 getMinerServer(),
@@ -792,7 +793,6 @@ public class RskContext implements NodeBootstrapper {
                 getDebugModule(),
                 getRskModule(),
                 getChannelManager(),
-                getRepositoryLocator(),
                 getPeerScoringManager(),
                 getNetworkStateExporter(),
                 getBlockStore(),
@@ -802,8 +802,18 @@ public class RskContext implements NodeBootstrapper {
                 getHashRateCalculator(),
                 getConfigCapabilities(),
                 getBuildInfo(),
-                getBlocksBloomStore()
-        );
+                getBlocksBloomStore(),
+                getWeb3InformationRetriever());
+    }
+
+    protected Web3InformationRetriever getWeb3InformationRetriever() {
+        if (web3InformationRetriever == null) {
+            web3InformationRetriever = new Web3InformationRetriever(
+                    getTransactionPool(),
+                    getBlockchain(),
+                    getRepositoryLocator());
+        }
+        return web3InformationRetriever;
     }
 
     protected ReceiptStore buildReceiptStore() {

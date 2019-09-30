@@ -26,6 +26,7 @@ import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.net.NodeID;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -48,6 +49,8 @@ import org.junit.Test;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Random;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 12/07/2017.
@@ -374,7 +377,6 @@ public class Web3ImplScoringTest {
         return new Web3RskImpl(
                 rsk,
                 world.getBlockChain(),
-                null,
                 config,
                 Web3Mocks.getMockMinerClient(),
                 Web3Mocks.getMockMinerServer(),
@@ -386,7 +388,6 @@ public class Web3ImplScoringTest {
                 dm,
                 null,
                 Web3Mocks.getMockChannelManager(),
-                null,
                 peerScoringManager,
                 null,
                 null,
@@ -396,8 +397,8 @@ public class Web3ImplScoringTest {
                 null,
                 null,
                 null,
-                null
-        );
+                null,
+                null);
     }
 
     private static NodeID generateNodeID() {

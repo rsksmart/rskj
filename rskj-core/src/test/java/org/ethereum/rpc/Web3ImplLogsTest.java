@@ -27,6 +27,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -56,6 +57,8 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 30/11/2016.
@@ -1008,7 +1011,6 @@ public class Web3ImplLogsTest {
         return new Web3RskImpl(
                 eth,
                 blockChain,
-                transactionPool,
                 config,
                 Web3Mocks.getMockMinerClient(),
                 Web3Mocks.getMockMinerServer(),
@@ -1020,7 +1022,6 @@ public class Web3ImplLogsTest {
                 debugModule,
                 null,
                 Web3Mocks.getMockChannelManager(),
-                repositoryLocator,
                 null,
                 null,
                 blockStore,
@@ -1030,8 +1031,8 @@ public class Web3ImplLogsTest {
                 null,
                 new SimpleConfigCapabilities(),
                 null,
-                new BlocksBloomStore(2, 0)
-        );
+                new BlocksBloomStore(2, 0),
+                mock(Web3InformationRetriever.class));
     }
 
     private void addTwoEmptyBlocks() {

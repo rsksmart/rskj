@@ -20,7 +20,6 @@ package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
-import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.*;
@@ -67,7 +66,6 @@ public class Web3RskImpl extends Web3Impl {
     public Web3RskImpl(
             Ethereum eth,
             Blockchain blockchain,
-            TransactionPool transactionPool,
             RskSystemProperties properties,
             MinerClient minerClient,
             MinerServer minerServer,
@@ -79,7 +77,6 @@ public class Web3RskImpl extends Web3Impl {
             DebugModule debugModule,
             RskModule rskModule,
             ChannelManager channelManager,
-            RepositoryLocator repositoryLocator,
             PeerScoringManager peerScoringManager,
             NetworkStateExporter networkStateExporter,
             BlockStore blockStore,
@@ -89,11 +86,12 @@ public class Web3RskImpl extends Web3Impl {
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
-            BlocksBloomStore blocksBloomStore) {
-        super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
+            BlocksBloomStore blocksBloomStore,
+            Web3InformationRetriever retriever) {
+        super(eth, blockchain, blockStore, receiptStore, properties, minerClient, minerServer,
               personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, rskModule,
-              channelManager, repositoryLocator, peerScoringManager, peerServer, nodeBlockProcessor,
-              hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore);
+              channelManager, peerScoringManager, peerServer, nodeBlockProcessor,
+              hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever);
 
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;

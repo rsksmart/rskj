@@ -32,6 +32,8 @@ import org.junit.Test;
 
 import java.util.Map;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by ajlopez on 20/04/2017.
  */
@@ -40,16 +42,13 @@ public class Web3ImplRpcTest {
     public void getRpcModules() {
         Ethereum eth = Web3Mocks.getMockEthereum();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
-        TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
         PersonalModule pm = new PersonalModuleWalletDisabled();
-        RepositoryLocator repositoryLocator = Web3Mocks.getMockRepositoryLocator();
-        Web3Impl web3 = new Web3RskImpl(eth, blockchain, transactionPool,
-                            new TestSystemProperties(), null, null, pm,
+        Web3Impl web3 = new Web3RskImpl(eth, blockchain,
+                new TestSystemProperties(), null, null, pm,
                             null, null, null, null,
-                            null, null, null, repositoryLocator, null,
+                            null, null, null, null,
                             null, null, null, null, null,
-                            null, null, null, null
-        );
+                            null, null, null, null, null);
 
         Map<String, String> result = web3.rpc_modules();
 

@@ -2,6 +2,7 @@ package co.rsk.rpc.modules.rsk;
 
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.trie.Trie;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -20,10 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unimplemented;
 
 public class RskModuleImpl implements RskModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -31,11 +29,16 @@ public class RskModuleImpl implements RskModule {
     private final Blockchain blockchain;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final Web3InformationRetriever web3InformationRetriever;
 
-    public RskModuleImpl(Blockchain blockchain, BlockStore blockStore, ReceiptStore receiptStore) {
+    public RskModuleImpl(Blockchain blockchain,
+                         BlockStore blockStore,
+                         ReceiptStore receiptStore,
+                         Web3InformationRetriever web3InformationRetriever) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.web3InformationRetriever = web3InformationRetriever;
     }
 
     @Override
@@ -128,30 +131,13 @@ public class RskModuleImpl implements RskModule {
     public String getRawBlockHeaderByNumber(String bnOrId) {
         String s = null;
         try {
-            Block b = getByJsonBlockId(bnOrId);
-            return s = (b == null ? null : TypeConverter.toUnformattedJsonHex(b.getHeader().getEncoded()));
+            return s = web3InformationRetriever.getBlock(bnOrId)
+                    .map(b -> TypeConverter.toUnformattedJsonHex(b.getHeader().getEncoded()))
+                    .orElse(null);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("rsk_getRawBlockHeaderByNumber({}): {}", bnOrId, s);
             }
         }
     }
-
-    private Block getByJsonBlockId(String id) {
-        if ("earliest".equalsIgnoreCase(id)) {
-            return this.blockchain.getBlockByNumber(0);
-        } else if ("latest".equalsIgnoreCase(id)) {
-            return this.blockchain.getBestBlock();
-        } else if ("pending".equalsIgnoreCase(id)) {
-            throw unimplemented("The method don't support 'pending' as a parameter yet");
-        } else {
-            try {
-                long blockNumber = stringHexToBigInteger(id).longValue();
-                return this.blockchain.getBlockByNumber(blockNumber);
-            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                throw invalidParamError("invalid blocknumber " + id);
-            }
-        }
-    }
-
 }
