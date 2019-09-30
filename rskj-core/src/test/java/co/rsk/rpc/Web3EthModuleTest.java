@@ -68,7 +68,7 @@ public class Web3EthModuleTest {
                 mock(TxPoolModule.class),
                 mock(MnrModule.class),
                 mock(DebugModule.class),
-                mock(RskModule.class),
+                null, mock(RskModule.class),
                 mock(ChannelManager.class),
                 mock(RepositoryLocator.class),
                 mock(PeerScoringManager.class),
