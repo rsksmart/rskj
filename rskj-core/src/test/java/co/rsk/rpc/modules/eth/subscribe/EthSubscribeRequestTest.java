@@ -19,7 +19,6 @@ package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.jsonrpc.JsonRpcRequest;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
-import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import org.junit.Test;
@@ -32,7 +31,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 
 public class EthSubscribeRequestTest {
-    private JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();
+    private JacksonBasedRpcSerializer serializer = new JacksonBasedRpcSerializer();
 
     @Test
     public void deserializeNewHeads() throws IOException {

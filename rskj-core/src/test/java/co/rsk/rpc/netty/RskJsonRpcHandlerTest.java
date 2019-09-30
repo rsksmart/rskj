@@ -19,8 +19,9 @@ package co.rsk.rpc.netty;
 
 import co.rsk.jsonrpc.JsonRpcBooleanResult;
 import co.rsk.jsonrpc.JsonRpcRequest;
+import co.rsk.jsonrpc.JsonRpcSerializer;
 import co.rsk.rpc.EthSubscriptionNotificationEmitter;
-import co.rsk.rpc.JsonRpcSerializer;
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeNewHeadsParams;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
 import co.rsk.rpc.modules.eth.subscribe.SubscriptionId;
@@ -44,7 +45,7 @@ public class RskJsonRpcHandlerTest {
 
     private RskJsonRpcHandler handler;
     private EthSubscriptionNotificationEmitter emitter;
-    private JsonRpcSerializer serializer;
+    private JsonRpcSerializer<RskJsonRpcRequestParams> serializer;
 
     @Before
     public void setUp() {
@@ -72,7 +73,7 @@ public class RskJsonRpcHandlerTest {
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
         when(ctx.channel())
                 .thenReturn(channel);
-        when(emitter.visit(any(EthSubscribeNewHeadsParams.class), eq(channel)))
+        when(emitter.subscribe(any(EthSubscribeNewHeadsParams.class), eq(channel)))
             .thenReturn(SAMPLE_SUBSCRIPTION_ID);
 
         assertThat(
@@ -88,11 +89,11 @@ public class RskJsonRpcHandlerTest {
         when(ctx.channel())
                 .thenReturn(channel);
 
-        JsonRpcRequest request = mock(JsonRpcRequest.class);
+        JsonRpcRequest<RskJsonRpcRequestParams> request = mock(JsonRpcRequest.class);
         when(request.getParams()).thenReturn(SAMPLE_SUBSCRIBE_PARAMS);
         when(serializer.deserializeRequest(any()))
                 .thenReturn(request);
-        when(emitter.visit(any(EthSubscribeNewHeadsParams.class), eq(channel)))
+        when(emitter.subscribe(any(EthSubscribeNewHeadsParams.class), eq(channel)))
                 .thenReturn(SAMPLE_SUBSCRIPTION_ID);
         when(serializer.serializeMessage(any()))
                 .thenReturn("serialized");

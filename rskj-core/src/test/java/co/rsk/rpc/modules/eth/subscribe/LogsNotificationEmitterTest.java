@@ -20,8 +20,8 @@ package co.rsk.rpc.modules.eth.subscribe;
 import co.rsk.core.bc.BlockFork;
 import co.rsk.core.bc.BlockchainBranchComparator;
 import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.rpc.JsonRpcSerializer;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import co.rsk.jsonrpc.JsonRpcSerializer;
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.TestUtils;
@@ -38,6 +38,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
@@ -51,7 +52,7 @@ import static org.mockito.Mockito.*;
 public class LogsNotificationEmitterTest {
     private LogsNotificationEmitter emitter;
     private EthereumListener listener;
-    private JsonRpcSerializer serializer;
+    private JsonRpcSerializer<RskJsonRpcRequestParams> serializer;
     private ReceiptStore receiptStore;
     private BlockchainBranchComparator comparator;
 
@@ -69,7 +70,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void onBestBlockEventTriggersMessageToChannel() throws JsonProcessingException {
+    public void onBestBlockEventTriggersMessageToChannel() throws IOException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -84,7 +85,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void onBestBlockEventTriggersOneMessageToChannelPerLogInfoAndSubscription() throws JsonProcessingException {
+    public void onBestBlockEventTriggersOneMessageToChannelPerLogInfoAndSubscription() throws IOException {
         SubscriptionId subscriptionId1 = mock(SubscriptionId.class);
         SubscriptionId subscriptionId2 = mock(SubscriptionId.class);
         Channel channel1 = mock(Channel.class);
@@ -109,7 +110,7 @@ public class LogsNotificationEmitterTest {
     }
 
     @Test
-    public void emitsNewAndRemovedLogs() throws JsonProcessingException {
+    public void emitsNewAndRemovedLogs() throws IOException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
@@ -161,16 +162,16 @@ public class LogsNotificationEmitterTest {
         verifyNoMoreInteractions(channel);
     }
 
-    private void verifyLogsData(byte[]... results) throws JsonProcessingException {
+    private void verifyLogsData(byte[]... results) throws IOException {
         verifyLogs((ln, d) -> assertThat(ln.getData(), is(TypeConverter.toJsonHex(d))), results);
     }
 
-    private void verifyLogsRemovedStatus(Boolean... results) throws JsonProcessingException {
+    private void verifyLogsRemovedStatus(Boolean... results) throws IOException {
         verifyLogs((ln, r) -> assertThat(ln.getRemoved(), is(r)), results);
     }
 
     private <T> void verifyLogs(BiConsumer<LogsNotification, T> checker, T... results)
-            throws JsonProcessingException {
+            throws IOException {
         ArgumentCaptor<JsonRpcMessage> captor = ArgumentCaptor.forClass(JsonRpcMessage.class);
         verify(serializer, times(results.length)).serializeMessage(captor.capture());
         assertThat(captor.getAllValues(), hasSize(results.length));

@@ -19,6 +19,7 @@ package co.rsk.rpc;
 
 import co.rsk.jsonrpc.JsonRpcMessage;
 import co.rsk.jsonrpc.JsonRpcRequest;
+import co.rsk.jsonrpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeParams;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
@@ -32,17 +33,18 @@ import java.io.InputStream;
 /**
  * This implements basic JSON-RPC serialization using Jackson.
  */
-public class JacksonBasedRpcSerializer implements JsonRpcSerializer {
+public class JacksonBasedRpcSerializer implements JsonRpcSerializer<RskJsonRpcRequestParams> {
     //From https://fasterxml.github.io/jackson-databind/javadoc/2.5/com/fasterxml/jackson/databind/ObjectMapper.html
     // ObjectMapper is thread-safe as long as the config methods are not called after the serialiation begins.
     private final ObjectMapper mapper;
 
-    public JacksonBasedRpcSerializer() {
+    public JacksonBasedRpcSerializer(NamedType... extraTypes) {
         mapper = new ObjectMapper();
         mapper.registerSubtypes(
                 new NamedType(EthSubscribeParams.class, "eth_subscribe"),
                 new NamedType(EthUnsubscribeParams.class, "eth_unsubscribe")
         );
+        mapper.registerSubtypes(extraTypes);
     }
 
     @Override

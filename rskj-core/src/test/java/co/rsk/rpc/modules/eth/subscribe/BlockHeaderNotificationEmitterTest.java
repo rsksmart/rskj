@@ -18,8 +18,7 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.rpc.JsonRpcSerializer;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import co.rsk.jsonrpc.JsonRpcSerializer;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.core.Block;
@@ -28,6 +27,8 @@ import org.ethereum.listener.EthereumListener;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+
+import java.io.IOException;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -52,7 +53,7 @@ public class BlockHeaderNotificationEmitterTest {
     }
 
     @Test
-    public void ethereumOnBlockEventTriggersMessageToChannel() throws JsonProcessingException {
+    public void ethereumOnBlockEventTriggersMessageToChannel() throws IOException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);

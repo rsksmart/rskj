@@ -19,7 +19,7 @@ package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.core.bc.BlockFork;
 import co.rsk.core.bc.BlockchainBranchComparator;
-import co.rsk.rpc.JsonRpcSerializer;
+import co.rsk.jsonrpc.JsonRpcSerializer;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.core.Block;

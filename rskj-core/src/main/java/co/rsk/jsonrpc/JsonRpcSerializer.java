@@ -15,29 +15,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.rpc;
-
-import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.jsonrpc.JsonRpcRequest;
-import co.rsk.rpc.modules.RskJsonRpcRequestParams;
-import com.fasterxml.jackson.core.JsonProcessingException;
+package co.rsk.jsonrpc;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
  * Basic JSON-RPC serialization methods.
+ * @param <T> a hierarchy root class of the JSON-RPC API.
  */
-public interface JsonRpcSerializer {
+public interface JsonRpcSerializer<T extends JsonRpcRequestParams> {
     /**
      * @return a JsonRpcMessage serialized into a JSON string
-     * @throws JsonProcessingException when serialization fails
+     * @throws IOException when serialization fails
      */
-    String serializeMessage(JsonRpcMessage message) throws JsonProcessingException;
+    String serializeMessage(JsonRpcMessage message) throws IOException;
 
     /**
      * @return an RskJsonRpcRequest deserialized from a JSON string in the source stream
      * @throws IOException when deserialization fails
      */
-    JsonRpcRequest<RskJsonRpcRequestParams> deserializeRequest(InputStream source) throws IOException;
+    JsonRpcRequest<T> deserializeRequest(InputStream source) throws IOException;
 }

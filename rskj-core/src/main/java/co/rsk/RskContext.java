@@ -1391,7 +1391,7 @@ public class RskContext implements NodeBootstrapper {
     private Web3WebSocketServer getWeb3WebSocketServer() {
         if (web3WebSocketServer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            JsonRpcSerializer jsonRpcSerializer = getJsonRpcSerializer();
+            JacksonBasedRpcSerializer jsonRpcSerializer = getJsonRpcSerializer();
             Ethereum rsk = getRsk();
             EthSubscriptionNotificationEmitter emitter = new EthSubscriptionNotificationEmitter(
                     new BlockHeaderNotificationEmitter(rsk, jsonRpcSerializer),
@@ -1431,7 +1431,7 @@ public class RskContext implements NodeBootstrapper {
         return web3HttpServer;
     }
 
-    private JsonRpcSerializer getJsonRpcSerializer() {
+    private JacksonBasedRpcSerializer getJsonRpcSerializer() {
         if (jacksonBasedRpcSerializer == null) {
             jacksonBasedRpcSerializer = new JacksonBasedRpcSerializer();
         }

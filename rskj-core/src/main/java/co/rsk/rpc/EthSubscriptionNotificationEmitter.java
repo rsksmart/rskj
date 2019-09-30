@@ -24,7 +24,7 @@ import io.netty.channel.Channel;
  * This manages subscriptions and emits events to interested clients.
  * Can only be used with the WebSockets transport.
  */
-public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVisitor {
+public class EthSubscriptionNotificationEmitter {
     private final BlockHeaderNotificationEmitter blockHeader;
     private final LogsNotificationEmitter logs;
 
@@ -35,15 +35,13 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
         this.logs = logs;
     }
 
-    @Override
-    public SubscriptionId visit(EthSubscribeNewHeadsParams params, Channel channel) {
+    public SubscriptionId subscribe(EthSubscribeNewHeadsParams params, Channel channel) {
         SubscriptionId subscriptionId = new SubscriptionId();
         blockHeader.subscribe(subscriptionId, channel);
         return subscriptionId;
     }
 
-    @Override
-    public SubscriptionId visit(EthSubscribeLogsParams params, Channel channel) {
+    public SubscriptionId subscribe(EthSubscribeLogsParams params, Channel channel) {
         SubscriptionId subscriptionId = new SubscriptionId();
         logs.subscribe(subscriptionId, channel, params);
         return subscriptionId;

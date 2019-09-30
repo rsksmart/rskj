@@ -17,12 +17,8 @@
  */
 package co.rsk.rpc.netty;
 
-import co.rsk.jsonrpc.JsonRpcBooleanResult;
-import co.rsk.jsonrpc.JsonRpcIdentifiableMessage;
-import co.rsk.jsonrpc.JsonRpcRequest;
-import co.rsk.jsonrpc.JsonRpcResultOrError;
+import co.rsk.jsonrpc.*;
 import co.rsk.rpc.EthSubscriptionNotificationEmitter;
-import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import co.rsk.rpc.modules.Web3Api;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeLogsParams;
@@ -56,9 +52,11 @@ public class RskJsonRpcHandler
     private static final Logger LOGGER = LoggerFactory.getLogger(RskJsonRpcHandler.class);
 
     private final EthSubscriptionNotificationEmitter emitter;
-    private final JsonRpcSerializer serializer;
+    private final JsonRpcSerializer<RskJsonRpcRequestParams> serializer;
 
-    public RskJsonRpcHandler(EthSubscriptionNotificationEmitter emitter, JsonRpcSerializer serializer) {
+    public RskJsonRpcHandler(
+            EthSubscriptionNotificationEmitter emitter,
+            JsonRpcSerializer<RskJsonRpcRequestParams> serializer) {
         this.emitter = emitter;
         this.serializer = serializer;
     }
@@ -97,11 +95,11 @@ public class RskJsonRpcHandler
 
     @Override
     public JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthSubscribeLogsParams params) {
-        return emitter.visit(params, ctx.channel());
+        return emitter.subscribe(params, ctx.channel());
     }
 
     @Override
     public JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthSubscribeNewHeadsParams params) {
-        return emitter.visit(params, ctx.channel());
+        return emitter.subscribe(params, ctx.channel());
     }
 }

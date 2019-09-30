@@ -19,7 +19,6 @@ package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
-import co.rsk.rpc.JsonRpcSerializer;
 import org.ethereum.core.Block;
 import org.junit.Test;
 
@@ -32,7 +31,7 @@ public class EthSubscriptionNotificationTest {
     private static final Block TEST_BLOCK = new BlockGenerator().createBlock(12, 0);
     private static final String TEST_BLOCK_RESULT_JSON = "{\"difficulty\":\"0x020000\",\"extraData\":\"0x00\",\"gasLimit\":\"0x2fefd8\",\"gasUsed\":\"0x0\",\"logsBloom\":\"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"miner\":\"0xe94aef644e428941ee0a3741f28d80255fddba7f\",\"number\":\"0xc\",\"parentHash\":\"0xbe5de0c9c661653c979ec457f610444dcd0048007e683b2d04ce05729af56280\",\"receiptsRoot\":\"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\",\"sha3Uncles\":\"0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347\",\"stateRoot\":\"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\",\"timestamp\":\"0x1\",\"transactionsRoot\":\"0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421\",\"hash\":\"0xcbb16dab6cda29b0bc51dd4389d2abb978a33cfb9dce1fe1ac218e719c932712\"}";
 
-    private JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();
+    private JacksonBasedRpcSerializer serializer = new JacksonBasedRpcSerializer();
 
     @Test
     public void basicRequest() throws IOException {
