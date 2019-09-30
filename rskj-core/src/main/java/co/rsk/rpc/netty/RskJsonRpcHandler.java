@@ -19,13 +19,15 @@ package co.rsk.rpc.netty;
 
 import co.rsk.jsonrpc.JsonRpcBooleanResult;
 import co.rsk.jsonrpc.JsonRpcIdentifiableMessage;
+import co.rsk.jsonrpc.JsonRpcRequest;
 import co.rsk.jsonrpc.JsonRpcResultOrError;
 import co.rsk.rpc.EthSubscriptionNotificationEmitter;
 import co.rsk.rpc.JsonRpcSerializer;
-import co.rsk.rpc.modules.RskJsonRpcRequest;
-import co.rsk.rpc.modules.RskJsonRpcRequestVisitor;
-import co.rsk.rpc.modules.eth.subscribe.EthSubscribeRequest;
-import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeRequest;
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
+import co.rsk.rpc.modules.Web3Api;
+import co.rsk.rpc.modules.eth.subscribe.EthSubscribeLogsParams;
+import co.rsk.rpc.modules.eth.subscribe.EthSubscribeNewHeadsParams;
+import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -50,7 +52,7 @@ import java.io.IOException;
 @Sharable
 public class RskJsonRpcHandler
         extends SimpleChannelInboundHandler<ByteBufHolder>
-        implements RskJsonRpcRequestVisitor {
+        implements Web3Api {
     private static final Logger LOGGER = LoggerFactory.getLogger(RskJsonRpcHandler.class);
 
     private final EthSubscriptionNotificationEmitter emitter;
@@ -64,12 +66,12 @@ public class RskJsonRpcHandler
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder msg) {
         try {
-            RskJsonRpcRequest request = serializer.deserializeRequest(
+            JsonRpcRequest<RskJsonRpcRequestParams> request = serializer.deserializeRequest(
                     new ByteBufInputStream(msg.copy().content())
             );
 
             // TODO(mc) we should support the ModuleDescription method filters
-            JsonRpcResultOrError resultOrError = request.accept(this, ctx);
+            JsonRpcResultOrError resultOrError = request.getParams().resolve(ctx, this);
             JsonRpcIdentifiableMessage response = resultOrError.responseFor(request.getId());
             ctx.writeAndFlush(new TextWebSocketFrame(serializer.serializeMessage(response)));
             return;
@@ -88,13 +90,18 @@ public class RskJsonRpcHandler
     }
 
     @Override
-    public JsonRpcResultOrError visit(EthUnsubscribeRequest request, ChannelHandlerContext ctx) {
-        boolean unsubscribed = emitter.unsubscribe(request.getParams().getSubscriptionId());
+    public JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthUnsubscribeParams params) {
+        boolean unsubscribed = emitter.unsubscribe(params.getSubscriptionId());
         return new JsonRpcBooleanResult(unsubscribed);
     }
 
     @Override
-    public JsonRpcResultOrError visit(EthSubscribeRequest request, ChannelHandlerContext ctx) {
-        return request.getParams().accept(emitter, ctx.channel());
+    public JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthSubscribeLogsParams params) {
+        return emitter.visit(params, ctx.channel());
+    }
+
+    @Override
+    public JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthSubscribeNewHeadsParams params) {
+        return emitter.visit(params, ctx.channel());
     }
 }

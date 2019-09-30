@@ -17,12 +17,11 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.netty.channel.Channel;
 
 @JsonDeserialize(using = EthSubscribeParamsDeserializer.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
-public interface EthSubscribeParams {
-    SubscriptionId accept(EthSubscribeParamsVisitor visitor, Channel channel);
+public interface EthSubscribeParams extends RskJsonRpcRequestParams {
 }

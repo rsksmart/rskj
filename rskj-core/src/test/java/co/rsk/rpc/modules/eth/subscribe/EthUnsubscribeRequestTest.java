@@ -17,9 +17,10 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.jsonrpc.JsonRpcRequest;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
-import co.rsk.rpc.modules.RskJsonRpcRequest;
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -36,12 +37,12 @@ public class EthUnsubscribeRequestTest {
     @Test
     public void deserializeUnsubscribe() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":100,\"method\":\"eth_unsubscribe\",\"params\":[\"0x0204\"]}";
-        RskJsonRpcRequest request = serializer.deserializeRequest(
+        JsonRpcRequest<RskJsonRpcRequestParams> request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
         );
 
-        assertThat(request, instanceOf(EthUnsubscribeRequest.class));
-        EthUnsubscribeRequest unsubscribeRequest = (EthUnsubscribeRequest) request;
-        assertThat(unsubscribeRequest.getParams().getSubscriptionId(), is(new SubscriptionId("0x0204")));
+        assertThat(request.getParams(), instanceOf(EthUnsubscribeParams.class));
+        EthUnsubscribeParams unsubscribeParams = (EthUnsubscribeParams) request.getParams();
+        assertThat(unsubscribeParams.getSubscriptionId(), is(new SubscriptionId("0x0204")));
     }
 }

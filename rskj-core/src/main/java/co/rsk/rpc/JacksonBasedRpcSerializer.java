@@ -18,7 +18,8 @@
 package co.rsk.rpc;
 
 import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.rpc.modules.RskJsonRpcRequest;
+import co.rsk.jsonrpc.JsonRpcRequest;
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -39,7 +40,7 @@ public class JacksonBasedRpcSerializer implements JsonRpcSerializer {
     }
 
     @Override
-    public RskJsonRpcRequest deserializeRequest(InputStream source) throws IOException {
-        return mapper.readValue(source, RskJsonRpcRequest.class);
+    public JsonRpcRequest<RskJsonRpcRequestParams> deserializeRequest(InputStream source) throws IOException {
+        return mapper.readValue(source, JsonRpcRequest.class);
     }
 }

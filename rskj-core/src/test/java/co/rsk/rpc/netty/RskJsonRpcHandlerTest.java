@@ -18,11 +18,12 @@
 package co.rsk.rpc.netty;
 
 import co.rsk.jsonrpc.JsonRpcBooleanResult;
-import co.rsk.jsonrpc.JsonRpcVersion;
+import co.rsk.jsonrpc.JsonRpcRequest;
 import co.rsk.rpc.EthSubscriptionNotificationEmitter;
 import co.rsk.rpc.JsonRpcSerializer;
-import co.rsk.rpc.modules.RskJsonRpcMethod;
-import co.rsk.rpc.modules.eth.subscribe.*;
+import co.rsk.rpc.modules.eth.subscribe.EthSubscribeNewHeadsParams;
+import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
+import co.rsk.rpc.modules.eth.subscribe.SubscriptionId;
 import io.netty.buffer.DefaultByteBufHolder;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -39,13 +40,7 @@ import static org.mockito.Mockito.*;
 
 public class RskJsonRpcHandlerTest {
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID = new SubscriptionId("0x3075");
-    private static final EthSubscribeRequest SAMPLE_SUBSCRIBE_REQUEST = new EthSubscribeRequest(
-            JsonRpcVersion.V2_0,
-            RskJsonRpcMethod.ETH_SUBSCRIBE,
-            35,
-            new EthSubscribeNewHeadsParams()
-
-    );
+    private static final EthSubscribeNewHeadsParams SAMPLE_SUBSCRIBE_PARAMS = new EthSubscribeNewHeadsParams();
 
     private RskJsonRpcHandler handler;
     private EthSubscriptionNotificationEmitter emitter;
@@ -60,19 +55,13 @@ public class RskJsonRpcHandlerTest {
 
     @Test
     public void visitUnsubscribe() {
-        EthUnsubscribeRequest unsubscribe = new EthUnsubscribeRequest(
-                JsonRpcVersion.V2_0,
-                RskJsonRpcMethod.ETH_UNSUBSCRIBE,
-                35,
-                new EthUnsubscribeParams(SAMPLE_SUBSCRIPTION_ID)
-
-        );
+        EthUnsubscribeParams params = new EthUnsubscribeParams(SAMPLE_SUBSCRIPTION_ID);
 
         when(emitter.unsubscribe(SAMPLE_SUBSCRIPTION_ID))
             .thenReturn(true);
 
         assertThat(
-                handler.visit(unsubscribe, null),
+                handler.respond(null, params),
                 is(new JsonRpcBooleanResult(true))
         );
     }
@@ -87,7 +76,7 @@ public class RskJsonRpcHandlerTest {
             .thenReturn(SAMPLE_SUBSCRIPTION_ID);
 
         assertThat(
-                handler.visit(SAMPLE_SUBSCRIBE_REQUEST, ctx),
+                handler.respond(ctx, SAMPLE_SUBSCRIBE_PARAMS),
                 is(SAMPLE_SUBSCRIPTION_ID)
         );
     }
@@ -99,8 +88,10 @@ public class RskJsonRpcHandlerTest {
         when(ctx.channel())
                 .thenReturn(channel);
 
+        JsonRpcRequest request = mock(JsonRpcRequest.class);
+        when(request.getParams()).thenReturn(SAMPLE_SUBSCRIBE_PARAMS);
         when(serializer.deserializeRequest(any()))
-                .thenReturn(SAMPLE_SUBSCRIBE_REQUEST);
+                .thenReturn(request);
         when(emitter.visit(any(EthSubscribeNewHeadsParams.class), eq(channel)))
                 .thenReturn(SAMPLE_SUBSCRIPTION_ID);
         when(serializer.serializeMessage(any()))

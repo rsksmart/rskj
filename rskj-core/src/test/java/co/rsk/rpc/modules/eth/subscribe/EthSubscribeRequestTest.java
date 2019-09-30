@@ -17,9 +17,10 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.jsonrpc.JsonRpcRequest;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
-import co.rsk.rpc.modules.RskJsonRpcRequest;
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import org.junit.Test;
 
@@ -36,7 +37,7 @@ public class EthSubscribeRequestTest {
     @Test
     public void deserializeNewHeads() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"newHeads\"]}";
-        RskJsonRpcRequest request = serializer.deserializeRequest(
+        JsonRpcRequest<RskJsonRpcRequestParams> request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
         );
 
@@ -46,7 +47,7 @@ public class EthSubscribeRequestTest {
     @Test
     public void deserializeLogsWithEmptyConfig() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\", {}]}";
-        RskJsonRpcRequest request = serializer.deserializeRequest(
+        JsonRpcRequest<RskJsonRpcRequestParams> request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
         );
 
@@ -59,7 +60,7 @@ public class EthSubscribeRequestTest {
     @Test
     public void deserializeLogsWithoutConfig() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\"]}";
-        RskJsonRpcRequest request = serializer.deserializeRequest(
+        JsonRpcRequest<RskJsonRpcRequestParams> request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
         );
 
@@ -74,7 +75,7 @@ public class EthSubscribeRequestTest {
         String logAddress = "0x3e1127bf1a673d378a8570f7a79cea4f10e20489";
         String logTopic = "0x2809c7e17bf978fbc7194c0a694b638c4215e9140cacc6c38ca36010b45697df";
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\", {\"address\":\"" + logAddress + "\",\"topics\":[\"" + logTopic + "\"]}]}";
-        RskJsonRpcRequest request = serializer.deserializeRequest(
+        JsonRpcRequest<RskJsonRpcRequestParams> request = serializer.deserializeRequest(
                 new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
         );
 
@@ -93,10 +94,8 @@ public class EthSubscribeRequestTest {
         );
     }
 
-    private <T extends EthSubscribeParams> T validateParams(RskJsonRpcRequest request, Class<T> paramsClass) {
-        assertThat(request, instanceOf(EthSubscribeRequest.class));
-        EthSubscribeRequest subscribeRequest = (EthSubscribeRequest) request;
-        EthSubscribeParams params = subscribeRequest.getParams();
+    private <T extends EthSubscribeParams> T validateParams(JsonRpcRequest<RskJsonRpcRequestParams> request, Class<T> paramsClass) {
+        RskJsonRpcRequestParams params = request.getParams();
         assertThat(params, instanceOf(paramsClass));
         return paramsClass.cast(params);
     }

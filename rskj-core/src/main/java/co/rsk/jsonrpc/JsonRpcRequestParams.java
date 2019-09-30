@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,18 +15,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.rpc.modules;
-
-import co.rsk.rpc.modules.eth.subscribe.EthSubscribeRequest;
-import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeRequest;
-import co.rsk.jsonrpc.JsonRpcResultOrError;
-import io.netty.channel.ChannelHandlerContext;
+package co.rsk.jsonrpc;
 
 /**
- * Classes implementing this interface know how to handle JSON-RPC requests on a specific Netty channel.
+ * This is the marker interface for JSON-RPC requests parameters.
  */
-public interface RskJsonRpcRequestVisitor {
-    JsonRpcResultOrError visit(EthUnsubscribeRequest request, ChannelHandlerContext ctx);
-
-    JsonRpcResultOrError visit(EthSubscribeRequest request, ChannelHandlerContext ctx);
+public interface JsonRpcRequestParams {
 }

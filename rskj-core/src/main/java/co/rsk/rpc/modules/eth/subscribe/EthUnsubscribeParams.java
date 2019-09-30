@@ -17,16 +17,20 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.jsonrpc.JsonRpcResultOrError;
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
+import co.rsk.rpc.modules.Web3Api;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.netty.channel.ChannelHandlerContext;
 
 import java.util.Objects;
 
 @JsonFormat(shape=JsonFormat.Shape.ARRAY)
 @JsonPropertyOrder({"subscriptionId"})
-public class EthUnsubscribeParams {
+public class EthUnsubscribeParams implements RskJsonRpcRequestParams {
 
     private final SubscriptionId subscriptionId;
 
@@ -38,5 +42,10 @@ public class EthUnsubscribeParams {
 
     public SubscriptionId getSubscriptionId() {
         return subscriptionId;
+    }
+
+    @Override
+    public JsonRpcResultOrError resolve(ChannelHandlerContext ctx, Web3Api api) {
+        return api.respond(ctx, this);
     }
 }

@@ -18,7 +18,8 @@
 package co.rsk.rpc;
 
 import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.rpc.modules.RskJsonRpcRequest;
+import co.rsk.jsonrpc.JsonRpcRequest;
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.io.IOException;
@@ -38,5 +39,5 @@ public interface JsonRpcSerializer {
      * @return an RskJsonRpcRequest deserialized from a JSON string in the source stream
      * @throws IOException when deserialization fails
      */
-    RskJsonRpcRequest deserializeRequest(InputStream source) throws IOException;
+    JsonRpcRequest<RskJsonRpcRequestParams> deserializeRequest(InputStream source) throws IOException;
 }

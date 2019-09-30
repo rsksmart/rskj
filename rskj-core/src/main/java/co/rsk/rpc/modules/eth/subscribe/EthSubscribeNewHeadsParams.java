@@ -18,13 +18,15 @@
 
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.jsonrpc.JsonRpcResultOrError;
+import co.rsk.rpc.modules.Web3Api;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 
 @JsonDeserialize
 public class EthSubscribeNewHeadsParams implements EthSubscribeParams {
     @Override
-    public SubscriptionId accept(EthSubscribeParamsVisitor visitor, Channel channel) {
-        return visitor.visit(this, channel);
+    public JsonRpcResultOrError resolve(ChannelHandlerContext ctx, Web3Api api) {
+        return api.respond(ctx, this);
     }
 }

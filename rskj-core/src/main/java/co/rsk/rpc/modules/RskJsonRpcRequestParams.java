@@ -17,15 +17,17 @@
  */
 package co.rsk.rpc.modules;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import co.rsk.jsonrpc.JsonRpcRequestParams;
+import co.rsk.jsonrpc.JsonRpcResultOrError;
+import io.netty.channel.ChannelHandlerContext;
 
 /**
- * The methods handled by the node.
- * It could be extended to support other RSK methods.
+ * The base interface for all RSK RPC request params.
  */
-public enum RskJsonRpcMethod {
-    @JsonProperty("eth_subscribe")
-    ETH_SUBSCRIBE,
-    @JsonProperty("eth_unsubscribe")
-    ETH_UNSUBSCRIBE
+public interface RskJsonRpcRequestParams extends JsonRpcRequestParams {
+    /**
+     * When a request is deserialized its type is unknown. We implement the visitor pattern to resolve the API method
+     * that will actually respond it.
+     */
+    JsonRpcResultOrError resolve(ChannelHandlerContext ctx, Web3Api api);
 }
