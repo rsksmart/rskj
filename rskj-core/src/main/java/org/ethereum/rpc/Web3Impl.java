@@ -500,8 +500,11 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_getUncleCountByBlockHash(String blockHash) {
         Block b = getBlockByJSonHash(blockHash);
-        long n = b.getUncleList().size();
+        if (b == null) {
+            throw blockNotFound(String.format("Block with hash %s not found", blockHash));
+        }
 
+        long n = b.getUncleList().size();
         return toQuantityJsonHex(n);
     }
 
