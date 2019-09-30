@@ -382,7 +382,7 @@ public class Web3ImplScoringTest {
                 tpm,
                 null,
                 dm,
-                null,
+                null, null,
                 Web3Mocks.getMockChannelManager(),
                 null,
                 peerScoringManager,
