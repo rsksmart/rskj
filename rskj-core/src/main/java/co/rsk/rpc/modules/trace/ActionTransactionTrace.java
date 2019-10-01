@@ -19,10 +19,50 @@
 package co.rsk.rpc.modules.trace;
 
 public class ActionTransactionTrace {
-    private String callType;
-    private String from;
-    private String to;
-    private String gas;
-    private String input;
-    private String value;
+    private final String callType;
+    private final String from;
+    private final String to;
+    private final String gas;
+    private final String input;
+    private final String value;
+
+    public ActionTransactionTrace(
+            String callType,
+            String from,
+            String to,
+            String gas,
+            String input,
+            String value
+    ) {
+        this.callType = callType;
+        this.from = from;
+        this.to = to;
+        this.gas = gas;
+        this.input = input;
+        this.value = value;
+    }
+
+    public String getCallType() {
+        return this.callType;
+    }
+
+    public String getFrom() {
+        return this.from;
+    }
+
+    public String getTo() {
+        return this.to;
+    }
+
+    public String getGas() {
+        return this.gas;
+    }
+
+    public String getInput() {
+        return this.input;
+    }
+
+    public String getValue() {
+        return this.value;
+    }
 }

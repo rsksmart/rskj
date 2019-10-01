@@ -106,6 +106,10 @@ public class ProgramTrace {
         }
     }
 
+    public ProgramInvoke getProgramInvoke() {
+        return this.programInvoke;
+    }
+
     private void saveCurrentStorage(Map<String, String> storage) {
         this.currentStorage = new HashMap<>(storage);
     }
