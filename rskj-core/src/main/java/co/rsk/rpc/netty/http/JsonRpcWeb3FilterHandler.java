@@ -93,7 +93,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
                 response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
             }
             else {
-                ctx.fireChannelRead(request);
+                ctx.fireChannelRead(request.retain());
                 return;
             }
         } else {
