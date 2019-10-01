@@ -43,7 +43,7 @@ public class RskJsonRpcHandlerTest {
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID = new SubscriptionId("0x3075");
     private static final EthSubscribeNewHeadsParams SAMPLE_SUBSCRIBE_PARAMS = new EthSubscribeNewHeadsParams();
 
-    private RskJsonRpcHandler handler;
+    private JsonRpcRequestHandler handler;
     private EthSubscriptionNotificationEmitter emitter;
     private JsonRpcSerializer<RskJsonRpcRequestParams> serializer;
 
@@ -51,7 +51,7 @@ public class RskJsonRpcHandlerTest {
     public void setUp() {
         emitter = mock(EthSubscriptionNotificationEmitter.class);
         serializer = mock(JsonRpcSerializer.class);
-        handler = new RskJsonRpcHandler(emitter, serializer);
+        handler = new JsonRpcRequestHandler(emitter, serializer);
     }
 
     @Test

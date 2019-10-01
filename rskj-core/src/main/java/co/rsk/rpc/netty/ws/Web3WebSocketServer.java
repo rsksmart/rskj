@@ -18,8 +18,11 @@
 package co.rsk.rpc.netty.ws;
 
 import co.rsk.config.InternalService;
+import co.rsk.jsonrpc.JsonRpcSerializer;
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
+import co.rsk.rpc.netty.JsonRpcRequestDecoder;
+import co.rsk.rpc.netty.JsonRpcRequestHandler;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
-import co.rsk.rpc.netty.RskJsonRpcHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -42,7 +45,8 @@ public class Web3WebSocketServer implements InternalService {
 
     private final InetAddress host;
     private final int port;
-    private final RskJsonRpcHandler jsonRpcHandler;
+    private final JsonRpcSerializer<RskJsonRpcRequestParams> jsonRpcSerializer;
+    private final JsonRpcRequestHandler jsonRpcRequestHandler;
     private final JsonRpcWeb3ServerHandler web3ServerHandler;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
@@ -51,11 +55,13 @@ public class Web3WebSocketServer implements InternalService {
     public Web3WebSocketServer(
             InetAddress host,
             int port,
-            RskJsonRpcHandler jsonRpcHandler,
+            JsonRpcSerializer<RskJsonRpcRequestParams> jsonRpcSerializer,
+            JsonRpcRequestHandler jsonRpcRequestHandler,
             JsonRpcWeb3ServerHandler web3ServerHandler) {
         this.host = host;
         this.port = port;
-        this.jsonRpcHandler = jsonRpcHandler;
+        this.jsonRpcSerializer = jsonRpcSerializer;
+        this.jsonRpcRequestHandler = jsonRpcRequestHandler;
         this.web3ServerHandler = web3ServerHandler;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
@@ -74,7 +80,8 @@ public class Web3WebSocketServer implements InternalService {
                     p.addLast(new HttpServerCodec());
                     p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
                     p.addLast(new WebSocketServerProtocolHandler("/websocket"));
-                    p.addLast(jsonRpcHandler);
+                    p.addLast(new JsonRpcRequestDecoder(jsonRpcSerializer));
+                    p.addLast(jsonRpcRequestHandler);
                     p.addLast(web3ServerHandler);
                     p.addLast(new Web3ResultWebSocketResponseHandler());
                 }

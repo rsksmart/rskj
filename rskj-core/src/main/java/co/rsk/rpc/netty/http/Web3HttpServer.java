@@ -1,7 +1,11 @@
 package co.rsk.rpc.netty.http;
 
 import co.rsk.config.InternalService;
+import co.rsk.jsonrpc.JsonRpcSerializer;
 import co.rsk.rpc.CorsConfiguration;
+import co.rsk.rpc.modules.RskJsonRpcRequestParams;
+import co.rsk.rpc.netty.JsonRpcRequestDecoder;
+import co.rsk.rpc.netty.JsonRpcRequestHandler;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -31,23 +35,29 @@ public class Web3HttpServer implements InternalService {
     private final int socketLinger;
     private final boolean reuseAddress;
     private final CorsConfiguration corsConfiguration;
+    private final JsonRpcSerializer<RskJsonRpcRequestParams> jsonRpcSerializer;
     private final JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private final JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
+    private final JsonRpcRequestHandler jsonRpcRequestHandler;
 
     public Web3HttpServer(InetAddress bindAddress,
                           int port,
                           int socketLinger,
                           boolean reuseAddress,
                           CorsConfiguration corsConfiguration,
+                          JsonRpcSerializer<RskJsonRpcRequestParams> jsonRpcSerializer,
                           JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
-                          JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
+                          JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler,
+                          JsonRpcRequestHandler jsonRpcRequestHandler) {
         this.bindAddress = bindAddress;
         this.port = port;
         this.socketLinger = socketLinger;
         this.reuseAddress = reuseAddress;
         this.corsConfiguration = corsConfiguration;
+        this.jsonRpcSerializer = jsonRpcSerializer;
         this.jsonRpcWeb3FilterHandler = jsonRpcWeb3FilterHandler;
         this.jsonRpcWeb3ServerHandler = jsonRpcWeb3ServerHandler;
+        this.jsonRpcRequestHandler = jsonRpcRequestHandler;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
     }
@@ -81,6 +91,9 @@ public class Web3HttpServer implements InternalService {
                     }
                     p.addLast(jsonRpcWeb3FilterHandler);
                     p.addLast(new Web3HttpMethodFilterHandler());
+                    p.addLast(new JsonRpcRequestDecoder(jsonRpcSerializer));
+                    p.addLast(new JsonRpcSubscriptionMethodsFilter());
+                    p.addLast(jsonRpcRequestHandler);
                     p.addLast(jsonRpcWeb3ServerHandler);
                     p.addLast(new Web3ResultHttpResponseHandler());
                 }

@@ -26,4 +26,9 @@ public abstract class JsonRpcResult implements JsonRpcResultOrError {
     public JsonRpcIdentifiableMessage responseFor(int messageId) {
         return new JsonRpcResultResponse(messageId, this);
     }
+
+    @Override
+    public int httpStatusCode() {
+        return 200; // OK
+    }
 }

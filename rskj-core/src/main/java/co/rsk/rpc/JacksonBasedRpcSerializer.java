@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.jsontype.NamedType;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * This implements basic JSON-RPC serialization using Jackson.
@@ -50,6 +51,11 @@ public class JacksonBasedRpcSerializer implements JsonRpcSerializer<RskJsonRpcRe
     @Override
     public String serializeMessage(JsonRpcMessage message) throws JsonProcessingException {
         return mapper.writeValueAsString(message);
+    }
+
+    @Override
+    public void serializeMessage(OutputStream os, JsonRpcMessage message) throws IOException {
+        mapper.writeValue(os, message);
     }
 
     @Override

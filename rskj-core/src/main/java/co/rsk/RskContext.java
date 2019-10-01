@@ -64,8 +64,8 @@ import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.rsk.RskModuleImpl;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
+import co.rsk.rpc.netty.JsonRpcRequestHandler;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
-import co.rsk.rpc.netty.RskJsonRpcHandler;
 import co.rsk.rpc.netty.http.JsonRpcWeb3FilterHandler;
 import co.rsk.rpc.netty.http.Web3HttpServer;
 import co.rsk.rpc.netty.ws.Web3WebSocketServer;
@@ -228,6 +228,7 @@ public class RskContext implements NodeBootstrapper {
     private PeersInformation peersInformation;
     private StatusResolver statusResolver;
     private JsonRpcMethodFilter jsonRpcMethodFilter;
+    private JsonRpcRequestHandler jsonRpcRequestHandler;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -1391,6 +1392,20 @@ public class RskContext implements NodeBootstrapper {
     private Web3WebSocketServer getWeb3WebSocketServer() {
         if (web3WebSocketServer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            web3WebSocketServer = new Web3WebSocketServer(
+                    rskSystemProperties.rpcWebSocketBindAddress(),
+                    rskSystemProperties.rpcWebSocketPort(),
+                    getJsonRpcSerializer(),
+                    getJsonRpcRequestHandler(),
+                    getJsonRpcWeb3ServerHandler()
+            );
+        }
+
+        return web3WebSocketServer;
+    }
+
+    private JsonRpcRequestHandler getJsonRpcRequestHandler() {
+        if (jsonRpcRequestHandler == null) {
             JacksonBasedRpcSerializer jsonRpcSerializer = getJsonRpcSerializer();
             Ethereum rsk = getRsk();
             EthSubscriptionNotificationEmitter emitter = new EthSubscriptionNotificationEmitter(
@@ -1402,16 +1417,10 @@ public class RskContext implements NodeBootstrapper {
                             new BlockchainBranchComparator(getBlockStore())
                     )
             );
-            RskJsonRpcHandler jsonRpcHandler = new RskJsonRpcHandler(emitter, jsonRpcSerializer);
-            web3WebSocketServer = new Web3WebSocketServer(
-                    rskSystemProperties.rpcWebSocketBindAddress(),
-                    rskSystemProperties.rpcWebSocketPort(),
-                    jsonRpcHandler,
-                    getJsonRpcWeb3ServerHandler()
-            );
+            jsonRpcRequestHandler = new JsonRpcRequestHandler(emitter, jsonRpcSerializer);
         }
 
-        return web3WebSocketServer;
+        return jsonRpcRequestHandler;
     }
 
     private Web3HttpServer getWeb3HttpServer() {
@@ -1423,8 +1432,10 @@ public class RskContext implements NodeBootstrapper {
                     rskSystemProperties.soLingerTime(),
                     true,
                     new CorsConfiguration(rskSystemProperties.corsDomains()),
+                    getJsonRpcSerializer(),
                     getJsonRpcWeb3FilterHandler(),
-                    getJsonRpcWeb3ServerHandler()
+                    getJsonRpcWeb3ServerHandler(),
+                    getJsonRpcRequestHandler()
             );
         }
 

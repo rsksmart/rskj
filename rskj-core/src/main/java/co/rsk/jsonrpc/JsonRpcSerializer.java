@@ -19,6 +19,7 @@ package co.rsk.jsonrpc;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Basic JSON-RPC serialization methods.
@@ -30,6 +31,12 @@ public interface JsonRpcSerializer<T extends JsonRpcRequestParams> {
      * @throws IOException when serialization fails
      */
     String serializeMessage(JsonRpcMessage message) throws IOException;
+
+    /**
+     * @param os the destination of the JsonRpcMessage serialized into a JSON string as bytes
+     * @throws IOException when serialization fails
+     */
+    void serializeMessage(OutputStream os, JsonRpcMessage message) throws IOException;
 
     /**
      * @return an RskJsonRpcRequest deserialized from a JSON string in the source stream

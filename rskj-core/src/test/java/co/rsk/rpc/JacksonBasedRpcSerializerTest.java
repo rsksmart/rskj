@@ -23,7 +23,7 @@ import co.rsk.jsonrpc.JsonRpcRequest;
 import co.rsk.jsonrpc.JsonRpcResultOrError;
 import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import co.rsk.rpc.modules.Web3Api;
-import co.rsk.rpc.netty.RskJsonRpcHandler;
+import co.rsk.rpc.netty.JsonRpcRequestHandler;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
 public class JacksonBasedRpcSerializerTest {
     /**
      * This test {@link JacksonBasedRpcSerializer} extensibility and shows how it could be used at a higher level
-     * (such as for supporting fed methods in {@link RskJsonRpcHandler}) through dynamic casts.
+     * (such as for supporting fed methods in {@link JsonRpcRequestHandler}) through dynamic casts.
      */
     @Test
     public void providesExtensibilityForNewRpcMethods() throws IOException {

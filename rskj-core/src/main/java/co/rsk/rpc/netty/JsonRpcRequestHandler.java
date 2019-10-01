@@ -24,14 +24,12 @@ import co.rsk.rpc.modules.Web3Api;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeLogsParams;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeNewHeadsParams;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
-import io.netty.buffer.ByteBufHolder;
-import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -46,15 +44,13 @@ import java.io.IOException;
  */
 
 @Sharable
-public class RskJsonRpcHandler
-        extends SimpleChannelInboundHandler<ByteBufHolder>
+public class JsonRpcRequestHandler
+        extends SimpleChannelInboundHandler<JsonRpcRequest<RskJsonRpcRequestParams>>
         implements Web3Api {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RskJsonRpcHandler.class);
-
     private final EthSubscriptionNotificationEmitter emitter;
     private final JsonRpcSerializer<RskJsonRpcRequestParams> serializer;
 
-    public RskJsonRpcHandler(
+    public JsonRpcRequestHandler(
             EthSubscriptionNotificationEmitter emitter,
             JsonRpcSerializer<RskJsonRpcRequestParams> serializer) {
         this.emitter = emitter;
@@ -62,23 +58,19 @@ public class RskJsonRpcHandler
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder msg) {
-        try {
-            JsonRpcRequest<RskJsonRpcRequestParams> request = serializer.deserializeRequest(
-                    new ByteBufInputStream(msg.copy().content())
-            );
+    protected void channelRead0(ChannelHandlerContext ctx, JsonRpcRequest<RskJsonRpcRequestParams> request)
+            throws IOException {
+        // TODO(mc) we should support the ModuleDescription method filters
+        JsonRpcResultOrError resultOrError = request.getParams().resolve(ctx, this);
+        JsonRpcIdentifiableMessage response = resultOrError.responseFor(request.getId());
+        int responseCode = resultOrError.httpStatusCode();
 
-            // TODO(mc) we should support the ModuleDescription method filters
-            JsonRpcResultOrError resultOrError = request.getParams().resolve(ctx, this);
-            JsonRpcIdentifiableMessage response = resultOrError.responseFor(request.getId());
-            ctx.writeAndFlush(new TextWebSocketFrame(serializer.serializeMessage(response)));
-            return;
-        } catch (IOException e) {
-            LOGGER.trace("Not a known or valid JsonRpcRequest", e);
+        ByteBuf responseContent = Unpooled.buffer();
+        try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent)) {
+            serializer.serializeMessage(os, response);
         }
 
-        // delegate to the next handler if the message can't be matched to a known JSON-RPC request
-        ctx.fireChannelRead(msg.retain());
+        ctx.fireChannelRead(new Web3Result(responseContent, responseCode));
     }
 
     @Override
