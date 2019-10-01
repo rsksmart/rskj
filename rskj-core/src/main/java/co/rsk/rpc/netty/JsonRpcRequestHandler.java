@@ -60,7 +60,6 @@ public class JsonRpcRequestHandler
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, JsonRpcRequest<RskJsonRpcRequestParams> request)
             throws IOException {
-        // TODO(mc) we should support the ModuleDescription method filters
         JsonRpcResultOrError resultOrError = request.getParams().resolve(ctx, this);
         JsonRpcIdentifiableMessage response = resultOrError.responseFor(request.getId());
         int responseCode = resultOrError.httpStatusCode();

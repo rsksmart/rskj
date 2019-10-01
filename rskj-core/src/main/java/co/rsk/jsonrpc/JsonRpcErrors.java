@@ -28,4 +28,8 @@ public class JsonRpcErrors {
     public static JsonRpcError internal() {
         return new JsonRpcError(-32603, "Internal error");
     }
+
+    public static JsonRpcError methodNotEnabled() {
+        return new JsonRpcError(-32604, "Method not enabled");
+    }
 }

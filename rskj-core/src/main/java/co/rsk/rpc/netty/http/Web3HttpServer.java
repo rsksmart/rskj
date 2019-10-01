@@ -3,8 +3,10 @@ package co.rsk.rpc.netty.http;
 import co.rsk.config.InternalService;
 import co.rsk.jsonrpc.JsonRpcSerializer;
 import co.rsk.rpc.CorsConfiguration;
+import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import co.rsk.rpc.netty.JsonRpcRequestDecoder;
+import co.rsk.rpc.netty.JsonRpcRequestFilter;
 import co.rsk.rpc.netty.JsonRpcRequestHandler;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
@@ -36,6 +38,7 @@ public class Web3HttpServer implements InternalService {
     private final boolean reuseAddress;
     private final CorsConfiguration corsConfiguration;
     private final JsonRpcSerializer<RskJsonRpcRequestParams> jsonRpcSerializer;
+    private final JsonRpcMethodFilter jsonRpcMethodFilter;
     private final JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private final JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
     private final JsonRpcRequestHandler jsonRpcRequestHandler;
@@ -46,6 +49,7 @@ public class Web3HttpServer implements InternalService {
                           boolean reuseAddress,
                           CorsConfiguration corsConfiguration,
                           JsonRpcSerializer<RskJsonRpcRequestParams> jsonRpcSerializer,
+                          JsonRpcMethodFilter jsonRpcMethodFilter,
                           JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
                           JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler,
                           JsonRpcRequestHandler jsonRpcRequestHandler) {
@@ -55,6 +59,7 @@ public class Web3HttpServer implements InternalService {
         this.reuseAddress = reuseAddress;
         this.corsConfiguration = corsConfiguration;
         this.jsonRpcSerializer = jsonRpcSerializer;
+        this.jsonRpcMethodFilter = jsonRpcMethodFilter;
         this.jsonRpcWeb3FilterHandler = jsonRpcWeb3FilterHandler;
         this.jsonRpcWeb3ServerHandler = jsonRpcWeb3ServerHandler;
         this.jsonRpcRequestHandler = jsonRpcRequestHandler;
@@ -93,6 +98,7 @@ public class Web3HttpServer implements InternalService {
                     p.addLast(new Web3HttpMethodFilterHandler());
                     p.addLast(new JsonRpcRequestDecoder(jsonRpcSerializer));
                     p.addLast(new JsonRpcSubscriptionMethodsFilter());
+                    p.addLast(new JsonRpcRequestFilter(jsonRpcSerializer, jsonRpcMethodFilter));
                     p.addLast(jsonRpcRequestHandler);
                     p.addLast(jsonRpcWeb3ServerHandler);
                     p.addLast(new Web3ResultHttpResponseHandler());

@@ -102,7 +102,7 @@ public class Web3HttpServerTest {
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, methodFilter);
         JacksonBasedRpcSerializer serializer = new JacksonBasedRpcSerializer();
         JsonRpcRequestHandler handler = new JsonRpcRequestHandler(null, serializer);
-        Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, serializer, filterHandler, serverHandler, handler);
+        Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, serializer, methodFilter, filterHandler, serverHandler, handler);
         server.start();
         try {
             Response response = sendJsonRpcMessage(randomPort, contentType, host);

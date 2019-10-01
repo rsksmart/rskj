@@ -1396,6 +1396,7 @@ public class RskContext implements NodeBootstrapper {
                     rskSystemProperties.rpcWebSocketBindAddress(),
                     rskSystemProperties.rpcWebSocketPort(),
                     getJsonRpcSerializer(),
+                    getJsonRpcMethodFilter(),
                     getJsonRpcRequestHandler(),
                     getJsonRpcWeb3ServerHandler()
             );
@@ -1433,6 +1434,7 @@ public class RskContext implements NodeBootstrapper {
                     true,
                     new CorsConfiguration(rskSystemProperties.corsDomains()),
                     getJsonRpcSerializer(),
+                    getJsonRpcMethodFilter(),
                     getJsonRpcWeb3FilterHandler(),
                     getJsonRpcWeb3ServerHandler(),
                     getJsonRpcRequestHandler()

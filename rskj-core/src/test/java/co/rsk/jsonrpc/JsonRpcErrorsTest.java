@@ -36,4 +36,13 @@ public class JsonRpcErrorsTest {
                 is(message)
         );
     }
+
+    @Test
+    public void serializeMethodNotEnabled() throws IOException {
+        String message = "{\"code\":-32604,\"message\":\"Method not enabled\"}";
+        assertThat(
+                serializer.writeValueAsString(JsonRpcErrors.methodNotEnabled()),
+                is(message)
+        );
+    }
 }

@@ -77,7 +77,7 @@ public class Web3WebSocketServerTest {
         JsonRpcRequestHandler handler = new JsonRpcRequestHandler(null, serializer);
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, methodFilter);
 
-        Web3WebSocketServer websocketServer = new Web3WebSocketServer(InetAddress.getLoopbackAddress(), randomPort, serializer, handler, serverHandler);
+        Web3WebSocketServer websocketServer = new Web3WebSocketServer(InetAddress.getLoopbackAddress(), randomPort, serializer, methodFilter, handler, serverHandler);
         websocketServer.start();
 
         OkHttpClient wsClient = new OkHttpClient();
