@@ -92,7 +92,7 @@ public class PeersInformation {
             return peerStatus;
         }
 
-        return this.registerPeer(nodeID);
+        return this.registerPeer(peer);
     }
 
     public SyncPeerStatus getPeer(NodeID nodeID) {
@@ -137,9 +137,9 @@ public class PeersInformation {
         return peerStatuses.keySet();
     }
 
-    public SyncPeerStatus registerPeer(NodeID nodeID) {
+    public SyncPeerStatus registerPeer(MessageChannel peer) {
         SyncPeerStatus peerStatus = new SyncPeerStatus();
-        peerStatuses.put(nodeID, peerStatus);
+        peerStatuses.put(peer.getPeerNodeID(), peerStatus);
         return peerStatus;
     }
 

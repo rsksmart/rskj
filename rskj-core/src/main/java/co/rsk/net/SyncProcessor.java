@@ -86,7 +86,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processStatus(MessageChannel sender, Status status) {
         logger.debug("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.shortHash(status.getBestBlockHash()));
-        peersInformation.registerPeer(sender.getPeerNodeID()).setStatus(status);
+        peersInformation.registerPeer(sender).setStatus(status);
         syncState.newPeerStatus();
     }
 

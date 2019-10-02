@@ -2,6 +2,7 @@ package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
+import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -108,7 +109,7 @@ public class DecidingSyncStateTest {
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
-        knownPeers.registerPeer(new NodeID(HashUtil.randomPeerId()));
+        knownPeers.registerPeer(new SimpleMessageChannel(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(syncConfiguration.getTimeoutWaitingPeers().minusSeconds(1L));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -126,7 +127,7 @@ public class DecidingSyncStateTest {
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
-        knownPeers.registerPeer(new NodeID(HashUtil.randomPeerId()));
+        knownPeers.registerPeer(new SimpleMessageChannel(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -144,7 +145,7 @@ public class DecidingSyncStateTest {
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
-        knownPeers.registerPeer(new NodeID(HashUtil.randomPeerId()));
+        knownPeers.registerPeer(new SimpleMessageChannel(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
