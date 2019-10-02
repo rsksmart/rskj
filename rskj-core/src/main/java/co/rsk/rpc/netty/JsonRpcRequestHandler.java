@@ -21,6 +21,8 @@ import co.rsk.jsonrpc.*;
 import co.rsk.rpc.EthSubscriptionNotificationEmitter;
 import co.rsk.rpc.modules.RskJsonRpcRequestParams;
 import co.rsk.rpc.modules.Web3Api;
+import co.rsk.rpc.modules.eth.EthBlockNumberParams;
+import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeLogsParams;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeNewHeadsParams;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
@@ -47,12 +49,15 @@ import java.io.IOException;
 public class JsonRpcRequestHandler
         extends SimpleChannelInboundHandler<JsonRpcRequest<RskJsonRpcRequestParams>>
         implements Web3Api {
+    private final EthModule ethModule;
     private final EthSubscriptionNotificationEmitter emitter;
     private final JsonRpcSerializer<RskJsonRpcRequestParams> serializer;
 
     public JsonRpcRequestHandler(
+            EthModule ethModule,
             EthSubscriptionNotificationEmitter emitter,
             JsonRpcSerializer<RskJsonRpcRequestParams> serializer) {
+        this.ethModule = ethModule;
         this.emitter = emitter;
         this.serializer = serializer;
     }
@@ -76,6 +81,12 @@ public class JsonRpcRequestHandler
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         emitter.unsubscribe(ctx.channel());
         super.channelInactive(ctx);
+    }
+
+    @Override
+    public JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthBlockNumberParams params) {
+        long blockNumber = ethModule.blockNumber();
+        return new JsonRpcQuantityResult(blockNumber);
     }
 
     @Override

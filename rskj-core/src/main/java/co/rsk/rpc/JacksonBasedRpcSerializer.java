@@ -21,6 +21,7 @@ import co.rsk.jsonrpc.JsonRpcMessage;
 import co.rsk.jsonrpc.JsonRpcRequest;
 import co.rsk.jsonrpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequestParams;
+import co.rsk.rpc.modules.eth.EthBlockNumberParams;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeParams;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -42,6 +43,7 @@ public class JacksonBasedRpcSerializer implements JsonRpcSerializer<RskJsonRpcRe
     public JacksonBasedRpcSerializer(NamedType... extraTypes) {
         mapper = new ObjectMapper();
         mapper.registerSubtypes(
+                new NamedType(EthBlockNumberParams.class, "eth_blockNumber"),
                 new NamedType(EthSubscribeParams.class, "eth_subscribe"),
                 new NamedType(EthUnsubscribeParams.class, "eth_unsubscribe")
         );

@@ -74,7 +74,7 @@ public class Web3WebSocketServerTest {
 
         JsonRpcMethodFilter methodFilter = new JsonRpcMethodFilter(Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList())));
         JacksonBasedRpcSerializer serializer = new JacksonBasedRpcSerializer();
-        JsonRpcRequestHandler handler = new JsonRpcRequestHandler(null, serializer);
+        JsonRpcRequestHandler handler = new JsonRpcRequestHandler(null, null, serializer);
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, methodFilter);
 
         Web3WebSocketServer websocketServer = new Web3WebSocketServer(InetAddress.getLoopbackAddress(), randomPort, serializer, methodFilter, handler, serverHandler);

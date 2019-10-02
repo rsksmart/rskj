@@ -18,6 +18,7 @@
 package co.rsk.rpc.modules;
 
 import co.rsk.jsonrpc.JsonRpcResultOrError;
+import co.rsk.rpc.modules.eth.EthBlockNumberParams;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeLogsParams;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeNewHeadsParams;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeParams;
@@ -30,6 +31,8 @@ import io.netty.channel.ChannelHandlerContext;
  * This boilerplate is the price to pay to have a strongly-typed API with no reflection.
  */
 public interface Web3Api {
+    JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthBlockNumberParams params);
+
     JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthSubscribeNewHeadsParams params);
 
     JsonRpcResultOrError respond(ChannelHandlerContext ctx, EthSubscribeLogsParams params);

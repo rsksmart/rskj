@@ -364,20 +364,6 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_blockNumber() {
-        Block bestBlock = blockchain.getBestBlock();
-
-        long b = 0;
-        if (bestBlock != null) {
-            b = bestBlock.getNumber();
-        }
-
-        logger.debug("eth_blockNumber(): {}", b);
-
-        return toQuantityJsonHex(b);
-    }
-
-    @Override
     public String eth_getBalance(String address, String block) throws Exception {
         /* HEX String  - an integer block number
         *  String "earliest"  for the earliest/genesis block

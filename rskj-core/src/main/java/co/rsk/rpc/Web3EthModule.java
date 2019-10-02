@@ -71,8 +71,6 @@ public interface Web3EthModule {
 
     String eth_gasPrice();
 
-    String eth_blockNumber();
-
     String eth_getBalance(String address, String block) throws Exception;
 
     String eth_getBalance(String address) throws Exception;

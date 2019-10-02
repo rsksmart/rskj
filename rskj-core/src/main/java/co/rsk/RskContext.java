@@ -1418,7 +1418,7 @@ public class RskContext implements NodeBootstrapper {
                             new BlockchainBranchComparator(getBlockStore())
                     )
             );
-            jsonRpcRequestHandler = new JsonRpcRequestHandler(emitter, jsonRpcSerializer);
+            jsonRpcRequestHandler = new JsonRpcRequestHandler(getEthModule(), emitter, jsonRpcSerializer);
         }
 
         return jsonRpcRequestHandler;

@@ -101,6 +101,10 @@ public class EthModule
         return ethModuleWallet.accounts();
     }
 
+    public long blockNumber() {
+        return blockchain.getBestBlock().getNumber();
+    }
+
     public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
         Block bestBlock = blockchain.getBestBlock();
         Repository track = repositoryLocator.startTrackingAt(bestBlock.getHeader());
