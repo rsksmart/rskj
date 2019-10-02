@@ -22,13 +22,17 @@ package org.ethereum.vm.trace;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 
+import java.util.List;
+
 public class ProgramSubTrace {
     private final ProgramInvoke programInvoke;
     private final ProgramResult programResult;
+    private final List<ProgramSubTrace> subtraces;
 
-    public ProgramSubTrace(ProgramInvoke programInvoke, ProgramResult programResult) {
+    public ProgramSubTrace(ProgramInvoke programInvoke, ProgramResult programResult, List<ProgramSubTrace> subtraces) {
         this.programInvoke = programInvoke;
         this.programResult = programResult;
+        this.subtraces = subtraces;
     }
 
     public ProgramInvoke getProgramInvoke() {
@@ -38,4 +42,6 @@ public class ProgramSubTrace {
     public ProgramResult getProgramResult() {
         return this.programResult;
     }
+
+    public List<ProgramSubTrace> getSubtraces() { return this.subtraces; }
 }

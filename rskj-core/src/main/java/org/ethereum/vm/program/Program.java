@@ -591,6 +591,7 @@ public class Program {
             VM vm = new VM(config, precompiledContracts);
             Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
             vm.play(program);
+            getTrace().addSubTrace(new ProgramSubTrace(program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
             programResult = program.getResult();
         }
 
@@ -818,7 +819,7 @@ public class Program {
         vm.play(program);
         childResult  = program.getResult();
 
-        getTrace().addSubTrace(new ProgramSubTrace(program.getProgramInvoke(), program.getResult()));
+        getTrace().addSubTrace(new ProgramSubTrace(program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
 
         getTrace().merge(program.getTrace());
         getResult().merge(childResult);

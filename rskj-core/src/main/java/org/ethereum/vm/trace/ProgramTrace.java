@@ -234,7 +234,7 @@ public class ProgramTrace {
         this.subtraces.add(programSubTrace);
     }
 
-    public List<ProgramSubTrace> getSubTraces() {
+    public List<ProgramSubTrace> getSubtraces() {
         return this.subtraces;
     }
 
