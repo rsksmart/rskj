@@ -18,6 +18,8 @@
 
 package co.rsk.rpc.modules.trace;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+
 public class ActionTransactionTrace {
     private final String callType;
     private final String from;
@@ -42,26 +44,32 @@ public class ActionTransactionTrace {
         this.value = value;
     }
 
+    @JsonGetter("callType")
     public String getCallType() {
         return this.callType;
     }
 
+    @JsonGetter("from")
     public String getFrom() {
         return this.from;
     }
 
+    @JsonGetter("to")
     public String getTo() {
         return this.to;
     }
 
+    @JsonGetter("gas")
     public String getGas() {
         return this.gas;
     }
 
+    @JsonGetter("input")
     public String getInput() {
         return this.input;
     }
 
+    @JsonGetter("value")
     public String getValue() {
         return this.value;
     }

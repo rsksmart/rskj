@@ -20,6 +20,7 @@
 package co.rsk.rpc.modules.trace;
 
 import co.rsk.core.RskAddress;
+import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -28,6 +29,23 @@ import org.ethereum.vm.trace.ProgramTrace;
 public class TraceTransformer {
     private TraceTransformer() {
 
+    }
+
+    public static TransactionTrace toTrace(ProgramTrace trace, TransactionInfo txInfo, long blockNumber) {
+        ActionTransactionTrace action = toAction(trace);
+        String blockHash = TypeConverter.toUnformattedJsonHex(txInfo.getBlockHash());
+        String transactionHash = txInfo.getReceipt().getTransaction().getHash().toJsonString();
+        int transactionPosition = txInfo.getIndex();
+        String type = "call";
+
+        return new TransactionTrace(
+            action,
+            blockHash,
+            blockNumber,
+            transactionHash,
+            transactionPosition,
+            type
+        );
     }
 
     public static ActionTransactionTrace toAction(ProgramTrace trace) {
