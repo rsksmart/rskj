@@ -1,4 +1,4 @@
-package co.rsk.rpc.netty;
+package co.rsk.rpc.netty.http;
 
 import co.rsk.rpc.OriginValidator;
 import io.netty.channel.ChannelFutureListener;
