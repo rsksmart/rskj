@@ -20,11 +20,11 @@
 package co.rsk.rpc.modules.trace;
 
 import co.rsk.core.RskAddress;
-import com.sun.xml.internal.bind.v2.runtime.reflect.ListTransducedAccessorImpl;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.trace.ProgramSubTrace;
 import org.ethereum.vm.trace.ProgramTrace;
 
 import java.util.ArrayList;
@@ -46,10 +46,19 @@ public class TraceTransformer {
     private static void addTrace(List<TransactionTrace> traces, ProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
         traces.add(toTrace(trace, txInfo, blockNumber, traceAddress));
 
-        int nsubtraces = trace.getSubTraces().size();
+        int nsubtraces = trace.getSubtraces().size();
 
         for (int k = 0; k < nsubtraces; k++)
-            traces.add(toTrace(trace.getSubTraces().get(k).getProgramInvoke(), txInfo, blockNumber, new TraceAddress(traceAddress, k)));
+            addTrace(traces, trace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
+    }
+
+    private static void addTrace(List<TransactionTrace> traces, ProgramSubTrace subtrace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
+        traces.add(toTrace(subtrace.getProgramInvoke(), txInfo, blockNumber, traceAddress));
+
+        int nsubtraces = subtrace.getSubtraces().size();
+
+        for (int k = 0; k < nsubtraces; k++)
+            addTrace(traces, subtrace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
     }
 
     public static TransactionTrace toTrace(ProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
@@ -58,7 +67,7 @@ public class TraceTransformer {
         String transactionHash = txInfo.getReceipt().getTransaction().getHash().toJsonString();
         int transactionPosition = txInfo.getIndex();
         String type = "call";
-        int subtraces = trace.getSubTraces().size();
+        int subtraces = trace.getSubtraces().size();
 
         return new TransactionTrace(
             action,
