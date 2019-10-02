@@ -15,23 +15,22 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.rpc.netty;
+package co.rsk.rpc.netty.ws;
 
-import io.netty.channel.ChannelFutureListener;
+import co.rsk.rpc.netty.Web3Result;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
-public class Web3HttpMethodFilterHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class Web3ResultWebSocketResponseHandler extends SimpleChannelInboundHandler<Web3Result> {
+
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
-        HttpMethod httpMethod = request.getMethod();
-        if (HttpMethod.POST.equals(httpMethod)) {
-            // retain the request so it isn't released automatically by SimpleChannelInboundHandler
-            ctx.fireChannelRead(request.retain());
-        } else {
-            HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_IMPLEMENTED);
-            ctx.write(response).addListener(ChannelFutureListener.CLOSE);
-        }
+    protected void channelRead0(ChannelHandlerContext ctx, Web3Result msg) {
+        ctx.write(new TextWebSocketFrame(msg.getContent()));
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) {
+        ctx.flush();
     }
 }

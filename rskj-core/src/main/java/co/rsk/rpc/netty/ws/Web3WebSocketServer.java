@@ -15,9 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk.rpc.netty;
+package co.rsk.rpc.netty.ws;
 
 import co.rsk.config.InternalService;
+import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
+import co.rsk.rpc.netty.RskJsonRpcHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;

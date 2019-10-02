@@ -1,7 +1,8 @@
-package co.rsk.rpc.netty;
+package co.rsk.rpc.netty.http;
 
 import co.rsk.config.InternalService;
 import co.rsk.rpc.CorsConfiguration;
+import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;

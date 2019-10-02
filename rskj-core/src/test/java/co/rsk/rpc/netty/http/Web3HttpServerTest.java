@@ -1,7 +1,8 @@
-package co.rsk.rpc.netty;
+package co.rsk.rpc.netty.http;
 
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;

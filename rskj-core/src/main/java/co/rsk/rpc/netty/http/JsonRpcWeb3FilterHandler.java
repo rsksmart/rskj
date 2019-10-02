@@ -1,4 +1,4 @@
-package co.rsk.rpc.netty;
+package co.rsk.rpc.netty.http;
 
 import co.rsk.rpc.OriginValidator;
 import io.netty.channel.ChannelFutureListener;
@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,7 +30,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
 
     public JsonRpcWeb3FilterHandler(String corsDomains, InetAddress rpcAddress, List<String> rpcHost) {
         this.originValidator = new OriginValidator(corsDomains);
-        this.rpcHost = rpcHost;
+        this.rpcHost = Collections.unmodifiableList(rpcHost);
         this.rpcAddress = rpcAddress;
         this.acceptedHosts = getAcceptedHosts();
     }
