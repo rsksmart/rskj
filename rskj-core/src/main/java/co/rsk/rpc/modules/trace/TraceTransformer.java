@@ -20,23 +20,45 @@
 package co.rsk.rpc.modules.trace;
 
 import co.rsk.core.RskAddress;
+import com.sun.xml.internal.bind.v2.runtime.reflect.ListTransducedAccessorImpl;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.trace.ProgramTrace;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class TraceTransformer {
     private TraceTransformer() {
 
     }
 
-    public static TransactionTrace toTrace(ProgramTrace trace, TransactionInfo txInfo, long blockNumber) {
+    public static List<TransactionTrace> toTraces(ProgramTrace trace, TransactionInfo txInfo, long blockNumber) {
+        List<TransactionTrace> traces = new ArrayList<>();
+
+        addTrace(traces, trace, txInfo, blockNumber, new TraceAddress());
+
+        return traces;
+    }
+
+    private static void addTrace(List<TransactionTrace> traces, ProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
+        traces.add(toTrace(trace, txInfo, blockNumber, traceAddress));
+
+        int nsubtraces = trace.getSubTraces().size();
+
+        for (int k = 0; k < nsubtraces; k++)
+            traces.add(toTrace(trace.getSubTraces().get(k).getProgramInvoke(), txInfo, blockNumber, new TraceAddress(traceAddress, k)));
+    }
+
+    public static TransactionTrace toTrace(ProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
         ActionTransactionTrace action = toAction(trace);
         String blockHash = TypeConverter.toUnformattedJsonHex(txInfo.getBlockHash());
         String transactionHash = txInfo.getReceipt().getTransaction().getHash().toJsonString();
         int transactionPosition = txInfo.getIndex();
         String type = "call";
+        int subtraces = trace.getSubTraces().size();
 
         return new TransactionTrace(
             action,
@@ -44,13 +66,39 @@ public class TraceTransformer {
             blockNumber,
             transactionHash,
             transactionPosition,
-            type
+            type,
+            subtraces,
+            traceAddress
+        );
+    }
+
+    public static TransactionTrace toTrace(ProgramInvoke invoke, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
+        ActionTransactionTrace action = toAction(invoke);
+        String blockHash = TypeConverter.toUnformattedJsonHex(txInfo.getBlockHash());
+        String transactionHash = txInfo.getReceipt().getTransaction().getHash().toJsonString();
+        int transactionPosition = txInfo.getIndex();
+        String type = "call";
+        int subtraces = 0;
+
+        return new TransactionTrace(
+                action,
+                blockHash,
+                blockNumber,
+                transactionHash,
+                transactionPosition,
+                type,
+                subtraces,
+                traceAddress
         );
     }
 
     public static ActionTransactionTrace toAction(ProgramTrace trace) {
         ProgramInvoke invoke = trace.getProgramInvoke();
 
+        return toAction(invoke);
+    }
+
+    public static ActionTransactionTrace toAction(ProgramInvoke invoke) {
         String from = new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
         String to = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
         String gas = TypeConverter.toQuantityJsonHex(invoke.getGas());

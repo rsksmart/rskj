@@ -18,6 +18,8 @@
 
 package co.rsk.rpc.modules.trace;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public class TraceAddress {
     private static final int[] EMPTY_ADDRESS = new int[0];
 
@@ -34,6 +36,7 @@ public class TraceAddress {
         this.index = index;
     }
 
+    @JsonValue
     public int[] toAddress() {
         if (this.parent == null) {
             return EMPTY_ADDRESS;

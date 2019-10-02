@@ -32,6 +32,8 @@ import org.ethereum.vm.trace.Serializers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 public class TraceModuleImpl implements TraceModule {
@@ -77,8 +79,8 @@ public class TraceModuleImpl implements TraceModule {
             return null;
         }
 
-        TransactionTrace trace = TraceTransformer.toTrace(programTrace, txInfo, block.getNumber());
+        List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
         ObjectMapper mapper = Serializers.createMapper(true);
-        return mapper.valueToTree(trace);
+        return mapper.valueToTree(traces);
     }
 }
