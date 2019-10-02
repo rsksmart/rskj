@@ -227,6 +227,7 @@ public class RskContext implements NodeBootstrapper {
     private BridgeSupportFactory bridgeSupportFactory;
     private PeersInformation peersInformation;
     private StatusResolver statusResolver;
+    private JsonRpcMethodFilter jsonRpcMethodFilter;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -1373,13 +1374,18 @@ public class RskContext implements NodeBootstrapper {
 
     private JsonRpcWeb3ServerHandler getJsonRpcWeb3ServerHandler() {
         if (jsonRpcWeb3ServerHandler == null) {
-            jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(
-                    getWeb3(),
-                    getRskSystemProperties().getRpcModules()
-            );
+            jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(getWeb3(), getJsonRpcMethodFilter());
         }
 
         return jsonRpcWeb3ServerHandler;
+    }
+
+    private JsonRpcMethodFilter getJsonRpcMethodFilter() {
+        if (jsonRpcMethodFilter == null) {
+            jsonRpcMethodFilter = new JsonRpcMethodFilter(getRskSystemProperties().getRpcModules());
+        }
+
+        return jsonRpcMethodFilter;
     }
 
     private Web3WebSocketServer getWeb3WebSocketServer() {

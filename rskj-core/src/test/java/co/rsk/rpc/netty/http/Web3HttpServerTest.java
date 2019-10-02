@@ -1,6 +1,7 @@
 package co.rsk.rpc.netty.http;
 
 import co.rsk.rpc.CorsConfiguration;
+import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -94,9 +95,9 @@ public class Web3HttpServerTest {
 
         int randomPort = 9999;//new ServerSocket(0).getLocalPort();
 
-        List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
+        JsonRpcMethodFilter methodFilter = new JsonRpcMethodFilter(Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList())));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", rpcAddress, rpcHost);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, methodFilter);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler);
         server.start();
         try {
