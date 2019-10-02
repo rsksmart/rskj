@@ -2,47 +2,63 @@ package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
-import org.ethereum.core.Blockchain;
+import org.ethereum.db.BlockStore;
 
 import java.util.Optional;
 
 public class FindingConnectionPointSyncState extends BaseSyncState {
-    private final Blockchain blockchain;
+
+    private final BlockStore blockStore;
     private final NodeID selectedPeerId;
-    private ConnectionPointFinder connectionPointFinder;
+    private final ConnectionPointFinder connectionPointFinder;
 
     public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration,
                                            SyncEventsHandler syncEventsHandler,
-                                           Blockchain blockchain,
+                                           BlockStore blockStore,
                                            NodeID selectedPeerId,
-                                           long bestBlockNumber) {
+                                           long peerBestBlockNumber) {
         super(syncEventsHandler, syncConfiguration);
-        this.blockchain = blockchain;
+        long minNumber = blockStore.getMinNumber();
+
+        this.blockStore = blockStore;
         this.selectedPeerId = selectedPeerId;
-        this.connectionPointFinder = new ConnectionPointFinder(bestBlockNumber);
+        this.connectionPointFinder = new ConnectionPointFinder(
+                minNumber,
+                peerBestBlockNumber);
     }
 
     @Override
     public void newConnectionPointData(byte[] hash) {
-        if (isKnownBlock(hash)) {
+        boolean knownBlock = isKnownBlock(hash);
+        Optional<Long> cp = connectionPointFinder.getConnectionPoint();
+        if (cp.isPresent()) {
+            if (knownBlock) {
+                syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId);
+            } else {
+                syncEventsHandler.onSyncIssue("Connection point not found with node {}", selectedPeerId);
+            }
+             return;
+        }
+
+        if (knownBlock) {
             connectionPointFinder.updateFound();
         } else {
             connectionPointFinder.updateNotFound();
         }
 
-        Optional<Long> cp = connectionPointFinder.getConnectionPoint();
-        if (!cp.isPresent()) {
-            this.resetTimeElapsed();
-            trySendRequest();
+        cp = connectionPointFinder.getConnectionPoint();
+        // No need to ask for genesis hash
+        if (cp.isPresent() && cp.get() == 0L) {
+            syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId);
             return;
         }
 
-        // connection point found
-        syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeerId);
+        this.resetTimeElapsed();
+        trySendRequest();
     }
 
     private boolean isKnownBlock(byte[] hash) {
-        return blockchain.getBlockByHash(hash) != null;
+        return blockStore.isBlockExist(hash);
     }
 
     private void trySendRequest() {

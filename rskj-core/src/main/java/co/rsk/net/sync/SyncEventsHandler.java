@@ -2,6 +2,7 @@ package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
@@ -27,6 +28,8 @@ public interface SyncEventsHandler {
 
     void startSyncing(NodeID nodeID);
 
+    void backwardDownloadBodies(NodeID peerId, Block parent, List<BlockHeader> toRequest);
+
     void stopSyncing();
 
     void onErrorSyncing(NodeID peerId, String message, EventType eventType, Object... arguments);
@@ -34,4 +37,6 @@ public interface SyncEventsHandler {
     void onSyncIssue(String message, Object... arguments);
 
     void startFindingConnectionPoint(NodeID peerId);
+
+    void backwardSyncing(NodeID peerId);
 }

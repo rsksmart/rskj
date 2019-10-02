@@ -43,7 +43,7 @@ import java.util.*;
 public class NodeBlockProcessor implements BlockProcessor {
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
 
-    private final BlockStore store;
+    private final NetBlockStore store;
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation;
     // keep tabs on which nodes know which blocks.
@@ -61,7 +61,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param blockSyncService
      */
     public NodeBlockProcessor(
-            @Nonnull final BlockStore store,
+            @Nonnull final NetBlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final BlockSyncService blockSyncService,
@@ -126,7 +126,6 @@ public class NodeBlockProcessor implements BlockProcessor {
 
     private void processBlockHeader(@Nonnull final MessageChannel sender, @Nonnull final BlockHeader header) {
         sender.sendMessage(new GetBlockMessage(header.getHash().getBytes()));
-
         this.store.saveHeader(header);
     }
 
@@ -240,6 +239,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processBlockHashRequest(@Nonnull final MessageChannel sender, long requestId, long height) {
         logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getPeerNodeID());
+
         if (height == 0){
             return;
         }

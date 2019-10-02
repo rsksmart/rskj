@@ -149,7 +149,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     private static NodeBlockProcessor createNodeBlockProcessor(BlockChainImpl blockChain) {
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();

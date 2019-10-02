@@ -24,9 +24,6 @@ import co.rsk.net.messages.Message;
 
 import java.net.InetAddress;
 
-/**
- * Created by ajlopez on 5/14/2016.
- */
 public class SimpleNodeChannel implements MessageChannel {
     private SimpleNode sender;
     private SimpleNode receiver;
@@ -36,8 +33,9 @@ public class SimpleNodeChannel implements MessageChannel {
         this.sender = sender;
         this.receiver = receiver;
 
-        if (receiver != null)
+        if (receiver != null) {
             this.nodeID = receiver.getNodeID();
+        }
     }
 
     public void sendMessage(Message message) {
@@ -48,14 +46,6 @@ public class SimpleNodeChannel implements MessageChannel {
     public NodeID getPeerNodeID() {
         return this.nodeID;
     }
-
-    @Override
-    public void setPeerNodeID(NodeID peerNodeId) {
-
-    }
-
-    @Override
-    public void setAddress(InetAddress address) { }
 
     @Override
     public InetAddress getAddress() { return null; }

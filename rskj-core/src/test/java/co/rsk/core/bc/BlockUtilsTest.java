@@ -20,7 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.BlockStore;
+import co.rsk.net.NetBlockStore;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
@@ -63,7 +63,7 @@ public class BlockUtilsTest {
     @Test
     public void unknowAncestorsHashes() {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
 
         Block genesis = blockChain.getBestBlock();
 
@@ -112,7 +112,7 @@ public class BlockUtilsTest {
         BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
         BlockChainImpl blockChain = blockChainBuilder.build();
         Genesis genesis = (Genesis) blockChain.getBestBlock();
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
 
         BlockBuilder blockBuilder = new BlockBuilder(blockChain, null,
                                                      blockChainBuilder.getBlockStore()

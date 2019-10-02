@@ -51,6 +51,8 @@ import co.rsk.rpc.*;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.*;
+import co.rsk.rpc.modules.eth.subscribe.BlockHeaderNotificationEmitter;
+import co.rsk.rpc.modules.eth.subscribe.LogsNotificationEmitter;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.evm.EvmModuleImpl;
 import co.rsk.rpc.modules.mnr.MnrModule;
@@ -66,7 +68,10 @@ import co.rsk.rpc.netty.*;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
-import co.rsk.trie.*;
+import co.rsk.trie.MultiTrieStore;
+import co.rsk.trie.TrieConverter;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.ethereum.config.Constants;
@@ -114,7 +119,9 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.*;
 import java.util.stream.Stream;
@@ -139,7 +146,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockFactory blockFactory;
     private BlockChainLoader blockChainLoader;
     private org.ethereum.db.BlockStore blockStore;
-    private co.rsk.net.BlockStore netBlockStore;
+    private NetBlockStore netBlockStore;
     private TrieStore trieStore;
     private GenesisLoader genesisLoader;
     private Genesis genesis;
@@ -215,6 +222,7 @@ public class RskContext implements NodeBootstrapper {
     private PrecompiledContracts precompiledContracts;
     private BridgeSupportFactory bridgeSupportFactory;
     private PeersInformation peersInformation;
+    private StatusResolver statusResolver;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -894,8 +902,9 @@ public class RskContext implements NodeBootstrapper {
                 rskSystemProperties.getTimeoutWaitingRequest(),
                 rskSystemProperties.getExpirationTimePeerStatus(),
                 rskSystemProperties.getMaxSkeletonChunks(),
-                rskSystemProperties.getChunkSize()
-        );
+                rskSystemProperties.getChunkSize(),
+                rskSystemProperties.getMaxRequestedBodies(),
+                rskSystemProperties.getLongSyncLimit());
     }
 
     protected StateRootHandler buildStateRootHandler() {
@@ -1288,6 +1297,7 @@ public class RskContext implements NodeBootstrapper {
         if (syncProcessor == null) {
             syncProcessor = new SyncProcessor(
                     getBlockchain(),
+                    getBlockStore(),
                     getConsensusValidationMainchainView(),
                     getBlockSyncService(),
                     getChannelManager(),
@@ -1299,8 +1309,8 @@ public class RskContext implements NodeBootstrapper {
                             new BlockRootValidationRule(getRskSystemProperties().getActivationConfig())
                     ),
                     getDifficultyCalculator(),
-                    getPeersInformation()
-            );
+                    getPeersInformation(),
+                    getGenesis());
         }
 
         return syncProcessor;
@@ -1372,9 +1382,15 @@ public class RskContext implements NodeBootstrapper {
         if (web3WebSocketServer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             JsonRpcSerializer jsonRpcSerializer = getJsonRpcSerializer();
+            Ethereum rsk = getRsk();
             EthSubscriptionNotificationEmitter emitter = new EthSubscriptionNotificationEmitter(
-                    getRsk(),
-                    jsonRpcSerializer
+                    new BlockHeaderNotificationEmitter(rsk, jsonRpcSerializer),
+                    new LogsNotificationEmitter(
+                            rsk,
+                            jsonRpcSerializer,
+                            getReceiptStore(),
+                            new BlockchainBranchComparator(getBlockStore())
+                    )
             );
             RskJsonRpcHandler jsonRpcHandler = new RskJsonRpcHandler(emitter, jsonRpcSerializer);
             web3WebSocketServer = new Web3WebSocketServer(
@@ -1413,9 +1429,9 @@ public class RskContext implements NodeBootstrapper {
         return jacksonBasedRpcSerializer;
     }
 
-    private co.rsk.net.BlockStore getNetBlockStore() {
+    private NetBlockStore getNetBlockStore() {
         if (netBlockStore == null) {
-            netBlockStore = new co.rsk.net.BlockStore();
+            netBlockStore = new NetBlockStore();
         }
 
         return netBlockStore;
@@ -1437,29 +1453,37 @@ public class RskContext implements NodeBootstrapper {
         if (nodeMessageHandler == null) {
             nodeMessageHandler = new NodeMessageHandler(
                     getRskSystemProperties(),
-                    getBlockStore(),
                     getNodeBlockProcessor(),
                     getSyncProcessor(),
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),
-                    getBlockValidationRule()
-            );
+                    getBlockValidationRule(),
+                    getStatusResolver());
         }
 
         return nodeMessageHandler;
     }
 
+    private StatusResolver getStatusResolver() {
+        if (statusResolver == null) {
+            statusResolver = new StatusResolver(getBlockStore(), getGenesis());
+        }
+        return statusResolver;
+    }
+
     private RskWireProtocol.Factory getRskWireProtocolFactory() {
         if (rskWireProtocolFactory == null) {
-            rskWireProtocolFactory = () -> new RskWireProtocol(
+            rskWireProtocolFactory = (messageQueue, channel) -> new RskWireProtocol(
                     getRskSystemProperties(),
                     getPeerScoringManager(),
                     getNodeMessageHandler(),
-                    getBlockchain(),
                     getCompositeEthereumListener(),
                     getGenesis(),
-                    getMessageRecorder());
+                    getMessageRecorder(),
+                    getStatusResolver(),
+                    messageQueue,
+                    channel);
         }
 
         return rskWireProtocolFactory;

@@ -140,8 +140,8 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
             return;
         }
 
-        if (channel.getNodeStatistics().ethInbound.get() - ethInbound > 1 ||
-                channel.getNodeStatistics().ethOutbound.get() - ethOutbound > 1) {
+        if (channel.getNodeStatistics().getEthInbound().get() - ethInbound > 1 ||
+                channel.getNodeStatistics().getEthOutbound().get() - ethOutbound > 1) {
 
             // it means that we've been disconnected
             // after some incorrect action from our peer
@@ -154,8 +154,8 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
 
         channel.getNodeStatistics().setClientId(msg.getClientId());
 
-        this.ethInbound = channel.getNodeStatistics().ethInbound.get();
-        this.ethOutbound = channel.getNodeStatistics().ethOutbound.get();
+        this.ethInbound = channel.getNodeStatistics().getEthInbound().get();
+        this.ethOutbound = channel.getNodeStatistics().getEthOutbound().get();
 
         ethereumListener.onHandShakePeer(channel, msg);
     }

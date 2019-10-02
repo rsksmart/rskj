@@ -806,11 +806,6 @@ public class BlockExecutorTest {
         }
 
         @Override
-        public void onSyncDone() {
-
-        }
-
-        @Override
         public void onNoConnections() {
 
         }

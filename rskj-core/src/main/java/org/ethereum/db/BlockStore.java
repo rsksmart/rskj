@@ -62,7 +62,17 @@ public interface BlockStore extends RemascCache {
 
     Block getBestBlock();
 
+    /**
+     * @return The highest block number stored.
+     * @throws IllegalStateException if the blockstore is empty.
+     */
     long getMaxNumber();
+
+    /**
+     * @return The smallest block number stored.
+     * @throws IllegalStateException if the blockstore is empty.
+     */
+    long getMinNumber();
 
     void flush();
 

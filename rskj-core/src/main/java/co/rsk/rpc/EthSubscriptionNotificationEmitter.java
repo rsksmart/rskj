@@ -17,51 +17,35 @@
  */
 package co.rsk.rpc;
 
-import co.rsk.rpc.modules.eth.subscribe.BlockHeaderNotification;
-import co.rsk.rpc.modules.eth.subscribe.EthSubscriptionNotification;
-import co.rsk.rpc.modules.eth.subscribe.EthSubscriptionParams;
-import co.rsk.rpc.modules.eth.subscribe.SubscriptionId;
+import co.rsk.rpc.modules.eth.subscribe.*;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.ethereum.core.Block;
-import org.ethereum.core.TransactionReceipt;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.listener.EthereumListenerAdapter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This manages subscriptions and emits events to interested clients.
  * Can only be used with the WebSockets transport.
  */
-public class EthSubscriptionNotificationEmitter {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EthSubscriptionNotificationEmitter.class);
+public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVisitor {
+    private final BlockHeaderNotificationEmitter blockHeader;
+    private final LogsNotificationEmitter logs;
 
-    private final Map<SubscriptionId, Channel> subscriptions = new ConcurrentHashMap<>();
-    private final JsonRpcSerializer jsonRpcSerializer;
-
-    public EthSubscriptionNotificationEmitter(Ethereum ethereum, JsonRpcSerializer jsonRpcSerializer) {
-        ethereum.addListener(new EthereumListenerAdapter() {
-            @Override
-            public void onBlock(Block block, List<TransactionReceipt> receipts) {
-                emit(block);
-            }
-        });
-        this.jsonRpcSerializer = jsonRpcSerializer;
+    public EthSubscriptionNotificationEmitter(
+            BlockHeaderNotificationEmitter blockHeader,
+            LogsNotificationEmitter logs) {
+        this.blockHeader = blockHeader;
+        this.logs = logs;
     }
 
-    /**
-     * @param channel a Netty channel to subscribe notifications to.
-     * @return a subscription id which should be used as an unsubscribe parameter.
-     */
-    public SubscriptionId subscribe(Channel channel) {
+    @Override
+    public SubscriptionId visit(EthSubscribeNewHeadsParams params, Channel channel) {
         SubscriptionId subscriptionId = new SubscriptionId();
-        subscriptions.put(subscriptionId, channel);
+        blockHeader.subscribe(subscriptionId, channel);
+        return subscriptionId;
+    }
+
+    @Override
+    public SubscriptionId visit(EthSubscribeLogsParams params, Channel channel) {
+        SubscriptionId subscriptionId = new SubscriptionId();
+        logs.subscribe(subscriptionId, channel, params);
         return subscriptionId;
     }
 
@@ -69,30 +53,17 @@ public class EthSubscriptionNotificationEmitter {
      * @return whether the unsubscription succeeded.
      */
     public boolean unsubscribe(SubscriptionId subscriptionId) {
-        return subscriptions.remove(subscriptionId) != null;
+        // temporal variables avoid short-circuiting behavior
+        boolean unsubscribedBlockHeader = blockHeader.unsubscribe(subscriptionId);
+        boolean unsubscribedLogs = logs.unsubscribe(subscriptionId);
+        return unsubscribedBlockHeader || unsubscribedLogs;
     }
 
     /**
      * Clear all subscriptions for channel.
      */
     public void unsubscribe(Channel channel) {
-        subscriptions.values().removeIf(channel::equals);
-    }
-
-    private void emit(Block block) {
-        BlockHeaderNotification header = new BlockHeaderNotification(block);
-
-        subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            EthSubscriptionNotification request = new EthSubscriptionNotification(
-                    new EthSubscriptionParams(id, header)
-            );
-
-            try {
-                String msg = jsonRpcSerializer.serializeMessage(request);
-                channel.writeAndFlush(new TextWebSocketFrame(msg));
-            } catch (IOException e) {
-                LOGGER.error("Couldn't serialize block header result for notification", e);
-            }
-        });
+        blockHeader.unsubscribe(channel);
+        logs.unsubscribe(channel);
     }
 }

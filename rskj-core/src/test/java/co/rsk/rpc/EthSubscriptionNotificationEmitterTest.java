@@ -17,17 +17,10 @@
  */
 package co.rsk.rpc;
 
-import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.rpc.modules.eth.subscribe.SubscriptionId;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import co.rsk.rpc.modules.eth.subscribe.*;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.ethereum.core.Block;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.listener.EthereumListener;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -35,47 +28,81 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class EthSubscriptionNotificationEmitterTest {
-    private static final Block TEST_BLOCK = new BlockGenerator().createBlock(12, 0);
-
+    private BlockHeaderNotificationEmitter newHeads;
+    private LogsNotificationEmitter logs;
     private EthSubscriptionNotificationEmitter emitter;
-    private EthereumListener listener;
-    private JsonRpcSerializer serializer;
 
     @Before
     public void setUp() {
-        Ethereum ethereum = mock(Ethereum.class);
-        serializer = mock(JsonRpcSerializer.class);
-        emitter = new EthSubscriptionNotificationEmitter(ethereum, serializer);
-
-        ArgumentCaptor<EthereumListener> listenerCaptor = ArgumentCaptor.forClass(EthereumListener.class);
-        verify(ethereum, times(1)).addListener(listenerCaptor.capture());
-        listener = listenerCaptor.getValue();
+        newHeads = mock(BlockHeaderNotificationEmitter.class);
+        logs = mock(LogsNotificationEmitter.class);
+        emitter = new EthSubscriptionNotificationEmitter(newHeads, logs);
     }
 
     @Test
-    public void subscribeReturnsSubscriptionId() {
+    public void subscribeToNewHeads() {
         Channel channel = mock(Channel.class);
+        EthSubscribeNewHeadsParams params = mock(EthSubscribeNewHeadsParams.class);
 
-        assertThat(emitter.subscribe(channel), notNullValue());
+        SubscriptionId subscriptionId = emitter.visit(params, channel);
+
+        assertThat(subscriptionId, notNullValue());
+        verify(newHeads).subscribe(subscriptionId, channel);
     }
 
     @Test
-    public void ethereumOnBlockEventTriggersMessageToChannel() throws JsonProcessingException {
+    public void subscribeToLogs() {
         Channel channel = mock(Channel.class);
-        emitter.subscribe(channel);
-        when(serializer.serializeMessage(any()))
-                .thenReturn("serialized");
+        EthSubscribeLogsParams params = mock(EthSubscribeLogsParams.class);
 
-        listener.onBlock(TEST_BLOCK, null);
-        verify(channel, times(1)).writeAndFlush(new TextWebSocketFrame("serialized"));
+        SubscriptionId subscriptionId = emitter.visit(params, channel);
+
+        assertThat(subscriptionId, notNullValue());
+        verify(logs).subscribe(subscriptionId, channel, params);
     }
 
     @Test
-    public void unsubscribeSucceedsForExistingSubscriptionId() {
-        Channel channel = mock(Channel.class);
-        SubscriptionId subscriptionId = emitter.subscribe(channel);
+    public void unsubscribeUnsuccessfully() {
+        SubscriptionId subscriptionId = mock(SubscriptionId.class);
 
-        assertThat(emitter.unsubscribe(new SubscriptionId()), is(false));
-        assertThat(emitter.unsubscribe(subscriptionId), is(true));
+        boolean unsubscribed = emitter.unsubscribe(subscriptionId);
+
+        assertThat(unsubscribed, is(false));
+        verify(newHeads).unsubscribe(subscriptionId);
+        verify(logs).unsubscribe(subscriptionId);
+    }
+
+    @Test
+    public void unsubscribeSuccessfullyFromNewHeads() {
+        SubscriptionId subscriptionId = mock(SubscriptionId.class);
+        when(newHeads.unsubscribe(subscriptionId)).thenReturn(true);
+
+        boolean unsubscribed = emitter.unsubscribe(subscriptionId);
+
+        assertThat(unsubscribed, is(true));
+        verify(newHeads).unsubscribe(subscriptionId);
+        verify(logs).unsubscribe(subscriptionId);
+    }
+
+    @Test
+    public void unsubscribeSuccessfullyFromLogs() {
+        SubscriptionId subscriptionId = mock(SubscriptionId.class);
+        when(logs.unsubscribe(subscriptionId)).thenReturn(true);
+
+        boolean unsubscribed = emitter.unsubscribe(subscriptionId);
+
+        assertThat(unsubscribed, is(true));
+        verify(newHeads).unsubscribe(subscriptionId);
+        verify(logs).unsubscribe(subscriptionId);
+    }
+
+    @Test
+    public void unsubscribeChannel() {
+        Channel channel = mock(Channel.class);
+
+        emitter.unsubscribe(channel);
+
+        verify(newHeads).unsubscribe(channel);
+        verify(logs).unsubscribe(channel);
     }
 }

@@ -20,16 +20,12 @@ package co.rsk.net;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
-import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.BlockStore;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,12 +49,12 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final ChannelManager channelManager;
     private final TransactionGateway transactionGateway;
     private final PeerScoringManager peerScoringManager;
-    private final BlockStore continuousBlockStore;
 
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
 
     private BlockValidationRule blockValidationRule;
+    private final StatusResolver statusResolver;
 
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
     private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
@@ -67,24 +63,23 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private volatile boolean stopped;
 
     /**
-     * @param continuousBlockStore This block store is used to report the current node status.
-     *                             It should have every block from genesis to best block.
+     * @param statusResolver
      */
     public NodeMessageHandler(RskSystemProperties config,
-                              BlockStore continuousBlockStore,
-                              @Nonnull final BlockProcessor blockProcessor,
+                              final BlockProcessor blockProcessor,
                               final SyncProcessor syncProcessor,
                               @Nullable final ChannelManager channelManager,
                               @Nullable final TransactionGateway transactionGateway,
                               @Nullable final PeerScoringManager peerScoringManager,
-                              @Nonnull BlockValidationRule blockValidationRule) {
+                              BlockValidationRule blockValidationRule,
+                              StatusResolver statusResolver) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
         this.transactionGateway = transactionGateway;
         this.blockValidationRule = blockValidationRule;
-        this.continuousBlockStore = continuousBlockStore;
+        this.statusResolver = statusResolver;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
     }
@@ -205,22 +200,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         //Refresh status to peers every 10 seconds or so
         Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
         if (timeStatus.getSeconds() > 10) {
-            sendStatusToAll();
+            Status status = statusResolver.currentStatus();
+            logger.trace("Sending status best block to all {} {}",
+                    status.getBestBlockNumber(),
+                    status.getBestBlockHash());
+            channelManager.broadcastStatus(status);
             lastStatusSent = now;
         }
-    }
-
-    @VisibleForTesting
-    public synchronized void sendStatusToAll() {
-        Block block = continuousBlockStore.getBestBlock();
-        BlockDifficulty totalDifficulty = continuousBlockStore.getTotalDifficultyForHash(block.getHash().getBytes());
-
-        Status status = new Status(block.getNumber(),
-                block.getHash().getBytes(),
-                block.getParentHash().getBytes(),
-                totalDifficulty);
-        logger.trace("Sending status best block to all {} {}", block.getNumber(), block.getHash());
-        this.channelManager.broadcastStatus(status);
     }
 
     private void recordEvent(MessageChannel sender, EventType event) {

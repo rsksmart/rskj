@@ -3,6 +3,7 @@ package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
@@ -20,6 +21,11 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
 
     @Override
     public void startFindingConnectionPoint(NodeID peerId) {
+
+    }
+
+    @Override
+    public void backwardSyncing(NodeID peerId) {
 
     }
 
@@ -45,6 +51,11 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     @Override
     public void startSyncing(NodeID nodeID) {
         this.startSyncingWasCalled_ = true;
+    }
+
+    @Override
+    public void backwardDownloadBodies(NodeID peerId, Block parent, List<BlockHeader> toRequest) {
+
     }
 
     @Override

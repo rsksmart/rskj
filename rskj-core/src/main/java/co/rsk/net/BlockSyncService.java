@@ -49,7 +49,7 @@ public class BlockSyncService {
     private long lastKnownBlockNumber = 0;
 
     private static final Logger logger = LoggerFactory.getLogger("blocksyncservice");
-    private final BlockStore store;
+    private final NetBlockStore store;
     private final Blockchain blockchain;
     private final SyncConfiguration syncConfiguration;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
@@ -59,7 +59,7 @@ public class BlockSyncService {
     // and we should use the same objects everywhere to ensure consistency
     public BlockSyncService(
             @Nonnull final RskSystemProperties config,
-            @Nonnull final BlockStore store,
+            @Nonnull final NetBlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final SyncConfiguration syncConfiguration) {
@@ -134,8 +134,7 @@ public class BlockSyncService {
     }
 
     public boolean hasBetterBlockToSync() {
-        int blocksDistance = syncConfiguration.getChunkSize() / CHUNK_PART_LIMIT;
-        return getLastKnownBlockNumber() >= getBestBlockNumber() + blocksDistance;
+        return getLastKnownBlockNumber() >= getBestBlockNumber() + syncConfiguration.getLongSyncLimit();
     }
 
     public boolean canBeIgnoredForUnclesRewards(long blockNumber) {
