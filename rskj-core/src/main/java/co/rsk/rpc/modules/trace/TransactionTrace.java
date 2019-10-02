@@ -18,6 +18,8 @@
 
 package co.rsk.rpc.modules.trace;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+
 public class TransactionTrace {
     private ActionTransactionTrace action;
     private String blockHash;
@@ -27,4 +29,50 @@ public class TransactionTrace {
     private String transactionHash;
     private int transactionPosition;
     private String type;
-}
+
+    public TransactionTrace(
+            ActionTransactionTrace action,
+            String blockHash,
+            long blockNumber,
+            String transactionHash,
+            int transactionPosition,
+            String type
+    ) {
+        this.action = action;
+        this.blockHash = blockHash;
+        this.blockNumber = blockNumber;
+        this.transactionHash = transactionHash;
+        this.transactionPosition = transactionPosition;
+        this.type = type;
+    }
+
+    @JsonGetter("action")
+    public ActionTransactionTrace getAction() {
+        return this.action;
+    }
+
+    @JsonGetter("blockHash")
+    public String getBlockHash() {
+        return this.blockHash;
+    }
+
+    @JsonGetter("blockNumber")
+    public long getBlockNumber() {
+        return this.blockNumber;
+    }
+
+    @JsonGetter("transactionHash")
+    public String getTransactionHash() {
+        return this.transactionHash;
+    }
+
+    @JsonGetter("transactionPosition")
+    public int getTransactionPosition() {
+        return this.transactionPosition;
+    }
+
+    @JsonGetter("type")
+    public String getType() {
+        return this.type;
+    }
+ }

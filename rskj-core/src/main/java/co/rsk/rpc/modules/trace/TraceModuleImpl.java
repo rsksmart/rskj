@@ -20,12 +20,15 @@ package co.rsk.rpc.modules.trace;
 
 import co.rsk.core.bc.BlockExecutor;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
+import org.ethereum.vm.trace.Serializers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +71,14 @@ public class TraceModuleImpl implements TraceModule {
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
         blockExecutor.traceBlock(programTraceProcessor, block, parent.getHeader(), false, false);
 
-        return programTraceProcessor.getProgramTraceAsJsonNode(tx.getHash());
+        ProgramTrace programTrace = programTraceProcessor.getProgramTrace(tx.getHash());
+
+        if (programTrace == null) {
+            return null;
+        }
+
+        TransactionTrace trace = TraceTransformer.toTrace(programTrace, txInfo, block.getNumber());
+        ObjectMapper mapper = Serializers.createMapper(true);
+        return mapper.valueToTree(trace);
     }
 }
