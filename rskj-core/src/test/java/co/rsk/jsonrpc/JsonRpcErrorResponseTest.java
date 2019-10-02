@@ -30,11 +30,9 @@ public class JsonRpcErrorResponseTest {
 
     @Test
     public void serializeResponseWithError() throws IOException {
-        String message = "{\"jsonrpc\":\"2.0\",\"id\":48,\"error\":{\"code\":-32603,\"message\":\"Internal error.\"}}";
+        String message = "{\"jsonrpc\":\"2.0\",\"id\":48,\"error\":{\"code\":-32603,\"message\":\"Internal error\"}}";
         assertThat(
-                serializer.writeValueAsString(
-                        new JsonRpcErrorResponse(48, new JsonRpcInternalError())
-                ),
+                serializer.writeValueAsString(new JsonRpcErrorResponse(48, JsonRpcErrors.internal())),
                 is(message)
         );
     }
