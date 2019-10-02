@@ -17,11 +17,23 @@
  */
 package co.rsk.jsonrpc;
 
-/**
- * A standard error to send when internal errors don't want to be exposed.
- */
-public class JsonRpcInternalError extends JsonRpcError {
-    public JsonRpcInternalError() {
-        super(-32603, "Internal error.");
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Test;
+
+import java.io.IOException;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
+public class JsonRpcErrorsTest {
+    private ObjectMapper serializer = new ObjectMapper();
+
+    @Test
+    public void serializeInternalError() throws IOException {
+        String message = "{\"code\":-32603,\"message\":\"Internal error\"}";
+        assertThat(
+                serializer.writeValueAsString(JsonRpcErrors.internal()),
+                is(message)
+        );
     }
 }

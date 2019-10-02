@@ -17,25 +17,15 @@
  */
 package co.rsk.jsonrpc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
+/**
+ * Standard errors.
+ */
+public class JsonRpcErrors {
+    private JsonRpcErrors() {
+        // Utility class
+    }
 
-import java.io.IOException;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-
-public class JsonRpcInternalErrorTest {
-    private ObjectMapper serializer = new ObjectMapper();
-
-    @Test
-    public void serializeInternalError() throws IOException {
-        String message = "{\"code\":-32603,\"message\":\"Internal error.\"}";
-        assertThat(
-                serializer.writeValueAsString(
-                        new JsonRpcInternalError()
-                ),
-                is(message)
-        );
+    public static JsonRpcError internal() {
+        return new JsonRpcError(-32603, "Internal error");
     }
 }
