@@ -212,6 +212,20 @@ public class Channel implements MessageChannel {
         eth.dropConnection();
     }
 
+    public void sendMessage(Message message) {
+        eth.sendMessage(new RskMessage(message));
+    }
+
+    @Override
+    public NodeID getPeerNodeID() {
+        return node.getId();
+    }
+
+    @Override
+    public InetAddress getAddress() {
+        return inetSocketAddress.getAddress();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -238,19 +252,5 @@ public class Channel implements MessageChannel {
     @Override
     public String toString() {
         return String.format("%s | %s", getPeerIdShort(), inetSocketAddress);
-    }
-
-    public void sendMessage(Message message) {
-        eth.sendMessage(new RskMessage(message));
-    }
-
-    @Override
-    public NodeID getPeerNodeID() {
-        return node.getId();
-    }
-
-    @Override
-    public InetAddress getAddress() {
-        return inetSocketAddress.getAddress();
     }
 }

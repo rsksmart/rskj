@@ -2,6 +2,7 @@ package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.scoring.EventType;
@@ -83,7 +84,8 @@ public class PeersInformation {
         return Math.toIntExact(count);
     }
 
-    public SyncPeerStatus getOrRegisterPeer(NodeID nodeID) {
+    public SyncPeerStatus getOrRegisterPeer(MessageChannel peer) {
+        NodeID nodeID = peer.getPeerNodeID();
         SyncPeerStatus peerStatus = this.peerStatuses.get(nodeID);
 
         if (peerStatus != null && peerNotExpired(peerStatus)) {

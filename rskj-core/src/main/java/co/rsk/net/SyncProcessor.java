@@ -92,7 +92,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processSkeletonResponse(MessageChannel peer, SkeletonResponseMessage message) {
         logger.debug("Process skeleton response from node {}", peer.getPeerNodeID());
-        peersInformation.getOrRegisterPeer(peer.getPeerNodeID());
+        peersInformation.getOrRegisterPeer(peer);
 
         long messageId = message.getId();
         MessageType messageType = message.getMessageType();
@@ -107,7 +107,7 @@ public class SyncProcessor implements SyncEventsHandler {
     public void processBlockHashResponse(MessageChannel peer, BlockHashResponseMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.debug("Process block hash response from node {} hash {}", nodeID, HashUtil.shortHash(message.getHash()));
-        peersInformation.getOrRegisterPeer(nodeID);
+        peersInformation.getOrRegisterPeer(peer);
 
         long messageId = message.getId();
         MessageType messageType = message.getMessageType();
@@ -121,7 +121,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processBlockHeadersResponse(MessageChannel peer, BlockHeadersResponseMessage message) {
         logger.debug("Process block headers response from node {}", peer.getPeerNodeID());
-        peersInformation.getOrRegisterPeer(peer.getPeerNodeID());
+        peersInformation.getOrRegisterPeer(peer);
 
         long messageId = message.getId();
         MessageType messageType = message.getMessageType();
@@ -135,7 +135,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processBodyResponse(MessageChannel peer, BodyResponseMessage message) {
         logger.debug("Process body response from node {}", peer.getPeerNodeID());
-        peersInformation.getOrRegisterPeer(peer.getPeerNodeID());
+        peersInformation.getOrRegisterPeer(peer);
 
         long messageId = message.getId();
         MessageType messageType = message.getMessageType();
@@ -153,7 +153,7 @@ public class SyncProcessor implements SyncEventsHandler {
         byte[] hash = message.getBlockHash();
 
         if (syncState instanceof DecidingSyncState && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
-            peersInformation.getOrRegisterPeer(nodeID);
+            peersInformation.getOrRegisterPeer(peer);
             sendMessage(nodeID, new BlockRequestMessage(++lastRequestId, hash));
         }
     }
@@ -161,7 +161,7 @@ public class SyncProcessor implements SyncEventsHandler {
     public void processBlockResponse(MessageChannel peer, BlockResponseMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.debug("Process block response from node {} block {} {}", nodeID, message.getBlock().getNumber(), message.getBlock().getShortHash());
-        peersInformation.getOrRegisterPeer(nodeID);
+        peersInformation.getOrRegisterPeer(peer);
 
         long messageId = message.getId();
         MessageType messageType = message.getMessageType();
