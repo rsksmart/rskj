@@ -357,44 +357,10 @@ public class BridgeSupport {
             BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
             Address senderBtcAddress = new Address(btcContext.getParams(), senderBtcKey.getPubKeyHash());
 
-            // If the address is not whitelisted, then return the funds
-            // using the exact same utxos sent to us.
-            // That is, build a release transaction and get it in the release transaction set.
-            // Otherwise, transfer SBTC to the sender of the BTC
-            // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
-            LockWhitelist lockWhitelist = provider.getLockWhitelist();
-            if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
-                locked = false;
-                // Build the list of UTXOs in the BTC transaction sent to either the active
-                // or retiring federation
-                List<UTXO> utxosToUs = btcTx.getWalletOutputs(getNoSpendWalletForLiveFederations()).stream()
-                        .map(output ->
-                                new UTXO(
-                                        btcTx.getHash(),
-                                        output.getIndex(),
-                                        output.getValue(),
-                                        0,
-                                        btcTx.isCoinBase(),
-                                        output.getScriptPubKey()
-                                )
-                        ).collect(Collectors.toList());
-                // Use the list of UTXOs to build a transaction builder
-                // for the return btc transaction generation
-                ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
-                        btcContext.getParams(),
-                        getUTXOBasedWalletForLiveFederations(utxosToUs),
-                        senderBtcAddress,
-                        getFeePerKb()
-                );
-                Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = txBuilder.buildEmptyWalletTo(senderBtcAddress);
-                if (buildReturnResult.isPresent()) {
-                    provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
-                    logger.info("whitelist money return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
-                } else {
-                    logger.warn("whitelist money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
-                    panicProcessor.panic("whitelist-return-funds", String.format("whitelist money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
-                }
-            } else {
+            // Confirm we should process this lock
+            if (verifyLockSenderIsWhitelisted(rskTx, btcTx, senderBtcAddress, totalAmount, height) &&
+                verifyLockDoesNotSurpassLockingCap(rskTx, btcTx, senderBtcAddress, totalAmount)) {
+
                 org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
                 RskAddress sender = new RskAddress(key.getAddress());
                 co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(totalAmount);
@@ -402,10 +368,10 @@ public class BridgeSupport {
                 this.transferTo(sender, amount);
 
                 logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, sender);
-
-                // Consume this whitelisted address
-                lockWhitelist.consume(senderBtcAddress);
+            } else {
+                locked = false;
             }
+
         } else if (BridgeUtils.isReleaseTx(btcTx, getLiveFederations())) {
             logger.debug("This is a release tx {}", btcTx);
             // do-nothing
@@ -2073,6 +2039,95 @@ public class BridgeSupport {
 
     private Address getParsedAddress(String base58Address) throws AddressFormatException {
         return Address.fromBase58(btcContext.getParams(), base58Address);
+    }
+
+    private boolean verifyLockSenderIsWhitelisted(Transaction rskTx, BtcTransaction btcTx, Address senderBtcAddress, Coin totalAmount, int height) throws IOException {
+        // If the address is not whitelisted, then return the funds
+        // using the exact same utxos sent to us.
+        // That is, build a release transaction and get it in the release transaction set.
+        // Otherwise, transfer SBTC to the sender of the BTC
+        // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
+
+        LockWhitelist lockWhitelist = provider.getLockWhitelist();
+        if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
+            Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress);
+            if (buildReturnResult.isPresent()) {
+                provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
+                logger.info("whitelist money return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
+            } else {
+                logger.warn("whitelist money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
+                panicProcessor.panic("whitelist-return-funds", String.format("whitelist money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
+            }
+            return false;
+        }
+
+        // Consume this whitelisted address
+        lockWhitelist.consume(senderBtcAddress);
+
+        return true;
+    }
+
+    private boolean verifyLockDoesNotSurpassLockingCap(Transaction rskTx, BtcTransaction btcTx, Address senderBtcAddress, Coin totalAmount) throws IOException {
+        if (!activations.isActive(ConsensusRule.RSKIP134)) {
+            return true;
+        }
+
+        Coin fedUTXOsAfterThisLock = getFederationCurrentFunds().add(totalAmount);
+        // If the federation funds (including this new UTXO) are smaller than or equals to the current locking cap, we are fine.
+        if (fedUTXOsAfterThisLock.compareTo(this.getLockingCap()) <= 0) {
+            return true;
+        }
+
+        // Reject the lock
+        Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress);
+        if (buildReturnResult.isPresent()) {
+            // Send the release transaction to request signature immediately
+            provider.getRskTxsWaitingForSignatures().put(rskTx.getHash(), buildReturnResult.get().getBtcTx());
+            logger.info("locking cap exceeded! money return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
+        } else {
+            logger.warn("locking cap exceeded! money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
+            panicProcessor.panic("locking-cap-exceeded-return-funds", String.format("locking cap exceeded! money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
+        }
+        return false;
+    }
+
+    private Optional<ReleaseTransactionBuilder.BuildResult> getRefundingTransaction(BtcTransaction btcTx, Address senderBtcAddress) throws IOException {
+
+        // Build the list of UTXOs in the BTC transaction sent to either the active
+        // or retiring federation
+        List<UTXO> utxosToUs = btcTx.getWalletOutputs(getNoSpendWalletForLiveFederations()).stream()
+                .map(output ->
+                        new UTXO(
+                                btcTx.getHash(),
+                                output.getIndex(),
+                                output.getValue(),
+                                0,
+                                btcTx.isCoinBase(),
+                                output.getScriptPubKey()
+                        )
+                ).collect(Collectors.toList());
+        // Use the list of UTXOs to build a transaction builder
+        // for the return btc transaction generation
+        ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+                btcContext.getParams(),
+                getUTXOBasedWalletForLiveFederations(utxosToUs),
+                senderBtcAddress,
+                getFeePerKb()
+        );
+        return txBuilder.buildEmptyWalletTo(senderBtcAddress);
+    }
+
+    private Coin getFederationCurrentFunds() throws IOException {
+        Coin amountToActive = getActiveFederationWallet().getBalance();
+        Wallet retiringFedWallet = getRetiringFederationWallet();
+        if (retiringFedWallet == null) {
+            return amountToActive;
+        }
+        Coin amountToRetiring = retiringFedWallet.getBalance();
+        if (amountToRetiring == null) {
+            return amountToActive;
+        }
+        return amountToActive.add(amountToRetiring);
     }
 }
 
