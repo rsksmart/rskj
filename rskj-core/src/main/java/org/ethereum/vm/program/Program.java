@@ -593,8 +593,11 @@ public class Program {
             VM vm = new VM(config, precompiledContracts);
             Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
             vm.play(program);
-            getTrace().addSubTrace(new ProgramSubtrace(CallType.NONE, programCode, program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
             programResult = program.getResult();
+
+            if (programResult.getException() == null && !programResult.isRevert()) {
+                getTrace().addSubTrace(new ProgramSubtrace(CallType.NONE, programCode, programResult.getHReturn(), contractAddress, program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
+            }
         }
 
         if (programResult.getException() != null || programResult.isRevert()) {
@@ -651,6 +654,7 @@ public class Program {
             // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
             stackPush(DataWord.valueOf(contractAddress.getBytes()));
         }
+
         return programResult;
     }
 
@@ -821,7 +825,7 @@ public class Program {
         vm.play(program);
         childResult  = program.getResult();
 
-        getTrace().addSubTrace(new ProgramSubtrace(CallType.fromMsgType(msg.getType()), null, program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
+        getTrace().addSubTrace(new ProgramSubtrace(CallType.fromMsgType(msg.getType()), null, null, null, program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
 
         getTrace().merge(program.getTrace());
         getResult().merge(childResult);

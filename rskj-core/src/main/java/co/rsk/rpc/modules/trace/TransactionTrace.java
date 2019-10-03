@@ -29,6 +29,7 @@ public class TransactionTrace {
     private final String type;
     private final int subtraces;
     private final TraceAddress traceAddress;
+    private final TraceResult result;
 
     public TransactionTrace(
             TraceAction action,
@@ -38,7 +39,8 @@ public class TransactionTrace {
             int transactionPosition,
             String type,
             int subtraces,
-            TraceAddress traceAddress
+            TraceAddress traceAddress,
+            TraceResult result
     ) {
         this.action = action;
         this.blockHash = blockHash;
@@ -48,6 +50,7 @@ public class TransactionTrace {
         this.type = type;
         this.subtraces = subtraces;
         this.traceAddress = traceAddress;
+        this.result = result;
     }
 
     @JsonGetter("action")
@@ -70,6 +73,9 @@ public class TransactionTrace {
         return this.transactionHash;
     }
 
+    @JsonGetter("result")
+    public TraceResult getResult() { return this.result; }
+
     @JsonGetter("transactionPosition")
     public int getTransactionPosition() {
         return this.transactionPosition;
@@ -85,4 +91,5 @@ public class TransactionTrace {
     public String getType() {
         return this.type;
     }
+
  }
