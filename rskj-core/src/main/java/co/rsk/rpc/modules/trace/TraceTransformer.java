@@ -62,7 +62,7 @@ public class TraceTransformer {
             createdAddress = txInfo.getReceipt().getTransaction().getContractAddress();
         }
 
-        traces.add(toTrace(trace.getProgramInvoke(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, createdCode, createdAddress));
+        traces.add(toTrace(trace.getProgramInvoke(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, createdCode, createdAddress, trace.getError()));
 
         int nsubtraces = trace.getSubtraces().size();
 
@@ -71,7 +71,7 @@ public class TraceTransformer {
     }
 
     private static void addTrace(List<TransactionTrace> traces, ProgramSubtrace subtrace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
-        traces.add(toTrace(subtrace.getProgramInvoke(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), subtrace.getCreatedCode(), subtrace.getCreatedAddress()));
+        traces.add(toTrace(subtrace.getProgramInvoke(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), subtrace.getCreatedCode(), subtrace.getCreatedAddress(), null));
 
         int nsubtraces = subtrace.getSubtraces().size();
 
@@ -79,13 +79,25 @@ public class TraceTransformer {
             addTrace(traces, subtrace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
     }
 
-    public static TransactionTrace toTrace(ProgramInvoke invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, byte[] creationData, byte[] createdCode, RskAddress createdAddress) {
+    public static TransactionTrace toTrace(ProgramInvoke invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, byte[] creationData, byte[] createdCode, RskAddress createdAddress, String err) {
         TraceAction action = toAction(invoke, callType, creationData);
         TraceResult result = toResult(programResult, createdCode, createdAddress);
         String blockHash = TypeConverter.toUnformattedJsonHex(txInfo.getBlockHash());
         String transactionHash = txInfo.getReceipt().getTransaction().getHash().toJsonString();
         int transactionPosition = txInfo.getIndex();
         String type = creationData == null ? "call" : "create";
+        String error = err != null && err.isEmpty() ? null : err;
+
+        if (programResult.getException() != null) {
+            error = programResult.getException().toString();
+        }
+        else if (programResult.isRevert()) {
+            error = "transaction reverted";
+        }
+
+        if (error != null) {
+            result = null;
+        }
 
         int subtraces = 0;
 
@@ -98,7 +110,8 @@ public class TraceTransformer {
                 type,
                 subtraces,
                 traceAddress,
-                result
+                result,
+                error
         );
     }
 

@@ -18,17 +18,15 @@
 
 package co.rsk.rpc.modules.trace;
 
-import co.rsk.config.VmConfig;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
-import org.ethereum.vm.trace.ProgramTrace;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class TraceTransformerTest {
     @Test
-    public void getActionFromTrace() {
+    public void getActionFromInvokeData() {
         DataWord address = DataWord.valueOf(1);
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);
@@ -48,12 +46,45 @@ public class TraceTransformerTest {
                 null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        TraceAction action = TraceTransformer.toAction(invoke, CallType.CALL);
+        TraceAction action = TraceTransformer.toAction(invoke, CallType.CALL, null);
 
         Assert.assertNotNull(action);
 
         Assert.assertEquals("call", action.getCallType());
         Assert.assertEquals("0x0000000000000000000000000000000000000001", action.getTo());
+        Assert.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
+        Assert.assertEquals("0x01020304", action.getInput());
+        Assert.assertEquals("0xf4240", action.getGas());
+        Assert.assertEquals("0x186a0", action.getValue());
+    }
+
+    @Test
+    public void getActionFromInvokeDataWithCreationData() {
+        DataWord address = DataWord.valueOf(1);
+        DataWord origin = DataWord.valueOf(2);
+        DataWord caller = DataWord.valueOf(3);
+        long gas = 1000000;
+        DataWord callValue = DataWord.valueOf(100000);
+        byte[] data = new byte[]{0x01, 0x02, 0x03, 0x04};
+
+        ProgramInvoke invoke = new ProgramInvokeImpl(
+                address,
+                origin,
+                caller,
+                null,
+                null,
+                gas,
+                callValue,
+                null,
+                null, null, null, null, null, null,
+                null, null, 0, null, false, false);
+
+        TraceAction action = TraceTransformer.toAction(invoke, CallType.NONE, data);
+
+        Assert.assertNotNull(action);
+
+        Assert.assertNull(action.getCallType());
+        Assert.assertNull(action.getTo());
         Assert.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
         Assert.assertEquals("0x01020304", action.getInput());
         Assert.assertEquals("0xf4240", action.getGas());
