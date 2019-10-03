@@ -26,6 +26,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.pcc.NativeContract;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
+import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
@@ -48,7 +49,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
-import org.ethereum.vm.trace.ProgramSubTrace;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceListener;
 import org.slf4j.Logger;
@@ -592,7 +593,7 @@ public class Program {
             VM vm = new VM(config, precompiledContracts);
             Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
             vm.play(program);
-            getTrace().addSubTrace(new ProgramSubTrace(program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
+            getTrace().addSubTrace(new ProgramSubtrace(CallType.NONE, programCode, program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
             programResult = program.getResult();
         }
 
@@ -820,7 +821,7 @@ public class Program {
         vm.play(program);
         childResult  = program.getResult();
 
-        getTrace().addSubTrace(new ProgramSubTrace(program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
+        getTrace().addSubTrace(new ProgramSubtrace(CallType.fromMsgType(msg.getType()), null, program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
 
         getTrace().merge(program.getTrace());
         getResult().merge(childResult);

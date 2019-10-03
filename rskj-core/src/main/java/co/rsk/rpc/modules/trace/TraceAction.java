@@ -19,17 +19,19 @@
 package co.rsk.rpc.modules.trace;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-public class ActionTransactionTrace {
-    private final String callType;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class TraceAction {
+    private final CallType callType;
     private final String from;
     private final String to;
     private final String gas;
     private final String input;
     private final String value;
 
-    public ActionTransactionTrace(
-            String callType,
+    public TraceAction(
+            CallType callType,
             String from,
             String to,
             String gas,
@@ -46,7 +48,11 @@ public class ActionTransactionTrace {
 
     @JsonGetter("callType")
     public String getCallType() {
-        return this.callType;
+        if (this.callType == CallType.NONE) {
+            return null;
+        }
+
+        return this.callType.name().toLowerCase();
     }
 
     @JsonGetter("from")
