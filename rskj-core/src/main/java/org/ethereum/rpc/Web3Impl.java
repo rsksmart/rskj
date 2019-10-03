@@ -510,10 +510,11 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getUncleCountByBlockNumber(String bnOrId) {
-        Block b = getBlockByNumberOrStr(bnOrId, blockchain);
-        long n = b.getUncleList().size();
-
-        return toQuantityJsonHex(n);
+        return web3InformationRetriever.getBlock(bnOrId)
+                .map(Block::getUncleList)
+                .map(List::size)
+                .map(TypeConverter::toQuantityJsonHex)
+                .orElseThrow(() -> blockNotFound(String.format("Block %s not found", bnOrId)));
     }
 
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
