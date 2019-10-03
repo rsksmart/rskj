@@ -17,23 +17,31 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.vm.trace;
+package co.rsk.rpc.modules.trace;
 
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 
 import java.util.List;
 
-public class ProgramSubTrace {
+public class ProgramSubtrace {
+    private final CallType callType;
+    private final byte[] creationData;
     private final ProgramInvoke programInvoke;
     private final ProgramResult programResult;
-    private final List<ProgramSubTrace> subtraces;
+    private final List<ProgramSubtrace> subtraces;
 
-    public ProgramSubTrace(ProgramInvoke programInvoke, ProgramResult programResult, List<ProgramSubTrace> subtraces) {
+    public ProgramSubtrace(CallType callType, byte[] creationData, ProgramInvoke programInvoke, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+        this.callType = callType;
+        this.creationData = creationData;
         this.programInvoke = programInvoke;
         this.programResult = programResult;
         this.subtraces = subtraces;
     }
+
+    public CallType getCallType() { return this.callType; }
+
+    public byte[] getCreationData() { return this.creationData; }
 
     public ProgramInvoke getProgramInvoke() {
         return this.programInvoke;
@@ -43,5 +51,5 @@ public class ProgramSubTrace {
         return this.programResult;
     }
 
-    public List<ProgramSubTrace> getSubtraces() { return this.subtraces; }
+    public List<ProgramSubtrace> getSubtraces() { return this.subtraces; }
 }

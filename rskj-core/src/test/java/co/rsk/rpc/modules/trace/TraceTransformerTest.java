@@ -48,10 +48,7 @@ public class TraceTransformerTest {
                 null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        VmConfig vmConfig = new VmConfig(false, 0, 0, "");
-        ProgramTrace programTrace = new ProgramTrace(vmConfig, invoke);
-
-        ActionTransactionTrace action = TraceTransformer.toAction(programTrace);
+        TraceAction action = TraceTransformer.toAction(invoke, CallType.CALL);
 
         Assert.assertNotNull(action);
 

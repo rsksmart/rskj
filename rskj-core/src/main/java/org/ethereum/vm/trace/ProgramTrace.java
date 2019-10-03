@@ -22,6 +22,7 @@ package org.ethereum.vm.trace;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
@@ -64,7 +65,7 @@ public class ProgramTrace {
     private final ProgramInvoke programInvoke;
 
     @JsonIgnore
-    private final List<ProgramSubTrace> subtraces = new ArrayList<>();
+    private final List<ProgramSubtrace> subtraces = new ArrayList<>();
 
     public ProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
         this.programInvoke = programInvoke;
@@ -230,11 +231,11 @@ public class ProgramTrace {
         return op;
     }
 
-    public void addSubTrace(ProgramSubTrace programSubTrace) {
+    public void addSubTrace(ProgramSubtrace programSubTrace) {
         this.subtraces.add(programSubTrace);
     }
 
-    public List<ProgramSubTrace> getSubtraces() {
+    public List<ProgramSubtrace> getSubtraces() {
         return this.subtraces;
     }
 

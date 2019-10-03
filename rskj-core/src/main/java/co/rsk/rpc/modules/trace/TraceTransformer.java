@@ -24,7 +24,6 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.trace.ProgramSubTrace;
 import org.ethereum.vm.trace.ProgramTrace;
 
 import java.util.ArrayList;
@@ -44,7 +43,11 @@ public class TraceTransformer {
     }
 
     private static void addTrace(List<TransactionTrace> traces, ProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
-        traces.add(toTrace(trace, txInfo, blockNumber, traceAddress));
+        boolean isContractCreation = txInfo.getReceipt().getTransaction().isContractCreation();
+        CallType callType = isContractCreation ? CallType.NONE : CallType.CALL;
+        byte[] creationData = isContractCreation ? txInfo.getReceipt().getTransaction().getData() : null;
+
+        traces.add(toTrace(trace.getProgramInvoke(), txInfo, blockNumber, traceAddress, callType, creationData));
 
         int nsubtraces = trace.getSubtraces().size();
 
@@ -52,8 +55,8 @@ public class TraceTransformer {
             addTrace(traces, trace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
     }
 
-    private static void addTrace(List<TransactionTrace> traces, ProgramSubTrace subtrace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
-        traces.add(toTrace(subtrace.getProgramInvoke(), txInfo, blockNumber, traceAddress));
+    private static void addTrace(List<TransactionTrace> traces, ProgramSubtrace subtrace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
+        traces.add(toTrace(subtrace.getProgramInvoke(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData()));
 
         int nsubtraces = subtrace.getSubtraces().size();
 
@@ -61,32 +64,13 @@ public class TraceTransformer {
             addTrace(traces, subtrace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
     }
 
-    public static TransactionTrace toTrace(ProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
-        ActionTransactionTrace action = toAction(trace);
+    public static TransactionTrace toTrace(ProgramInvoke invoke, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, byte[] creationData) {
+        TraceAction action = toAction(invoke, callType, creationData);
         String blockHash = TypeConverter.toUnformattedJsonHex(txInfo.getBlockHash());
         String transactionHash = txInfo.getReceipt().getTransaction().getHash().toJsonString();
         int transactionPosition = txInfo.getIndex();
-        String type = "call";
-        int subtraces = trace.getSubtraces().size();
+        String type = creationData == null ? "call" : "create";
 
-        return new TransactionTrace(
-            action,
-            blockHash,
-            blockNumber,
-            transactionHash,
-            transactionPosition,
-            type,
-            subtraces,
-            traceAddress
-        );
-    }
-
-    public static TransactionTrace toTrace(ProgramInvoke invoke, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
-        ActionTransactionTrace action = toAction(invoke);
-        String blockHash = TypeConverter.toUnformattedJsonHex(txInfo.getBlockHash());
-        String transactionHash = txInfo.getReceipt().getTransaction().getHash().toJsonString();
-        int transactionPosition = txInfo.getIndex();
-        String type = "call";
         int subtraces = 0;
 
         return new TransactionTrace(
@@ -101,28 +85,18 @@ public class TraceTransformer {
         );
     }
 
-    public static ActionTransactionTrace toAction(ProgramTrace trace) {
-        ProgramInvoke invoke = trace.getProgramInvoke();
-
-        return toAction(invoke);
-    }
-
-    public static ActionTransactionTrace toAction(ProgramInvoke invoke) {
+    public static TraceAction toAction(ProgramInvoke invoke, CallType callType, byte[] creationData) {
         String from = new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
-        String to = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
+        String to = creationData == null ? new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString() : null;
         String gas = TypeConverter.toQuantityJsonHex(invoke.getGas());
-        String input = TypeConverter.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));
-        String callType = "call";
+        String input = TypeConverter.toUnformattedJsonHex(creationData == null ?  invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()) : creationData);
         String value;
 
         DataWord callValue = invoke.getCallValue();
 
-        if (callValue.isZero())
-            value = "0x";
-        else
-            value = TypeConverter.toQuantityJsonHex(callValue.getData());
+        value = TypeConverter.toQuantityJsonHex(callValue.getData());
 
-        return new ActionTransactionTrace(
+        return new TraceAction(
                 callType,
                 from,
                 to,
