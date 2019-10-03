@@ -19,7 +19,9 @@
 package co.rsk.rpc.modules.trace;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TransactionTrace {
     private final TraceAction action;
     private final String blockHash;
@@ -30,6 +32,7 @@ public class TransactionTrace {
     private final int subtraces;
     private final TraceAddress traceAddress;
     private final TraceResult result;
+    private final String error;
 
     public TransactionTrace(
             TraceAction action,
@@ -40,7 +43,8 @@ public class TransactionTrace {
             String type,
             int subtraces,
             TraceAddress traceAddress,
-            TraceResult result
+            TraceResult result,
+            String error
     ) {
         this.action = action;
         this.blockHash = blockHash;
@@ -51,6 +55,7 @@ public class TransactionTrace {
         this.subtraces = subtraces;
         this.traceAddress = traceAddress;
         this.result = result;
+        this.error = error;
     }
 
     @JsonGetter("action")
@@ -92,4 +97,6 @@ public class TransactionTrace {
         return this.type;
     }
 
- }
+    @JsonGetter("error")
+    public String getError() { return this.error; }
+}
