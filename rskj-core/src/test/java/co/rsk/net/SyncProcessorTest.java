@@ -259,7 +259,6 @@ public class SyncProcessorTest {
                 mock(Genesis.class));
 
         List<SimpleMessageChannel> senders = new ArrayList<>();
-        List<Channel> channels = new ArrayList<>();
         Map<NodeID, List<Message>> messagesByNode = new HashMap<>();
 
         int lessPeers = SyncConfiguration.DEFAULT.getExpectedPeers() - 1;
@@ -282,22 +281,24 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(lessPeers, processor.getNoAdvancedPeers());
 
-        Set<NodeID> ids = processor.getKnownPeersNodeIDs();
-        senders.stream()
+        Set<NodeID> knownPeersNodeIDs = processor.getKnownPeersNodeIDs();
+        Assert.assertTrue(senders.stream()
                 .map(SimpleMessageChannel::getPeerNodeID)
-                .forEach(peerId -> Assert.assertTrue(ids.contains(peerId)));
+                .allMatch(knownPeersNodeIDs::contains));
 
         SimpleMessageChannel lastSender = new SimpleMessageChannel();
         Channel channel = mock(Channel.class);
         when(channel.getNodeId()).thenReturn(lastSender.getPeerNodeID());
-        Assert.assertFalse(ids.contains(lastSender.getPeerNodeID()));
+        Assert.assertFalse(processor.getKnownPeersNodeIDs().contains(lastSender.getPeerNodeID()));
 
         processor.processStatus(lastSender, status);
 
         // now test with all senders
         senders.add(lastSender);
+        Set<NodeID> ids = processor.getKnownPeersNodeIDs();
+
         Assert.assertTrue(ids.contains(lastSender.getPeerNodeID()));
-        Assert.assertFalse(messagesByNode.values().stream().allMatch(m -> m.isEmpty()));
+        Assert.assertFalse(messagesByNode.values().stream().allMatch(List::isEmpty));
         Assert.assertEquals(1, messagesByNode.values().stream()
                 .mapToInt(List::size)
                 .sum());

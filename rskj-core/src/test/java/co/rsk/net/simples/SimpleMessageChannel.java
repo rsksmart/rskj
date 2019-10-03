@@ -24,12 +24,14 @@ import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
+import org.ethereum.net.server.Channel;
 import org.junit.Assert;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -100,4 +102,27 @@ public class SimpleMessageChannel implements MessageChannel {
 
     @Override
     public InetAddress getAddress() { return this.address; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SimpleMessageChannel channel = (SimpleMessageChannel) o;
+
+        return Objects.equals(address, channel.address) &&
+                Objects.equals(nodeID, channel.nodeID);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = address != null ? address.hashCode() : 0;
+        result = 31 * result + (nodeID != null ? nodeID.hashCode() : 0);
+        return result;
+    }
 }

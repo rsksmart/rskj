@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,7 +38,7 @@ public class PeersInformation {
     private final Map<NodeID, Instant> failedPeers;
     private final PeerScoringManager peerScoringManager;
     private final Comparator<Map.Entry<NodeID, SyncPeerStatus>> peerComparator;
-    private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
+    private Map<MessageChannel, SyncPeerStatus> peerStatuses = new HashMap<>();
 
     public PeersInformation(ChannelManager channelManager,
                             SyncConfiguration syncConfiguration,
@@ -85,8 +86,7 @@ public class PeersInformation {
     }
 
     public SyncPeerStatus getOrRegisterPeer(MessageChannel peer) {
-        NodeID nodeID = peer.getPeerNodeID();
-        SyncPeerStatus peerStatus = this.peerStatuses.get(nodeID);
+        SyncPeerStatus peerStatus = this.peerStatuses.get(peer);
 
         if (peerStatus != null && peerNotExpired(peerStatus)) {
             return peerStatus;
@@ -96,7 +96,11 @@ public class PeersInformation {
     }
 
     public SyncPeerStatus getPeer(NodeID nodeID) {
-        return this.peerStatuses.get(nodeID);
+        return this.peerStatuses.entrySet().stream()
+                .filter(e -> e.getKey().getPeerNodeID().equals(nodeID))
+                .findAny()
+                .map(Map.Entry::getValue)
+                .orElse(null);
     }
 
     public Optional<NodeID> getBestPeer() {
@@ -110,10 +114,12 @@ public class PeersInformation {
                 .map(Channel::getNodeId).collect(Collectors.toSet());
 
         return peerStatuses.entrySet().stream()
+                .map(e -> new AbstractMap.SimpleEntry<>(e.getKey().getPeerNodeID(), e.getValue()))
                 .filter(e -> peerNotExpired(e.getValue()))
                 .filter(e -> activeNodes.contains(e.getKey()))
                 .filter(e -> peerScoringManager.hasGoodReputation(e.getKey()))
-                .filter(e -> hasLowerDifficulty(e.getKey()));
+                .filter(e -> hasLowerDifficulty(e.getKey()))
+                .map(Function.identity());
     }
 
     private boolean hasLowerDifficulty(NodeID key) {
@@ -134,12 +140,14 @@ public class PeersInformation {
     }
 
     public Set<NodeID> knownNodeIds() {
-        return peerStatuses.keySet();
+        return peerStatuses.keySet().stream()
+                .map(MessageChannel::getPeerNodeID)
+                .collect(Collectors.toSet());
     }
 
     public SyncPeerStatus registerPeer(MessageChannel peer) {
         SyncPeerStatus peerStatus = new SyncPeerStatus();
-        peerStatuses.put(peer.getPeerNodeID(), peerStatus);
+        peerStatuses.put(peer, peerStatus);
         return peerStatus;
     }
 
