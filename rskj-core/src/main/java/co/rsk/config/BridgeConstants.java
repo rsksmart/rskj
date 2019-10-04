@@ -52,6 +52,8 @@ public class BridgeConstants {
 
     protected Coin genesisFeePerKb;
 
+    protected Coin maxFeePerKb;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -99,4 +101,6 @@ public class BridgeConstants {
     public AddressBasedAuthorizer getFeePerKbChangeAuthorizer() { return feePerKbChangeAuthorizer; }
 
     public Coin getGenesisFeePerKb() { return genesisFeePerKb; }
+
+    public Coin getMaxFeePerKb() { return maxFeePerKb; }
 }
