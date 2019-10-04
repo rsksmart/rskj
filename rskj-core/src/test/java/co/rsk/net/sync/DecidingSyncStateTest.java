@@ -1,6 +1,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.Status;
 import co.rsk.net.simples.SimplePeer;
 import co.rsk.scoring.PeerScoringManager;
@@ -34,7 +35,7 @@ public class DecidingSyncStateTest {
         when(bestBlock.getNumber()).thenReturn(100L);
 
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, peersInformation, blockStore);
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(mock(NodeID.class)));
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(mock(Peer.class)));
 
         Status status = mock(Status.class);
         SyncPeerStatus bpStatus = mock(SyncPeerStatus.class);
@@ -71,7 +72,7 @@ public class DecidingSyncStateTest {
 
         PeersInformation peersInformation = mock(PeersInformation.class);
         when(peersInformation.count()).thenReturn(1);
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(mock(NodeID.class)));
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(mock(Peer.class)));
 
         Status status = mock(Status.class);
         SyncPeerStatus bpStatus = mock(SyncPeerStatus.class);
@@ -162,8 +163,10 @@ public class DecidingSyncStateTest {
                 blockStore);
 
         when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
+        Peer peer = mock(Peer.class);
         NodeID nodeID = mock(NodeID.class);
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(nodeID));
+        when(peer.getPeerNodeID()).thenReturn(nodeID);
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         SyncPeerStatus syncPeerStatus = mock(SyncPeerStatus.class);
         Status status = mock(Status.class);
@@ -194,8 +197,10 @@ public class DecidingSyncStateTest {
                 blockStore);
 
         when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
+        Peer peer = mock(Peer.class);
         NodeID nodeID = mock(NodeID.class);
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(nodeID));
+        when(peer.getPeerNodeID()).thenReturn(nodeID);
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         SyncPeerStatus syncPeerStatus = mock(SyncPeerStatus.class);
         Status status = mock(Status.class);
@@ -226,8 +231,10 @@ public class DecidingSyncStateTest {
                 blockStore);
 
         when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
+        Peer peer = mock(Peer.class);
         NodeID nodeID = mock(NodeID.class);
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(nodeID));
+        when(peer.getPeerNodeID()).thenReturn(nodeID);
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         SyncPeerStatus syncPeerStatus = mock(SyncPeerStatus.class);
         Status status = mock(Status.class);

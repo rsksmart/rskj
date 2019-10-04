@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -102,11 +101,10 @@ public class PeersInformation {
                 .orElse(null);
     }
 
-    public Optional<NodeID> getBestPeer() {
+    public Optional<Peer> getBestPeer() {
         return getCandidatesStream()
                 .max(this.peerComparator)
-                .map(Map.Entry::getKey)
-                .map(Peer::getPeerNodeID);
+                .map(Map.Entry::getKey);
     }
 
     private Stream<Map.Entry<Peer, SyncPeerStatus>> getCandidatesStream(){

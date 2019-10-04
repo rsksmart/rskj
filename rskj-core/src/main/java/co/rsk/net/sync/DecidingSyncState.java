@@ -2,6 +2,7 @@ package co.rsk.net.sync;
 
 
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import org.ethereum.db.BlockStore;
 
 import java.time.Duration;
@@ -41,17 +42,17 @@ public class DecidingSyncState extends BaseSyncState {
 
     private void tryStartSyncing() {
 
-        Optional<NodeID> bestPeer = peersInformation.getBestPeer();
+        Optional<Peer> bestPeer = peersInformation.getBestPeer();
         if (!bestPeer.isPresent()) {
             return;
         }
 
-        long bpBestBlockNumber = peersInformation.getPeer(bestPeer.get()).getStatus().getBestBlockNumber();
+        long bpBestBlockNumber = peersInformation.getPeer(bestPeer.get().getPeerNodeID()).getStatus().getBestBlockNumber();
         long distanceToTip = bpBestBlockNumber - blockStore.getBestBlock().getNumber();
         if (distanceToTip > syncConfiguration.getLongSyncLimit() || blockStore.getMinNumber() == 0) {
-            syncEventsHandler.startSyncing(bestPeer.get());
+            syncEventsHandler.startSyncing(bestPeer.get().getPeerNodeID());
             return;
         }
-        syncEventsHandler.backwardSyncing(bestPeer.get());
+        syncEventsHandler.backwardSyncing(bestPeer.get().getPeerNodeID());
     }
 }
