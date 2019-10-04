@@ -67,7 +67,7 @@ public class NodeMessageHandlerTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
-    public void processBlockMessageUsingProcessor() throws UnknownHostException {
+    public void processBlockMessageUsingProcessor() {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
@@ -292,9 +292,7 @@ public class NodeMessageHandlerTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
-        when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
+        when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         final Message[] msg = new Message[1];
         when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
             msg[0] = invocation.getArgument(1);
@@ -313,7 +311,7 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void processStatusMessageWithKnownBestBlock() throws UnknownHostException {
+    public void processStatusMessageWithKnownBestBlock() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();

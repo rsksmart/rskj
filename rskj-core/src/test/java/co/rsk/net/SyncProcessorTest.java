@@ -91,8 +91,8 @@ public class SyncProcessorTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
+        MessageChannel channel = mock(MessageChannel.class);
+        when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final List<Message> messages = new ArrayList<>();
         when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
@@ -148,8 +148,8 @@ public class SyncProcessorTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
+        MessageChannel channel = mock(MessageChannel.class);
+        when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final List<Message> messages = new ArrayList<>();
         when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
@@ -265,10 +265,8 @@ public class SyncProcessorTest {
         for (int i = 0; i < lessPeers; i++) {
             SimpleMessageChannel sender = new SimpleMessageChannel();
             senders.add(sender);
-            Channel channel = mock(Channel.class);
             messagesByNode.put(sender.getPeerNodeID(), new ArrayList<>());
-            when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
-            when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
+            when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
             when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
                 messagesByNode.get(sender.getPeerNodeID()).add(invocation.getArgument(1));
                 return true;
@@ -287,8 +285,6 @@ public class SyncProcessorTest {
                 .allMatch(knownPeersNodeIDs::contains));
 
         SimpleMessageChannel lastSender = new SimpleMessageChannel();
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(lastSender.getPeerNodeID());
         Assert.assertFalse(processor.getKnownPeersNodeIDs().contains(lastSender.getPeerNodeID()));
 
         processor.processStatus(lastSender, status);
@@ -354,8 +350,8 @@ public class SyncProcessorTest {
         Blockchain blockchain = new BlockChainBuilder().ofSize(100);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
+        MessageChannel channel = mock(MessageChannel.class);
+        when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
         when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
@@ -394,8 +390,8 @@ public class SyncProcessorTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
+        MessageChannel channel = mock(MessageChannel.class);
+        when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
         when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
@@ -885,8 +881,8 @@ public class SyncProcessorTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
+        MessageChannel channel = mock(MessageChannel.class);
+        when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final List<Message> messages = new ArrayList<>();
         when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
@@ -948,8 +944,8 @@ public class SyncProcessorTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
+        MessageChannel channel = mock(MessageChannel.class);
+        when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final List<Message> messages = new ArrayList<>();
         when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
@@ -1012,8 +1008,8 @@ public class SyncProcessorTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
+        MessageChannel channel = mock(MessageChannel.class);
+        when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
         when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
@@ -1097,8 +1093,8 @@ public class SyncProcessorTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
+        MessageChannel channel = mock(MessageChannel.class);
+        when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
         when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {

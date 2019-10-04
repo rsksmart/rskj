@@ -28,6 +28,7 @@ import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.MessageChannel;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -340,7 +341,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String[] net_peerList() {
-        Collection<Channel> peers = channelManager.getActivePeers();
+        Collection<MessageChannel> peers = channelManager.getActivePeers();
         List<String> response = new ArrayList<>();
         peers.forEach(channel -> response.add(channel.toString()));
 

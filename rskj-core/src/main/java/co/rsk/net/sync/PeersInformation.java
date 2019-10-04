@@ -111,7 +111,7 @@ public class PeersInformation {
 
     private Stream<Map.Entry<NodeID, SyncPeerStatus>> getCandidatesStream(){
         Set<NodeID> activeNodes = channelManager.getActivePeers().stream()
-                .map(Channel::getNodeId).collect(Collectors.toSet());
+                .map(MessageChannel::getPeerNodeID).collect(Collectors.toSet());
 
         return peerStatuses.entrySet().stream()
                 .map(e -> new AbstractMap.SimpleEntry<>(e.getKey().getPeerNodeID(), e.getValue()))

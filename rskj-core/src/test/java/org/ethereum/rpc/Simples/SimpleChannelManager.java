@@ -106,14 +106,8 @@ public class SimpleChannelManager implements ChannelManager {
     }
 
     @Override
-    public Collection<Channel> getActivePeers() {
-        return simpleChannels.values().stream().map(this::getMockedChannel).collect(Collectors.toList());
-    }
-
-    private Channel getMockedChannel(MessageChannel mc) {
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(mc.getPeerNodeID());
-        return channel;
+    public Collection<MessageChannel> getActivePeers() {
+        return simpleChannels.values();
     }
 
     @Override
