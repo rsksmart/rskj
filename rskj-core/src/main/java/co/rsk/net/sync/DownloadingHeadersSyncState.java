@@ -3,6 +3,7 @@ package co.rsk.net.sync;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
 import co.rsk.validators.BlockHeaderValidationRule;
 import com.google.common.annotations.VisibleForTesting;
@@ -22,7 +23,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
     private final ChunksDownloadHelper chunksDownloadHelper;
     private final DependentBlockHeaderRule blockParentValidationRule;
     private final BlockHeaderValidationRule blockHeaderValidationRule;
-    private final NodeID selectedPeerId;
+    private final Peer selectedPeer;
     private Map<Keccak256, BlockHeader> pendingHeadersByHash;
 
     public DownloadingHeadersSyncState(
@@ -31,16 +32,19 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             ConsensusValidationMainchainView mainchainView,
             DependentBlockHeaderRule blockParentValidationRule,
             BlockHeaderValidationRule blockHeaderValidationRule,
-            NodeID selectedPeerId,
+            Peer peer,
             Map<NodeID, List<BlockIdentifier>> skeletons,
             long connectionPoint) {
         super(syncEventsHandler, syncConfiguration);
         this.blockParentValidationRule = blockParentValidationRule;
         this.blockHeaderValidationRule = blockHeaderValidationRule;
-        this.selectedPeerId = selectedPeerId;
+        this.selectedPeer = peer;
         this.pendingHeaders = new ArrayList<>();
         this.skeletons = skeletons;
-        this.chunksDownloadHelper = new ChunksDownloadHelper(syncConfiguration, skeletons.get(selectedPeerId), connectionPoint);
+        this.chunksDownloadHelper = new ChunksDownloadHelper(
+                syncConfiguration,
+                skeletons.get(selectedPeer.getPeerNodeID()),
+                connectionPoint);
         this.pendingHeadersByHash = new ConcurrentHashMap<>();
         mainchainView.setPendingHeaders(pendingHeadersByHash);
     }
@@ -49,16 +53,18 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
     public void newBlockHeaders(List<BlockHeader> chunk) {
         Optional<ChunkDescriptor> currentChunkOpt = chunksDownloadHelper.getCurrentChunk();
         if (!currentChunkOpt.isPresent()) {
-            syncEventsHandler.onSyncIssue("Current chunk not present. Node {}", selectedPeerId);
+            syncEventsHandler.onSyncIssue(
+                    "Current chunk not present. Node {}",
+                    selectedPeer.getPeerNodeID());
             return;
         }
         ChunkDescriptor currentChunk = currentChunkOpt.get();
         if (chunk.size() != currentChunk.getCount()
                 || !ByteUtil.fastEquals(chunk.get(0).getHash().getBytes(), currentChunk.getHash())) {
             syncEventsHandler.onErrorSyncing(
-                    selectedPeerId,
+                    selectedPeer.getPeerNodeID(),
                     "Invalid chunk received from node {} {}", EventType.INVALID_MESSAGE,
-                    selectedPeerId,
+                    selectedPeer.getPeerNodeID(),
                     TypeConverter.toUnformattedJsonHex(currentChunk.getHash()));
             return;
         }
@@ -75,7 +81,8 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             BlockHeader header = chunk.get(chunk.size() - k - 1);
 
             if (!blockHeaderIsValid(header, parentHeader)) {
-                syncEventsHandler.onErrorSyncing(selectedPeerId,
+                syncEventsHandler.onErrorSyncing(
+                        selectedPeer.getPeerNodeID(),
                         "Invalid header received from node {} {} {}", EventType.INVALID_HEADER,
                         header.getNumber(), header.getShortHash());
                 return;
@@ -89,7 +96,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
 
         if (!chunksDownloadHelper.hasNextChunk()) {
             // Finished verifying headers
-            syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons, selectedPeerId);
+            syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons, selectedPeer);
             return;
         }
 
@@ -108,17 +115,25 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
     }
 
     private void trySendRequest() {
-        boolean sent = syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk(), selectedPeerId);
+        boolean sent = syncEventsHandler.sendBlockHeadersRequest(
+                chunksDownloadHelper.getNextChunk(),
+                selectedPeer.getPeerNodeID());
         if (!sent) {
-            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), selectedPeerId);
+            syncEventsHandler.onSyncIssue(
+                    "Channel failed to sent on {} to {}",
+                    this.getClass(),
+                    selectedPeer.getPeerNodeID());
         }
     }
 
     @Override
     protected void onMessageTimeOut() {
-        syncEventsHandler.onErrorSyncing(selectedPeerId,
-                "Timeout waiting requests {}", EventType.TIMEOUT_MESSAGE, this.getClass(), selectedPeerId);
+        syncEventsHandler.onErrorSyncing(
+                selectedPeer.getPeerNodeID(),
+                "Timeout waiting requests {}",
+                EventType.TIMEOUT_MESSAGE,
+                this.getClass(),
+                selectedPeer.getPeerNodeID());
     }
 
     private boolean blockHeaderIsValid(BlockHeader header, BlockHeader parentHeader) {

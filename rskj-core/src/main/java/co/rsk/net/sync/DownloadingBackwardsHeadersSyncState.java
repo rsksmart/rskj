@@ -1,7 +1,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -16,24 +16,23 @@ import java.util.stream.Collectors;
 public class DownloadingBackwardsHeadersSyncState extends BaseSyncState {
 
     private final Block child;
-    private final NodeID selectedPeerId;
+    private final Peer selectedPeer;
 
     public DownloadingBackwardsHeadersSyncState(
             SyncConfiguration syncConfiguration,
             SyncEventsHandler syncEventsHandler,
             BlockStore blockStore,
-            NodeID selectedPeerId) {
+            Peer peer) {
         super(syncEventsHandler, syncConfiguration);
-        this.selectedPeerId = selectedPeerId;
+        this.selectedPeer = peer;
         this.child = blockStore.getChainBlockByNumber(blockStore.getMinNumber());
     }
 
     @Override
     public void newBlockHeaders(List<BlockHeader> toRequest) {
         syncEventsHandler.backwardDownloadBodies(
-                selectedPeerId,
-                child,
-                toRequest.stream().skip(1).collect(Collectors.toList()));
+                child, toRequest.stream().skip(1).collect(Collectors.toList()), selectedPeer
+        );
     }
 
     @Override
@@ -43,16 +42,20 @@ public class DownloadingBackwardsHeadersSyncState extends BaseSyncState {
                 hashToRequest.getBytes(),
                 syncConfiguration.getChunkSize());
 
-        boolean sent = syncEventsHandler.sendBlockHeadersRequest(chunkDescriptor, selectedPeerId);
+        boolean sent = syncEventsHandler.sendBlockHeadersRequest(chunkDescriptor, selectedPeer.getPeerNodeID());
         if (!sent) {
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), selectedPeerId);
+                    this.getClass(), selectedPeer);
         }
     }
 
     @Override
     protected void onMessageTimeOut() {
-        syncEventsHandler.onErrorSyncing(selectedPeerId,
-                "Timeout waiting requests {}", EventType.TIMEOUT_MESSAGE, this.getClass(), selectedPeerId);
+        syncEventsHandler.onErrorSyncing(
+                selectedPeer.getPeerNodeID(),
+                "Timeout waiting requests {}",
+                EventType.TIMEOUT_MESSAGE,
+                this.getClass(),
+                selectedPeer.getPeerNodeID());
     }
 }

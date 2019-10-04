@@ -1,6 +1,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -16,19 +17,19 @@ public interface SyncEventsHandler {
 
     boolean sendBlockHashRequest(long height, NodeID peerId);
 
-    boolean sendBlockHeadersRequest(ChunkDescriptor chunk, NodeID peerId);
+    boolean sendBlockHeadersRequest(ChunkDescriptor chunk, NodeID peer);
 
-    Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId);
+    Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peer);
 
-    void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, NodeID peerId);
+    void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, Peer peer);
 
-    void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, NodeID peerId);
+    void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer);
 
-    void startDownloadingSkeleton(long connectionPoint, NodeID peerId);
+    void startDownloadingSkeleton(long connectionPoint, Peer peer);
 
-    void startSyncing(NodeID nodeID);
+    void startSyncing(Peer peer);
 
-    void backwardDownloadBodies(NodeID peerId, Block parent, List<BlockHeader> toRequest);
+    void backwardDownloadBodies(Block parent, List<BlockHeader> toRequest, Peer peer);
 
     void stopSyncing();
 
@@ -36,7 +37,7 @@ public interface SyncEventsHandler {
 
     void onSyncIssue(String message, Object... arguments);
 
-    void startFindingConnectionPoint(NodeID peerId);
+    void startFindingConnectionPoint(Peer peer);
 
-    void backwardSyncing(NodeID peerId);
+    void backwardSyncing(Peer peer);
 }

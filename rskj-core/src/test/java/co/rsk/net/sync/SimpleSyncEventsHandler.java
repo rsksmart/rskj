@@ -2,6 +2,7 @@ package co.rsk.net.sync;
 
 
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -20,20 +21,19 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public boolean sendBlockHeadersRequest(ChunkDescriptor chunk, NodeID peerId) { return true;}
 
     @Override
-    public void startFindingConnectionPoint(NodeID peerId) {
+    public void startFindingConnectionPoint(Peer peer) {
 
     }
 
     @Override
-    public void backwardSyncing(NodeID peerId) {
-
+    public void backwardSyncing(Peer peer) {
     }
 
     @Override
     public Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) { return 0L; }
 
     @Override
-    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, NodeID peerId) {
+    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, Peer peer) {
 
     }
 
@@ -46,20 +46,20 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, NodeID peerId) { }
+    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) { }
 
     @Override
-    public void startSyncing(NodeID nodeID) {
+    public void startSyncing(Peer peer) {
         this.startSyncingWasCalled_ = true;
     }
 
     @Override
-    public void backwardDownloadBodies(NodeID peerId, Block parent, List<BlockHeader> toRequest) {
+    public void backwardDownloadBodies(Block parent, List<BlockHeader> toRequest, Peer peer) {
 
     }
 
     @Override
-    public void startDownloadingSkeleton(long connectionPoint, NodeID peerId) { }
+    public void startDownloadingSkeleton(long connectionPoint, Peer peer) { }
 
     @Override
     public void stopSyncing() { this.stopSyncingWasCalled_ = true; }

@@ -215,17 +215,21 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startSyncing(NodeID peerId) {
-        logger.info("Start syncing with node {}", peerId);
-        byte[] bestBlockHash = peersInformation.getPeer(peerId).getStatus().getBestBlockHash();
-        setSyncState(new CheckingBestHeaderSyncState(syncConfiguration,
-                this, blockHeaderValidationRule, peerId, bestBlockHash));
+    public void startSyncing(Peer peer) {
+        NodeID nodeID = peer.getPeerNodeID();
+        logger.info("Start syncing with node {}", nodeID);
+        byte[] bestBlockHash = peersInformation.getPeer(nodeID).getStatus().getBestBlockHash();
+        setSyncState(new CheckingBestHeaderSyncState(
+                syncConfiguration,
+                this,
+                blockHeaderValidationRule, peer, bestBlockHash));
     }
 
     @Override
-    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, NodeID peerId) {
+    public void startDownloadingBodies(
+            List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, Peer peer) {
         // we keep track of best known block and we start to trust it when all headers are validated
-        List<BlockIdentifier> selectedSkeleton = skeletons.get(peerId);
+        List<BlockIdentifier> selectedSkeleton = skeletons.get(peer.getPeerNodeID());
         final long peerBestBlockNumber = selectedSkeleton.get(selectedSkeleton.size() - 1).getNumber();
 
         if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber()) {
@@ -244,50 +248,52 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, NodeID peerId) {
+    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) {
         setSyncState(new DownloadingHeadersSyncState(
                 syncConfiguration,
                 this,
                 consensusValidationMainchainView,
                 difficultyRule,
                 blockHeaderValidationRule,
-                peerId,
+                peer,
                 skeletons,
                 connectionPoint));
     }
 
     @Override
-    public void startDownloadingSkeleton(long connectionPoint, NodeID peerId) {
+    public void startDownloadingSkeleton(long connectionPoint, Peer peer) {
         setSyncState(new DownloadingSkeletonSyncState(
                 syncConfiguration,
                 this,
                 peersInformation,
-                peerId,
+                peer,
                 connectionPoint));
     }
 
     @Override
-    public void startFindingConnectionPoint(NodeID peerId) {
+    public void startFindingConnectionPoint(Peer peer) {
+        NodeID peerId = peer.getPeerNodeID();
         logger.debug("Find connection point with node {}", peerId);
         long bestBlockNumber = peersInformation.getPeer(peerId).getStatus().getBestBlockNumber();
         setSyncState(new FindingConnectionPointSyncState(
-                syncConfiguration, this, blockStore, peerId, bestBlockNumber));
+                syncConfiguration, this, blockStore, peer, bestBlockNumber));
     }
 
     @Override
-    public void backwardSyncing(NodeID peerId) {
+    public void backwardSyncing(Peer peer) {
+        NodeID peerId = peer.getPeerNodeID();
         logger.debug("Starting backwards synchronization with node {}", peerId);
         setSyncState(new DownloadingBackwardsHeadersSyncState(
                 syncConfiguration,
                 this,
                 blockStore,
-                peerId
+                peer
         ));
     }
 
     @Override
-    public void backwardDownloadBodies(NodeID peerId, Block child, List<BlockHeader> toRequest) {
-        logger.debug("Starting backwards body download with node {}", peerId);
+    public void backwardDownloadBodies(Block child, List<BlockHeader> toRequest, Peer peer) {
+        logger.debug("Starting backwards body download with node {}", peer.getPeerNodeID());
         setSyncState(new DownloadingBackwardsBodiesSyncState(
                 syncConfiguration,
                 this,
@@ -297,7 +303,7 @@ public class SyncProcessor implements SyncEventsHandler {
                 blockStore,
                 child,
                 toRequest,
-                peerId
+                peer
         ));
     }
 

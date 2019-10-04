@@ -15,7 +15,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     private final PeersInformation peersInformation;
     private final Map<NodeID, List<BlockIdentifier>> skeletons;
     private final Map<NodeID, Boolean> availables;
-    private final NodeID selectedPeerId;
+    private final Peer selectedPeer;
     private final List<NodeID> candidates;
     private long connectionPoint;
     private long expectedSkeletons;
@@ -25,10 +25,10 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     public DownloadingSkeletonSyncState(SyncConfiguration syncConfiguration,
                                         SyncEventsHandler syncEventsHandler,
                                         PeersInformation peersInformation,
-                                        NodeID selectedPeerId,
+                                        Peer peer,
                                         long connectionPoint) {
         super(syncEventsHandler, syncConfiguration);
-        this.selectedPeerId = selectedPeerId;
+        this.selectedPeer = peer;
         this.connectionPoint = connectionPoint;
         this.skeletons = new HashMap<>();
         this.availables = new HashMap<>();
@@ -41,7 +41,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     @Override
     public void newSkeleton(List<BlockIdentifier> skeleton, Peer peer) {
         NodeID peerId = peer.getPeerNodeID();
-        boolean isSelectedPeer = peerId.equals(selectedPeerId);
+        boolean isSelectedPeer = peerId.equals(selectedPeer);
 
         // defensive programming: this should never happen
         if (skeleton.size() < 2) {
@@ -65,7 +65,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 syncEventsHandler.stopSyncing();
                 return;
             }
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peerId);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peer);
         }
     }
 
@@ -86,14 +86,18 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 return;
             }
 
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeerId);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeer);
         }
     }
 
     @Override
     protected void onMessageTimeOut() {
-        syncEventsHandler.onErrorSyncing(selectedPeerId,
-                "Timeout waiting requests {}", EventType.TIMEOUT_MESSAGE, this.getClass(), selectedPeerId);
+        syncEventsHandler.onErrorSyncing(
+                selectedPeer.getPeerNodeID(),
+                "Timeout waiting requests {}",
+                EventType.TIMEOUT_MESSAGE,
+                this.getClass(),
+                selectedPeer.getPeerNodeID());
     }
 
     @Override

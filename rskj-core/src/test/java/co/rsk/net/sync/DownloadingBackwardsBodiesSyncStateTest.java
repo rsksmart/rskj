@@ -3,7 +3,6 @@ package co.rsk.net.sync;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.Peer;
-import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -28,7 +27,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
     private BlockFactory blockFactory;
     private BlockStore blockStore;
     private Block child;
-    private NodeID selectedPeerId;
+    private Peer peer;
 
     @Before
     public void setUp() {
@@ -39,7 +38,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         blockFactory = mock(BlockFactory.class);
         blockStore = mock(BlockStore.class);
         child = mock(Block.class);
-        selectedPeerId = mock(NodeID.class);
+        peer = mock(Peer.class);
     }
 
     /**
@@ -59,7 +58,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
                 blockStore,
                 child,
                 toRequest,
-                selectedPeerId);
+                peer);
 
         when(child.getNumber()).thenReturn(1L);
         when(genesis.isParentOf(child)).thenReturn(false);
@@ -84,7 +83,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
                 blockStore,
                 child,
                 toRequest,
-                selectedPeerId);
+                peer);
 
         Keccak256 childHash = new Keccak256(new byte[32]);
         when(child.getHash()).thenReturn(childHash);
@@ -112,7 +111,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
                 blockStore,
                 child,
                 toRequest,
-                selectedPeerId);
+                peer);
 
         Keccak256 childHash = new Keccak256(new byte[32]);
         when(child.getHash()).thenReturn(childHash);
@@ -187,7 +186,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
                 blockStore,
                 child,
                 toRequest,
-                selectedPeerId);
+                peer);
 
         while (!responses.isEmpty()) {
             target.onEnter();
@@ -251,7 +250,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
                 blockStore,
                 child,
                 toRequest,
-                selectedPeerId);
+                peer);
 
         while(!responses.isEmpty()) {
             target.onEnter();

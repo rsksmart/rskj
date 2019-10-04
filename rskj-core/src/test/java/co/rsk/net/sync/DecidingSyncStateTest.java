@@ -182,7 +182,7 @@ public class DecidingSyncStateTest {
 
         syncState.newPeerStatus();
 
-        verify(syncEventsHandler).backwardSyncing(nodeID);
+        verify(syncEventsHandler).backwardSyncing(peer);
     }
 
     @Test
@@ -216,7 +216,7 @@ public class DecidingSyncStateTest {
 
         syncState.newPeerStatus();
 
-        verify(syncEventsHandler).startSyncing(nodeID);
+        verify(syncEventsHandler).startSyncing(peer);
     }
 
     @Test
@@ -251,6 +251,6 @@ public class DecidingSyncStateTest {
 
         syncState.newPeerStatus();
 
-        verify(syncEventsHandler).startSyncing(nodeID);
+        verify(syncEventsHandler).startSyncing(peer);
     }
 }

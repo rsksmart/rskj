@@ -1,11 +1,9 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import org.ethereum.db.BlockStore;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -15,13 +13,13 @@ public class FindingConnectionPointSyncStateTest {
 
     private BlockStore blockStore;
     private SyncEventsHandler syncEventsHandler;
-    private NodeID nodeId;
+    private Peer peer;
 
     @Before
     public void setUp() {
         syncEventsHandler = mock(SyncEventsHandler.class);
         blockStore = mock(BlockStore.class);
-        nodeId = mock(NodeID.class);
+        peer = mock(Peer.class);
     }
 
     @Test
@@ -32,7 +30,7 @@ public class FindingConnectionPointSyncStateTest {
                         SyncConfiguration.IMMEDIATE_FOR_TESTING,
                         syncEventsHandler,
                         blockStore,
-                        nodeId, 10L);
+                        peer, 10L);
 
         when(blockStore.isBlockExist(any())).thenReturn(false);
         when(syncEventsHandler.sendBlockHashRequest(anyLong(), any())).thenReturn(true);

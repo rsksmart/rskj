@@ -2,6 +2,7 @@ package co.rsk.net.sync;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
@@ -20,14 +21,17 @@ public class DownloadingBackwardsHeadersSyncStateTest {
     private SyncConfiguration syncConfiguration;
     private SyncEventsHandler syncEventsHandler;
     private BlockStore blockStore;
-    private NodeID selectedPeerId;
+    private Peer selectedPeer;
+    private NodeID nodeID;
 
     @Before
     public void setUp () {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
         blockStore = mock(BlockStore.class);
-        selectedPeerId = mock(NodeID.class);
+        selectedPeer = mock(Peer.class);
+        nodeID = mock(NodeID.class);
+        when(selectedPeer.getPeerNodeID()).thenReturn(nodeID);
     }
 
     @Test
@@ -42,14 +46,14 @@ public class DownloadingBackwardsHeadersSyncStateTest {
                 syncConfiguration,
                 syncEventsHandler,
                 blockStore,
-                selectedPeerId);
+                selectedPeer);
 
         ArgumentCaptor<ChunkDescriptor> descriptorCaptor = ArgumentCaptor.forClass(ChunkDescriptor.class);
         when(syncEventsHandler.sendBlockHeadersRequest(descriptorCaptor.capture(), any())).thenReturn(true);
 
         target.onEnter();
 
-        verify(syncEventsHandler).sendBlockHeadersRequest(any(), eq(selectedPeerId));
+        verify(syncEventsHandler).sendBlockHeadersRequest(any(), eq(nodeID));
         verify(syncEventsHandler, never()).onSyncIssue(any(), any());
 
         assertEquals(descriptorCaptor.getValue().getHash(), hash.getBytes());
@@ -68,14 +72,14 @@ public class DownloadingBackwardsHeadersSyncStateTest {
                 syncConfiguration,
                 syncEventsHandler,
                 blockStore,
-                selectedPeerId);
+                selectedPeer);
 
         ArgumentCaptor<ChunkDescriptor> descriptorCaptor = ArgumentCaptor.forClass(ChunkDescriptor.class);
         when(syncEventsHandler.sendBlockHeadersRequest(descriptorCaptor.capture(), any())).thenReturn(false);
 
         target.onEnter();
 
-        verify(syncEventsHandler).sendBlockHeadersRequest(any(), eq(selectedPeerId));
+        verify(syncEventsHandler).sendBlockHeadersRequest(any(), eq(nodeID));
         verify(syncEventsHandler).onSyncIssue(any(), any());
 
         assertEquals(descriptorCaptor.getValue().getHash(), hash.getBytes());
@@ -95,13 +99,13 @@ public class DownloadingBackwardsHeadersSyncStateTest {
                 syncConfiguration,
                 syncEventsHandler,
                 blockStore,
-                selectedPeerId);
+                selectedPeer);
 
 
         List<BlockHeader> receivedHeaders = new LinkedList<>();
         target.newBlockHeaders(receivedHeaders);
 
 
-        verify(syncEventsHandler).backwardDownloadBodies(eq(selectedPeerId), eq(child), eq(receivedHeaders));
+        verify(syncEventsHandler).backwardDownloadBodies(eq(child), eq(receivedHeaders), eq(selectedPeer));
     }
 }

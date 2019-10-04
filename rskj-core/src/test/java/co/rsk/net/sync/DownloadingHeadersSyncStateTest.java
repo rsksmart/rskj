@@ -2,6 +2,7 @@ package co.rsk.net.sync;
 
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.validators.BlockHeaderValidationRule;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.validator.DependentBlockHeaderRule;
@@ -26,7 +27,7 @@ public class DownloadingHeadersSyncStateTest {
                 mock(ConsensusValidationMainchainView.class),
                 mock(DependentBlockHeaderRule.class),
                 mock(BlockHeaderValidationRule.class),
-                mock(NodeID.class), skeletons,
+                mock(Peer.class), skeletons,
                 0);
 
         for (int i = 0; i < 10; i++) {
@@ -45,7 +46,7 @@ public class DownloadingHeadersSyncStateTest {
                 mock(ConsensusValidationMainchainView.class),
                 mock(DependentBlockHeaderRule.class),
                 mock(BlockHeaderValidationRule.class),
-                mock(NodeID.class), Collections.emptyMap(),
+                mock(Peer.class), Collections.emptyMap(),
                 0);
 
         syncState.newPeerStatus();
@@ -68,7 +69,7 @@ public class DownloadingHeadersSyncStateTest {
                 mock(ConsensusValidationMainchainView.class),
                 mock(DependentBlockHeaderRule.class),
                 mock(BlockHeaderValidationRule.class),
-                mock(NodeID.class), Collections.emptyMap(),
+                mock(Peer.class), Collections.emptyMap(),
                 0);
 
         syncState.newPeerStatus();

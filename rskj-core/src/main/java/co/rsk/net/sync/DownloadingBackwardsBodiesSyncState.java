@@ -2,7 +2,6 @@ package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Peer;
-import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
@@ -32,7 +31,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
     private final BlockFactory blockFactory;
     private final BlockStore blockStore;
     private final Queue<BlockHeader> toRequest;
-    private final NodeID selectedPeerId;
+    private final Peer selectedPeer;
 
     private final PriorityQueue<Block> responses;
     private final Map<Long, BlockHeader> inTransit;
@@ -47,7 +46,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
             BlockStore blockStore,
             Block child,
             List<BlockHeader> toRequest,
-            NodeID selectedPeerId) {
+            Peer peer) {
 
         super(syncEventsHandler, syncConfiguration);
         this.peersInformation = peersInformation;
@@ -56,7 +55,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
         this.blockStore = blockStore;
         this.toRequest = new LinkedList<>(toRequest);
         this.child = child;
-        this.selectedPeerId = selectedPeerId;
+        this.selectedPeer = peer;
         this.responses = new PriorityQueue<>(Comparator.comparingLong(Block::getNumber).reversed());
         this.inTransit = new HashMap<>();
     }
@@ -140,10 +139,10 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
     }
 
     private void requestBodies(BlockHeader headerToRequest) {
-        Long requestNumber = syncEventsHandler.sendBodyRequest(headerToRequest, selectedPeerId);
+        Long requestNumber = syncEventsHandler.sendBodyRequest(headerToRequest, selectedPeer.getPeerNodeID());
         if (requestNumber == null) {
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), selectedPeerId);
+                    this.getClass(), selectedPeer);
         }
         inTransit.put(requestNumber, headerToRequest);
     }
@@ -163,7 +162,11 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
 
     @Override
     protected void onMessageTimeOut() {
-        syncEventsHandler.onErrorSyncing(selectedPeerId,
-                "Timeout waiting requests {}", EventType.TIMEOUT_MESSAGE, this.getClass(), selectedPeerId);
+        syncEventsHandler.onErrorSyncing(
+                selectedPeer.getPeerNodeID(),
+                "Timeout waiting requests {}",
+                EventType.TIMEOUT_MESSAGE,
+                this.getClass(),
+                selectedPeer.getPeerNodeID());
     }
 }
