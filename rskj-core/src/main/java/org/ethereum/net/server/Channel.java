@@ -19,7 +19,7 @@
 
 package org.ethereum.net.server;
 
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.eth.RskMessage;
 import co.rsk.net.eth.RskWireProtocol;
@@ -52,7 +52,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Objects;
 
-public class Channel implements MessageChannel {
+public class Channel implements Peer {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 

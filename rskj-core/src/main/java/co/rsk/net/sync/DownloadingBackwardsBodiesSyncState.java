@@ -1,7 +1,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
@@ -71,7 +71,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
      * @param peer The peer sending the message.
      */
     @Override
-    public void newBody(BodyResponseMessage body, MessageChannel peer) {
+    public void newBody(BodyResponseMessage body, Peer peer) {
         BlockHeader requestedHeader = inTransit.get(body.getId());
         if (requestedHeader == null) {
             peersInformation.reportEvent(peer.getPeerNodeID(), EventType.INVALID_MESSAGE);

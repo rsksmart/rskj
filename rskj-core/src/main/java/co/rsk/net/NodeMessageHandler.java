@@ -90,7 +90,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      * @param sender  the message sender.
      * @param message the message to be processed.
      */
-    public synchronized void processMessage(final MessageChannel sender, @Nonnull final Message message) {
+    public synchronized void processMessage(final Peer sender, @Nonnull final Message message) {
         long start = System.nanoTime();
         logger.trace("Process message type: {}", message.getMessageType());
 
@@ -108,7 +108,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     @Override
-    public void postMessage(MessageChannel sender, Message message) {
+    public void postMessage(Peer sender, Message message) {
         logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
         // There's an obvious race condition here, but fear not.
         // receivedMessages and logger are thread-safe
@@ -119,7 +119,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         logger.trace("End post message (queue size {})", this.queue.size());
     }
 
-    private void tryAddMessage(MessageChannel sender, Message message) {
+    private void tryAddMessage(Peer sender, Message message) {
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         if (!receivedMessages.contains(encodedMessage)) {
             if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
@@ -209,7 +209,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
     }
 
-    private void recordEvent(MessageChannel sender, EventType event) {
+    private void recordEvent(Peer sender, EventType event) {
         if (sender == null) {
             return;
         }
@@ -218,15 +218,15 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private static class MessageTask {
-        private MessageChannel sender;
+        private Peer sender;
         private Message message;
 
-        public MessageTask(MessageChannel sender, Message message) {
+        public MessageTask(Peer sender, Message message) {
             this.sender = sender;
             this.message = message;
         }
 
-        public MessageChannel getSender() {
+        public Peer getSender() {
             return this.sender;
         }
 

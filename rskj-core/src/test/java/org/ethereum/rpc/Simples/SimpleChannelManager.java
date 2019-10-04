@@ -18,7 +18,7 @@
 
 package org.ethereum.rpc.Simples;
 
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.MessageWithId;
@@ -35,17 +35,15 @@ import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by Ruben on 09/06/2016.
  */
 public class SimpleChannelManager implements ChannelManager {
     private List<Transaction> transactions = new ArrayList<>();
-    private Map<NodeID, MessageChannel> simpleChannels = new ConcurrentHashMap<>();
+    private Map<NodeID, Peer> simpleChannels = new ConcurrentHashMap<>();
 
     @Override
     public void start() {
@@ -89,8 +87,8 @@ public class SimpleChannelManager implements ChannelManager {
 
     }
 
-    public MessageChannel getMessageChannel(SimpleNode sender, SimpleNode receiver) {
-        MessageChannel channel = simpleChannels.get(sender.getNodeID());
+    public Peer getMessageChannel(SimpleNode sender, SimpleNode receiver) {
+        Peer channel = simpleChannels.get(sender.getNodeID());
         if (channel != null){
             return channel;
         }
@@ -106,13 +104,13 @@ public class SimpleChannelManager implements ChannelManager {
     }
 
     @Override
-    public Collection<MessageChannel> getActivePeers() {
+    public Collection<Peer> getActivePeers() {
         return simpleChannels.values();
     }
 
     @Override
     public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
-        MessageChannel channel = simpleChannels.get(nodeID);
+        Peer channel = simpleChannels.get(nodeID);
         // TODO(lsebrie): handle better tests where channels are not initialized
         if (channel != null){
             channel.sendMessage(message);

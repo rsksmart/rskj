@@ -2,7 +2,7 @@ package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
 import org.ethereum.core.*;
@@ -191,7 +191,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
         while (!responses.isEmpty()) {
             target.onEnter();
-            target.newBody(responses.pop(), mock(MessageChannel.class));
+            target.newBody(responses.pop(), mock(Peer.class));
 
             Block block = expectedBlocks.pop();
             BlockDifficulty expectedDifficulty = difficultyForBlockNumber.apply(block.getNumber());
@@ -255,7 +255,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
         while(!responses.isEmpty()) {
             target.onEnter();
-            target.newBody(responses.pop(), mock(MessageChannel.class));
+            target.newBody(responses.pop(), mock(Peer.class));
 
             Block block = expectedBlocks.pop();
             BlockDifficulty expectedDifficulty = difficultyForBlockNumber.apply(block.getNumber());

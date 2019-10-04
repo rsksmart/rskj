@@ -18,15 +18,14 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
-import org.ethereum.net.server.Channel;
 
 import java.net.InetAddress;
 import java.util.Objects;
 
-public class SimpleNodeChannel implements MessageChannel {
+public class SimpleNodeChannel implements Peer {
     private SimpleNode sender;
     private SimpleNode receiver;
     private NodeID nodeID = new NodeID(new byte[]{});

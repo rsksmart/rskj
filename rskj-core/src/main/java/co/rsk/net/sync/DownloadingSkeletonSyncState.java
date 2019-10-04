@@ -1,6 +1,6 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockIdentifier;
@@ -39,7 +39,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     }
 
     @Override
-    public void newSkeleton(List<BlockIdentifier> skeleton, MessageChannel peer) {
+    public void newSkeleton(List<BlockIdentifier> skeleton, Peer peer) {
         NodeID peerId = peer.getPeerNodeID();
         boolean isSelectedPeer = peerId.equals(selectedPeerId);
 

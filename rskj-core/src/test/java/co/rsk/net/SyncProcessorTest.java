@@ -8,7 +8,7 @@ import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.net.messages.*;
-import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.DownloadingBodiesSyncState;
 import co.rsk.net.sync.DownloadingHeadersSyncState;
 import co.rsk.net.sync.PeersInformation;
@@ -26,7 +26,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
-import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
@@ -89,7 +88,7 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+        SimplePeer sender = new SimplePeer(new byte[]{0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         final List<Message> messages = new ArrayList<>();
@@ -144,7 +143,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+        SimplePeer sender = new SimplePeer(new byte[]{0x01});
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         final List<Message> messages = new ArrayList<>();
@@ -210,7 +209,7 @@ public class SyncProcessorTest {
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.DEFAULT, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class));
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+        SimplePeer sender = new SimplePeer(new byte[]{0x01});
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getPeersCount());
@@ -254,12 +253,12 @@ public class SyncProcessorTest {
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.DEFAULT, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class));
 
-        List<SimpleMessageChannel> senders = new ArrayList<>();
+        List<SimplePeer> senders = new ArrayList<>();
         Map<NodeID, List<Message>> messagesByNode = new HashMap<>();
 
         int lessPeers = SyncConfiguration.DEFAULT.getExpectedPeers() - 1;
         for (int i = 0; i < lessPeers; i++) {
-            SimpleMessageChannel sender = new SimpleMessageChannel();
+            SimplePeer sender = new SimplePeer();
             senders.add(sender);
             messagesByNode.put(sender.getPeerNodeID(), new ArrayList<>());
             when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
@@ -277,10 +276,10 @@ public class SyncProcessorTest {
 
         Set<NodeID> knownPeersNodeIDs = processor.getKnownPeersNodeIDs();
         Assert.assertTrue(senders.stream()
-                .map(SimpleMessageChannel::getPeerNodeID)
+                .map(SimplePeer::getPeerNodeID)
                 .allMatch(knownPeersNodeIDs::contains));
 
-        SimpleMessageChannel lastSender = new SimpleMessageChannel();
+        SimplePeer lastSender = new SimplePeer();
         Assert.assertFalse(processor.getKnownPeersNodeIDs().contains(lastSender.getPeerNodeID()));
 
         processor.processStatus(lastSender, status);
@@ -310,7 +309,7 @@ public class SyncProcessorTest {
     public void processStatusWithPeerWithSameDifficulty() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(100);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 
@@ -344,9 +343,9 @@ public class SyncProcessorTest {
     @Test
     public void sendSkeletonRequest() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(100);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
-        MessageChannel channel = mock(MessageChannel.class);
+        Peer channel = mock(Peer.class);
         when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
@@ -384,9 +383,9 @@ public class SyncProcessorTest {
     public void sendBlockHashRequest() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
-        MessageChannel channel = mock(MessageChannel.class);
+        Peer channel = mock(Peer.class);
         when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
@@ -423,7 +422,7 @@ public class SyncProcessorTest {
     @Test(expected = Exception.class)
     public void processBlockHashResponseWithUnknownHash() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
 
         SyncProcessor processor = new SyncProcessor(
@@ -441,7 +440,7 @@ public class SyncProcessorTest {
     @Test
     public void processBlockHeadersResponseWithEmptyList() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, new NetBlockStore(), blockchain, new BlockNodeInformation(), syncConfiguration);
@@ -468,7 +467,7 @@ public class SyncProcessorTest {
     public void processBlockHeadersResponseRejectsNonSolicitedMessages() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
@@ -497,7 +496,7 @@ public class SyncProcessorTest {
     public void processBlockHeadersResponseWithManyHeadersMissingFirstParent() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         Blockchain otherBlockchain = new BlockChainBuilder().ofSize(10, true);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
@@ -529,7 +528,7 @@ public class SyncProcessorTest {
     public void processBlockHeadersResponseWithOneExistingHeader() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
@@ -557,7 +556,7 @@ public class SyncProcessorTest {
     @Test
     public void processBodyResponseRejectsNonSolicitedMessages() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(3);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
@@ -584,7 +583,7 @@ public class SyncProcessorTest {
     public void processBodyResponseAddsToBlockchain() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
@@ -635,7 +634,7 @@ public class SyncProcessorTest {
     public void doesntProcessInvalidBodyResponse() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
@@ -693,7 +692,7 @@ public class SyncProcessorTest {
     public void doesntProcessUnexpectedBodyResponse() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+        SimplePeer sender = new SimplePeer(new byte[]{0x01});
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
@@ -758,7 +757,7 @@ public class SyncProcessorTest {
         Blockchain blockchain = blockChainBuilder.ofSize(0, false, accounts);
 
         Block genesis = blockchain.getBestBlock();
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
@@ -837,7 +836,7 @@ public class SyncProcessorTest {
     public void processBlockResponseAddsToBlockchain() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
@@ -875,7 +874,7 @@ public class SyncProcessorTest {
         Blockchain blockchain = builder.ofSize(0);
         Blockchain advancedBlockchain = new BlockChainBuilder().ofSize(100);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         final List<Message> messages = new ArrayList<>();
@@ -936,7 +935,7 @@ public class SyncProcessorTest {
         org.ethereum.db.BlockStore blockStore = builder.getBlockStore();
         Blockchain advancedBlockchain = BlockChainBuilder.copyAndExtend(blockchain, 70);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         final List<Message> messages = new ArrayList<>();
@@ -998,9 +997,9 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
-        MessageChannel channel = mock(MessageChannel.class);
+        Peer channel = mock(Peer.class);
         when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
@@ -1049,7 +1048,7 @@ public class SyncProcessorTest {
     public void processSkeletonResponseWithoutBlockIdentifiers() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(0);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
 
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
@@ -1083,9 +1082,9 @@ public class SyncProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
         final ChannelManager channelManager = mock(ChannelManager.class);
-        MessageChannel channel = mock(MessageChannel.class);
+        Peer channel = mock(Peer.class);
         when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];

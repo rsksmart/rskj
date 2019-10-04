@@ -84,13 +84,13 @@ public class SyncProcessor implements SyncEventsHandler {
         setSyncState(new DecidingSyncState(syncConfiguration, this, peersInformation, blockStore));
     }
 
-    public void processStatus(MessageChannel sender, Status status) {
+    public void processStatus(Peer sender, Status status) {
         logger.debug("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.shortHash(status.getBestBlockHash()));
         peersInformation.registerPeer(sender).setStatus(status);
         syncState.newPeerStatus();
     }
 
-    public void processSkeletonResponse(MessageChannel peer, SkeletonResponseMessage message) {
+    public void processSkeletonResponse(Peer peer, SkeletonResponseMessage message) {
         logger.debug("Process skeleton response from node {}", peer.getPeerNodeID());
         peersInformation.getOrRegisterPeer(peer);
 
@@ -104,7 +104,7 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
-    public void processBlockHashResponse(MessageChannel peer, BlockHashResponseMessage message) {
+    public void processBlockHashResponse(Peer peer, BlockHashResponseMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.debug("Process block hash response from node {} hash {}", nodeID, HashUtil.shortHash(message.getHash()));
         peersInformation.getOrRegisterPeer(peer);
@@ -119,7 +119,7 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
-    public void processBlockHeadersResponse(MessageChannel peer, BlockHeadersResponseMessage message) {
+    public void processBlockHeadersResponse(Peer peer, BlockHeadersResponseMessage message) {
         logger.debug("Process block headers response from node {}", peer.getPeerNodeID());
         peersInformation.getOrRegisterPeer(peer);
 
@@ -133,7 +133,7 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
-    public void processBodyResponse(MessageChannel peer, BodyResponseMessage message) {
+    public void processBodyResponse(Peer peer, BodyResponseMessage message) {
         logger.debug("Process body response from node {}", peer.getPeerNodeID());
         peersInformation.getOrRegisterPeer(peer);
 
@@ -147,7 +147,7 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
-    public void processNewBlockHash(MessageChannel peer, NewBlockHashMessage message) {
+    public void processNewBlockHash(Peer peer, NewBlockHashMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.debug("Process new block hash from node {} hash {}", nodeID, HashUtil.shortHash(message.getBlockHash()));
         byte[] hash = message.getBlockHash();
@@ -158,7 +158,7 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
-    public void processBlockResponse(MessageChannel peer, BlockResponseMessage message) {
+    public void processBlockResponse(Peer peer, BlockResponseMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.debug("Process block response from node {} block {} {}", nodeID, message.getBlock().getNumber(), message.getBlock().getShortHash());
         peersInformation.getOrRegisterPeer(peer);

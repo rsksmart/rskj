@@ -20,7 +20,7 @@
 package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
@@ -297,7 +297,7 @@ public class ChannelManagerImpl implements ChannelManager {
         }
     }
 
-    public Collection<MessageChannel> getActivePeers() {
+    public Collection<Peer> getActivePeers() {
         // from the docs: it is imperative to synchronize when iterating
         synchronized (activePeersLock){
             return new ArrayList<>(activePeers.values());

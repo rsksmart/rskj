@@ -69,7 +69,7 @@ public class SimpleAsyncNode extends SimpleNode {
 
     @Override
     public void receiveMessageFrom(SimpleNode peer, Message message) {
-        MessageChannel senderToPeer = simpleChannelManager.getMessageChannel(this, peer);
+        Peer senderToPeer = simpleChannelManager.getMessageChannel(this, peer);
         futures.add(
                 executor.submit(() -> this.getHandler().processMessage(senderToPeer, message)));
     }

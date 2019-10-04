@@ -2,7 +2,7 @@ package co.rsk.net.sync;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockSyncService;
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
@@ -89,7 +89,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     @Override
-    public void newBody(BodyResponseMessage message, MessageChannel peer) {
+    public void newBody(BodyResponseMessage message, Peer peer) {
         NodeID peerId = peer.getPeerNodeID();
         long requestId = message.getId();
         if (!isExpectedBody(requestId, peerId)) {

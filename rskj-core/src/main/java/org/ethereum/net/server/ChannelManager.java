@@ -20,7 +20,7 @@
 package org.ethereum.net.server;
 
 import co.rsk.config.InternalService;
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.MessageWithId;
@@ -76,7 +76,7 @@ public interface ChannelManager extends InternalService {
 
     void notifyDisconnect(Channel channel);
 
-    Collection<MessageChannel> getActivePeers();
+    Collection<Peer> getActivePeers();
 
     boolean sendMessageTo(NodeID nodeID, MessageWithId message);
 
