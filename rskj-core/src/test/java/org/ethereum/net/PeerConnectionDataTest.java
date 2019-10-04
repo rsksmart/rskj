@@ -20,7 +20,7 @@
 package org.ethereum.net;
 
 import org.ethereum.net.client.Capability;
-import org.ethereum.net.p2p.Peer;
+import org.ethereum.net.p2p.PeerConnectionData;
 
 import org.junit.Test;
 
@@ -33,7 +33,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public class PeerTest {
+public class PeerConnectionDataTest {
 
     /* PEER */
 
@@ -45,10 +45,10 @@ public class PeerTest {
         List<Capability> capabilities = new ArrayList<>();
         int port = 1010;
         String peerId = "1010";
-        Peer peerCopy = new Peer(address, port, peerId);
+        PeerConnectionData peerCopy = new PeerConnectionData(address, port, peerId);
 
-        //Peer
-        Peer peer = new Peer(address, port, peerId);
+        //PeerConnectionData
+        PeerConnectionData peer = new PeerConnectionData(address, port, peerId);
 
         //getAddress
         assertEquals("127.0.0.1", peer.getAddress().getHostAddress());
