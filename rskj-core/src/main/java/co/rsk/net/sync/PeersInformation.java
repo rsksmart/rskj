@@ -9,7 +9,6 @@ import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Blockchain;
-import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +36,7 @@ public class PeersInformation {
     private final Blockchain blockchain;
     private final Map<NodeID, Instant> failedPeers;
     private final PeerScoringManager peerScoringManager;
-    private final Comparator<Map.Entry<NodeID, SyncPeerStatus>> peerComparator;
+    private final Comparator<Map.Entry<MessageChannel, SyncPeerStatus>> peerComparator;
     private Map<MessageChannel, SyncPeerStatus> peerStatuses = new HashMap<>();
 
     public PeersInformation(ChannelManager channelManager,
@@ -49,7 +48,7 @@ public class PeersInformation {
         this.blockchain = blockchain;
         this.failedPeers = new MaxSizeHashMap<>(MAX_SIZE_FAILURE_RECORDS, true);
         this.peerScoringManager = peerScoringManager;
-        this.peerComparator = ((Comparator<Map.Entry<NodeID, SyncPeerStatus>>) this::comparePeerFailInstant)
+        this.peerComparator = ((Comparator<Map.Entry<MessageChannel, SyncPeerStatus>>) this::comparePeerFailInstant)
                 // TODO reenable when unprocessable blocks stop being marked as invalid blocks
 //                .thenComparing(this::comparePeerScoring)
                 .thenComparing(this::comparePeerTotalDifficulty);
@@ -106,24 +105,22 @@ public class PeersInformation {
     public Optional<NodeID> getBestPeer() {
         return getCandidatesStream()
                 .max(this.peerComparator)
-                .map(Map.Entry::getKey);
+                .map(Map.Entry::getKey)
+                .map(MessageChannel::getPeerNodeID);
     }
 
-    private Stream<Map.Entry<NodeID, SyncPeerStatus>> getCandidatesStream(){
-        Set<NodeID> activeNodes = channelManager.getActivePeers().stream()
-                .map(MessageChannel::getPeerNodeID).collect(Collectors.toSet());
+    private Stream<Map.Entry<MessageChannel, SyncPeerStatus>> getCandidatesStream(){
+        Collection<MessageChannel> activeNodes = channelManager.getActivePeers();
 
         return peerStatuses.entrySet().stream()
-                .map(e -> new AbstractMap.SimpleEntry<>(e.getKey().getPeerNodeID(), e.getValue()))
                 .filter(e -> peerNotExpired(e.getValue()))
                 .filter(e -> activeNodes.contains(e.getKey()))
-                .filter(e -> peerScoringManager.hasGoodReputation(e.getKey()))
-                .filter(e -> hasLowerDifficulty(e.getKey()))
-                .map(Function.identity());
+                .filter(e -> peerScoringManager.hasGoodReputation(e.getKey().getPeerNodeID()))
+                .filter(e -> hasLowerDifficulty(e.getKey()));
     }
 
-    private boolean hasLowerDifficulty(NodeID key) {
-        Status status = getPeer(key).getStatus();
+    private boolean hasLowerDifficulty(MessageChannel peer) {
+        Status status = getPeer(peer.getPeerNodeID()).getStatus();
         if (status == null) {
             return false;
         }
@@ -136,7 +133,10 @@ public class PeersInformation {
     }
 
     public List<NodeID> getPeerCandidates() {
-        return getCandidatesStream().map(Map.Entry::getKey).collect(Collectors.toList());
+        return getCandidatesStream()
+                .map(Map.Entry::getKey)
+                .map(MessageChannel::getPeerNodeID)
+                .collect(Collectors.toList());
     }
 
     public Set<NodeID> knownNodeIds() {
@@ -162,8 +162,8 @@ public class PeersInformation {
     }
 
     private int comparePeerFailInstant(
-            Map.Entry<NodeID, SyncPeerStatus> entry,
-            Map.Entry<NodeID, SyncPeerStatus> other) {
+            Map.Entry<MessageChannel, SyncPeerStatus> entry,
+            Map.Entry<MessageChannel, SyncPeerStatus> other) {
         Instant failInstant = getFailInstant(entry.getKey());
         Instant otherFailInstant = getFailInstant(other.getKey());
         // note that this is in inverse order
@@ -184,8 +184,8 @@ public class PeersInformation {
     }
 
     private int comparePeerTotalDifficulty(
-            Map.Entry<NodeID, SyncPeerStatus> entry,
-            Map.Entry<NodeID, SyncPeerStatus> other) {
+            Map.Entry<MessageChannel, SyncPeerStatus> entry,
+            Map.Entry<MessageChannel, SyncPeerStatus> other) {
         BlockDifficulty ttd = entry.getValue().getStatus().getTotalDifficulty();
         BlockDifficulty otd = other.getValue().getStatus().getTotalDifficulty();
 
@@ -205,8 +205,8 @@ public class PeersInformation {
         return ttd.compareTo(otd);
     }
 
-    private Instant getFailInstant(NodeID peerId) {
-        Instant instant = failedPeers.get(peerId);
+    private Instant getFailInstant(MessageChannel peer) {
+        Instant instant = failedPeers.get(peer.getPeerNodeID());
         if (instant != null){
             return instant;
         }
