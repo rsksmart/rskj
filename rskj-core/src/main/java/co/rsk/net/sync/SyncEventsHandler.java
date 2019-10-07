@@ -7,19 +7,18 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
-import javax.annotation.Nonnull;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 
 public interface SyncEventsHandler {
-    boolean sendSkeletonRequest(NodeID nodeID, long height);
+    boolean sendSkeletonRequest(Peer peer, long height);
 
-    boolean sendBlockHashRequest(long height, NodeID peerId);
+    boolean sendBlockHashRequest(Peer peer, long height);
 
-    boolean sendBlockHeadersRequest(ChunkDescriptor chunk, NodeID peer);
+    boolean sendBlockHeadersRequest(Peer peer, ChunkDescriptor chunk);
 
-    Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peer);
+    Long sendBodyRequest(Peer peer, BlockHeader header);
 
     void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer);
 

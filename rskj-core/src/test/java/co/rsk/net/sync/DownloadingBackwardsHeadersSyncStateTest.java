@@ -22,7 +22,6 @@ public class DownloadingBackwardsHeadersSyncStateTest {
     private SyncEventsHandler syncEventsHandler;
     private BlockStore blockStore;
     private Peer selectedPeer;
-    private NodeID nodeID;
 
     @Before
     public void setUp () {
@@ -30,7 +29,7 @@ public class DownloadingBackwardsHeadersSyncStateTest {
         syncEventsHandler = mock(SyncEventsHandler.class);
         blockStore = mock(BlockStore.class);
         selectedPeer = mock(Peer.class);
-        nodeID = mock(NodeID.class);
+        NodeID nodeID = mock(NodeID.class);
         when(selectedPeer.getPeerNodeID()).thenReturn(nodeID);
     }
 
@@ -49,11 +48,11 @@ public class DownloadingBackwardsHeadersSyncStateTest {
                 selectedPeer);
 
         ArgumentCaptor<ChunkDescriptor> descriptorCaptor = ArgumentCaptor.forClass(ChunkDescriptor.class);
-        when(syncEventsHandler.sendBlockHeadersRequest(descriptorCaptor.capture(), any())).thenReturn(true);
+        when(syncEventsHandler.sendBlockHeadersRequest(any(), descriptorCaptor.capture())).thenReturn(true);
 
         target.onEnter();
 
-        verify(syncEventsHandler).sendBlockHeadersRequest(any(), eq(nodeID));
+        verify(syncEventsHandler).sendBlockHeadersRequest(eq(selectedPeer), any());
         verify(syncEventsHandler, never()).onSyncIssue(any(), any());
 
         assertEquals(descriptorCaptor.getValue().getHash(), hash.getBytes());
@@ -75,11 +74,11 @@ public class DownloadingBackwardsHeadersSyncStateTest {
                 selectedPeer);
 
         ArgumentCaptor<ChunkDescriptor> descriptorCaptor = ArgumentCaptor.forClass(ChunkDescriptor.class);
-        when(syncEventsHandler.sendBlockHeadersRequest(descriptorCaptor.capture(), any())).thenReturn(false);
+        when(syncEventsHandler.sendBlockHeadersRequest(any(), descriptorCaptor.capture())).thenReturn(false);
 
         target.onEnter();
 
-        verify(syncEventsHandler).sendBlockHeadersRequest(any(), eq(nodeID));
+        verify(syncEventsHandler).sendBlockHeadersRequest(eq(selectedPeer), any());
         verify(syncEventsHandler).onSyncIssue(any(), any());
 
         assertEquals(descriptorCaptor.getValue().getHash(), hash.getBytes());

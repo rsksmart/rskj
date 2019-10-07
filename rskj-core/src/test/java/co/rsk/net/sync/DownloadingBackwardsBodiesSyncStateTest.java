@@ -150,7 +150,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
             when(headerToRequest.getHash()).thenReturn(headerHash);
             toRequest.addFirst(headerToRequest);
-            when(syncEventsHandler.sendBodyRequest(eq(headerToRequest), any())).thenReturn(i);
+            when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
             BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
             responses.addFirst(response);
@@ -216,7 +216,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
             when(headerToRequest.getHash()).thenReturn(headerHash);
             toRequest.addFirst(headerToRequest);
-            when(syncEventsHandler.sendBodyRequest(eq(headerToRequest), any())).thenReturn(i);
+            when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
             BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
             responses.addFirst(response);

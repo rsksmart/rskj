@@ -109,7 +109,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     }
 
     private void trySendRequest(Peer p) {
-        boolean sent = syncEventsHandler.sendSkeletonRequest(p.getPeerNodeID(), connectionPoint);
+        boolean sent = syncEventsHandler.sendSkeletonRequest(p, connectionPoint);
         availables.put(p, sent);
         if (!sent){
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}", this.getClass(), p);

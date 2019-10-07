@@ -46,7 +46,7 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
     }
 
     private void trySendRequest() {
-        boolean sent = syncEventsHandler.sendBlockHeadersRequest(miniChunk, selectedPeer.getPeerNodeID());
+        boolean sent = syncEventsHandler.sendBlockHeadersRequest(selectedPeer, miniChunk);
         if (!sent) {
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
                     this.getClass(), selectedPeer.getPeerNodeID());

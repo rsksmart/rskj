@@ -33,7 +33,7 @@ public class FindingConnectionPointSyncStateTest {
                         peer, 10L);
 
         when(blockStore.isBlockExist(any())).thenReturn(false);
-        when(syncEventsHandler.sendBlockHashRequest(anyLong(), any())).thenReturn(true);
+        when(syncEventsHandler.sendBlockHashRequest(any(), anyLong())).thenReturn(true);
 
         target.onEnter();
         for(int i = 0; i < 4; i++) {

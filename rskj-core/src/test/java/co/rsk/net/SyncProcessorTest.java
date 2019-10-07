@@ -364,7 +364,7 @@ public class SyncProcessorTest {
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class));
 
-        processor.sendSkeletonRequest(sender.getPeerNodeID(), 0);
+        processor.sendSkeletonRequest(sender, 0);
 
         Message message = msg[0];
         Assert.assertNotNull(message);
@@ -404,7 +404,7 @@ public class SyncProcessorTest {
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class));
 
-        processor.sendBlockHashRequest(100, sender.getPeerNodeID());
+        processor.sendBlockHashRequest(sender, 100);
 
         Message message = msg[0];
 

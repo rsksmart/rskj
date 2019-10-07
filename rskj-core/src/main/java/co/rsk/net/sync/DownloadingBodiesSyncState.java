@@ -357,7 +357,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void tryRequestBody(Peer peer, BlockHeader header){
-        Long messageId = syncEventsHandler.sendBodyRequest(header, peer.getPeerNodeID());
+        Long messageId = syncEventsHandler.sendBodyRequest(peer, header);
         if (messageId != null){
             pendingBodyResponses.put(messageId, new PendingBodyResponse(peer.getPeerNodeID(), header));
             timeElapsedByPeer.put(peer, Duration.ZERO);

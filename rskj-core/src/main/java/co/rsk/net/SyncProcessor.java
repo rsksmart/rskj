@@ -154,7 +154,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
         if (syncState instanceof DecidingSyncState && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
             peersInformation.getOrRegisterPeer(peer);
-            sendMessage(nodeID, new BlockRequestMessage(++lastRequestId, hash));
+            sendMessage(peer, new BlockRequestMessage(++lastRequestId, hash));
         }
     }
 
@@ -174,33 +174,35 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public boolean sendSkeletonRequest(NodeID nodeID, long height) {
-        logger.debug("Send skeleton request to node {} height {}", nodeID, height);
+    public boolean sendSkeletonRequest(Peer peer, long height) {
+        logger.debug("Send skeleton request to node {} height {}", peer.getPeerNodeID(), height);
         MessageWithId message = new SkeletonRequestMessage(++lastRequestId, height);
-        return sendMessage(nodeID, message);
+        return sendMessage(peer, message);
     }
 
     @Override
-    public boolean sendBlockHashRequest(long height, NodeID peerId) {
-        logger.debug("Send hash request to node {} height {}", peerId, height);
+    public boolean sendBlockHashRequest(Peer peer, long height) {
+        logger.debug("Send hash request to node {} height {}", peer.getPeerNodeID(), height);
         BlockHashRequestMessage message = new BlockHashRequestMessage(++lastRequestId, height);
-        return sendMessage(peerId, message);
+        return sendMessage(peer, message);
     }
 
     @Override
-    public boolean sendBlockHeadersRequest(ChunkDescriptor chunk, NodeID peerId) {
-        logger.debug("Send headers request to node {}", peerId);
+    public boolean sendBlockHeadersRequest(Peer peer, ChunkDescriptor chunk) {
+        logger.debug("Send headers request to node {}", peer.getPeerNodeID());
 
-        BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(++lastRequestId, chunk.getHash(), chunk.getCount());
-        return sendMessage(peerId, message);
+        BlockHeadersRequestMessage message =
+                new BlockHeadersRequestMessage(++lastRequestId, chunk.getHash(), chunk.getCount());
+        return sendMessage(peer, message);
     }
 
     @Override
-    public Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) {
-        logger.debug("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash().getBytes()), peerId);
+    public Long sendBodyRequest(Peer peer, @Nonnull BlockHeader header) {
+        logger.debug("Send body request block {} hash {} to peer {}", header.getNumber(),
+                HashUtil.shortHash(header.getHash().getBytes()), peer.getPeerNodeID());
 
         BodyRequestMessage message = new BodyRequestMessage(++lastRequestId, header.getHash().getBytes());
-        if (!sendMessage(peerId, message)){
+        if (!sendMessage(peer, message)){
             return null;
         }
         return message.getId();
@@ -333,13 +335,13 @@ public class SyncProcessor implements SyncEventsHandler {
         stopSyncing();
     }
 
-    private boolean sendMessage(NodeID nodeID, MessageWithId message) {
-        boolean sent = sendMessageTo(nodeID, message);
+    private boolean sendMessage(Peer peer, MessageWithId message) {
+        boolean sent = sendMessageTo(peer.getPeerNodeID(), message);
         if (sent){
             MessageType messageType = message.getResponseMessageType();
             long messageId = message.getId();
             pendingMessages.put(messageId, messageType);
-            logger.trace("Pending {}@{} ADDED for {}", messageType, messageId, nodeID);
+            logger.trace("Pending {}@{} ADDED for {}", messageType, messageId, peer.getPeerNodeID());
         }
         return sent;
     }

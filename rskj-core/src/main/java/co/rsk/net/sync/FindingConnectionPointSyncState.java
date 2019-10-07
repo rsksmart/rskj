@@ -1,6 +1,5 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
 import org.ethereum.db.BlockStore;
@@ -64,8 +63,8 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
 
     private void trySendRequest() {
         boolean sent = syncEventsHandler.sendBlockHashRequest(
-                connectionPointFinder.getFindingHeight(),
-                selectedPeer.getPeerNodeID());
+                selectedPeer, connectionPointFinder.getFindingHeight()
+        );
         if (!sent) {
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
                     this.getClass(), selectedPeer.getPeerNodeID());
