@@ -620,7 +620,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender);
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender, bids), sender);
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
@@ -678,7 +678,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender);
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender, bids), sender);
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
         processor.processBodyResponse(sender, response);
 
@@ -732,7 +732,7 @@ public class SyncProcessorTest {
         int step = 192;
         int linkCount = 1;
         processor.startDownloadingBodies(headers,
-                Collections.singletonMap(sender.getPeerNodeID(),
+                Collections.singletonMap(sender,
                         buildSkeleton(extended, connectionPoint, step, linkCount)), sender);
 
         processor.processBodyResponse(sender, response);
@@ -822,7 +822,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids), sender);
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender, bids), sender);
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);

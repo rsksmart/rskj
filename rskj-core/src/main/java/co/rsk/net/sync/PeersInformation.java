@@ -130,10 +130,9 @@ public class PeersInformation {
                 (!hasTotalDifficulty && nodeStatus.getBestBlockNumber() < status.getBestBlockNumber());
     }
 
-    public List<NodeID> getPeerCandidates() {
+    public List<Peer> getPeerCandidates() {
         return getCandidatesStream()
                 .map(Map.Entry::getKey)
-                .map(Peer::getPeerNodeID)
                 .collect(Collectors.toList());
     }
 

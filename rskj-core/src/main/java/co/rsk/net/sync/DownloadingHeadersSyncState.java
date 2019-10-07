@@ -2,7 +2,6 @@ package co.rsk.net.sync;
 
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
 import co.rsk.validators.BlockHeaderValidationRule;
@@ -18,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DownloadingHeadersSyncState extends BaseSyncState {
 
-    private final Map<NodeID, List<BlockIdentifier>> skeletons;
+    private final Map<Peer, List<BlockIdentifier>> skeletons;
     private final List<Deque<BlockHeader>> pendingHeaders;
     private final ChunksDownloadHelper chunksDownloadHelper;
     private final DependentBlockHeaderRule blockParentValidationRule;
@@ -33,7 +32,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             DependentBlockHeaderRule blockParentValidationRule,
             BlockHeaderValidationRule blockHeaderValidationRule,
             Peer peer,
-            Map<NodeID, List<BlockIdentifier>> skeletons,
+            Map<Peer, List<BlockIdentifier>> skeletons,
             long connectionPoint) {
         super(syncEventsHandler, syncConfiguration);
         this.blockParentValidationRule = blockParentValidationRule;
@@ -43,7 +42,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
         this.skeletons = skeletons;
         this.chunksDownloadHelper = new ChunksDownloadHelper(
                 syncConfiguration,
-                skeletons.get(selectedPeer.getPeerNodeID()),
+                skeletons.get(selectedPeer),
                 connectionPoint);
         this.pendingHeadersByHash = new ConcurrentHashMap<>();
         mainchainView.setPendingHeaders(pendingHeadersByHash);

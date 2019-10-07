@@ -13,10 +13,10 @@ import java.util.Map;
 public class DownloadingSkeletonSyncState extends BaseSyncState {
 
     private final PeersInformation peersInformation;
-    private final Map<NodeID, List<BlockIdentifier>> skeletons;
-    private final Map<NodeID, Boolean> availables;
+    private final Map<Peer, List<BlockIdentifier>> skeletons;
+    private final Map<Peer, Boolean> availables;
     private final Peer selectedPeer;
-    private final List<NodeID> candidates;
+    private final List<Peer> candidates;
     private long connectionPoint;
     private long expectedSkeletons;
     private boolean selectedPeerAnswered;
@@ -41,7 +41,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     @Override
     public void newSkeleton(List<BlockIdentifier> skeleton, Peer peer) {
         NodeID peerId = peer.getPeerNodeID();
-        boolean isSelectedPeer = peerId.equals(selectedPeer);
+        boolean isSelectedPeer = peer.equals(selectedPeer);
 
         // defensive programming: this should never happen
         if (skeleton.size() < 2) {
@@ -54,7 +54,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 return;
             }
         } else {
-            skeletons.put(peerId, skeleton);
+            skeletons.put(peer, skeleton);
         }
 
         expectedSkeletons--;
@@ -77,8 +77,10 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                     .filter(availables::get)
                     .filter(c -> !skeletons.containsKey(c))
                     .forEach(p ->
-                            peersInformation.reportEventWithLog("Timeout waiting skeleton from node {}",
-                                    p, EventType.TIMEOUT_MESSAGE, p));
+                            peersInformation.reportEventWithLog(
+                                    "Timeout waiting skeleton from node {}",
+                                    p.getPeerNodeID(),
+                                    EventType.TIMEOUT_MESSAGE, p));
 
             // when the selected peer fails automatically all process restarts
             if (!selectedPeerAnswered){
@@ -106,8 +108,8 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
         expectedSkeletons = availables.size();
     }
 
-    private void trySendRequest(NodeID p) {
-        boolean sent = syncEventsHandler.sendSkeletonRequest(p, connectionPoint);
+    private void trySendRequest(Peer p) {
+        boolean sent = syncEventsHandler.sendSkeletonRequest(p.getPeerNodeID(), connectionPoint);
         availables.put(p, sent);
         if (!sent){
             syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}", this.getClass(), p);

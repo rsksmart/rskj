@@ -39,7 +39,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private final List<Deque<BlockHeader>> pendingHeaders;
 
     // a skeleton from each suitable peer
-    private final Map<NodeID, List<BlockIdentifier>> skeletons;
+    private final Map<Peer, List<BlockIdentifier>> skeletons;
 
     // segment a peer belongs to
     private final Map<NodeID, Integer> segmentByNode;
@@ -65,7 +65,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                                       BlockSyncService blockSyncService,
                                       BlockCompositeRule blockValidationRule,
                                       List<Deque<BlockHeader>> pendingHeaders,
-                                      Map<NodeID, List<BlockIdentifier>> skeletons) {
+                                      Map<Peer, List<BlockIdentifier>> skeletons) {
 
         super(syncEventsHandler, syncConfiguration);
         this.peersInformation = peersInformation;
@@ -341,6 +341,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private List<NodeID> getAvailableNodesIDSFor(Integer chunkNumber) {
         return skeletons.entrySet().stream()
+                .map(e -> new AbstractMap.SimpleEntry<>(e.getKey().getPeerNodeID(), e.getValue()))
                 .filter(e -> e.getValue().size() > chunkNumber + 1)
                 .filter(e -> ByteUtil.fastEquals(
                     // the hash of the start of next chunk

@@ -227,9 +227,9 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void startDownloadingBodies(
-            List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, Peer peer) {
+            List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer) {
         // we keep track of best known block and we start to trust it when all headers are validated
-        List<BlockIdentifier> selectedSkeleton = skeletons.get(peer.getPeerNodeID());
+        List<BlockIdentifier> selectedSkeleton = skeletons.get(peer);
         final long peerBestBlockNumber = selectedSkeleton.get(selectedSkeleton.size() - 1).getNumber();
 
         if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber()) {
@@ -248,7 +248,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) {
+    public void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) {
         setSyncState(new DownloadingHeadersSyncState(
                 syncConfiguration,
                 this,

@@ -33,7 +33,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) { return 0L; }
 
     @Override
-    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, Peer peer) {
+    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer) {
 
     }
 
@@ -46,7 +46,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) { }
+    public void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) { }
 
     @Override
     public void startSyncing(Peer peer) {

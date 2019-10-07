@@ -21,9 +21,9 @@ public interface SyncEventsHandler {
 
     Long sendBodyRequest(@Nonnull BlockHeader header, NodeID peer);
 
-    void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons, Peer peer);
+    void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer);
 
-    void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer);
+    void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer);
 
     void startDownloadingSkeleton(long connectionPoint, Peer peer);
 

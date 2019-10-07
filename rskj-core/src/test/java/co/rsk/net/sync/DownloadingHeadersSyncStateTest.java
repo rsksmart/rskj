@@ -1,7 +1,6 @@
 package co.rsk.net.sync;
 
 import co.rsk.core.bc.ConsensusValidationMainchainView;
-import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.validators.BlockHeaderValidationRule;
 import org.ethereum.core.BlockIdentifier;
@@ -20,7 +19,7 @@ public class DownloadingHeadersSyncStateTest {
     public void itIgnoresNewPeerInformation() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
-        Map<NodeID, List<BlockIdentifier>> skeletons = Collections.singletonMap(null, null);
+        Map<Peer, List<BlockIdentifier>> skeletons = Collections.singletonMap(null, null);
         SyncState syncState = new DownloadingHeadersSyncState(
                 syncConfiguration,
                 syncEventsHandler,
