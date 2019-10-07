@@ -33,7 +33,10 @@ import org.mapdb.DBMaker;
 import java.io.File;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+import static junit.framework.TestCase.*;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public final class TestUtils {
@@ -143,5 +146,18 @@ public final class TestUtils {
         byte[] result = Arrays.copyOf(first, first.length + second.length);
         System.arraycopy(second, 0, result, first.length, second.length);
         return result;
+    }
+
+    public static<T extends Exception>  T assertThrows(Class<T> c, Runnable f) {
+        Exception thrownException = null;
+        try {
+            f.run();
+        } catch (Exception e) {
+            thrownException = e;
+        }
+
+        assertNotNull(thrownException);
+        assertEquals(thrownException.getClass(), c);
+        return c.cast(thrownException);
     }
 }

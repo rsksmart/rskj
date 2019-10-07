@@ -28,6 +28,7 @@ import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.*;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.evm.EvmModule;
@@ -49,6 +50,8 @@ import org.junit.Test;
 
 import java.time.Clock;
 import java.util.List;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 15/04/2017.
@@ -177,7 +180,6 @@ public class Web3ImplSnapshotTest {
         return new Web3Impl(
                 ethereum,
                 blockchain,
-                factory.getTransactionPool(),
                 factory.getBlockStore(),
                 factory.getReceiptStore(),
                 Web3Mocks.getMockProperties(),
@@ -191,15 +193,14 @@ public class Web3ImplSnapshotTest {
                 dm,
                 null,
                 Web3Mocks.getMockChannelManager(),
-                factory.getRepositoryLocator(),
                 null,
                 null,
                 null,
                 null,
                 null,
                 null,
-                null
-        );
+                null,
+                null);
     }
 
     private Web3Impl createWeb3() {

@@ -107,10 +107,12 @@ public class DslFilesTest {
         Block top2 = world.getBlockByName("b02b");
 
         // Creates a new view of the repository, standing on top1 state
-        Repository repo1 = new MutableRepository(world.getTrieStore(), world.getTrieStore().retrieve(top1.getStateRoot()));
+        Repository repo1 = new MutableRepository(world.getTrieStore(),
+                world.getTrieStore().retrieve(top1.getStateRoot()).get());
 
         // Creates a new view of the repository, standing on top2 state
-        Repository repo2 = new MutableRepository(world.getTrieStore(), world.getTrieStore().retrieve(top2.getStateRoot()));
+        Repository repo2 = new MutableRepository(world.getTrieStore(),
+                world.getTrieStore().retrieve(top2.getStateRoot()).get());
         // addr1: sender's account
         RskAddress addr1 = new RskAddress("a0663f719962ec10bb57865532bef522059dfd96");
         // addr2: Parent Contract account

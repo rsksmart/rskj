@@ -101,14 +101,13 @@ public class MultiTrieStoreTest {
         verify(store3).dispose();
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void throwsIllegalArgumentOnMissingTrieToRetrieve() {
+    public void retrievesTrieNotFound() {
         TrieStoreFactory storeFactory = name -> mock(TrieStore.class);
         MultiTrieStore store = new MultiTrieStore(49, 3, storeFactory, null);
 
         Trie testTrie = new Trie();
         byte[] hashToRetrieve = testTrie.getHash().getBytes();
-        store.retrieve(hashToRetrieve);
+        assertFalse(store.retrieve(hashToRetrieve).isPresent());
     }
 
     @Test
@@ -126,7 +125,7 @@ public class MultiTrieStoreTest {
         byte[] hashToRetrieve = testTrie.getHash().getBytes();
         when(store2.retrieveValue(hashToRetrieve)).thenReturn(testTrie.toMessage());
 
-        Trie retrievedTrie = store.retrieve(hashToRetrieve);
+        Trie retrievedTrie = store.retrieve(hashToRetrieve).get();
         assertEquals(testTrie, retrievedTrie);
 
         verify(store1, never()).retrieveValue(hashToRetrieve);
@@ -209,7 +208,7 @@ public class MultiTrieStoreTest {
         verify(disposer).callback(46);
 
         // 3. oldest trie is still accessible and disposed database is not queried
-        Trie retrievedTrie = store.retrieve(testTrieHash);
+        Trie retrievedTrie = store.retrieve(testTrieHash).get();
         assertEquals(testTrie, retrievedTrie);
         // 1 was only called for collect
         // 2 and 3 were called once during collect and another one for retrieve.

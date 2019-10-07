@@ -25,7 +25,6 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
@@ -34,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
@@ -89,7 +89,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             if (null == tx.getGasLimit()
                     || null == tx.getGasPrice()
                     || null == tx.getValue()) {
-                throw new JsonRpcInvalidParamException("Missing parameter, gasPrice, gas or value");
+                throw invalidParamError("Missing parameter, gasPrice, gas or value");
             }
 
             transactionPool.addTransaction(tx)

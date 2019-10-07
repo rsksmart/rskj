@@ -53,22 +53,24 @@ import org.mockito.Mockito;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
+
 public class Web3RskImplTest {
 
     @Test
     public void web3_ext_dumpState() throws Exception {
-        Ethereum rsk = Mockito.mock(Ethereum.class);
-        Blockchain blockchain = Mockito.mock(Blockchain.class);
-        MiningMainchainView mainchainView = Mockito.mock(MiningMainchainView.class);
+        Ethereum rsk = mock(Ethereum.class);
+        Blockchain blockchain = mock(Blockchain.class);
+        MiningMainchainView mainchainView = mock(MiningMainchainView.class);
 
-        NetworkStateExporter networkStateExporter = Mockito.mock(NetworkStateExporter.class);
+        NetworkStateExporter networkStateExporter = mock(NetworkStateExporter.class);
         Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
 
-        Block block = Mockito.mock(Block.class);
+        Block block = mock(Block.class);
         Mockito.when(block.getHash()).thenReturn(PegTestUtils.createHash3());
         Mockito.when(block.getNumber()).thenReturn(1L);
 
-        BlockStore blockStore = Mockito.mock(BlockStore.class);
+        BlockStore blockStore = mock(BlockStore.class);
         Mockito.when(blockStore.getBestBlock()).thenReturn(block);
         Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
 
@@ -89,7 +91,6 @@ public class Web3RskImplTest {
         Web3RskImpl web3 = new Web3RskImpl(
                 rsk,
                 blockchain,
-                Web3Mocks.getMockTransactionPool(),
                 config,
                 Web3Mocks.getMockMinerClient(),
                 Web3Mocks.getMockMinerServer(),
@@ -101,7 +102,6 @@ public class Web3RskImplTest {
                 dm,
                 null,
                 Web3Mocks.getMockChannelManager(),
-                Web3Mocks.getMockRepositoryLocator(),
                 null,
                 networkStateExporter,
                 blockStore,
@@ -111,25 +111,25 @@ public class Web3RskImplTest {
                 null,
                 null,
                 null,
-                null
-        );
+                null,
+                null);
         web3.ext_dumpState();
     }
 
     @Test
     public void web3_LogFilterElement_toString() {
-        LogInfo logInfo = Mockito.mock(LogInfo.class);
+        LogInfo logInfo = mock(LogInfo.class);
         byte[] valueToTest = HashUtil.keccak256(new byte[]{1});
         Mockito.when(logInfo.getData()).thenReturn(valueToTest);
         List<DataWord> topics = new ArrayList<>();
         topics.add(DataWord.valueFromHex("c1"));
         topics.add(DataWord.valueFromHex("c2"));
         Mockito.when(logInfo.getTopics()).thenReturn(topics);
-        Block block = Mockito.mock(Block.class);
+        Block block = mock(Block.class);
         Mockito.when(block.getHash()).thenReturn(new Keccak256(valueToTest));
         Mockito.when(block.getNumber()).thenReturn(1L);
         int txIndex = 1;
-        Transaction tx = Mockito.mock(Transaction.class);
+        Transaction tx = mock(Transaction.class);
         byte[] bytes = new byte[32];
         bytes[0] = 2;
         Mockito.when(tx.getHash()).thenReturn(new Keccak256(bytes));

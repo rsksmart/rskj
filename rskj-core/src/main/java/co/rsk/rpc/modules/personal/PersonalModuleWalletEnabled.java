@@ -29,13 +29,14 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class PersonalModuleWalletEnabled implements PersonalModule {
 
@@ -150,7 +151,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
             try {
                 dur = convertFromJsonHexToLong(duration);
             } catch (Exception e) {
-                throw new JsonRpcInvalidParamException("Can't parse duration param", e);
+                throw invalidParamError("Can't parse duration param", e);
             }
         }
 

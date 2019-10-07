@@ -23,6 +23,7 @@ import org.bouncycastle.util.encoders.Hex;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class MultiTrieStore implements TrieStore {
 
@@ -69,25 +70,21 @@ public class MultiTrieStore implements TrieStore {
         epochs.forEach(TrieStore::flush);
     }
 
+
     /**
      * This method will go through all epochs from newest to oldest retrieving the <code>rootHash</code>
-     *
-     * @param rootHash the root of the {@link Trie} to retrieve
-     * @return the {@link Trie} with <code>rootHash</code>
-     * @throws IllegalArgumentException if it's not found
      */
     @Override
-    public Trie retrieve(byte[] rootHash) {
+    public Optional<Trie> retrieve(byte[] rootHash) {
         for (TrieStore epochTrieStore : epochs) {
             byte[] message = epochTrieStore.retrieveValue(rootHash);
             if (message == null) {
                 continue;
             }
-            return Trie.fromMessage(message, this);
+            return Optional.of(Trie.fromMessage(message, this));
         }
-        throw new IllegalArgumentException(String.format(
-                "The trie with root %s is missing from every epoch", Hex.toHexString(rootHash)
-        ));
+
+        return Optional.empty();
     }
 
     @Override
@@ -115,7 +112,12 @@ public class MultiTrieStore implements TrieStore {
      * @param oldestTrieHashToKeep a trie root hash to ensure epoch survival
      */
     public void collect(byte[] oldestTrieHashToKeep) {
-        Trie oldestTrieToKeep = retrieve(oldestTrieHashToKeep);
+        Trie oldestTrieToKeep = retrieve(oldestTrieHashToKeep)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(String.format("The trie with root %s is missing from every epoch",
+                                Hex.toHexString(oldestTrieHashToKeep)
+        )));
+
         epochs.get(epochs.size() - 2).save(oldestTrieToKeep); // save into the upcoming last epoch
         epochs.get(epochs.size() - 1).dispose(); // dispose last epoch
         disposer.callback(currentEpoch - epochs.size());

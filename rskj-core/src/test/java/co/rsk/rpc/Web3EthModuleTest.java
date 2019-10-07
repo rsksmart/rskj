@@ -20,7 +20,6 @@ package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
-import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
@@ -35,7 +34,6 @@ import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
@@ -58,7 +56,6 @@ public class Web3EthModuleTest {
         Web3EthModule web3 = new Web3RskImpl(
                 mock(Ethereum.class),
                 mock(Blockchain.class, RETURNS_DEEP_STUBS),
-                mock(TransactionPool.class),
                 mock(RskSystemProperties.class),
                 mock(MinerClient.class),
                 mock(MinerServer.class),
@@ -70,7 +67,6 @@ public class Web3EthModuleTest {
                 mock(DebugModule.class),
                 mock(RskModule.class),
                 mock(ChannelManager.class),
-                mock(RepositoryLocator.class),
                 mock(PeerScoringManager.class),
                 mock(NetworkStateExporter.class),
                 mock(BlockStore.class),
@@ -80,8 +76,8 @@ public class Web3EthModuleTest {
                 mock(HashRateCalculator.class),
                 mock(ConfigCapabilities.class),
                 mock(BuildInfo.class),
-                mock(BlocksBloomStore.class)
-        );
+                mock(BlocksBloomStore.class),
+                mock(Web3InformationRetriever.class));
 
         assertThat(web3.eth_chainId(), is("0x21"));
     }

@@ -60,7 +60,7 @@ public class TrieStoreImplTest {
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
         verifyNoMoreInteractions(map);
 
-        Trie newTrie = store.retrieve(trie.getHash().getBytes());
+        Trie newTrie = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
@@ -80,7 +80,7 @@ public class TrieStoreImplTest {
         verify(map, times(1)).put(trie.getValueHash().getBytes(), trie.getValue());
         verifyNoMoreInteractions(map);
 
-        Trie newTrie = store.retrieve(trie.getHash().getBytes());
+        Trie newTrie = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
@@ -166,9 +166,9 @@ public class TrieStoreImplTest {
         verifyNoMoreInteractions(map);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void retrieveUnknownHash() {
-        store.retrieve(new byte[] { 0x01, 0x02, 0x03, 0x04 });
+    @Test
+    public void retrieveTrieNotFound() {
+        Assert.assertFalse(store.retrieve(new byte[] { 0x01, 0x02, 0x03, 0x04 }).isPresent());
     }
 
     @Test
@@ -180,7 +180,7 @@ public class TrieStoreImplTest {
         store.save(trie);
         int size = trie.trieSize();
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         verify(map, times(1)).get(any());
 
@@ -198,7 +198,7 @@ public class TrieStoreImplTest {
         store.save(trie);
         int size = trie.trieSize();
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         verify(map, times(1)).get(any());
 

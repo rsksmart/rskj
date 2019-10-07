@@ -40,7 +40,6 @@ import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -52,6 +51,7 @@ import java.util.Map;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 // TODO add all RPC methods
 public class EthModule
@@ -217,7 +217,7 @@ public class EthModule
                     }
                     return null;
                 } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                    throw new JsonRpcInvalidParamException("invalid blocknumber " + id);
+                    throw invalidParamError("invalid blocknumber " + id);
                 }
         }
     }
