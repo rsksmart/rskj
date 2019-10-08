@@ -27,6 +27,7 @@ import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -72,6 +73,10 @@ public class BlockFactory {
         RLPList rlpHeader = (RLPList) block.get(0);
         BlockHeader header = decodeHeader(rlpHeader, sealed);
 
+        if (isDecodingGenesis(header.getNumber(), rawData)) {
+            return genesis;
+        }
+
         List<Transaction> transactionList = parseTxs((RLPList) block.get(1));
 
         RLPList uncleHeadersRlp = (RLPList) block.get(2);
@@ -80,6 +85,10 @@ public class BlockFactory {
                 .collect(Collectors.toList());
 
         return newBlock(header, transactionList, uncleList, sealed);
+    }
+
+    private boolean isDecodingGenesis(long number, byte[] rawData) {
+        return number == genesis.getNumber() && ByteUtil.fastEquals(genesis.getEncoded(), rawData);
     }
 
     public Block newBlock(BlockHeader header, List<Transaction> transactionList, List<BlockHeader> uncleList) {
@@ -181,6 +190,10 @@ public class BlockFactory {
         byte[] tsBytes = rlpHeader.get(11).getRLPData();
 
         long number = parseBigInteger(nrBytes).longValueExact();
+
+        if (number == 0L) {
+            return genesis.getHeader();
+        }
 
         long gasUsed = parseBigInteger(guBytes).longValueExact();
         long timestamp = parseBigInteger(tsBytes).longValueExact();

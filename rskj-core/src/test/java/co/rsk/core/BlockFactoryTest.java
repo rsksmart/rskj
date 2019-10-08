@@ -21,6 +21,7 @@ package co.rsk.core;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -58,8 +59,14 @@ public class BlockFactoryTest {
         genesis = mock(Block.class);
         BlockHeader genesisHeader = mock(BlockHeader.class);
         when(genesis.getHeader()).thenReturn(genesisHeader);
+        when(genesis.getEncoded()).thenReturn(genesisRaw());
         when(genesisHeader.getNumber()).thenReturn(0L);
         factory = new BlockFactory(activationConfig, genesis);
+    }
+
+    @Test
+    public void decodeGenesisBlock() {
+        assertThat(factory.decodeBlock(genesisRaw()), is(genesis));
     }
 
     @Test
@@ -251,5 +258,21 @@ public class BlockFactoryTest {
                 forkDetectionData,
                 Coin.valueOf(10L).getBytes(),
                 0);
+    }
+
+
+
+    private static byte[] genesisRaw() {
+        return Hex.decode("f901dbf901d6a00000000000000000000000000000000000000000000000000000000000000000a" +
+                "01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347943333333333333333333333333" +
+                "333333333333333a045bce5168430c42b3d568331753f900a32457b4f3748697cbd8375ff4da72641a056e81f171" +
+                "bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a056e81f171bcc55a6ff8345e692c0f86e5b4" +
+                "8e01b996cadc001622fb5e363b421b90100000000000000000000000000000000000000000000000000000000000" +
+                "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+                "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+                "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+                "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" +
+                "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000085000" +
+                "010000080834c4b40808085434d272841800080000000c0c0");
     }
 }
