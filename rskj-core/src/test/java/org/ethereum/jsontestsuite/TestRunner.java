@@ -84,7 +84,7 @@ public class TestRunner {
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
     private boolean validateGasUsed = false; // until EIP150 test cases are ready.

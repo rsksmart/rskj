@@ -53,7 +53,7 @@ public class ImportLightTest {
             Repository repository,
             BlockStore blockStore,
             TrieStore trieStore) {
-        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), genesis);
         CompositeEthereumListener listener = new TestCompositeEthereumListener();
 
         KeyValueDataSource ds = new HashMapDB();

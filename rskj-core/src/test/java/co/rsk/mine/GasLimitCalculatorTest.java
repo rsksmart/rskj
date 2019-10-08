@@ -20,6 +20,7 @@ package co.rsk.mine;
 
 import co.rsk.config.TestSystemProperties;
 import org.ethereum.config.Constants;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.validator.ParentGasLimitRule;
@@ -29,6 +30,7 @@ import org.junit.Test;
 import java.math.BigInteger;
 
 import static org.ethereum.validator.ParentGasLimitRuleTest.getHeader;
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by Ruben Altman on 5/23/2016.
@@ -36,7 +38,7 @@ import static org.ethereum.validator.ParentGasLimitRuleTest.getHeader;
 public class GasLimitCalculatorTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
     private Constants constants = Constants.regtest();
     private ParentGasLimitRule rule = new ParentGasLimitRule(1024);
 

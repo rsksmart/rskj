@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -49,7 +50,7 @@ public class VMExecutionTest {
     private final TestSystemProperties config = new TestSystemProperties();
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
     private ProgramInvokeMockImpl invoke;
     private BytecodeCompiler compiler;
 

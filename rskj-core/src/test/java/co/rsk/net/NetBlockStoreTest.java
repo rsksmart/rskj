@@ -33,11 +33,13 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class NetBlockStoreTest {
-    private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+    private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all(), mock(Block.class));
 
     @Test
     public void getUnknownBlockAsNull() {

@@ -54,7 +54,7 @@ public class BlockValidatorTest {
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
     @Test
     public void validEmptyUnclesHash() {

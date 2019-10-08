@@ -24,6 +24,7 @@ import co.rsk.helpers.PerformanceTestConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
@@ -50,6 +51,7 @@ import java.util.List;
 import static org.ethereum.TestUtils.padLeft;
 import static org.ethereum.TestUtils.padRight;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 // Remove junit imports for standalone use
 
@@ -58,7 +60,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class VMPerformanceTest {
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
     private final ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0);

@@ -62,11 +62,12 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
 
 public class TransactionTest {
 
     private TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */
     public void test1() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeyException, IOException {

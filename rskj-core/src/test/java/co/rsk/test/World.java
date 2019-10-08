@@ -47,6 +47,8 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by ajlopez on 8/7/2016.
  */
@@ -131,7 +133,7 @@ public class World {
                             config,
                             blockStore,
                             null,
-                            new BlockFactory(config.getActivationConfig()),
+                            new BlockFactory(config.getActivationConfig(), mock(Genesis.class)),
                             programInvokeFactory,
                             new PrecompiledContracts(config, bridgeSupportFactory)
                     )

@@ -42,6 +42,8 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by ajlopez on 8/7/2016.
  */
@@ -260,7 +262,7 @@ public class WorldDslProcessor {
                             config,
                             world.getBlockStore(),
                             null,
-                            new BlockFactory(config.getActivationConfig()),
+                            new BlockFactory(config.getActivationConfig(), mock(Block.class)),
                             programInvokeFactory,
                             null
                     )

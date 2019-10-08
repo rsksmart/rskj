@@ -30,10 +30,7 @@ import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Account;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.Utils;
 import org.ethereum.vm.program.Program;
@@ -66,7 +63,7 @@ public class VMTest {
     private VM vm;
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 

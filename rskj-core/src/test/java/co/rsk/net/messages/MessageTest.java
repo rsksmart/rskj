@@ -36,11 +36,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class MessageTest {
-    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all(), mock(Block.class));
 
     @Test
     public void encodeDecodeGetBlockMessage() {

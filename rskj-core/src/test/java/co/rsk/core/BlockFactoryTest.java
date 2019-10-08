@@ -24,6 +24,7 @@ import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
@@ -49,11 +50,16 @@ public class BlockFactoryTest {
 
     private ActivationConfig activationConfig;
     private BlockFactory factory;
+    private Block genesis;
 
     @Before
     public void setUp() {
         activationConfig = mock(ActivationConfig.class);
-        factory = new BlockFactory(activationConfig);
+        genesis = mock(Block.class);
+        BlockHeader genesisHeader = mock(BlockHeader.class);
+        when(genesis.getHeader()).thenReturn(genesisHeader);
+        when(genesisHeader.getNumber()).thenReturn(0L);
+        factory = new BlockFactory(activationConfig, genesis);
     }
 
     @Test

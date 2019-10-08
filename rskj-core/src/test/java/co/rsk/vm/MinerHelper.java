@@ -39,6 +39,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by Sergio on 18/07/2016.
  */
@@ -63,7 +65,7 @@ public class MinerHelper {
         this.repositoryLocator = repositoryLocator;
         this.blockchain = blockchain;
         this.gasLimitCalculator = new GasLimitCalculator(config.getNetworkConstants());
-        this.blockFactory = new BlockFactory(config.getActivationConfig());
+        this.blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
     }
 
     public void processBlock( Block block, Block parent) {

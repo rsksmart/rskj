@@ -44,9 +44,15 @@ public class BlockFactory {
     private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 19;
 
     private final ActivationConfig activationConfig;
+    private final Block genesis;
 
-    public BlockFactory(ActivationConfig activationConfig) {
+    /**
+     * @param activationConfig Configuration for different behaviours depending on activations.
+     * @param genesis When the requested block to decode is numnber 0, genesis block is retrieved.
+     */
+    public BlockFactory(ActivationConfig activationConfig, Block genesis) {
         this.activationConfig = activationConfig;
+        this.genesis = genesis;
     }
 
     public Block cloneBlockForModification(Block block) {

@@ -51,6 +51,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by ajlopez on 8/6/2016.
  */
@@ -176,7 +178,7 @@ public class BlockChainBuilder {
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();
 
-        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), genesis);
         if (blockStore == null) {
             blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), blocksIndex);
         }

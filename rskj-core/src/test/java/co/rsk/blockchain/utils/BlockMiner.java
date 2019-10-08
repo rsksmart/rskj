@@ -10,6 +10,7 @@ import org.ethereum.core.BlockFactory;
 import java.math.BigInteger;
 
 import static co.rsk.mine.MinerServerImpl.compressCoinbase;
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 13/09/2017.
@@ -22,7 +23,7 @@ public class BlockMiner {
 
     public BlockMiner(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
-        this.blockFactory = new BlockFactory(activationConfig);
+        this.blockFactory = new BlockFactory(activationConfig, mock(Block.class));
     }
 
     public Block mineBlock(Block block) {

@@ -8,6 +8,7 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.validators.*;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.mock;
 
 public class NodeMessageHandlerUtil {
     private static final TestSystemProperties config = new TestSystemProperties();
-    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
     public static NodeMessageHandler createHandler(BlockValidationRule validationRule, Blockchain blockchain) {

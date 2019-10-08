@@ -39,12 +39,13 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.mockito.Mockito.mock;
 
 public class TransactionTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final byte chainId = config.getNetworkConstants().getChainId();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {

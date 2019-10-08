@@ -36,13 +36,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by SDL on 12/5/2017.
  */
 public class BlockEncodingTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
-    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all(), mock(Block.class));
 
     @Test(expected = ArithmeticException.class)
     public void testBadBlockEncoding1() {

@@ -29,7 +29,6 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
-import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -74,9 +73,11 @@ import java.math.BigInteger;
 import java.time.Clock;
 import java.util.HashMap;
 
+import static org.mockito.Mockito.mock;
+
 public class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
     private TransactionExecutorFactory transactionExecutorFactory;
 
     @Test
@@ -333,7 +334,7 @@ public class TransactionModuleTest {
                         new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                         new GasLimitCalculator(config.getNetworkConstants()),
                         new ForkDetectionDataCalculator(),
-                        Mockito.mock(BlockUnclesValidationRule.class),
+                        mock(BlockUnclesValidationRule.class),
                         minerClock,
                         blockFactory,
                         new BlockExecutor(

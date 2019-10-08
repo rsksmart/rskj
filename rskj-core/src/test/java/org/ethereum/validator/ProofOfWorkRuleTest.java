@@ -44,6 +44,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Mikhail Kalinin
@@ -61,7 +62,7 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         this.rule = new ProofOfWorkRule(config).setFallbackMiningEnabled(false);
         this.activationConfig = config.getActivationConfig();
         this.networkConstants = config.getNetworkConstants();
-        this.blockFactory = new BlockFactory(activationConfig);
+        this.blockFactory = new BlockFactory(activationConfig, mock(Block.class));
     }
 
     @Test

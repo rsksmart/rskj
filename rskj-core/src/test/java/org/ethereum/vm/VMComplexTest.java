@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -54,7 +55,7 @@ public class VMComplexTest {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 

@@ -64,7 +64,7 @@ public class EnvironmentUtils {
         new BlockMiner(config.getActivationConfig()).findNonce(bitcoinMergedMiningBlock, targetBI);
 
         // We need to clone to allow modifications
-        Block newBlock = new BlockFactory(config.getActivationConfig()).cloneBlockForModification(
+        Block newBlock = new BlockFactory(config.getActivationConfig(), mock(Block.class)).cloneBlockForModification(
                 blockGenerator.createChildBlock(
                         parent, new ArrayList<>(), new ArrayList<>(),
                         parent.getDifficulty().asBigInteger().longValue(),

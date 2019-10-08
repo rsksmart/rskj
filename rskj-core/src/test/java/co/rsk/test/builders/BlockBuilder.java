@@ -114,7 +114,7 @@ public class BlockBuilder {
                             config,
                             blockStore,
                             null,
-                            new BlockFactory(config.getActivationConfig()),
+                            new BlockFactory(config.getActivationConfig(), blockGenerator.getGenesisBlock()),
                             new ProgramInvokeFactoryImpl(),
                             new PrecompiledContracts(config, bridgeSupportFactory)
                     )

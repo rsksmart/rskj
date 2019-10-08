@@ -33,10 +33,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionExecutor;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -51,6 +48,8 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.Arrays;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by Sergio on 26/02/2017.
  */
@@ -62,7 +61,7 @@ public class CodeReplaceTest {
             return ActivationConfigsForTest.allBut(ConsensusRule.RSKIP94);
         }
     };
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
     @Test
     public void replaceCodeTest1() throws InterruptedException {

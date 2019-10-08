@@ -84,7 +84,7 @@ public class BlockToMineBuilderTest {
                 new ForkDetectionDataCalculator(),
                 validationRules,
                 mock(MinerClock.class),
-                new BlockFactory(ActivationConfigsForTest.all()),
+                new BlockFactory(ActivationConfigsForTest.all(), mock(Block.class)),
                 blockExecutor,
                 minimumGasPriceCalculator,
                 minerUtils

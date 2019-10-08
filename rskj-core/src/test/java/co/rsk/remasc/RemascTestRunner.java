@@ -126,7 +126,7 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
-        BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig());
+        BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig(), genesis);
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(

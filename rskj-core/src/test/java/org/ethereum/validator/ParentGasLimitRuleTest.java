@@ -21,6 +21,7 @@ package org.ethereum.validator;
 import co.rsk.core.BlockDifficulty;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
@@ -28,13 +29,14 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Angel J Lopez
  * @since 02.23.2016
  */
 public class ParentGasLimitRuleTest {
-    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all(), mock(Block.class));
     private ParentGasLimitRule rule = new ParentGasLimitRule(1024);
 
     @Test // pass rule

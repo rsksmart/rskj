@@ -21,6 +21,7 @@ package org.ethereum.jsontestsuite;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.json.simple.parser.ParseException;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Mikhail Kalinin
@@ -51,7 +53,7 @@ public class GitHubBasicTest {
 
     @Test
     public void runDifficultyTest() throws IOException, ParseException {
-        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficulty.json", shacommit);
 
@@ -71,7 +73,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyFrontierTest() throws IOException, ParseException {
 
-        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyFrontier.json", shacommit);
 
@@ -91,7 +93,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyHomesteadTest() throws IOException, ParseException {
 
-        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyHomestead.json", shacommit);
 

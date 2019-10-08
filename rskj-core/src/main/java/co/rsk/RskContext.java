@@ -77,10 +77,7 @@ import co.rsk.validators.*;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
@@ -284,7 +281,7 @@ public class RskContext implements NodeBootstrapper {
 
     public BlockFactory getBlockFactory() {
         if (blockFactory == null) {
-            blockFactory = new BlockFactory(getRskSystemProperties().getActivationConfig());
+            blockFactory = new BlockFactory(getRskSystemProperties().getActivationConfig(), getGenesis());
         }
 
         return blockFactory;

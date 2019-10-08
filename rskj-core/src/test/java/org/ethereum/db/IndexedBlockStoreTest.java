@@ -72,7 +72,7 @@ public class IndexedBlockStoreTest {
         File file = new File(scenario1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
         config = new TestSystemProperties();
-        blockFactory = new BlockFactory(config.getActivationConfig());
+        blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
         Block genesis = RskTestFactory.getGenesisInstance(config);
         blocks.add(genesis);
         cumDifficulty = cumDifficulty.add(genesis.getCumulativeDifficulty());

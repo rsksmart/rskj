@@ -61,6 +61,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -68,7 +69,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class BlockExecutorTest {
     public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     private static final TestSystemProperties config = new TestSystemProperties();
-    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
     private Blockchain blockchain;
     private BlockExecutor executor;

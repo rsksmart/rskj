@@ -36,13 +36,15 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Set;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by ajlopez on 12/08/2016.
  */
 public class FamilyUtilsTest {
 
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
-    private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+    private static final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all(), mock(Block.class));
 
     @Test
     public void getFamilyGetParent() {

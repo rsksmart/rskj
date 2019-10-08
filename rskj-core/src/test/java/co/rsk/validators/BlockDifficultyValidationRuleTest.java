@@ -34,6 +34,8 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by sergio on 23/01/17.
  */
@@ -42,12 +44,14 @@ public class BlockDifficultyValidationRuleTest {
     private BlockFactory blockFactory;
     private ActivationConfig activationConfig;
     private Constants networkConstants;
+    private Block genesis;
 
     @Before
     public void setUp() {
         activationConfig = ActivationConfigsForTest.all();
         networkConstants = Constants.regtest();
-        blockFactory = new BlockFactory(activationConfig);
+        genesis = mock(Block.class);
+        blockFactory = new BlockFactory(activationConfig, genesis);
     }
 
     private BlockHeader getEmptyHeader(BlockDifficulty difficulty, long blockTimestamp, int uCount) {
@@ -63,8 +67,8 @@ public class BlockDifficultyValidationRuleTest {
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(activationConfig, networkConstants);
         BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator);
 
-        Block block = Mockito.mock(Block.class);
-        Block parent= Mockito.mock(Block.class);
+        Block block = mock(Block.class);
+        Block parent= mock(Block.class);
         long parentTimestamp = 0;
         long blockTimeStamp  = 10;
 
@@ -78,7 +82,7 @@ public class BlockDifficultyValidationRuleTest {
 
         BlockHeader blockHeader =getEmptyHeader(blockDifficulty, blockTimeStamp ,1);
 
-        BlockHeader parentHeader = Mockito.mock(BlockHeader.class);
+        BlockHeader parentHeader = mock(BlockHeader.class);
 
         Mockito.when(parentHeader.getDifficulty())
                 .thenReturn(parentDifficulty);

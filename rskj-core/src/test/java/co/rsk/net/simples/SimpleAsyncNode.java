@@ -32,6 +32,7 @@ import co.rsk.validators.BlockCompositeRule;
 import co.rsk.validators.BlockRootValidationRule;
 import co.rsk.validators.BlockUnclesHashValidationRule;
 import co.rsk.validators.DummyBlockValidationRule;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
@@ -135,7 +136,7 @@ public class SimpleAsyncNode extends SimpleNode {
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
         SimpleChannelManager channelManager = new SimpleChannelManager();
-        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
         SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain, indexedBlockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration, blockFactory,
                 blockValidationRule,

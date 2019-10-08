@@ -63,13 +63,14 @@ import java.util.List;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.byteArrayToLong;
+import static org.mockito.Mockito.mock;
 
 public class StateTestRunner {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
     public static List<String> run(StateTestCase stateTestCase2) {
         return new StateTestRunner(stateTestCase2).runImpl();

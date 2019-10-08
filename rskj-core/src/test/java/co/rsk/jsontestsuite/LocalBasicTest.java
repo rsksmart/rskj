@@ -23,6 +23,7 @@ import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.jsontestsuite.DifficultyTestCase;
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Angel J Lopez
@@ -48,7 +50,7 @@ public class LocalBasicTest {
 
     @Test
     public void runDifficultyTest() throws IOException {
-        BlockFactory blockFactory = new BlockFactory(activationConfig);
+        BlockFactory blockFactory = new BlockFactory(activationConfig, mock(Block.class));
 
         String json = getJSON("difficulty");
 

@@ -33,13 +33,15 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by ajlopez on 07/05/2017.
  */
 public class CallContractTest {
 
     private static final TestSystemProperties config = new TestSystemProperties();
-    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
     @Test
     public void callContractReturningOne() {

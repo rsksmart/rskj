@@ -62,7 +62,7 @@ public class OneAsyncNodeTest {
         SimpleChannelManager channelManager = new SimpleChannelManager();
         SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration,
-                new BlockFactory(config.getActivationConfig()),
+                new BlockFactory(config.getActivationConfig(), mock(Block.class)),
                 new DummyBlockValidationRule(),
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),

@@ -456,7 +456,7 @@ public class RemascStorageProviderTest {
                         config,
                         builder.getBlockStore(),
                         null,
-                        new BlockFactory(config.getActivationConfig()),
+                        new BlockFactory(config.getActivationConfig(), genesisBlock),
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory)
                 )

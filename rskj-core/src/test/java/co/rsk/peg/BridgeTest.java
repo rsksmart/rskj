@@ -127,7 +127,7 @@ public class BridgeTest {
         when(config.getNetworkConstants()).thenReturn(constants);
         activationConfig = spy(ActivationConfigsForTest.genesis());
         when(config.getActivationConfig()).thenReturn(activationConfig);
-        blockFactory = new BlockFactory(activationConfig);
+        blockFactory = new BlockFactory(activationConfig, mock(Block.class));
         btcBlockFactory = new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams());
     }
 
@@ -2833,7 +2833,7 @@ public class BridgeTest {
 //        GenesisConfig mockedConfig = spy(new GenesisConfig());
 //        when(mockedConfig.isRskip88()).thenReturn(false);
 //        config.setBlockchainConfig(mockedConfig);
-        blockFactory = new BlockFactory(config.getActivationConfig());
+        blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
 
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
         EVMAssembler assembler = new EVMAssembler();
@@ -2875,7 +2875,7 @@ public class BridgeTest {
     public void testCallFromContract_afterOrchid() {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP87), anyLong());
         doReturn(true).when(activationConfig).isActive(eq(RSKIP88), anyLong());
-        blockFactory = new BlockFactory(activationConfig);
+        blockFactory = new BlockFactory(activationConfig, mock(Block.class));
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),

@@ -23,6 +23,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
@@ -31,6 +32,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Angel J Lopez
@@ -38,7 +40,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class DifficultyRuleTest {
     private final ActivationConfig activationConfig = ActivationConfigsForTest.all();
-    private final BlockFactory blockFactory = new BlockFactory(activationConfig);
+    private final BlockFactory blockFactory = new BlockFactory(activationConfig, mock(Block.class));
     private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(activationConfig, Constants.regtest()));
 
     @Ignore

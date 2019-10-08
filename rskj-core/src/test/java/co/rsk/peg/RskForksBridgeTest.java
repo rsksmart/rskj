@@ -468,7 +468,7 @@ public class RskForksBridgeTest {
                 beforeBambooProperties,
                 blockStore,
                 null,
-                new BlockFactory(beforeBambooProperties.getActivationConfig()),
+                new BlockFactory(beforeBambooProperties.getActivationConfig(), genesis),
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory())
                 );

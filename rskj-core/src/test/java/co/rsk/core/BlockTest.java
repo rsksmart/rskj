@@ -39,10 +39,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
+
 public class BlockTest {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
-    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+    private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all(), mock(Block.class));
 
     @Test
     public void testParseRemascTransaction() {

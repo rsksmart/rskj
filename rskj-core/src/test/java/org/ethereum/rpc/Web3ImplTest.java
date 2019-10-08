@@ -92,7 +92,7 @@ import static org.mockito.Mockito.*;
 public class Web3ImplTest {
 
     private final TestSystemProperties config = new TestSystemProperties();
-    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig(), mock(Block.class));
     Wallet wallet;
 
     @Test
