@@ -305,13 +305,11 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     @Override
-    public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
+    public void sendMessageTo(NodeID nodeID, MessageWithId message) {
         Channel channel = activePeers.get(nodeID);
-        if (channel == null){
-            return false;
+        if (channel != null){
+            channel.sendMessage(message);
         }
-        channel.sendMessage(message);
-        return true;
     }
 
     public boolean isAddressBlockAvailable(InetAddress inetAddress) {

@@ -139,11 +139,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
     }
 
     private void requestBodies(BlockHeader headerToRequest) {
-        Long requestNumber = syncEventsHandler.sendBodyRequest(selectedPeer, headerToRequest);
-        if (requestNumber == null) {
-            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), selectedPeer);
-        }
+        long requestNumber = syncEventsHandler.sendBodyRequest(selectedPeer, headerToRequest);
         inTransit.put(requestNumber, headerToRequest);
     }
 

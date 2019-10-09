@@ -92,10 +92,9 @@ public class SyncProcessorTest {
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         final List<Message> messages = new ArrayList<>();
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            messages.add(invocation.getArgument(1));
-            return true;
-        });
+
+        doAnswer((InvocationOnMock invocation) -> messages.add(invocation.getArgument(1)))
+                .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
 
         SyncProcessor processor = new SyncProcessor(
                 blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
@@ -147,10 +146,9 @@ public class SyncProcessorTest {
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         final List<Message> messages = new ArrayList<>();
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            messages.add(invocation.getArgument(1));
-            return true;
-        });
+
+        doAnswer((InvocationOnMock invocation) -> messages.add(invocation.getArgument(1)))
+                .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
 
         SyncProcessor processor = new SyncProcessor(
                 blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
@@ -262,10 +260,10 @@ public class SyncProcessorTest {
             senders.add(sender);
             messagesByNode.put(sender.getPeerNodeID(), new ArrayList<>());
             when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
-            when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-                messagesByNode.get(sender.getPeerNodeID()).add(invocation.getArgument(1));
-                return true;
-            });
+
+            doAnswer((InvocationOnMock invocation) ->
+                    messagesByNode.get(sender.getPeerNodeID()).add(invocation.getArgument(1)))
+                    .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
         }
 
         messagesByNode.values().forEach(m -> Assert.assertTrue(m.isEmpty()));
@@ -349,10 +347,10 @@ public class SyncProcessorTest {
         when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
+
+        doAnswer((InvocationOnMock invocation) ->
+                msg[0] = invocation.getArgument(1))
+                .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
 
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), null, channelManager,
@@ -389,10 +387,10 @@ public class SyncProcessorTest {
         when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
+
+        doAnswer((InvocationOnMock invocation) ->
+                msg[0] = invocation.getArgument(1))
+                .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
 
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), null, channelManager,
@@ -878,10 +876,10 @@ public class SyncProcessorTest {
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         final List<Message> messages = new ArrayList<>();
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            messages.add(invocation.getArgument(1));
-            return true;
-        });
+
+        doAnswer((InvocationOnMock invocation) ->
+                messages.add(invocation.getArgument(1)))
+                .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
 
         NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -939,10 +937,10 @@ public class SyncProcessorTest {
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         final List<Message> messages = new ArrayList<>();
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            messages.add(invocation.getArgument(1));
-            return true;
-        });
+
+        doAnswer((InvocationOnMock invocation) ->
+                messages.add(invocation.getArgument(1)))
+                .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
 
         NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -1003,10 +1001,10 @@ public class SyncProcessorTest {
         when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
+
+        doAnswer((InvocationOnMock invocation) ->
+                msg[0] = invocation.getArgument(1))
+                .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
 
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
@@ -1088,10 +1086,11 @@ public class SyncProcessorTest {
         when(channel.getPeerNodeID()).thenReturn(sender.getPeerNodeID());
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
         final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
+
+        doAnswer((InvocationOnMock invocation) ->
+                msg[0] = invocation.getArgument(1))
+                .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
+
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,

@@ -293,10 +293,11 @@ public class NodeMessageHandlerTest {
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
         final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
+
+        doAnswer((InvocationOnMock invocation) ->
+                msg[0] = invocation.getArgument(1))
+                .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
+
         final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
 
         BlockGenerator blockGenerator = new BlockGenerator();

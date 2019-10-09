@@ -18,7 +18,8 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     private boolean stopSyncingWasCalled_;
 
     @Override
-    public boolean sendBlockHeadersRequest(Peer peer, ChunkDescriptor chunk) { return true;}
+    public void sendBlockHeadersRequest(Peer peer, ChunkDescriptor chunk) {
+    }
 
     @Override
     public void startFindingConnectionPoint(Peer peer) {
@@ -30,7 +31,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public Long sendBodyRequest(Peer peer, BlockHeader header) { return 0L; }
+    public long sendBodyRequest(Peer peer, BlockHeader header) { return 0L; }
 
     @Override
     public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer) {
@@ -38,11 +39,11 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public boolean sendSkeletonRequest(Peer peer, long height) { return true;}
+    public void sendSkeletonRequest(Peer peer, long height) {
+    }
 
     @Override
-    public boolean sendBlockHashRequest(Peer peer, long height) {
-        return true;
+    public void sendBlockHashRequest(Peer peer, long height) {
     }
 
     @Override

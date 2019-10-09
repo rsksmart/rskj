@@ -62,13 +62,7 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
     }
 
     private void trySendRequest() {
-        boolean sent = syncEventsHandler.sendBlockHashRequest(
-                selectedPeer, connectionPointFinder.getFindingHeight()
-        );
-        if (!sent) {
-            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), selectedPeer.getPeerNodeID());
-        }
+        syncEventsHandler.sendBlockHashRequest(selectedPeer, connectionPointFinder.getFindingHeight());
     }
 
     @Override

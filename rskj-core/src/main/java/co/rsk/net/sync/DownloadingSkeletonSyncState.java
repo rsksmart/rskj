@@ -6,15 +6,12 @@ import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockIdentifier;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DownloadingSkeletonSyncState extends BaseSyncState {
 
     private final PeersInformation peersInformation;
     private final Map<Peer, List<BlockIdentifier>> skeletons;
-    private final Map<Peer, Boolean> availables;
     private final Peer selectedPeer;
     private final List<Peer> candidates;
     private long connectionPoint;
@@ -31,7 +28,6 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
         this.selectedPeer = peer;
         this.connectionPoint = connectionPoint;
         this.skeletons = new HashMap<>();
-        this.availables = new HashMap<>();
         this.selectedPeerAnswered = false;
         this.peersInformation = peersInformation;
         this.candidates = peersInformation.getPeerCandidates();
@@ -74,7 +70,6 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
         timeElapsed = timeElapsed.plus(duration);
         if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0) {
             candidates.stream()
-                    .filter(availables::get)
                     .filter(c -> !skeletons.containsKey(c))
                     .forEach(p ->
                             peersInformation.reportEventWithLog(
@@ -104,15 +99,6 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
 
     @Override
     public void onEnter() {
-        peersInformation.getPeerCandidates().forEach(this::trySendRequest);
-        expectedSkeletons = availables.size();
-    }
-
-    private void trySendRequest(Peer p) {
-        boolean sent = syncEventsHandler.sendSkeletonRequest(p, connectionPoint);
-        availables.put(p, sent);
-        if (!sent){
-            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}", this.getClass(), p);
-        }
+        peersInformation.getPeerCandidates().forEach(p -> syncEventsHandler.sendSkeletonRequest(p, connectionPoint));
     }
 }

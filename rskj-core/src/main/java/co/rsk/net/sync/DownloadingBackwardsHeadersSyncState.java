@@ -42,11 +42,7 @@ public class DownloadingBackwardsHeadersSyncState extends BaseSyncState {
                 hashToRequest.getBytes(),
                 syncConfiguration.getChunkSize());
 
-        boolean sent = syncEventsHandler.sendBlockHeadersRequest(selectedPeer, chunkDescriptor);
-        if (!sent) {
-            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), selectedPeer);
-        }
+        syncEventsHandler.sendBlockHeadersRequest(selectedPeer, chunkDescriptor);
     }
 
     @Override

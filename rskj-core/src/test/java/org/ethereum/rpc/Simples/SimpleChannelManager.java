@@ -109,13 +109,11 @@ public class SimpleChannelManager implements ChannelManager {
     }
 
     @Override
-    public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
+    public void sendMessageTo(NodeID nodeID, MessageWithId message) {
         Peer channel = simpleChannels.get(nodeID);
-        // TODO(lsebrie): handle better tests where channels are not initialized
         if (channel != null){
             channel.sendMessage(message);
         }
-        return true;
     }
 
     @Override

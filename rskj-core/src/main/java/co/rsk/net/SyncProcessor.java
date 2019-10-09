@@ -174,37 +174,35 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public boolean sendSkeletonRequest(Peer peer, long height) {
+    public void sendSkeletonRequest(Peer peer, long height) {
         logger.debug("Send skeleton request to node {} height {}", peer.getPeerNodeID(), height);
         MessageWithId message = new SkeletonRequestMessage(++lastRequestId, height);
-        return sendMessage(peer, message);
+        sendMessage(peer, message);
     }
 
     @Override
-    public boolean sendBlockHashRequest(Peer peer, long height) {
+    public void sendBlockHashRequest(Peer peer, long height) {
         logger.debug("Send hash request to node {} height {}", peer.getPeerNodeID(), height);
         BlockHashRequestMessage message = new BlockHashRequestMessage(++lastRequestId, height);
-        return sendMessage(peer, message);
+        sendMessage(peer, message);
     }
 
     @Override
-    public boolean sendBlockHeadersRequest(Peer peer, ChunkDescriptor chunk) {
+    public void sendBlockHeadersRequest(Peer peer, ChunkDescriptor chunk) {
         logger.debug("Send headers request to node {}", peer.getPeerNodeID());
 
         BlockHeadersRequestMessage message =
                 new BlockHeadersRequestMessage(++lastRequestId, chunk.getHash(), chunk.getCount());
-        return sendMessage(peer, message);
+        sendMessage(peer, message);
     }
 
     @Override
-    public Long sendBodyRequest(Peer peer, @Nonnull BlockHeader header) {
+    public long sendBodyRequest(Peer peer, @Nonnull BlockHeader header) {
         logger.debug("Send body request block {} hash {} to peer {}", header.getNumber(),
                 HashUtil.shortHash(header.getHash().getBytes()), peer.getPeerNodeID());
 
         BodyRequestMessage message = new BodyRequestMessage(++lastRequestId, header.getHash().getBytes());
-        if (!sendMessage(peer, message)){
-            return null;
-        }
+        sendMessage(peer, message);
         return message.getId();
     }
 
@@ -335,19 +333,12 @@ public class SyncProcessor implements SyncEventsHandler {
         stopSyncing();
     }
 
-    private boolean sendMessage(Peer peer, MessageWithId message) {
-        boolean sent = sendMessageTo(peer.getPeerNodeID(), message);
-        if (sent){
-            MessageType messageType = message.getResponseMessageType();
-            long messageId = message.getId();
-            pendingMessages.put(messageId, messageType);
-            logger.trace("Pending {}@{} ADDED for {}", messageType, messageId, peer.getPeerNodeID());
-        }
-        return sent;
-    }
-
-    private boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
-        return channelManager.sendMessageTo(nodeID, message);
+    private void sendMessage(Peer peer, MessageWithId message) {
+        channelManager.sendMessageTo(peer.getPeerNodeID(), message);
+        MessageType messageType = message.getResponseMessageType();
+        long messageId = message.getId();
+        pendingMessages.put(messageId, messageType);
+        logger.trace("Pending {}@{} ADDED for {}", messageType, messageId, peer.getPeerNodeID());
     }
 
     private void setSyncState(SyncState syncState) {

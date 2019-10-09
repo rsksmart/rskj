@@ -34,7 +34,7 @@ public class DownloadingBackwardsHeadersSyncStateTest {
     }
 
     @Test
-    public void onEnter_requestSent() {
+    public void onEnter() {
         when(blockStore.getMinNumber()).thenReturn(50L);
         Block child = mock(Block.class);
         Keccak256 hash = new Keccak256(new byte[32]);
@@ -48,43 +48,15 @@ public class DownloadingBackwardsHeadersSyncStateTest {
                 selectedPeer);
 
         ArgumentCaptor<ChunkDescriptor> descriptorCaptor = ArgumentCaptor.forClass(ChunkDescriptor.class);
-        when(syncEventsHandler.sendBlockHeadersRequest(any(), descriptorCaptor.capture())).thenReturn(true);
 
         target.onEnter();
 
-        verify(syncEventsHandler).sendBlockHeadersRequest(eq(selectedPeer), any());
+        verify(syncEventsHandler).sendBlockHeadersRequest(eq(selectedPeer), descriptorCaptor.capture());
         verify(syncEventsHandler, never()).onSyncIssue(any(), any());
 
         assertEquals(descriptorCaptor.getValue().getHash(), hash.getBytes());
         assertEquals(descriptorCaptor.getValue().getCount(), syncConfiguration.getChunkSize());
     }
-
-    @Test
-    public void onEnter_requestNotSent() {
-        when(blockStore.getMinNumber()).thenReturn(50L);
-        Block child = mock(Block.class);
-        Keccak256 hash = new Keccak256(new byte[32]);
-        when(child.getHash()).thenReturn(hash);
-        when(blockStore.getChainBlockByNumber(50L)).thenReturn(child);
-
-        DownloadingBackwardsHeadersSyncState target = new DownloadingBackwardsHeadersSyncState(
-                syncConfiguration,
-                syncEventsHandler,
-                blockStore,
-                selectedPeer);
-
-        ArgumentCaptor<ChunkDescriptor> descriptorCaptor = ArgumentCaptor.forClass(ChunkDescriptor.class);
-        when(syncEventsHandler.sendBlockHeadersRequest(any(), descriptorCaptor.capture())).thenReturn(false);
-
-        target.onEnter();
-
-        verify(syncEventsHandler).sendBlockHeadersRequest(eq(selectedPeer), any());
-        verify(syncEventsHandler).onSyncIssue(any(), any());
-
-        assertEquals(descriptorCaptor.getValue().getHash(), hash.getBytes());
-        assertEquals(descriptorCaptor.getValue().getCount(), syncConfiguration.getChunkSize());
-    }
-
 
     @Test
     public void newHeaders() {

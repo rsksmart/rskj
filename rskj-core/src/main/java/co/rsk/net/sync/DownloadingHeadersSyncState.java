@@ -114,15 +114,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
     }
 
     private void trySendRequest() {
-        boolean sent = syncEventsHandler.sendBlockHeadersRequest(
-                selectedPeer, chunksDownloadHelper.getNextChunk()
-        );
-        if (!sent) {
-            syncEventsHandler.onSyncIssue(
-                    "Channel failed to sent on {} to {}",
-                    this.getClass(),
-                    selectedPeer.getPeerNodeID());
-        }
+        syncEventsHandler.sendBlockHeadersRequest(selectedPeer, chunksDownloadHelper.getNextChunk());
     }
 
     @Override

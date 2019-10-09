@@ -78,7 +78,7 @@ public interface ChannelManager extends InternalService {
 
     Collection<Peer> getActivePeers();
 
-    boolean sendMessageTo(NodeID nodeID, MessageWithId message);
+    void sendMessageTo(NodeID nodeID, MessageWithId message);
 
     boolean isAddressBlockAvailable(InetAddress address);
 }

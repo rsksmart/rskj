@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 public interface SyncEventsHandler {
-    boolean sendSkeletonRequest(Peer peer, long height);
+    void sendSkeletonRequest(Peer peer, long height);
 
-    boolean sendBlockHashRequest(Peer peer, long height);
+    void sendBlockHashRequest(Peer peer, long height);
 
-    boolean sendBlockHeadersRequest(Peer peer, ChunkDescriptor chunk);
+    void sendBlockHeadersRequest(Peer peer, ChunkDescriptor chunk);
 
-    Long sendBodyRequest(Peer peer, BlockHeader header);
+    long sendBodyRequest(Peer peer, BlockHeader header);
 
     void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer);
 
