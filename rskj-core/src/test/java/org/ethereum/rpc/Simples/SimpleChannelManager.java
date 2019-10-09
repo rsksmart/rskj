@@ -100,20 +100,11 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Override
     public void notifyDisconnect(Channel channel) {
-
     }
 
     @Override
     public Collection<Peer> getActivePeers() {
         return simpleChannels.values();
-    }
-
-    @Override
-    public void sendMessageTo(NodeID nodeID, MessageWithId message) {
-        Peer channel = simpleChannels.get(nodeID);
-        if (channel != null){
-            channel.sendMessage(message);
-        }
     }
 
     @Override

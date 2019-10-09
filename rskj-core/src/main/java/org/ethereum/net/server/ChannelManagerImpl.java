@@ -304,14 +304,6 @@ public class ChannelManagerImpl implements ChannelManager {
         }
     }
 
-    @Override
-    public void sendMessageTo(NodeID nodeID, MessageWithId message) {
-        Channel channel = activePeers.get(nodeID);
-        if (channel != null){
-            channel.sendMessage(message);
-        }
-    }
-
     public boolean isAddressBlockAvailable(InetAddress inetAddress) {
         synchronized (activePeersLock) {
             //TODO(lsebrie): save block address in a data structure and keep updated on each channel add/remove

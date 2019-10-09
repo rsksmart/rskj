@@ -292,11 +292,6 @@ public class NodeMessageHandlerTest {
 
         final ChannelManager channelManager = mock(ChannelManager.class);
         when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
-        final Message[] msg = new Message[1];
-
-        doAnswer((InvocationOnMock invocation) ->
-                msg[0] = invocation.getArgument(1))
-                .when(channelManager).sendMessageTo(eq(sender.getPeerNodeID()), any());
 
         final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
 
@@ -306,8 +301,8 @@ public class NodeMessageHandlerTest {
         final Message message = new StatusMessage(status);
         handler.processMessage(sender, message);
 
-        Assert.assertNotNull(msg[0]);
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, msg[0].getMessageType());
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
     }
 
     @Test
@@ -325,7 +320,6 @@ public class NodeMessageHandlerTest {
                 blockchain,
                 mock(BlockStore.class), mock(ConsensusValidationMainchainView.class),
                 blockSyncService,
-                RskMockFactory.getChannelManager(),
                 syncConfiguration,
                 blockFactory,
                 new DummyBlockValidationRule(),

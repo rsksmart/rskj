@@ -12,7 +12,6 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.net.server.ChannelManager;
 import org.ethereum.validator.DifficultyRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +32,6 @@ public class SyncProcessor implements SyncEventsHandler {
     private final BlockStore blockStore;
     private final ConsensusValidationMainchainView consensusValidationMainchainView;
     private final BlockSyncService blockSyncService;
-    private final ChannelManager channelManager;
     private final BlockFactory blockFactory;
     private final BlockHeaderValidationRule blockHeaderValidationRule;
     private final BlockCompositeRule blockValidationRule;
@@ -50,7 +48,6 @@ public class SyncProcessor implements SyncEventsHandler {
                          BlockStore blockStore,
                          ConsensusValidationMainchainView consensusValidationMainchainView,
                          BlockSyncService blockSyncService,
-                         ChannelManager channelManager,
                          SyncConfiguration syncConfiguration,
                          BlockFactory blockFactory,
                          BlockHeaderValidationRule blockHeaderValidationRule,
@@ -62,7 +59,6 @@ public class SyncProcessor implements SyncEventsHandler {
         this.blockStore = blockStore;
         this.consensusValidationMainchainView = consensusValidationMainchainView;
         this.blockSyncService = blockSyncService;
-        this.channelManager = channelManager;
         this.syncConfiguration = syncConfiguration;
         this.blockFactory = blockFactory;
         this.blockHeaderValidationRule = blockHeaderValidationRule;
@@ -334,11 +330,11 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     private void sendMessage(Peer peer, MessageWithId message) {
-        channelManager.sendMessageTo(peer.getPeerNodeID(), message);
         MessageType messageType = message.getResponseMessageType();
         long messageId = message.getId();
         pendingMessages.put(messageId, messageType);
         logger.trace("Pending {}@{} ADDED for {}", messageType, messageId, peer.getPeerNodeID());
+        peer.sendMessage(message);
     }
 
     private void setSyncState(SyncState syncState) {
