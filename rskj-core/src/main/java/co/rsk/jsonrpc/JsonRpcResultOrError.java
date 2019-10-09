@@ -26,10 +26,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public interface JsonRpcResultOrError {
     /**
      * @return a response according to the result or error state of this object.
-     * @param messageId the message ID
+     * @param id the request ID to respond to
      */
     @JsonIgnore
-    JsonRpcIdentifiableMessage responseFor(int messageId);
+    JsonRpcIdentifiableMessage responseFor(JsonRpcRequestId id);
 
     /**
      * @return a status code according to the result or error state of this object.

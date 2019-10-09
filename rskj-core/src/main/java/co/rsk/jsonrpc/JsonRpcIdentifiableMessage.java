@@ -19,31 +19,21 @@ package co.rsk.jsonrpc;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.Objects;
+
 /**
  * The basic JSON-RPC request or response. It is required to have an ID.
- *
- * Note that the JSON-RPC 2.0 spec allows using strings as IDs, but our implementation doesn't.
  */
 public abstract class JsonRpcIdentifiableMessage extends JsonRpcMessage {
-    private final int id;
+    private final JsonRpcRequestId id;
 
-    public JsonRpcIdentifiableMessage(JsonRpcVersion version, int id) {
+    public JsonRpcIdentifiableMessage(JsonRpcVersion version, JsonRpcRequestId id) {
         super(version);
-        this.id = requireNonNegative(id);
+        this.id = Objects.requireNonNull(id);
     }
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public int getId() {
-        return id;
-    }
-
-    private static int requireNonNegative(int id) {
-        if (id < 0) {
-            throw new IllegalArgumentException(
-                    String.format("JSON-RPC message id should be a positive number, but was %s.", id)
-            );
-        }
-
+    public JsonRpcRequestId getId() {
         return id;
     }
 }

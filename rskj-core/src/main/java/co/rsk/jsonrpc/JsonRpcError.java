@@ -40,8 +40,8 @@ public class JsonRpcError implements JsonRpcResultOrError {
     }
 
     @Override
-    public JsonRpcIdentifiableMessage responseFor(int messageId) {
-        return new JsonRpcErrorResponse(messageId, this);
+    public JsonRpcIdentifiableMessage responseFor(JsonRpcRequestId id) {
+        return new JsonRpcErrorResponse(id, this);
     }
 
     @Override

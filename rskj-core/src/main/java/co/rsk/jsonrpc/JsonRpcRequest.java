@@ -35,7 +35,7 @@ public class JsonRpcRequest extends JsonRpcIdentifiableMessage {
 
     public JsonRpcRequest(
             @JsonProperty("jsonrpc") JsonRpcVersion version,
-            @JsonProperty("id") Integer id,
+            @JsonProperty("id") JsonRpcRequestId id,
             @JsonProperty("method") String method,
             @JsonProperty("params") JsonNode params) {
         super(version, id);

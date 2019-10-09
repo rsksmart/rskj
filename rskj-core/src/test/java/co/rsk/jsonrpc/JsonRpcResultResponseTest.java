@@ -33,7 +33,7 @@ public class JsonRpcResultResponseTest {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":48,\"result\":true}";
         assertThat(
                 serializer.writeValueAsString(
-                        new JsonRpcResultResponse(48, new JsonRpcBooleanResult(true))
+                        new JsonRpcResultResponse(new JsonRpcRequestId(48), new JsonRpcBooleanResult(true))
                 ),
                 is(message)
         );
