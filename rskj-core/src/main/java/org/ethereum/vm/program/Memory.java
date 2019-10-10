@@ -76,6 +76,12 @@ public class Memory implements ProgramListenerAware {
     }
 
     public void write(int address, byte[] data, int dataSize, boolean limited) {
+        // border case that happens sometimes
+        // it is not the happiest fix but fixes all kind of trouble
+        // at once
+        if (data == null) {
+            return;
+        }
 
         if (data.length < dataSize) {
             dataSize = data.length;
