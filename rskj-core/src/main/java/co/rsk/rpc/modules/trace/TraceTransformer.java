@@ -62,16 +62,16 @@ public class TraceTransformer {
             createdAddress = txInfo.getReceipt().getTransaction().getContractAddress();
         }
 
-        traces.add(toTrace(trace.getProgramInvoke(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, createdCode, createdAddress, trace.getError()));
-
         int nsubtraces = trace.getSubtraces().size();
+
+        traces.add(toTrace(trace.getProgramInvoke(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, createdCode, createdAddress, trace.getError(), nsubtraces));
 
         for (int k = 0; k < nsubtraces; k++)
             addTrace(traces, trace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
     }
 
     private static void addTrace(List<TransactionTrace> traces, ProgramSubtrace subtrace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
-        traces.add(toTrace(subtrace.getProgramInvoke(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), subtrace.getCreatedCode(), subtrace.getCreatedAddress(), null));
+        traces.add(toTrace(subtrace.getProgramInvoke(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), subtrace.getCreatedCode(), subtrace.getCreatedAddress(), null, subtrace.getSubtraces().size()));
 
         int nsubtraces = subtrace.getSubtraces().size();
 
@@ -79,7 +79,7 @@ public class TraceTransformer {
             addTrace(traces, subtrace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
     }
 
-    public static TransactionTrace toTrace(ProgramInvoke invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, byte[] creationData, byte[] createdCode, RskAddress createdAddress, String err) {
+    public static TransactionTrace toTrace(ProgramInvoke invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, byte[] creationData, byte[] createdCode, RskAddress createdAddress, String err, int nsubtraces) {
         TraceAction action = toAction(invoke, callType, creationData);
         TraceResult result = toResult(programResult, createdCode, createdAddress);
         String blockHash = TypeConverter.toUnformattedJsonHex(txInfo.getBlockHash());
@@ -99,8 +99,6 @@ public class TraceTransformer {
             result = null;
         }
 
-        int subtraces = 0;
-
         return new TransactionTrace(
                 action,
                 blockHash,
@@ -108,7 +106,7 @@ public class TraceTransformer {
                 transactionHash,
                 transactionPosition,
                 type,
-                subtraces,
+                nsubtraces,
                 traceAddress,
                 result,
                 error
