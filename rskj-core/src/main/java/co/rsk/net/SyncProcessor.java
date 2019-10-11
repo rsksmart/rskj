@@ -220,7 +220,7 @@ public class SyncProcessor implements SyncEventsHandler {
     public void startSyncing(Peer peer) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.info("Start syncing with node {}", nodeID);
-        byte[] bestBlockHash = peersInformation.getPeer(nodeID).getStatus().getBestBlockHash();
+        byte[] bestBlockHash = peersInformation.getPeer(peer).getStatus().getBestBlockHash();
         setSyncState(new CheckingBestHeaderSyncState(
                 syncConfiguration,
                 this,
@@ -276,7 +276,7 @@ public class SyncProcessor implements SyncEventsHandler {
     public void startFindingConnectionPoint(Peer peer) {
         NodeID peerId = peer.getPeerNodeID();
         logger.debug("Find connection point with node {}", peerId);
-        long bestBlockNumber = peersInformation.getPeer(peerId).getStatus().getBestBlockNumber();
+        long bestBlockNumber = peersInformation.getPeer(peer).getStatus().getBestBlockNumber();
         setSyncState(new FindingConnectionPointSyncState(
                 syncConfiguration, this, blockStore, peer, bestBlockNumber));
     }

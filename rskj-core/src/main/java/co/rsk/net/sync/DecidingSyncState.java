@@ -46,7 +46,7 @@ public class DecidingSyncState extends BaseSyncState {
             return;
         }
 
-        long bpBestBlockNumber = peersInformation.getPeer(bestPeer.get().getPeerNodeID()).getStatus().getBestBlockNumber();
+        long bpBestBlockNumber = peersInformation.getPeer(bestPeer.get()).getStatus().getBestBlockNumber();
         long distanceToTip = bpBestBlockNumber - blockStore.getBestBlock().getNumber();
         if (distanceToTip > syncConfiguration.getLongSyncLimit() || blockStore.getMinNumber() == 0) {
             syncEventsHandler.startSyncing(bestPeer.get());

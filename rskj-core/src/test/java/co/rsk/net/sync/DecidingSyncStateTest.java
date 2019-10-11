@@ -164,14 +164,12 @@ public class DecidingSyncStateTest {
 
         when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
         Peer peer = mock(Peer.class);
-        NodeID nodeID = mock(NodeID.class);
-        when(peer.getPeerNodeID()).thenReturn(nodeID);
         when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         SyncPeerStatus syncPeerStatus = mock(SyncPeerStatus.class);
         Status status = mock(Status.class);
         when(syncPeerStatus.getStatus()).thenReturn(status);
-        when(peersInformation.getPeer(nodeID)).thenReturn(syncPeerStatus);
+        when(peersInformation.getPeer(peer)).thenReturn(syncPeerStatus);
 
         when(blockStore.getMinNumber()).thenReturn(1L);
         Block block = mock(Block.class);
@@ -198,14 +196,12 @@ public class DecidingSyncStateTest {
 
         when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
         Peer peer = mock(Peer.class);
-        NodeID nodeID = mock(NodeID.class);
-        when(peer.getPeerNodeID()).thenReturn(nodeID);
         when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         SyncPeerStatus syncPeerStatus = mock(SyncPeerStatus.class);
         Status status = mock(Status.class);
         when(syncPeerStatus.getStatus()).thenReturn(status);
-        when(peersInformation.getPeer(nodeID)).thenReturn(syncPeerStatus);
+        when(peersInformation.getPeer(peer)).thenReturn(syncPeerStatus);
 
         when(blockStore.getMinNumber()).thenReturn(0L);
         Block block = mock(Block.class);
@@ -232,14 +228,12 @@ public class DecidingSyncStateTest {
 
         when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
         Peer peer = mock(Peer.class);
-        NodeID nodeID = mock(NodeID.class);
-        when(peer.getPeerNodeID()).thenReturn(nodeID);
         when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         SyncPeerStatus syncPeerStatus = mock(SyncPeerStatus.class);
         Status status = mock(Status.class);
         when(syncPeerStatus.getStatus()).thenReturn(status);
-        when(peersInformation.getPeer(nodeID)).thenReturn(syncPeerStatus);
+        when(peersInformation.getPeer(peer)).thenReturn(syncPeerStatus);
 
         Block block = mock(Block.class);
         long myBestBlockNumber = 90L;

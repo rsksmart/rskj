@@ -68,7 +68,7 @@ public class PeersInformation {
         peerScoringManager.recordEvent(peerId, null, eventType);
     }
 
-    public int getScore(NodeID peerId) {
+    private int getScore(NodeID peerId) {
         return peerScoringManager.getPeerScoring(peerId).getScore();
     }
 
@@ -93,12 +93,8 @@ public class PeersInformation {
         return this.registerPeer(peer);
     }
 
-    public SyncPeerStatus getPeer(NodeID nodeID) {
-        return this.peerStatuses.entrySet().stream()
-                .filter(e -> e.getKey().getPeerNodeID().equals(nodeID))
-                .findAny()
-                .map(Map.Entry::getValue)
-                .orElse(null);
+    public SyncPeerStatus getPeer(Peer peer) {
+        return this.peerStatuses.get(peer);
     }
 
     public Optional<Peer> getBestPeer() {
@@ -118,7 +114,7 @@ public class PeersInformation {
     }
 
     private boolean hasLowerDifficulty(Peer peer) {
-        Status status = getPeer(peer.getPeerNodeID()).getStatus();
+        Status status = getPeer(peer).getStatus();
         if (status == null) {
             return false;
         }
