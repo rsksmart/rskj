@@ -49,6 +49,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import org.ethereum.vm.trace.DetailedProgramTrace;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceListener;
 import org.slf4j.Logger;
@@ -158,7 +159,7 @@ public class Program {
 
         this.ops = nullToEmpty(ops);
 
-        this.trace = new ProgramTrace(config, programInvoke);
+        this.trace = new DetailedProgramTrace(config, programInvoke);
         this.memory = setupProgramListener(new Memory());
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?

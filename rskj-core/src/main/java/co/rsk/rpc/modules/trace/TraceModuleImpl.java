@@ -26,7 +26,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.vm.trace.ProgramTrace;
+import org.ethereum.vm.trace.DetailedProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.ethereum.vm.trace.Serializers;
 import org.slf4j.Logger;
@@ -73,7 +73,8 @@ public class TraceModuleImpl implements TraceModule {
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
         blockExecutor.traceBlock(programTraceProcessor, block, parent.getHeader(), false, false);
 
-        ProgramTrace programTrace = programTraceProcessor.getProgramTrace(tx.getHash());
+        // TODO use Resumed Program Trace
+        DetailedProgramTrace programTrace = (DetailedProgramTrace)programTraceProcessor.getProgramTrace(tx.getHash());
 
         if (programTrace == null) {
             return null;
