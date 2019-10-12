@@ -25,7 +25,7 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.program.invoke.InvokeData;
 import org.ethereum.vm.trace.SummarizedProgramTrace;
 
 import java.math.BigInteger;
@@ -71,7 +71,7 @@ public class TraceTransformer {
     }
 
     private static void addTrace(List<TransactionTrace> traces, ProgramSubtrace subtrace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
-        traces.add(toTrace(subtrace.getProgramInvoke(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), null, subtrace.getSubtraces().size()));
+        traces.add(toTrace(subtrace.getInvokeData(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), null, subtrace.getSubtraces().size()));
 
         int nsubtraces = subtrace.getSubtraces().size();
 
@@ -79,7 +79,7 @@ public class TraceTransformer {
             addTrace(traces, subtrace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
     }
 
-    public static TransactionTrace toTrace(ProgramInvoke invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String err, int nsubtraces) {
+    public static TransactionTrace toTrace(InvokeData invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String err, int nsubtraces) {
         TraceAction action = toAction(invoke, callType, creationData == null ? null : creationData.getCreationInput());
         TraceResult result = toResult(programResult, creationData == null ? null : creationData.getCreatedCode(), creationData == null ? null : creationData.getCreatedAddress());
         String blockHash = TypeConverter.toUnformattedJsonHex(txInfo.getBlockHash());
@@ -130,7 +130,7 @@ public class TraceTransformer {
         return new TraceResult(gasUsed, output, code, address);
     }
 
-    public static TraceAction toAction(ProgramInvoke invoke, CallType callType, byte[] creationInput) {
+    public static TraceAction toAction(InvokeData invoke, CallType callType, byte[] creationInput) {
         String from = new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
         String to = creationInput == null ? new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString() : null;
         String gas = TypeConverter.toQuantityJsonHex(invoke.getGas());
