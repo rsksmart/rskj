@@ -52,10 +52,7 @@ import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
-import org.ethereum.vm.trace.DetailedProgramTrace;
-import org.ethereum.vm.trace.ProgramTrace;
-import org.ethereum.vm.trace.ProgramTraceListener;
-import org.ethereum.vm.trace.SummarizedProgramTrace;
+import org.ethereum.vm.trace.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,12 +172,15 @@ public class Program {
     }
 
     private static ProgramTrace createProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
+        if (!config.vmTrace()) {
+            return new EmptyProgramTrace();
+        }
+
         if ((config.vmTraceOptions() & VmConfig.LIGHT_TRACE) != 0) {
             return new SummarizedProgramTrace(programInvoke);
         }
-        else {
-            return new DetailedProgramTrace(config, programInvoke);
-        }
+
+        return new DetailedProgramTrace(config, programInvoke);
     }
 
     public int getCallDeep() {
