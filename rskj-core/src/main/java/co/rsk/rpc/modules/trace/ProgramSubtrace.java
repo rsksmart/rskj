@@ -19,7 +19,6 @@
 
 package co.rsk.rpc.modules.trace;
 
-import co.rsk.core.RskAddress;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 
@@ -27,18 +26,22 @@ import java.util.List;
 
 public class ProgramSubtrace {
     private final CallType callType;
-    private final byte[] creationData;
-    private final byte[] createdCode;
-    private final RskAddress createdAddress;
+    private final CreationData creationData;
     private final ProgramInvoke programInvoke;
     private final ProgramResult programResult;
     private final List<ProgramSubtrace> subtraces;
 
-    public ProgramSubtrace(CallType callType, byte[] creationData, byte[] createdCode, RskAddress createdAddress, ProgramInvoke programInvoke, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
-        this.callType = callType;
+    public ProgramSubtrace(CreationData creationData, ProgramInvoke programInvoke, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+        this.callType = CallType.NONE;
         this.creationData = creationData;
-        this.createdCode = createdCode;
-        this.createdAddress = createdAddress;
+        this.programInvoke = programInvoke;
+        this.programResult = programResult;
+        this.subtraces = subtraces;
+    }
+
+    public ProgramSubtrace(CallType callType, ProgramInvoke programInvoke, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+        this.callType = callType;
+        this.creationData = null;
         this.programInvoke = programInvoke;
         this.programResult = programResult;
         this.subtraces = subtraces;
@@ -47,14 +50,10 @@ public class ProgramSubtrace {
     public CallType getCallType() { return this.callType; }
 
     public boolean isContractCreation() {
-        return this.creationData != null && this.createdAddress != null && this.createdCode != null;
+        return this.creationData != null;
     }
 
-    public byte[] getCreationData() { return this.creationData; }
-
-    public byte[] getCreatedCode() { return this.createdCode; }
-
-    public RskAddress getCreatedAddress() { return this.createdAddress; }
+    public CreationData getCreationData() { return this.creationData; }
 
     public ProgramInvoke getProgramInvoke() {
         return this.programInvoke;
