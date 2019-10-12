@@ -27,6 +27,7 @@ import co.rsk.pcc.NativeContract;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.rpc.modules.trace.CallType;
+import co.rsk.rpc.modules.trace.CreationData;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
@@ -600,6 +601,7 @@ public class Program {
                 newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         returnDataBuffer = null; // reset return buffer right before the call
+
         if (!isEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
             Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
@@ -607,7 +609,7 @@ public class Program {
             programResult = program.getResult();
 
             if (programResult.getException() == null && !programResult.isRevert()) {
-                getTrace().addSubTrace(new ProgramSubtrace(CallType.NONE, programCode, programResult.getHReturn(), contractAddress, program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
+                getTrace().addSubTrace(new ProgramSubtrace(new CreationData(programCode, programResult.getHReturn(), contractAddress), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
             }
         }
 
@@ -836,7 +838,7 @@ public class Program {
         vm.play(program);
         childResult  = program.getResult();
 
-        getTrace().addSubTrace(new ProgramSubtrace(CallType.fromMsgType(msg.getType()), null, null, null, program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
+        getTrace().addSubTrace(new ProgramSubtrace(CallType.fromMsgType(msg.getType()), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
 
         getTrace().merge(program.getTrace());
         getResult().merge(childResult);
