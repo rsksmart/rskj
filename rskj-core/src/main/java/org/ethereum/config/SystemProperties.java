@@ -313,6 +313,10 @@ public abstract class SystemProperties {
         return configFromFiles.getBoolean("vm.structured.trace");
     }
 
+    public int vmTraceOptions() {
+        return configFromFiles.getInt("vm.structured.traceOptions");
+    }
+
     public boolean vmTraceCompressed() {
         return configFromFiles.getBoolean("vm.structured.compressed");
     }

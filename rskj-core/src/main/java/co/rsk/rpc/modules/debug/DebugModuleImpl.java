@@ -77,7 +77,7 @@ public class DebugModuleImpl implements DebugModule {
         txInfo.setTransaction(tx);
 
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
-        blockExecutor.traceBlock(programTraceProcessor, block, parent.getHeader(), false, false);
+        blockExecutor.traceBlock(programTraceProcessor, 0, block, parent.getHeader(), false, false);
 
         return programTraceProcessor.getProgramTraceAsJsonNode(tx.getHash());
     }

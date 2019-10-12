@@ -22,18 +22,22 @@ package co.rsk.config;
  * Wraps configuration for the VM, which is usually derived from configuration files.
  */
 public class VmConfig {
+    public static final int LIGHT_TRACE = 1;
 
     private final boolean vmTrace;
+    private final int vmTraceOptions;
     private final int vmTraceInitStorageLimit;
     private final int dumpBlock;
     private final String dumpStyle;
 
     public VmConfig(
             boolean vmTrace,
+            int vmTraceOptions,
             int vmTraceInitStorageLimit,
             int dumpBlock,
             String dumpStyle) {
         this.vmTrace = vmTrace;
+        this.vmTraceOptions = vmTraceOptions;
         this.vmTraceInitStorageLimit = vmTraceInitStorageLimit;
         this.dumpBlock = dumpBlock;
         this.dumpStyle = dumpStyle;
@@ -50,6 +54,8 @@ public class VmConfig {
     public boolean vmTrace() {
         return vmTrace;
     }
+
+    public int vmTraceOptions() { return vmTraceOptions; }
 
     public int vmTraceInitStorageLimit() {
         return vmTraceInitStorageLimit;
