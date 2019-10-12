@@ -47,6 +47,7 @@ import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
@@ -796,6 +797,17 @@ public class Program {
             track.commit();
             callResult = true;
             refundGas(msg.getGas().longValue(), "remaining gas from the internal call");
+
+            DataWord callerAddress = DataWord.valueOf(senderAddress.getBytes());
+            DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
+            DataWord transferValue = DataWord.valueOf(endowment.getBytes());
+
+            TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), transferValue);
+            ProgramResult result     = new ProgramResult();
+
+            ProgramSubtrace subtrace = new ProgramSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, Collections.EMPTY_LIST);
+
+            getTrace().addSubTrace(subtrace);
         }
 
         // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK

@@ -20,43 +20,39 @@
 package co.rsk.rpc.modules.trace;
 
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.program.invoke.InvokeData;
 
 import java.util.List;
 
 public class ProgramSubtrace {
     private final CallType callType;
     private final CreationData creationData;
-    private final ProgramInvoke programInvoke;
+    private final InvokeData invokeData;
     private final ProgramResult programResult;
     private final List<ProgramSubtrace> subtraces;
 
-    public ProgramSubtrace(CreationData creationData, ProgramInvoke programInvoke, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+    public ProgramSubtrace(CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
         this.callType = CallType.NONE;
         this.creationData = creationData;
-        this.programInvoke = programInvoke;
+        this.invokeData = invokeData;
         this.programResult = programResult;
         this.subtraces = subtraces;
     }
 
-    public ProgramSubtrace(CallType callType, ProgramInvoke programInvoke, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+    public ProgramSubtrace(CallType callType, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
         this.callType = callType;
         this.creationData = null;
-        this.programInvoke = programInvoke;
+        this.invokeData = invokeData;
         this.programResult = programResult;
         this.subtraces = subtraces;
     }
 
     public CallType getCallType() { return this.callType; }
 
-    public boolean isContractCreation() {
-        return this.creationData != null;
-    }
-
     public CreationData getCreationData() { return this.creationData; }
 
-    public ProgramInvoke getProgramInvoke() {
-        return this.programInvoke;
+    public InvokeData getInvokeData() {
+        return this.invokeData;
     }
 
     public ProgramResult getProgramResult() {

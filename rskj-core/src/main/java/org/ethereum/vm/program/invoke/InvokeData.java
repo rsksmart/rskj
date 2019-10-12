@@ -19,45 +19,20 @@
 
 package org.ethereum.vm.program.invoke;
 
-import org.ethereum.core.Repository;
-import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
 
-/**
- * @author Roman Mandeleil
- * @since 03.06.2014
- */
-public interface ProgramInvoke extends InvokeData {
+public interface InvokeData {
+    DataWord getOwnerAddress();
 
-    DataWord getBalance();
+    DataWord getCallerAddress();
 
-    DataWord getOriginAddress();
+    long getGas();
 
-    DataWord getMinGasPrice();
+    DataWord getCallValue();
 
-    DataWord getPrevHash();
+    DataWord getDataSize();
 
-    DataWord getCoinbase();
+    DataWord getDataValue(DataWord indexData);
 
-    DataWord getTimestamp();
-
-    DataWord getNumber();
-
-    DataWord getTransactionIndex();
-
-    DataWord getDifficulty();
-
-    DataWord getGaslimit();
-
-    boolean byTransaction();
-
-    boolean byTestingSuite();
-
-    int getCallDeep();
-
-    Repository getRepository();
-
-    BlockStore getBlockStore();
-
-    boolean isStaticCall();
+    byte[] getDataCopy(DataWord offsetData, DataWord lengthData);
 }
