@@ -18,6 +18,7 @@
 
 package co.rsk.rpc.modules.trace;
 
+import co.rsk.config.VmConfig;
 import co.rsk.core.bc.BlockExecutor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,9 +27,9 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.vm.trace.DetailedProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.ethereum.vm.trace.Serializers;
+import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,10 +72,9 @@ public class TraceModuleImpl implements TraceModule {
         txInfo.setTransaction(tx);
 
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
-        blockExecutor.traceBlock(programTraceProcessor, block, parent.getHeader(), false, false);
+        blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
-        // TODO use Resumed Program Trace
-        DetailedProgramTrace programTrace = (DetailedProgramTrace)programTraceProcessor.getProgramTrace(tx.getHash());
+        SummarizedProgramTrace programTrace = (SummarizedProgramTrace)programTraceProcessor.getProgramTrace(tx.getHash());
 
         if (programTrace == null) {
             return null;

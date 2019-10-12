@@ -53,6 +53,7 @@ import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.vm.trace.DetailedProgramTrace;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceListener;
+import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +161,7 @@ public class Program {
 
         this.ops = nullToEmpty(ops);
 
-        this.trace = new DetailedProgramTrace(config, programInvoke);
+        this.trace = createProgramTrace(config, programInvoke);
         this.memory = setupProgramListener(new Memory());
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
@@ -169,6 +170,15 @@ public class Program {
 
         precompile();
         traceListener = new ProgramTraceListener(config);
+    }
+
+    private static ProgramTrace createProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
+        if ((config.vmTraceOptions() & VmConfig.LIGHT_TRACE) != 0) {
+            return new SummarizedProgramTrace(programInvoke);
+        }
+        else {
+            return new DetailedProgramTrace(config, programInvoke);
+        }
     }
 
     public int getCallDeep() {

@@ -70,7 +70,7 @@ public class TransactionExecutorFactory {
             Repository track,
             Block block,
             long totalGasUsed) {
-        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, new HashSet<>());
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, 0, new HashSet<>());
     }
 
     public TransactionExecutor newInstance(
@@ -81,6 +81,7 @@ public class TransactionExecutorFactory {
             Block block,
             long totalGasUsed,
             boolean vmTrace,
+            int vmTraceOptions,
             Set<DataWord> deletedAccounts) {
         // Tracing configuration is scattered across different files (VM, DetailedProgramTrace, etc.) and
         // TransactionExecutor#extractTrace doesn't work when called independently.
@@ -89,6 +90,7 @@ public class TransactionExecutorFactory {
         if (vmTrace) {
             vmConfig = new VmConfig(
                     true,
+                    vmTraceOptions,
                     vmConfig.vmTraceInitStorageLimit(),
                     vmConfig.dumpBlock(),
                     vmConfig.dumpStyle(),
