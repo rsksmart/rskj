@@ -82,7 +82,7 @@ public class TransactionExecutorFactory {
             long totalGasUsed,
             boolean vmTrace,
             Set<DataWord> deletedAccounts) {
-        // Tracing configuration is scattered across different files (VM, ProgramTrace, etc.) and
+        // Tracing configuration is scattered across different files (VM, DetailedProgramTrace, etc.) and
         // TransactionExecutor#extractTrace doesn't work when called independently.
         // It would be great to decouple from VmConfig#vmTrace, but sadly that's a major refactor we can't do now.
         VmConfig vmConfig = config.getVmConfig();

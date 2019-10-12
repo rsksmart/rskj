@@ -26,7 +26,7 @@ import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.trace.ProgramTrace;
+import org.ethereum.vm.trace.DetailedProgramTrace;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ public class TraceTransformer {
 
     }
 
-    public static List<TransactionTrace> toTraces(ProgramTrace trace, TransactionInfo txInfo, long blockNumber) {
+    public static List<TransactionTrace> toTraces(DetailedProgramTrace trace, TransactionInfo txInfo, long blockNumber) {
         List<TransactionTrace> traces = new ArrayList<>();
 
         addTrace(traces, trace, txInfo, blockNumber, new TraceAddress());
@@ -45,7 +45,7 @@ public class TraceTransformer {
         return traces;
     }
 
-    private static void addTrace(List<TransactionTrace> traces, ProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
+    private static void addTrace(List<TransactionTrace> traces, DetailedProgramTrace trace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
         boolean isContractCreation = txInfo.getReceipt().getTransaction().isContractCreation();
         CallType callType = isContractCreation ? CallType.NONE : CallType.CALL;
         byte[] creationData = isContractCreation ? txInfo.getReceipt().getTransaction().getData() : null;
