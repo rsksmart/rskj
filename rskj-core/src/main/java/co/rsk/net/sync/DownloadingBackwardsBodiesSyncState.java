@@ -10,6 +10,8 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Genesis;
 import org.ethereum.db.BlockStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -22,6 +24,8 @@ import java.util.*;
  * Assuming that child is valid, the previous block can be validated by comparing it's hash to the child's parent.
  */
 public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
+
+    private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     private final PeersInformation peersInformation;
     private final Genesis genesis;
@@ -98,6 +102,8 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
 
         if (child.getNumber() == 1) {
             connectGenesis(child);
+            blockStore.flush();
+            logger.info("Backward syncing complete");
             syncEventsHandler.stopSyncing();
             return;
         }
@@ -108,6 +114,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
 
         if (toRequest.isEmpty() && inTransit.isEmpty()) {
             blockStore.flush();
+            logger.info("Backward syncing phase complete {}", block.getNumber());
             syncEventsHandler.stopSyncing();
         }
     }
