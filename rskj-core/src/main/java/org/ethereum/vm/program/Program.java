@@ -45,10 +45,7 @@ import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.*;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.ethereum.vm.program.invoke.TransferInvoke;
+import org.ethereum.vm.program.invoke.*;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
@@ -387,10 +384,9 @@ public class Program {
 
         RskAddress owner = getOwnerRskAddress();
         Coin balance = getStorage().getBalance(owner);
+        RskAddress obtainer = new RskAddress(obtainerAddress);
 
         if (!balance.equals(Coin.ZERO)) {
-            RskAddress obtainer = new RskAddress(obtainerAddress);
-
             logger.info("Transfer to: [{}] heritage: [{}]", obtainer, balance);
 
             addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
@@ -405,6 +401,10 @@ public class Program {
         // In any case, remove the account
         getResult().addDeleteAccount(this.getOwnerAddress());
 
+        SuicideInvoke invoke = new SuicideInvoke(DataWord.valueOf(owner.getBytes()), obtainerAddress, DataWord.valueOf(balance.getBytes()));
+        ProgramSubtrace subtrace = new ProgramSubtrace(invoke);
+
+        getTrace().addSubTrace(subtrace);
     }
 
     public void send(DataWord destAddress, Coin amount) {

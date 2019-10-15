@@ -22,16 +22,28 @@ package co.rsk.rpc.modules.trace;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.InvokeData;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ProgramSubtrace {
+    private final TraceType traceType;
     private final CallType callType;
     private final CreationData creationData;
     private final InvokeData invokeData;
     private final ProgramResult programResult;
     private final List<ProgramSubtrace> subtraces;
 
+    public ProgramSubtrace(InvokeData invokeData) {
+        this.traceType = TraceType.SUICIDE;
+        this.callType = CallType.NONE;
+        this.creationData = null;
+        this.invokeData = invokeData;
+        this.programResult = null;
+        this.subtraces = Collections.EMPTY_LIST;
+    }
+
     public ProgramSubtrace(CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+        this.traceType = TraceType.CREATE;
         this.callType = CallType.NONE;
         this.creationData = creationData;
         this.invokeData = invokeData;
@@ -40,12 +52,15 @@ public class ProgramSubtrace {
     }
 
     public ProgramSubtrace(CallType callType, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+        this.traceType = TraceType.CALL;
         this.callType = callType;
         this.creationData = null;
         this.invokeData = invokeData;
         this.programResult = programResult;
         this.subtraces = subtraces;
     }
+
+    public TraceType getTraceType() { return this.traceType; }
 
     public CallType getCallType() { return this.callType; }
 
