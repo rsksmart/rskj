@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.InvokeData;
@@ -54,24 +55,26 @@ public class TraceTransformer {
         programResult.spendGas(new BigInteger(1, txInfo.getReceipt().getGasUsed()).longValue());
 
         CreationData creationData = null;
+        TraceType traceType = TraceType.CALL;
 
         if (isContractCreation) {
             String outputText = trace.getResult();
             byte[] createdCode = Hex.decode(outputText);
             RskAddress createdAddress = txInfo.getReceipt().getTransaction().getContractAddress();
             creationData = new CreationData(creationInput, createdCode, createdAddress);
+            traceType = TraceType.CREATE;
         }
 
         int nsubtraces = trace.getSubtraces().size();
 
-        traces.add(toTrace(trace.getProgramInvoke(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, trace.getError(), nsubtraces));
+        traces.add(toTrace(traceType, trace.getProgramInvoke(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, trace.getError(), nsubtraces));
 
         for (int k = 0; k < nsubtraces; k++)
             addTrace(traces, trace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
     }
 
     private static void addTrace(List<TransactionTrace> traces, ProgramSubtrace subtrace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
-        traces.add(toTrace(subtrace.getInvokeData(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), null, subtrace.getSubtraces().size()));
+        traces.add(toTrace(subtrace.getTraceType(), subtrace.getInvokeData(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), null, subtrace.getSubtraces().size()));
 
         int nsubtraces = subtrace.getSubtraces().size();
 
@@ -79,25 +82,32 @@ public class TraceTransformer {
             addTrace(traces, subtrace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
     }
 
-    public static TransactionTrace toTrace(InvokeData invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String err, int nsubtraces) {
-        TraceAction action = toAction(invoke, callType, creationData == null ? null : creationData.getCreationInput());
-        TraceResult result = toResult(programResult, creationData == null ? null : creationData.getCreatedCode(), creationData == null ? null : creationData.getCreatedAddress());
+    public static TransactionTrace toTrace(TraceType traceType, InvokeData invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String err, int nsubtraces) {
+        TraceAction action = toAction(traceType, invoke, callType, creationData == null ? null : creationData.getCreationInput());
+        TraceResult result = null;
+        String error = null;
+
+        if (traceType != TraceType.SUICIDE) {
+            result = toResult(programResult, creationData == null ? null : creationData.getCreatedCode(), creationData == null ? null : creationData.getCreatedAddress());
+
+            error = err != null && err.isEmpty() ? null : err;
+
+            if (programResult.getException() != null) {
+                error = programResult.getException().toString();
+            }
+            else if (programResult.isRevert()) {
+                error = "transaction reverted";
+            }
+
+            if (error != null) {
+                result = null;
+            }
+        }
+
         String blockHash = TypeConverter.toUnformattedJsonHex(txInfo.getBlockHash());
         String transactionHash = txInfo.getReceipt().getTransaction().getHash().toJsonString();
         int transactionPosition = txInfo.getIndex();
-        String type = creationData == null ? "call" : "create";
-        String error = err != null && err.isEmpty() ? null : err;
-
-        if (programResult.getException() != null) {
-            error = programResult.getException().toString();
-        }
-        else if (programResult.isRevert()) {
-            error = "transaction reverted";
-        }
-
-        if (error != null) {
-            result = null;
-        }
+        String type = traceType.name().toLowerCase();
 
         return new TransactionTrace(
                 action,
@@ -130,16 +140,35 @@ public class TraceTransformer {
         return new TraceResult(gasUsed, output, code, address);
     }
 
-    public static TraceAction toAction(InvokeData invoke, CallType callType, byte[] creationInput) {
+    public static TraceAction toAction(TraceType traceType, InvokeData invoke, CallType callType, byte[] creationInput) {
         String from = new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
-        String to = creationInput == null ? new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString() : null;
-        String gas = TypeConverter.toQuantityJsonHex(invoke.getGas());
-        String input = TypeConverter.toUnformattedJsonHex(creationInput == null ?  invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()) : creationInput);
-        String value;
+        String to = null;
+        String gas = null;
 
         DataWord callValue = invoke.getCallValue();
 
-        value = TypeConverter.toQuantityJsonHex(callValue.getData());
+        String input = null;
+        String value = null;
+        String refundAddress = null;
+        String balance = null;
+
+        if (traceType == TraceType.CREATE) {
+            input = TypeConverter.toUnformattedJsonHex(creationInput);
+            value = TypeConverter.toQuantityJsonHex(callValue.getData());
+            gas = TypeConverter.toQuantityJsonHex(invoke.getGas());
+        }
+
+        if (traceType == TraceType.CALL) {
+            input = TypeConverter.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));;
+            value = TypeConverter.toQuantityJsonHex(callValue.getData());
+            to = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
+            gas = TypeConverter.toQuantityJsonHex(invoke.getGas());
+        }
+
+        if (traceType == TraceType.SUICIDE) {
+            balance = TypeConverter.toQuantityJsonHex(callValue.getData());
+            refundAddress = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
+        }
 
         return new TraceAction(
                 callType,
@@ -147,7 +176,9 @@ public class TraceTransformer {
                 to,
                 gas,
                 input,
-                value
+                value,
+                refundAddress,
+                balance
         );
     }
 }

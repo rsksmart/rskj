@@ -79,6 +79,7 @@ public class TransactionTrace {
     }
 
     @JsonGetter("result")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public TraceResult getResult() { return this.result; }
 
     @JsonGetter("transactionPosition")
