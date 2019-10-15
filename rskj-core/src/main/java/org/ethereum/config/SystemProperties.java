@@ -70,6 +70,7 @@ public abstract class SystemProperties {
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_BASE_PATH = "database.dir";
     public static final String PROPERTY_DB_RESET = "database.reset";
+    public static final String PROPERTY_DB_IMPORT = "database.import.enabled";
     // TODO review rpc properties
     public static final String PROPERTY_RPC_CORS = "rpc.providers.web.cors";
     public static final String PROPERTY_RPC_HTTP_ENABLED = "rpc.providers.web.http.enabled";
@@ -198,7 +199,17 @@ public abstract class SystemProperties {
         return configFromFiles.getBoolean("database.reset");
     }
 
+    public boolean importEnabled() {
+        return configFromFiles.getBoolean(PROPERTY_DB_IMPORT);
+    }
 
+    public String importUrl() {
+        return configFromFiles.getString("database.import.url");
+    }
+
+    public List<String> importTrustedKeys() {
+        return configFromFiles.getStringList("database.import.trusted-keys");
+    }
 
     public List<Node> peerActive() {
         if (!configFromFiles.hasPath("peer.active")) {

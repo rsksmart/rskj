@@ -1272,7 +1272,7 @@ public class Trie {
             this.node = node;
         }
 
-        public final Trie getNode() {
+        public Trie getNode() {
             return node;
         }
 

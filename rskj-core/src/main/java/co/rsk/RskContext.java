@@ -27,6 +27,11 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.MapDBBlocksIndex;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.importer.BootstrapImporter;
+import co.rsk.db.importer.BootstrapURLProvider;
+import co.rsk.db.importer.provider.*;
+import co.rsk.db.importer.provider.index.BootstrapIndexCandidateSelector;
+import co.rsk.db.importer.provider.index.BootstrapIndexRetriever;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
@@ -74,6 +79,7 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -125,6 +131,9 @@ import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.*;
 import java.util.stream.Stream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Creates the initial object graph without a DI framework.
@@ -224,6 +233,7 @@ public class RskContext implements NodeBootstrapper {
     private PeersInformation peersInformation;
     private StatusResolver statusResolver;
     private Web3InformationRetriever web3InformationRetriever;
+    private BootstrapImporter bootstrapImporter;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -236,12 +246,44 @@ public class RskContext implements NodeBootstrapper {
         this.cliArgs = cliArgs;
     }
 
+    public BootstrapImporter getBootstrapImporter() {
+        if (bootstrapImporter == null) {
+            RskSystemProperties systemProperties = getRskSystemProperties();
+            List<String> publicKeys = systemProperties.importTrustedKeys();
+            int minimumRequired = publicKeys.size() / 2 + 1;
+            if (minimumRequired < 2) {
+                logger.warn("Configuration has less trusted sources than the minimum required {} of 2", minimumRequired);
+                minimumRequired = 2;
+            }
+
+            BootstrapURLProvider bootstrapUrlProvider = new BootstrapURLProvider(systemProperties.importUrl());
+
+            bootstrapImporter = new BootstrapImporter(
+                    getBlockStore(),
+                    getTrieStore(),
+                    blockFactory,
+                    new BootstrapDataProvider(
+                            new BootstrapDataVerifier(),
+                            new BootstrapFileHandler(bootstrapUrlProvider, new Unzipper()),
+                            new BootstrapIndexCandidateSelector(publicKeys, minimumRequired),
+                            new BootstrapIndexRetriever(publicKeys, bootstrapUrlProvider, new ObjectMapper()),
+                            minimumRequired
+                    )
+            );
+        }
+        return bootstrapImporter;
+    }
+
     @Override
     public NodeRunner getNodeRunner() {
         if (nodeRunner == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            if (rskSystemProperties.databaseReset()) {
+            if (rskSystemProperties.databaseReset() || rskSystemProperties.importEnabled()) {
                 FileUtil.recursiveDelete(rskSystemProperties.databaseDir());
+            }
+
+            if (rskSystemProperties.importEnabled()) {
+                getBootstrapImporter().importData();
             }
 
             nodeRunner = buildNodeRunner();

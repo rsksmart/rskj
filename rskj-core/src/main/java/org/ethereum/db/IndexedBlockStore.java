@@ -242,6 +242,11 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
+    public boolean isEmpty() {
+        return index.isEmpty();
+    }
+
+    @Override
     public synchronized Block getChainBlockByNumber(long number){
         List<BlockInfo> blockInfos = index.getBlocksByNumber(number);
 
@@ -497,6 +502,10 @@ public class IndexedBlockStore implements BlockStore {
      * Note that this doesn't clean the caches, making it unsuitable for using after initialization.
      */
     public void rewind(long blockNumber) {
+        if (index.isEmpty()) {
+            return;
+        }
+
         long maxNumber = getMaxNumber();
         for (long i = maxNumber; i > blockNumber; i--) {
             List<BlockInfo> blockInfos = index.removeLast();
@@ -505,6 +514,7 @@ public class IndexedBlockStore implements BlockStore {
                 this.blocks.delete(blockInfo.getHash().getBytes());
             }
         }
+        flush();
     }
 
     /**
