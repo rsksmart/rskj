@@ -122,6 +122,11 @@ public class BlockStoreDummy implements BlockStore {
     public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
 
     @Override
+    public boolean isEmpty() {
+        return false;
+    }
+
+    @Override
     public Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
         return null;
     }
