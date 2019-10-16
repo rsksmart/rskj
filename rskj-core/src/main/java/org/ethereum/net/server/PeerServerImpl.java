@@ -90,7 +90,7 @@ public class PeerServerImpl implements PeerServer {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-        ReceiverHandshakeInitializer ethereumChannelInitializer = ethereumChannelInitializerFactory.newReceiver("");
+        ReceiverHandshakeInitializer ethereumChannelInitializer = ethereumChannelInitializerFactory.newReceiver();
 
         ethereumListener.trace("Listening on port " + port);
 

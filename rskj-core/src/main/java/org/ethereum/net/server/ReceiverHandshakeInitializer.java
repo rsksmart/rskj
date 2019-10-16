@@ -36,7 +36,7 @@ import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.p2p.P2pMessageFactory;
-import org.ethereum.net.rlpx.HandshakeHandler;
+import org.ethereum.net.rlpx.ReceiverHandshakeHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +48,6 @@ public class ReceiverHandshakeInitializer extends ChannelInitializer<NioSocketCh
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
-    private final String remoteId;
     private final RskSystemProperties config;
     private final ChannelManager channelManager;
     private final CompositeEthereumListener ethereumListener;
@@ -60,7 +59,6 @@ public class ReceiverHandshakeInitializer extends ChannelInitializer<NioSocketCh
     private final PeerScoringManager peerScoringManager;
 
     public ReceiverHandshakeInitializer(
-            String remoteId,
             RskSystemProperties config,
             ChannelManager channelManager,
             CompositeEthereumListener ethereumListener,
@@ -70,7 +68,6 @@ public class ReceiverHandshakeInitializer extends ChannelInitializer<NioSocketCh
             Eth62MessageFactory eth62MessageFactory,
             StaticMessages staticMessages,
             PeerScoringManager peerScoringManager) {
-        this.remoteId = remoteId;
         this.config = config;
         this.channelManager = channelManager;
         this.ethereumListener = ethereumListener;
@@ -85,33 +82,31 @@ public class ReceiverHandshakeInitializer extends ChannelInitializer<NioSocketCh
     @Override
     public void initChannel(NioSocketChannel ch) {
         try {
-            logger.info("Open {} connection, channel: {}", isInbound() ? "inbound" : "outbound", ch);
+            logger.info("Open inbound connection, channel: {}", ch);
 
-            if (isInbound()) {
-                InetAddress address = ch.remoteAddress().getAddress();
-                if (channelManager.isRecentlyDisconnected(address)) {
-                    // avoid too frequent connection attempts
-                    logger.info("Drop connection - the same IP was disconnected recently, channel: {}", ch);
-                    ch.disconnect();
-                    return;
-                } else if (!channelManager.isAddressBlockAvailable(address)) {
-                    // avoid too many connection from same block address
-                    logger.info("IP range is full, IP {} is not accepted for new connection", address);
-                    ch.disconnect();
-                    return;
-                }
+            InetAddress address = ch.remoteAddress().getAddress();
+            if (channelManager.isRecentlyDisconnected(address)) {
+                // avoid too frequent connection attempts
+                logger.info("Drop connection - the same IP was disconnected recently, channel: {}", ch);
+                ch.disconnect();
+                return;
+            } else if (!channelManager.isAddressBlockAvailable(address)) {
+                // avoid too many connection from same block address
+                logger.info("IP range is full, IP {} is not accepted for new connection", address);
+                ch.disconnect();
+                return;
             }
 
             MessageQueue messageQueue = new MessageQueue();
             P2pHandler p2pHandler = new P2pHandler(ethereumListener, messageQueue, config.getPeerP2PPingInterval());
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
-            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
-            Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId);
+            ReceiverHandshakeHandler handshakeHandler = new ReceiverHandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
+            Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, "");
 
             ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
             ch.pipeline().addLast("handshakeHandler", handshakeHandler);
 
-            handshakeHandler.setRemoteId(remoteId, channel);
+            handshakeHandler.setRemoteId("", channel);
             messageCodec.setChannel(channel);
             messageQueue.setChannel(channel);
             messageCodec.setP2pMessageFactory(new P2pMessageFactory());
@@ -130,9 +125,5 @@ public class ReceiverHandshakeInitializer extends ChannelInitializer<NioSocketCh
         } catch (Exception e) {
             logger.error("Unexpected error: ", e);
         }
-    }
-
-    private boolean isInbound() {
-        return remoteId == null || remoteId.isEmpty();
     }
 }

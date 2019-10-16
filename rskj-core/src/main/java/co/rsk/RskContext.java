@@ -1059,9 +1059,8 @@ public class RskContext implements NodeBootstrapper {
                 }
 
                 @Override
-                public ReceiverHandshakeInitializer newReceiver(String remoteId) {
+                public ReceiverHandshakeInitializer newReceiver() {
                     return new ReceiverHandshakeInitializer(
-                            remoteId,
                             RskContext.this.getRskSystemProperties(),
                             RskContext.this.getChannelManager(),
                             RskContext.this.getCompositeEthereumListener(),

@@ -7,6 +7,6 @@ public interface EthereumChannelInitializerFactory {
 
     InitiatorHandshakeInitializer newInitiator(String remoteId);
 
-    ReceiverHandshakeInitializer newReceiver(String remoteId);
+    ReceiverHandshakeInitializer newReceiver();
 
 }

@@ -64,7 +64,7 @@ import static org.ethereum.util.ByteUtil.bigEndianToShort;
  * which installs further handlers depending on the protocol parameters.
  * This handler is finally removed from the pipeline.
  */
-public class HandshakeHandler extends ByteToMessageDecoder {
+public class InitiatorHandshakeHandler extends ByteToMessageDecoder {
 
     private final SystemProperties config;
     private final PeerScoringManager peerScoringManager;
@@ -83,7 +83,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     private byte[] initiatePacket;
     private Channel channel;
 
-    public HandshakeHandler(
+    public InitiatorHandshakeHandler(
             SystemProperties config,
             PeerScoringManager peerScoringManager,
             P2pHandler p2pHandler,

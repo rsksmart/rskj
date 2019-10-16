@@ -36,12 +36,11 @@ import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.p2p.P2pMessageFactory;
-import org.ethereum.net.rlpx.HandshakeHandler;
+import org.ethereum.net.rlpx.InitiatorHandshakeHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
 import java.util.concurrent.TimeUnit;
 
 public class InitiatorHandshakeInitializer extends ChannelInitializer<NioSocketChannel> {
@@ -85,27 +84,12 @@ public class InitiatorHandshakeInitializer extends ChannelInitializer<NioSocketC
     @Override
     public void initChannel(NioSocketChannel ch) {
         try {
-            logger.info("Open {} connection, channel: {}", isInbound() ? "inbound" : "outbound", ch);
-
-            if (isInbound()) {
-                InetAddress address = ch.remoteAddress().getAddress();
-                if (channelManager.isRecentlyDisconnected(address)) {
-                    // avoid too frequent connection attempts
-                    logger.info("Drop connection - the same IP was disconnected recently, channel: {}", ch);
-                    ch.disconnect();
-                    return;
-                } else if (!channelManager.isAddressBlockAvailable(address)) {
-                    // avoid too many connection from same block address
-                    logger.info("IP range is full, IP {} is not accepted for new connection", address);
-                    ch.disconnect();
-                    return;
-                }
-            }
+            logger.info("Open outbound connection, channel: {}", ch);
 
             MessageQueue messageQueue = new MessageQueue();
             P2pHandler p2pHandler = new P2pHandler(ethereumListener, messageQueue, config.getPeerP2PPingInterval());
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
-            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
+            InitiatorHandshakeHandler handshakeHandler = new InitiatorHandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
             Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId);
 
             ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
@@ -130,9 +114,5 @@ public class InitiatorHandshakeInitializer extends ChannelInitializer<NioSocketC
         } catch (Exception e) {
             logger.error("Unexpected error: ", e);
         }
-    }
-
-    private boolean isInbound() {
-        return remoteId == null || remoteId.isEmpty();
     }
 }

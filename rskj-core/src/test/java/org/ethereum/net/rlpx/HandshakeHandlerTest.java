@@ -47,7 +47,7 @@ import static org.mockito.Mockito.*;
 
 public class HandshakeHandlerTest {
 
-    private HandshakeHandler handler;
+    private ReceiverHandshakeHandler handler;
     private ECKey hhKey;
     private Channel channel;
     private EmbeddedChannel ch;
@@ -57,7 +57,7 @@ public class HandshakeHandlerTest {
     public void setup() {
         RskSystemProperties config = new TestSystemProperties();
         hhKey = config.getMyKey();
-        handler = new HandshakeHandler(
+        handler = new ReceiverHandshakeHandler(
                 config,
                 mock(PeerScoringManager.class),
                 mock(P2pHandler.class),
