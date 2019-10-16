@@ -100,13 +100,12 @@ public class ReceiverHandshakeInitializer extends ChannelInitializer<NioSocketCh
             MessageQueue messageQueue = new MessageQueue();
             P2pHandler p2pHandler = new P2pHandler(ethereumListener, messageQueue, config.getPeerP2PPingInterval());
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
-            ReceiverHandshakeHandler handshakeHandler = new ReceiverHandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
             Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, "");
+            ReceiverHandshakeHandler handshakeHandler = new ReceiverHandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities, channel);
 
             ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
             ch.pipeline().addLast("handshakeHandler", handshakeHandler);
 
-            handshakeHandler.setRemoteId("", channel);
             messageCodec.setChannel(channel);
             messageQueue.setChannel(channel);
             messageCodec.setP2pMessageFactory(new P2pMessageFactory());

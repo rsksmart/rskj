@@ -57,16 +57,16 @@ public class HandshakeHandlerTest {
     public void setup() {
         RskSystemProperties config = new TestSystemProperties();
         hhKey = config.getMyKey();
+        channel = mock(Channel.class);
+        when(channel.getNodeStatistics()).thenReturn(new NodeStatistics());
         handler = new ReceiverHandshakeHandler(
                 config,
                 mock(PeerScoringManager.class),
                 mock(P2pHandler.class),
                 mock(MessageCodec.class),
                 // this needs to be the real object so we can test changing the HELLO message
-                new ConfigCapabilitiesImpl(config)
-        );
-        channel = mock(Channel.class);
-        when(channel.getNodeStatistics()).thenReturn(new NodeStatistics());
+                new ConfigCapabilitiesImpl(config),
+                channel);
 
         // We don't pass the handler to the constructor to avoid calling HandshakeHandler.channelActive
         ch = new EmbeddedChannel();
@@ -100,8 +100,7 @@ public class HandshakeHandlerTest {
     // In the future, the handshake classes should be rewritten to allow unit testing.
     private void simulateHandshakeStartedByPeer(List<Capability> capabilities) throws Exception {
         ECKey remoteKey = new ECKey();
-        handler.setRemoteId("", channel);
-        handler.internalChannelActive(ctx);
+        handler.internalChannelActive();
 
         EncryptionHandshake handshake = new EncryptionHandshake(hhKey.getPubKeyPoint());
         AuthInitiateMessageV4 initiateMessage = handshake.createAuthInitiateV4(remoteKey);
