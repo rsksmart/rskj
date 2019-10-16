@@ -22,7 +22,6 @@ package org.ethereum.net.rlpx;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
-import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -31,13 +30,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.ECIESCoder;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.eth.EthVersion;
-import org.ethereum.net.p2p.DisconnectMessage;
-import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.p2p.P2pHandler;
-import org.ethereum.net.p2p.P2pMessageCodes;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +42,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
 
-import static org.ethereum.net.eth.EthVersion.fromCode;
-import static org.ethereum.net.rlpx.FrameCodec.Frame;
 import static org.ethereum.util.ByteUtil.bigEndianToShort;
 
 /**
@@ -64,18 +56,14 @@ import static org.ethereum.util.ByteUtil.bigEndianToShort;
  * which installs further handlers depending on the protocol parameters.
  * This handler is finally removed from the pipeline.
  */
-public class InitiatorHandshakeHandler extends ByteToMessageDecoder {
-
+public class InitiatorHandshakeInitPacketHandler extends ByteToMessageDecoder {
     private final SystemProperties config;
     private final PeerScoringManager peerScoringManager;
-    private final P2pHandler p2pHandler;
-    private final MessageCodec messageCodec;
-    private final ConfigCapabilities configCapabilities;
+    private final InitiatorHandshakeFrameCodecHandler.Factory nextHandlerFactory;
 
     private static final Logger loggerWire = LoggerFactory.getLogger("wire");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
 
-    private FrameCodec frameCodec;
     private ECKey myKey;
     private byte[] nodeId;
     private byte[] remoteId;
@@ -83,7 +71,7 @@ public class InitiatorHandshakeHandler extends ByteToMessageDecoder {
     private byte[] initiatePacket;
     private Channel channel;
 
-    public InitiatorHandshakeHandler(
+    public InitiatorHandshakeInitPacketHandler(
             SystemProperties config,
             PeerScoringManager peerScoringManager,
             P2pHandler p2pHandler,
@@ -93,11 +81,10 @@ public class InitiatorHandshakeHandler extends ByteToMessageDecoder {
             Channel channel) {
         this.config = config;
         this.peerScoringManager = peerScoringManager;
-        this.p2pHandler = p2pHandler;
-        this.messageCodec = messageCodec;
-        this.configCapabilities = configCapabilities;
         this.remoteId = Hex.decode(remoteId);
         this.channel = channel;
+        this.nextHandlerFactory = (c, frameCodec) -> new InitiatorHandshakeFrameCodecHandler(
+                peerScoringManager, p2pHandler, messageCodec, configCapabilities, c, frameCodec);
         this.myKey = config.getMyKey();
     }
 
@@ -148,52 +135,37 @@ public class InitiatorHandshakeHandler extends ByteToMessageDecoder {
 
     // consume handshake, producing no resulting message to upper layers
     private void decodeHandshake(final ChannelHandlerContext ctx, ByteBuf buffer) throws Exception {
-        if (frameCodec == null) {
-            byte[] responsePacket = new byte[AuthResponseMessage.getLength() + ECIESCoder.getOverhead()];
-            if (!buffer.isReadable(responsePacket.length)) {
-                return;
-            }
-            buffer.readBytes(responsePacket);
-
-            try {
-                // trying to decode as pre-EIP-8
-                AuthResponseMessage response = handshake.handleAuthResponse(myKey, initiatePacket, responsePacket);
-                loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), response);
-
-            } catch (Throwable t) {
-                // it must be format defined by EIP-8 then
-                responsePacket = readEIP8Packet(buffer, responsePacket);
-                if (responsePacket == null) {
-                    return;
-                }
-
-                AuthResponseMessageV4 response = handshake.handleAuthResponseV4(myKey, initiatePacket, responsePacket);
-                loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), response);
-            }
-
-            EncryptionHandshake.Secrets secrets = this.handshake.getSecrets();
-            this.frameCodec = new FrameCodec(secrets);
-
-            loggerNet.trace("auth exchange done");
-            channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), null);
-        } else {
-            loggerWire.debug("MessageCodec: Buffer bytes: {}", buffer.readableBytes());
-            List<Frame> frames = frameCodec.readFrames(buffer);
-            if (frames == null || frames.isEmpty()) {
-                return;
-            }
-            Frame frame = frames.get(0);
-            byte[] payload = ByteStreams.toByteArray(frame.getStream());
-            if (frame.getType() == P2pMessageCodes.HELLO.asByte()) {
-                HelloMessage helloMessage = new HelloMessage(payload);
-                loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), helloMessage);
-                processHelloMessage(ctx, helloMessage);
-            } else {
-                DisconnectMessage message = new DisconnectMessage(payload);
-                loggerNet.trace("From: \t{} \tRecv: \t{}", channel, message);
-                channel.getNodeStatistics().nodeDisconnectedRemote(message.getReason());
-            }
+        byte[] responsePacket = new byte[AuthResponseMessage.getLength() + ECIESCoder.getOverhead()];
+        if (!buffer.isReadable(responsePacket.length)) {
+            return;
         }
+        buffer.readBytes(responsePacket);
+
+        try {
+            // trying to decode as pre-EIP-8
+            AuthResponseMessage response = handshake.handleAuthResponse(myKey, initiatePacket, responsePacket);
+            loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), response);
+
+        } catch (Throwable t) {
+            // it must be format defined by EIP-8 then
+            responsePacket = readEIP8Packet(buffer, responsePacket);
+            if (responsePacket == null) {
+                return;
+            }
+
+            AuthResponseMessageV4 response = handshake.handleAuthResponseV4(myKey, initiatePacket, responsePacket);
+            loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), response);
+        }
+
+        EncryptionHandshake.Secrets secrets = this.handshake.getSecrets();
+        FrameCodec frameCodec = new FrameCodec(secrets);
+
+        // TODO(mc) consider ChannelPipeline#replace
+        ctx.pipeline().addLast(nextHandlerFactory.newInstance(channel, frameCodec));
+        ctx.pipeline().remove(this);
+
+        loggerNet.trace("auth exchange done");
+        channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), null);
 
         channel.getNodeStatistics().rlpxInHello.add();
     }
@@ -222,7 +194,7 @@ public class InitiatorHandshakeHandler extends ByteToMessageDecoder {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         recordFailedHandshake(ctx);
         if (cause instanceof IOException) {
             loggerNet.info("Handshake failed: address {}", ctx.channel().remoteAddress(), cause);
@@ -236,10 +208,6 @@ public class InitiatorHandshakeHandler extends ByteToMessageDecoder {
         recordEvent(ctx, EventType.FAILED_HANDSHAKE);
     }
 
-    private void recordSuccessfulHandshake(ChannelHandlerContext ctx) {
-        recordEvent(ctx, EventType.SUCCESSFUL_HANDSHAKE);
-    }
-
     private void recordEvent(ChannelHandlerContext ctx, EventType event) {
         SocketAddress socketAddress = ctx.channel().remoteAddress();
 
@@ -251,48 +219,5 @@ public class InitiatorHandshakeHandler extends ByteToMessageDecoder {
 
             peerScoringManager.recordEvent(nodeID, address, event);
         }
-    }
-
-    private void processHelloMessage(ChannelHandlerContext ctx, HelloMessage helloMessage) {
-        List<Capability> capInCommon = configCapabilities.getSupportedCapabilities(helloMessage);
-        channel.initMessageCodes(capInCommon);
-        for (Capability capability : capInCommon) {
-            // It seems that the only supported capability is RSK, and everything else is ignored.
-            if (Capability.RSK.equals(capability.getName())) {
-                publicRLPxHandshakeFinished(ctx, helloMessage, fromCode(capability.getVersion()));
-                return;
-            }
-        }
-
-        throw new RuntimeException("The remote peer didn't support the RSK capability");
-    }
-
-    private void publicRLPxHandshakeFinished(ChannelHandlerContext ctx, HelloMessage helloRemote, EthVersion ethVersion) {
-        if (!P2pHandler.isProtocolVersionSupported(helloRemote.getP2PVersion())) {
-            throw new RuntimeException(String.format(
-                    "The remote peer protocol version %s isn't supported", helloRemote.getP2PVersion()
-            ));
-        }
-
-        loggerNet.debug("publicRLPxHandshakeFinished with {}", ctx.channel().remoteAddress());
-        if (helloRemote.getP2PVersion() < 5) {
-            messageCodec.setSupportChunkedFrames(false);
-        }
-
-        FrameCodecHandler frameCodecHandler = new FrameCodecHandler(frameCodec, channel);
-        ctx.pipeline().addLast("medianFrameCodec", frameCodecHandler);
-        ctx.pipeline().addLast("messageCodec", messageCodec);
-        ctx.pipeline().addLast(Capability.P2P, p2pHandler);
-
-        p2pHandler.setChannel(channel);
-        p2pHandler.setHandshake(helloRemote);
-        channel.activateEth(ctx, ethVersion);
-
-        channel.getNodeStatistics().rlpxHandshake.add();
-
-        recordSuccessfulHandshake(ctx);
-
-        loggerWire.debug("Handshake done, removing HandshakeHandler from pipeline.");
-        ctx.pipeline().remove(this);
     }
 }

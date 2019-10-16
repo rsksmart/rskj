@@ -36,7 +36,7 @@ import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.p2p.P2pMessageFactory;
-import org.ethereum.net.rlpx.InitiatorHandshakeHandler;
+import org.ethereum.net.rlpx.InitiatorHandshakeInitPacketHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +90,7 @@ public class InitiatorHandshakeInitializer extends ChannelInitializer<NioSocketC
             P2pHandler p2pHandler = new P2pHandler(ethereumListener, messageQueue, config.getPeerP2PPingInterval());
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
             Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId);
-            InitiatorHandshakeHandler handshakeHandler = new InitiatorHandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities, remoteId, channel);
+            InitiatorHandshakeInitPacketHandler handshakeHandler = new InitiatorHandshakeInitPacketHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities, remoteId, channel);
 
             ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
             ch.pipeline().addLast("handshakeHandler", handshakeHandler);
