@@ -29,7 +29,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.EthereumChannelInitializerFactory;
-import org.ethereum.net.server.EthereumChannelInitializer;
+import org.ethereum.net.server.InitiatorHandshakeInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +67,7 @@ public class PeerClient {
     public ChannelFuture connectAsync(String host, int port, String remoteId) {
         ethereumListener.trace("Connecting to: " + host + ":" + port);
 
-        EthereumChannelInitializer ethereumChannelInitializer = ethereumChannelInitializerFactory.newInstance(remoteId);
+        InitiatorHandshakeInitializer ethereumChannelInitializer = ethereumChannelInitializerFactory.newInitiator(remoteId);
 
         Bootstrap b = new Bootstrap();
         b.group(workerGroup);

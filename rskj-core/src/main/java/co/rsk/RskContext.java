@@ -1041,18 +1041,39 @@ public class RskContext implements NodeBootstrapper {
 
     private EthereumChannelInitializerFactory getEthereumChannelInitializerFactory() {
         if (ethereumChannelInitializerFactory == null) {
-            ethereumChannelInitializerFactory = remoteId -> new EthereumChannelInitializer(
-                    remoteId,
-                    getRskSystemProperties(),
-                    getChannelManager(),
-                    getCompositeEthereumListener(),
-                    getConfigCapabilities(),
-                    getNodeManager(),
-                    getRskWireProtocolFactory(),
-                    getEth62MessageFactory(),
-                    getStaticMessages(),
-                    getPeerScoringManager()
-            );
+            ethereumChannelInitializerFactory = new EthereumChannelInitializerFactory() {
+                @Override
+                public InitiatorHandshakeInitializer newInitiator(String remoteId) {
+                    return new InitiatorHandshakeInitializer(
+                            remoteId,
+                            RskContext.this.getRskSystemProperties(),
+                            RskContext.this.getChannelManager(),
+                            RskContext.this.getCompositeEthereumListener(),
+                            RskContext.this.getConfigCapabilities(),
+                            RskContext.this.getNodeManager(),
+                            RskContext.this.getRskWireProtocolFactory(),
+                            RskContext.this.getEth62MessageFactory(),
+                            RskContext.this.getStaticMessages(),
+                            RskContext.this.getPeerScoringManager()
+                    );
+                }
+
+                @Override
+                public ReceiverHandshakeInitializer newReceiver(String remoteId) {
+                    return new ReceiverHandshakeInitializer(
+                            remoteId,
+                            RskContext.this.getRskSystemProperties(),
+                            RskContext.this.getChannelManager(),
+                            RskContext.this.getCompositeEthereumListener(),
+                            RskContext.this.getConfigCapabilities(),
+                            RskContext.this.getNodeManager(),
+                            RskContext.this.getRskWireProtocolFactory(),
+                            RskContext.this.getEth62MessageFactory(),
+                            RskContext.this.getStaticMessages(),
+                            RskContext.this.getPeerScoringManager()
+                    );
+                }
+            };
         }
 
         return ethereumChannelInitializerFactory;

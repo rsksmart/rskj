@@ -1,9 +1,12 @@
 package org.ethereum.net;
 
-import org.ethereum.net.server.EthereumChannelInitializer;
+import org.ethereum.net.server.InitiatorHandshakeInitializer;
+import org.ethereum.net.server.ReceiverHandshakeInitializer;
 
 public interface EthereumChannelInitializerFactory {
 
-    EthereumChannelInitializer newInstance(String remoteId);
+    InitiatorHandshakeInitializer newInitiator(String remoteId);
+
+    ReceiverHandshakeInitializer newReceiver(String remoteId);
 
 }

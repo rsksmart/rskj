@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 import java.net.InetAddress;
 import java.util.concurrent.TimeUnit;
 
-public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChannel> {
+public class ReceiverHandshakeInitializer extends ChannelInitializer<NioSocketChannel> {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
@@ -59,7 +59,7 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
     private final StaticMessages staticMessages;
     private final PeerScoringManager peerScoringManager;
 
-    public EthereumChannelInitializer(
+    public ReceiverHandshakeInitializer(
             String remoteId,
             RskSystemProperties config,
             ChannelManager channelManager,
