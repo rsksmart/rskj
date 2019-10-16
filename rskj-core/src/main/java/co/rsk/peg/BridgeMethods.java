@@ -445,7 +445,7 @@ public enum BridgeMethods {
                     new String[]{},
                     new String[]{"int256"}
             ),
-            fixedCost(23000L), // TODO: ESTIMATE GAS
+            fixedCost(3_000L),
             (BridgeMethodExecutorTyped) Bridge::getLockingCap,
             activations -> activations.isActive(RSKIP134),
             true
@@ -456,7 +456,7 @@ public enum BridgeMethods {
                     new String[]{"int256"},
                     new String[]{"bool"}
             ),
-            fixedCost(23000L), // TODO: ESTIMATE GAS
+            fixedCost(8_000L),
             (BridgeMethodExecutorTyped) Bridge::increaseLockingCap,
             activations -> activations.isActive(RSKIP134),
             false
