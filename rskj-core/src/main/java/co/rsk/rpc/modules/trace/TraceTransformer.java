@@ -23,7 +23,6 @@ import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.InvokeData;
@@ -53,6 +52,10 @@ public class TraceTransformer {
 
         ProgramResult programResult = ProgramResult.empty();
         programResult.spendGas(new BigInteger(1, txInfo.getReceipt().getGasUsed()).longValue());
+
+        if (trace.getReverted()) {
+            programResult.setRevert();
+        }
 
         CreationData creationData = null;
         TraceType traceType = TraceType.CALL;
@@ -96,7 +99,7 @@ public class TraceTransformer {
                 error = programResult.getException().toString();
             }
             else if (programResult.isRevert()) {
-                error = "transaction reverted";
+                error = "Reverted";
             }
 
             if (error != null) {

@@ -25,5 +25,7 @@ public interface ProgramTrace {
 
     ProgramTrace error(Exception error);
 
+    ProgramTrace revert(boolean reverted);
+
     boolean isEmpty();
 }

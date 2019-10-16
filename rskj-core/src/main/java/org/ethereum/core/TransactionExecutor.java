@@ -544,7 +544,8 @@ public class TransactionExecutor {
      */
     public void extractTrace(ProgramTraceProcessor programTraceProcessor) {
         if (program != null) {
-            ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
+            // TODO improve this settings; the trace should already have the values
+            ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException()).revert(result.isRevert());
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
     }

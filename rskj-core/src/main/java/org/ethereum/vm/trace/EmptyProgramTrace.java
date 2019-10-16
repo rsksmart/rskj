@@ -69,6 +69,11 @@ public class EmptyProgramTrace implements ProgramTrace {
     }
 
     @Override
+    public ProgramTrace revert(boolean reverted) {
+        return this;
+    }
+
+    @Override
     public boolean isEmpty() {
         return true;
     }

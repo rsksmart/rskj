@@ -41,6 +41,7 @@ public class SummarizedProgramTrace implements ProgramTrace {
 
     private String result;
     private String error;
+    private boolean reverted;
 
     public SummarizedProgramTrace(ProgramInvoke programInvoke) {
         this.programInvoke = programInvoke;
@@ -81,6 +82,14 @@ public class SummarizedProgramTrace implements ProgramTrace {
         setResult(toHexString(result));
         return this;
     }
+
+    @Override
+    public ProgramTrace revert(boolean reverted) {
+        this.reverted = reverted;
+        return this;
+    }
+
+    public boolean getReverted() { return this.reverted; }
 
     public void setResult(String result) {
         this.result = result;

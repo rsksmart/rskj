@@ -50,6 +50,7 @@ public class DetailedProgramTrace implements ProgramTrace {
     private List<Op> structLogs = new LinkedList<>();
     private String result;
     private String error;
+    private boolean reverted;
 
     private int storageSize;
 
@@ -148,6 +149,8 @@ public class DetailedProgramTrace implements ProgramTrace {
         this.error = error;
     }
 
+    public boolean getReverted() { return reverted; }
+
     public boolean isFullStorage() {
         return fullStorage;
     }
@@ -187,6 +190,12 @@ public class DetailedProgramTrace implements ProgramTrace {
 
     public ProgramTrace error(Exception error) {
         setError(error == null ? "" : format("%s: %s", error.getClass(), error.getMessage()));
+        return this;
+    }
+
+    @Override
+    public ProgramTrace revert(boolean reverted) {
+        this.reverted = reverted;
         return this;
     }
 
