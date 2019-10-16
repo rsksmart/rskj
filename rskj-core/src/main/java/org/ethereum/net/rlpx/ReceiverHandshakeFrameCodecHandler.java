@@ -22,22 +22,20 @@ package org.ethereum.net.rlpx;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.crypto.ECIESCoder;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.message.Message;
-import org.ethereum.net.p2p.*;
+import org.ethereum.net.p2p.HelloMessage;
+import org.ethereum.net.p2p.P2pHandler;
+import org.ethereum.net.p2p.P2pMessageCodes;
+import org.ethereum.net.p2p.P2pMessageFactory;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +48,6 @@ import java.util.List;
 
 import static org.ethereum.net.eth.EthVersion.fromCode;
 import static org.ethereum.net.rlpx.FrameCodec.Frame;
-import static org.ethereum.util.ByteUtil.bigEndianToShort;
 
 /**
  * The Netty handler which manages initial negotiation with peer
@@ -64,7 +61,7 @@ import static org.ethereum.util.ByteUtil.bigEndianToShort;
  * which installs further handlers depending on the protocol parameters.
  * This handler is finally removed from the pipeline.
  */
-public class ReceiverHandshakeHandler extends ByteToMessageDecoder {
+public class ReceiverHandshakeFrameCodecHandler extends ByteToMessageDecoder {
     private final PeerScoringManager peerScoringManager;
     private final P2pHandler p2pHandler;
     private final MessageCodec messageCodec;
@@ -74,159 +71,54 @@ public class ReceiverHandshakeHandler extends ByteToMessageDecoder {
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
 
     private FrameCodec frameCodec;
-    private ECKey myKey;
     private byte[] nodeId;
-    private EncryptionHandshake handshake;
     private final Channel channel;
 
-    public ReceiverHandshakeHandler(
+    public ReceiverHandshakeFrameCodecHandler(
             SystemProperties config,
             PeerScoringManager peerScoringManager,
             P2pHandler p2pHandler,
             MessageCodec messageCodec,
             ConfigCapabilities configCapabilities,
-            Channel channel) {
+            Channel channel,
+            FrameCodec frameCodec) {
         this.peerScoringManager = peerScoringManager;
         this.p2pHandler = p2pHandler;
         this.messageCodec = messageCodec;
         this.configCapabilities = configCapabilities;
         this.channel = channel;
-        this.myKey = config.getMyKey();
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) {
-        channel.setInetSocketAddress((InetSocketAddress) ctx.channel().remoteAddress());
-        internalChannelActive();
-    }
-
-    @VisibleForTesting
-    public void internalChannelActive()  {
-        handshake = new EncryptionHandshake();
-        nodeId = myKey.getNodeId();
+        this.frameCodec = frameCodec;
+        this.nodeId = config.getMyKey().getNodeId();
     }
 
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         loggerWire.debug("Decoding handshake... ({} bytes available)", in.readableBytes());
-        decodeHandshake(ctx, in);
-    }
-
-    // consume handshake, producing no resulting message to upper layers
-    private void decodeHandshake(final ChannelHandlerContext ctx, ByteBuf buffer) throws Exception {
-        loggerWire.debug("Not initiator.");
-        if (frameCodec == null) {
-            loggerWire.debug("FrameCodec == null");
-            byte[] authInitPacket = new byte[AuthInitiateMessage.getLength() + ECIESCoder.getOverhead()];
-            if (!buffer.isReadable(authInitPacket.length)) {
-                return;
-            }
-            buffer.readBytes(authInitPacket);
-
-            this.handshake = new EncryptionHandshake();
-
-            byte[] responsePacket;
-            try {
-                // trying to decode as pre-EIP-8
-                AuthInitiateMessage initiateMessage = handshake.decryptAuthInitiate(authInitPacket, myKey);
-                loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), initiateMessage);
-
-                AuthResponseMessage response = handshake.makeAuthInitiate(initiateMessage, myKey);
-                loggerNet.trace("To: \t{} \tSend: \t{}", ctx.channel().remoteAddress(), response);
-                responsePacket = handshake.encryptAuthResponse(response);
-
-            } catch (Throwable t) {
-
-                // it must be format defined by EIP-8 then
-                try {
-                    authInitPacket = readEIP8Packet(buffer, authInitPacket);
-
-                    if (authInitPacket == null) {
-                        return;
-                    }
-
-                    AuthInitiateMessageV4 initiateMessage = handshake.decryptAuthInitiateV4(authInitPacket, myKey);
-                    loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), initiateMessage);
-
-                    AuthResponseMessageV4 response = handshake.makeAuthInitiateV4(initiateMessage, myKey);
-                    loggerNet.trace("To: \t{} \tSend: \t{}", ctx.channel().remoteAddress(), response);
-                    responsePacket = handshake.encryptAuthResponseV4(response);
-
-                } catch (InvalidCipherTextException ce) {
-                    loggerNet.warn(
-                            "Can't decrypt AuthInitiateMessage from {}. Most likely the remote peer used wrong public key (NodeID) to encrypt message.",
-                            ctx.channel().remoteAddress()
-                    );
-                    return;
-                }
-            }
-
-            handshake.agreeSecret(authInitPacket, responsePacket);
-
-            EncryptionHandshake.Secrets secrets = this.handshake.getSecrets();
-            this.frameCodec = new FrameCodec(secrets);
-
-            ECPoint remotePubKey = this.handshake.getRemotePublicKey();
-
-            byte[] compressed = remotePubKey.getEncoded(false);
-
-            byte[] remoteId = new byte[compressed.length - 1];
-            System.arraycopy(compressed, 1, remoteId, 0, remoteId.length);
-            channel.setNode(remoteId);
-
-            final ByteBuf byteBufMsg = ctx.alloc().buffer(responsePacket.length);
-            byteBufMsg.writeBytes(responsePacket);
-            ctx.writeAndFlush(byteBufMsg).sync();
-        } else {
-            List<Frame> frames = frameCodec.readFrames(buffer);
-            if (frames == null || frames.isEmpty()) {
-                return;
-            }
-            Frame frame = frames.get(0);
-
-            Message message = new P2pMessageFactory().create((byte) frame.getType(),
-                    ByteStreams.toByteArray(frame.getStream()));
-            loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), message);
-
-            if (frame.getType() == P2pMessageCodes.DISCONNECT.asByte()) {
-                loggerNet.info("Active remote peer disconnected right after handshake.");
-                return;
-            }
-
-            if (frame.getType() != P2pMessageCodes.HELLO.asByte()) {
-                throw new RuntimeException("The message type is not HELLO or DISCONNECT: " + message);
-            }
-
-            HelloMessage inboundHelloMessage = (HelloMessage) message;
-
-            // Secret authentication finish here
-            channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), inboundHelloMessage);
-            processHelloMessage(ctx, inboundHelloMessage);
+        List<Frame> frames = frameCodec.readFrames(in);
+        if (frames == null || frames.isEmpty()) {
+            return;
         }
+        Frame frame = frames.get(0);
+
+        Message message = new P2pMessageFactory().create((byte) frame.getType(),
+                ByteStreams.toByteArray(frame.getStream()));
+        loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), message);
+
+        if (frame.getType() == P2pMessageCodes.DISCONNECT.asByte()) {
+            loggerNet.info("Active remote peer disconnected right after handshake.");
+            return;
+        }
+
+        if (frame.getType() != P2pMessageCodes.HELLO.asByte()) {
+            throw new RuntimeException("The message type is not HELLO or DISCONNECT: " + message);
+        }
+
+        HelloMessage inboundHelloMessage = (HelloMessage) message;
+
+        // Secret authentication finish here
+        channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), inboundHelloMessage);
+        processHelloMessage(ctx, inboundHelloMessage);
 
         channel.getNodeStatistics().rlpxInHello.add();
-    }
-
-    private byte[] readEIP8Packet(ByteBuf buffer, byte[] plainPacket) {
-
-        int size = bigEndianToShort(plainPacket);
-        if (size < plainPacket.length) {
-            throw new IllegalArgumentException("AuthResponse packet size is too low");
-        }
-
-        int bytesLeft = size - plainPacket.length + 2;
-        byte[] restBytes = new byte[bytesLeft];
-
-        if (!buffer.isReadable(restBytes.length)) {
-            return null;
-        }
-
-        buffer.readBytes(restBytes);
-
-        byte[] fullResponse = new byte[size + 2];
-        System.arraycopy(plainPacket, 0, fullResponse, 0, plainPacket.length);
-        System.arraycopy(restBytes, 0, fullResponse, plainPacket.length, restBytes.length);
-
-        return fullResponse;
     }
 
     @Override
@@ -302,5 +194,9 @@ public class ReceiverHandshakeHandler extends ByteToMessageDecoder {
 
         loggerWire.debug("Handshake done, removing HandshakeHandler from pipeline.");
         ctx.pipeline().remove(this);
+    }
+
+    public interface Factory {
+        ReceiverHandshakeFrameCodecHandler newInstance(Channel channel, FrameCodec frameCodec);
     }
 }

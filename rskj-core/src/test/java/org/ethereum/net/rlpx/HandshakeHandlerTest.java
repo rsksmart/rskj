@@ -47,7 +47,7 @@ import static org.mockito.Mockito.*;
 
 public class HandshakeHandlerTest {
 
-    private ReceiverHandshakeHandler handler;
+    private ReceiverHandshakeInitPacketHandler handler;
     private ECKey hhKey;
     private Channel channel;
     private EmbeddedChannel ch;
@@ -59,7 +59,7 @@ public class HandshakeHandlerTest {
         hhKey = config.getMyKey();
         channel = mock(Channel.class);
         when(channel.getNodeStatistics()).thenReturn(new NodeStatistics());
-        handler = new ReceiverHandshakeHandler(
+        handler = new ReceiverHandshakeInitPacketHandler(
                 config,
                 mock(PeerScoringManager.class),
                 mock(P2pHandler.class),
@@ -100,7 +100,6 @@ public class HandshakeHandlerTest {
     // In the future, the handshake classes should be rewritten to allow unit testing.
     private void simulateHandshakeStartedByPeer(List<Capability> capabilities) throws Exception {
         ECKey remoteKey = new ECKey();
-        handler.internalChannelActive();
 
         EncryptionHandshake handshake = new EncryptionHandshake(hhKey.getPubKeyPoint());
         AuthInitiateMessageV4 initiateMessage = handshake.createAuthInitiateV4(remoteKey);
