@@ -19,7 +19,7 @@ package co.rsk.rpc.netty.ws;
 
 import co.rsk.config.InternalService;
 import co.rsk.rpc.netty.JsonRpcRequestHandler;
-import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
+import co.rsk.rpc.netty.Jsonrpc4jLegacyHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -43,7 +43,7 @@ public class Web3WebSocketServer implements InternalService {
     private final InetAddress host;
     private final int port;
     private final JsonRpcRequestHandler.Factory requestHandlerFactory;
-    private final JsonRpcWeb3ServerHandler web3ServerHandler;
+    private final Jsonrpc4jLegacyHandler jsonrpc4jLegacyHandler;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
     private @Nullable ChannelFuture webSocketChannel;
@@ -52,11 +52,11 @@ public class Web3WebSocketServer implements InternalService {
             InetAddress host,
             int port,
             JsonRpcRequestHandler.Factory requestHandlerFactory,
-            JsonRpcWeb3ServerHandler web3ServerHandler) {
+            Jsonrpc4jLegacyHandler jsonrpc4jLegacyHandler) {
         this.host = host;
         this.port = port;
         this.requestHandlerFactory = requestHandlerFactory;
-        this.web3ServerHandler = web3ServerHandler;
+        this.jsonrpc4jLegacyHandler = jsonrpc4jLegacyHandler;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
     }
@@ -75,7 +75,7 @@ public class Web3WebSocketServer implements InternalService {
                     p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
                     p.addLast(new WebSocketServerProtocolHandler("/websocket"));
                     p.addLast(requestHandlerFactory.newInstance());
-                    p.addLast(web3ServerHandler);
+                    p.addLast(jsonrpc4jLegacyHandler);
                     p.addLast(new Web3ResultWebSocketResponseHandler());
                 }
             });

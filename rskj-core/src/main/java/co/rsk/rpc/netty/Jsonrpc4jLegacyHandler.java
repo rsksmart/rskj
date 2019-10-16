@@ -37,15 +37,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ChannelHandler.Sharable
-public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBufHolder> {
+public class Jsonrpc4jLegacyHandler extends SimpleChannelInboundHandler<ByteBufHolder> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("jsonrpc");
+    private static final Logger logger = LoggerFactory.getLogger(Jsonrpc4jLegacyHandler.class);
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
     private final JsonRpcBasicServer jsonRpcServer;
 
-    public JsonRpcWeb3ServerHandler(Web3 service, JsonRpcMethodFilter methodFilter) {
+    public Jsonrpc4jLegacyHandler(Web3 service, JsonRpcMethodFilter methodFilter) {
         this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
         jsonRpcServer.setRequestInterceptor(methodFilter);
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
@@ -61,7 +61,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
             responseCode = jsonRpcServer.handleRequest(is, os);
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";
-            LOGGER.error(unexpectedErrorMsg, e);
+            logger.error(unexpectedErrorMsg, e);
             int errorCode = ErrorResolver.JsonError.CUSTOM_SERVER_ERROR_LOWER;
             responseContent = buildErrorContent(errorCode, unexpectedErrorMsg);
             responseCode = errorCode;
@@ -75,7 +75,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        LOGGER.error("Unexpected exception", cause);
+        logger.error("Unexpected exception", cause);
         ctx.close();
     }
 

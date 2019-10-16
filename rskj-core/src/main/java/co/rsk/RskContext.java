@@ -66,7 +66,7 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.rpc.netty.JsonRpcRequestHandler;
 import co.rsk.rpc.netty.JsonRpcRequestHandlerManager;
-import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
+import co.rsk.rpc.netty.Jsonrpc4jLegacyHandler;
 import co.rsk.rpc.netty.http.JsonRpcWeb3FilterHandler;
 import co.rsk.rpc.netty.http.Web3HttpServer;
 import co.rsk.rpc.netty.ws.Web3WebSocketServer;
@@ -181,7 +181,7 @@ public class RskContext implements NodeBootstrapper {
     private SyncPool syncPool;
     private Web3 web3;
     private JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
-    private JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
+    private Jsonrpc4jLegacyHandler jsonrpc4jLegacyHandler;
     private Web3WebSocketServer web3WebSocketServer;
     private Web3HttpServer web3HttpServer;
     private WriterMessageRecorder writerMessageRecorder;
@@ -1380,12 +1380,12 @@ public class RskContext implements NodeBootstrapper {
         return jsonRpcWeb3FilterHandler;
     }
 
-    private JsonRpcWeb3ServerHandler getJsonRpcWeb3ServerHandler() {
-        if (jsonRpcWeb3ServerHandler == null) {
-            jsonRpcWeb3ServerHandler = new JsonRpcWeb3ServerHandler(getWeb3(), getJsonRpcMethodFilter());
+    private Jsonrpc4jLegacyHandler getJsonrpc4jLegacyHandler() {
+        if (jsonrpc4jLegacyHandler == null) {
+            jsonrpc4jLegacyHandler = new Jsonrpc4jLegacyHandler(getWeb3(), getJsonRpcMethodFilter());
         }
 
-        return jsonRpcWeb3ServerHandler;
+        return jsonrpc4jLegacyHandler;
     }
 
     private JsonRpcMethodFilter getJsonRpcMethodFilter() {
@@ -1407,7 +1407,7 @@ public class RskContext implements NodeBootstrapper {
                     rskSystemProperties.rpcWebSocketBindAddress(),
                     rskSystemProperties.rpcWebSocketPort(),
                     getJsonRpcRequestHandlerFactory(),
-                    getJsonRpcWeb3ServerHandler()
+                    getJsonrpc4jLegacyHandler()
             );
         }
 
@@ -1448,7 +1448,7 @@ public class RskContext implements NodeBootstrapper {
                     new CorsConfiguration(rskSystemProperties.corsDomains()),
                     getJsonRpcRequestHandlerFactory(),
                     getJsonRpcWeb3FilterHandler(),
-                    getJsonRpcWeb3ServerHandler()
+                    getJsonrpc4jLegacyHandler()
             );
         }
 

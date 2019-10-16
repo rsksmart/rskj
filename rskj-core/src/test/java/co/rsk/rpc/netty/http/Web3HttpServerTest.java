@@ -6,7 +6,7 @@ import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.netty.JsonRpcRequestHandler;
 import co.rsk.rpc.netty.JsonRpcRequestHandlerManager;
-import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
+import co.rsk.rpc.netty.Jsonrpc4jLegacyHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -103,8 +103,8 @@ public class Web3HttpServerTest {
         JacksonBasedRpcSerializer serializer = new JacksonBasedRpcSerializer();
         JsonRpcRequestHandlerManager handlers = new JsonRpcRequestHandlerManager(null, serializer);
         JsonRpcRequestHandler.Factory requestHandlerFactory = d -> new JsonRpcRequestHandler(null, serializer, methodFilter, handlers, d);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, methodFilter);
-        Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, requestHandlerFactory, filterHandler, serverHandler);
+        Jsonrpc4jLegacyHandler jsonrpc4j = new Jsonrpc4jLegacyHandler(web3Mock, methodFilter);
+        Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, requestHandlerFactory, filterHandler, jsonrpc4j);
         server.start();
         try {
             Response response = sendJsonRpcMessage(randomPort, contentType, host);

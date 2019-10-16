@@ -3,7 +3,7 @@ package co.rsk.rpc.netty.http;
 import co.rsk.config.InternalService;
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.netty.JsonRpcRequestHandler;
-import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
+import co.rsk.rpc.netty.Jsonrpc4jLegacyHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -34,7 +34,7 @@ public class Web3HttpServer implements InternalService {
     private final CorsConfiguration corsConfiguration;
     private final JsonRpcRequestHandler.Factory requestHandlerFactory;
     private final JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
-    private final JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
+    private final Jsonrpc4jLegacyHandler jsonrpc4jLegacyHandler;
 
     public Web3HttpServer(InetAddress bindAddress,
                           int port,
@@ -43,7 +43,7 @@ public class Web3HttpServer implements InternalService {
                           CorsConfiguration corsConfiguration,
                           JsonRpcRequestHandler.Factory requestHandlerFactory,
                           JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
-                          JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
+                          Jsonrpc4jLegacyHandler jsonrpc4jLegacyHandler) {
         this.bindAddress = bindAddress;
         this.port = port;
         this.socketLinger = socketLinger;
@@ -51,7 +51,7 @@ public class Web3HttpServer implements InternalService {
         this.corsConfiguration = corsConfiguration;
         this.requestHandlerFactory = requestHandlerFactory;
         this.jsonRpcWeb3FilterHandler = jsonRpcWeb3FilterHandler;
-        this.jsonRpcWeb3ServerHandler = jsonRpcWeb3ServerHandler;
+        this.jsonrpc4jLegacyHandler = jsonrpc4jLegacyHandler;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
     }
@@ -86,7 +86,7 @@ public class Web3HttpServer implements InternalService {
                     p.addLast(jsonRpcWeb3FilterHandler);
                     p.addLast(new Web3HttpMethodFilterHandler());
                     p.addLast(requestHandlerFactory.newInstance("eth_subscribe", "eth_unsubscribe"));
-                    p.addLast(jsonRpcWeb3ServerHandler);
+                    p.addLast(jsonrpc4jLegacyHandler);
                     p.addLast(new Web3ResultHttpResponseHandler());
                 }
             });
