@@ -88,6 +88,31 @@ public class WorldDslProcessorTest {
     }
 
     @Test
+    public void processBlockChainCommandWithTwoChildBlocksSkippingMultilineComments() throws DslProcessorException {
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser = new DslParser("comment\nthis is a comment\nend\nblock_chain g00 b01 b02\ncomment\nthis is another comment\nwith two lines\n  end  \n");
+
+        processor.processCommands(parser);
+
+        Block genesis = world.getBlockByName("g00");
+
+        Block block1 = world.getBlockByName("b01");
+
+        Assert.assertNotNull(block1);
+        Assert.assertEquals(1, block1.getNumber());
+        Assert.assertEquals(genesis.getHash(), block1.getParentHash());
+
+        Block block2 = world.getBlockByName("b02");
+
+        Assert.assertNotNull(block2);
+        Assert.assertEquals(2, block2.getNumber());
+        Assert.assertEquals(block1.getHash(), block2.getParentHash());
+    }
+
+    @Test
     public void processBlockConnectCommand() throws DslProcessorException {
         World world = new World();
 
