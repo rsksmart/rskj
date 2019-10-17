@@ -1972,6 +1972,11 @@ public class BridgeSupport {
             logger.warn("attempted value doesn't increase locking cap. Attempted: " + newCap.value);
             return false;
         }
+        Coin maxLockingCap = currentLockingCap.multiply(bridgeConstants.getLockingCapIncrementsMultiplier());
+        if (newCap.compareTo(maxLockingCap) > 0) {
+            logger.warn("attempted value increases locking cap above its limit. Attempted: " + newCap.value);
+            return false;
+        }
 
         this.provider.setLockingCap(newCap);
 

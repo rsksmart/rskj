@@ -315,7 +315,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void increaseLockingCap_invalidValue() {
+    public void increaseLockingCap_below_current_value() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getLockingCap()).thenReturn(Coin.COIN);
 
@@ -325,17 +325,15 @@ public class BridgeSupportTest {
         BridgeConstants constants = mock(BridgeConstants.class);
         when(constants.getIncreaseLockingCapAuthorizer()).thenReturn(authorizer);
 
-        BridgeSupport bridgeSupport = getBridgeSupport(
-                constants, provider
-        );
+        BridgeSupport bridgeSupport = getBridgeSupport(constants, provider);
 
         assertFalse(bridgeSupport.increaseLockingCap(mock(Transaction.class), Coin.SATOSHI));
     }
 
     @Test
-    public void increaseLockingCap() {
+    public void increaseLockingCap_above_upper_value() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.getLockingCap()).thenReturn(Coin.SATOSHI);
+        when(provider.getLockingCap()).thenReturn(Coin.COIN);
 
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         when(authorizer.isAuthorized(any(Transaction.class))).thenReturn(true);
@@ -343,11 +341,43 @@ public class BridgeSupportTest {
         BridgeConstants constants = mock(BridgeConstants.class);
         when(constants.getIncreaseLockingCapAuthorizer()).thenReturn(authorizer);
 
+        int multiplier = 2;
+        when(constants.getLockingCapIncrementsMultiplier()).thenReturn(multiplier);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(constants, provider);
+
+        assertFalse(bridgeSupport.increaseLockingCap(mock(Transaction.class), Coin.COIN.multiply(multiplier).plus(Coin.SATOSHI)));
+    }
+
+    @Test
+    public void increaseLockingCap() {
+        Coin lastValue = Coin.COIN;
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getLockingCap()).thenReturn(lastValue);
+
+        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
+        when(authorizer.isAuthorized(any(Transaction.class))).thenReturn(true);
+
+        BridgeConstants constants = mock(BridgeConstants.class);
+        when(constants.getIncreaseLockingCapAuthorizer()).thenReturn(authorizer);
+        int multiplier = 2;
+        when(constants.getLockingCapIncrementsMultiplier()).thenReturn(multiplier);
+
         BridgeSupport bridgeSupport = getBridgeSupport(
                 constants, provider
         );
 
-        assertTrue(bridgeSupport.increaseLockingCap(mock(Transaction.class), Coin.COIN));
+        // Accepts up to the last value (increment 0)
+        assertTrue(bridgeSupport.increaseLockingCap(mock(Transaction.class), lastValue));
+
+        // Accepts up to the last value plus one
+        assertTrue(bridgeSupport.increaseLockingCap(mock(Transaction.class), lastValue.plus(Coin.SATOSHI)));
+
+        // Accepts a value in the middle
+        assertTrue(bridgeSupport.increaseLockingCap(mock(Transaction.class), lastValue.plus(Coin.CENT)));
+
+        // Accepts up to the last value times multiplier
+        assertTrue(bridgeSupport.increaseLockingCap(mock(Transaction.class), lastValue.multiply(multiplier)));
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider) {
