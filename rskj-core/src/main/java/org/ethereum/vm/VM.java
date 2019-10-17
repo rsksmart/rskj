@@ -21,11 +21,13 @@ package org.ethereum.vm;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -784,6 +786,44 @@ public class VM {
         }
 
         program.stackPush(codeLength);
+
+        program.step();
+    }
+
+    protected void doEXTCODEHASH() {
+        if (computeGas) {
+            gasCost = GasCost.EXT_CODE_HASH;
+            spendOpCodeGas();
+        }
+
+        //EXECUTION PHASE
+        DataWord address = program.stackPop();
+
+        ActivationConfig.ForBlock activations = program.getActivations();
+        PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, address);
+        boolean isPrecompiledContract = precompiledContract != null;
+
+        if (isPrecompiledContract) {
+            byte[] emptyHash = Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY);
+            program.stackPush(DataWord.valueOf(emptyHash));
+
+            if (isLogEnabled) {
+                hint = "hash: " + Hex.toHexString(emptyHash);
+            }
+        } else {
+            Keccak256 codeHash = program.getCodeHashAt(address);
+            //If account does not exist, 0 is pushed in stack
+            if (codeHash.equals(Keccak256.ZERO_HASH)) {
+                program.stackPush(DataWord.ZERO);
+            } else {
+                DataWord word = DataWord.valueOf(codeHash.getBytes());
+                program.stackPush(word);
+            }
+
+            if (isLogEnabled) {
+                hint = "hash: " + codeHash.toHexString();
+            }
+        }
 
         program.step();
     }
@@ -1744,6 +1784,14 @@ public class VM {
                 break;
             case OpCodes.OP_CODECOPY:
             case OpCodes.OP_EXTCODECOPY: doCODECOPY();
+            break;
+
+
+            case OpCodes.OP_EXTCODEHASH:
+                if (!activations.isActive(RSKIP140)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doEXTCODEHASH();
             break;
             case OpCodes.OP_RETURNDATASIZE: doRETURNDATASIZE();
             break;

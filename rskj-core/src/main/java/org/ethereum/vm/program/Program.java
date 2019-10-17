@@ -22,6 +22,7 @@ package org.ethereum.vm.program;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.pcc.NativeContract;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
@@ -945,6 +946,10 @@ public class Program {
     public byte[] getCode() {
         return Arrays.copyOf(ops, ops.length);
     }
+
+    public Keccak256 getCodeHashAt(RskAddress addr) { return invoke.getRepository().getCodeHash(addr); }
+
+    public Keccak256 getCodeHashAt(DataWord address) { return getCodeHashAt(new RskAddress(address)); }
 
     public int getCodeLengthAt(RskAddress addr) {
         return invoke.getRepository().getCodeLength(addr);

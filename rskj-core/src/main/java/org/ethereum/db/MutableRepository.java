@@ -32,6 +32,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,6 +155,22 @@ public class MutableRepository implements Repository {
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
         return mutableTrie.getValueLength(key).intValue();
+    }
+
+    @Override
+    public synchronized Keccak256 getCodeHash(RskAddress addr) {
+
+        if (!isExist(addr)) {
+            return Keccak256.ZERO_HASH;
+        }
+
+        if (!isContract(addr)) {
+            return new Keccak256(
+                    Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
+        }
+
+        byte[] key = trieKeyMapper.getCodeKey(addr);
+        return mutableTrie.getValueHash(key);
     }
 
 

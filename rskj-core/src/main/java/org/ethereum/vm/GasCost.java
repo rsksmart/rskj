@@ -89,6 +89,7 @@ public class GasCost {
     public static final int EC_RECOVER = 3000;
     public static final int EXT_CODE_SIZE = 700;
     public static final int EXT_CODE_COPY = 700;
+    public static final int EXT_CODE_HASH = 400;
     public static final int NEW_ACCT_SUICIDE = 25000;
     public static final int RETURN = 0;
 }
