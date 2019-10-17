@@ -34,7 +34,7 @@ import org.junit.Test;
 
 import java.io.FileNotFoundException;
 
-public class TraceModuleTest {
+public class TraceModuleImplTest {
     @Test
     public void retrieveUnknownTransactionAsNull() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
@@ -74,6 +74,111 @@ public class TraceModuleTest {
 
         Assert.assertNotNull(oresult.get("type"));
         Assert.assertEquals("\"create\"", oresult.get("type").toString());
+    }
+
+    @Test
+    public void retrieveMultiContractTraces() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+
+        retrieveNestedContractCreationTrace(world, receiptStore,"tx01");
+        retrieveNestedContractInvocationTrace(world, receiptStore, "tx02");
+        retrieveNestedRevertedInvocationTrace(world, receiptStore, "tx03");
+        retrieveSuicideInvocationTrace(world, receiptStore, "tx04");
+    }
+
+    private static void retrieveNestedContractCreationTrace(World world, ReceiptStore receiptStore, String txname)  throws Exception {
+        Transaction transaction = world.getTransactionByName(txname);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(4, aresult.size());
+
+        for (int k = 0; k < 4; k++) {
+            Assert.assertTrue(result.get(k).isObject());
+
+            ObjectNode oresult = (ObjectNode) result.get(k);
+
+            Assert.assertNotNull(oresult.get("type"));
+            Assert.assertEquals("\"create\"", oresult.get("type").toString());
+        }
+    }
+
+    private static void retrieveNestedContractInvocationTrace(World world, ReceiptStore receiptStore, String txname)  throws Exception {
+        Transaction transaction = world.getTransactionByName(txname);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(4, aresult.size());
+
+        for (int k = 0; k < 4; k++) {
+            Assert.assertTrue(result.get(k).isObject());
+
+            ObjectNode oresult = (ObjectNode) result.get(k);
+
+            Assert.assertNotNull(oresult.get("type"));
+            Assert.assertEquals("\"call\"", oresult.get("type").toString());
+        }
+    }
+
+    private static void retrieveNestedRevertedInvocationTrace(World world, ReceiptStore receiptStore, String txname)  throws Exception {
+        Transaction transaction = world.getTransactionByName(txname);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(3, aresult.size());
+
+        for (int k = 0; k < 3; k++) {
+            Assert.assertTrue(result.get(k).isObject());
+
+            ObjectNode oresult = (ObjectNode) result.get(k);
+
+            Assert.assertNotNull(oresult.get("error"));
+            Assert.assertEquals("\"Reverted\"", oresult.get("error").toString());
+        }
+    }
+
+    private static void retrieveSuicideInvocationTrace(World world, ReceiptStore receiptStore, String txname) throws Exception {
+        Transaction transaction = world.getTransactionByName(txname);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(2, aresult.size());
+
+        Assert.assertTrue(result.get(1).isObject());
+
+        ObjectNode oresult = (ObjectNode) result.get(1);
+
+        Assert.assertNotNull(oresult.get("type"));
+        Assert.assertEquals("\"suicide\"", oresult.get("type").toString());
     }
 
     @Test
@@ -132,5 +237,15 @@ public class TraceModuleTest {
 
         Assert.assertNotNull(oresult.get("type"));
         Assert.assertEquals("\"call\"", oresult.get("type").toString());
+    }
+
+    private static World executeMultiContract(ReceiptStore receiptStore) throws DslProcessorException, FileNotFoundException {
+        DslParser parser = DslParser.fromResource("dsl/contracts08.txt");
+        World world = new World(receiptStore);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        return world;
     }
 }
