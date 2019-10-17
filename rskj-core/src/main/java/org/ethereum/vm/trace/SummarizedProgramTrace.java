@@ -23,7 +23,9 @@ import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.vm.program.Memory;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.Storage;
+import org.ethereum.vm.program.invoke.InvokeData;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,7 @@ public class SummarizedProgramTrace implements ProgramTrace {
     private static final Logger LOGGER = LoggerFactory.getLogger("vm");
 
     private final ProgramInvoke programInvoke;
+    private final TransferInvoke transferInvoke;
     private final List<ProgramSubtrace> subtraces = new ArrayList<>();
 
     private String result;
@@ -45,11 +48,28 @@ public class SummarizedProgramTrace implements ProgramTrace {
 
     public SummarizedProgramTrace(ProgramInvoke programInvoke) {
         this.programInvoke = programInvoke;
+        this.transferInvoke = null;
+    }
+
+    // TODO refactor to have two implementations
+    // one for program invocations
+    // another for simple transfers
+    public SummarizedProgramTrace(TransferInvoke transferInvoke) {
+        this.programInvoke = null;
+        this.transferInvoke = transferInvoke;
     }
 
     @Override
     public ProgramInvoke getProgramInvoke() {
         return this.programInvoke;
+    }
+
+    public InvokeData getInvokeData() {
+        if (this.programInvoke != null) {
+            return this.programInvoke;
+        } else {
+            return this.transferInvoke;
+        }
     }
 
     @Override

@@ -70,7 +70,7 @@ public class TraceTransformer {
 
         int nsubtraces = trace.getSubtraces().size();
 
-        traces.add(toTrace(traceType, trace.getProgramInvoke(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, trace.getError(), nsubtraces));
+        traces.add(toTrace(traceType, trace.getInvokeData(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, trace.getError(), nsubtraces));
 
         for (int k = 0; k < nsubtraces; k++)
             addTrace(traces, trace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
