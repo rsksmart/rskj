@@ -36,8 +36,10 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
+import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -574,6 +576,12 @@ public class TransactionExecutor {
         if (program != null) {
             // TODO improve this settings; the trace should already have the values
             ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException()).revert(result.isRevert());
+            programTraceProcessor.processProgramTrace(trace, tx.getHash());
+        }
+        else {
+            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender().getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
+
+            SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
     }

@@ -104,4 +104,33 @@ public class TraceModuleTest {
         Assert.assertNotNull(oresult.get("type"));
         Assert.assertEquals("\"call\"", oresult.get("type").toString());
     }
+
+    @Test
+    public void retrieveSimpleAccountTransfer()  throws Exception {
+        DslParser parser = DslParser.fromResource("dsl/transfers01.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Transaction transaction = world.getTransactionByName("tx01");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(1, aresult.size());
+        Assert.assertTrue(result.get(0).isObject());
+
+        ObjectNode oresult = (ObjectNode)result.get(0);
+
+        Assert.assertNotNull(oresult.get("type"));
+        Assert.assertEquals("\"call\"", oresult.get("type").toString());
+    }
 }
