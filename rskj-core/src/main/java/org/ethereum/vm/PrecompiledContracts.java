@@ -23,6 +23,9 @@ import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.pcc.altBN128.BN128Addition;
+import co.rsk.pcc.altBN128.BN128Multiplication;
+import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
@@ -61,6 +64,11 @@ public class PrecompiledContracts {
     public static final String RIPEMPD160_ADDR_STR = "0000000000000000000000000000000000000003";
     public static final String IDENTITY_ADDR_STR = "0000000000000000000000000000000000000004";
     public static final String BIG_INT_MODEXP_ADDR_STR = "0000000000000000000000000000000000000005";
+
+    public static final String ALT_BN_128_ADD_ADDR_STR = "0000000000000000000000000000000000000006";
+    public static final String ALT_BN_128_MUL_ADDR_STR = "0000000000000000000000000000000000000007";
+    public static final String ALT_BN_128_PAIRING_ADDR_STR = "0000000000000000000000000000000000000008";
+
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
@@ -71,6 +79,11 @@ public class PrecompiledContracts {
     public static final DataWord RIPEMPD160_ADDR_DW = DataWord.valueFromHex(RIPEMPD160_ADDR_STR);
     public static final DataWord IDENTITY_ADDR_DW = DataWord.valueFromHex(IDENTITY_ADDR_STR);
     public static final DataWord BIG_INT_MODEXP_ADDR_DW = DataWord.valueFromHex(BIG_INT_MODEXP_ADDR_STR);
+
+    public static final DataWord ALT_BN_128_ADD_DW = DataWord.valueFromHex(ALT_BN_128_ADD_ADDR_STR);
+    public static final DataWord ALT_BN_128_MUL_DW = DataWord.valueFromHex(ALT_BN_128_MUL_ADDR_STR);
+    public static final DataWord ALT_BN_128_PAIRING_DW = DataWord.valueFromHex(ALT_BN_128_PAIRING_ADDR_STR);
+
     public static final DataWord BRIDGE_ADDR_DW = DataWord.valueFromHex(BRIDGE_ADDR_STR);
     public static final DataWord REMASC_ADDR_DW = DataWord.valueFromHex(REMASC_ADDR_STR);
     public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
@@ -81,6 +94,11 @@ public class PrecompiledContracts {
     public static final RskAddress RIPEMPD160_ADDR = new RskAddress(RIPEMPD160_ADDR_DW);
     public static final RskAddress IDENTITY_ADDR = new RskAddress(IDENTITY_ADDR_DW);
     public static final RskAddress BIG_INT_MODEXP_ADDR = new RskAddress(BIG_INT_MODEXP_ADDR_DW);
+
+    public static final RskAddress ALT_BN_128_ADD_ADDR = new RskAddress(ALT_BN_128_ADD_DW);
+    public static final RskAddress ALT_BN_128_MUL_ADDR = new RskAddress(ALT_BN_128_MUL_DW);
+    public static final RskAddress ALT_BN_128_PAIRING_ADDR = new RskAddress(ALT_BN_128_PAIRING_DW);
+
     public static final RskAddress BRIDGE_ADDR = new RskAddress(BRIDGE_ADDR_DW);
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_DW);
     public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
@@ -100,7 +118,10 @@ public class PrecompiledContracts {
     public static final Map<RskAddress, ConsensusRule> CONSENSUS_ENABLED_ADDRESSES = Collections.unmodifiableMap(
         Stream.of(
             new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
-            new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119)
+            new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
+            new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
+            new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
+            new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137)
         ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
@@ -154,6 +175,18 @@ public class PrecompiledContracts {
 
         if (activations.isActive(ConsensusRule.RSKIP106) && address.equals(HD_WALLET_UTILS_ADDR_DW)) {
             return new HDWalletUtils(config.getActivationConfig(), HD_WALLET_UTILS_ADDR);
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_ADD_DW)) {
+            return new BN128Addition();
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_MUL_DW)) {
+            return new BN128Multiplication();
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_PAIRING_DW)) {
+            return new BN128Pairing();
         }
 
         return null;
@@ -423,5 +456,6 @@ public class PrecompiledContracts {
         }
 
     }
+
 
 }
