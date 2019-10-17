@@ -79,4 +79,8 @@ public final class Topic {
     public String toString() {
         return Hex.toHexString(bytes);
     }
+
+    public String toJsonString() {
+        return TypeConverter.toUnformattedJsonHex(this.getBytes());
+    }
 }

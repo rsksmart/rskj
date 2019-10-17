@@ -18,37 +18,41 @@
 
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.core.RskAddress;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.netty.channel.Channel;
+import org.ethereum.rpc.Topic;
 
 import java.util.Arrays;
 
 @JsonDeserialize
 public class EthSubscribeLogsParams implements EthSubscribeParams {
 
-    private final String address;
-    private final String[] topics;
+    private final RskAddress[] addresses;
+    private final Topic[][] topics;
 
     public EthSubscribeLogsParams() {
-        this(null, new String[0]);
+        this(new RskAddress[0], new Topic[0][]);
     }
 
     @JsonCreator
     public EthSubscribeLogsParams(
-            @JsonProperty("address") String address,
-            @JsonProperty("topics") String[] topics
+            @JsonProperty("address") @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) RskAddress[] addresses,
+            @JsonProperty("topics") @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) Topic[][] topics
     ) {
-        this.address = address;
-        this.topics = topics == null? new String[0]: topics;
+        this.addresses = addresses == null? new RskAddress[0]: addresses;
+        this.topics = topics == null? new Topic[0][]: topics;
     }
 
-    public String getAddress() {
-        return address;
+    public RskAddress[] getAddresses() {
+        return Arrays.copyOf(addresses, addresses.length);
     }
 
-    public String[] getTopics() {
+    public Topic[][] getTopics() {
+        // TODO(mc) deep copy
         return Arrays.copyOf(topics, topics.length);
     }
 

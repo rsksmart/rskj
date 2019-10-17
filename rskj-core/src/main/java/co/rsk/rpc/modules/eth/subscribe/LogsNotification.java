@@ -18,6 +18,7 @@
 
 package co.rsk.rpc.modules.eth.subscribe;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -34,64 +35,97 @@ import static org.ethereum.rpc.TypeConverter.toQuantityJsonHex;
  * The logs DTO for JSON serialization purposes.
  */
 public class LogsNotification implements EthSubscriptionNotificationDTO {
-    private final String logIndex;
-    private final String blockNumber;
-    private final String blockHash;
-    private final String transactionHash;
-    private final String transactionIndex;
-    private final String address;
-    private final String data;
-    private final List<String> topics;
+
+    private final LogInfo logInfo;
+    private final Block block;
+    private final Transaction transaction;
+    private final int logInfoIndex;
+    private final int transactionIndex;
     private final boolean removed;
 
+    private String lazyLogIndex;
+    private String lazyBlockNumber;
+    private String lazyBlockHash;
+    private String lazyTransactionHash;
+    private String lazyTransactionIndex;
+    private String lazyAddress;
+    private String lazyData;
+    private List<String> lazyTopics;
+
     public LogsNotification(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx, boolean r) {
-        logIndex = toQuantityJsonHex(logIdx);
-        blockNumber = toQuantityJsonHex(b.getNumber());
-        blockHash = b.getHashJsonString();
-        removed = r;
-        transactionIndex = toQuantityJsonHex(txIndex);
-        transactionHash = tx.getHash().toJsonString();
-        address = toJsonHex(logInfo.getAddress());
-        data = toJsonHex(logInfo.getData());
-        topics = logInfo.getTopics().stream()
-                .map(t -> toJsonHex(t.getData()))
-                .collect(Collectors.toList());
+        this.logInfo = logInfo;
+        this.block = b;
+        this.transaction = tx;
+        this.logInfoIndex = logIdx;
+        this.removed = r;
+        this.transactionIndex = txIndex;
     }
 
     public String getLogIndex() {
-        return logIndex;
+        if (lazyLogIndex == null) {
+            lazyLogIndex = toQuantityJsonHex(logInfoIndex);
+        }
+        return lazyLogIndex;
     }
 
     public String getBlockNumber() {
-        return blockNumber;
+        if (lazyBlockNumber == null) {
+            lazyBlockNumber = toQuantityJsonHex(block.getNumber());
+        }
+        return lazyBlockNumber;
     }
 
     public String getBlockHash() {
-        return blockHash;
+        if (lazyBlockHash == null) {
+            lazyBlockHash = block.getHashJsonString();
+        }
+        return lazyBlockHash;
     }
 
     public String getTransactionHash() {
-        return transactionHash;
+        if (lazyTransactionHash == null) {
+            lazyTransactionHash = transaction.getHash().toJsonString();
+        }
+        return lazyTransactionHash;
     }
 
     public String getTransactionIndex() {
-        return transactionIndex;
+        if (lazyTransactionIndex == null) {
+            lazyTransactionIndex = toQuantityJsonHex(transactionIndex);
+        }
+        return lazyTransactionIndex;
     }
 
     public String getAddress() {
-        return address;
+        if (lazyAddress == null) {
+            lazyAddress = toJsonHex(logInfo.getAddress());
+        }
+        return lazyAddress;
     }
 
     public String getData() {
-        return data;
+        if (lazyData == null) {
+            lazyData = toJsonHex(logInfo.getData());
+        }
+        return lazyData;
     }
 
     public List<String> getTopics() {
-        return Collections.unmodifiableList(topics);
+        if (lazyTopics == null) {
+            lazyTopics = logInfo.getTopics().stream()
+                    .map(t -> toJsonHex(t.getData()))
+                    .collect(Collectors.toList());
+        }
+        return Collections.unmodifiableList(lazyTopics);
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public boolean getRemoved() {
         return removed;
+    }
+
+    @JsonIgnore
+    public LogInfo getLogInfo() {
+        return logInfo;
     }
 }
