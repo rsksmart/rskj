@@ -46,7 +46,6 @@ public class ActivationConfigTest {
             "    rskip90: orchid,",
             "    rskip91: orchid,",
             "    rskip92: orchid,",
-            "    rskip94: orchid,",
             "    rskip97: orchid,",
             "    rskip98: orchid,",
             "    rskip103: orchid060,",

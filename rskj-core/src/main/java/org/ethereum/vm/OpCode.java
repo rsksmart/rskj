@@ -608,11 +608,6 @@ public enum OpCode {
      */
     TXINDEX(0xaa, 0, 1, BASE_TIER),
 
-    /**
-     * CODEREPLACE
-     */
-    CODEREPLACE(0xab, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
-
     /*  System operations   */
 
     /**

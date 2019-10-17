@@ -1632,54 +1632,6 @@ public class VM {
         program.stop();
     }
 
-    protected void doCODEREPLACE() {
-
-        DataWord size;
-        long newCodeSizeLong;
-        long newMemSize ;
-        if (computeGas) {
-            gasCost = GasCost.CODEREPLACE;
-            size = stack.get(stack.size() - 2);
-            newCodeSizeLong = Program.limitToMaxLong(size);
-            checkSizeArgument(newCodeSizeLong); // max 30 bits
-            newMemSize = memNeeded(stack.peek(), newCodeSizeLong); // max 30 bits
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0); // max 32 bits
-            long oldCodeSize = program.getCode().length;
-
-            // If the contract is been created (initialization code is been executed)
-            // then the meaning of codereplace is less clear. It's better to disallow it.
-            long storedLength = program.getCodeAt(program.getOwnerAddress()).length;
-            if (storedLength == 0) { // rise OOG, but a specific exception would be better
-                throw Program.ExceptionHelper.notEnoughOpGas(op, Long.MAX_VALUE, program.getRemainingGas());
-            }
-
-            // every byte replaced pays REPLACE_DATA
-            // every byte added pays CREATE_DATA
-            if (newCodeSizeLong <= oldCodeSize) {
-                gasCost += GasCost.REPLACE_DATA * newCodeSizeLong; // max 38 bits
-            } else {
-                gasCost += GasCost.REPLACE_DATA * oldCodeSize;
-                gasCost += GasCost.CREATE_DATA * (newCodeSizeLong-oldCodeSize);
-            }
-
-            spendOpCodeGas();
-        }
-        // EXECUTION PHASE
-        DataWord memOffsetData = program.stackPop();
-        DataWord lengthData = program.stackPop();
-        byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
-        int resultInt = program.replaceCode(buffer);
-
-        DataWord result = DataWord.valueOf(resultInt);
-
-        if (isLogEnabled) {
-            hint = result.toString();
-        }
-
-        program.stackPush(result);
-        program.step();
-    }
-
     protected void executeOpcode() {
         // Execute operation
         ActivationConfig.ForBlock activations = program.getActivations();
@@ -1941,12 +1893,6 @@ public class VM {
             case OpCodes.OP_REVERT: doREVERT();
             break;
             case OpCodes.OP_SUICIDE: doSUICIDE();
-            break;
-            case OpCodes.OP_CODEREPLACE:
-                if (activations.isActive(RSKIP94)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
-                }
-                doCODEREPLACE();
             break;
             case OpCodes.OP_DUPN: doDUPN();
                 break;

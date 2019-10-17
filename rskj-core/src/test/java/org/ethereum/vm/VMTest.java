@@ -2993,44 +2993,6 @@ public class VMTest {
             assertTrue(program.isStopped());
         }
     }
-    /////////////////////////////////////////////////////////////////////////////////////////////
-    // Tests related to CODEREPLACE
-    @Test(expected = Program.IllegalOperationException.class)
-    public void testCodereplace_0() {
-
-        // CODEREPLACE is invalid if scriptVersion is zero
-        String asm ="256 0x00FF CODEREPLACE";
-        EVMAssembler assembler = new EVMAssembler();
-        byte[] code = assembler.assemble(asm);
-        program = getProgram(code);
-        vm.step(program);  // push
-        vm.step(program);  // push
-        vm.step(program);  // CODEREPLACE
-    }
-    @Test
-    public void testCodereplace_1() {
-
-        // CODEREPLACE is invalid if scriptVersion is zero
-        String asm ="0xFC 0x00 0x01 0x00 "+ // opHEADER, exevesion scriptversion extheaderlenth
-                "0x00 "+ // address
-                "0x01 "+ // value
-                "MSTORE "+ // stores 0x1 on address 0x00
-
-                "0x00 "+ // adress
-                "0x01 "+ // length" +
-                "CODEREPLACE";
-
-        EVMAssembler assembler = new EVMAssembler();
-        byte[] code = assembler.assemble(asm);
-        program = getProgram(code);
-
-        vm.step(program);  // push
-        vm.step(program);  // push
-        vm.step(program);  // MSTORE
-        vm.step(program);  // push
-        vm.step(program);  // push
-        vm.step(program);  // CODEREPLACE
-    }
 
     private VM getSubject() {
         return new VM(vmConfig, precompiledContracts);
