@@ -19,6 +19,7 @@ package co.rsk;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.spi.PluginService;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
@@ -32,14 +33,17 @@ public class FullNodeRunner implements NodeRunner {
     private static Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
     private final List<InternalService> internalServices;
+    private final List<PluginService> pluginServices;
     private final RskSystemProperties rskSystemProperties;
     private final BuildInfo buildInfo;
 
     public FullNodeRunner(
             List<InternalService> internalServices,
+            List<PluginService> pluginServices,
             RskSystemProperties rskSystemProperties,
             BuildInfo buildInfo) {
         this.internalServices = Collections.unmodifiableList(internalServices);
+        this.pluginServices = Collections.unmodifiableList(pluginServices);
         this.rskSystemProperties = rskSystemProperties;
         this.buildInfo = buildInfo;
     }
@@ -60,6 +64,10 @@ public class FullNodeRunner implements NodeRunner {
             internalService.start();
         }
 
+        for (PluginService pluginService : pluginServices) {
+            pluginService.start();
+        }
+
         if (logger.isInfoEnabled()) {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
             logger.info("Capability eth version: [{}]", versions);
@@ -71,6 +79,10 @@ public class FullNodeRunner implements NodeRunner {
     @Override
     public void stop() {
         logger.info("Shutting down RSK node");
+
+        for (int i = pluginServices.size() - 1; i >= 0; i--) {
+            pluginServices.get(i).stop();
+        }
 
         for (int i = internalServices.size() - 1; i >= 0; i--) {
             internalServices.get(i).stop();

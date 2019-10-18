@@ -73,6 +73,9 @@ import co.rsk.rpc.netty.*;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
+import co.rsk.spi.PluginLoader;
+import co.rsk.spi.PluginService;
+import co.rsk.spi.PluginServiceRegistryImpl;
 import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
@@ -748,6 +751,7 @@ public class RskContext implements NodeBootstrapper {
     protected NodeRunner buildNodeRunner() {
         return new FullNodeRunner(
                 buildInternalServices(),
+                buildPluginServices(),
                 getRskSystemProperties(),
                 getBuildInfo()
         );
@@ -806,6 +810,12 @@ public class RskContext implements NodeBootstrapper {
             ));
         }
         return Collections.unmodifiableList(internalServices);
+    }
+
+    public List<PluginService> buildPluginServices() {
+        PluginServiceRegistryImpl registry = new PluginServiceRegistryImpl();
+        new PluginLoader(this, registry).load();
+        return registry.registeredServices();
     }
 
     protected SolidityCompiler buildSolidityCompiler() {

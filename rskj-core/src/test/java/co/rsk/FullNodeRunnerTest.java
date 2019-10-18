@@ -20,6 +20,7 @@ package co.rsk;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.spi.PluginService;
 import org.ethereum.util.BuildInfo;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,10 +28,12 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class FullNodeRunnerTest {
     private List<InternalService> internalServices;
+    private List<PluginService> pluginServices;
     private FullNodeRunner runner;
 
     @Before
@@ -39,7 +42,11 @@ public class FullNodeRunnerTest {
                 mock(InternalService.class),
                 mock(InternalService.class)
         );
-        runner = new FullNodeRunner(internalServices, mock(RskSystemProperties.class), mock(BuildInfo.class));
+        pluginServices = Arrays.asList(
+                mock(PluginService.class),
+                mock(PluginService.class)
+        );
+        runner = new FullNodeRunner(internalServices, pluginServices, mock(RskSystemProperties.class), mock(BuildInfo.class));
     }
 
     @Test
@@ -56,6 +63,24 @@ public class FullNodeRunnerTest {
 
         for (InternalService internalService : internalServices) {
             verify(internalService).stop();
+        }
+    }
+
+    @Test
+    public void callingRunStartsPluginServices() {
+        runner.run();
+
+        for (PluginService pluginService : pluginServices) {
+            verify(pluginService).start();
+        }
+    }
+
+    @Test
+    public void callingStopStopsPluginServices() {
+        runner.stop();
+
+        for (PluginService pluginService : pluginServices) {
+            verify(pluginService).stop();
         }
     }
 }
