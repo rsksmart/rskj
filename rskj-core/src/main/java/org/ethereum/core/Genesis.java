@@ -21,7 +21,6 @@ package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
 import java.util.Arrays;
@@ -54,33 +53,13 @@ public class Genesis extends Block {
     private static final byte[] ZERO_HASH_2048 = new byte[256];
     protected static final long NUMBER = 0;
 
-    public Genesis(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                   byte[] difficulty, long number, long gasLimit,
-                   long gasUsed, long timestamp,
-                   byte[] extraData,
-                   byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                   byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] minimumGasPrice,
-                   boolean useRskip92Encoding, boolean isRskip126Enabled,
+    public Genesis(boolean isRskip126Enabled,
                    Map<RskAddress, AccountState> initialAccounts,
                    Map<RskAddress, byte[]> initialCodes,
-                   Map<RskAddress, Map<DataWord, byte[]>> initialStorages){
+                   Map<RskAddress, Map<DataWord, byte[]>> initialStorages,
+                   BlockHeader header){
         super(
-                new GenesisHeader(
-                        parentHash,
-                        unclesHash,
-                        logsBloom,
-                        difficulty,
-                        number,
-                        ByteUtil.longToBytes(gasLimit),
-                        gasUsed,
-                        timestamp,
-                        extraData,
-                        bitcoinMergedMiningHeader,
-                        bitcoinMergedMiningMerkleProof,
-                        bitcoinMergedMiningCoinbaseTransaction,
-                        minimumGasPrice,
-                        useRskip92Encoding,
-                        coinbase),
+                header,
                 Collections.emptyList(),
                 Collections.emptyList(),
                 isRskip126Enabled,

@@ -8,7 +8,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
-class GenesisHeader extends BlockHeader {
+public class GenesisHeader extends BlockHeader {
 
     private final byte[] difficulty;
 

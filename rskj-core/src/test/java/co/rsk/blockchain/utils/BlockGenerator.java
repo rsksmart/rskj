@@ -36,6 +36,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -99,10 +100,23 @@ public class BlockGenerator {
 
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, 0);
-        return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
-                difficulty, 0, gasLimit, 0, timestamp, extraData,
-                null, null, null, BigInteger.valueOf(100L).toByteArray(), useRskip92Encoding,
-                isRskip126Enabled, accounts, Collections.emptyMap(), Collections.emptyMap()
+        return new Genesis(
+                isRskip126Enabled, accounts, Collections.emptyMap(), Collections.emptyMap(), new GenesisHeader(
+                parentHash,
+                EMPTY_LIST_HASH,
+                getZeroHash(),
+                difficulty,
+                0,
+                        ByteUtil.longToBytes(gasLimit),
+                0,
+                timestamp,
+                extraData,
+                null,
+                null,
+                null,
+                BigInteger.valueOf(100L).toByteArray(),
+                useRskip92Encoding,
+                coinbase)
         );
     }
 
