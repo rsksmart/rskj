@@ -25,6 +25,7 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
@@ -43,6 +44,18 @@ public class TraceModuleImplTest {
         TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockStore(), receiptStore, world.getBlockExecutor());
 
         JsonNode result = traceModule.traceTransaction("0x00");
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void retrieveUnknownBlockAsNull() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceBlock("0x0001020300010203000102030001020300010203000102030001020300010203");
 
         Assert.assertNull(result);
     }
@@ -81,10 +94,56 @@ public class TraceModuleImplTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = executeMultiContract(receiptStore);
 
+        retrieveEmptyBlockTrace(world, receiptStore,"g00");
+        retrieveNestedContractCreationBlockTrace(world, receiptStore,"b01");
         retrieveNestedContractCreationTrace(world, receiptStore,"tx01");
         retrieveNestedContractInvocationTrace(world, receiptStore, "tx02");
         retrieveNestedRevertedInvocationTrace(world, receiptStore, "tx03");
         retrieveSuicideInvocationTrace(world, receiptStore, "tx04");
+    }
+
+    private static void retrieveEmptyBlockTrace(World world, ReceiptStore receiptStore, String blkname)  throws Exception {
+        Block block = world.getBlockByName(blkname);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceBlock(block.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(0, aresult.size());
+    }
+
+    private static void retrieveNestedContractCreationBlockTrace(World world, ReceiptStore receiptStore, String blkname)  throws Exception {
+        Block block = world.getBlockByName(blkname);
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceBlock(block.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult0 = (ArrayNode)result;
+
+        Assert.assertEquals(1, aresult0.size());
+        Assert.assertTrue(aresult0.get(0).isArray());
+
+        ArrayNode aresult = (ArrayNode)aresult0.get(0);
+
+        Assert.assertEquals(4, aresult.size());
+
+        for (int k = 0; k < 4; k++) {
+            Assert.assertTrue(aresult.get(k).isObject());
+
+            ObjectNode oresult = (ObjectNode) aresult.get(k);
+
+            Assert.assertNotNull(oresult.get("type"));
+            Assert.assertEquals("\"create\"", oresult.get("type").toString());
+        }
     }
 
     private static void retrieveNestedContractCreationTrace(World world, ReceiptStore receiptStore, String txname)  throws Exception {
@@ -102,9 +161,9 @@ public class TraceModuleImplTest {
         Assert.assertEquals(4, aresult.size());
 
         for (int k = 0; k < 4; k++) {
-            Assert.assertTrue(result.get(k).isObject());
+            Assert.assertTrue(aresult.get(k).isObject());
 
-            ObjectNode oresult = (ObjectNode) result.get(k);
+            ObjectNode oresult = (ObjectNode) aresult.get(k);
 
             Assert.assertNotNull(oresult.get("type"));
             Assert.assertEquals("\"create\"", oresult.get("type").toString());
