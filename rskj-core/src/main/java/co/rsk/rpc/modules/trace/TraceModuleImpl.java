@@ -33,6 +33,7 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
@@ -83,5 +84,39 @@ public class TraceModuleImpl implements TraceModule {
         List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
         ObjectMapper mapper = Serializers.createMapper(true);
         return mapper.valueToTree(traces);
+    }
+
+    @Override
+    public JsonNode traceBlock(String blockHash) throws Exception {
+        logger.trace("trace_block({})", blockHash);
+
+        byte[] hash = stringHexToByteArray(blockHash);
+
+        Block block = blockStore.getBlockByHash(hash);
+        Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
+
+        ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
+        blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+
+        List<List<TransactionTrace>> blockTraces = new ArrayList<>();
+
+        for (Transaction tx : block.getTransactionsList()) {
+            TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), blockStore);
+            txInfo.setTransaction(tx);
+
+            SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
+
+            if (programTrace == null) {
+                return null;
+            }
+
+            List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
+
+            blockTraces.add(traces);
+        }
+
+        ObjectMapper mapper = Serializers.createMapper(true);
+
+        return mapper.valueToTree(blockTraces);
     }
 }

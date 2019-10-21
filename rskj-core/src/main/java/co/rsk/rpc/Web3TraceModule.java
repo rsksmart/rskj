@@ -27,6 +27,10 @@ public interface Web3TraceModule {
         return getTraceModule().traceTransaction(transactionHash);
     }
 
+    default JsonNode trace_block(String blockHash) throws Exception {
+        return getTraceModule().traceBlock(blockHash);
+    }
+
     TraceModule getTraceModule();
 }
 
