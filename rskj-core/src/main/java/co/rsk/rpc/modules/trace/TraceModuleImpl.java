@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
@@ -93,26 +94,34 @@ public class TraceModuleImpl implements TraceModule {
         byte[] hash = stringHexToByteArray(blockHash);
 
         Block block = blockStore.getBlockByHash(hash);
-        Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
-        ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
-        blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+        if (block == null) {
+            logger.trace("No block for {}", blockHash);
+            return null;
+        }
+
+        Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
         List<List<TransactionTrace>> blockTraces = new ArrayList<>();
 
-        for (Transaction tx : block.getTransactionsList()) {
-            TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), blockStore);
-            txInfo.setTransaction(tx);
+        if (block.getNumber() != 0) {
+            ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
+            blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
-            SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
+            for (Transaction tx : block.getTransactionsList()) {
+                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), blockStore);
+                txInfo.setTransaction(tx);
 
-            if (programTrace == null) {
-                return null;
+                SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
+
+                if (programTrace == null) {
+                    return null;
+                }
+
+                List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
+
+                blockTraces.add(traces);
             }
-
-            List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
-
-            blockTraces.add(traces);
         }
 
         ObjectMapper mapper = Serializers.createMapper(true);
