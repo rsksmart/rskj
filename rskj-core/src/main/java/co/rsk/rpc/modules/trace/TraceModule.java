@@ -22,4 +22,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public interface TraceModule {
     JsonNode traceTransaction(String transactionHash) throws Exception;
+
+    JsonNode traceBlock(String blockHash) throws Exception;
 }
