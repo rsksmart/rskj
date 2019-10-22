@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
+import co.rsk.net.light.LightProcessor;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.PeersInformation;
@@ -69,7 +70,9 @@ public class OneAsyncNodeTest {
                 new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class)
         );
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule(), mock(StatusResolver.class));
+
+        LightProcessor lightProcessor = new LightProcessor();
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule(), mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }

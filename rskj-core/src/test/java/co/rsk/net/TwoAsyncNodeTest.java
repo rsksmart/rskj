@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.net.light.LightProcessor;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.SyncConfiguration;
@@ -56,7 +57,7 @@ public class TwoAsyncNodeTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, new DummyBlockValidationRule(), mock(StatusResolver.class));
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, null, new DummyBlockValidationRule(), mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain);
     }
@@ -75,7 +76,7 @@ public class TwoAsyncNodeTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, new DummyBlockValidationRule(), mock(StatusResolver.class));
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, null, new DummyBlockValidationRule(), mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain);
     }
