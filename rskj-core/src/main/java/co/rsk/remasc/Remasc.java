@@ -54,7 +54,6 @@ public class Remasc {
     private final Transaction executionTx;
     private final Block executionBlock;
     private final List<LogInfo> logs;
-    private final List<ProgramSubtrace> subtraces;
 
     private final RemascStorageProvider provider;
     private final RemascFeesPayer feesPayer;
@@ -76,10 +75,9 @@ public class Remasc {
         this.executionTx = executionTx;
         this.executionBlock = executionBlock;
         this.logs = logs;
-        this.subtraces = subtraces;
 
         this.provider = new RemascStorageProvider(repository, contractAddress);
-        this.feesPayer = new RemascFeesPayer(repository, contractAddress);
+        this.feesPayer = new RemascFeesPayer(repository, contractAddress, subtraces);
         this.constants = constants;
         this.activationConfig = activationConfig;
     }
