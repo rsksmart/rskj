@@ -22,6 +22,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.*;
+import co.rsk.net.light.LightProcessor;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
@@ -129,6 +130,7 @@ public class SimpleAsyncNode extends SimpleNode {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(config, blockStore, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(blockStore, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        LightProcessor lightProcessor = new LightProcessor();
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
         SimpleChannelManager channelManager = new SimpleChannelManager();
@@ -141,7 +143,7 @@ public class SimpleAsyncNode extends SimpleNode {
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
                 mock(Genesis.class)
         );
-        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, mock(StatusResolver.class));
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, channelManager, null, peerScoringManager, mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }
