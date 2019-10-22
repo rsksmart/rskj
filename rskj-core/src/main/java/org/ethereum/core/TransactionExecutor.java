@@ -26,6 +26,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -90,6 +91,7 @@ public class TransactionExecutor {
 
     private VM vm;
     private Program program;
+    private List<ProgramSubtrace> subtraces;
 
     private PrecompiledContracts.PrecompiledContract precompiledContract;
 
@@ -290,7 +292,8 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
+            this.subtraces = new ArrayList<>();
+            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList(), subtraces);
             profiler.stop(metric);
 
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
@@ -582,6 +585,13 @@ public class TransactionExecutor {
             TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender().getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
+
+            if (this.subtraces != null) {
+                for (ProgramSubtrace subtrace : this.subtraces) {
+                    trace.addSubTrace(subtrace);
+                }
+            }
+
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
     }

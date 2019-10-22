@@ -38,6 +38,7 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
@@ -104,6 +105,7 @@ public class BridgeSupport {
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
     private final BridgeEventLogger eventLogger;
+    private final List<ProgramSubtrace> subtraces;
 
     private final FederationSupport federationSupport;
 
@@ -123,7 +125,8 @@ public class BridgeSupport {
             Context btcContext,
             FederationSupport federationSupport,
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
-            ActivationConfig.ForBlock activations) {
+            ActivationConfig.ForBlock activations,
+            List<ProgramSubtrace> subtraces) {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
@@ -133,7 +136,7 @@ public class BridgeSupport {
         this.federationSupport = federationSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
-
+        this.subtraces = subtraces;
     }
 
     @VisibleForTesting

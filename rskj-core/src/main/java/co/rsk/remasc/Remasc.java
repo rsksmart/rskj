@@ -22,6 +22,7 @@ import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -53,6 +54,7 @@ public class Remasc {
     private final Transaction executionTx;
     private final Block executionBlock;
     private final List<LogInfo> logs;
+    private final List<ProgramSubtrace> subtraces;
 
     private final RemascStorageProvider provider;
     private final RemascFeesPayer feesPayer;
@@ -66,13 +68,15 @@ public class Remasc {
             Transaction executionTx,
             RskAddress contractAddress,
             Block executionBlock,
-            List<LogInfo> logs) {
+            List<LogInfo> logs,
+            List<ProgramSubtrace> subtraces) {
         this.repository = repository;
         this.blockStore = blockStore;
         this.remascConstants = remascConstants;
         this.executionTx = executionTx;
         this.executionBlock = executionBlock;
         this.logs = logs;
+        this.subtraces = subtraces;
 
         this.provider = new RemascStorageProvider(repository, contractAddress);
         this.feesPayer = new RemascFeesPayer(repository, contractAddress);

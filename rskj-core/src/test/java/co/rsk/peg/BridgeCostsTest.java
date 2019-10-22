@@ -59,7 +59,7 @@ public class BridgeCostsTest {
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
-        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null, null);
 
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
             byte[][] headers = new byte[numberOfHeaders][];
@@ -78,7 +78,7 @@ public class BridgeCostsTest {
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
-        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null, null);
 
         final long BASE_COST = 66_000L;
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
@@ -103,7 +103,7 @@ public class BridgeCostsTest {
         Transaction txMock = mock(Transaction.class);
         when(txMock.getReceiveAddress()).thenReturn(RskAddress.nullAddress());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactory);
-        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+        bridge.init(txMock, getGenesisBlock(), null, null, null, null, null);
 
         final long BASE_COST = 25_000L;
         for (int numberOfHeaders = 0; numberOfHeaders < 10; numberOfHeaders++) {
@@ -145,7 +145,7 @@ public class BridgeCostsTest {
         Repository mockRepository = mock(Repository.class);
         when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
 
-        bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
+        bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null, null);
         Assert.assertEquals(0, bridge.getGasForData(rskTx.getData()));
     }
 
@@ -251,7 +251,7 @@ public class BridgeCostsTest {
         Repository mockRepository = mock(Repository.class);
         when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
 
-        bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
+        bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null, null);
         Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
     }
 

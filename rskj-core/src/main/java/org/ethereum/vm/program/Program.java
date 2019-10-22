@@ -1413,7 +1413,7 @@ public class Program {
                     Collections.emptyList()
             );
 
-            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
+            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null, null);
         }
 
         long requiredGas = contract.getGasForData(data);

@@ -27,7 +27,6 @@ import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.BenchmarkedRepository;
 import co.rsk.mine.MinerUtils;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
@@ -56,7 +55,7 @@ public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerforman
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
                 World world = buildWorld(6000, 500, 6);
                 BlockHeaderContract contract = new BlockHeaderContract(activationConfig, new RskAddress("0000000000000000000000000000000001000010"));
-                contract.init(txBuilder.build(executionIndex), world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
+                contract.init(txBuilder.build(executionIndex), world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>(), null);
 
                 return EnvironmentBuilder.Environment.withContract(contract);
         };
