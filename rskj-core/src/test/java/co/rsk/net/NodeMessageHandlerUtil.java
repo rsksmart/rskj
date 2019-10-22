@@ -3,6 +3,7 @@ package co.rsk.net;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
+import co.rsk.net.light.LightProcessor;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
@@ -38,8 +39,9 @@ public class NodeMessageHandlerUtil {
                 DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class));
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        LightProcessor lightProcessor = new LightProcessor();
 
-        return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule, mock(StatusResolver.class));
+        return new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule, mock(StatusResolver.class));
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration, ChannelManager channelManager) {
@@ -69,6 +71,8 @@ public class NodeMessageHandlerUtil {
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
                 mock(Genesis.class)
         );
-        return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, blockValidationRule, mock(StatusResolver.class));
+        LightProcessor lightProcessor = new LightProcessor();
+
+        return new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, channelManager, null, null, blockValidationRule, mock(StatusResolver.class));
     }
 }
