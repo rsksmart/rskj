@@ -67,7 +67,7 @@ public class OneAsyncNodeTest {
                 new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class)
         );
-        LightProcessor lightProcessor = new LightProcessor();
+        LightProcessor lightProcessor = new LightProcessor(blockchain, blockSyncService);
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);

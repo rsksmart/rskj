@@ -39,7 +39,7 @@ public class NodeMessageHandlerUtil {
                 DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class));
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        LightProcessor lightProcessor = new LightProcessor();
+        LightProcessor lightProcessor = new LightProcessor(blockchain, blockSyncService);
         return new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
     }
 
@@ -70,7 +70,7 @@ public class NodeMessageHandlerUtil {
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
                 mock(Genesis.class)
         );
-        LightProcessor lightProcessor = new LightProcessor();
+        LightProcessor lightProcessor = new LightProcessor(blockchain, blockSyncService);
         return new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, channelManager, null, null, mock(StatusResolver.class));
     }
 }
