@@ -258,6 +258,30 @@ public class MessageVisitorTest {
     }
 
     @Test
+    public void blockReceiptsRequestMessage() {
+        BlockReceiptsRequestMessage message = mock(BlockReceiptsRequestMessage.class);
+        byte[] blockHash = new byte[]{0x0F};
+
+        when(message.getBlockHash()).thenReturn(blockHash);
+        when(message.getId()).thenReturn(24L);
+
+        target.apply(message);
+
+        verify(lightProcessor, times(1))
+                .processBlockReceiptsRequest(eq(sender), eq(24L), eq(blockHash));
+    }
+
+    @Test
+    public void blockReceiptsResponseMessage() {
+        BlockReceiptsResponseMessage message = mock(BlockReceiptsResponseMessage.class);
+
+        target.apply(message);
+
+        verify(lightProcessor, times(1))
+                .processBlockReceiptsResponse(eq(sender), eq(message));
+    }
+
+    @Test
     public void skeletonRequestMessage() {
         SkeletonRequestMessage message = mock(SkeletonRequestMessage.class);
         when(message.getStartNumber()).thenReturn(24L);

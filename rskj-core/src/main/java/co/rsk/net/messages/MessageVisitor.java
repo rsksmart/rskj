@@ -163,6 +163,15 @@ public class MessageVisitor {
         this.syncProcessor.processBlockHashResponse(sender, message);
     }
 
+    public void apply(BlockReceiptsRequestMessage message) {
+        this.lightProcessor.processBlockReceiptsRequest(sender, message.getId(), message.getBlockHash());
+    }
+
+    public void apply(BlockReceiptsResponseMessage message) {
+        this.lightProcessor.processBlockReceiptsResponse(sender, message);
+
+    }
+
     public void apply(NewBlockHashMessage message) {
         this.syncProcessor.processNewBlockHash(sender, message);
     }
