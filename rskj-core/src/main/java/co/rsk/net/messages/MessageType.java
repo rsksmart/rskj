@@ -28,6 +28,7 @@ import org.ethereum.util.RLPList;
 import org.bouncycastle.util.BigIntegers;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -230,6 +231,34 @@ public enum MessageType {
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             byte[] hash = list.get(0).getRLPData();
             return new NewBlockHashMessage(hash);
+        }
+    },
+    BLOCK_RECEIPTS_REQUEST_MESSAGE(101) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            byte[] rlpId = list.get(0).getRLPData();
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            byte[] hash = message.get(0).getRLPData();
+            return new BlockReceiptsRequestMessage(id, hash);
+        }
+    },
+    BLOCK_RECEIPTS_RESPONSE_MESSAGE(102) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            byte[] rlpId = list.get(0).getRLPData();
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+
+            RLPList rlpReceipts = (RLPList)RLP.decode2(message.getRLPData()).get(0);
+            List<TransactionReceipt> receipts = new LinkedList<>();
+            for (int k = 0; k < rlpReceipts.size(); k++) {
+                byte[] rpData = rlpReceipts.get(k).getRLPData();
+                TransactionReceipt rp = new TransactionReceipt(rpData);
+                receipts.add(rp);
+            }
+
+            return new BlockReceiptsResponseMessage(id, receipts);
         }
     };
 
