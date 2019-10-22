@@ -30,6 +30,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
+import org.ethereum.core.GenesisHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
@@ -190,11 +191,23 @@ public class GenesisLoaderImpl implements GenesisLoader {
             }
         }
 
-        return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, Genesis.getZeroHash(),
-                difficulty, 0, gasLimit, 0, timestamp, extraData,
-                bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, minGasPrice, useRskip92Encoding,
-                isRskip126Enabled, accounts, codes, storages);
+        GenesisHeader header = new GenesisHeader(
+                parentHash,
+                EMPTY_LIST_HASH,
+                Genesis.getZeroHash(),
+                difficulty,
+                0,
+                ByteUtil.longToBytes(gasLimit),
+                0,
+                timestamp,
+                extraData,
+                bitcoinMergedMiningHeader,
+                bitcoinMergedMiningMerkleProof,
+                bitcoinMergedMiningCoinbaseTransaction,
+                minGasPrice,
+                useRskip92Encoding,
+                coinbase);
+        return new Genesis(isRskip126Enabled, accounts, codes, storages, header);
     }
 
     private Trie loadGenesisTrie(Genesis genesis) {

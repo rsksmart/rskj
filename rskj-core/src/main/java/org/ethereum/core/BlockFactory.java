@@ -72,7 +72,6 @@ public class BlockFactory {
         List<BlockHeader> uncleList = uncleHeadersRlp.stream()
                 .map(uncleHeader -> decodeHeader((RLPList) uncleHeader, sealed))
                 .collect(Collectors.toList());
-
         return newBlock(header, transactionList, uncleList, sealed);
     }
 
@@ -139,7 +138,7 @@ public class BlockFactory {
         return decodeHeader(RLP.decodeList(encoded), true);
     }
 
-    public BlockHeader decodeHeader(RLPList rlpHeader, boolean sealed) {
+    private BlockHeader decodeHeader(RLPList rlpHeader, boolean sealed) {
         // TODO fix old tests that have other sizes
         if (rlpHeader.size() != RLP_HEADER_SIZE && rlpHeader.size() != RLP_HEADER_SIZE_WITH_MERGED_MINING) {
             throw new IllegalArgumentException(String.format(
@@ -150,7 +149,8 @@ public class BlockFactory {
 
         byte[] parentHash = rlpHeader.get(0).getRLPData();
         byte[] unclesHash = rlpHeader.get(1).getRLPData();
-        RskAddress coinbase = RLP.parseRskAddress(rlpHeader.get(2).getRLPData());
+        byte[] coinBaseBytes = rlpHeader.get(2).getRLPData();
+        RskAddress coinbase = RLP.parseRskAddress(coinBaseBytes);
         byte[] stateRoot = rlpHeader.get(3).getRLPData();
         if (stateRoot == null) {
             stateRoot = EMPTY_TRIE_HASH;
@@ -167,7 +167,8 @@ public class BlockFactory {
         }
 
         byte[] logsBloom = rlpHeader.get(6).getRLPData();
-        BlockDifficulty difficulty = RLP.parseBlockDifficulty(rlpHeader.get(7).getRLPData());
+        byte[] difficultyBytes = rlpHeader.get(7).getRLPData();
+        BlockDifficulty difficulty = RLP.parseBlockDifficulty(difficultyBytes);
 
         byte[] nrBytes = rlpHeader.get(8).getRLPData();
         byte[] glBytes = rlpHeader.get(9).getRLPData();
@@ -182,7 +183,8 @@ public class BlockFactory {
         byte[] extraData = rlpHeader.get(12).getRLPData();
 
         Coin paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
-        Coin minimumGasPrice = RLP.parseSignedCoinNonNullZero(rlpHeader.get(14).getRLPData());
+        byte[] minimumGasPriceBytes = rlpHeader.get(14).getRLPData();
+        Coin minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPriceBytes);
 
         int r = 15;
 
@@ -204,6 +206,26 @@ public class BlockFactory {
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, number);
         boolean includeForkDetectionData = activationConfig.isActive(ConsensusRule.RSKIP110, number) &&
                 number >= MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION;
+
+        if (number == Genesis.NUMBER) {
+            return new GenesisHeader(
+                    parentHash,
+                    unclesHash,
+                    logsBloom,
+                    difficultyBytes,
+                    number,
+                    glBytes,
+                    gasUsed,
+                    timestamp,
+                    extraData,
+                    bitcoinMergedMiningHeader,
+                    bitcoinMergedMiningMerkleProof,
+                    bitcoinMergedMiningCoinbaseTransaction,
+                    minimumGasPriceBytes,
+                    useRskip92Encoding,
+                    coinBaseBytes,
+                    stateRoot);
+        }
 
         return new BlockHeader(
                 parentHash, unclesHash, coinbase, stateRoot,
