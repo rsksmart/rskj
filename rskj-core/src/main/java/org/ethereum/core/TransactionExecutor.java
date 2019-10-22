@@ -290,9 +290,10 @@ public class TransactionExecutor {
         // But init() will detect this earlier
         precompiledContract = precompiledContracts.getContractForAddress(activations, DataWord.valueOf(targetAddress.getBytes()));
 
+        this.subtraces = new ArrayList<>();
+
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            this.subtraces = new ArrayList<>();
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList(), subtraces);
             profiler.stop(metric);
 
@@ -586,10 +587,8 @@ public class TransactionExecutor {
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
 
-            if (this.subtraces != null) {
-                for (ProgramSubtrace subtrace : this.subtraces) {
-                    trace.addSubTrace(subtrace);
-                }
+            for (ProgramSubtrace subtrace : this.subtraces) {
+                trace.addSubTrace(subtrace);
             }
 
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
