@@ -38,6 +38,7 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
@@ -47,8 +48,11 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.ProgramResult;
+import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -390,12 +394,26 @@ public class BridgeSupport {
             } else {
                 org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
                 RskAddress sender = new RskAddress(key.getAddress());
+                co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(totalAmount);
 
                 rskRepository.transfer(
                         PrecompiledContracts.BRIDGE_ADDR,
                         sender,
-                        co.rsk.core.Coin.fromBitcoin(totalAmount)
+                        amount
                 );
+
+                if (this.subtraces != null) {
+                    DataWord from = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
+                    DataWord to = DataWord.valueOf(sender.getBytes());
+                    long gas = 0L;
+                    DataWord value = DataWord.valueOf(amount.getBytes());
+
+                    TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
+                    ProgramResult result     = new ProgramResult();
+                    ProgramSubtrace subtrace = new ProgramSubtrace(CallType.CALL, invoke, result, Collections.EMPTY_LIST);
+
+                    this.subtraces.add(subtrace);
+                }
 
                 logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, sender);
 
