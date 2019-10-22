@@ -20,10 +20,12 @@ package co.rsk.remasc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -46,7 +48,8 @@ public class RemascFeesPayerTest {
 
         // Setup objects
         Repository repositoryMock = Mockito.mock(Repository.class);
-        RemascFeesPayer feesPayer = new RemascFeesPayer(repositoryMock, PrecompiledContracts.REMASC_ADDR);
+        List<ProgramSubtrace> subtraces = new ArrayList<>();
+        RemascFeesPayer feesPayer = new RemascFeesPayer(repositoryMock, PrecompiledContracts.REMASC_ADDR, subtraces);
 
         byte[] blockHash = { 0x1, 0x2 };
         Coin value = Coin.valueOf(7L);
@@ -55,6 +58,14 @@ public class RemascFeesPayerTest {
 
         // Do call
         feesPayer.payMiningFees(blockHash, value, toAddress, logs);
+
+        Assert.assertEquals(1, subtraces.size());
+
+        ProgramSubtrace subtrace = subtraces.get(0);
+
+        Assert.assertEquals(DataWord.valueOf(PrecompiledContracts.REMASC_ADDR.getBytes()), subtrace.getInvokeData().getCallerAddress());
+        Assert.assertEquals(DataWord.valueOf(toAddress.getBytes()), subtrace.getInvokeData().getOwnerAddress());
+        Assert.assertEquals(DataWord.valueOf(value.getBytes()), subtrace.getInvokeData().getCallValue());
 
         Assert.assertEquals(1, logs.size());
 
