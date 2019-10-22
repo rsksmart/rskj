@@ -106,7 +106,7 @@ public class EthModule
         Repository track = repositoryLocator.startTrackingAt(bestBlock.getHeader());
 
         BridgeSupport bridgeSupport = bridgeSupportFactory.newInstance(
-                track, bestBlock, PrecompiledContracts.BRIDGE_ADDR, null);
+                track, bestBlock, PrecompiledContracts.BRIDGE_ADDR, null, null);
 
         byte[] result = bridgeSupport.getStateForDebugging();
 

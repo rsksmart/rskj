@@ -224,8 +224,8 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                         benchmarkerTrack,
                         blockChainBuilder.getBlockStore(),
                         null,
-                        logs
-                );
+                        logs,
+                        null);
 
                 // Execute a random method so that bridge support initialization
                 // does its initial writes to the repo for e.g. genesis block,

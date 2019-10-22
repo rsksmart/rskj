@@ -48,7 +48,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
             HDWalletUtils contract = new HDWalletUtils(new TestSystemProperties().getActivationConfig(), PrecompiledContracts.HD_WALLET_UTILS_ADDR);
-            contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null);
+            contract.init(txBuilder.build(executionIndex), Helper.getMockBlock(1), null, null, null, null, null);
 
             return EnvironmentBuilder.Environment.withContract(contract);
         };

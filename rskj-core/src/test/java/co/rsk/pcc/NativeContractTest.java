@@ -397,7 +397,7 @@ public class NativeContractTest {
         receiptStore = mock(ReceiptStore.class);
         logs = Collections.emptyList();
         tx = txArg;
-        contract.init(tx, block, repository, blockStore, receiptStore, logs);
+        contract.init(tx, block, repository, blockStore, receiptStore, logs, null);
     }
 
     private void assertFails(Runnable statement) {

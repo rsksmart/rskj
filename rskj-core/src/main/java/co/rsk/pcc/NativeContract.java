@@ -20,6 +20,7 @@ package co.rsk.pcc;
 
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
@@ -71,8 +72,8 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
     }
 
     @Override
-    public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
-        super.init(tx, executionBlock, repository, blockStore, receiptStore, logs);
+    public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs, List<ProgramSubtrace> subtraces) {
+        super.init(tx, executionBlock, repository, blockStore, receiptStore, logs, subtraces);
 
         executionEnvironment = new ExecutionEnvironment(
                 activationConfig,

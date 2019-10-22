@@ -233,7 +233,8 @@ public class BridgeSupportTest {
                 bridgeConstants, provider, mock(BridgeEventLogger.class), track, null,
                         new Context(bridgeConstants.getBtcParams()),
                         new FederationSupport(bridgeConstants, provider, null),
-                btcBlockStoreFactory
+                btcBlockStoreFactory,
+                null
         ) {
             @Override
             InputStream getCheckPoints() {
@@ -1727,7 +1728,8 @@ public class BridgeSupportTest {
                 mock(Block.class),
                 btcContext,
                 mockFederationSupport,
-                mockFactory
+                mockFactory,
+                null
         );
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
@@ -4227,7 +4229,8 @@ public class BridgeSupportTest {
                 constants, provider, eventLogger, track, executionBlock,
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, executionBlock),
-                blockStoreFactory
+                blockStoreFactory,
+                null
         );
     }
 
