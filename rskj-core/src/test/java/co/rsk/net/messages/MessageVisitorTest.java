@@ -3,6 +3,7 @@ package co.rsk.net.messages;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
+import co.rsk.net.light.LightProcessor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
@@ -33,6 +34,7 @@ public class MessageVisitorTest {
     private TransactionGateway transactionGateway;
     private SyncProcessor syncProcessor;
     private BlockProcessor blockProcessor;
+    private LightProcessor lightProcessor;
     private RskSystemProperties config;
 
     @Before
@@ -44,11 +46,13 @@ public class MessageVisitorTest {
         peerScoringManager = mock(PeerScoringManager.class);
         channelManager = mock(ChannelManager.class);
         sender = mock(Peer.class);
+        lightProcessor = mock(LightProcessor.class);
 
         target = new MessageVisitor(
                 config,
                 blockProcessor,
                 syncProcessor,
+                lightProcessor,
                 transactionGateway,
                 peerScoringManager,
                 channelManager,
