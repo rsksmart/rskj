@@ -21,6 +21,7 @@ package co.rsk.net.messages;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
+import co.rsk.net.light.LightProcessor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.core.Block;
@@ -48,6 +49,7 @@ public class MessageVisitor {
 
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
+    private final LightProcessor lightProcessor;
     private final TransactionGateway transactionGateway;
     private final Peer sender;
     private final PeerScoringManager peerScoringManager;
@@ -57,6 +59,7 @@ public class MessageVisitor {
     public MessageVisitor(RskSystemProperties config,
                           BlockProcessor blockProcessor,
                           SyncProcessor syncProcessor,
+                          LightProcessor lightProcessor,
                           TransactionGateway transactionGateway,
                           PeerScoringManager peerScoringManager,
                           ChannelManager channelManager,
@@ -64,6 +67,7 @@ public class MessageVisitor {
 
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
+        this.lightProcessor = lightProcessor;
         this.transactionGateway = transactionGateway;
         this.peerScoringManager = peerScoringManager;
         this.channelManager = channelManager;
