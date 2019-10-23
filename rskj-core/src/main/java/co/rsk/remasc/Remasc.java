@@ -119,10 +119,11 @@ public class Remasc {
 
         // this search can be optimized if have certainty that the execution block is not in a fork
         // larger than depth
-        Block currentBlock = blockStore.getBlockByHashAndDepth(
-                executionBlock.getParentHash().getBytes(),
-                remascConstants.getMaturity() - 1 - uncleGenerationLimit
+        Block currentBlock = blockStore.getBlockAtDepthStartingAt(
+                remascConstants.getMaturity() - 1 - uncleGenerationLimit,
+                executionBlock.getParentHash().getBytes()
         );
+
         descendantsBlocks.push(blockStore.getSiblingsFromBlockByHash(currentBlock.getHash()));
 
         // descendants are stored in reverse order because the original order to pay siblings is defined in the way
