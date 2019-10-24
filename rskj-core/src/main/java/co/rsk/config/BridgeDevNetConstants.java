@@ -115,6 +115,18 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         maxFeePerKb = Coin.valueOf(5_000_000L);
 
-        // TODO: define increaseLockingCapAuthorizer and initialLockingCap values
+        // Key generated with GenNodeKey using generator 'auth-increase_locking_cap'
+        List<ECKey> increaseLockingCapAuthorizedKeys = Arrays.stream(new String[]{
+                "04450bbaab83ec48b3cb8fbb077c950ee079733041c039a8c4f1539e5181ca1a27589eeaf0fbf430e49d2909f14c767bf6909ad6845831f683416ee12b832e36ed"
+        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+        increaseLockingCapAuthorizer = new AddressBasedAuthorizer(
+                increaseLockingCapAuthorizedKeys,
+                AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
+        );
+
+        initialLockingCap = Coin.COIN.multiply(1_000L); // 1_000 BTC
+
+        lockingCapIncrementsMultiplier = 2;
     }
 }
