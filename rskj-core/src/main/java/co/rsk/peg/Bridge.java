@@ -187,6 +187,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
     public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
+    public static final DataWord LOCK_BTC_TOPIC = DataWord.fromString("lock_btc_topic");
 
     private final Constants constants;
     private final BridgeConstants bridgeConstants;

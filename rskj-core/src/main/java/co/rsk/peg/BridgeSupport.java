@@ -42,6 +42,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -241,6 +242,7 @@ public class BridgeSupport {
      * @throws BlockStoreException
      * @throws IOException
      */
+
     public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized) throws IOException, BlockStoreException {
         Context.propagate(btcContext);
 
@@ -397,6 +399,10 @@ public class BridgeSupport {
 
                 // Consume this whitelisted address
                 lockWhitelist.consume(senderBtcAddress);
+
+                if (activations.isActive(ConsensusRule.RSKIP121)) {
+                    eventLogger.logLockBtc(btcTx, senderBtcAddress, sender, totalAmount);
+                }
             }
         } else if (BridgeUtils.isReleaseTx(btcTx, getLiveFederations())) {
             logger.debug("This is a release tx {}", btcTx);
@@ -404,7 +410,7 @@ public class BridgeSupport {
             // We could call removeUsedUTXOs(btcTx) here, but we decided to not do that.
             // Used utxos should had been removed when we created the release tx.
             // Invoking removeUsedUTXOs() here would make "some" sense in theses scenarios:
-            // a) In testnet, devnet or local: we restart the RSK blockchain whithout changing the federation address. We don't want to have utxos that were already spent.
+            // a) In testnet, devnet or local: we restart the RSK blockchain without changing the federation address. We don't want to have utxos that were already spent.
             // Open problem: TxA spends TxB. registerBtcTransaction() for TxB is called, it spends a utxo the bridge is not yet aware of,
             // so nothing is removed. Then registerBtcTransaction() for TxA and the "already spent" utxo is added as it was not spent.
             // When is not guaranteed to be called in the chronological order, so a Federator can inform

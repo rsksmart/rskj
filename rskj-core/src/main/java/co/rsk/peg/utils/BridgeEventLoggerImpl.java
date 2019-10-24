@@ -18,9 +18,12 @@
 
 package co.rsk.peg.utils;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.config.BridgeConstants;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
@@ -89,6 +92,14 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge();
 
         byte[] data = RLP.encodeList(oldFedData, newFedData, RLP.encodeString(Long.toString(newFedActivationBlockNumber)));
+
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
+    }
+
+    public void logLockBtc(BtcTransaction btcTx, Address senderBtcAddress, RskAddress RskReceiver, Coin Amount) {
+        List<DataWord> topics = Collections.singletonList(Bridge.LOCK_BTC_TOPIC);
+        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()), RLP.encodeString(senderBtcAddress.toString()),
+                      RLP.encodeRskAddress(RskReceiver), RLP.encodeString(Amount.toString()));
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
     }
