@@ -18,8 +18,8 @@
 
 package co.rsk.peg.utils;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -41,4 +41,6 @@ public interface BridgeEventLogger {
     void logReleaseBtc(BtcTransaction btcTx);
 
     void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation);
+
+    void logLockBtc(BtcTransaction btcTx, Address senderBtcAddress, RskAddress RskReceiver, Coin Amount);
 }

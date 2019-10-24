@@ -18,16 +18,17 @@
 
 package co.rsk.peg.utils;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
 import co.rsk.peg.FederationTestUtils;
+import com.sun.org.apache.bcel.internal.generic.ANEWARRAY;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -35,14 +36,12 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -53,6 +52,7 @@ import static org.mockito.Mockito.when;
  *
  * @author martin.medina
  */
+
 public class BridgeEventLoggerImplTest {
 
     @Test
@@ -136,5 +136,35 @@ public class BridgeEventLoggerImplTest {
 
         // Assert new federation activation block number
         Assert.assertEquals(15L + BridgeRegTestConstants.getInstance().getFederationActivationAge(), Long.valueOf(new String(dataList.get(2).getRLPData(), StandardCharsets.UTF_8)).longValue());
+    }
+
+    @Test
+    public void logLockBtc() {
+        // Setup event logger
+        List<LogInfo> eventLogs = new LinkedList<>();
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        Address senderAddress = mock(Address.class);
+        RskAddress rskAddress = mock(RskAddress.class);
+
+        // Mock btc transaction
+        BtcTransaction mockedTx = mock(BtcTransaction.class);
+        when(mockedTx.getHashAsString()).thenReturn("a-tx-hash");
+
+        Coin amount = Coin.SATOSHI;
+
+        eventLogger.logLockBtc(mockedTx, senderAddress, rskAddress, amount);
+
+        Assert.assertEquals(1, eventLogs.size());
+        LogInfo entry = eventLogs.get(0);
+
+        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
+
+        Assert.assertEquals(1, entry.getTopics().size());
+        Assert.assertEquals(Bridge.LOCK_BTC_TOPIC, entry.getTopics().get(0));
+
+        byte[] data = entry.getData();
+        byte[] expectedData = RLP.encodeList(RLP.encodeString("a-tx-hash"), RLP.encodeString(senderAddress.toString()),
+                              RLP.encodeRskAddress(rskAddress), RLP.encodeString(amount.toString()));
+        Assert.assertArrayEquals(data, expectedData);
     }
 }
