@@ -63,9 +63,9 @@ public class BridgeTest {
 
         byte[] data = Bridge.GET_LOCKING_CAP.encode(new Object[]{ });
         byte[] result = bridge.execute(data);
-        Assert.assertEquals(1L, ((BigInteger)Bridge.GET_LOCKING_CAP.decodeResult(result)[0]).longValue());
+        Assert.assertEquals(Coin.COIN.getValue(), ((BigInteger)Bridge.GET_LOCKING_CAP.decodeResult(result)[0]).longValue());
         // Also test the method itself
-        Assert.assertEquals(1L, bridge.getLockingCap(new Object[]{ }));
+        Assert.assertEquals(Coin.COIN.getValue(), bridge.getLockingCap(new Object[]{ }));
     }
 
     @Test
@@ -125,11 +125,6 @@ public class BridgeTest {
         // Uses the proper signature and data type, but with an invalid value
         // This will be rejected by the initial validation in the method
         data = Bridge.INCREASE_LOCKING_CAP.encode(new Object[]{ -1 });
-        result = bridge.execute(data);
-        Assert.assertNull(result);
-
-        // Uses the proper signature and data type, but with a value just above max permitted
-        data = Bridge.INCREASE_LOCKING_CAP.encode(new Object[]{ 21_000_001 });
         result = bridge.execute(data);
         Assert.assertNull(result);
 

@@ -442,7 +442,7 @@ public class BridgeStorageProvider {
 
     public void saveLockingCap() {
         if (activations.isActive(RSKIP134)) {
-            safeSaveToRepository(LOCKING_CAP_KEY, this.lockingCap, BridgeSerializationUtils::serializeCoin);
+            safeSaveToRepository(LOCKING_CAP_KEY, this.getLockingCap(), BridgeSerializationUtils::serializeCoin);
         }
     }
 

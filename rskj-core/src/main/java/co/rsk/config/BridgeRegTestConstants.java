@@ -127,7 +127,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
                 AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
-        initialLockingCap = Coin.valueOf(1_000L);
+        initialLockingCap = Coin.COIN.multiply(1_000L); // 1_000 BTC
 
         lockingCapIncrementsMultiplier = 2;
     }

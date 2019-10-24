@@ -1919,6 +1919,7 @@ public class BridgeSupport {
         // Before returning the locking cap, check if it was already set
         if (activations.isActive(ConsensusRule.RSKIP134) && this.provider.getLockingCap() == null) {
             // Set the initial locking cap value
+            logger.debug("Setting initial locking cap value");
             this.provider.setLockingCap(bridgeConstants.getInitialLockingCap());
         }
 
@@ -1944,6 +1945,7 @@ public class BridgeSupport {
             return false;
         }
 
+        logger.info("increased locking cap: " + newCap.value);
         this.provider.setLockingCap(newCap);
 
         return true;
@@ -2047,7 +2049,6 @@ public class BridgeSupport {
         // That is, build a release transaction and get it in the release transaction set.
         // Otherwise, transfer SBTC to the sender of the BTC
         // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
-
         LockWhitelist lockWhitelist = provider.getLockWhitelist();
         if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
             Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress);
@@ -2072,20 +2073,24 @@ public class BridgeSupport {
             return true;
         }
 
-        Coin fedUTXOsAfterThisLock = getFederationCurrentFunds().add(totalAmount);
+        Coin fedCurrentFunds = getFederationCurrentFunds();
+        Coin lockingCap = this.getLockingCap();
+        logger.trace("Evaluating locking cap for: Sender {}. Value to lock {}. Current funds {}. Current locking cap {}", senderBtcAddress, totalAmount, fedCurrentFunds, lockingCap);
+        Coin fedUTXOsAfterThisLock = fedCurrentFunds.add(totalAmount);
         // If the federation funds (including this new UTXO) are smaller than or equals to the current locking cap, we are fine.
-        if (fedUTXOsAfterThisLock.compareTo(this.getLockingCap()) <= 0) {
+        if (fedUTXOsAfterThisLock.compareTo(lockingCap) <= 0) {
             return true;
         }
 
+        logger.info("locking cap exceeded! btc Tx {}", btcTx);
         // Reject the lock
         Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress);
         if (buildReturnResult.isPresent()) {
             // Send the release transaction to request signature immediately
             provider.getRskTxsWaitingForSignatures().put(rskTx.getHash(), buildReturnResult.get().getBtcTx());
-            logger.info("locking cap exceeded! money return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
+            logger.info("money return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
         } else {
-            logger.warn("locking cap exceeded! money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
+            logger.warn("money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
             panicProcessor.panic("locking-cap-exceeded-return-funds", String.format("locking cap exceeded! money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
         }
         return false;
