@@ -48,7 +48,7 @@ import static org.ethereum.net.message.StaticMessages.PONG_MESSAGE;
  */
 public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
 
-    public static final byte VERSION = 4;
+    public static final byte VERSION = 5;
 
     private static final byte[] SUPPORTED_VERSIONS = {4, 5};
 

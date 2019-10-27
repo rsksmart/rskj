@@ -37,6 +37,7 @@ import org.ethereum.net.server.Channel;
 import org.ethereum.util.LRUMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xerial.snappy.Snappy;
 
 import java.io.IOException;
 import java.util.*;
@@ -67,6 +68,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
     private final EthereumListener ethereumListener;
 
     private boolean supportChunkedFrames = true;
+    private boolean applySnappyCompression = false;
 
     Map<Integer, Pair<? extends List<Frame>, AtomicInteger>> incompleteFrames = new LRUMap<>(1, 16);
     // LRU avoids OOM on invalid peers
@@ -81,7 +83,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
     protected void decode(ChannelHandlerContext ctx, Frame frame, List<Object> out) throws Exception {
         if (frame.isChunked()) {
             if (!supportChunkedFrames && frame.totalFrameSize > 0) {
-                throw new RuntimeException("Faming is not supported in this configuration.");
+                throw new RuntimeException("Framing is not supported in this configuration.");
             }
 
             Pair<? extends List<Frame>, AtomicInteger> frameParts = incompleteFrames.get(frame.contextId);
@@ -135,6 +137,10 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
             pos += ByteStreams.read(frame.getStream(), payload, pos, frame.getSize());
         }
 
+        if (applySnappyCompression) {
+            payload = snappyDecompress(payload);
+        }
+
         if (loggerWire.isDebugEnabled()) {
             loggerWire.debug("Recv: Encoded: {} [{}]", frameType, Hex.toHexString(payload));
         }
@@ -178,6 +184,9 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
             int newPos = min(curPos + maxFramePayloadSize, bytes.length);
             byte[] frameBytes = curPos == 0 && newPos == bytes.length ? bytes :
                     Arrays.copyOfRange(bytes, curPos, newPos);
+            if (applySnappyCompression) {
+                frameBytes = snappyCompress(frameBytes);
+            }
             ret.add(new Frame(code, frameBytes));
             curPos = newPos;
         }
@@ -254,4 +263,23 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
         this.ethMessageFactory = ethMessageFactory;
     }
 
+    public void setApplySnappyCompression(boolean applySnappyCompression) {
+        this.applySnappyCompression = applySnappyCompression;
+    }
+
+    private byte[] snappyCompress(byte[] frameBytes) {
+        try {
+            return Snappy.compress(frameBytes);
+        } catch (IOException e) {
+            throw new RuntimeException("Snappy compression failed " + e.getMessage(), e);
+        }
+    }
+
+    private byte[] snappyDecompress(byte[] payload) {
+        try {
+            return Snappy.uncompress(payload);
+        } catch (IOException e) {
+            throw new RuntimeException("Snappy uncompression failed " + e.getMessage(), e);
+        }
+    }
 }
