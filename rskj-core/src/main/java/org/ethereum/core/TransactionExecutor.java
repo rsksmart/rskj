@@ -559,8 +559,10 @@ public class TransactionExecutor {
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
 
-            for (ProgramSubtrace subtrace : this.subtraces) {
-                trace.addSubTrace(subtrace);
+            if (this.subtraces != null) {
+                for (ProgramSubtrace subtrace : this.subtraces) {
+                    trace.addSubTrace(subtrace);
+                }
             }
 
             programTraceProcessor.processProgramTrace(trace, tx.getHash());

@@ -62,7 +62,7 @@ public class TraceTransformer {
 
         if (isContractCreation) {
             String outputText = trace.getResult();
-            byte[] createdCode = Hex.decode(outputText);
+            byte[] createdCode = outputText == null ? new byte[0] : Hex.decode(outputText);
             RskAddress createdAddress = txInfo.getReceipt().getTransaction().getContractAddress();
             creationData = new CreationData(creationInput, createdCode, createdAddress);
             traceType = TraceType.CREATE;
