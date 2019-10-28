@@ -112,7 +112,7 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ BridgeUtils.class, BtcBlockChain.class, BridgeSupport.class })
-public class BridgeSupportTest {
+public class BridgeSupportTestPowerMock {
     private static final co.rsk.core.Coin LIMIT_MONETARY_BASE = new co.rsk.core.Coin(new BigInteger("21000000000000000000000000"));
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
     public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);

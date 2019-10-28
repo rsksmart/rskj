@@ -94,7 +94,7 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Bridge.class, BridgeUtils.class})
-public class BridgeTest {
+public class BridgeTestPowerMock {
     private static NetworkParameters networkParameters;
     private static BridgeRegTestConstants bridgeConstants;
 
