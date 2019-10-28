@@ -285,17 +285,17 @@ public class BridgeTest {
     }
 
     @Test
-    public void sendNoBlockHeader() throws IOException {
+    public void sendNoBlockHeader() throws BlockStoreException, IOException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
+        BridgeSupportFactory bridgeSupportFactory = mock(BridgeSupportFactory.class);
+        BridgeSupport bridgeSupport = mock(BridgeSupport.class);
+        when(bridgeSupportFactory.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupport);
+        when(bridgeSupport.getActiveFederation()).thenReturn(bridgeConstants.getGenesisFederation());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
@@ -303,6 +303,8 @@ public class BridgeTest {
         bridge.execute(Bridge.RECEIVE_HEADERS.encode());
 
         track.commit();
+
+        verify(bridgeSupport, times(1)).receiveHeaders(new BtcBlock[]{});
     }
 
     @Test
@@ -321,6 +323,8 @@ public class BridgeTest {
                 bridgeSupportFactory);
         bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
 
+        Integer previousHeight = bridge.getBtcBlockchainBestChainHeight(new Object[] {});
+
         co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<>())
                 .cloneAsHeader();
         co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
@@ -334,6 +338,8 @@ public class BridgeTest {
         bridge.execute(Bridge.RECEIVE_HEADERS.encode(new Object[]{objectArray}));
 
         track.commit();
+
+        Assert.assertEquals(previousHeight, bridge.getBtcBlockchainBestChainHeight(new Object[] {}));
     }
 
     @Test
@@ -1451,7 +1457,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -1505,7 +1511,7 @@ public class BridgeTest {
 
         Assert.assertTrue(Arrays.equals(new byte[]{10},
                 (byte[]) BridgeMethods.GET_FEDERATOR_PUBLIC_KEY.getFunction().decodeResult(
-                    bridge.execute(BridgeMethods.GET_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)}))
+                        bridge.execute(BridgeMethods.GET_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{BigInteger.valueOf(10)}))
                 )[0]
         ));
 
@@ -1612,7 +1618,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -1759,7 +1765,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -1881,7 +1887,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -1934,7 +1940,7 @@ public class BridgeTest {
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         Assert.assertNull(
-            bridge.execute(BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{Hex.decode("aabbccdd")}))
+                bridge.execute(BridgeMethods.ADD_FEDERATOR_PUBLIC_KEY.getFunction().encode(new Object[]{Hex.decode("aabbccdd")}))
         );
 
         verify(bridgeSupportMock, never()).voteFederationChange(any(Transaction.class), any(ABICallSpec.class));
@@ -2035,7 +2041,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -2068,7 +2074,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -2098,7 +2104,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
@@ -2225,7 +2231,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
@@ -2353,7 +2359,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(txMock, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -2371,7 +2377,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
         bridge.init(null, getGenesisBlock(), createRepository().startTracking(), null, null, null);
@@ -2455,15 +2461,17 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactoryMock);
 
+        Address expectedResult = new BtcECKey().toAddress(networkParameters);
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getFederationAddress()).thenReturn(new BtcECKey().toAddress(networkParameters));
+        when(bridgeSupportMock.getFederationAddress()).thenReturn(expectedResult);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
 
         bridge.init(tx, getGenesisBlock(), null, null, null, null);
 
         byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
-        bridge.execute(data);
+        String result = (String)BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().decodeResult(bridge.execute(data))[0];
+        Assert.assertEquals(expectedResult.toBase58(), result);
     }
 
     @Test
@@ -2750,7 +2758,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         Bridge bridge = PowerMockito.spy(new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory));
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -2881,7 +2889,7 @@ public class BridgeTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),
                 activationConfig);
-                
+
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(config,
                 bridgeSupportFactory);
         EVMAssembler assembler = new EVMAssembler();
@@ -2926,34 +2934,34 @@ public class BridgeTest {
 
         // Actual tests
         Arrays.asList(
-            BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT,
-            BridgeMethods.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT,
-            BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR,
-            BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH,
-            BridgeMethods.GET_BTC_TX_HASH_PROCESSED_HEIGHT,
-            BridgeMethods.GET_FEDERATION_ADDRESS,
-            BridgeMethods.GET_FEDERATION_CREATION_BLOCK_NUMBER,
-            BridgeMethods.GET_FEDERATION_CREATION_TIME,
-            BridgeMethods.GET_FEDERATION_SIZE,
-            BridgeMethods.GET_FEDERATION_THRESHOLD,
-            BridgeMethods.GET_FEDERATOR_PUBLIC_KEY,
-            BridgeMethods.GET_FEE_PER_KB,
-            BridgeMethods.GET_LOCK_WHITELIST_ADDRESS,
-            BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS,
-            BridgeMethods.GET_LOCK_WHITELIST_SIZE,
-            BridgeMethods.GET_MINIMUM_LOCK_TX_VALUE,
-            BridgeMethods.GET_PENDING_FEDERATION_HASH,
-            BridgeMethods.GET_PENDING_FEDERATION_SIZE,
-            BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY,
-            BridgeMethods.GET_RETIRING_FEDERATION_ADDRESS,
-            BridgeMethods.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER,
-            BridgeMethods.GET_RETIRING_FEDERATION_CREATION_TIME,
-            BridgeMethods.GET_RETIRING_FEDERATION_SIZE,
-            BridgeMethods.GET_RETIRING_FEDERATION_THRESHOLD,
-            BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY,
-            BridgeMethods.GET_STATE_FOR_BTC_RELEASE_CLIENT,
-            BridgeMethods.GET_STATE_FOR_DEBUGGING,
-            BridgeMethods.IS_BTC_TX_HASH_ALREADY_PROCESSED
+                BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT,
+                BridgeMethods.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT,
+                BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR,
+                BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH,
+                BridgeMethods.GET_BTC_TX_HASH_PROCESSED_HEIGHT,
+                BridgeMethods.GET_FEDERATION_ADDRESS,
+                BridgeMethods.GET_FEDERATION_CREATION_BLOCK_NUMBER,
+                BridgeMethods.GET_FEDERATION_CREATION_TIME,
+                BridgeMethods.GET_FEDERATION_SIZE,
+                BridgeMethods.GET_FEDERATION_THRESHOLD,
+                BridgeMethods.GET_FEDERATOR_PUBLIC_KEY,
+                BridgeMethods.GET_FEE_PER_KB,
+                BridgeMethods.GET_LOCK_WHITELIST_ADDRESS,
+                BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS,
+                BridgeMethods.GET_LOCK_WHITELIST_SIZE,
+                BridgeMethods.GET_MINIMUM_LOCK_TX_VALUE,
+                BridgeMethods.GET_PENDING_FEDERATION_HASH,
+                BridgeMethods.GET_PENDING_FEDERATION_SIZE,
+                BridgeMethods.GET_PENDING_FEDERATOR_PUBLIC_KEY,
+                BridgeMethods.GET_RETIRING_FEDERATION_ADDRESS,
+                BridgeMethods.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER,
+                BridgeMethods.GET_RETIRING_FEDERATION_CREATION_TIME,
+                BridgeMethods.GET_RETIRING_FEDERATION_SIZE,
+                BridgeMethods.GET_RETIRING_FEDERATION_THRESHOLD,
+                BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY,
+                BridgeMethods.GET_STATE_FOR_BTC_RELEASE_CLIENT,
+                BridgeMethods.GET_STATE_FOR_DEBUGGING,
+                BridgeMethods.IS_BTC_TX_HASH_ALREADY_PROCESSED
         ).stream().forEach(m -> {
             Assert.assertTrue(m.onlyAllowsLocalCalls());
         });

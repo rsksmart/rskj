@@ -57,6 +57,8 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -102,7 +104,7 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -231,9 +233,9 @@ public class BridgeSupportTest {
         List<BtcBlock> checkpoints = createBtcBlocks(btcParams, btcParams.getGenesisBlock(), 10);
         BridgeSupport bridgeSupport = new BridgeSupport(
                 bridgeConstants, provider, mock(BridgeEventLogger.class), track, null,
-                        new Context(bridgeConstants.getBtcParams()),
-                        new FederationSupport(bridgeConstants, provider, null),
-                btcBlockStoreFactory
+                new Context(bridgeConstants.getBtcParams()),
+                new FederationSupport(bridgeConstants, provider, null),
+                btcBlockStoreFactory, mock(ActivationConfig.ForBlock.class)
         ) {
             @Override
             InputStream getCheckPoints() {
@@ -322,7 +324,7 @@ public class BridgeSupportTest {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                new BridgeStorageConfiguration(true, true)
+                bridgeStorageConfigurationAtHeightZero
         );
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, provider, track, eventLogger, rskCurrentBlock, null);
 
@@ -387,7 +389,7 @@ public class BridgeSupportTest {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                new BridgeStorageConfiguration(true, true)
+                bridgeStorageConfigurationAtHeightZero
         );
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), rskCurrentBlock, null);
 
@@ -454,7 +456,7 @@ public class BridgeSupportTest {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                new BridgeStorageConfiguration(true, true)
+                bridgeStorageConfigurationAtHeightZero
         );
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), rskCurrentBlock, null
@@ -523,7 +525,7 @@ public class BridgeSupportTest {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                new BridgeStorageConfiguration(true, true)
+                bridgeStorageConfigurationAtHeightZero
         );
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), rskCurrentBlock, null
@@ -663,7 +665,7 @@ public class BridgeSupportTest {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                new BridgeStorageConfiguration(true, true)
+                bridgeStorageConfigurationAtHeightZero
         );
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), rskCurrentBlock, null);
@@ -822,7 +824,7 @@ public class BridgeSupportTest {
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
                 bridgeConstants,
-                new BridgeStorageConfiguration(true, true)
+                bridgeStorageConfigurationAtHeightZero
         );
         BridgeSupport bridgeSupport = getBridgeSupport(providerForSupport, track, null);
 
@@ -842,11 +844,11 @@ public class BridgeSupportTest {
         Repository track = repository.startTracking();
 
         BridgeSupport bridgeSupport = getBridgeSupport(new BridgeStorageProvider(
-                                        track,
-                                        PrecompiledContracts.BRIDGE_ADDR,
-                                        bridgeConstants,
-                                        new BridgeStorageConfiguration(true, true)
-                                ), track, null);
+                track,
+                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeConstants,
+                new BridgeStorageConfiguration(true, true)
+        ), track, null);
 
         bridgeSupport.addSignature(new BtcECKey(), null, PegTestUtils.createHash().getBytes());
         bridgeSupport.save();
@@ -910,11 +912,11 @@ public class BridgeSupportTest {
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, new BridgeStorageProvider(
-                                        track,
-                                        contractAddress,
-                                        bridgeConstants,
-                                        new BridgeStorageConfiguration(true, true)
-                                ), track, eventLogger, mock(Block.class),
+                        track,
+                        contractAddress,
+                        bridgeConstants,
+                        new BridgeStorageConfiguration(true, true)
+                ), track, eventLogger, mock(Block.class),
                 null
         );
 
@@ -1008,11 +1010,11 @@ public class BridgeSupportTest {
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, new BridgeStorageProvider(
-                                        track,
-                                        contractAddress,
-                                        bridgeConstants,
-                                        new BridgeStorageConfiguration(true, true)
-                                ), track, eventLogger, mock(Block.class),
+                        track,
+                        contractAddress,
+                        bridgeConstants,
+                        new BridgeStorageConfiguration(true, true)
+                ), track, eventLogger, mock(Block.class),
                 null
         );
 
@@ -1120,11 +1122,11 @@ public class BridgeSupportTest {
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, new BridgeStorageProvider(
-                                        track,
-                                        contractAddress,
-                                        bridgeConstants,
-                                        new BridgeStorageConfiguration(true, true)
-                                ), track, eventLogger, mock(Block.class),
+                        track,
+                        contractAddress,
+                        bridgeConstants,
+                        new BridgeStorageConfiguration(true, true)
+                ), track, eventLogger, mock(Block.class),
                 null
         );
 
@@ -1573,15 +1575,15 @@ public class BridgeSupportTest {
         NetworkParameters parameters = bridgeConstants.getBtcParams();
 
         List<BtcECKey> activeFederationKeys = Stream.of(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02"))
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
         Federation activeFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys), Instant.ofEpochMilli(2000L), 2L, parameters);
 
         List<BtcECKey> retiringFederationKeys = Stream.of(
-            BtcECKey.fromPrivate(Hex.decode("fb01")),
-            BtcECKey.fromPrivate(Hex.decode("fb02"))
+                BtcECKey.fromPrivate(Hex.decode("fb01")),
+                BtcECKey.fromPrivate(Hex.decode("fb02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
 
         Federation retiringFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(retiringFederationKeys), Instant.ofEpochMilli(1000L), 1L, parameters);
@@ -1727,7 +1729,8 @@ public class BridgeSupportTest {
                 mock(Block.class),
                 btcContext,
                 mockFederationSupport,
-                mockFactory
+                mockFactory,
+                mock(ActivationConfig.ForBlock.class)
         );
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
@@ -2515,7 +2518,7 @@ public class BridgeSupportTest {
     @Test
     public void addFederatorPublicKey_okNoKeys() throws IOException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("add", new byte[][]{
-            Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")
+                Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")
         }, true);
 
         PendingFederation pendingFederation = new PendingFederation(Collections.emptyList());
@@ -2623,7 +2626,7 @@ public class BridgeSupportTest {
         }, false);
 
         PendingFederation pendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersWithKeys(Arrays.asList(new BtcECKey[]{
-            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
+                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
         })));
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
@@ -3252,7 +3255,7 @@ public class BridgeSupportTest {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.getSize()).thenReturn(4);
         List<LockWhitelistEntry> entries = Arrays.stream(new Integer[]{2,3,4,5}).map(i ->
-            new UnlimitedWhiteListEntry(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash()))
+                new UnlimitedWhiteListEntry(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash()))
         ).collect(Collectors.toList());
         when(mockedWhitelist.getAll()).thenReturn(entries);
         for (int i = 0; i < 4; i++) {
@@ -3275,8 +3278,8 @@ public class BridgeSupportTest {
     public void addLockWhitelistAddress_ok() throws IOException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
-            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
-            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
@@ -3329,8 +3332,8 @@ public class BridgeSupportTest {
     public void addLockWhitelistAddress_invalidAddress() throws IOException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
-            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
-            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
@@ -3345,8 +3348,8 @@ public class BridgeSupportTest {
     public void setLockWhitelistDisableBlockDelay_ok() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
-            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
-            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
@@ -3372,8 +3375,8 @@ public class BridgeSupportTest {
     public void setLockWhitelistDisableBlockDelay_negativeDisableBlockBI() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
-            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
-            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
@@ -3399,8 +3402,8 @@ public class BridgeSupportTest {
     public void setLockWhitelistDisableBlockDelay_disableBlockDelayBIBiggerThanInt() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
-            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
-            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
@@ -3423,8 +3426,8 @@ public class BridgeSupportTest {
     public void setLockWhitelistDisableBlockDelay_overflow() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
-            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
-            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
@@ -3450,8 +3453,8 @@ public class BridgeSupportTest {
     public void setLockWhitelistDisableBlockDelay_maxIntValueDisableBlockBI() throws IOException, BlockStoreException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
-            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
-            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
@@ -3564,8 +3567,8 @@ public class BridgeSupportTest {
     public void removeLockWhitelistAddress_invalidAddress() throws IOException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
-            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
-            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
         RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
@@ -3716,7 +3719,7 @@ public class BridgeSupportTest {
         Sha256Hash btcTransactionHash = Sha256Hash.of(Hex.decode("112233"));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 
         MerkleBranch merkleBranch = mock(MerkleBranch.class);
@@ -3748,7 +3751,7 @@ public class BridgeSupportTest {
         Sha256Hash btcTransactionHash = Sha256Hash.of(Hex.decode("112233"));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
@@ -3787,7 +3790,7 @@ public class BridgeSupportTest {
         Sha256Hash btcTransactionHash = Sha256Hash.of(Hex.decode("112233"));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
@@ -3821,7 +3824,7 @@ public class BridgeSupportTest {
         Sha256Hash btcTransactionHash = Sha256Hash.of(Hex.decode("112233"));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
@@ -3855,7 +3858,7 @@ public class BridgeSupportTest {
         Sha256Hash btcTransactionHash = Sha256Hash.of(Hex.decode("112233"));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
 
@@ -3889,7 +3892,7 @@ public class BridgeSupportTest {
         Sha256Hash btcTransactionHash = Sha256Hash.of(Hex.decode("112233"));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, null);
 
@@ -3924,7 +3927,7 @@ public class BridgeSupportTest {
         Sha256Hash btcTransactionHash = Sha256Hash.of(Hex.decode("112233"));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
         MerkleBranch merkleBranch = mock(MerkleBranch.class);
         when(merkleBranch.proves(btcTransactionHash, blockHeader)).thenReturn(false);
@@ -3955,7 +3958,7 @@ public class BridgeSupportTest {
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 
         Object [] args = new Object[4];
@@ -3984,7 +3987,7 @@ public class BridgeSupportTest {
         when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 
         Object [] args = new Object[4];
@@ -4010,7 +4013,7 @@ public class BridgeSupportTest {
         when(btcBlockStore.getChainHead()).thenThrow(new BlockStoreException(""));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 
         Object [] args = new Object[4];
@@ -4040,7 +4043,7 @@ public class BridgeSupportTest {
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                                                                   bridgeStorageConfigurationAtHeightZero);
+                bridgeStorageConfigurationAtHeightZero);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
 
         Object [] args = new Object[4];
@@ -4102,8 +4105,8 @@ public class BridgeSupportTest {
             PendingFederation mockedPendingFederation,
             ABICallElection mockedFederationElection,
             Block executionBlock) throws IOException {
-            return this.getBridgeSupportWithMocksForFederationTests(genesis, mockedNewFederation, mockedGenesisFederation,
-                            mockedOldFederation, mockedPendingFederation, mockedFederationElection, executionBlock, null);
+        return this.getBridgeSupportWithMocksForFederationTests(genesis, mockedNewFederation, mockedGenesisFederation,
+                mockedOldFederation, mockedPendingFederation, mockedFederationElection, executionBlock, null);
     }
 
     private BridgeSupport getBridgeSupportWithMocksForFederationTests(
@@ -4209,14 +4212,27 @@ public class BridgeSupportTest {
         return getBridgeSupport(bridgeConstants, provider, track, blockStoreFactory);
     }
 
+    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider) {
+        return getBridgeSupport(constants, provider, null, null, null, null);
+    }
+
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track, BtcBlockStoreWithCache.Factory blockStoreFactory) {
-        if (blockStoreFactory == null) {
-            blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        }
         return getBridgeSupport(constants, provider, track, null, null, blockStoreFactory);
     }
 
-    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track, BridgeEventLogger eventLogger, Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory) {
+    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
+                                           BridgeEventLogger eventLogger, Block executionBlock,
+                                           BtcBlockStoreWithCache.Factory blockStoreFactory) {
+        return getBridgeSupport(
+                constants, provider, track, eventLogger, executionBlock,
+                blockStoreFactory, mock(ActivationConfig.ForBlock.class)
+        );
+    }
+
+    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
+                                           BridgeEventLogger eventLogger, Block executionBlock,
+                                           BtcBlockStoreWithCache.Factory blockStoreFactory,
+                                           ActivationConfig.ForBlock activations) {
         if (eventLogger == null) {
             eventLogger = mock(BridgeEventLogger.class);
         }
@@ -4227,7 +4243,7 @@ public class BridgeSupportTest {
                 constants, provider, eventLogger, track, executionBlock,
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, executionBlock),
-                blockStoreFactory
+                blockStoreFactory, activations
         );
     }
 

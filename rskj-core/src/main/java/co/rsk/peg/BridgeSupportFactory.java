@@ -71,6 +71,6 @@ public class BridgeSupportFactory {
         }
 
         return new BridgeSupport(bridgeConstants, provider, eventLogger, repository, executionBlock, btcContext,
-                federationSupport, btcBlockStoreFactory);
+                federationSupport, btcBlockStoreFactory, activations);
     }
 }

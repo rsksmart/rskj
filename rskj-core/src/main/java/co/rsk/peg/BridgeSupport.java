@@ -41,6 +41,7 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -110,6 +111,7 @@ public class BridgeSupport {
     private BtcBlockStoreWithCache btcBlockStore;
     private BtcBlockChain btcBlockChain;
     private final org.ethereum.core.Block rskExecutionBlock;
+    private final ActivationConfig.ForBlock activations;
 
     public BridgeSupport(
             BridgeConstants bridgeConstants,
@@ -119,7 +121,8 @@ public class BridgeSupport {
             Block executionBlock,
             Context btcContext,
             FederationSupport federationSupport,
-            BtcBlockStoreWithCache.Factory btcBlockStoreFactory) {
+            BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
+            ActivationConfig.ForBlock activations) {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
@@ -128,6 +131,8 @@ public class BridgeSupport {
         this.btcContext = btcContext;
         this.federationSupport = federationSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
+        this.activations = activations;
+
     }
 
     @VisibleForTesting
