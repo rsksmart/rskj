@@ -114,10 +114,6 @@ public class GasCost {
             super(String.format("Got invalid gas value: %d", invalidValue));
         }
 
-        private InvalidGasException(String reason) {
-            super(String.format("Got an invalid gas value: Reason: %s", reason));
-        }
-
     }
 
     /**
@@ -187,7 +183,7 @@ public class GasCost {
 
         long result = x + y;
         if (additionOverflowed(x, y, result)) {
-            throw new InvalidGasException("overflow");
+            throw new InvalidGasException(result);
         }
         return result;
     }
@@ -215,7 +211,7 @@ public class GasCost {
         }
         long result = x * y;
         if (multiplicationOverflowed(x, y, result)) {
-            throw new InvalidGasException("overflow");
+            throw new InvalidGasException(result);
         }
         return result;
     }
@@ -249,7 +245,7 @@ public class GasCost {
         if (result < 0) {
             throw new InvalidGasException(result);
         } else if (subtractionOverflowed(x, y, result)) {
-            throw new InvalidGasException("overflow");
+            throw new InvalidGasException(result);
         }
         return result;
     }
@@ -284,9 +280,12 @@ public class GasCost {
             throw new InvalidGasException(offender);
         }
         long mult = unitCost * units;
+        if (multiplicationOverflowed(unitCost, units, mult)) {
+            throw new InvalidGasException(mult);
+        }
         long result = baseCost + mult;
-        if (multiplicationOverflowed(unitCost, units, mult) || additionOverflowed(baseCost, mult, result)) {
-            throw new InvalidGasException("overflow");
+        if (additionOverflowed(baseCost, mult, result)) {
+            throw new InvalidGasException(result);
         }
         return result;
     }
