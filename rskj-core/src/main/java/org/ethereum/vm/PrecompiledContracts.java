@@ -340,11 +340,8 @@ public class PrecompiledContracts {
 
             long adjExpLen = getAdjustedExponentLength(expHighBytes, expLen);
 
-            // use big numbers to stay safe in case of overflow
-            BigInteger gas = BigInteger.valueOf(multComplexity)
-                    .multiply(BigInteger.valueOf(Math.max(adjExpLen, 1)))
-                    .divide(GQUAD_DIVISOR);
-
+            BigInteger gas = BigInteger.valueOf(multComplexity).multiply(
+                    BigInteger.valueOf(Math.max(adjExpLen, 1))).divide(GQUAD_DIVISOR);
 
             return GasCost.toGasBounded(gas);
         }

@@ -20,6 +20,8 @@
 
 package org.ethereum.vm;
 
+import org.ethereum.util.ByteUtil;
+
 import java.math.BigInteger;
 
 /**
@@ -110,31 +112,27 @@ public class GasCost {
             super(String.format("Got invalid gas value: %d", invalidValue));
         }
 
-        private InvalidGasException(BigInteger invalidValue) {
-            super(String.format("Got invalid gas value: %d", invalidValue));
+        private InvalidGasException(byte[] bytes) {
+            super(String.format("Got invalid gas value as bytes array: %s", bytes.toString()));
         }
 
     }
 
     /**
-     * Converts a byte array to gas.
+     * Converts a byte array to gas. Byte arrays are signed two bit compliments.
      * @param bytes represents the number which will be converted to gas.
      * @return the gas equivalent of the byte array.
-     * @throws InvalidGasException if the number if bigger than .MAX_GAS.
+     * @throws InvalidGasException if the number if bigger than Long.MAX_GAS.
      */
-    public static long toGas(byte []bytes) throws InvalidGasException {
-        BigInteger bigValue = new BigInteger(1, bytes);
-        // big integer is created as unsigned, no need
-        // to check for negative values
-        if (bigValue.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) > 0 ) {
-            throw new InvalidGasException(bigValue);
+    public static long toGas(byte[] bytes) throws InvalidGasException {
+        if (bytes.length > 8) {
+            throw new InvalidGasException(bytes);
         }
-        long gas =  bigValue.longValue();
-        // make sure sign has not changed
-        if (gas < 0) {
-            throw new InvalidGasException(bigValue);
+        long result = ByteUtil.byteArrayToLong(bytes);
+        if (result < 0) {
+            throw new InvalidGasException(bytes);
         }
-        return gas;
+        return result;
     }
 
     /**
@@ -142,18 +140,14 @@ public class GasCost {
      * return Long.MAX_VALUE. Expects the arguments in big endian.
      */
     public static long toGasBounded(byte[] bytes) {
-        BigInteger bigValue = new BigInteger(1, bytes);
-        // big integer is created as unsigned, no need
-        // to check for negative values
-        if (bigValue.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) > 0 ) {
+        if (bytes.length > 8) {
             return Long.MAX_VALUE;
         }
-        long gas = bigValue.longValue();
-        // make sure sign has not changed
-        if (gas < 0) {
+        long result = ByteUtil.byteArrayToLong(bytes);
+        if (result < 0) {
             return Long.MAX_VALUE;
         }
-        return gas;
+        return result;
     }
 
     public static long toGasBounded(BigInteger big) {

@@ -249,18 +249,28 @@ public class ByteUtil {
     }
 
     /**
-     * Cast hex encoded value from byte[] to int
-     *
-     * Limited to Integer.MAX_VALUE: 2^32-1 (4 bytes)
+     * Cast from byte[] to long
+     * Limited to Long.MAX_VALUE: 2^63-1 (8 bytes)
+     * Will throw IlegalArgumentException if you  pass
+     * a byte array with more than 8 bytes.
      *
      * @param b array contains the values
      * @return unsigned positive long value.
      */
     public static long byteArrayToLong(byte[] b) {
         if (b == null || b.length == 0) {
-            return 0;
+             return 0;
         }
-        return new BigInteger(1, b).longValue();
+        // avoids overflows in the result
+        if (b.length > 8) {
+            throw new IllegalArgumentException("byte array can't have more than 8 bytes if it is to be cast to long");
+        }
+        long result = 0;
+        for (int i = 0; i < b.length; i++) {
+            result <<= 8;
+            result |= (b[i] & 0xFF);
+        }
+        return result;
     }
 
 
