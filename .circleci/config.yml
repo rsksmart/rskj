@@ -1,17 +1,25 @@
-version: 2
+version: 2.1 # needed for executors
 
-jobs:
-  build:
+executors:
+  jvm-executor:
     docker:
       - image: openjdk:8-jdk
     environment:
       _JAVA_OPTIONS: "-Xmx3G -Xms2G"
+    working_directory: /app
     resource_class: medium+
+  mit-executor:
+    docker:
+      - image: alpine:3.10
+
+jobs:
+  build:
+    executor: jvm-executor
     steps:
       - checkout
       - run:
           name: Setup
-          command: apt update -y && apt install -y gnupg2 jq
+          command: apt update -y && apt install -y gnupg2
       - run:
           name: Verify files
           command: |
@@ -22,7 +30,16 @@ jobs:
           command: |
             ./configure.sh
             ./gradlew --no-daemon dependencies
-            ./gradlew --no-daemon --stacktrace build
+            ./gradlew --no-daemon --stacktrace build -x test
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  sonarqube:
+    executor: jvm-executor
+    steps:
+      - attach_workspace:
+          at: /app
       - run:
           name: Run SonarQube analysis
           # https://community.sonarsource.com/t/no-code-or-issue-found-in-pull-request-decorations-github-circleci/8496
@@ -44,6 +61,20 @@ jobs:
                 -Dsonar.host.url=$SONAR_URL \
                 -Dsonar.login=$SONAR_TOKEN
             fi
+  rskj-tests:
+    executor: jvm-executor
+    steps:
+      - attach_workspace:
+          at: /app
+      - run:
+          name: rskj tests
+          command: ./gradlew --no-daemon --stacktrace test
+  mining-tests:
+    executor: mit-executor
+    steps:
+      - run:
+          name: Setup
+          command: apk add --no-cache curl jq
       - run:
           name: Mining integration tests
           command: |
@@ -92,7 +123,8 @@ jobs:
                 "RSKJ_CIRCLE_SHA1": "'$CIRCLE_SHA1'"
               }
             }'
-            res=$(curl -Ssfu "$CIRCLE_INTEGRATIONS_TOKEN:" -H "Content-type: application/json" -d "$json_payload" \
+            res=$(curl -Ssf -u "$CIRCLE_INTEGRATIONS_TOKEN:" \
+                -H "Content-type: application/json" -d "$json_payload" \
                 "https://circleci.com/api/v1.1/project/github/$MIT_ORGANIZATION/$MIT_PROJECT/tree/$MIT_BRANCH" \
                 | jq -r '[.build_url, .build_num] | @tsv')
             IFS="	" set -- $res
@@ -112,3 +144,21 @@ jobs:
           path: ~/junit
       - store_artifacts:
           path: ~/junit
+
+workflows:
+  # https://circleci.com/docs/2.0/configuration-reference/#version-1
+  # As of commit date, it reads:
+  #     Should currently be `2`
+  version: 2
+  build-and-test:
+    jobs:
+      - build
+      - sonarqube:
+          requires:
+            - build
+      - rskj-tests:
+          requires:
+            - build
+      - mining-tests:
+          requires:
+            - rskj-tests
