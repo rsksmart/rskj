@@ -163,11 +163,19 @@ public class BridgeSupport {
             logger.warn("Received 0 headers");
         }
 
+        logger.trace("Propagating BTC context");
         Context.propagate(btcContext);
+        logger.trace("BTC context propagated");
+
+        logger.trace("Ensure BTC blockchain");
         this.ensureBtcBlockChain();
+        logger.trace("BTC blockchain ensured");
+
         for (int i = 0; i < headers.length; i++) {
             try {
+                logger.trace("Adding header {}", i);
                 btcBlockChain.add(headers[i]);
+                logger.trace("Header {} added", i);
             } catch (Exception e) {
                 // If we tray to add an orphan header bitcoinj throws an exception
                 // This catches that case and any other exception that may be thrown
