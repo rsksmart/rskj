@@ -80,6 +80,25 @@ public class ByteUtilTest {
     }
 
     @Test
+    public void testByteArrayToLong() {
+        assertEquals(Long.MAX_VALUE, ByteUtil.byteArrayToLong(new byte[]{
+                (byte)127, (byte)255, (byte)255, (byte)255,
+                (byte)255, (byte)255, (byte)255, (byte)255,
+                }
+        ));
+        assertEquals(0, ByteUtil.byteArrayToLong(new byte[]{ } ));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testByteArrayToLongThrowsWhenOverflow() {
+        assertEquals(Long.MAX_VALUE, ByteUtil.byteArrayToLong(new byte[]{
+                (byte)255, (byte)255, (byte)255, (byte)255,
+                (byte)255, (byte)255, (byte)255, (byte)255,
+                (byte)123, }
+        ));
+    }
+
+    @Test
     public void testByteArrayToInt() {
         assertEquals(0, ByteUtil.byteArrayToInt(null));
         assertEquals(0, ByteUtil.byteArrayToInt(new byte[0]));

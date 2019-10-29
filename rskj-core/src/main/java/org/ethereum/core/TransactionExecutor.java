@@ -92,7 +92,7 @@ public class TransactionExecutor {
 
     private PrecompiledContracts.PrecompiledContract precompiledContract;
 
-    private BigInteger mEndGas = BigInteger.ZERO;
+    private long mEndGas = 0;
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
@@ -138,19 +138,24 @@ public class TransactionExecutor {
             return readyToExecute;
         }
 
-        BigInteger txGasLimit = new BigInteger(1, tx.getGasLimit());
-        BigInteger curBlockGasLimit = new BigInteger(1, executionBlock.getGasLimit());
+        long txGasLimit = GasCost.toGas(tx.getGasLimit());
+        long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
+        long cumulativeGas = GasCost.add(txGasLimit, gasUsedInTheBlock);
 
-        boolean cumulativeGasReached = txGasLimit.add(BigInteger.valueOf(gasUsedInTheBlock)).compareTo(curBlockGasLimit) > 0;
+        // if we've passed the curBlockGas limit we must stop exec
+        // cumulativeGas being equal to GasCost.MAX_GAS is a border condition
+        // which is used on some stress tests, but its far from being practical
+        // as the current gas limit on blocks is 6.8M... several orders of magnitude
+        // less than the max gas cost.
+        boolean cumulativeGasReached = cumulativeGas > curBlockGasLimit || cumulativeGas == GasCost.MAX_GAS;
         if (cumulativeGasReached) {
             execError(String.format("Too much gas used in this block: Require: %s Got: %s",
-                    curBlockGasLimit.longValue() - toBI(tx.getGasLimit()).longValue(),
-                    toBI(tx.getGasLimit()).longValue()));
-
+                    curBlockGasLimit - txGasLimit,
+                    txGasLimit));
             return false;
         }
 
-        if (txGasLimit.compareTo(BigInteger.valueOf(basicTxCost)) < 0) {
+        if (txGasLimit < basicTxCost) {
             execError(String.format("Not enough gas for transaction execution: Require: %s Got: %s", basicTxCost, txGasLimit));
             return false;
         }
@@ -158,7 +163,6 @@ public class TransactionExecutor {
         BigInteger reqNonce = track.getNonce(tx.getSender());
         BigInteger txNonce = toBI(tx.getNonce());
         if (isNotEqual(reqNonce, txNonce)) {
-
             if (logger.isWarnEnabled()) {
                 logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, tx.getHash());
                 logger.warn("Transaction Data: {}", tx);
@@ -173,7 +177,7 @@ public class TransactionExecutor {
         Coin totalCost = tx.getValue();
         if (basicTxCost > 0 ) {
             // add gas cost only for priced transactions
-            Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
+            Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             totalCost = totalCost.add(txGasCost);
         }
 
@@ -229,8 +233,8 @@ public class TransactionExecutor {
 
             track.increaseNonce(tx.getSender());
 
-            BigInteger txGasLimit = toBI(tx.getGasLimit());
-            Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
+            long txGasLimit = GasCost.toGas(tx.getGasLimit());
+            Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             track.addBalance(tx.getSender(), txGasCost.negate());
 
             logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
@@ -241,6 +245,13 @@ public class TransactionExecutor {
         } else {
             call();
         }
+    }
+
+    private boolean enoughGas(long txGasLimit, long requiredGas, long gasUsed) {
+        if (!activations.isActive(ConsensusRule.RSKIP136)) {
+            return txGasLimit >= requiredGas;
+        }
+        return txGasLimit >= gasUsed;
     }
 
     private void call() {
@@ -262,51 +273,44 @@ public class TransactionExecutor {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
             profiler.stop(metric);
-
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
-            BigInteger requiredGas = BigInteger.valueOf(precompiledContract.getGasForData(tx.getData()));
-            BigInteger txGasLimit = toBI(tx.getGasLimit());
-            BigInteger gasUsed = requiredGas.add(BigInteger.valueOf(basicTxCost));
 
-            if (!localCall &&
-                    ((!activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(requiredGas) < 0) ||
-                            (activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(gasUsed) < 0))) {
+            long requiredGas = precompiledContract.getGasForData(tx.getData());
+            long txGasLimit = GasCost.toGas(tx.getGasLimit());
+            long gasUsed = GasCost.add(requiredGas, basicTxCost);
+            if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
-                execError(String.format(
-                        "Out of Gas calling precompiled contract at block %d for address 0x%s. required: %s, used: %s, left: %s ",
-                        executionBlock.getNumber(),
-                        targetAddress.toString(),
-                        requiredGas,
-                        gasUsed,
-                        mEndGas));
-                mEndGas = BigInteger.ZERO;
+                execError(String.format( "Out of Gas calling precompiled contract at block %d " +
+                                "for address 0x%s. required: %s, used: %s, left: %s ",
+                        executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, mEndGas));
+                mEndGas = 0;
                 profiler.stop(metric);
                 return;
-            } else {
-                mEndGas = txGasLimit.subtract(gasUsed);
-
-                // FIXME: save return for vm trace
-                try {
-                    byte[] out = precompiledContract.execute(tx.getData());
-                    result.setHReturn(out);
-                    if (!track.isExist(targetAddress)) {
-                        track.createAccount(targetAddress);
-                        track.setupContract(targetAddress);
-                    } else if (!track.isContract(targetAddress)) {
-                        track.setupContract(targetAddress);
-                    }
-                } catch (RuntimeException e) {
-                    result.setException(e);
-                }
-
-                result.spendGas(gasUsed.longValue());
-                profiler.stop(metric);
             }
+
+            mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
+                    GasCost.subtract(txGasLimit, gasUsed) :
+                    txGasLimit - gasUsed;
+            // FIXME: save return for vm trace
+            try {
+                byte[] out = precompiledContract.execute(tx.getData());
+                result.setHReturn(out);
+                if (!track.isExist(targetAddress)) {
+                    track.createAccount(targetAddress);
+                    track.setupContract(targetAddress);
+                } else if (!track.isContract(targetAddress)) {
+                    track.setupContract(targetAddress);
+                }
+            } catch (RuntimeException e) {
+                result.setException(e);
+            }
+            result.spendGas(gasUsed);
+            profiler.stop(metric);
         } else {
             byte[] code = track.getCode(targetAddress);
             // Code can be null
             if (isEmpty(code)) {
-                mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
+                mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
             } else {
                 ProgramInvoke programInvoke =
@@ -328,7 +332,7 @@ public class TransactionExecutor {
         cacheTrack.createAccount(newContractAddress); // pre-created
 
         if (isEmpty(tx.getData())) {
-            mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
+            mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
             // If there is no data, then the account is created, but without code nor
             // storage. It doesn't even call setupContract() to setup a storage root
         } else {
@@ -398,12 +402,13 @@ public class TransactionExecutor {
             }
 
             result = program.getResult();
-            mEndGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));
+            mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
             if (tx.isContractCreation() && !result.isRevert()) {
                 int createdContractSize = getLength(program.getResult().getHReturn());
-                int returnDataGasValue = createdContractSize * GasCost.CREATE_DATA;
-                if (mEndGas.compareTo(BigInteger.valueOf(returnDataGasValue)) < 0) {
+                long returnDataGasValue = GasCost.calculateTotal(0, GasCost.CREATE_DATA, createdContractSize);
+
+                if (mEndGas < returnDataGasValue) {
                     program.setRuntimeFailure(
                             Program.ExceptionHelper.notEnoughSpendingGas(
                                     "No gas to return just created contract",
@@ -419,7 +424,7 @@ public class TransactionExecutor {
                     result = program.getResult();
                     result.setHReturn(EMPTY_BYTE_ARRAY);
                 } else {
-                    mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
+                    mEndGas = GasCost.subtract(mEndGas,  returnDataGasValue);
                     program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
                     cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
                 }
@@ -443,7 +448,7 @@ public class TransactionExecutor {
             // TODO: catch whatever they will throw on you !!!
 //            https://github.com/ethereum/cpp-ethereum/blob/develop/libethereum/Executive.cpp#L241
             cacheTrack.rollback();
-            mEndGas = BigInteger.ZERO;
+            mEndGas = 0;
             execError(e);
 
         }
@@ -455,7 +460,7 @@ public class TransactionExecutor {
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
-            long totalGasUsed = gasUsedInTheBlock + getGasUsed();
+            long totalGasUsed = GasCost.add(gasUsedInTheBlock, getGasUsed());
             receipt.setCumulativeGas(totalGasUsed);
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
@@ -486,14 +491,16 @@ public class TransactionExecutor {
                 .collect(Collectors.toList());
 
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
-                .gasLeftover(mEndGas)
+                .gasLeftover(BigInteger.valueOf(mEndGas))
                 .logs(notRejectedLogInfos)
                 .result(result.getHReturn());
 
         // Accumulate refunds for suicides
-        result.addFutureRefund((long)result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
+        result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-        mEndGas = mEndGas.add(BigInteger.valueOf(gasRefund));
+        mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
+                GasCost.add(mEndGas, gasRefund) :
+                mEndGas + gasRefund;
 
         summaryBuilder
                 .gasUsed(toBI(result.getGasUsed()))
@@ -564,7 +571,7 @@ public class TransactionExecutor {
     }
 
     public long getGasUsed() {
-        return toBI(tx.getGasLimit()).subtract(mEndGas).longValue();
+        return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas);
     }
 
     public Coin getPaidFees() { return paidFees; }

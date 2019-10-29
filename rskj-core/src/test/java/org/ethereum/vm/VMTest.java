@@ -50,6 +50,7 @@ import java.util.*;
 
 import static java.lang.StrictMath.min;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
+import static org.ethereum.util.ByteUtil.toHexString;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -117,6 +118,112 @@ public class VMTest {
         vm.steps(program, Long.MAX_VALUE);
 
         assertEquals(DataWord.ZERO, program.stackPop());
+    }
+
+
+    @Test
+    public void testCALLWithBigUserSpecifiedGas() {
+        String maxGasValue = "7FFFFFFFFFFFFFFF";
+        RskAddress callee = createAddress("callee");
+        // purposefully broken contract so as to consume all gas
+        invoke = new ProgramInvokeMockImpl(compile("" +
+                " ADD"
+        ), callee);
+        program = getProgram(compile("" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x01" +
+                " PUSH20 0x" + callee.toHexString() +
+                " PUSH8 0x" + maxGasValue +
+                " CALL"
+        ), createTransaction(0));
+        program.fullTrace();
+        vm.steps(program, Long.MAX_VALUE);
+        Assert.assertEquals(
+                "faulty program with bigger gas limit than gas available should use all the gas in a block",
+                program.getResult().getGasUsed(), invoke.getGas()
+        );
+    }
+
+    @Test(expected = Program.OutOfGasException.class)
+    public void testLOGWithBigUserSpecifiedSize() {
+        String maxLongHex = "40000000";
+        program = getProgram(compile("" +
+                " PUSH4 0x" + maxLongHex +
+                " PUSH1 0x00" +
+                " LOG0"
+        ));
+        program.fullTrace();
+        vm.steps(program, Long.MAX_VALUE);
+    }
+
+    @Test(expected = Program.OutOfGasException.class)
+    public void testLogWithOverflowingGasCost() {
+        invoke.setGasLimit(680000);
+
+        // set size and offset very close to the max limit
+        String sizeLong = String.format("%X", Program.MAX_MEMORY - 10);
+        String offSet = String.format("%X", Program.MAX_MEMORY - 10);
+
+        program = getProgram(compile("" +
+                " PUSH4 0x" + sizeLong +
+                " PUSH4 0x" + offSet +
+                " LOG0")
+        );
+        program.fullTrace();
+        vm.steps(program, Long.MAX_VALUE);
+
+        invoke.setGasLimit(100000);
+    }
+
+    @Test(expected = Program.OutOfGasException.class)
+    public void testLogWithOverflowingDataCost() {
+        invoke.setGasLimit(680000);
+
+        // if we want to overflow dataCost, then
+        // sizeLong == MAX_LONG / 8
+        long sizeLong = Math.floorDiv(Long.MAX_VALUE, 8);
+        String sizeLongStr = String.format("%020X", sizeLong);
+
+        program = getProgram(compile("" +
+                " PUSH10 0x" + sizeLongStr +
+                " PUSH1 0x00" +
+                " LOG0"
+        ));
+        program.fullTrace();
+        vm.steps(program, Long.MAX_VALUE);
+        invoke.setGasLimit(100000);
+    }
+
+    @Test(expected = Program.OutOfGasException.class)
+    public void testLOGWithDataCostBiggerThanPreviousGasSize() {
+
+        // The test wants to try to set dataCost to something between
+        // 2**62-1 (the prev gas max size) and 2**63-1 (the current gas max)
+        // to check if something is wrong with the change.
+        // doLOG() is the only place where this constant was used.
+
+        invoke.setGasLimit(680000);
+        long previousGasMaxSize = 0x3fffffffffffffffL;
+        long sizeRequired = Math.floorDiv(previousGasMaxSize, GasCost.LOG_DATA_GAS) + 1;
+        String sizeInHex = String.format("%016X", sizeRequired);
+
+
+        // check it is over the previous max size
+        assert(sizeRequired * GasCost.LOG_DATA_GAS > previousGasMaxSize);
+        // check it did not overflow
+        assert(sizeRequired > 0);
+
+        program = getProgram(compile("" +
+                " PUSH8 0x" + sizeInHex +
+                " PUSH1 0x00" +
+                " LOG0"
+        ));
+        program.fullTrace();
+        vm.steps(program, Long.MAX_VALUE);
+        invoke.setGasLimit(100000);
     }
 
     @Test
@@ -3263,6 +3370,14 @@ public class VMTest {
         Account receiver = acbuilder.build();
         TransactionBuilder txbuilder = new TransactionBuilder();
         return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(number * 1000 + 1000)).build();
+    }
+
+    private static RskAddress createAddress(String name) {
+        AccountBuilder accountBuilder = new AccountBuilder();
+        accountBuilder.name(name);
+        Account account = accountBuilder.build();
+        return account.getAddress();
+
     }
 
     static String formatBinData(byte[] binData, int startPC) {

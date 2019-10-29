@@ -82,7 +82,6 @@ public class Program {
     // give som gap for small additions and skip checking for overflows
     // after each addition (instead, just check at the end).
     public static final long MAX_GAS = 0x3fffffffffffffffL;
-
     public static final long MAX_MEMORY = (1<<30);
 
     //Max size for stack checks
@@ -348,10 +347,6 @@ public class Program {
         return memory.readWord(addr.intValue());
     }
 
-    public DataWord memoryLoad(int address) {
-        return memory.readWord(address);
-    }
-
     public byte[] memoryChunk(int offset, int size) {
         return memory.read(offset, size);
     }
@@ -564,14 +559,16 @@ public class Program {
     }
 
     private void refundRemainingGas(long gasLimit, ProgramResult programResult) {
-        long refundGas = gasLimit - programResult.getGasUsed();
-        if (refundGas > 0) {
-            refundGas(refundGas, "remain gas from the internal call");
-            if (isGasLogEnabled) {
-                gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
-                        Hex.toHexString(getOwnerAddress().getLast20Bytes()),
-                        refundGas);
-            }
+        if (programResult.getGasUsed() >= gasLimit) {
+            return;
+        }
+        long refundGas = GasCost.subtract(gasLimit, programResult.getGasUsed());
+        refundGas(refundGas, "remaining gas from the internal call");
+        if (isGasLogEnabled) {
+            gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
+                    Hex.toHexString(getOwnerAddress().getLast20Bytes()),
+                    refundGas
+            );
         }
     }
 
@@ -621,8 +618,9 @@ public class Program {
             byte[] code = programResult.getHReturn();
             int codeLength = getLength(code);
 
-            long storageCost = (long) codeLength * GasCost.CREATE_DATA;
+            long storageCost = GasCost.calculateTotal(0, GasCost.CREATE_DATA, codeLength);
             long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
+
             if (afterSpend < 0) {
                 programResult.setException(
                         ExceptionHelper.notEnoughSpendingGas(
@@ -655,23 +653,6 @@ public class Program {
 
     }
 
-    public static long limitToMaxGas(DataWord gas) {
-        long r =gas.longValueSafe();
-        if (r>MAX_GAS) {
-            return MAX_GAS;
-        }
-        return r;
-
-    }
-
-    public static long limitToMaxGas(BigInteger gas) {
-        long r =limitToMaxLong(gas);
-        if (r>MAX_GAS) {
-            return MAX_GAS;
-        }
-        return r;
-    }
-
     public static long limitToMaxLong(BigInteger gas) {
         try {
             long r = gas.longValueExact();
@@ -692,16 +673,6 @@ public class Program {
             d = Math.multiplyExact(a, b);
         } catch (ArithmeticException e) {
             d = Long.MAX_VALUE;
-        }
-        return d;
-    }
-
-    public static long addLimitToMaxLong(long a,long b) {
-        long d;
-        try {
-            d = Math.addExact(a,b);
-        } catch (ArithmeticException e) {
-            d= Long.MAX_VALUE;
         }
         return d;
     }
@@ -877,6 +848,7 @@ public class Program {
         if (getRemainingGas()  < gasValue) {
             throw ExceptionHelper.notEnoughSpendingGas(cause, gasValue, this);
         }
+
         getResult().spendGas(gasValue);
     }
 

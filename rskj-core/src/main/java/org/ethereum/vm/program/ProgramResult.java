@@ -21,6 +21,7 @@ package org.ethereum.vm.program;
 
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 
 import java.util.*;
@@ -60,7 +61,7 @@ public class ProgramResult {
     }
 
     public void spendGas(long gas) {
-        gasUsed += gas;
+        gasUsed = GasCost.add(gasUsed, gas);
     }
 
     public void setRevert() {
@@ -72,7 +73,7 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
-        gasUsed -= gas;
+        gasUsed = GasCost.subtract(gasUsed, gas);
     }
 
     public void setHReturn(byte[] hReturn) {
