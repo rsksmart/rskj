@@ -28,7 +28,7 @@ import java.math.BigInteger;
  * computation engine; its price is set by the Transaction and miners are free to
  * ignore Transactions whose Gas price is too low.
  *
- * GasCost includes static methods to operate on floats which represent Gas. These methods
+ * GasCost includes static methods to operate on longs which represent Gas. These methods
  * should always be used when calculating gas.
  */
 public class GasCost {
@@ -168,7 +168,7 @@ public class GasCost {
     }
 
     /**
-     * Adds two float numbers representing gas.
+     * Adds two longs numbers representing gas.
      * @param x some gas.
      * @param y another gas.
      * @return the sum of the two numbers.
