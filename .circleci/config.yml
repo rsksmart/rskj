@@ -9,12 +9,20 @@ jobs:
     resource_class: medium+
     steps:
       - checkout
-      - run: apt update -y && apt install -y gnupg2 jq
-      - run: curl -sSL https://secchannel.rsk.co/release.asc | gpg2 --import -
-      - run: gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
-      - run: ./configure.sh
-      - run: ./gradlew --no-daemon dependencies
-      - run: ./gradlew --no-daemon --stacktrace build
+      - run:
+          name: Setup
+          command: apt update -y && apt install -y gnupg2 jq
+      - run:
+          name: Verify files
+          command: |
+            curl -sSL https://secchannel.rsk.co/release.asc | gpg2 --import -
+            gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
+      - run:
+          name: Build
+          command: |
+            ./configure.sh
+            ./gradlew --no-daemon dependencies
+            ./gradlew --no-daemon --stacktrace build
       - run:
           name: Run SonarQube analysis
           # https://community.sonarsource.com/t/no-code-or-issue-found-in-pull-request-decorations-github-circleci/8496
