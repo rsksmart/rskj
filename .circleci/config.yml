@@ -48,14 +48,20 @@ jobs:
               max_count=20
               while [ $i -lt $max_count ]; do
                 # output to avoid CircleCI considering the job stuck
-                printf "[%02u/%02u] Waiting for build %s ...\n" \
-                    "$i" "$max_count" "$build_url"
                 res=$(curl -Ssfu "$CIRCLE_INTEGRATIONS_TOKENS:" \
                     "https://circleci.com/api/v1.1/project/github/$MIT_ORGANIZATION/$MIT_PROJECT/$build_number" \
                     | jq -r '[.lifecycle, .outcome] | @tsv')
                 IFS="	" set -- $res
                 lifecycle=${1:-}
                 outcome=${2:-}
+                if [ "$lifecycle" = "queued" ]; then
+                  printf "Build is enqueued. Waiting...\n"
+                  # don't increment $i
+                else
+                  printf "[%02u/%02u] Waiting for build %s ...\n" \
+                      "$i" "$max_count" "$build_url"
+                  i=$(($i + 1))
+                fi
                 if [ "$lifecycle" = "finished" ]; then
                   printf "Build %u finished. Outcome: \"%s\".\n" \
                       "$build_number" "$outcome"
@@ -65,7 +71,6 @@ jobs:
                 fi
 
                 sleep $poll_interval
-                i=$(($i + 1))
               done
               return 1
             }
