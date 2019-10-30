@@ -21,7 +21,6 @@
 package org.ethereum.vm;
 
 import org.ethereum.util.ByteUtil;
-
 import java.math.BigInteger;
 
 /**
@@ -106,14 +105,14 @@ public class GasCost {
      * an operation overflows, has invalid inputs or wants to return
      * an invalid gas value.
      */
-    public static class InvalidGasException extends Exception {
+    public static class InvalidGasException extends IllegalArgumentException {
 
         private InvalidGasException(long invalidValue) {
             super(String.format("Got invalid gas value: %d", invalidValue));
         }
 
         private InvalidGasException(byte[] bytes) {
-            super(String.format("Got invalid gas value as bytes array: %s", bytes.toString()));
+            super(String.format("Got invalid gas value as bytes array: %s", ByteUtil.toHexString(bytes)));
         }
 
     }
@@ -135,28 +134,16 @@ public class GasCost {
         return result;
     }
 
-    /**
-     * Like `toGas`, but if the byte array is bigger than Long.MAX_VALUE,
-     * return Long.MAX_VALUE. Expects the arguments in big endian.
-     */
-    public static long toGasBounded(byte[] bytes) {
-        if (bytes.length > 8) {
-            return Long.MAX_VALUE;
+    public static long toGas(BigInteger big) throws InvalidGasException {
+        if (big.compareTo(BigInteger.ZERO) < 0) {
+            throw new InvalidGasException(big.longValue());
         }
-        long result = ByteUtil.byteArrayToLong(bytes);
-        if (result < 0) {
-            return Long.MAX_VALUE;
-        }
-        return result;
+        return toGas(big.toByteArray());
     }
 
-    public static long toGasBounded(BigInteger big) {
-        return toGasBounded(big.toByteArray());
-    }
-
-    public static long toGasBounded(long number) {
+    public static long toGas(long number) {
         if (number < 0) {
-            return Long.MAX_VALUE;
+            throw new InvalidGasException(number);
         }
         return number;
     }
@@ -174,23 +161,6 @@ public class GasCost {
             long offender = x < 0 ? x : y;
             throw new InvalidGasException(offender);
         }
-
-        long result = x + y;
-        if (additionOverflowed(x, y, result)) {
-            throw new InvalidGasException(result);
-        }
-        return result;
-    }
-
-
-    /**
-     * Like `add`, but returns Long.MAX_VALUE instead of
-     * throwing `InvalidGasException`.
-     */
-    public static long addBounded(long x, long y) {
-        if (x < 0 || y < 0) {
-            return Long.MAX_VALUE;
-        }
         long result = x + y;
         if (additionOverflowed(x, y, result)) {
             return Long.MAX_VALUE;
@@ -202,21 +172,6 @@ public class GasCost {
         if (x < 0 || y < 0) {
             long offender = x < 0 ? x : y;
             throw new InvalidGasException(offender);
-        }
-        long result = x * y;
-        if (multiplicationOverflowed(x, y, result)) {
-            throw new InvalidGasException(result);
-        }
-        return result;
-    }
-
-    /**
-     * Multiply, bounding the result between
-     * 0 and Long.MAX_VALUE
-     */
-    public static long multiplyBounded(long x, long y) {
-        if (x < 0 || y < 0) {
-            return Long.MAX_VALUE;
         }
         long result = x * y;
         if (multiplicationOverflowed(x, y, result)) {
@@ -235,26 +190,12 @@ public class GasCost {
             long offender = x < 0 ? x : y;
             throw new InvalidGasException(offender);
         }
-        long result = Math.subtractExact(x, y);
-        if (result < 0) {
-            throw new InvalidGasException(result);
-        } else if (subtractionOverflowed(x, y, result)) {
-            throw new InvalidGasException(result);
-        }
-        return result;
-    }
-
-    /**
-     * Like `substract`, but returns 0 or `Long.MAX_VALUE` instead
-     * of throwing an exception.
-     */
-    public static long subtractBounded(long x, long y) {
-        if (y < 0) {
-            return addBounded(x, -y);
-        }
         long result = x - y;
-        if (result < 0 || subtractionOverflowed(x, y, result)) {
-            return Long.MAX_VALUE;
+        // no need to check for overflow. as both inputs must be positive,
+        // the min value here is when x = 0 and y = Long.MAX_VALUE and
+        // thus result == Long.MAX_VALUE * -1, which does not overflow.
+        if (result < 0) {
+            return 0;
         }
         return result;
     }
@@ -275,25 +216,10 @@ public class GasCost {
         }
         long mult = unitCost * units;
         if (multiplicationOverflowed(unitCost, units, mult)) {
-            throw new InvalidGasException(mult);
+            return Long.MAX_VALUE;
         }
         long result = baseCost + mult;
         if (additionOverflowed(baseCost, mult, result)) {
-            throw new InvalidGasException(result);
-        }
-        return result;
-    }
-
-    /**
-     * Like `calculate`, but will return Long.MAX_VALUE instead of throwing an exception.
-     */
-    public static long calculateBounded(long baseCost, long unitCost, long units) {
-        if (baseCost < 0 || unitCost < 0 || units < 0) {
-            return Long.MAX_VALUE;
-        }
-        long mult = unitCost * units;
-        long result = baseCost + mult;
-        if (multiplicationOverflowed(unitCost, units, mult) || additionOverflowed(baseCost, mult, result)) {
             return Long.MAX_VALUE;
         }
         return result;
@@ -308,14 +234,6 @@ public class GasCost {
         // https://github.com/frohoff/jdk8u-jdk/blob/master/src/share/classes/java/lang/Math.java#L805
         // Copied here to avoid exceptions, which are slow.
         return ((x ^ result) & (y ^ result)) < 0;
-    }
-
-    /**
-     * Returns whether r is overflowed in `x - y = r`.
-     */
-    private static boolean subtractionOverflowed(long x, long y, long result) {
-        // exactly the same as addition.
-        return additionOverflowed(x, y, result);
     }
 
     /**

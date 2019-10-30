@@ -181,8 +181,8 @@ public class PrecompiledContracts {
             if (data == null) {
                 return 15;
             }
-            long variableCost = GasCost.multiplyBounded(GasCost.addBounded(data.length, 31) / 32, 3);
-            return GasCost.addBounded(15, variableCost);
+            long variableCost = GasCost.multiply(GasCost.add(data.length, 31) / 32, 3);
+            return GasCost.add(15, variableCost);
         }
 
         @Override
@@ -202,8 +202,8 @@ public class PrecompiledContracts {
             if (data == null) {
                 return 60;
             }
-            long variableCost = GasCost.multiplyBounded(GasCost.addBounded(data.length, 31) / 32, 12);
-            return GasCost.addBounded(60, variableCost);
+            long variableCost = GasCost.multiply(GasCost.add(data.length, 31) / 32, 12);
+            return GasCost.add(60, variableCost);
         }
 
         @Override
@@ -229,8 +229,8 @@ public class PrecompiledContracts {
             if (data == null) {
                 return 600;
             }
-            long variableCost = GasCost.multiplyBounded(GasCost.addBounded(data.length, 31) / 32, 120);
-            return GasCost.addBounded(600, variableCost);
+            long variableCost = GasCost.multiply(GasCost.add(data.length, 31) / 32, 120);
+            return GasCost.add(600, variableCost);
         }
 
         @Override
@@ -328,7 +328,7 @@ public class PrecompiledContracts {
             int expLen = parseLen(safeData, EXPONENT);
             int modLen = parseLen(safeData, MODULUS);
 
-            long multComplexity = GasCost.toGasBounded(getMultComplexity(Math.max(baseLen, modLen)));
+            long multComplexity = GasCost.toGas(getMultComplexity(Math.max(baseLen, modLen)));
 
             byte[] expHighBytes;
             try {
@@ -343,7 +343,7 @@ public class PrecompiledContracts {
             BigInteger gas = BigInteger.valueOf(multComplexity).multiply(
                     BigInteger.valueOf(Math.max(adjExpLen, 1))).divide(GQUAD_DIVISOR);
 
-            return GasCost.toGasBounded(gas);
+            return GasCost.toGas(gas.min(BigInteger.valueOf(Long.MAX_VALUE)));
         }
 
         @Override
