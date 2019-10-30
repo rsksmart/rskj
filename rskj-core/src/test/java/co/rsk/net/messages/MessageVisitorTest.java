@@ -282,6 +282,30 @@ public class MessageVisitorTest {
     }
 
     @Test
+    public void transactionIndexRequestMessage() {
+        TransactionIndexRequestMessage message = mock(TransactionIndexRequestMessage.class);
+        byte[] hash = new byte[]{0x0F};
+
+        when(message.getTransactionHash()).thenReturn(hash);
+        when(message.getId()).thenReturn(24L);
+
+        target.apply(message);
+
+        verify(lightProcessor, times(1))
+                .processTransactionIndexRequest(eq(sender), eq(24L), eq(hash));
+    }
+
+    @Test
+    public void transactionIndexResponseMessage() {
+        TransactionIndexResponseMessage message = mock(TransactionIndexResponseMessage.class);
+
+        target.apply(message);
+
+        verify(lightProcessor, times(1))
+                .processTransactionIndexResponseMessage(eq(sender), eq(message));
+    }
+
+    @Test
     public void skeletonRequestMessage() {
         SkeletonRequestMessage message = mock(SkeletonRequestMessage.class);
         when(message.getStartNumber()).thenReturn(24L);
