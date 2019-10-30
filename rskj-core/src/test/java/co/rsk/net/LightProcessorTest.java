@@ -81,7 +81,6 @@ public class LightProcessorTest {
         when(blockchain.getTransactionInfo(tx.getHash().getBytes())).thenReturn(transactionInfo);
         when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(transactionInfo.getReceipt()).thenReturn(receipt);
-
         lightProcessor.processBlockReceiptsRequest(sender, 100, block.getHash().getBytes());
 
         Assert.assertEquals(1, sender.getMessages().size());
