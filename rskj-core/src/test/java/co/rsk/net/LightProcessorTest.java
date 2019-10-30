@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2019 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.net;
 
 import co.rsk.config.TestSystemProperties;
@@ -16,6 +34,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.LogInfo;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -25,14 +44,28 @@ import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.hamcrest.Matchers.is;
 
+/**
+ * Created by Julian Len and Sebastian Sicardi on 20/10/19.
+ */
 public class LightProcessorTest {
 
     private static final byte[] HASH_1 = HashUtil.sha256(new byte[]{1});
 
+    private Blockchain blockchain;
+    private LightProcessor lightProcessor;
+    private SimpleMessageChannel sender;
+
+    @Before
+    public void setup(){
+        blockchain = mock(Blockchain.class);
+        lightProcessor = getLightProcessor(blockchain);
+        sender = new SimpleMessageChannel();
+    }
+
     @Test
     public void processBlockReceiptRequestMessageAndReturnsReceiptsCorrectly() {
-        final Blockchain blockchain = mock(Blockchain.class);
         final Block block = mock(Block.class);
         Transaction tx = mock(Transaction.class);
         TransactionInfo transactionInfo = mock(TransactionInfo.class);
@@ -50,7 +83,6 @@ public class LightProcessorTest {
         when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(transactionInfo.getReceipt()).thenReturn(receipt);
 
-        final LightProcessor lightProcessor = getLightProcessor(blockchain);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         lightProcessor.processBlockReceiptsRequest(sender, 100, block.getHash().getBytes());
@@ -70,11 +102,7 @@ public class LightProcessorTest {
 
     @Test
     public void processBlockReceiptRequestMessageWithIncorrectBlockHash() {
-        final Blockchain blockchain = mock(Blockchain.class);
         Keccak256 blockHash = new Keccak256(HASH_1);
-
-        final LightProcessor lightProcessor = getLightProcessor(blockchain);
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         lightProcessor.processBlockReceiptsRequest(sender, 100, blockHash.getBytes());
 
@@ -109,7 +137,7 @@ public class LightProcessorTest {
         // TODO calculate cumulative gas
         TransactionReceipt receipt = new TransactionReceipt(stateRoot, gasUsed, gasUsed, bloom, logs, new byte[]{0x01});
 
-        receipt.setTransaction(new Transaction((byte[]) null, null, null, null, null, null));
+        receipt.setTransaction(new Transaction(null, null, null, null, null, null));
 
         return receipt;
     }
