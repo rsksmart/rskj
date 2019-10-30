@@ -452,56 +452,6 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeTransactionIndexResponseMessage() {
-        long someId = 42;
-        long someBlockNumber = 43;
-        long someTxIndex = 44;
-
-        byte[] someBlockHash = HashUtil.randomHash();
-
-        TransactionIndexResponseMessage message = new TransactionIndexResponseMessage(someId,someBlockNumber,someBlockHash,someTxIndex);
-        byte[] encoded = message.getEncoded();
-
-        Message result = Message.create(blockFactory, encoded);
-
-        Assert.assertNotNull(result);
-        Assert.assertThat(encoded, is(result.getEncoded()));
-        Assert.assertThat(result.getMessageType(), is(MessageType.TRANSACTION_INDEX_RESPONSE_MESSAGE));
-
-        TransactionIndexResponseMessage newMessage = (TransactionIndexResponseMessage) result;
-
-        long idResult = newMessage.getId();
-        long blockNumberResult = newMessage.getBlockNumber();
-        long txIndexResult = newMessage.getTransactionIndex();
-        byte[] blockHashResult = newMessage.getBlockHash();
-
-        Assert.assertThat(idResult,is(idResult));
-        Assert.assertThat(blockNumberResult,is(someBlockNumber));
-        Assert.assertThat(txIndexResult,is(txIndexResult));
-        Assert.assertThat(blockHashResult,is(blockHashResult));
-    }
-
-    @Test
-    public void encodeDecodeTransactionIndexRequestMessage() {
-        long someId = 42;
-        byte[] hash = HashUtil.randomHash();
-        TransactionIndexRequestMessage message = new TransactionIndexRequestMessage(someId, hash);
-
-        byte[] encoded = message.getEncoded();
-
-        Message result = Message.create(blockFactory, encoded);
-
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.TRANSACTION_INDEX_REQUEST_MESSAGE, result.getMessageType());
-
-        TransactionIndexRequestMessage newMessage = (TransactionIndexRequestMessage) result;
-
-        Assert.assertEquals(someId, newMessage.getId());
-        Assert.assertArrayEquals(hash, newMessage.getTransactionHash());
-    }
-
-    @Test
     public void encodeDecodeSkeletonRequestMessage() {
         long someId = 42;
         long someStartNumber = 99;
@@ -602,6 +552,51 @@ public class MessageTest {
 
         for (int k = 0; k < uncles.size(); k++)
             Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getUncles().get(k).getFullEncoded());
+    }
+
+    @Test
+    public void encodeDecodeTransactionIndexResponseMessage() {
+        long someId = 42;
+        long someBlockNumber = 43;
+        long someTxIndex = 44;
+
+        byte[] someBlockHash = HashUtil.randomHash();
+
+        TransactionIndexResponseMessage message = new TransactionIndexResponseMessage(someId,someBlockNumber,someBlockHash,someTxIndex);
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertThat(result.getEncoded(), is(encoded));
+        Assert.assertThat(result.getMessageType(), is(MessageType.TRANSACTION_INDEX_RESPONSE_MESSAGE));
+
+        TransactionIndexResponseMessage newMessage = (TransactionIndexResponseMessage) result;
+
+        Assert.assertThat(newMessage.getId(),is(someId));
+        Assert.assertThat(newMessage.getBlockNumber(),is(someBlockNumber));
+        Assert.assertThat(newMessage.getTransactionIndex(),is(someTxIndex));
+        Assert.assertThat(newMessage.getBlockHash(),is(someBlockHash));
+    }
+
+    @Test
+    public void encodeDecodeTransactionIndexRequestMessage() {
+        long someId = 42;
+        byte[] hash = HashUtil.randomHash();
+        TransactionIndexRequestMessage message = new TransactionIndexRequestMessage(someId, hash);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.TRANSACTION_INDEX_REQUEST_MESSAGE, result.getMessageType());
+
+        TransactionIndexRequestMessage newMessage = (TransactionIndexRequestMessage) result;
+
+        Assert.assertEquals(someId, newMessage.getId());
+        Assert.assertArrayEquals(hash, newMessage.getTransactionHash());
     }
 
     private static Transaction createTransaction(int number) {
