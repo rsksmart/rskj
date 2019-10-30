@@ -24,7 +24,7 @@ import co.rsk.net.light.LightProcessor;
 import co.rsk.net.messages.BlockReceiptsResponseMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
-import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.SyncConfiguration;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -55,13 +55,13 @@ public class LightProcessorTest {
 
     private Blockchain blockchain;
     private LightProcessor lightProcessor;
-    private SimpleMessageChannel sender;
+    private SimplePeer sender;
 
     @Before
     public void setup(){
         blockchain = mock(Blockchain.class);
         lightProcessor = getLightProcessor(blockchain);
-        sender = new SimpleMessageChannel();
+        sender = new SimplePeer();
     }
 
     @Test
@@ -83,7 +83,7 @@ public class LightProcessorTest {
         when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(transactionInfo.getReceipt()).thenReturn(receipt);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         lightProcessor.processBlockReceiptsRequest(sender, 100, block.getHash().getBytes());
 
