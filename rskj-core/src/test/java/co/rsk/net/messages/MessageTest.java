@@ -38,6 +38,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import static org.hamcrest.Matchers.is;
+
 /**
  * Created by ajlopez on 5/11/2016.
  */
@@ -439,6 +441,56 @@ public class MessageTest {
 
         Assert.assertEquals(someId, newMessage.getId());
         Assert.assertArrayEquals(hash, newMessage.getBlockHash());
+    }
+
+    @Test
+    public void encodeDecodeTransactionIndexResponseMessage() {
+        long someId = 42;
+        long someBlockNumber = 43;
+        long someTxIndex = 44;
+
+        byte[] someBlockHash = HashUtil.randomHash();
+
+        TransactionIndexResponseMessage message = new TransactionIndexResponseMessage(someId,someBlockNumber,someBlockHash,someTxIndex);
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertThat(encoded, is(result.getEncoded()));
+        Assert.assertThat(result.getMessageType(), is(MessageType.TRANSACTION_INDEX_RESPONSE_MESSAGE));
+
+        TransactionIndexResponseMessage newMessage = (TransactionIndexResponseMessage) result;
+
+        long idResult = newMessage.getId();
+        long blockNumberResult = newMessage.getBlockNumber();
+        long txIndexResult = newMessage.getTransactionIndex();
+        byte[] blockHashResult = newMessage.getBlockHash();
+
+        Assert.assertThat(idResult,is(idResult));
+        Assert.assertThat(blockNumberResult,is(someBlockNumber));
+        Assert.assertThat(txIndexResult,is(txIndexResult));
+        Assert.assertThat(blockHashResult,is(blockHashResult));
+    }
+
+    @Test
+    public void encodeDecodeTransactionIndexRequestMessage() {
+        long someId = 42;
+        byte[] hash = HashUtil.randomHash();
+        TransactionIndexRequestMessage message = new TransactionIndexRequestMessage(someId, hash);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.TRANSACTION_INDEX_REQUEST_MESSAGE, result.getMessageType());
+
+        TransactionIndexRequestMessage newMessage = (TransactionIndexRequestMessage) result;
+
+        Assert.assertEquals(someId, newMessage.getId());
+        Assert.assertArrayEquals(hash, newMessage.getTransactionHash());
     }
 
     @Test
