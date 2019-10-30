@@ -49,6 +49,7 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Arrays;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -67,12 +68,26 @@ public class Transaction {
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
+
+    /* RSKIP-145 */
+    private static final byte FORMAT_ONE_LEADING = 0x1;
+
+    private static final byte NONCE_ID = 0;
+    private static final byte AMOUNT_ID = 1;
+    private static final byte RECEIVER_ID = 2;
+    private static final byte GAS_PRICE_ID = 3;
+    private static final byte GAS_LIMIT_ID = 4;
+    private static final byte DATA_ID = 5;
+    private static final byte SIGNATURE_ID = 6;
+
     /**
      * Since EIP-155, we could encode chainId in V
      */
     private static final byte CHAIN_ID_INC = 35;
 
     private static final byte LOWER_REAL_V = 27;
+    
+
     protected RskAddress sender;
     /* whether this is a local call transaction */
     private boolean isLocalCall;
@@ -102,35 +117,85 @@ public class Transaction {
     private Keccak256 rawHash;
 
     protected Transaction(byte[] rawData) {
-        List<RLPElement> transaction = RLP.decodeList(rawData);
-        if (transaction.size() != 9) {
-            throw new IllegalArgumentException("A transaction must have exactly 9 elements");
-        }
-
-        this.nonce = transaction.get(0).getRLPData();
-        this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());
-        this.gasLimit = transaction.get(2).getRLPData();
-        this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
-        this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
-        this.data = transaction.get(5).getRLPData();
-
-        // only parse signature in case tx is signed
-        byte[] vData = transaction.get(6).getRLPData();
-        if (vData != null) {
-            if (vData.length != 1) {
-                throw new TransactionException("Signature V is invalid");
+        if (rawData[0] != FORMAT_ONE_LEADING){
+            List<RLPElement> transaction = RLP.decodeList(rawData);
+            if (transaction.size() != 9) {
+                throw new IllegalArgumentException("A transaction must have exactly 9 elements");
             }
-            byte v = vData[0];
-            this.chainId = extractChainIdFromV(v);
-            byte[] r = transaction.get(7).getRLPData();
-            byte[] s = transaction.get(8).getRLPData();
-            this.signature = ECDSASignature.fromComponents(r, s, getRealV(v));
-        } else {
-            this.chainId = 0;
-            logger.trace("RLP encoded tx is not signed!");
+
+            this.nonce = transaction.get(0).getRLPData();
+            this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());
+            this.gasLimit = transaction.get(2).getRLPData();
+            this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
+            this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
+            this.data = transaction.get(5).getRLPData();
+
+            // only parse signature in case tx is signed
+            byte[] vData = transaction.get(6).getRLPData();
+            if (vData != null) {
+                if (vData.length != 1) {
+                    throw new TransactionException("Signature V is invalid");
+                }
+                byte v = vData[0];
+                this.chainId = extractChainIdFromV(v);
+                byte[] r = transaction.get(7).getRLPData();
+                byte[] s = transaction.get(8).getRLPData();
+                this.signature = ECDSASignature.fromComponents(r, s, getRealV(v));
+            } else {
+                this.chainId = 0;
+                logger.trace("RLP encoded tx is not signed!");
+            }
+        }else{
+            byte[] data = getElementByType(rawData, NONCE_ID);
+            if (data != null){
+                this.nonce = data;
+            }else{
+                this.nonce = new byte[]{1};
+            } 
+            this.value = RLP.parseCoinNullZero(getElementByType(rawData, AMOUNT_ID));
+            this.receiveAddress = RLP.parseRskAddress(getElementByType(rawData, RECEIVER_ID));
+            this.gasPrice = RLP.parseCoinNonNullZero(getElementByType(rawData, GAS_PRICE_ID));
+            
+            data = getElementByType(rawData, GAS_LIMIT_ID);
+            if (data != null){
+                this.gasLimit = getElementByType(rawData, GAS_LIMIT_ID);
+            }else{
+                // default gaslimit is 30000
+                this.gasLimit = new byte[]{0x75,0x30};
+            }
+            this.data = getElementByType(rawData, DATA_ID);
+
+            byte[] signature = getElementByType(rawData, SIGNATURE_ID);
+            if (signature == null){
+                throw new IllegalArgumentException("A transaction must be signed");
+            }else {
+                List<RLPElement> comps = RLP.decodeList(signature);
+                if (comps.size() != 3) {
+                    throw new IllegalArgumentException("A signature must have exactly 3 elements");
+                }
+                byte[] r = comps.get(0).getRLPData();
+                byte[] s = comps.get(1).getRLPData();
+                byte[] v = comps.get(2).getRLPData();
+                this.signature = ECDSASignature.fromComponents(r, s, getRealV(v[0]));
+                this.chainId = extractChainIdFromV(v[0]);
+            }
         }
     }
-
+    
+    @Nullable
+    private byte[] getElementByType (byte[] rawData, int targetType) {
+        byte[] realRLPEncoded = Arrays.copyOfRange(rawData, 1, rawData.length -1);
+        List<RLPElement> transaction = RLP.decodeList(realRLPEncoded);
+        for (RLPElement element : transaction){
+            byte[] data = element.getRLPData();
+            //elememt id contained in lower 5 bits 
+            int type = data[0] & (byte)0x1f;
+            if (type == targetType) {
+              return Arrays.copyOfRange(data, 1, data.length - 1);
+            }
+        }
+        return null;
+    }
     /* creation contract tx
      * [ nonce, gasPrice, gasLimit, "", endowment, init, signature(v, r, s) ]
      * or simple send tx
