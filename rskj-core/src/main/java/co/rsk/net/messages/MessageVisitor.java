@@ -229,13 +229,20 @@ public class MessageVisitor {
 
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }
-
     public void apply(TransactionIndexRequestMessage message) {
         lightProcessor.processTransactionIndexRequest(sender, message.getId(), message.getTransactionHash());
     }
 
     public void apply(TransactionIndexResponseMessage message) {
         lightProcessor.processTransactionIndexResponseMessage(sender, message);
+    }
+
+    public void apply(CodeRequestMessage message) {
+        this.lightProcessor.processCodeRequest(sender, message.getId(), message.getBlockHash(), message.getAddress());
+    }
+
+    public void apply(CodeResponseMessage message) {
+        this.lightProcessor.processCodeResponse(sender, message);
     }
 
     private void recordEvent(Peer sender, EventType event) {
