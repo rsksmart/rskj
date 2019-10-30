@@ -33,9 +33,6 @@ import java.math.BigInteger;
  * should always be used when calculating gas.
  */
 public class GasCost {
-    // Everything in this class should be static, do not initialize.
-    private GasCost() { }
-
     /* backwards compatibility, remove eventually */
     public static final long STEP = 1;
     public static final long SSTORE = 300;
@@ -116,6 +113,10 @@ public class GasCost {
         }
 
     }
+
+    // Everything in this class should be static, do not initialize.
+    private GasCost() { }
+
 
     /**
      * Converts a byte array to gas. Byte arrays are signed two bit compliments.
