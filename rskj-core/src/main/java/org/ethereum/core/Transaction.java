@@ -146,26 +146,58 @@ public class Transaction {
                 logger.trace("RLP encoded tx is not signed!");
             }
         }else{
-            byte[] data = getElementByType(rawData, NONCE_ID);
-            if (data != null){
-                this.nonce = data;
-            }else{
-                this.nonce = new byte[]{1};
-            } 
-            this.value = RLP.parseCoinNullZero(getElementByType(rawData, AMOUNT_ID));
-            this.receiveAddress = RLP.parseRskAddress(getElementByType(rawData, RECEIVER_ID));
-            this.gasPrice = RLP.parseCoinNonNullZero(getElementByType(rawData, GAS_PRICE_ID));
-            
-            data = getElementByType(rawData, GAS_LIMIT_ID);
-            if (data != null){
-                this.gasLimit = getElementByType(rawData, GAS_LIMIT_ID);
-            }else{
-                // default gaslimit is 30000
-                this.gasLimit = new byte[]{0x75,0x30};
-            }
-            this.data = getElementByType(rawData, DATA_ID);
+            byte[] nonce = new byte[]{1};
+            RskAddress receiveAddress = RskAddress.nullAddress();
+            Coin value = null;
+            Coin gasPrice = null;
+            // default gaslimit is 30000
+            byte[] gasLimit = new byte[]{0x75,0x30};
+            byte[] data = null;
+            byte[] signature = null;
 
-            byte[] signature = getElementByType(rawData, SIGNATURE_ID);
+            byte[] realRLPEncoded = Arrays.copyOfRange(rawData, 1, rawData.length -1);
+            List<RLPElement> transaction = RLP.decodeList(realRLPEncoded);
+            for (RLPElement element : transaction){
+                byte[] eleData = element.getRLPData();
+                //elememt id contained in lower 5 bits 
+                int type = eleData[0] & (byte)0x1f; 
+                byte[] realElementData = Arrays.copyOfRange(eleData, 1, eleData.length - 1);
+                switch (type) {
+                    case NONCE_ID:
+                        nonce = realElementData;
+                        break;
+                    case RECEIVER_ID:
+                        receiveAddress = RLP.parseRskAddress(realElementData);
+                        break;
+                    case AMOUNT_ID:
+                        value = RLP.parseCoinNullZero(realElementData);
+                        break;
+                    case GAS_PRICE_ID:
+                        gasPrice = RLP.parseCoinNonNullZero(realElementData);
+                        break;
+                    case GAS_LIMIT_ID:
+                        gasLimit = realElementData;
+                        break;
+                    case DATA_ID:
+                        data = realElementData;
+                        break;
+                    case SIGNATURE_ID:
+                        signature = realElementData;
+                    default:
+                        throw new IllegalArgumentException("A transaction contain a unknown element id");     
+                }
+            } 
+            this.nonce = nonce;
+            this.value = value;
+            this.receiveAddress = receiveAddress;
+            if (gasPrice == null){
+                throw new IllegalArgumentException("A transaction must contain gas price ");
+            }else{
+                this.gasPrice = gasPrice;
+            }
+            this.gasLimit = gasLimit;
+            this.data = data;
+            
             if (signature == null){
                 throw new IllegalArgumentException("A transaction must be signed");
             }else {
@@ -181,26 +213,7 @@ public class Transaction {
             }
         }
     }
-    
-    @Nullable
-    private byte[] getElementByType (byte[] rawData, int targetType) {
-        byte[] realRLPEncoded = Arrays.copyOfRange(rawData, 1, rawData.length -1);
-        List<RLPElement> transaction = RLP.decodeList(realRLPEncoded);
-        for (RLPElement element : transaction){
-            byte[] data = element.getRLPData();
-            //elememt id contained in lower 5 bits 
-            int type = data[0] & (byte)0x1f;
-            if (type == targetType) {
-              return Arrays.copyOfRange(data, 1, data.length - 1);
-            }
-        }
-        return null;
-    }
-    /* creation contract tx
-     * [ nonce, gasPrice, gasLimit, "", endowment, init, signature(v, r, s) ]
-     * or simple send tx
-     * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
-     */
+
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
     }
