@@ -36,9 +36,9 @@
         </rollingPolicy>
     </appender>
 
-    <logger name="execute" level="INFO"/>
-    <logger name="blockvalidator" level="INFO"/>
-    <logger name="blockexecutor" level="INFO"/>
+    <logger name="execute" level="TRACE"/>
+    <logger name="blockvalidator" level="TRACE"/>
+    <logger name="blockexecutor" level="TRACE"/>
     <logger name="general" level="INFO"/>
     <logger name="gaspricetracker" level="INFO"/>
     <logger name="web3" level="INFO"/>
@@ -61,7 +61,7 @@
     <logger name="main" level="INFO"/>
     <logger name="trie" level="INFO"/>
     <logger name="peermonitor" level="INFO"/>
-    <logger name="bridge" level="INFO"/>
+    <logger name="bridge" level="TRACE"/>
     <logger name="rlp" level="INFO"/>
     <logger name="messagehandler" level="INFO"/>
     <logger name="sync" level="INFO"/>
@@ -70,13 +70,13 @@
     <logger name="java.nio" level="INFO"/>
     <logger name="org.eclipse.jetty" level="INFO"/>
     <logger name="wire" level="INFO"/>
-    <logger name="BridgeSupport" level="INFO"/>
+    <logger name="BridgeSupport" level="TRACE"/>
     <logger name="jsonrpc" level="INFO"/>
     <logger name="wallet" level="INFO"/>
-    <logger name="blockchain" level="INFO"/>
+    <logger name="blockchain" level="TRACE"/>
     <logger name="blockprocessor" level="INFO"/>
     <logger name="state" level="INFO"/>
-    <logger name="org.bitcoinj" level="INFO"/>
+    <logger name="org.bitcoinj" level="TRACE"/>
     <logger name="metrics" level="INFO"/>
     <logger name="messageProcess" level="INFO"/>
     <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
