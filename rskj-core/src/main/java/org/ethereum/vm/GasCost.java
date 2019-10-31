@@ -124,9 +124,12 @@ public class GasCost {
 
     /**
      * Converts a byte array to gas. Byte arrays are signed two bit compliments.
+     * The byte array must have at most 8 values in it so as to fit in a long.
+     * Be careful so as not to send a negative byte array.
      * @param bytes represents the number which will be converted to gas.
      * @return the gas equivalent of the byte array.
-     * @throws InvalidGasException if the number if bigger than Long.MAX_GAS.
+     * @throws InvalidGasException if the array has more than 8 values or
+     *                             is negative.
      */
     public static long toGas(byte[] bytes) throws InvalidGasException {
         if (bytes.length > 8) {
@@ -139,6 +142,10 @@ public class GasCost {
         return result;
     }
 
+    /**
+     * Convert a BigInteger to gas.
+     * @throws InvalidGasException if the big integer is negative or is bigger than Long.MAX_VALUE.
+     */
     public static long toGas(BigInteger big) throws InvalidGasException {
         if (big.compareTo(BigInteger.ZERO) < 0) {
             throw new InvalidGasException(big.toByteArray());
@@ -146,7 +153,12 @@ public class GasCost {
         return toGas(big.toByteArray());
     }
 
-    public static long toGas(long number) {
+    /**
+     * Make sure the number is a valid gas value.
+     * @return: the number, if is positive or zero.
+     * @throws InvalidGasException if the number is negative.
+     */
+    public static long toGas(long number) throws InvalidGasException {
         if (number < 0) {
             throw new InvalidGasException(number);
         }
@@ -154,12 +166,11 @@ public class GasCost {
     }
 
     /**
-     * Adds two longs numbers representing gas.
+     * Adds two longs numbers representing gas, capping at Long.MAX_VALUE.
      * @param x some gas.
      * @param y another gas.
-     * @return the sum of the two numbers.
-     * @throws InvalidGasException if any of the gas inputs is negative
-     *         or if the sum is bigger than Long.MAX_VALUE.
+     * @return the sum of the two numbers, capped.
+     * @throws InvalidGasException if any of the inputs is negative
      */
     public static long add(long x, long y) throws InvalidGasException {
         if (x < 0 || y < 0) {
@@ -172,6 +183,13 @@ public class GasCost {
         return result;
     }
 
+    /**
+     * Multply two longs representing gas, capping at Long.MAX_VALUE.
+     * @param x some gas.
+     * @param y another gas.
+     * @return the multiplication of the two numbers, capped.
+     * @throws InvalidGasException if any of the inputs is negative
+     */
     public static long multiply(long x, long y) throws InvalidGasException {
         if (x < 0 || y < 0) {
             throw new InvalidGasException(String.format("%d * %d", x, y));
@@ -184,9 +202,9 @@ public class GasCost {
     }
 
     /**
-     * Substracts two longs representing gas.
-     * @throws InvalidGasException if any of the inputs are invalid
-     *         or the operation overflows or underflows.
+     * Subtracts two longs representing gas.
+     * @throws InvalidGasException if any of the inputs are negative or the
+     * result of the subtraction is negative.
      */
     public static long subtract(long x, long y) throws InvalidGasException {
         if (y < 0 || y > x) {
@@ -199,12 +217,12 @@ public class GasCost {
 
     /**
      * Calculate the total gas cost given a baseline cost, the cost of an unit and how many units
-     * are passed.
+     * are passed. The operation is capped at Long.MAX_VALUE.
      * @param baseCost a baseline cost.
      * @param unitCost the cost of a single unit.
      * @param units how many units.
-     * @return baseCost + unitCost * units
-     * @throws InvalidGasException if any of the inputs are negative, or if the operation overflows.
+     * @return baseCost + unitCost * units, capped at Long.MAX_VALUE
+     * @throws InvalidGasException if any of the inputs are negative.
      */
     public static long calculate(long baseCost, long unitCost, long units) throws InvalidGasException {
         if (baseCost < 0 || unitCost < 0 || units < 0) {
