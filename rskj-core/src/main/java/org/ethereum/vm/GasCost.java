@@ -112,6 +112,10 @@ public class GasCost {
             super(String.format("Got invalid gas value as bytes array: %s", ByteUtil.toHexString(bytes)));
         }
 
+        private InvalidGasException(String str) {
+            super(String.format("Got invalid gas value, tried operation: %s", str));
+        }
+
     }
 
     // Everything in this class should be static, do not initialize.
@@ -137,7 +141,7 @@ public class GasCost {
 
     public static long toGas(BigInteger big) throws InvalidGasException {
         if (big.compareTo(BigInteger.ZERO) < 0) {
-            throw new InvalidGasException(big.longValue());
+            throw new InvalidGasException(big.toByteArray());
         }
         return toGas(big.toByteArray());
     }
@@ -159,8 +163,7 @@ public class GasCost {
      */
     public static long add(long x, long y) throws InvalidGasException {
         if (x < 0 || y < 0) {
-            long offender = x < 0 ? x : y;
-            throw new InvalidGasException(offender);
+            throw new InvalidGasException(String.format("%d + %d", x, y));
         }
         long result = x + y;
         if (additionOverflowed(x, y, result)) {
@@ -171,8 +174,7 @@ public class GasCost {
 
     public static long multiply(long x, long y) throws InvalidGasException {
         if (x < 0 || y < 0) {
-            long offender = x < 0 ? x : y;
-            throw new InvalidGasException(offender);
+            throw new InvalidGasException(String.format("%d * %d", x, y));
         }
         long result = x * y;
         if (multiplicationOverflowed(x, y, result)) {
@@ -188,10 +190,10 @@ public class GasCost {
      */
     public static long subtract(long x, long y) throws InvalidGasException {
         if (x < 0 || y < 0) {
-            long offender = x < 0 ? x : y;
-            throw new InvalidGasException(offender);
+            throw new InvalidGasException(String.format("%d - %d", x, y));
         }
         long result = x - y;
+
         // no need to check for overflow. as both inputs must be positive,
         // the min value here is when x = 0 and y = Long.MAX_VALUE and
         // thus result == Long.MAX_VALUE * -1, which does not overflow.
@@ -212,8 +214,7 @@ public class GasCost {
      */
     public static long calculate(long baseCost, long unitCost, long units) throws InvalidGasException {
         if (baseCost < 0 || unitCost < 0 || units < 0) {
-            long offender = baseCost < 0 ? baseCost : unitCost < 0 ? unitCost : units;
-            throw new InvalidGasException(offender);
+            throw new InvalidGasException(String.format("%d + %d * %d", baseCost, unitCost, units));
         }
         long mult = unitCost * units;
         if (multiplicationOverflowed(unitCost, units, mult)) {
