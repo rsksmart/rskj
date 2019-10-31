@@ -173,25 +173,19 @@ public class GasCostTest {
         GasCost.subtract(1, -1);
     }
 
-    @Test
+    @Test(expected = GasCost.InvalidGasException.class)
     public void calculateSubtractWithExtremelyNegativeResult() throws GasCost.InvalidGasException {
-        Assert.assertEquals(0, GasCost.subtract(0, Long.MAX_VALUE));
+        GasCost.subtract(0, Long.MAX_VALUE);
     }
 
-    @Test
+    @Test(expected = GasCost.InvalidGasException.class)
     public void calculateSubtractGasToInvalidSubtle() throws GasCost.InvalidGasException {
-        Assert.assertEquals(0, GasCost.subtract(1, 2));
+        GasCost.subtract(1, 2);
     }
 
-    @Test
+    @Test(expected = GasCost.InvalidGasException.class)
     public void calculateSubtractGasToInvalidObvious() throws GasCost.InvalidGasException  {
-        Assert.assertEquals(0, GasCost.subtract(1, 159));
-    }
-
-    @Test()
-    public void calculateSubtractBoundedGasCostToMaxGasIfNegative() {
-        Assert.assertEquals(0, GasCost.subtract(1, 2));
-        Assert.assertEquals(0, GasCost.subtract(1, 10));
+        GasCost.subtract(1, 159);
     }
 
     @Test

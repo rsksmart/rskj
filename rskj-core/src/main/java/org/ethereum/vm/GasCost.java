@@ -189,18 +189,12 @@ public class GasCost {
      *         or the operation overflows or underflows.
      */
     public static long subtract(long x, long y) throws InvalidGasException {
-        if (x < 0 || y < 0) {
+        if (y < 0 || y > x) {
             throw new InvalidGasException(String.format("%d - %d", x, y));
         }
-        long result = x - y;
-
-        // no need to check for overflow. as both inputs must be positive,
-        // the min value here is when x = 0 and y = Long.MAX_VALUE and
-        // thus result == Long.MAX_VALUE * -1, which does not overflow.
-        if (result < 0) {
-            return 0;
-        }
-        return result;
+        // no need to check for overflows, as both x and y must be positive
+        // the minimum value of this is -Long.MAX_VALUE, and that does not overflow
+        return x - y;
     }
 
     /**
