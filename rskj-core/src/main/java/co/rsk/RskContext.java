@@ -385,14 +385,21 @@ public class RskContext implements NodeBootstrapper {
     public TrieStore getTrieStore() {
         if (trieStore == null) {
             GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
-            if (gcConfig.enabled()) {
-                try {
+
+            String multiTrieStoreNamePrefix = "unitrie_";
+            Path databasePath = Paths.get(getRskSystemProperties().databaseDir());
+            try {
+                boolean gcWasEnabled = Files.list(databasePath)
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .anyMatch(f -> f.startsWith(multiTrieStoreNamePrefix));
+                if (gcConfig.enabled() || gcWasEnabled) {
                     trieStore = buildMultiTrieStore(gcConfig.numberOfEpochs());
-                } catch (IOException e) {
-                    throw new IllegalStateException("Unable to build multi trie store", e);
+                } else {
+                    trieStore = buildTrieStore("unitrie");
                 }
-            } else {
-                trieStore = buildTrieStore("unitrie");
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to build multi trie store", e);
             }
         }
 
