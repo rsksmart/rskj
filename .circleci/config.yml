@@ -42,25 +42,25 @@ jobs:
           at: /app
       - run:
           name: Run SonarQube analysis
-          # https://community.sonarsource.com/t/no-code-or-issue-found-in-pull-request-decorations-github-circleci/8496
           command: |
-            if [ ! -z $CIRCLE_PULL_REQUEST ]; then
-              PULL_REQUEST=$(echo $CIRCLE_PULL_REQUEST | awk '{print substr($1,39)}')
+            extra_flags=""
+            if [ -n "$CIRCLE_PULL_REQUEST" ]; then
+              # https://community.sonarsource.com/t/no-code-or-issue-found-in-pull-request-decorations-github-circleci/8496
               git branch -f master origin/master
-              ./gradlew sonarqube --no-daemon -x build -x test \
-                -Dsonar.pullrequest.base=master \
-                -Dsonar.pullrequest.branch=$CIRCLE_BRANCH \
-                -Dsonar.pullrequest.key=$PULL_REQUEST \
-                -Dsonar.organization=rsksmart \
-                -Dsonar.host.url=$SONAR_URL \
-                -Dsonar.login=$SONAR_TOKEN
+              # extract PR number, as PR URLs are in the form
+              # https://github.com/$user/$repo/pull/$pr_number
+              pr_number=${CIRCLE_PULL_REQUEST##*/}
+              extra_flags="-Dsonar.pullrequest.base=master
+                -Dsonar.pullrequest.branch=$CIRCLE_BRANCH
+                -Dsonar.pullrequest.key=$pr_number"
             else
-              ./gradlew sonarqube --no-daemon -x build -x test \
-                -Dsonar.branch.name=master \
-                -Dsonar.organization=rsksmart \
-                -Dsonar.host.url=$SONAR_URL \
-                -Dsonar.login=$SONAR_TOKEN
+              extra_flags="-Dsonar.branch.name=master"
             fi
+            ./gradlew sonarqube --no-daemon -x build -x test \
+                $extra_flags \
+                -Dsonar.organization=rsksmart \
+                -Dsonar.host.url="$SONAR_URL" \
+                -Dsonar.login="$SONAR_TOKEN"
   rskj-tests:
     executor: jvm-executor
     steps:
