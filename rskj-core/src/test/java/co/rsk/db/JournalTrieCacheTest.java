@@ -133,8 +133,6 @@ public class JournalTrieCacheTest {
         assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
     }
 
-    // TODO Fix failed test
-/*
     @Test
     public void testNestedCaches() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
@@ -188,7 +186,6 @@ public class JournalTrieCacheTest {
         assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "125")));
         assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
     }
-*/
 
     @Test
     public void testStorageKeysMixOneLevel() {

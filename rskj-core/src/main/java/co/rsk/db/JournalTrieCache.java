@@ -40,11 +40,25 @@ public class JournalTrieCache implements MutableTrie {
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
 
     private MutableTrie trie;
-    private MultiLevelCache cache;
+    private ICache cache;
 
     public JournalTrieCache(MutableTrie parentTrie) {
-        trie = parentTrie;
-        cache = new MultiLevelCache();
+        // if parentTrie is a JournalTrieCache as well, then get its parent Trie and get its cache
+        if (parentTrie instanceof JournalTrieCache) {
+            trie = ((JournalTrieCache) parentTrie).getMutableTrie();
+            cache = new MultiLevelCacheSnapshot(((JournalTrieCache) parentTrie).getCache());
+        } else {
+            trie = parentTrie;
+            cache = new MultiLevelCacheSnapshot();
+        }
+    }
+
+    private MultiLevelCache getCache() {
+        return ((MultiLevelCacheSnapshot) cache).getCache();
+    }
+
+    private MutableTrie getMutableTrie() {
+        return trie;
     }
 
     @Override
@@ -260,54 +274,59 @@ public class JournalTrieCache implements MutableTrie {
         }
     }
 
-    private class MultiLevelCache {
+    private static class MultiLevelCache {
 
         static final int FIRST_CACHE_LEVEL = 1;
-        int currentLevel = FIRST_CACHE_LEVEL;
+        int depth = FIRST_CACHE_LEVEL;
         private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, Map<Integer, byte[]>>> valuesPerLevelPerKeyPerAccount
                 = new HashMap<>();
         private final Map<Integer, Set<ByteArrayWrapper>> deletedAccountsPerLevel = new HashMap<>();
         private final Map<Integer, Set<ByteArrayWrapper>> updatedKeysPerLevel = new HashMap<>();
 
-        public MultiLevelCache() {
-            this.initLevel(this.currentLevel);
+        MultiLevelCache() {
+            initLevel(depth);
         }
 
-        /**
-         * put in the current cache level, the given value at the given key
-         * @param key
-         * @param value
-         */
-        public void put(ByteArrayWrapper key, byte[] value) {
-            this.put(key, value, this.currentLevel);
+        int getDepth() {
+            return depth;
         }
 
-        /**
-         * get the value in cache for the given key, only if it has been updated in this cache level.
-         * To get the value in cache regardless of the level, use getNewestValue()
-         * @param key
-         * @return the value if the key has been updated in this cache level, otherwise null
-         */
-        public byte[] get(ByteArrayWrapper key) {
-            return get(key, currentLevel);
+        int getNewLevel() {
+            depth++;
+            initLevel(depth);
+            return depth;
         }
 
-        /**
-         * get the value in cache for the given key, from the last cache level when this key has been updated
-         * @param key
-         * @return the newest value if the key has been updated in cache,
-         * or null if the key has been deleted in cache and this deletion is more recent than any updates
-         * (we assume that the caller previously checked if the key is in cache before, using isInCache(),
-         *  so that a 'null' returned value means a deleted key)
-         */
-        // We assume this methode
-        public byte[] getNewestValue(ByteArrayWrapper key) {
+        void put(ByteArrayWrapper key, byte[] value, int cacheLevel) {
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            // if this account is in the deletedAccounts list, dont remove it, because this means that the lower
+            // level is deleted
+            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey
+                    = this.valuesPerLevelPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+            Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.computeIfAbsent(key, k -> new HashMap<>());
+            valuesPerLevel.put(cacheLevel, value);
+            updatedKeysPerLevel.get(cacheLevel).add(key);
+        }
+
+        byte[] get(ByteArrayWrapper key, int cacheLevel) {
             ByteArrayWrapper accountWrapper = getAccountWrapper(key);
             Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(accountWrapper);
-            for (int level = currentLevel; level >= FIRST_CACHE_LEVEL; level--) {
-                if (isAccountDeleted(key, level)) {
-                    return null;
+            if (valuesPerLevelPerKey != null) {
+                Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.get(key);
+                if (valuesPerLevel != null) {
+                    return valuesPerLevel.get(cacheLevel);
                 }
+            }
+            // TODO Prefer Optional<T> over null
+            return null;
+        }
+
+        byte[] getNewestValue(ByteArrayWrapper key, int maxLevel) {
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(accountWrapper);
+            for (int level = maxLevel; level >= FIRST_CACHE_LEVEL; level--) {
+                // For this level,
+                //  first: check if an updated key/value exist in cache
                 if (valuesPerLevelPerKey != null) {
                     Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.get(key);
                     if (valuesPerLevel != null) {
@@ -317,6 +336,10 @@ public class JournalTrieCache implements MutableTrie {
                         }
                     }
                 }
+                // second: if no updated key/value, check if the account has been deleted
+                if (isAccountDeleted(key, level)) {
+                    return null;
+                }
             }
             throw new UnsupportedOperationException(
                     "Key '" + new String(key.getData(), StandardCharsets.UTF_8) +
@@ -325,107 +348,127 @@ public class JournalTrieCache implements MutableTrie {
             );
         }
 
-        /**
-         * collect all the keys in cache (all levels included) with the specified size,
-         * or all keys when keySize = Integer.MAX_VALUE
-         * @param parentKeys : the set of collected keys
-         * @param keySize : the size of the key to collect, or Integer.MAX_VALUE to collect all
-         */
-        public void collectKeys(Set<ByteArrayWrapper> parentKeys, int keySize) {
+        void collectKeys(Set<ByteArrayWrapper> parentKeys, int keySize, int maxLevel) {
             // in order to manage the key deletion correctly, we need to walk over the different levels
             // starting from the oldest to the newest one
-            for (int level = FIRST_CACHE_LEVEL; level <= currentLevel; level++) {
-                collectKeys(parentKeys, keySize, FIRST_CACHE_LEVEL);
+            for (int level = FIRST_CACHE_LEVEL; level <= maxLevel; level++) {
+                collectKeysAtLevel(parentKeys, keySize, FIRST_CACHE_LEVEL);
+            }
+        }
+
+        Set<ByteArrayWrapper> getUpdatedKeys(int cacheLevel) {
+            return updatedKeysPerLevel.get(cacheLevel);
+        }
+
+        Set<ByteArrayWrapper> getDeletedAccounts(int cacheLevel) {
+            return deletedAccountsPerLevel.get(cacheLevel);
+        }
+
+        void deleteAccount(ByteArrayWrapper account, int cacheLevel) {
+            deletedAccountsPerLevel.get(cacheLevel).add(account);
+            // clean cache for all updated key/value of this account for the same cache level
+            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(account);
+            if (valuesPerLevelPerKey != null) {
+                Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(cacheLevel);
+                ArrayList<ByteArrayWrapper> emptyKeys = new ArrayList<>();
+                valuesPerLevelPerKey.forEach((key, valuesPerLevel) -> {
+                    updatedKeys.remove(key);
+                    valuesPerLevel.remove(cacheLevel);
+                    if (valuesPerLevel.size() == 0) {
+                        emptyKeys.add(key);
+                    }
+                });
+                emptyKeys.forEach(key -> valuesPerLevelPerKey.remove(key));
             }
         }
 
         /**
-         * whether the cache is at its first level or deeper
-         * @return true is at first level, false otherwise
+         * Merge cache from one level to another one
+         * @param levelFrom : level from which cache shall be merged
+         * @param levelTo : level to which cache shall be merged
+         * @param shallClear : whether the merged level shall be cleared once merged
          */
-        public boolean isFirstLevel() {
-            return currentLevel == FIRST_CACHE_LEVEL;
-        }
-
-        /**
-         * Returns all the keys that have been updated in the current level of caching
-         * Keys that have been deleted are not returned
-         * @return
-         */
-        public Set<ByteArrayWrapper> getUpdatedKeys() {
-            return getUpdatedKeys(this.currentLevel);
-        }
-
-        /**
-         * Returns all the keys that have been deleted in the current level of caching
-         * @return
-         */
-        public Set<ByteArrayWrapper> getDeletedAccounts() {
-            return getDeletedAccounts(this.currentLevel);
-        }
-
-        /**
-         *
-         * @param key
-         */
-        public void deleteAccount(ByteArrayWrapper key) {
-            deleteAccount(key, currentLevel);
-        }
-
-        /**
-         * Merge the latest cache level with the previous one
-         */
-        public void commit() {
-            if (isFirstLevel()) throw new IllegalStateException("commit() is not allowed for one level cache"); // shall never be called if not first level
-            commit(currentLevel, currentLevel-1, true);
-        }
-
-        /**
-         * Merge every levels of cache into the first one.
-         */
-        public void commitAll() {
-            if (currentLevel > FIRST_CACHE_LEVEL) {
-                // shallClear set to false to optimize, since everything will be clear() after.
-                commit(currentLevel, FIRST_CACHE_LEVEL, false);
+        void commit(int levelFrom, int levelTo, boolean shallClear) {
+            if (levelFrom <= levelTo) {
+                throw new IllegalArgumentException(
+                        "Can not merge cache. levelFrom shall be greater than levelTo." +
+                                "levelFrom=" + levelFrom + ", levelTo=" + levelTo);
+            }
+            for (int level = levelFrom; level > levelTo; level--) {
+                Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(level);
+                Set<ByteArrayWrapper> deletedAccounts = deletedAccountsPerLevel.get(level);
+                int level2 = level; // required to be used in lambda expression
+                deletedAccounts.forEach(account -> {
+                    deleteAccount(account, level2 - 1);
+                });
+                updatedKeys.forEach(key -> {
+                    byte[] value = get(key, level2);
+                    put(key, value, level2 - 1);
+                });
+                if (shallClear) {
+                    clear(level);
+                }
             }
         }
 
         /**
          * Clear the cache data for the current cache level
          */
-        public void clear() {
-            if (isFirstLevel()) {
+        void clear(int cacheLevel) {
+            if (cacheLevel == FIRST_CACHE_LEVEL) {
                 valuesPerLevelPerKeyPerAccount.clear();
                 deletedAccountsPerLevel.clear();
                 updatedKeysPerLevel.clear();
-                initLevel(currentLevel);
+                initLevel(cacheLevel);
             }
 		    else {
-                clear(currentLevel);
-            }
+                // clear all cache value for all updated keys for this cache level
+                Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(cacheLevel);
+                updatedKeys.forEach(key -> {
+                    ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+                    Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey
+                            = this.valuesPerLevelPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+                    if (valuesPerLevelPerKey != null) {
+                        Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.get(key);
+                        if (valuesPerLevel != null) {
+                            valuesPerLevel.remove(cacheLevel);
+                        }
+                    }
+                });
+                // clear the deletedKeys and updatedKeys for this cache level
+                initLevel(cacheLevel);
+		    }
         }
 
-        public Map<ByteArrayWrapper, byte[]> getAccountItems(ByteArrayWrapper key) {
+        Map<ByteArrayWrapper, byte[]> getAccountItems(ByteArrayWrapper key, int cacheLevel) {
             Map<ByteArrayWrapper, byte[]> accountItems = new HashMap<>();
             ByteArrayWrapper accountWrapper = getAccountWrapper(key);
             Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(accountWrapper);
             if (valuesPerLevelPerKey != null) {
                 valuesPerLevelPerKey.forEach((key2, valuesPerLevel) -> {
-                    // TODO : not sure here if we need to walk over all levels or only get from current one
-                    byte[] value = valuesPerLevel.get(currentLevel);
-                    // even if value is null, we need to keep it in the list because it means the key has been deleted in cache
-                    accountItems.put(key2, value);
+                    // Walk down through all level. If there is one level where account is deleted, stop it
+                    for (int level = cacheLevel; level >= FIRST_CACHE_LEVEL; level--) {
+                        if (getUpdatedKeys(level).contains(key2)) {
+                            byte[] value = valuesPerLevel.get(level);
+                            // even if value is null, we need to keep it in the list because it means the key has been deleted in cache
+                            accountItems.put(key2, value);
+                        }
+                        if (isAccountDeleted(accountWrapper, level)) {
+                            break;
+                        }
+                    }
                 });
             }
             return accountItems;
         }
 
-        public boolean isAccountDeleted(ByteArrayWrapper key) {
-            return isAccountDeleted(key, currentLevel);
+        boolean isAccountDeleted(ByteArrayWrapper key, int cacheLevel) {
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            return getDeletedAccounts(cacheLevel).contains(accountWrapper);
         }
 
-        public boolean isInCache(ByteArrayWrapper key) {
-            for (int level = currentLevel; level >= FIRST_CACHE_LEVEL; level --) {
+        boolean isInCache(ByteArrayWrapper key, int cacheLevel) {
+            for (int level = cacheLevel; level >= FIRST_CACHE_LEVEL; level --) {
                 if (getUpdatedKeys(level).contains(key) || isAccountDeleted(key, level)) {
                     return true;
                 }
@@ -441,81 +484,7 @@ public class JournalTrieCache implements MutableTrie {
             return key.length == size ? originalWrapper : new ByteArrayWrapper(Arrays.copyOf(key, size));
         }
 
-        private void initLevel(int cacheLevel) {
-            this.deletedAccountsPerLevel.put(cacheLevel, new HashSet<>());
-            this.updatedKeysPerLevel.put(cacheLevel, new HashSet<>());
-        }
-
-        /**
-         * Merge cache from one level to another one
-         * @param levelFrom : level from which cache shall be merged
-         * @param levelTo : level to which cache shall be merged
-         * @param shallClear : whether the merged level shall be cleared once merged
-         */
-        private void commit(int levelFrom, int levelTo, boolean shallClear) {
-            if (levelFrom <= levelTo) {
-                throw new IllegalArgumentException(
-                        "Can not merge cache. levelFrom shall be greater than levelTo." +
-                                "levelFrom=" + levelFrom + ", levelTo=" + levelTo);
-            }
-            for (int level = levelFrom; level > levelTo; level--) {
-                // TODO manage deleted keys
-                Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(level);
-                int level2 = level; // required to be used in lambda expression
-                updatedKeys.forEach(key -> {
-                    byte[] value = get(key, level2);
-                    // Optimization: put directly in the targeted level, instead of merging at each level
-                    put(key, value, levelTo);
-                });
-                if (shallClear) {
-                    clear(level);
-                }
-            }
-        }
-
-        private void clear(int cacheLevel) {
-            // clear all cache value for all updated keys for this cache level
-            Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(cacheLevel);
-            updatedKeys.forEach(key -> {
-                ByteArrayWrapper accountWrapper = getAccountWrapper(key);
-                Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey
-                        = this.valuesPerLevelPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
-                if (valuesPerLevelPerKey != null) {
-                    Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.get(key);
-                    if (valuesPerLevel != null) {
-                        valuesPerLevel.remove(cacheLevel);
-                    }
-                }
-            });
-            // clear the deletedKeys and updatedKeys for this cache level
-            initLevel(cacheLevel);
-        }
-
-        private void put(ByteArrayWrapper key, byte[] value, int cacheLevel) {
-            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
-            // if this account is in the deletedAccounts list, remove it
-            deletedAccountsPerLevel.get(cacheLevel).remove(accountWrapper);
-            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey
-                    = this.valuesPerLevelPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
-            Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.computeIfAbsent(key, k -> new HashMap<>());
-            valuesPerLevel.put(cacheLevel, value);
-            updatedKeysPerLevel.get(cacheLevel).add(key);
-        }
-
-        private byte[] get(ByteArrayWrapper key, int cacheLevel) {
-            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
-            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(accountWrapper);
-            if (valuesPerLevelPerKey != null) {
-                Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.get(key);
-                if (valuesPerLevel != null) {
-                    return valuesPerLevel.get(cacheLevel);
-                }
-            }
-            // TODO Prefer Optional<T> over null
-            return null;
-        }
-
-        private void collectKeys(Set<ByteArrayWrapper> parentKeys, int keySize, int cacheLevel) {
+        private void collectKeysAtLevel(Set<ByteArrayWrapper> parentKeys, int keySize, int cacheLevel) {
             // TODO manage delete correctly
             //            for key in getDeletedKeys(cacheLevel)
             //            if parentKeys.containsKey(key)
@@ -532,27 +501,221 @@ public class JournalTrieCache implements MutableTrie {
             });
         }
 
-        private Set<ByteArrayWrapper> getUpdatedKeys(int cacheLevel) {
-            return updatedKeysPerLevel.get(cacheLevel);
+        private void initLevel(int cacheLevel) {
+            this.deletedAccountsPerLevel.put(cacheLevel, new HashSet<>());
+            this.updatedKeysPerLevel.put(cacheLevel, new HashSet<>());
+        }
+    }
+
+    private interface ICache {
+        /**
+         * put in the current cache level, the given value at the given key
+         * @param key
+         * @param value
+         */
+        void put(ByteArrayWrapper key, byte[] value);
+
+        /**
+         * get the value in cache for the given key, only if it has been updated in this cache level.
+         * To get the value in cache regardless of the level, use getNewestValue()
+         * @param key
+         * @return the value if the key has been updated in this cache level, otherwise null
+         */
+        byte[] get(ByteArrayWrapper key);
+
+        /**
+         * get the value in cache for the given key, from the last cache level when this key has been updated
+         * @param key
+         * @return the newest value if the key has been updated in cache,
+         * or null if the key has been deleted in cache and this deletion is more recent than any updates
+         * (we assume that the caller previously checked if the key is in cache before, using isInCache(),
+         *  so that a 'null' returned value means a deleted key)
+         */
+        byte[] getNewestValue(ByteArrayWrapper key);
+
+        /**
+         * collect all the keys in cache (all levels included) with the specified size,
+         * or all keys when keySize = Integer.MAX_VALUE
+         * @param parentKeys : the set of collected keys
+         * @param keySize : the size of the key to collect, or Integer.MAX_VALUE to collect all
+         */
+        void collectKeys(Set<ByteArrayWrapper> parentKeys, int keySize);
+
+        /**
+         * whether the cache is at its first level or deeper
+         * @return true is at first level, false otherwise
+         */
+        boolean isFirstLevel();
+
+        /**
+         * Returns all the keys that have been updated in the current level of caching
+         * Keys that have been deleted are not returned
+         * @return
+         */
+        Set<ByteArrayWrapper> getUpdatedKeys();
+
+        /**
+         * Returns all the keys that have been deleted in the current level of caching
+         * @return
+         */
+        Set<ByteArrayWrapper> getDeletedAccounts();
+
+        /**
+         *
+         * @param key
+         */
+        void deleteAccount(ByteArrayWrapper key);
+
+        /**
+         * Merge the latest cache level with the previous one
+         */
+        void commit();
+
+        /**
+         * Merge every levels of cache into the first one.
+         */
+        void commitAll();
+
+        /**
+         * Clear the cache data for the current cache level
+         */
+        void clear();
+
+        Map<ByteArrayWrapper, byte[]> getAccountItems(ByteArrayWrapper key);
+
+        boolean isAccountDeleted(ByteArrayWrapper key);
+
+        boolean isInCache(ByteArrayWrapper key);
+    }
+
+    private class MultiLevelCacheSnapshot implements ICache {
+        int currentLevel;
+        MultiLevelCache cache;
+
+        MultiLevelCacheSnapshot(MultiLevelCache cache) {
+            this.currentLevel = cache.getNewLevel();
+            this.cache = cache;
         }
 
-        private Set<ByteArrayWrapper> getDeletedAccounts(int cacheLevel) {
-            return deletedAccountsPerLevel.get(cacheLevel);
+        MultiLevelCacheSnapshot() {
+            this.cache = new MultiLevelCache();
+            this.currentLevel = this.cache.getDepth();
         }
 
-        private void deleteAccount(ByteArrayWrapper account, int cacheLevel) {
-            deletedAccountsPerLevel.get(cacheLevel).add(account);
-            // clean cache for all keys of this account
-            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.remove(account);
-            if (valuesPerLevelPerKey != null) {
-                Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(cacheLevel);
-                valuesPerLevelPerKey.forEach((key, value) -> updatedKeys.remove(key));
+        public MultiLevelCache getCache() {
+            return this.cache;
+        }
+
+        /**
+         * whether the cache is at its first level or deeper
+         * @return true is at first level, false otherwise
+         */
+        public boolean isFirstLevel() {
+            return currentLevel == MultiLevelCache.FIRST_CACHE_LEVEL;
+        }
+
+        /**
+         * put in the current cache level, the given value at the given key
+         * @param key
+         * @param value
+         */
+        public void put(ByteArrayWrapper key, byte[] value) {
+            this.cache.put(key, value, this.currentLevel);
+        }
+
+        /**
+         * get the value in cache for the given key, only if it has been updated in this cache level.
+         * To get the value in cache regardless of the level, use getNewestValue()
+         * @param key
+         * @return the value if the key has been updated in this cache level, otherwise null
+         */
+        public byte[] get(ByteArrayWrapper key) {
+            return this.cache.get(key, currentLevel);
+        }
+
+        /**
+         * get the value in cache for the given key, from the last cache level when this key has been updated
+         * @param key
+         * @return the newest value if the key has been updated in cache,
+         * or null if the key has been deleted in cache and this deletion is more recent than any updates
+         * (we assume that the caller previously checked if the key is in cache before, using isInCache(),
+         *  so that a 'null' returned value means a deleted key)
+         */
+        // We assume this methode
+        public byte[] getNewestValue(ByteArrayWrapper key) {
+            return this.cache.getNewestValue(key, currentLevel);
+        }
+
+        /**
+         * collect all the keys in cache (all levels included) with the specified size,
+         * or all keys when keySize = Integer.MAX_VALUE
+         * @param parentKeys : the set of collected keys
+         * @param keySize : the size of the key to collect, or Integer.MAX_VALUE to collect all
+         */
+        public void collectKeys(Set<ByteArrayWrapper> parentKeys, int keySize) {
+            this.cache.collectKeys(parentKeys, keySize, currentLevel);
+        }
+
+        /**
+         * Returns all the keys that have been updated in the current level of caching
+         * Keys that have been deleted are not returned
+         * @return
+         */
+        public Set<ByteArrayWrapper> getUpdatedKeys() {
+            return this.cache.getUpdatedKeys(this.currentLevel);
+        }
+
+        /**
+         * Returns all the keys that have been deleted in the current level of caching
+         * @return
+         */
+        public Set<ByteArrayWrapper> getDeletedAccounts() {
+            return this.cache.getDeletedAccounts(this.currentLevel);
+        }
+
+        /**
+         *
+         * @param key
+         */
+        public void deleteAccount(ByteArrayWrapper key) {
+            this.cache.deleteAccount(key, currentLevel);
+        }
+
+        /**
+         * Merge the latest cache level with the previous one
+         */
+        public void commit() {
+            if (isFirstLevel()) throw new IllegalStateException("commit() is not allowed for one level cache"); // shall never be called if not first level
+            this.cache.commit(currentLevel, currentLevel-1, true);
+        }
+
+        /**
+         * Merge every levels of cache into the first one.
+         */
+        public void commitAll() {
+            if (currentLevel > MultiLevelCache.FIRST_CACHE_LEVEL) {
+                // shallClear set to false to optimize, since everything will be clear() after.
+                this.cache.commit(currentLevel, MultiLevelCache.FIRST_CACHE_LEVEL, false);
             }
         }
 
-        private boolean isAccountDeleted(ByteArrayWrapper key, int cacheLevel) {
-            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
-            return getDeletedAccounts(cacheLevel).contains(accountWrapper);
+        /**
+         * Clear the cache data for the current cache level
+         */
+        public void clear() {
+            this.cache.clear(currentLevel);
+        }
+
+        public Map<ByteArrayWrapper, byte[]> getAccountItems(ByteArrayWrapper key) {
+            return this.cache.getAccountItems(key, currentLevel);
+        }
+
+        public boolean isAccountDeleted(ByteArrayWrapper key) {
+            return this.cache.isAccountDeleted(key, currentLevel);
+        }
+
+        public boolean isInCache(ByteArrayWrapper key) {
+            return this.cache.isInCache(key, currentLevel);
         }
 
     }
