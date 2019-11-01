@@ -23,14 +23,21 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieKeySlice;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
 
 public class JournalTrieCache implements MutableTrie {
+
+    private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
 
     private MutableTrie trie;
     private MultiLevelCache cache;
@@ -42,13 +49,14 @@ public class JournalTrieCache implements MutableTrie {
 
     @Override
     public Keccak256 getHash() {
-        return null;
+        // TODO implement this mmethod
+        throw new NotImplementedException();
     }
 
     @Nullable
     @Override
     public byte[] get(byte[] key) {
-        return new byte[0];
+        return internalGet(key, trie::get, Function.identity()).orElse(null);
     }
 
     @Override
@@ -71,13 +79,17 @@ public class JournalTrieCache implements MutableTrie {
     }
 
     @Override
-    public void deleteRecursive(byte[] key) {
-
+    public void deleteRecursive(byte[] account) {
+        // the key has to match exactly an account key
+        // it won't work if it is used with an storage key or any other
+        ByteArrayWrapper wrap = new ByteArrayWrapper(account);
+        cache.deleteAccount(wrap);
     }
 
     @Override
     public void save() {
-
+        // TODO implement this mmethod
+        throw new NotImplementedException();
     }
 
     @Override
@@ -99,7 +111,8 @@ public class JournalTrieCache implements MutableTrie {
 
     @Override
     public void rollback() {
-
+        // TODO implement this mmethod
+        throw new NotImplementedException();
     }
 
     @Override
@@ -111,30 +124,149 @@ public class JournalTrieCache implements MutableTrie {
 
     @Override
     public Trie getTrie() {
-        return null;
+        // TODO implement this mmethod
+        throw new NotImplementedException();
     }
 
     @Override
     public Uint24 getValueLength(byte[] key) {
-        return null;
+        return internalGet(key, trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
     }
 
     @Override
     public Keccak256 getValueHash(byte[] key) {
-        return null;
+        return internalGet(key, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
     }
 
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
-        return null;
+        byte[] accountStoragePrefixKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
+        Map<ByteArrayWrapper, byte[]> accountItems = cache.getAccountItems(new ByteArrayWrapper(accountStoragePrefixKey));
+
+        // TODO : manage deleted keys
+        // TODO : Is account deleted and keys deleted equivalent ?
+        //  boolean isDeletedAccount = cache.getDeletedKeys().contains(key);
+        //  if (accountItems == null && isDeletedAccount) {
+        //     return Collections.emptyIterator();
+        //  }
+        //   if (isDeletedAccount) {
+        //      // lower level is deleted, return cached items
+        //      return new StorageKeysIterator(Collections.emptyIterator(), accountItems, addr, trieKeyMapper);
+        //  }
+
+        Iterator<DataWord> storageKeys = trie.getStorageKeys(addr);
+        if (accountItems == null) {
+            // uncached account
+            return storageKeys;
+        }
+
+        return new StorageKeysIterator(storageKeys, accountItems, addr, trieKeyMapper);
+    }
+
+    private <T> Optional<T> internalGet(
+            byte[] key,
+            Function<byte[], T> trieRetriever,
+            Function<byte[], T> cacheTransformer) {
+        ByteArrayWrapper wrapper = new ByteArrayWrapper(key);
+        if (!cache.isInCache(wrapper)) {
+            return Optional.ofNullable(trieRetriever.apply(key));
+        }
+        byte[] value = cache.getNewestValue(wrapper);
+        // A null value means the key has been deleted
+        return Optional.ofNullable(cacheTransformer.apply(value));
+    }
+
+    private static class StorageKeysIterator implements Iterator<DataWord> {
+        private final Iterator<DataWord> keysIterator;
+        private final Map<ByteArrayWrapper, byte[]> accountItems;
+        private final RskAddress address;
+        private final int storageKeyOffset = (
+                TrieKeyMapper.domainPrefix().length +
+                        TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE +
+                        TrieKeyMapper.storagePrefix().length +
+                        TrieKeyMapper.SECURE_KEY_SIZE)
+                * Byte.SIZE;
+        private final TrieKeyMapper trieKeyMapper;
+        private DataWord currentStorageKey;
+        private Iterator<Map.Entry<ByteArrayWrapper, byte[]>> accountIterator;
+
+        StorageKeysIterator(
+                Iterator<DataWord> keysIterator,
+                Map<ByteArrayWrapper, byte[]> accountItems,
+                RskAddress addr,
+                TrieKeyMapper trieKeyMapper) {
+            this.keysIterator = keysIterator;
+            this.accountItems = new HashMap<>(accountItems);
+            this.address = addr;
+            this.trieKeyMapper = trieKeyMapper;
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (currentStorageKey != null) {
+                return true;
+            }
+
+            while (keysIterator.hasNext()) {
+                DataWord item = keysIterator.next();
+                ByteArrayWrapper fullKey = getCompleteKey(item);
+                if (accountItems.containsKey(fullKey)) {
+                    byte[] value = accountItems.remove(fullKey);
+                    if (value == null){
+                        continue;
+                    }
+                }
+                currentStorageKey = item;
+                return true;
+            }
+
+            if (accountIterator == null) {
+                accountIterator = accountItems.entrySet().iterator();
+            }
+
+            while (accountIterator.hasNext()) {
+                Map.Entry<ByteArrayWrapper, byte[]> entry = accountIterator.next();
+                byte[] key = entry.getKey().getData();
+                if (entry.getValue() != null && key.length * Byte.SIZE > storageKeyOffset) {
+                    // cached account key
+                    currentStorageKey = getPartialKey(key);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private DataWord getPartialKey(byte[] key) {
+            TrieKeySlice nodeKey = TrieKeySlice.fromKey(key);
+            byte[] storageExpandedKeySuffix = nodeKey.slice(storageKeyOffset, nodeKey.length()).encode();
+            return DataWord.valueOf(storageExpandedKeySuffix);
+        }
+
+        private ByteArrayWrapper getCompleteKey(DataWord subkey) {
+            byte[] secureKeyPrefix = trieKeyMapper.getAccountStorageKey(address, subkey);
+            return new ByteArrayWrapper(secureKeyPrefix);
+        }
+
+        @Override
+        public DataWord next() {
+            if (currentStorageKey == null && !hasNext()) {
+                throw new NoSuchElementException();
+            }
+
+            DataWord next = currentStorageKey;
+            currentStorageKey = null;
+            return next;
+        }
     }
 
     private class MultiLevelCache {
 
         static final int FIRST_CACHE_LEVEL = 1;
         int currentLevel = FIRST_CACHE_LEVEL;
-        private final Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = new HashMap<>();
-        private final Map<Integer, Set<ByteArrayWrapper>> deletedKeysPerLevel = new HashMap<>();
+        private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, Map<Integer, byte[]>>> valuesPerLevelPerKeyPerAccount
+                = new HashMap<>();
+        private final Map<Integer, Set<ByteArrayWrapper>> deletedAccountsPerLevel = new HashMap<>();
         private final Map<Integer, Set<ByteArrayWrapper>> updatedKeysPerLevel = new HashMap<>();
 
         public MultiLevelCache() {
@@ -158,6 +290,39 @@ public class JournalTrieCache implements MutableTrie {
          */
         public byte[] get(ByteArrayWrapper key) {
             return get(key, currentLevel);
+        }
+
+        /**
+         * get the value in cache for the given key, from the last cache level when this key has been updated
+         * @param key
+         * @return the newest value if the key has been updated in cache,
+         * or null if the key has been deleted in cache and this deletion is more recent than any updates
+         * (we assume that the caller previously checked if the key is in cache before, using isInCache(),
+         *  so that a 'null' returned value means a deleted key)
+         */
+        // We assume this methode
+        public byte[] getNewestValue(ByteArrayWrapper key) {
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(accountWrapper);
+            for (int level = currentLevel; level >= FIRST_CACHE_LEVEL; level--) {
+                if (isAccountDeleted(key, level)) {
+                    return null;
+                }
+                if (valuesPerLevelPerKey != null) {
+                    Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.get(key);
+                    if (valuesPerLevel != null) {
+                        // the key exists so it has been updated at least once in cache
+                        if (valuesPerLevel.containsKey(level)) {
+                            return valuesPerLevel.get(level);
+                        }
+                    }
+                }
+            }
+            throw new UnsupportedOperationException(
+                    "Key '" + new String(key.getData(), StandardCharsets.UTF_8) +
+                            "' does not appear in cache.\n" +
+                            " Method 'getNewestValue' shall always  be called only after checking that the key is in cache"
+            );
         }
 
         /**
@@ -192,11 +357,37 @@ public class JournalTrieCache implements MutableTrie {
         }
 
         /**
+         * Returns all the keys that have been deleted in the current level of caching
+         * @return
+         */
+        public Set<ByteArrayWrapper> getDeletedAccounts() {
+            return getDeletedAccounts(this.currentLevel);
+        }
+
+        /**
+         *
+         * @param key
+         */
+        public void deleteAccount(ByteArrayWrapper key) {
+            deleteAccount(key, currentLevel);
+        }
+
+        /**
          * Merge the latest cache level with the previous one
          */
         public void commit() {
+            if (isFirstLevel()) throw new IllegalStateException("commit() is not allowed for one level cache"); // shall never be called if not first level
+            commit(currentLevel, currentLevel-1, true);
+        }
 
-
+        /**
+         * Merge every levels of cache into the first one.
+         */
+        public void commitAll() {
+            if (currentLevel > FIRST_CACHE_LEVEL) {
+                // shallClear set to false to optimize, since everything will be clear() after.
+                commit(currentLevel, FIRST_CACHE_LEVEL, false);
+            }
         }
 
         /**
@@ -204,8 +395,8 @@ public class JournalTrieCache implements MutableTrie {
          */
         public void clear() {
             if (isFirstLevel()) {
-                valuesPerLevelPerKey.clear();
-                deletedKeysPerLevel.clear();
+                valuesPerLevelPerKeyPerAccount.clear();
+                deletedAccountsPerLevel.clear();
                 updatedKeysPerLevel.clear();
                 initLevel(currentLevel);
             }
@@ -214,8 +405,44 @@ public class JournalTrieCache implements MutableTrie {
             }
         }
 
+        public Map<ByteArrayWrapper, byte[]> getAccountItems(ByteArrayWrapper key) {
+            Map<ByteArrayWrapper, byte[]> accountItems = new HashMap<>();
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(accountWrapper);
+            if (valuesPerLevelPerKey != null) {
+                valuesPerLevelPerKey.forEach((key2, valuesPerLevel) -> {
+                    // TODO : not sure here if we need to walk over all levels or only get from current one
+                    byte[] value = valuesPerLevel.get(currentLevel);
+                    // even if value is null, we need to keep it in the list because it means the key has been deleted in cache
+                    accountItems.put(key2, value);
+                });
+            }
+            return accountItems;
+        }
+
+        public boolean isAccountDeleted(ByteArrayWrapper key) {
+            return isAccountDeleted(key, currentLevel);
+        }
+
+        public boolean isInCache(ByteArrayWrapper key) {
+            for (int level = currentLevel; level >= FIRST_CACHE_LEVEL; level --) {
+                if (getUpdatedKeys(level).contains(key) || isAccountDeleted(key, level)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // This method returns a wrapper with the same content and size expected for a account key
+        // when the key is from the same size than the original wrapper, it returns the same object
+        private ByteArrayWrapper getAccountWrapper(ByteArrayWrapper originalWrapper) {
+            byte[] key = originalWrapper.getData();
+            int size = TrieKeyMapper.domainPrefix().length + TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.SECURE_KEY_SIZE;
+            return key.length == size ? originalWrapper : new ByteArrayWrapper(Arrays.copyOf(key, size));
+        }
+
         private void initLevel(int cacheLevel) {
-            this.deletedKeysPerLevel.put(cacheLevel, new HashSet<>());
+            this.deletedAccountsPerLevel.put(cacheLevel, new HashSet<>());
             this.updatedKeysPerLevel.put(cacheLevel, new HashSet<>());
         }
 
@@ -250,9 +477,14 @@ public class JournalTrieCache implements MutableTrie {
             // clear all cache value for all updated keys for this cache level
             Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(cacheLevel);
             updatedKeys.forEach(key -> {
-                Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.get(key);
-                if (valuesPerLevel != null) {
-                    valuesPerLevel.remove(cacheLevel);
+                ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+                Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey
+                        = this.valuesPerLevelPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+                if (valuesPerLevelPerKey != null) {
+                    Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.get(key);
+                    if (valuesPerLevel != null) {
+                        valuesPerLevel.remove(cacheLevel);
+                    }
                 }
             });
             // clear the deletedKeys and updatedKeys for this cache level
@@ -260,15 +492,24 @@ public class JournalTrieCache implements MutableTrie {
         }
 
         private void put(ByteArrayWrapper key, byte[] value, int cacheLevel) {
-            Map<Integer, byte[]> valuesPerLevel = this.valuesPerLevelPerKey.computeIfAbsent(key, k -> new HashMap<>());
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            // if this account is in the deletedAccounts list, remove it
+            deletedAccountsPerLevel.get(cacheLevel).remove(accountWrapper);
+            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey
+                    = this.valuesPerLevelPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+            Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.computeIfAbsent(key, k -> new HashMap<>());
             valuesPerLevel.put(cacheLevel, value);
             updatedKeysPerLevel.get(cacheLevel).add(key);
         }
 
         private byte[] get(ByteArrayWrapper key, int cacheLevel) {
-            Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.get(key);
-            if (valuesPerLevel != null) {
-                return valuesPerLevel.get(cacheLevel);
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(accountWrapper);
+            if (valuesPerLevelPerKey != null) {
+                Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.get(key);
+                if (valuesPerLevel != null) {
+                    return valuesPerLevel.get(cacheLevel);
+                }
             }
             // TODO Prefer Optional<T> over null
             return null;
@@ -293,6 +534,25 @@ public class JournalTrieCache implements MutableTrie {
 
         private Set<ByteArrayWrapper> getUpdatedKeys(int cacheLevel) {
             return updatedKeysPerLevel.get(cacheLevel);
+        }
+
+        private Set<ByteArrayWrapper> getDeletedAccounts(int cacheLevel) {
+            return deletedAccountsPerLevel.get(cacheLevel);
+        }
+
+        private void deleteAccount(ByteArrayWrapper account, int cacheLevel) {
+            deletedAccountsPerLevel.get(cacheLevel).add(account);
+            // clean cache for all keys of this account
+            Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.remove(account);
+            if (valuesPerLevelPerKey != null) {
+                Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(cacheLevel);
+                valuesPerLevelPerKey.forEach((key, value) -> updatedKeys.remove(key));
+            }
+        }
+
+        private boolean isAccountDeleted(ByteArrayWrapper key, int cacheLevel) {
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            return getDeletedAccounts(cacheLevel).contains(accountWrapper);
         }
 
     }
