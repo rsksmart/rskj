@@ -919,6 +919,7 @@ public class RskContext implements NodeBootstrapper {
                         .map(multiTrieStoreName -> multiTrieStoreName.replaceFirst(multiTrieStoreNamePrefix, ""))
                         .map(Integer::valueOf)
                         .max(Comparator.naturalOrder())
+                        .map(e -> e + 1)
                         .orElse(numberOfEpochs);
             }
             Path unitriePath = databasePath.resolve("unitrie");
