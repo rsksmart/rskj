@@ -325,11 +325,17 @@ public class Transaction {
         if (BridgeUtils.isFreeBridgeTx(this, constants, activations)) {
             return 0;
         }
+        if (version == 0){
+            long nonZeroes = this.nonZeroBytes(this.getData());
+            long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
 
-        long nonZeroes = this.nonZeroDataBytes();
-        long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
+            return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION_FORMAT_ZERO) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
+        }else{
+            long nonZeroes = this.nonZeroBytes(this.getEncoded());
+            long zeroVals = ListArrayUtil.getLength(this.getEncoded()) - nonZeroes;
 
-        return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
+            return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION_FORMAT_ONE) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
+        }
     }
 
     public void verify() {
@@ -455,7 +461,7 @@ public class Transaction {
         return this.receiveAddress.equals(RskAddress.nullAddress());
     }
 
-    private long nonZeroDataBytes() {
+    private long nonZeroBytes(byte[] data){
         if (data == null) {
             return 0;
         }
