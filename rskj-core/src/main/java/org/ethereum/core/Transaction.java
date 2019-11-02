@@ -47,6 +47,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Arrays;
@@ -154,19 +156,19 @@ public class Transaction {
             version = 1;
             byte[] nonce = new byte[]{1};
             RskAddress receiveAddress = RskAddress.nullAddress();
-            Coin value = null;
+            Coin value = Coin.ZERO;
             Coin gasPrice = null;
             byte[] gasLimit = DEFAULT_GAS_LIMIT;
             byte[] data = null;
             byte[] signature = null;
 
-            byte[] realRLPEncoded = Arrays.copyOfRange(rawData, 1, rawData.length -1);
+            byte[] realRLPEncoded = Arrays.copyOfRange(rawData, 1, rawData.length);
             List<RLPElement> transaction = RLP.decodeList(realRLPEncoded);
             for (RLPElement element : transaction){
                 byte[] eleData = element.getRLPData();
                 //elememt id contained in lower 5 bits 
                 int type = eleData[0] & (byte)0x1f; 
-                byte[] realElementData = Arrays.copyOfRange(eleData, 1, eleData.length - 1);
+                byte[] realElementData = Arrays.copyOfRange(eleData, 1, eleData.length);
                 switch (type) {
                     case NONCE_ID:
                         nonce = realElementData;
@@ -175,7 +177,7 @@ public class Transaction {
                         receiveAddress = RLP.parseRskAddress(realElementData);
                         break;
                     case AMOUNT_ID:
-                        value = RLP.parseCoinNullZero(realElementData);
+                        value = RLP.parseCoinNonNullZero(realElementData);
                         break;
                     case GAS_PRICE_ID:
                         gasPrice = RLP.parseCoinNonNullZero(realElementData);
@@ -188,6 +190,7 @@ public class Transaction {
                         break;
                     case SIGNATURE_ID:
                         signature = realElementData;
+                        break;
                     default:
                         throw new IllegalArgumentException("A transaction contain a unknown element id");     
                 }
@@ -196,7 +199,7 @@ public class Transaction {
             this.value = value;
             this.receiveAddress = receiveAddress;
             if (gasPrice == null){
-                throw new IllegalArgumentException("A transaction must contain gas price ");
+                throw new IllegalArgumentException("A transaction must contain gas price");
             }else{
                 this.gasPrice = gasPrice;
             }
@@ -235,6 +238,12 @@ public class Transaction {
                 data, chainId);
     }
 
+    public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId, int version) {
+        this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
+                BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
+                data, chainId, version);
+    }
+
     public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data,
                        byte chainId) {
         this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
@@ -270,6 +279,19 @@ public class Transaction {
         this.chainId = chainId;
         this.isLocalCall = false;
         this.version = 1;
+    }
+
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
+                       byte chainId, int version) {
+        this.nonce = ByteUtil.cloneBytes(nonce);
+        this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
+        this.gasLimit = ByteUtil.cloneBytes(gasLimit);
+        this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
+        this.value = RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw));
+        this.data = ByteUtil.cloneBytes(data);
+        this.chainId = chainId;
+        this.isLocalCall = false;
+        this.version = version;
     }
 
     public Transaction toImmutableTransaction() {
@@ -509,14 +531,47 @@ public class Transaction {
     public byte[] getEncodedRaw() {
         if (this.rawRlpEncoding == null) {
             // Since EIP-155 use chainId for v
-            if (chainId == 0) {
-                this.rawRlpEncoding = encode(null, null, null);
-            } else {
-                byte[] v = RLP.encodeByte(chainId);
-                byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-                byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+            if (version == 0){
+                if (chainId == 0) {
+                    this.rawRlpEncoding = encode(null, null, null);
+                } else {
+                    byte[] v = RLP.encodeByte(chainId);
+                    byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                    byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
 
-                this.rawRlpEncoding = encode(v, r, s);
+                    this.rawRlpEncoding = encode(v, r, s);
+                }
+            }else{
+                //version 2
+                try {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    baos.write(NONCE_ID);
+                    if (!(this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 1)) {
+                        baos.write(this.nonce);
+                    }
+                    baos.write(AMOUNT_ID);
+                    if (this.value != null){
+                        baos.write(this.value.getBytes());
+                    }
+                    baos.write(RECEIVER_ID);
+                    if (!this.receiveAddress.equals(RskAddress.nullAddress())){
+                        baos.write(this.receiveAddress.getBytes());
+                    }
+                    baos.write(GAS_PRICE_ID);
+                    baos.write(this.gasPrice.getBytes());
+                    baos.write(GAS_LIMIT_ID);
+                    if (!Arrays.equals(this.gasLimit, DEFAULT_GAS_LIMIT)){
+                        baos.write(this.gasLimit);
+                    }
+                    baos.write(DATA_ID);
+                    if (this.data != null){
+                        baos.write(this.data);
+                    }
+                    return baos.toByteArray();
+                }catch (IOException e){
+                    throw new TransactionException("Cannot generate fullRec to be signed");
+                }
+
             }
         }
 
@@ -528,7 +583,6 @@ public class Transaction {
             byte[] v;
             byte[] r;
             byte[] s;
-
             if (this.signature != null) {
                 v = RLP.encodeByte((byte) (chainId == 0 ? signature.v : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
                 r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
@@ -579,6 +633,7 @@ public class Transaction {
                 System.arraycopy(this.nonce, 0, toEncodeNonce, 1, this.nonce.length);
                 toEncodeNonce = RLP.encodeElement(toEncodeNonce);
             }
+
             byte[] toEncodeValue = null;
             if (this.value != null){
                 byte[] valueBytes = this.value.getBytes();
@@ -587,6 +642,7 @@ public class Transaction {
                 System.arraycopy(valueBytes, 0, toEncodeValue, 1, valueBytes.length);
                 toEncodeValue = RLP.encodeElement(toEncodeValue);
             }
+
             byte[] toEncodeReceiveAddress = null;
             if (!this.receiveAddress.equals(RskAddress.nullAddress())){
                 byte[] addrBytes = this.receiveAddress.getBytes();
@@ -595,7 +651,12 @@ public class Transaction {
                 System.arraycopy(addrBytes, 0, toEncodeReceiveAddress, 1, addrBytes.length);
                 toEncodeReceiveAddress = RLP.encodeElement(toEncodeReceiveAddress);
             }
-            byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
+
+            byte[] toEncodeGasPrice = new byte[1 + this.gasPrice.getBytes().length];
+            toEncodeGasPrice[0] = GAS_PRICE_ID;
+            System.arraycopy(this.gasPrice.getBytes(), 0, toEncodeGasPrice, 1, this.gasPrice.getBytes().length);
+            toEncodeGasPrice = RLP.encodeElement(toEncodeGasPrice);
+
             byte[] toEncodeGasLimit = null;
             if (!Arrays.equals(this.gasLimit, DEFAULT_GAS_LIMIT)){
                 toEncodeGasLimit = new byte[1 + this.gasLimit.length];
@@ -603,6 +664,7 @@ public class Transaction {
                 System.arraycopy(this.gasLimit, 0, toEncodeGasLimit, 1, this.gasLimit.length);
                 toEncodeGasLimit = RLP.encodeElement(toEncodeGasLimit);
             }
+
             byte[] toEncodeData = null;
             if (this.data != null){
                 toEncodeData = new byte[1 + this.data.length];
@@ -616,6 +678,7 @@ public class Transaction {
             toEncodeSig[0] = SIGNATURE_ID;
             System.arraycopy(sigList, 0, toEncodeSig, 1, sigList.length);
             toEncodeSig = RLP.encodeElement(toEncodeSig);
+
             List<byte[]> toEncodedElements = new ArrayList<byte[]>();
             if (toEncodeNonce != null){
                 toEncodedElements.add(toEncodeNonce);

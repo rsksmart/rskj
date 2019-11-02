@@ -289,7 +289,7 @@ public class TransactionTest {
         byte[] value = BigInteger.valueOf(1000000000000000000L).toByteArray();
         byte[] data = new byte[0];
         byte chainId = 1;
-        Transaction tx = new Transaction(nonce, gasPrice, gas, to, value, data, chainId);
+        Transaction tx = new Transaction(nonce, gasPrice, gas, to, value, data, chainId, 0);
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
         String strenc = Hex.toHexString(encoded);
@@ -303,7 +303,7 @@ public class TransactionTest {
     @Test
     public void testTransaction() {
         Transaction tx = new Transaction(9L, 20000000000L, 21000L,
-                "3535353535353535353535353535353535353535", 1000000000000000000L, new byte[0], (byte) 1);
+                "3535353535353535353535353535353535353535", 1000000000000000000L, new byte[0], (byte) 1, 0);
 
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();

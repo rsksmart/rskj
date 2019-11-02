@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
@@ -44,6 +45,7 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -52,12 +54,14 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -302,7 +306,6 @@ public class TransactionTest {
         tx1.sign(senderPrivKey);
 
         byte[] payload = tx1.getEncoded();
-
 
         System.out.println(Hex.toHexString(payload));
         Transaction tx2 = new ImmutableTransaction(payload);
@@ -709,6 +712,35 @@ public class TransactionTest {
         Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
     }
+
+	@Test
+    public void testFormat1() throws IOException {
+		//0x01 | RLPList( RLP(0x020102030405060708090A0102030405060708090A), RLP(0x0501020304))
+		byte[] ele1 = RLP.encodeElement(Hex.decode("020102030405060708090A0102030405060708090A"));
+		byte[] ele2 = RLP.encodeElement(Hex.decode("0501020304"));
+		byte[] ele3 = RLP.encodeElement(Hex.decode("030102"));
+		//faked signature
+		byte[] r = RLP.encodeElement(Hex.decode("19"));
+		byte[] s = RLP.encodeElement(Hex.decode("11121314"));
+		byte[] v = RLP.encodeElement(Hex.decode("11121314"));
+		byte[] rsv = RLP.encodeList(r, s, v);
+		ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+		baos1.write(6);
+		baos1.write(rsv);
+		byte[] ele4 = RLP.encodeElement(baos1.toByteArray());
+		byte[] eleList = RLP.encodeList(ele1, ele2, ele3, ele4);
+
+		ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
+		baos2.write(0x1);
+		baos2.write(eleList);
+		byte[] format1Trx = baos2.toByteArray();
+		ImmutableTransaction trx = new ImmutableTransaction(format1Trx);
+		Assert.assertEquals(trx.getReceiveAddress(), new RskAddress("0102030405060708090A0102030405060708090A"));
+		Assert.assertEquals(Arrays.equals(trx.getData(), new byte[]{1,2,3,4}), true);
+		Assert.assertEquals(Arrays.equals(trx.getNonce(), new byte[]{1}),true);
+		Assert.assertEquals(trx.getValue().equals(Coin.ZERO), true);
+		Assert.assertEquals(Arrays.equals(trx.getGasLimit(), new byte[]{0x75,0x30}), true);
+	}
 
     private Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, final Repository repository) throws InterruptedException {
         return createTx(sender, receiveAddress, data, 0, repository.getNonce(new RskAddress(sender.getAddress())));
