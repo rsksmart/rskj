@@ -7,10 +7,10 @@ import java.time.Duration;
 
 @Immutable
 public final class SyncConfiguration {
-    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10);
+    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 5, 20, 192, 20, 10, false);
 
     @VisibleForTesting
-    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10);
+    public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, false);
 
     private final int expectedPeers;
     private final Duration timeoutWaitingPeers;
@@ -20,6 +20,7 @@ public final class SyncConfiguration {
     private final int chunkSize;
     private final int longSyncLimit;
     private final int maxRequestedBodies;
+    private final boolean useAlternative;
 
     /**
      * @param expectedPeers The expected number of peers we would want to start finding a connection point.
@@ -30,6 +31,7 @@ public final class SyncConfiguration {
      * @param chunkSize Amount of blocks contained in a chunk
      * @param maxRequestedBodies Amount of bodies to request at the same time when synchronizing backwards.
      * @param longSyncLimit Distance to the tip of the peer's blockchain to enable long synchronization.
+     * @param useAlternative
      */
     public SyncConfiguration(
             int expectedPeers,
@@ -39,7 +41,8 @@ public final class SyncConfiguration {
             int maxSkeletonChunks,
             int chunkSize,
             int maxRequestedBodies,
-            int longSyncLimit) {
+            int longSyncLimit,
+            boolean useAlternative) {
         this.expectedPeers = expectedPeers;
         this.timeoutWaitingPeers = Duration.ofSeconds(timeoutWaitingPeers);
         this.timeoutWaitingRequest = Duration.ofSeconds(timeoutWaitingRequest);
@@ -48,6 +51,7 @@ public final class SyncConfiguration {
         this.chunkSize = chunkSize;
         this.maxRequestedBodies = maxRequestedBodies;
         this.longSyncLimit = longSyncLimit;
+        this.useAlternative = useAlternative;
     }
 
     public final int getExpectedPeers() {
@@ -81,4 +85,6 @@ public final class SyncConfiguration {
     public int getLongSyncLimit() {
         return longSyncLimit;
     }
+
+    public boolean getUseAlternative() { return useAlternative; }
 }
