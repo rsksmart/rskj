@@ -127,19 +127,12 @@ public class TraceModuleImplTest {
         Assert.assertNotNull(result);
         Assert.assertTrue(result.isArray());
 
-        ArrayNode aresult0 = (ArrayNode)result;
-
-        Assert.assertEquals(1, aresult0.size());
-        Assert.assertTrue(aresult0.get(0).isArray());
-
-        ArrayNode aresult = (ArrayNode)aresult0.get(0);
-
-        Assert.assertEquals(4, aresult.size());
+        Assert.assertEquals(4, result.size());
 
         for (int k = 0; k < 4; k++) {
-            Assert.assertTrue(aresult.get(k).isObject());
+            Assert.assertTrue(result.get(k).isObject());
 
-            ObjectNode oresult = (ObjectNode) aresult.get(k);
+            ObjectNode oresult = (ObjectNode) result.get(k);
 
             Assert.assertNotNull(oresult.get("type"));
             Assert.assertEquals("\"create\"", oresult.get("type").toString());

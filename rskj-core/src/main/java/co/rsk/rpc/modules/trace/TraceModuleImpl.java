@@ -102,7 +102,7 @@ public class TraceModuleImpl implements TraceModule {
 
         Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
-        List<List<TransactionTrace>> blockTraces = new ArrayList<>();
+        List<TransactionTrace> blockTraces = new ArrayList<>();
 
         if (block.getNumber() != 0) {
             ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
@@ -120,7 +120,7 @@ public class TraceModuleImpl implements TraceModule {
 
                 List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
 
-                blockTraces.add(traces);
+                blockTraces.addAll(traces);
             }
         }
 
