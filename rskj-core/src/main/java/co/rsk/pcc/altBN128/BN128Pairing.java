@@ -18,12 +18,10 @@
 
 package co.rsk.pcc.altBN128;
 
-import org.ethereum.crypto.altbn128.*;
-import org.ethereum.vm.DataWord;
+import com.bakaoh.altbn128.cloudflare.JniBn128;
 import org.ethereum.vm.PrecompiledContracts;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.parseWord;
 
 /**
  * Computes pairing check. <br/>
@@ -56,71 +54,23 @@ public class BN128Pairing extends PrecompiledContracts.PrecompiledContract {
     @Override
     public long getGasForData(byte[] data) {
 
-        if (data == null) {return 100000;}
+        if (data == null) {
+            return 100000;
+        }
 
         return 80000L * (data.length / PAIR_SIZE) + 100000L;
     }
 
     @Override
     public byte[] execute(byte[] data) {
-
         if (data == null) {
             data = EMPTY_BYTE_ARRAY;
         }
-
-        // fail if input len is not a multiple of PAIR_SIZE
-        if (data.length % PAIR_SIZE > 0) {
+        byte[] output = new byte[32];
+        int rs = new JniBn128().pairing(data, data.length, output);
+        if (rs < 0) {
             return EMPTY_BYTE_ARRAY;
         }
-
-        PairingCheck check = PairingCheck.create();
-
-        // iterating over all pairs
-        for (int offset = 0; offset < data.length; offset += PAIR_SIZE) {
-
-            BN128Pair pair = decodePair(data, offset);
-
-            // fail if decoding has failed
-            if (pair == null) {
-                    return EMPTY_BYTE_ARRAY;
-            }
-
-            check.addPair(pair.getG1(), pair.getG2());
-        }
-
-        check.run();
-        int result = check.result();
-
-        return DataWord.valueOf(result).getData();
-    }
-
-    private BN128Pair decodePair(byte[] in, int offset) {
-
-        byte[] x = parseWord(in, offset, 0);
-        byte[] y = parseWord(in, offset, 1);
-
-        BN128G1 p1 = BN128G1.create(x, y);
-
-        // fail if point is invalid
-        if (p1 == null) {
-            return null;
-        }
-
-        // (b, a)
-        byte[] b = parseWord(in, offset, 2);
-        byte[] a = parseWord(in, offset, 3);
-
-        // (d, c)
-        byte[] d = parseWord(in, offset, 4);
-        byte[] c = parseWord(in, offset, 5);
-
-        BN128G2 p2 = BN128G2.create(a, b, c, d);
-
-        // fail if point is invalid
-        if (p2 == null) {
-            return null;
-        }
-
-        return BN128Pair.of(p1, p2);
+        return output;
     }
 }

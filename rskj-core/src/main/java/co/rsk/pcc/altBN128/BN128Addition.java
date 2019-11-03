@@ -18,13 +18,10 @@
 
 package co.rsk.pcc.altBN128;
 
-import org.ethereum.crypto.altbn128.BN128;
-import org.ethereum.crypto.altbn128.BN128Fp;
-import org.ethereum.crypto.altbn128.Fp;
+import com.bakaoh.altbn128.cloudflare.JniBn128;
 import org.ethereum.vm.PrecompiledContracts;
 
 import static org.ethereum.util.ByteUtil.*;
-import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 /**
  * Computes point addition on Barreto–Naehrig curve.
@@ -47,19 +44,6 @@ import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
  */
 public class BN128Addition extends PrecompiledContracts.PrecompiledContract {
 
-    private static byte[] encodeRes(byte[] w1, byte[] w2) {
-
-        byte[] res = new byte[64];
-
-        w1 = stripLeadingZeroes(w1);
-        w2 = stripLeadingZeroes(w2);
-
-        System.arraycopy(w1, 0, res, 32 - w1.length, w1.length);
-        System.arraycopy(w2, 0, res, 64 - w2.length, w2.length);
-
-        return res;
-    }
-
     @Override
     public long getGasForData(byte[] data) {
         return 500;
@@ -67,31 +51,14 @@ public class BN128Addition extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public byte[] execute(byte[] data) {
-
         if (data == null) {
             data = EMPTY_BYTE_ARRAY;
         }
-
-        byte[] x1 = parseWord(data, 0);
-        byte[] y1 = parseWord(data, 1);
-
-        byte[] x2 = parseWord(data, 2);
-        byte[] y2 = parseWord(data, 3);
-
-        BN128<Fp> p1 = BN128Fp.create(x1, y1);
-
-        if (p1 == null) {
+        byte[] output = new byte[64];
+        int rs = new JniBn128().add(data, data.length, output);
+        if (rs < 0) {
             return EMPTY_BYTE_ARRAY;
         }
-
-        BN128<Fp> p2 = BN128Fp.create(x2, y2);
-        if (p2 == null) {
-            return EMPTY_BYTE_ARRAY;
-        }
-
-        BN128<Fp> res = p1.add(p2).toEthNotation();
-
-        return encodeRes(res.x().bytes(), res.y().bytes());
+        return output;
     }
-
 }
