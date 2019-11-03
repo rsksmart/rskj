@@ -18,14 +18,10 @@
 
 package co.rsk.pcc.altBN128;
 
-import org.ethereum.crypto.altbn128.BN128;
-import org.ethereum.crypto.altbn128.BN128Fp;
-import org.ethereum.crypto.altbn128.Fp;
-import org.ethereum.util.BIUtil;
+import com.bakaoh.altbn128.cloudflare.JniBn128;
 import org.ethereum.vm.PrecompiledContracts;
 
 import static org.ethereum.util.ByteUtil.*;
-import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 /**
  * Computes multiplication of scalar value on a point belonging to Barreto–Naehrig curve.
@@ -48,19 +44,6 @@ import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
  */
 public class BN128Multiplication extends PrecompiledContracts.PrecompiledContract {
 
-    private static byte[] encodeRes(byte[] w1, byte[] w2) {
-
-        byte[] res = new byte[64];
-
-        w1 = stripLeadingZeroes(w1);
-        w2 = stripLeadingZeroes(w2);
-
-        System.arraycopy(w1, 0, res, 32 - w1.length, w1.length);
-        System.arraycopy(w2, 0, res, 64 - w2.length, w2.length);
-
-        return res;
-    }
-
     @Override
     public long getGasForData(byte[] data) {
         return 40000;
@@ -68,24 +51,14 @@ public class BN128Multiplication extends PrecompiledContracts.PrecompiledContrac
 
     @Override
     public byte[] execute(byte[] data) {
-
         if (data == null) {
             data = EMPTY_BYTE_ARRAY;
         }
-
-        byte[] x = parseWord(data, 0);
-        byte[] y = parseWord(data, 1);
-
-        byte[] s = parseWord(data, 2);
-
-        BN128<Fp> p = BN128Fp.create(x, y);
-
-        if (p == null) {
+        byte[] output = new byte[64];
+        int rs = new JniBn128().mul(data, data.length, output);
+        if (rs < 0) {
             return EMPTY_BYTE_ARRAY;
         }
-
-        BN128<Fp> res = p.mul(BIUtil.toBI(s)).toEthNotation();
-
-        return encodeRes(res.x().bytes(), res.y().bytes());
+        return output;
     }
 }
