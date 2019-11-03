@@ -283,14 +283,35 @@ public class Block {
         return rlpEncoded;
     }
 
+    private byte[] getVersionOneSigList(){
+        List<byte[]> encodeSigs = new ArrayList<byte[]>();
+        for (int j = 0; j < transactionsList.size(); j++) {
+            Transaction tx = transactionsList.get(j);
+            if (tx.getVersion() == 1){
+                byte[] txIdx = RLP.encodeInt(j);
+                byte[] rsv = tx.getEncodedRSV();
+                encodeSigs.add(RLP.encodeList(txIdx, rsv));
+            }
+        }
+        if (encodeSigs.size()>0){
+            byte[][] sigsArray = encodeSigs.toArray(new byte[encodeSigs.size()][]);
+            return RLP.encodeList(sigsArray);
+        }
+        return null;
+
+    }
+
     private List<byte[]> getBodyElements() {
         byte[] transactions = getTransactionsEncoded();
         byte[] uncles = getUnclesEncoded();
-
+        byte[] sigs = getVersionOneSigList();
+        
         List<byte[]> body = new ArrayList<>();
         body.add(transactions);
         body.add(uncles);
-
+        if (sigs != null){
+            body.add(sigs);
+        }
         return body;
     }
 
