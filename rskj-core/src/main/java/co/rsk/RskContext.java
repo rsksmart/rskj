@@ -620,6 +620,7 @@ public class RskContext implements NodeBootstrapper {
     public TraceModule getTraceModule() {
         if (traceModule == null) {
             traceModule = new TraceModuleImpl(
+                    getBlockchain(),
                     getBlockStore(),
                     getReceiptStore(),
                     getBlockExecutor()
@@ -805,7 +806,8 @@ public class RskContext implements NodeBootstrapper {
                 getTxPoolModule(),
                 getMnrModule(),
                 getDebugModule(),
-                getTraceModule(), getRskModule(),
+                getTraceModule(),
+                getRskModule(),
                 getChannelManager(),
                 getRepositoryLocator(),
                 getPeerScoringManager(),
