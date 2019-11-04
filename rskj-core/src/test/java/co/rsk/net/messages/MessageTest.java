@@ -613,6 +613,26 @@ public class MessageTest {
         assertArrayEquals(address, newMessage.getAddress());
     }
 
+    @Test
+    public void encodeDecodeCodeResponseMessage() {
+        long someId = 42;
+        byte[] codeHash = HashUtil.randomHash();
+        CodeResponseMessage message = new CodeResponseMessage(someId, codeHash);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        assertNotNull(result);
+        assertArrayEquals(encoded, result.getEncoded());
+        assertEquals(MessageType.CODE_RESPONSE_MESSAGE, result.getMessageType());
+
+        CodeResponseMessage newMessage = (CodeResponseMessage) result;
+
+        assertEquals(someId, newMessage.getId());
+        assertArrayEquals(codeHash, newMessage.getCodeHash());
+    }
+
     private static Transaction createTransaction(int number) {
         AccountBuilder acbuilder = new AccountBuilder();
         acbuilder.name("sender" + number);
