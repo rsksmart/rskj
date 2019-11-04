@@ -227,6 +227,14 @@ public class MessageVisitor {
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }
 
+    public void apply(TransactionIndexRequestMessage message) {
+        lightProcessor.processTransactionIndexRequest(sender, message.getId(), message.getTransactionHash());
+    }
+
+    public void apply(TransactionIndexResponseMessage message) {
+        lightProcessor.processTransactionIndexResponseMessage(sender, message);
+    }
+
     private void recordEvent(MessageChannel sender, EventType event) {
         if (sender == null) {
             return;
