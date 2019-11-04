@@ -21,6 +21,10 @@ package co.rsk.net.light;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.Peer;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.messages.BlockReceiptsResponseMessage;
 import co.rsk.net.messages.Message;
 import org.bouncycastle.util.encoders.Hex;
@@ -112,6 +116,19 @@ public class LightProcessor {
         logger.debug("Blocknumber: " + message.getBlockNumber());
         logger.debug("TxIndex: " + message.getTransactionIndex());
         throw new UnsupportedOperationException();
+    }
+
+    public void processCodeRequest(Peer sender, long requestId, byte[] blockHash, byte[] address) {
+        logger.trace("Processing code request {} block {} code {} from {}", requestId, Hex.toHexString(blockHash), Hex.toHexString(address), sender.getPeerNodeID());
+        final Block block = getBlock(blockHash);
+
+        if (block == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+        RepositorySnapshot repositorySnapshot = repositoryLocator.snapshotAt(block.getHeader());
+        Keccak256 codeHash = repositorySnapshot.getCodeHash(new RskAddress(address));
     }
 
     private Block getBlock(byte[] blockHash) {
