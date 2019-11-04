@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.JournalTrieCache;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.MutableTrie;
@@ -292,10 +293,10 @@ public class MutableRepository implements Repository {
         return result;
     }
 
-    // To start tracking, a new repository is created, with a MutableTrieCache in the middle
+    // To start tracking, a new repository is created, with a JournalTrieCache in the middle
     @Override
     public synchronized Repository startTracking() {
-        return new MutableRepository(new MutableTrieCache(mutableTrie));
+        return new MutableRepository(new JournalTrieCache(mutableTrie));
     }
 
     @Override
