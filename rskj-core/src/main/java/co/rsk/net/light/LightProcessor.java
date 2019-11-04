@@ -26,6 +26,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.messages.BlockReceiptsResponseMessage;
+import co.rsk.net.messages.CodeResponseMessage;
 import co.rsk.net.messages.Message;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
@@ -128,7 +129,14 @@ public class LightProcessor {
         }
 
         RepositorySnapshot repositorySnapshot = repositoryLocator.snapshotAt(block.getHeader());
-        Keccak256 codeHash = repositorySnapshot.getCodeHash(new RskAddress(address));
+        RskAddress addr = new RskAddress(address);
+        Keccak256 codeHash = repositorySnapshot.getCodeHash(addr);
+        CodeResponseMessage response = new CodeResponseMessage(requestId, codeHash.getBytes());
+        sender.sendMessage(response);
+    }
+
+    public void processCodeResponse(Peer sender, CodeResponseMessage message) {
+        throw new UnsupportedOperationException();
     }
 
     private Block getBlock(byte[] blockHash) {

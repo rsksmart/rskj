@@ -18,16 +18,17 @@
 
 package co.rsk.net;
 
-import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.messages.TransactionIndexResponseMessage;
 import co.rsk.net.messages.BlockReceiptsResponseMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
 import co.rsk.net.simples.SimplePeer;
-import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.net.messages.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
@@ -56,14 +57,18 @@ public class LightProcessorTest {
     private static final byte[] HASH_1 = HashUtil.sha256(new byte[]{1});
 
     private Blockchain blockchain;
+    private BlockStore blockStore;
+    private RepositoryLocator repositoryLocator;
     private LightProcessor lightProcessor;
     private SimplePeer sender;
 
     @Before
     public void setup(){
         blockchain = mock(Blockchain.class);
-        lightProcessor = getLightProcessor(blockchain);
         sender = new SimplePeer();
+        blockStore = mock(BlockStore.class);
+        repositoryLocator = mock(RepositoryLocator.class);
+        lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
     }
 
     @Test
@@ -156,13 +161,43 @@ public class LightProcessorTest {
         assertEquals(0, sender.getMessages().size());
     }
 
-    private LightProcessor getLightProcessor(Blockchain blockchain) {
-        BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        TestSystemProperties config = new TestSystemProperties();
-        final NetBlockStore store = new NetBlockStore();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        return new LightProcessor(blockchain, mock(BlockStore.class), mock(RepositoryLocator.class));
+    @Test
+    public void processCodeRequestMessageAndReturnsCodeCorrectly() {
+        final Block block = mock(Block.class);
+        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
+
+        byte[] codeHash = TestUtils.randomBytes(32);
+        RskAddress address = new RskAddress(TestUtils.randomBytes(20));
+        Keccak256 blockHash = new Keccak256(HASH_1);
+        long id = 100;
+
+        when(block.getHash()).thenReturn(blockHash);
+        when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
+        when(repositorySnapshot.getCodeHash(address)).thenReturn(new Keccak256(codeHash));
+
+        lightProcessor.processCodeRequest(sender, id, blockHash.getBytes(), address.getBytes());
+
+        assertEquals(1, sender.getMessages().size());
+
+        final Message message = sender.getMessages().get(0);
+
+        assertEquals(MessageType.CODE_RESPONSE_MESSAGE, message.getMessageType());
+
+        final CodeResponseMessage response = (CodeResponseMessage) message;
+
+        assertEquals(id, response.getId());
+        assertArrayEquals(codeHash, response.getCodeHash());
+    }
+
+    @Test
+    public void processCodeRequestMessageAndReturnsCodeWithIncorrectBlockHash() {
+        long id = 100;
+        RskAddress rskAddress = new RskAddress(TestUtils.randomBytes(20));
+        Keccak256 blockHash = new Keccak256(HASH_1);
+
+        lightProcessor.processCodeRequest(sender, id, blockHash.getBytes(), rskAddress.getBytes());
+        assertEquals(0, sender.getMessages().size());
     }
 
     // from TransactionTest
