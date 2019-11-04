@@ -23,7 +23,10 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TrieKeyMapper;
@@ -34,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by SerAdmin on 9/26/2018.
@@ -435,6 +439,71 @@ public class MutableTrieCacheTest {
 
         getValueHashAndAssert(baseMutableTrie, wrongKey, zeroHash);
         getValueHashAndAssert(mtCache, wrongKey, zeroHash);
+    }
+
+    /**
+     * Check the save() method. Verify that all commits are applied before saving Trie in TrieStore
+     */
+    @Test
+    public void testSaveOneCacheLevel() {
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
+        // First put some strings in the base
+        baseMutableTrie.put("ALICE",toBytes("alice"));
+        baseMutableTrie.put("BOB",toBytes("bob"));
+        MutableTrieCache mtCache;
+        mtCache = new MutableTrieCache(baseMutableTrie);
+
+        // Now add two more
+        mtCache.put("ALICE",toBytes("ecila"));
+        mtCache.put("CAROL",toBytes("carol"));
+        mtCache.put("ROBERT",toBytes("robert"));
+        mtCache.deleteRecursive(toBytes("BOB"));
+
+        mtCache.save();
+        byte[] hashToRetrieve = baseMutableTrie.getTrie().getHash().getBytes();
+        Trie retrievedTrie = trieStore.retrieve(hashToRetrieve).get();
+        baseMutableTrie = new MutableTrieImpl(trieStore, retrievedTrie);
+        String result;
+        result = getKeysFrom(baseMutableTrie);
+        assertEquals("ALICE;CAROL;ROBERT;",result);
+        assertArrayEquals(toBytes("ecila"), baseMutableTrie.get(toBytes("ALICE")));
+        assertNull(baseMutableTrie.get(toBytes("BOB")));
+        assertArrayEquals(toBytes("carol"), baseMutableTrie.get(toBytes("CAROL")));
+        assertArrayEquals(toBytes("robert"), baseMutableTrie.get(toBytes("ROBERT")));
+    }
+
+    /**
+     * Check the save() method. Verify that all commits are applied before saving Trie in TrieStore
+     */
+    @Test
+    public void testSaveSeveralLevels() {
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
+        // First put some strings in the base
+        baseMutableTrie.put("ALICE",toBytes("alice"));
+        baseMutableTrie.put("BOB",toBytes("bob"));
+        MutableTrieCache mtCacheLvl1 = new MutableTrieCache(baseMutableTrie);
+        MutableTrieCache mtCacheLvl2 = new MutableTrieCache(mtCacheLvl1);
+        MutableTrieCache mtCacheLvl3 = new MutableTrieCache(mtCacheLvl2);
+
+        // Now add two more
+        mtCacheLvl1.put("ALICE",toBytes("ecila"));
+        mtCacheLvl2.put("CAROL",toBytes("carol"));
+        mtCacheLvl2.deleteRecursive(toBytes("BOB"));
+        mtCacheLvl3.put("ROBERT",toBytes("robert"));
+
+        mtCacheLvl3.save();
+        byte[] hashToRetrieve = baseMutableTrie.getTrie().getHash().getBytes();
+        Trie retrievedTrie = trieStore.retrieve(hashToRetrieve).get();
+        baseMutableTrie = new MutableTrieImpl(trieStore, retrievedTrie);
+        String result;
+        result = getKeysFrom(baseMutableTrie);
+        assertEquals("ALICE;CAROL;ROBERT;",result);
+        assertArrayEquals(toBytes("ecila"), baseMutableTrie.get(toBytes("ALICE")));
+        assertNull(baseMutableTrie.get(toBytes("BOB")));
+        assertArrayEquals(toBytes("carol"), baseMutableTrie.get(toBytes("CAROL")));
+        assertArrayEquals(toBytes("robert"), baseMutableTrie.get(toBytes("ROBERT")));
     }
 
     private void getValueHashAndAssert(MutableTrie trie, byte[] key, Keccak256 expectedHash) {

@@ -28,7 +28,6 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +45,10 @@ public class JournalTrieCache implements MutableTrie {
         // if parentTrie is a JournalTrieCache as well, then get its parent Trie and get its cache
         if (parentTrie instanceof JournalTrieCache) {
             trie = ((JournalTrieCache) parentTrie).getMutableTrie();
-            cache = new MultiLevelCacheSnapshot(((JournalTrieCache) parentTrie).getCache());
+            cache = new MultiLevelCacheSnapshot(
+                ((JournalTrieCache) parentTrie).getCache(),
+                ((JournalTrieCache) parentTrie).getCacheLevel() + 1
+            );
         } else {
             trie = parentTrie;
             cache = new MultiLevelCacheSnapshot();
@@ -61,10 +63,14 @@ public class JournalTrieCache implements MutableTrie {
         return trie;
     }
 
+    private int getCacheLevel() {
+        return ((MultiLevelCacheSnapshot) cache).currentLevel;
+    }
+
     @Override
     public Keccak256 getHash() {
-        // TODO implement this mmethod
-        throw new NotImplementedException();
+        assertNoCache();
+        return trie.getHash();
     }
 
     @Nullable
@@ -102,21 +108,16 @@ public class JournalTrieCache implements MutableTrie {
 
     @Override
     public void save() {
-        // TODO implement this mmethod
-        throw new NotImplementedException();
+        cache.commitAll();
+        // now everything has been merged in only one-level cache, commit the first level
+        commitFirstLevel(((MultiLevelCacheSnapshot) cache).getFirstLevel());
+        trie.save();
     }
 
     @Override
     public void commit() {
         if (cache.isFirstLevel()) {
-            // only one cache level: apply changes directly in parent Trie
-            // TODO : manage deleted keys
-            cache.getUpdatedKeys().forEach(key -> {
-                byte[] value = cache.get(key);
-                trie.put(key, value);
-            });
-            // clear the complete cache
-            cache.clear();
+            commitFirstLevel(cache);
         } else {
             // merge last cache level with the previous one
             cache.commit();
@@ -125,8 +126,7 @@ public class JournalTrieCache implements MutableTrie {
 
     @Override
     public void rollback() {
-        // TODO implement this mmethod
-        throw new NotImplementedException();
+        cache.clear();
     }
 
     @Override
@@ -138,8 +138,8 @@ public class JournalTrieCache implements MutableTrie {
 
     @Override
     public Trie getTrie() {
-        // TODO implement this mmethod
-        throw new NotImplementedException();
+        assertNoCache();
+        return trie.getTrie();
     }
 
     @Override
@@ -155,18 +155,18 @@ public class JournalTrieCache implements MutableTrie {
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         byte[] accountStoragePrefixKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        Map<ByteArrayWrapper, byte[]> accountItems = cache.getAccountItems(new ByteArrayWrapper(accountStoragePrefixKey));
+        ByteArrayWrapper accountWrapper = new ByteArrayWrapper(accountStoragePrefixKey);
+        Map<ByteArrayWrapper, byte[]> accountItems = cache.getAccountItems(accountWrapper);
+        boolean isDeletedAccount = cache.isAccountDeleted(accountWrapper);
 
-        // TODO : manage deleted keys
-        // TODO : Is account deleted and keys deleted equivalent ?
-        //  boolean isDeletedAccount = cache.getDeletedKeys().contains(key);
-        //  if (accountItems == null && isDeletedAccount) {
-        //     return Collections.emptyIterator();
-        //  }
-        //   if (isDeletedAccount) {
-        //      // lower level is deleted, return cached items
-        //      return new StorageKeysIterator(Collections.emptyIterator(), accountItems, addr, trieKeyMapper);
-        //  }
+        if (accountItems == null && isDeletedAccount) {
+            return Collections.emptyIterator();
+        }
+
+        if (isDeletedAccount) {
+            // lower level is deleted, return cached items
+            return new StorageKeysIterator(Collections.emptyIterator(), accountItems, addr, trieKeyMapper);
+        }
 
         Iterator<DataWord> storageKeys = trie.getStorageKeys(addr);
         if (accountItems == null) {
@@ -187,8 +187,29 @@ public class JournalTrieCache implements MutableTrie {
         }
         byte[] value = cache.getNewestValue(wrapper);
         // A null value means the key has been deleted
-        return Optional.ofNullable(cacheTransformer.apply(value));
+        return Optional.ofNullable( value == null ? null : cacheTransformer.apply(value));
     }
+
+    private void commitFirstLevel(ICache firstLevelCache) {
+        // only one cache level: apply changes directly in parent Trie
+        firstLevelCache.getDeletedAccounts().forEach(account -> {
+            trie.deleteRecursive(account.getData());
+        });
+        firstLevelCache.getUpdatedKeys().forEach(key -> {
+            byte[] value = firstLevelCache.get(key);
+            trie.put(key, value);
+        });
+        // clear the complete cache
+        firstLevelCache.clear();
+    }
+
+    private void assertNoCache() {
+        if (!cache.isEmpty()) {
+            throw new IllegalStateException();
+        }
+    }
+
+
 
     private static class StorageKeysIterator implements Iterator<DataWord> {
         private final Iterator<DataWord> keysIterator;
@@ -291,7 +312,7 @@ public class JournalTrieCache implements MutableTrie {
             return depth;
         }
 
-        int getNewLevel() {
+        int getNextLevel() {
             depth++;
             initLevel(depth);
             return depth;
@@ -352,7 +373,7 @@ public class JournalTrieCache implements MutableTrie {
             // in order to manage the key deletion correctly, we need to walk over the different levels
             // starting from the oldest to the newest one
             for (int level = FIRST_CACHE_LEVEL; level <= maxLevel; level++) {
-                collectKeysAtLevel(parentKeys, keySize, FIRST_CACHE_LEVEL);
+                collectKeysAtLevel(parentKeys, keySize, level);
             }
         }
 
@@ -476,6 +497,18 @@ public class JournalTrieCache implements MutableTrie {
             return false;
         }
 
+        boolean isEmpty() {
+            for (int level = FIRST_CACHE_LEVEL; level <= getDepth(); level++) {
+                if (getUpdatedKeys(level).size()  > 0)
+                    return false;
+                if (getDeletedAccounts(level).size() > 0)
+                    return false;
+                if (valuesPerLevelPerKeyPerAccount.size() > 0)
+                    return false;
+            }
+            return true;
+        }
+
         // This method returns a wrapper with the same content and size expected for a account key
         // when the key is from the same size than the original wrapper, it returns the same object
         private ByteArrayWrapper getAccountWrapper(ByteArrayWrapper originalWrapper) {
@@ -485,10 +518,9 @@ public class JournalTrieCache implements MutableTrie {
         }
 
         private void collectKeysAtLevel(Set<ByteArrayWrapper> parentKeys, int keySize, int cacheLevel) {
-            // TODO manage delete correctly
-            //            for key in getDeletedKeys(cacheLevel)
-            //            if parentKeys.containsKey(key)
-            //            parentKeys.remove(key)
+            getDeletedAccounts(cacheLevel).forEach(key -> {
+                parentKeys.remove(key);
+            });
             getUpdatedKeys(cacheLevel).forEach((key) -> {
                 if (keySize == Integer.MAX_VALUE || key.getData().length == keySize) {
                     byte[] value = get(key, cacheLevel);
@@ -586,20 +618,34 @@ public class JournalTrieCache implements MutableTrie {
         boolean isAccountDeleted(ByteArrayWrapper key);
 
         boolean isInCache(ByteArrayWrapper key);
+
+        boolean isEmpty();
     }
 
     private class MultiLevelCacheSnapshot implements ICache {
         int currentLevel;
         MultiLevelCache cache;
 
-        MultiLevelCacheSnapshot(MultiLevelCache cache) {
-            this.currentLevel = cache.getNewLevel();
-            this.cache = cache;
-        }
+//        MultiLevelCacheSnapshot(MultiLevelCache cache) {
+//            this.currentLevel = cache.getNewLevel();
+//            this.cache = cache;
+//        }
 
         MultiLevelCacheSnapshot() {
             this.cache = new MultiLevelCache();
             this.currentLevel = this.cache.getDepth();
+        }
+
+        MultiLevelCacheSnapshot(MultiLevelCache cache, int cacheLevel) {
+            if (cacheLevel > cache.getDepth() + 1) {
+                throw new IllegalArgumentException("Unable to create MultiLevelCacheSnapshot with cacheLevel=" +
+                        cacheLevel + " from a cache with lower depth");
+            }
+            if (cacheLevel == cache.getDepth() + 1) {
+                this.currentLevel = cache.getNextLevel();
+            }
+            this.currentLevel = cacheLevel;
+            this.cache = cache;
         }
 
         public MultiLevelCache getCache() {
@@ -718,5 +764,12 @@ public class JournalTrieCache implements MutableTrie {
             return this.cache.isInCache(key, currentLevel);
         }
 
+        public boolean isEmpty() {
+            return this.cache.isEmpty();
+        }
+
+        public ICache getFirstLevel() {
+            return new MultiLevelCacheSnapshot(cache, MultiLevelCache.FIRST_CACHE_LEVEL);
+        }
     }
 }
