@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.messages.TransactionIndexResponseMessage;
 import co.rsk.net.messages.BlockReceiptsResponseMessage;
@@ -32,6 +33,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.LogInfo;
 import org.junit.Before;
@@ -41,6 +43,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -155,7 +158,7 @@ public class LightProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         final NetBlockStore store = new NetBlockStore();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        return new LightProcessor(blockchain, blockSyncService);
+        return new LightProcessor(blockchain, mock(BlockStore.class), mock(RepositoryLocator.class));
     }
 
     // from TransactionTest
