@@ -110,7 +110,7 @@ public class LightProcessor {
         sender.sendMessage(response);
     }
 
-    public void processTransactionIndexResponseMessage(Peer sender, TransactionIndexResponseMessage message) {
+    public void processTransactionIndexResponse(Peer sender, TransactionIndexResponseMessage message) {
         logger.debug("transactionIndex response Message Received");
         logger.debug("ID: " + message.getId());
         logger.debug("BlockHash: " + Hex.toHexString(message.getBlockHash()));

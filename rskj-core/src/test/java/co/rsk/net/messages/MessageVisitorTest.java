@@ -302,7 +302,7 @@ public class MessageVisitorTest {
         target.apply(message);
 
         verify(lightProcessor, times(1))
-                .processTransactionIndexResponseMessage(eq(sender), eq(message));
+                .processTransactionIndexResponse(eq(sender), eq(message));
     }
 
     @Test

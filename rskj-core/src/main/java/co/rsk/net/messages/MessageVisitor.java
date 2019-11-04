@@ -231,7 +231,7 @@ public class MessageVisitor {
     }
 
     public void apply(TransactionIndexResponseMessage message) {
-        lightProcessor.processTransactionIndexResponseMessage(sender, message);
+        lightProcessor.processTransactionIndexResponse(sender, message);
     }
 
     public void apply(CodeRequestMessage message) {
