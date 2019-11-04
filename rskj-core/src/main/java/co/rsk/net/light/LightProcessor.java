@@ -138,7 +138,8 @@ public class LightProcessor {
     public void processCodeResponse(Peer sender, CodeResponseMessage message) {
             throw new UnsupportedOperationException();
     }
-    public void processAccountRequestMessage(Peer sender, long id, byte[] blockHash, byte[] addressHash) {
+
+    public void processAccountRequest(Peer sender, long id, byte[] blockHash, byte[] addressHash) {
         final Block block = getBlock(blockHash);
 
         if (block == null) {
@@ -148,10 +149,9 @@ public class LightProcessor {
 
     }
 
-    public void processAccountResponseMessage(Peer sender, AccountResponseMessage message) {
+    public void processAccountResponse(Peer sender, AccountResponseMessage message) {
         throw new UnsupportedOperationException();
     }
-
 
     private Block getBlock(byte[] blockHash) {
         Block block = blockStore.getBlockByHash(blockHash);

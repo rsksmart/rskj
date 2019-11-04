@@ -243,11 +243,11 @@ public class MessageVisitor {
     }
 
     public void apply(AccountRequestMessage message) {
-        lightProcessor.processAccountRequestMessage(sender, message.getId(), message.getBlockHash(), message.getAddressHash());
+        lightProcessor.processAccountRequest(sender, message.getId(), message.getBlockHash(), message.getAddressHash());
     }
 
     public void apply(AccountResponseMessage message) {
-        lightProcessor.processAccountResponseMessage(sender, message);
+        lightProcessor.processAccountResponse(sender, message);
     }
 
     private void recordEvent(Peer sender, EventType event) {
