@@ -18,7 +18,7 @@
 
 package co.rsk.net.light;
 
-import co.rsk.net.BlockSyncService;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.messages.BlockReceiptsResponseMessage;
 import co.rsk.net.messages.Message;
@@ -27,6 +27,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 import co.rsk.net.messages.TransactionIndexResponseMessage;
 import org.slf4j.Logger;
@@ -42,13 +43,16 @@ import java.util.*;
 public class LightProcessor {
     private static final Logger logger = LoggerFactory.getLogger("lightprocessor");
     // keep tabs on which nodes know which blocks.
-    private final BlockSyncService blockSyncService;
+    private final BlockStore blockStore;
+    private final RepositoryLocator repositoryLocator;
     private final Blockchain blockchain;
 
     public LightProcessor(@Nonnull final Blockchain blockchain,
-                          @Nonnull final BlockSyncService blockSyncService) {
-        this.blockSyncService = blockSyncService;
+                          @Nonnull final BlockStore blockStore,
+                          @Nonnull final RepositoryLocator repositoryLocator) {
         this.blockchain = blockchain;
+        this.blockStore = blockStore;
+        this.repositoryLocator = repositoryLocator;
     }
 
     /**
@@ -60,7 +64,7 @@ public class LightProcessor {
      */
     public void processBlockReceiptsRequest(MessageChannel sender, long requestId, byte[] blockHash) {
         logger.trace("Processing block receipts request {} block {} from {}", requestId, Hex.toHexString(blockHash), sender.getPeerNodeID());
-        final Block block = blockSyncService.getBlockFromStoreOrBlockchain(blockHash);
+        final Block block = getBlock(blockHash);
 
         if (block == null) {
             // Don't waste time sending an empty response.
@@ -107,5 +111,15 @@ public class LightProcessor {
         logger.debug("Blocknumber: " + message.getBlockNumber());
         logger.debug("TxIndex: " + message.getTransactionIndex());
         throw new UnsupportedOperationException();
+    }
+
+    private Block getBlock(byte[] blockHash) {
+        Block block = blockStore.getBlockByHash(blockHash);
+
+        if (block == null) {
+            block = blockchain.getBlockByHash(blockHash);
+        }
+
+        return block;
     }
 }
