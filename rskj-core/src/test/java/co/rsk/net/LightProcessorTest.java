@@ -34,15 +34,14 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.LogInfo;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -78,23 +77,23 @@ public class LightProcessorTest {
         Keccak256 blockHash = new Keccak256(HASH_1);
         when(block.getHash()).thenReturn(blockHash);
         when(block.getTransactionsList()).thenReturn(txs);
-        Mockito.when(tx.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
+        when(tx.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
         when(blockchain.getTransactionInfo(tx.getHash().getBytes())).thenReturn(transactionInfo);
         when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(transactionInfo.getReceipt()).thenReturn(receipt);
         lightProcessor.processBlockReceiptsRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertEquals(1, sender.getMessages().size());
+        assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_RECEIPTS_RESPONSE_MESSAGE, message.getMessageType());
+        assertEquals(MessageType.BLOCK_RECEIPTS_RESPONSE_MESSAGE, message.getMessageType());
 
         final BlockReceiptsResponseMessage response = (BlockReceiptsResponseMessage) message;
 
-        Assert.assertEquals(100, response.getId());
-        Assert.assertEquals(receipt, response.getBlockReceipts().get(0));
-        Assert.assertEquals(1, response.getBlockReceipts().size());
+        assertEquals(100, response.getId());
+        assertEquals(receipt, response.getBlockReceipts().get(0));
+        assertEquals(1, response.getBlockReceipts().size());
     }
 
     @Test
@@ -102,7 +101,7 @@ public class LightProcessorTest {
         Keccak256 blockHash = new Keccak256(HASH_1);
         lightProcessor.processBlockReceiptsRequest(sender, 100, blockHash.getBytes());
 
-        Assert.assertEquals(0, sender.getMessages().size());
+        assertEquals(0, sender.getMessages().size());
 
     }
 
@@ -130,24 +129,24 @@ public class LightProcessorTest {
 
         lightProcessor.processTransactionIndexRequest(sender, id, txHash.getBytes());
 
-        Assert.assertThat(sender.getMessages().size(), is(1));
+        assertThat(sender.getMessages().size(), is(1));
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.TRANSACTION_INDEX_RESPONSE_MESSAGE, message.getMessageType());
+        assertEquals(MessageType.TRANSACTION_INDEX_RESPONSE_MESSAGE, message.getMessageType());
 
         final TransactionIndexResponseMessage response = (TransactionIndexResponseMessage) message;
 
-        Assert.assertThat(response.getId(), is(id));
-        Assert.assertThat(response.getBlockHash(), is(blockHash.getBytes()));
-        Assert.assertThat(response.getTransactionIndex(), is((long)txIndex));
-        Assert.assertThat(response.getBlockNumber(), is(blockNumber));
+        assertThat(response.getId(), is(id));
+        assertThat(response.getBlockHash(), is(blockHash.getBytes()));
+        assertThat(response.getTransactionIndex(), is((long)txIndex));
+        assertThat(response.getBlockNumber(), is(blockNumber));
     }
 
     @Test
     public void processTransactionIndexRequestMessageWithIncorrectBlockHash() {
         lightProcessor.processTransactionIndexRequest(sender, 100, new Keccak256(HASH_1).getBytes());
-        Assert.assertEquals(0, sender.getMessages().size());
+        assertEquals(0, sender.getMessages().size());
     }
 
     private LightProcessor getLightProcessor(Blockchain blockchain) {
