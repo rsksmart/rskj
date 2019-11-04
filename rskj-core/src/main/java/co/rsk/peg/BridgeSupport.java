@@ -42,6 +42,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -530,7 +531,7 @@ public class BridgeSupport {
 
         processFundsMigration();
 
-        processReleaseRequests();
+        processReleaseRequests(rskTx);
 
         processReleaseTransactions(rskTx);
     }
@@ -623,7 +624,7 @@ public class BridgeSupport {
      * processing.
      *
      */
-    private void processReleaseRequests() {
+    private void processReleaseRequests(Transaction rskTx) {
         final Wallet activeFederationWallet;
         final ReleaseRequestQueue releaseRequestQueue;
 
@@ -701,6 +702,10 @@ public class BridgeSupport {
             // TODO: it would eventually need to be fixed.
             // Adjust balances in edge cases
             adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount());
+
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                eventLogger.logReleaseRequestedBtc(rskTx, result.get().getBtcTx(), releaseRequest.getDestination(), releaseRequest.getAmount());
+            }
 
             return true;
         });

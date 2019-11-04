@@ -18,8 +18,10 @@
 
 package co.rsk.peg.utils;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.config.BridgeConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeEvents;
@@ -32,6 +34,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 
+import javax.xml.crypto.Data;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -93,6 +96,24 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         byte[] data = RLP.encodeList(oldFedData, newFedData, RLP.encodeString(Long.toString(newFedActivationBlockNumber)));
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
+    }
+
+    public void logReleaseRequestedBtc(Transaction rskTransaction, BtcTransaction btcTx, Address rskAddress, Coin Amount) {
+        String rskaddress = "address";
+        String rsktx = "bytes32";
+        String btctx = "bytes32";
+        String amount = "int256";
+
+        CallTransaction.Function event = CallTransaction.Function.fromEventSignature(
+                "logReleaseRequestedBtc",
+                new String[]{rskaddress, rsktx, btctx, amount}
+        );
+        this.logs.add(
+                new LogInfo(BRIDGE_CONTRACT_ADDRESS,
+                        Collections.singletonList(DataWord.valueOf(event.encodeSignatureLong())),
+                        event.encodeArguments(rskAddress, rskTransaction, btcTx, Amount)
+            )
+        );
     }
 
     private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
