@@ -34,6 +34,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 
+/**
+ * Implements a cache accessor to a MutableTrie, using a MultiLevelCache system.
+ * IF the nested MutableTrie is a JournalTrieCache too, the same MultiLevelCache is shared across the accessors
+ */
 public class JournalTrieCache implements MutableTrie {
 
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
@@ -41,16 +45,25 @@ public class JournalTrieCache implements MutableTrie {
     private MutableTrie trie;
     private ICache cache;
 
+    /**
+     * Builds a cache accessor to a MutableTrie, using a MultiLevelCache system.
+     * IF the nested MutableTrie is a JournalTrieCache too, the same MultiLevelCache is shared across the accessors
+     * @param parentTrie
+     */
     public JournalTrieCache(MutableTrie parentTrie) {
-        // if parentTrie is a JournalTrieCache as well, then get its parent Trie and get its cache
         if (parentTrie instanceof JournalTrieCache) {
+            // if parentTrie is a JournalTrieCache, then we add a MultiLevelCacheSnapshot to the same instance
+            // of MultiLevelCache than the parent, with one caching level upper.
             trie = ((JournalTrieCache) parentTrie).getMutableTrie();
             cache = new MultiLevelCacheSnapshot(
                 ((JournalTrieCache) parentTrie).getCache(),
                 ((JournalTrieCache) parentTrie).getCacheLevel() + 1
             );
         } else {
+            // if parentTrie is not a JournalTrieCache, we create a new MultiLevelCacheSnapshot looking at a
+            // new MultiCacheLevel instance. Then, only one caching level for now.
             trie = parentTrie;
+
             cache = new MultiLevelCacheSnapshot();
         }
     }
@@ -177,6 +190,14 @@ public class JournalTrieCache implements MutableTrie {
         return new StorageKeysIterator(storageKeys, accountItems, addr, trieKeyMapper);
     }
 
+    /**
+     * apply a 'retriever method' for a given key, taking into account the cache if any, or gets from the nested mutable trie otherwise.
+     * @param key : the key to get for
+     * @param trieRetriever : a retriever method for a not cached key
+     * @param cacheTransformer : a retriever method for a cached key
+     * @param <T> : variable return type of the retriever methods
+     * @return : returned value of the retriever method
+     */
     private <T> Optional<T> internalGet(
             byte[] key,
             Function<byte[], T> trieRetriever,
@@ -190,6 +211,11 @@ public class JournalTrieCache implements MutableTrie {
         return Optional.ofNullable( value == null ? null : cacheTransformer.apply(value));
     }
 
+    /**
+     * Committing the first level of the MultiLevelCache.
+     * Means the nested mutable trie is effectively modified with the changed in cache
+     * @param firstLevelCache
+     */
     private void commitFirstLevel(ICache firstLevelCache) {
         // only one cache level: apply changes directly in parent Trie
         firstLevelCache.getDeletedAccounts().forEach(account -> {
@@ -203,14 +229,19 @@ public class JournalTrieCache implements MutableTrie {
         firstLevelCache.clear();
     }
 
+    /**
+     * Insure that there is no changes in cache anymore (ie all changes have been committed or rolled back)
+     */
     private void assertNoCache() {
         if (!cache.isEmpty()) {
             throw new IllegalStateException();
         }
     }
 
-
-
+    /**
+     * An iterator class to allow iterating on keys stored in the Trie, taking into account the changes in cache.
+     * Such an iterator is returned by the getStorageKeys() method
+     */
     private static class StorageKeysIterator implements Iterator<DataWord> {
         private final Iterator<DataWord> keysIterator;
         private final Map<ByteArrayWrapper, byte[]> accountItems;
@@ -295,6 +326,10 @@ public class JournalTrieCache implements MutableTrie {
         }
     }
 
+    /**
+     * A class to implement a multilevel cache system, so that the same
+     *  object can record changes at different caching level
+     */
     private static class MultiLevelCache {
 
         static final int FIRST_CACHE_LEVEL = 1;
@@ -539,6 +574,9 @@ public class JournalTrieCache implements MutableTrie {
         }
     }
 
+    /**
+     * An interface declaring methods to manage a cache
+     */
     private interface ICache {
         /**
          * put in the current cache level, the given value at the given key
@@ -622,32 +660,50 @@ public class JournalTrieCache implements MutableTrie {
         boolean isEmpty();
     }
 
+    /**
+     * A class to look at a MultiLevelCache with a given caching level
+     */
     private class MultiLevelCacheSnapshot implements ICache {
         int currentLevel;
         MultiLevelCache cache;
 
-//        MultiLevelCacheSnapshot(MultiLevelCache cache) {
-//            this.currentLevel = cache.getNewLevel();
-//            this.cache = cache;
-//        }
-
+        /**
+         * builds a new MultiLevelCacheSnapshot looking at a new instance of MultiLevelCache (one-level caching for now)
+         */
         MultiLevelCacheSnapshot() {
             this.cache = new MultiLevelCache();
             this.currentLevel = this.cache.getDepth();
         }
 
+        /**
+         * builds a new MultiLevelCacheSnapshot looking at an existing instance of MultiLevelCache, with the
+         * specified caching level
+         * @param cache : the nested MultiLevelCache to look at
+         * @param cacheLevel : the cache level of the snapshot. It can be any level up to the nested cache depth plus one.
+         */
         MultiLevelCacheSnapshot(MultiLevelCache cache, int cacheLevel) {
             if (cacheLevel > cache.getDepth() + 1) {
                 throw new IllegalArgumentException("Unable to create MultiLevelCacheSnapshot with cacheLevel=" +
                         cacheLevel + " from a cache with lower depth");
             }
-            if (cacheLevel == cache.getDepth() + 1) {
-                this.currentLevel = cache.getNextLevel();
-            }
-            this.currentLevel = cacheLevel;
+            // The same instance of MultiLevelCache is shared by several MultiLevelCacheSnapshot
+            // Each MultiLevelCacheSnapshot look at the MultiLevelCache with its own caching level
             this.cache = cache;
+            if (cacheLevel == cache.getDepth() + 1) {
+                // Looking at the cache with an additional caching level
+                this.currentLevel = cache.getNextLevel();
+            } else {
+                // or just looking at the cache with a given existing caching level.
+                // This usecase happens when committing all levels at one time (see getFirstLevel())
+                this.currentLevel = cacheLevel;
+            }
+
         }
 
+        /**
+         * returns the nested MultiCacheLevel instance the Snapshot is look at
+         * @return
+         */
         public MultiLevelCache getCache() {
             return this.cache;
         }
@@ -720,7 +776,7 @@ public class JournalTrieCache implements MutableTrie {
         }
 
         /**
-         *
+         * delete the specified account in the cache for the current cache level
          * @param key
          */
         public void deleteAccount(ByteArrayWrapper key) {
@@ -752,22 +808,45 @@ public class JournalTrieCache implements MutableTrie {
             this.cache.clear(currentLevel);
         }
 
+        /**
+         * returns a map of the [key, value] updated in cache for the current cache level
+         * @param key
+         * @return
+         */
         public Map<ByteArrayWrapper, byte[]> getAccountItems(ByteArrayWrapper key) {
             return this.cache.getAccountItems(key, currentLevel);
         }
 
+        /**
+         * Check if the specified account has been deleted in cache for the current cache level
+         * @param key
+         * @return
+         */
         public boolean isAccountDeleted(ByteArrayWrapper key) {
             return this.cache.isAccountDeleted(key, currentLevel);
         }
 
+        /**
+         * Check if there is some changes in cache for the specified key for the current cache level
+         * @param key
+         * @return
+         */
         public boolean isInCache(ByteArrayWrapper key) {
             return this.cache.isInCache(key, currentLevel);
         }
 
+        /**
+         * whether the cache contains some changes at any level or not
+         * @return true when it contains no changes at all
+         */
         public boolean isEmpty() {
             return this.cache.isEmpty();
         }
 
+        /**
+         * return a Snapshot of the first caching level of the nested MultiLevelCache
+         * @return
+         */
         public ICache getFirstLevel() {
             return new MultiLevelCacheSnapshot(cache, MultiLevelCache.FIRST_CACHE_LEVEL);
         }
