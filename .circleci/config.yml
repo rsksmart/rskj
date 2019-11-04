@@ -69,6 +69,17 @@ jobs:
       - run:
           name: rskj tests
           command: ./gradlew --no-daemon --stacktrace test
+      - run:
+          name: Save test results
+          command: |
+            mkdir -p ~/junit/
+            find rskj-core/build/test-results -type f -name "*.xml" \
+                -exec cp {} ~/junit/ \;
+          when: always
+      - store_test_results:
+          path: ~/junit
+      - store_artifacts:
+          path: ~/junit
   mining-tests:
     executor: mit-executor
     steps:
@@ -134,16 +145,6 @@ jobs:
             printf "Running mining integration tests. Follow it on:\n\n    %s\n\n" "$build_url"
             sleep 10 # give CircleCI some time to spin up the job
             wait_for_completion "$build_num"
-      - run:
-          name: Save test results
-          command: |
-            mkdir -p ~/junit/
-            find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/junit/ \;
-          when: always
-      - store_test_results:
-          path: ~/junit
-      - store_artifacts:
-          path: ~/junit
 
 workflows:
   # https://circleci.com/docs/2.0/configuration-reference/#version-1
