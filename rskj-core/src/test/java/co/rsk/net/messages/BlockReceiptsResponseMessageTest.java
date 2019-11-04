@@ -5,13 +5,13 @@ import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.vm.LogInfo;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class BlockReceiptsResponseMessageTest {
@@ -22,9 +22,9 @@ public class BlockReceiptsResponseMessageTest {
         receipts.add(createReceipt());
 
         BlockReceiptsResponseMessage message = new BlockReceiptsResponseMessage(1, receipts);
-        Assert.assertEquals(1, message.getId());
-        Assert.assertEquals(receipts, message.getBlockReceipts());
-        Assert.assertEquals(MessageType.BLOCK_RECEIPTS_RESPONSE_MESSAGE, message.getMessageType());
+        assertEquals(1, message.getId());
+        assertEquals(receipts, message.getBlockReceipts());
+        assertEquals(MessageType.BLOCK_RECEIPTS_RESPONSE_MESSAGE, message.getMessageType());
     }
 
     @Test
