@@ -90,6 +90,35 @@ public class TraceModuleImplTest {
     }
 
     @Test
+    public void retrieveEmptyContractCreationTrace()  throws Exception {
+        DslParser parser = DslParser.fromResource("dsl/contracts09.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Transaction transaction = world.getTransactionByName("tx01");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(1, aresult.size());
+        Assert.assertTrue(result.get(0).isObject());
+
+        ObjectNode oresult = (ObjectNode)result.get(0);
+
+        Assert.assertNotNull(oresult.get("type"));
+        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+    }
+
+    @Test
     public void retrieveMultiContractTraces() throws Exception {
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = executeMultiContract(receiptStore);
