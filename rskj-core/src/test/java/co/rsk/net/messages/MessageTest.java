@@ -600,6 +600,28 @@ public class MessageTest {
         assertArrayEquals(hash, newMessage.getTransactionHash());
     }
 
+    @Test
+    public void encodeDecodeCodeRequestMessage() {
+        long someId = 42;
+        byte[] blockHash = HashUtil.randomHash();
+        byte[] address = HashUtil.randomHash();
+        CodeRequestMessage message = new CodeRequestMessage(someId, blockHash, address);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        assertNotNull(result);
+        assertArrayEquals(encoded, result.getEncoded());
+        assertEquals(MessageType.CODE_REQUEST_MESSAGE, result.getMessageType());
+
+        CodeRequestMessage newMessage = (CodeRequestMessage) result;
+
+        assertEquals(someId, newMessage.getId());
+        assertArrayEquals(blockHash, newMessage.getBlockHash());
+        assertArrayEquals(address, newMessage.getAddress());
+    }
+
     private static Transaction createTransaction(int number) {
         AccountBuilder acbuilder = new AccountBuilder();
         acbuilder.name("sender" + number);
