@@ -1,10 +1,10 @@
 package co.rsk.net.messages;
 
 import org.ethereum.crypto.HashUtil;
-import org.junit.Assert;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class TransactionIndexResponseMessageTest {
@@ -18,9 +18,9 @@ public class TransactionIndexResponseMessageTest {
 
         TransactionIndexResponseMessage message = new TransactionIndexResponseMessage(id, blockNumber, blockHash,txIdx);
 
-        Assert.assertThat(message.getId(), is(id));
-        Assert.assertThat(message.getBlockHash(), is(blockHash));
-        Assert.assertThat(message.getMessageType(), is(MessageType.TRANSACTION_INDEX_RESPONSE_MESSAGE));
+        assertThat(message.getId(), is(id));
+        assertThat(message.getBlockHash(), is(blockHash));
+        assertThat(message.getMessageType(), is(MessageType.TRANSACTION_INDEX_RESPONSE_MESSAGE));
     }
 
     @Test
