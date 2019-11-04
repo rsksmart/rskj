@@ -398,6 +398,20 @@ public class CallTransaction {
             }
             return ret;
         }
+
+        public static Function fromEventSignature(String eventName, String[] paramTypes) {
+            Function event = new Function();
+            event.name = eventName;
+            event.constant = false;
+            event.type = FunctionType.event;
+            event.inputs = new Param[paramTypes.length];
+            for (int i = 0; i < paramTypes.length; i++) {
+                event.inputs[i] = new Param();
+                event.inputs[i].name = "param" + i;
+                event.inputs[i].type = SolidityType.getType(paramTypes[i]);
+            }
+            return event;
+        }
     }
 
     public static class Contract {
