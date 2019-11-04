@@ -42,8 +42,7 @@ public enum MessageType {
     STATUS_MESSAGE(1) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            byte[] rlpdata = list.get(0).getRLPData();
-            long number = rlpdata == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpdata).longValue();
+            long number = getLongFromRLP(0, list);
             byte[] hash = list.get(1).getRLPData();
 
             if (list.size() == 2) {
@@ -90,10 +89,8 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            byte[] rlpHeight = message.get(0).getRLPData();
-            long height = rlpHeight == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpHeight).longValue();
+            long id = getLongFromRLP(0, list);
+            long height = getLongFromRLP(0, message);
 
             return new BlockHashRequestMessage(id, height);
         }
@@ -102,8 +99,7 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            long id = getLongFromRLP(0, list);
             byte[] hash = message.get(0).getRLPData();
 
             return new BlockHashResponseMessage(id, hash);
@@ -142,8 +138,7 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            long id = getLongFromRLP(0, list);
             byte[] hash = message.get(0).getRLPData();
             return new BlockRequestMessage(id, hash);
         }
@@ -165,8 +160,7 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            long id = getLongFromRLP(0, list);
 
             RLPList paramsList = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
             List<BlockIdentifier> blockIdentifiers = paramsList.stream()
@@ -191,8 +185,7 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            long id = getLongFromRLP(0, list);
             RLPList rlpTransactions = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
             RLPList rlpUncles = (RLPList)RLP.decode2(message.get(1).getRLPData()).get(0);
 
@@ -219,10 +212,8 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            byte[] rlpStartNumber = message.get(0).getRLPData();
-            long startNumber = rlpStartNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpStartNumber).longValue();
+            long id = getLongFromRLP(0, list);
+            long startNumber = getLongFromRLP(0, message);
             return new SkeletonRequestMessage(id, startNumber);
         }
     },
@@ -237,8 +228,7 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            long id = getLongFromRLP(0, list);
             byte[] hash = message.get(0).getRLPData();
             return new BlockReceiptsRequestMessage(id, hash);
         }
@@ -247,8 +237,7 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            long id = getLongFromRLP(0, list);
 
             RLPList rlpReceipts = (RLPList)RLP.decode2(message.getRLPData()).get(0);
             List<TransactionReceipt> receipts = new LinkedList<>();
@@ -266,8 +255,7 @@ public enum MessageType {
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
 
-            byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            long id = getLongFromRLP(0, list);
             byte[] txHash = message.get(0).getRLPData();
             return new TransactionIndexRequestMessage(id, txHash);
         }
@@ -277,16 +265,13 @@ public enum MessageType {
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
 
-            byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            long id = getLongFromRLP(0, list);
 
-            byte[] blockNumberRLP = message.get(0).getRLPData();
-            long blockNumber = blockNumberRLP == null ? 0 : BigIntegers.fromUnsignedByteArray(blockNumberRLP).longValue();
+            long blockNumber = getLongFromRLP(0, message);
 
             byte[] blockHash = message.get(1).getRLPData();
 
-            byte[] rlpTx = message.get(2).getRLPData();
-            long txIndex = rlpTx == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpTx).longValue();
+            long txIndex = getLongFromRLP(2, message);
 
             return new TransactionIndexResponseMessage(id, blockNumber, blockHash, txIndex);
         }
@@ -313,6 +298,33 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             return new CodeResponseMessage(id, codeHash);
         }
+    },
+
+    ACCOUNT_REQUEST_MESSAGE(105) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+
+            long id = getLongFromRLP(0, list);
+            byte[] blockHash = message.get(0).getRLPData();
+            byte[] addressHash = message.get(1).getRLPData();
+            return new AccountRequestMessage(id, blockHash,addressHash);
+        }
+    },
+    ACCOUNT_RESPONSE_MESSAGE(106) {
+        @Override
+        public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+
+            long id = getLongFromRLP(0, list);
+            byte[] merkleProof = message.get(1).getRLPData();
+            long nonce = getLongFromRLP(2, message);
+            long balance = getLongFromRLP(3, message);
+            byte[] codeHash = message.get(4).getRLPData();
+            byte[] storageRoot = message.get(5).getRLPData();
+
+            return new AccountResponseMessage(id, merkleProof, nonce, balance, codeHash, storageRoot);
+        }
     };
 
     private int type;
@@ -338,5 +350,10 @@ public enum MessageType {
 
     private static boolean validTransactionLength(byte[] data) {
         return data.length <= 1 << 19;  /* 512KB */
+    }
+
+    private static long getLongFromRLP(int index, RLPList list) {
+        byte[] rlpId = list.get(index).getRLPData();
+        return rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
     }
 }

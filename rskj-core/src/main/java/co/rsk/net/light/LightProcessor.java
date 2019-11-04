@@ -28,6 +28,7 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.messages.BlockReceiptsResponseMessage;
 import co.rsk.net.messages.CodeResponseMessage;
 import co.rsk.net.messages.Message;
+import co.rsk.net.messages.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -35,7 +36,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
-import co.rsk.net.messages.TransactionIndexResponseMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,8 +136,22 @@ public class LightProcessor {
     }
 
     public void processCodeResponse(Peer sender, CodeResponseMessage message) {
+            throw new UnsupportedOperationException();
+    }
+    public void processAccountRequestMessage(Peer sender, long id, byte[] blockHash, byte[] addressHash) {
+        final Block block = getBlock(blockHash);
+
+        if (block == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+    }
+
+    public void processAccountResponseMessage(Peer sender, AccountResponseMessage message) {
         throw new UnsupportedOperationException();
     }
+
 
     private Block getBlock(byte[] blockHash) {
         Block block = blockStore.getBlockByHash(blockHash);

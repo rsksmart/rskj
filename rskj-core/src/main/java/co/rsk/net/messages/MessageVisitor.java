@@ -242,6 +242,14 @@ public class MessageVisitor {
         this.lightProcessor.processCodeResponse(sender, message);
     }
 
+    public void apply(AccountRequestMessage message) {
+        lightProcessor.processAccountRequestMessage(sender, message.getId(), message.getBlockHash(), message.getAddressHash());
+    }
+
+    public void apply(AccountResponseMessage message) {
+        lightProcessor.processAccountResponseMessage(sender, message);
+    }
+
     private void recordEvent(Peer sender, EventType event) {
         if (sender == null) {
             return;
