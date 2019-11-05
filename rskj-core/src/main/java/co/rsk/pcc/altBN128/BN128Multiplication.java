@@ -18,9 +18,9 @@
 
 package co.rsk.pcc.altBN128;
 
-import org.ethereum.crypto.altbn128.BN128;
-import org.ethereum.crypto.altbn128.BN128Fp;
-import org.ethereum.crypto.altbn128.Fp;
+import org.ethereum.crypto.altbn128.rust.BN128;
+import org.ethereum.crypto.altbn128.rust.BN128G1;
+import org.ethereum.crypto.altbn128.rust.Fp;
 import org.ethereum.util.BIUtil;
 import org.ethereum.vm.PrecompiledContracts;
 
@@ -78,7 +78,7 @@ public class BN128Multiplication extends PrecompiledContracts.PrecompiledContrac
 
         byte[] s = parseWord(data, 2);
 
-        BN128<Fp> p = BN128Fp.create(x, y);
+        BN128<Fp> p = BN128G1.create(x, y);
 
         if (p == null) {
             return EMPTY_BYTE_ARRAY;

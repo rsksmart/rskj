@@ -17,7 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.crypto.altbn128;
+package org.ethereum.crypto.altbn128.java;
 
 import java.math.BigInteger;
 

@@ -17,15 +17,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.crypto.altbn128;
+package org.ethereum.crypto.altbn128.java;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.ethereum.crypto.altbn128.Params.B_Fp2;
-import static org.ethereum.crypto.altbn128.Params.PAIRING_FINAL_EXPONENT_Z;
-import static org.ethereum.crypto.altbn128.Params.TWIST;
+import static org.ethereum.crypto.altbn128.java.Params.B_Fp2;
+import static org.ethereum.crypto.altbn128.java.Params.PAIRING_FINAL_EXPONENT_Z;
+import static org.ethereum.crypto.altbn128.java.Params.TWIST;
 
 /**
  * Implementation of a Pairing Check operation over points of two twisted Barreto–Naehrig curves {@link BN128Fp}, {@link BN128Fp2}<br/>
@@ -160,7 +160,7 @@ public class PairingCheck {
     }
 
     private static Precomputed flippedMillerLoopMixedAddition(BN128G2 base, BN128G2 addend) {
-        
+
         Fp2 x1 = addend.x, y1 = addend.y, z1 = addend.z;
         Fp2 x2 = base.x, y2 = base.y;
 

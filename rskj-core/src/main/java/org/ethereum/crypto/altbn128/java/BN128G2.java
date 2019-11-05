@@ -17,13 +17,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.crypto.altbn128;
+package org.ethereum.crypto.altbn128.java;
 
 import java.math.BigInteger;
 
-import static org.ethereum.crypto.altbn128.Params.R;
-import static org.ethereum.crypto.altbn128.Params.TWIST_MUL_BY_P_X;
-import static org.ethereum.crypto.altbn128.Params.TWIST_MUL_BY_P_Y;
+import static org.ethereum.crypto.altbn128.java.Params.R;
+import static org.ethereum.crypto.altbn128.java.Params.TWIST_MUL_BY_P_X;
+import static org.ethereum.crypto.altbn128.java.Params.TWIST_MUL_BY_P_Y;
 
 /**
  * Implementation of specific cyclic subgroup of points belonging to {@link BN128Fp2} <br/>
@@ -47,7 +47,7 @@ public class BN128G2 extends BN128Fp2 {
         super(p.x, p.y, p.z);
     }
 
-    BN128G2(Fp2 x, Fp2 y, Fp2 z) {
+    public BN128G2(Fp2 x, Fp2 y, Fp2 z) {
         super(x, y, z);
     }
 

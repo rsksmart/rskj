@@ -17,23 +17,37 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.crypto.altbn128;
 
-/**
- * Interface of abstract finite field
- *
- * @author Mikhail Kalinin
- * @since 05.09.2017
- */
-public interface Field<T> {
+package org.ethereum.crypto.altbn128.java;
 
-    T add(T o);
-    T mul(T o);
-    T sub(T o);
-    T squared();
-    T dbl();
-    T inverse();
-    T negate();
-    boolean isZero();
-    boolean isValid();
+public class BN128Pair {
+
+    private BN128G1 g1;
+    private BN128G2 g2;
+
+    public static BN128Pair of(BN128G1 g1, BN128G2 g2) {
+        return new BN128Pair(g1, g2);
+    }
+
+    BN128Pair(BN128G1 g1, BN128G2 g2) {
+        this.g1 = g1;
+        this.g2 = g2;
+    }
+
+    public BN128G1 getG1() {
+        return g1;
+    }
+
+    public BN128G2 getG2() {
+        return g2;
+    }
+
+    Fp12 millerLoop() {
+
+        // miller loop result equals "1" if at least one of the points is zero
+        if (g1.isZero()) {return Fp12._1;}
+        if (g2.isZero()) {return Fp12._1;}
+
+        return PairingCheck.millerLoop(g1, g2);
+    }
 }

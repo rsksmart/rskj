@@ -18,12 +18,12 @@
  */
 
 
-package org.ethereum.crypto.altbn128;
+package org.ethereum.crypto.altbn128.rust;
 
 public class BN128Pair {
 
-    private BN128G1 g1;
-    private BN128G2 g2;
+    BN128G1 g1;
+    BN128G2 g2;
 
     public static BN128Pair of(BN128G1 g1, BN128G2 g2) {
         return new BN128Pair(g1, g2);
@@ -40,14 +40,5 @@ public class BN128Pair {
 
     public BN128G2 getG2() {
         return g2;
-    }
-
-    Fp12 millerLoop() {
-
-        // miller loop result equals "1" if at least one of the points is zero
-        if (g1.isZero()) {return Fp12._1;}
-        if (g2.isZero()) {return Fp12._1;}
-
-        return PairingCheck.millerLoop(g1, g2);
     }
 }

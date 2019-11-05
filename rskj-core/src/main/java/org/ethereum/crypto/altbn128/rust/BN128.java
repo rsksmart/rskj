@@ -17,7 +17,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.crypto.altbn128;
+package org.ethereum.crypto.altbn128.rust;
+
+import org.ethereum.crypto.altbn128.Field;
+import org.ethereum.crypto.altbn128.java.PairingCheck;
 
 import java.math.BigInteger;
 import java.util.Objects;
@@ -35,7 +38,7 @@ import java.util.Objects;
  * Point at infinity is encoded as <code>(0, 0, 0)</code> <br/>
  * <br/>
  *
- * This curve has embedding degree 12 with respect to "r" (see {@link Params#R}), which means that "r" is a multiple of "p ^ 12 - 1",
+ * This curve has embedding degree 12 with respect to "r" (see {@link org.ethereum.crypto.altbn128.java.Params#R}), which means that "r" is a multiple of "p ^ 12 - 1",
  * this condition is important for pairing operation implemented in {@link PairingCheck}<br/>
  * <br/>
  *

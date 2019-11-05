@@ -17,11 +17,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.crypto.altbn128;
+package org.ethereum.crypto.altbn128.java;
+
+import org.ethereum.crypto.altbn128.Field;
 
 import java.math.BigInteger;
 
-import static org.ethereum.crypto.altbn128.Params.P;
+import static org.ethereum.crypto.altbn128.java.Params.P;
 
 /**
  * Arithmetic in F_p, p = 21888242871839275222246405745257275088696311157297823662689037894645226208583
@@ -39,7 +41,7 @@ public class Fp implements Field<Fp> {
 
     private BigInteger v;
 
-    Fp(BigInteger v) { this.v = v; }
+    public Fp(BigInteger v) { this.v = v; }
 
     @Override public Fp add(Fp o) { return new Fp(this.v.add(o.v).mod(P)); }
     @Override public Fp mul(Fp o) { return new Fp(this.v.multiply(o.v).mod(P)); }

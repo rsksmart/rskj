@@ -17,7 +17,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.crypto.altbn128;
+package org.ethereum.crypto.altbn128.java;
+
+import org.ethereum.crypto.altbn128.Field;
 
 import java.math.BigInteger;
 import java.util.Objects;
@@ -35,7 +37,7 @@ import java.util.Objects;
  * @author Mikhail Kalinin
  * @since 01.09.2017
  */
-class Fp2 implements Field<Fp2> {
+public class Fp2 implements Field<Fp2> {
 
     public static final Fp2 ZERO = new Fp2(Fp.ZERO, Fp.ZERO);
     public static final Fp2 _1  = new Fp2(Fp._1, Fp.ZERO);
@@ -63,7 +65,7 @@ class Fp2 implements Field<Fp2> {
         this.b = b;
     }
 
-    Fp2(BigInteger a, BigInteger b) {
+    public Fp2(BigInteger a, BigInteger b) {
         this(new Fp(a), new Fp(b));
     }
 

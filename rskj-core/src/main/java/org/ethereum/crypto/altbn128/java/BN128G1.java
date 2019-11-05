@@ -17,7 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.crypto.altbn128;
+package org.ethereum.crypto.altbn128.java;
 
 /**
  * Implementation of specific cyclic subgroup of points belonging to {@link BN128Fp} <br/>

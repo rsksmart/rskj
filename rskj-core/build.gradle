@@ -3,8 +3,15 @@ import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 
 buildscript {
+    repositories {
+        jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
     dependencies {
         classpath files('libs/rsk-gradle-witness.jar')
+        classpath "me.champeau.gradle:jmh-gradle-plugin:0.4.4"
     }
 }
 
@@ -15,6 +22,7 @@ plugins {
 apply plugin: 'witness'
 apply plugin: 'maven'
 apply plugin: 'jacoco'
+apply plugin: "me.champeau.gradle.jmh"
 
 test {
     beforeTest { descriptor ->
@@ -47,6 +55,8 @@ sourceCompatibility = 1.8
 mainClassName = 'co.rsk.Start'
 applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
 
+project.ext.set('nativeLibsDir', "libs/natives")
+
 tasks.withType(JavaCompile){
     options.warnings = false
     options.encoding = 'UTF-8'
@@ -56,6 +66,10 @@ tasks.withType(JavaCompile){
 tasks.withType(AbstractArchiveTask) {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
+}
+
+jmh {
+    jvmArgsAppend = ["-Djava.library.path=" + System.getProperty("java.library.path") + ":" + project.nativeLibsDir]
 }
 
 ext {
