@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -49,6 +50,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     private final String databaseDir;
     private final String name;
+    private final OnLevelDBClose closeCallback;
     private DB db;
     private boolean alive;
 
@@ -60,16 +62,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDbDataSource(String name, String databaseDir) {
+    public LevelDbDataSource(String name,
+                             String databaseDir,
+                             OnLevelDBClose closeCallback) {
         this.databaseDir = databaseDir;
         this.name = name;
+        this.closeCallback = closeCallback;
         logger.debug("New LevelDbDataSource: {}", name);
-    }
-
-    public static KeyValueDataSource makeDataSource(Path datasourcePath) {
-        KeyValueDataSource ds = new LevelDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
-        ds.init();
-        return ds;
     }
 
     @Override
@@ -323,7 +322,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             try {
                 logger.debug("Close db: {}", name);
                 db.close();
-
+                closeCallback.callback();
                 alive = false;
             } catch (IOException e) {
                 logger.error("Failed to find the db file on the close: {} ", name);
@@ -340,17 +339,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
 
-    public static void mergeDataSources(Path destinationPath, List<Path> originPaths) {
-        Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
-        for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath);
-            for (byte[] key : singleOriginDataSource.keys()) {
-                mergedStores.put(ByteUtil.wrap(key), singleOriginDataSource.get(key));
-            }
-            singleOriginDataSource.close();
-        }
-        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath);
-        destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
-        destinationDataSource.close();
+    public interface OnLevelDBClose {
+        void callback();
     }
 }

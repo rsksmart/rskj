@@ -95,7 +95,7 @@ import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.datasource.LevelDbDataSourceFactory;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
@@ -238,12 +238,20 @@ public class RskContext implements NodeBootstrapper {
     private StatusResolver statusResolver;
     private Web3InformationRetriever web3InformationRetriever;
     private BootstrapImporter bootstrapImporter;
+    private LevelDbDataSourceFactory levelDbDataSourceFactory;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
                 NodeCliOptions.class,
                 NodeCliFlags.class
         ).parse(args));
+    }
+
+    private LevelDbDataSourceFactory getLevelDbDataSourceFactory() {
+        if (levelDbDataSourceFactory == null) {
+            levelDbDataSourceFactory = new LevelDbDataSourceFactory();
+        }
+        return levelDbDataSourceFactory;
     }
 
     private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
@@ -847,7 +855,7 @@ public class RskContext implements NodeBootstrapper {
 
                 boolean gcWasEnabled = !multiTrieStorePaths.isEmpty();
                 if (gcWasEnabled) {
-                    LevelDbDataSource.mergeDataSources(trieStorePath, multiTrieStorePaths);
+                    getLevelDbDataSourceFactory().mergeDataSources(trieStorePath, multiTrieStorePaths);
                     // cleanup MultiTrieStore data sources
                     multiTrieStorePaths.stream()
                             .map(Path::toString)
@@ -856,7 +864,7 @@ public class RskContext implements NodeBootstrapper {
             } catch (IOException e) {
                 logger.error("Unable to check if GC was ever enabled", e);
             }
-            newTrieStore = buildTrieStore(trieStorePath);
+            newTrieStore = buildTrieStore(databasePath.resolve("unitrie"));
         }
         return newTrieStore;
     }
@@ -901,7 +909,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected ReceiptStore buildReceiptStore() {
-        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "receipts"));
+        KeyValueDataSource ds = getLevelDbDataSourceFactory().makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "receipts"));
         return new ReceiptStoreImpl(ds);
     }
 
@@ -929,9 +937,10 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected TrieStore buildTrieStore(Path trieStorePath) {
-        int statesCacheSize = getRskSystemProperties().getStatesCacheSize();
-        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(trieStorePath);
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        int statesCacheSize = rskSystemProperties.getStatesCacheSize();
 
+        KeyValueDataSource ds = getLevelDbDataSourceFactory().makeDataSource(trieStorePath);
         if (statesCacheSize != 0) {
             ds = new DataSourceWithCache(ds, statesCacheSize);
         }
@@ -997,7 +1006,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected StateRootHandler buildStateRootHandler() {
-        KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
+        KeyValueDataSource stateRootsDB = getLevelDbDataSourceFactory().makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
         return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB, new HashMap<>());
     }
 
@@ -1043,7 +1052,7 @@ public class RskContext implements NodeBootstrapper {
             return null;
         }
 
-        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"));
+        KeyValueDataSource ds = getLevelDbDataSourceFactory().makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"));
         return new Wallet(ds);
     }
 
@@ -1658,7 +1667,7 @@ public class RskContext implements NodeBootstrapper {
                 .closeOnJvmShutdown()
                 .make();
 
-        KeyValueDataSource blocksDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "blocks"));
+        KeyValueDataSource blocksDB = getLevelDbDataSourceFactory().makeDataSource(Paths.get(databaseDir, "blocks"));
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
     }
