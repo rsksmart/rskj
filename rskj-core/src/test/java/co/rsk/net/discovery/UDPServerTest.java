@@ -20,6 +20,9 @@ package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
+import co.rsk.net.discovery.upnp.UpnpGatewayManager;
+import co.rsk.net.discovery.upnp.UpnpProtocol;
+import co.rsk.net.discovery.upnp.UpnpService;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
@@ -27,11 +30,15 @@ import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.powermock.reflect.Whitebox;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+
+import static org.mockito.Mockito.*;
 
 /**
  * Created by mario on 15/02/17.
@@ -56,6 +63,8 @@ public class UDPServerTest {
     private static final long TIMEOUT = 30000;
     private static final long UPDATE = 60000;
     private static final long CLEAN = 60000;
+
+    private static final long START_THREAD_TIMEOUT = 10000;
 
     @Test
     public void port0DoesntCreateANewChannel() throws InterruptedException {
@@ -156,5 +165,41 @@ public class UDPServerTest {
             }
         }
         return check;
+    }
+
+    @Test
+    public void testUpnpPortMapping() throws Exception {
+        // init mocks
+        UpnpService mockUpnpService = mock(UpnpService.class);
+        UpnpGatewayManager mockGatewayManager = mock(UpnpGatewayManager.class);
+        PeerExplorer mockPeerExplorer = mock(PeerExplorer.class);
+
+        // stub mocks
+        when(mockUpnpService.findGateway(anyString()))
+                .thenReturn(Optional.of(mockGatewayManager));
+        when(mockGatewayManager.addPortMapping(anyInt(), anyInt(), any(UpnpProtocol.class), anyString()))
+                .thenReturn(true);
+
+        // start UDPServer, but prevent it from opening an actual channel
+        UDPServer testServer = spy(new UDPServer(HOST, PORT_1, mockPeerExplorer, Optional.of(mockUpnpService)));
+        doNothing().when(testServer).startUDPServer();
+        testServer.start();
+
+        // verify that correct values were used for port forwarding
+        ArgumentCaptor<String> acAddress = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Integer> acExternalPort = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Integer> acInternalPort = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<UpnpProtocol> acProtocol = ArgumentCaptor.forClass(UpnpProtocol.class);
+
+        // wait for UDPServer::start()'s thread to make the calls
+        verify(mockUpnpService, timeout(START_THREAD_TIMEOUT)).findGateway(acAddress.capture());
+        verify(mockGatewayManager, timeout(START_THREAD_TIMEOUT))
+                .addPortMapping(acExternalPort.capture(), acInternalPort.capture(), acProtocol.capture(), anyString());
+
+        String errorTemplate = "Wrong %s used for port mapping.";
+        Assert.assertEquals(String.format(errorTemplate, "address"), HOST, acAddress.getValue());
+        Assert.assertEquals(String.format(errorTemplate, "external port"), PORT_1, acExternalPort.getValue().intValue());
+        Assert.assertEquals(String.format(errorTemplate, "internal port"), PORT_1, acInternalPort.getValue().intValue());
+        Assert.assertEquals(String.format(errorTemplate, "protocol"), UpnpProtocol.UDP, acProtocol.getValue());
     }
 }

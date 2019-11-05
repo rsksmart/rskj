@@ -68,6 +68,7 @@ ext {
     logbackVersion = '1.2.2'
     bitcoinjVersion = '0.14.4-rsk-8'
     nettyVersion = '4.0.56.Final'
+    weupnpVersion = '0.1.4'
 }
 
 dependencies {
@@ -84,6 +85,7 @@ dependencies {
     compile "org.mapdb:mapdb:2.0-beta13"
     compile "co.rsk.bitcoinj:bitcoinj-thin:${bitcoinjVersion}"
     compile 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.1'
+    compile "org.bitlet:weupnp:${weupnpVersion}"
 
     runtime "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
     runtime "ch.qos.logback:logback-classic:${logbackVersion}"
@@ -131,6 +133,9 @@ dependencyVerification {
         'net.jcip:jcip-annotations:be5805392060c71474bf6c9a67a099471274d30b83eef84bfc4e0889a4f1dcc0',
         'org.apache.commons:commons-lang3:8ac96fc686512d777fca85e144f196cd7cfe0c0aec23127229497d1a38ff651c',
         'org.awaitility:awaitility:a02982e89585a52c1c84296a895bfeb86ea250cca1a53bcfc8a14092fffa87c4',
+        // TODO should be updated with hash from reproducible build, once that .jar/.pom is uploaded
+        //  see: https://github.com/rsksmart/reproducible-builds/pull/19
+        'org.bitlet:weupnp:88df7e6504929d00bdb832863761385c68ab92af945b04f0770b126270a444fb',
         'org.bouncycastle:bclcrypto-jdk15on:7d03ba37df4d0ddc4ea40d56554324c6f18062a930edadb0a1b3acbbbea28efc',
         'org.ethereum:leveldbjni-all:18da00444c77080d4422b16c9d4750c4addabda350b702b4a6d628b86658e585',
         'org.fusesource.hawtjni:hawtjni-runtime:74fe9764e1fb1ef20b159dbca2d29abd6de292082ce3fcf538f81ac912390416',
