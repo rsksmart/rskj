@@ -51,7 +51,7 @@ public class MessageVisitor {
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
     private final TransactionGateway transactionGateway;
-    private final MessageChannel sender;
+    private final Peer sender;
     private final PeerScoringManager peerScoringManager;
     private final RskSystemProperties config;
     private final BlockValidationRule blockValidationRule;
@@ -64,7 +64,7 @@ public class MessageVisitor {
                           PeerScoringManager peerScoringManager,
                           ChannelManager channelManager,
                           BlockValidationRule blockValidationRule,
-                          MessageChannel sender) {
+                          Peer sender) {
 
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
@@ -214,7 +214,7 @@ public class MessageVisitor {
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }
 
-    private void recordEvent(MessageChannel sender, EventType event) {
+    private void recordEvent(Peer sender, EventType event) {
         if (sender == null) {
             return;
         }

@@ -1352,7 +1352,6 @@ public class RskContext implements NodeBootstrapper {
                     getBlockStore(),
                     getConsensusValidationMainchainView(),
                     getBlockSyncService(),
-                    getChannelManager(),
                     getSyncConfiguration(),
                     getBlockFactory(),
                     getProofOfWorkRule(),

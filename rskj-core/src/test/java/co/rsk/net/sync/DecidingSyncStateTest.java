@@ -1,7 +1,9 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.Status;
+import co.rsk.net.simples.SimplePeer;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -12,7 +14,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -34,7 +35,7 @@ public class DecidingSyncStateTest {
         when(bestBlock.getNumber()).thenReturn(100L);
 
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, peersInformation, blockStore);
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(mock(NodeID.class)));
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(mock(Peer.class)));
 
         Status status = mock(Status.class);
         SyncPeerStatus bpStatus = mock(SyncPeerStatus.class);
@@ -71,7 +72,7 @@ public class DecidingSyncStateTest {
 
         PeersInformation peersInformation = mock(PeersInformation.class);
         when(peersInformation.count()).thenReturn(1);
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(mock(NodeID.class)));
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(mock(Peer.class)));
 
         Status status = mock(Status.class);
         SyncPeerStatus bpStatus = mock(SyncPeerStatus.class);
@@ -108,7 +109,7 @@ public class DecidingSyncStateTest {
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
-        knownPeers.registerPeer(new NodeID(HashUtil.randomPeerId()));
+        knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(syncConfiguration.getTimeoutWaitingPeers().minusSeconds(1L));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -126,7 +127,7 @@ public class DecidingSyncStateTest {
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
-        knownPeers.registerPeer(new NodeID(HashUtil.randomPeerId()));
+        knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -144,7 +145,7 @@ public class DecidingSyncStateTest {
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, knownPeers, mock(BlockStore.class));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
-        knownPeers.registerPeer(new NodeID(HashUtil.randomPeerId()));
+        knownPeers.registerPeer(new SimplePeer(new NodeID(HashUtil.randomPeerId())));
         syncState.newPeerStatus();
         syncState.tick(Duration.ofMinutes(2));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
@@ -162,13 +163,13 @@ public class DecidingSyncStateTest {
                 blockStore);
 
         when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
-        NodeID nodeID = mock(NodeID.class);
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(nodeID));
+        Peer peer = mock(Peer.class);
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         SyncPeerStatus syncPeerStatus = mock(SyncPeerStatus.class);
         Status status = mock(Status.class);
         when(syncPeerStatus.getStatus()).thenReturn(status);
-        when(peersInformation.getPeer(nodeID)).thenReturn(syncPeerStatus);
+        when(peersInformation.getPeer(peer)).thenReturn(syncPeerStatus);
 
         when(blockStore.getMinNumber()).thenReturn(1L);
         Block block = mock(Block.class);
@@ -179,7 +180,7 @@ public class DecidingSyncStateTest {
 
         syncState.newPeerStatus();
 
-        verify(syncEventsHandler).backwardSyncing(nodeID);
+        verify(syncEventsHandler).backwardSyncing(peer);
     }
 
     @Test
@@ -194,13 +195,13 @@ public class DecidingSyncStateTest {
                 blockStore);
 
         when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
-        NodeID nodeID = mock(NodeID.class);
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(nodeID));
+        Peer peer = mock(Peer.class);
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         SyncPeerStatus syncPeerStatus = mock(SyncPeerStatus.class);
         Status status = mock(Status.class);
         when(syncPeerStatus.getStatus()).thenReturn(status);
-        when(peersInformation.getPeer(nodeID)).thenReturn(syncPeerStatus);
+        when(peersInformation.getPeer(peer)).thenReturn(syncPeerStatus);
 
         when(blockStore.getMinNumber()).thenReturn(0L);
         Block block = mock(Block.class);
@@ -211,7 +212,7 @@ public class DecidingSyncStateTest {
 
         syncState.newPeerStatus();
 
-        verify(syncEventsHandler).startSyncing(nodeID);
+        verify(syncEventsHandler).startSyncing(peer);
     }
 
     @Test
@@ -226,13 +227,13 @@ public class DecidingSyncStateTest {
                 blockStore);
 
         when(peersInformation.count()).thenReturn(syncConfiguration.getExpectedPeers() + 1);
-        NodeID nodeID = mock(NodeID.class);
-        when(peersInformation.getBestPeer()).thenReturn(Optional.of(nodeID));
+        Peer peer = mock(Peer.class);
+        when(peersInformation.getBestPeer()).thenReturn(Optional.of(peer));
 
         SyncPeerStatus syncPeerStatus = mock(SyncPeerStatus.class);
         Status status = mock(Status.class);
         when(syncPeerStatus.getStatus()).thenReturn(status);
-        when(peersInformation.getPeer(nodeID)).thenReturn(syncPeerStatus);
+        when(peersInformation.getPeer(peer)).thenReturn(syncPeerStatus);
 
         Block block = mock(Block.class);
         long myBestBlockNumber = 90L;
@@ -244,6 +245,6 @@ public class DecidingSyncStateTest {
 
         syncState.newPeerStatus();
 
-        verify(syncEventsHandler).startSyncing(nodeID);
+        verify(syncEventsHandler).startSyncing(peer);
     }
 }

@@ -22,7 +22,7 @@ import co.rsk.net.messages.Message;
 
 import java.net.InetAddress;
 
-public interface MessageChannel {
+public interface Peer {
     void sendMessage(Message message);
 
     NodeID getPeerNodeID();

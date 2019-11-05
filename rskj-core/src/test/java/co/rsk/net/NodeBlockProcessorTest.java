@@ -23,7 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
-import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
@@ -47,7 +47,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockSavingInStore() throws UnknownHostException {
         final NetBlockStore store = new NetBlockStore();
-        final MessageChannel sender = new SimpleMessageChannel();
+        final Peer sender = new SimplePeer();
 
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -70,7 +70,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockWithTooMuchHeight() throws UnknownHostException {
         final NetBlockStore store = new NetBlockStore();
-        final MessageChannel sender = new SimpleMessageChannel();
+        final Peer sender = new SimplePeer();
 
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final Block orphan = new BlockGenerator().createBlock(1000, 0);
@@ -91,7 +91,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void advancedBlock() throws UnknownHostException {
         final NetBlockStore store = new NetBlockStore();
-        final MessageChannel sender = new SimpleMessageChannel();
+        final Peer sender = new SimplePeer();
 
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -110,7 +110,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void canBeIgnoredForUncles() throws UnknownHostException {
         final NetBlockStore store = new NetBlockStore();
-        final MessageChannel sender = new SimpleMessageChannel();
+        final Peer sender = new SimplePeer();
 
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -434,7 +434,7 @@ public class NodeBlockProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block genesis = blockGenerator.getGenesisBlock();
@@ -468,7 +468,7 @@ public class NodeBlockProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block genesis = blockGenerator.getGenesisBlock();
@@ -500,7 +500,7 @@ public class NodeBlockProcessorTest {
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block genesis = blockGenerator.getGenesisBlock();
@@ -524,7 +524,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         final Block block = blockchain.getBestBlock();
         final Keccak256 blockHash = block.getHash();
@@ -549,7 +549,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         final Block block = blockchain.getBlockByNumber(1);
         final Keccak256 blockHash = block.getHash();
@@ -579,7 +579,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         processor.processBlockHeadersRequest(sender, 1, block.getHash().getBytes(), 1);
 
@@ -607,7 +607,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
@@ -630,7 +630,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         processor.processBlockHeadersRequest(sender, 1, block.getHash().getBytes(), 1);
 
@@ -661,7 +661,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
@@ -693,7 +693,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
@@ -717,7 +717,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
@@ -752,7 +752,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
@@ -784,7 +784,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         processor.processBodyRequest(sender, 100, block.getHash().getBytes());
 
@@ -815,7 +815,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
@@ -839,7 +839,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
@@ -870,7 +870,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         processor.processBlockHashRequest(sender, 100, 99999);
 
@@ -889,7 +889,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         processor.processBlockHeadersRequest(sender, 100, block.getHash().getBytes(), 20);
 
@@ -921,7 +921,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         processor.processBlockHeadersRequest(sender, 100, HashUtil.randomHash(), 20);
 
@@ -942,7 +942,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         processor.processSkeletonRequest(sender, 100, 5);
 
@@ -978,7 +978,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         processor.processSkeletonRequest(sender, 100, 5);
 
@@ -1016,7 +1016,7 @@ public class NodeBlockProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         processor.processSkeletonRequest(sender, 100, skeletonStep + 5);
 
@@ -1054,7 +1054,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void failIfProcessBlockHeadersRequestCountHigher()  {
 
-        final MessageChannel sender = mock(MessageChannel.class);
+        final Peer sender = mock(Peer.class);
 
 
         final Block block = new BlockGenerator().getBlock(3);

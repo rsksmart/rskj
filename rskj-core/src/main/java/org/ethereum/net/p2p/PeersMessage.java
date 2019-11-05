@@ -42,13 +42,13 @@ public class PeersMessage extends P2pMessage {
 
     private boolean parsed = false;
 
-    private Set<Peer> peers;
+    private Set<PeerConnectionData> peers;
 
     public PeersMessage(byte[] payload) {
         super(payload);
     }
 
-    public PeersMessage(Set<Peer> peers) {
+    public PeersMessage(Set<PeerConnectionData> peers) {
         this.peers = peers;
         parsed = true;
     }
@@ -68,7 +68,7 @@ public class PeersMessage extends P2pMessage {
                 InetAddress address = InetAddress.getByAddress(ipBytes);
 
                 String peerId = peerIdRaw == null ? "" : Hex.toHexString(peerIdRaw);
-                Peer peer = new Peer(address, peerPort, peerId);
+                PeerConnectionData peer = new PeerConnectionData(address, peerPort, peerId);
                 peers.add(peer);
             } catch (UnknownHostException e) {
                 throw new RuntimeException("Malformed ip", e);
@@ -80,7 +80,7 @@ public class PeersMessage extends P2pMessage {
     private void encode() {
         byte[][] encodedByteArrays = new byte[this.peers.size() + 1][];
         encodedByteArrays[0] = RLP.encodeByte(this.getCommand().asByte());
-        List<Peer> peerList = new ArrayList<>(this.peers);
+        List<PeerConnectionData> peerList = new ArrayList<>(this.peers);
         for (int i = 0; i < peerList.size(); i++) {
             encodedByteArrays[i + 1] = peerList.get(i).getEncoded();
         }
@@ -95,7 +95,7 @@ public class PeersMessage extends P2pMessage {
         return encoded;
     }
 
-    public Set<Peer> getPeers() {
+    public Set<PeerConnectionData> getPeers() {
         if (!parsed) {
             this.parse();
         }
@@ -118,7 +118,7 @@ public class PeersMessage extends P2pMessage {
         }
 
         StringBuilder sb = new StringBuilder();
-        for (Peer peerData : peers) {
+        for (PeerConnectionData peerData : peers) {
             sb.append("\n       ").append(peerData);
         }
         return "[" + this.getCommand().name() + sb.toString() + "]";
