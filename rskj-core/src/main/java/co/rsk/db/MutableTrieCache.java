@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
+import co.rsk.util.StorageKeysIteratorWithCache;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
@@ -107,7 +108,7 @@ public class MutableTrieCache implements MutableTrie {
 
         if (isDeletedAccount) {
             // lower level is deleted, return cached items
-            return new StorageKeysIterator(Collections.emptyIterator(), accountItems, addr, trieKeyMapper);
+            return new StorageKeysIteratorWithCache(Collections.emptyIterator(), accountItems, addr, trieKeyMapper);
         }
 
         Iterator<DataWord> storageKeys = trie.getStorageKeys(addr);
@@ -116,7 +117,7 @@ public class MutableTrieCache implements MutableTrie {
             return storageKeys;
         }
 
-        return new StorageKeysIterator(storageKeys, accountItems, addr, trieKeyMapper);
+        return new StorageKeysIteratorWithCache(storageKeys, accountItems, addr, trieKeyMapper);
     }
 
     // This method returns a wrapper with the same content and size expected for a account key
@@ -236,89 +237,5 @@ public class MutableTrieCache implements MutableTrie {
     @Override
     public Keccak256 getValueHash(byte[] key) {
         return internalGet(key, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
-    }
-
-    private static class StorageKeysIterator implements Iterator<DataWord> {
-        private final Iterator<DataWord> keysIterator;
-        private final Map<ByteArrayWrapper, byte[]> accountItems;
-        private final RskAddress address;
-        private final int storageKeyOffset = (
-                TrieKeyMapper.domainPrefix().length +
-                TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE +
-                TrieKeyMapper.storagePrefix().length +
-                TrieKeyMapper.SECURE_KEY_SIZE)
-                * Byte.SIZE;
-        private final TrieKeyMapper trieKeyMapper;
-        private DataWord currentStorageKey;
-        private Iterator<Map.Entry<ByteArrayWrapper, byte[]>> accountIterator;
-
-        StorageKeysIterator(
-                Iterator<DataWord> keysIterator,
-                Map<ByteArrayWrapper, byte[]> accountItems,
-                RskAddress addr,
-                TrieKeyMapper trieKeyMapper) {
-            this.keysIterator = keysIterator;
-            this.accountItems = new HashMap<>(accountItems);
-            this.address = addr;
-            this.trieKeyMapper = trieKeyMapper;
-        }
-
-        @Override
-        public boolean hasNext() {
-            if (currentStorageKey != null) {
-                return true;
-            }
-
-            while (keysIterator.hasNext()) {
-                DataWord item = keysIterator.next();
-                ByteArrayWrapper fullKey = getCompleteKey(item);
-                if (accountItems.containsKey(fullKey)) {
-                    byte[] value = accountItems.remove(fullKey);
-                    if (value == null){
-                        continue;
-                    }
-                }
-                currentStorageKey = item;
-                return true;
-            }
-
-            if (accountIterator == null) {
-                accountIterator = accountItems.entrySet().iterator();
-            }
-
-            while (accountIterator.hasNext()) {
-                Map.Entry<ByteArrayWrapper, byte[]> entry = accountIterator.next();
-                byte[] key = entry.getKey().getData();
-                if (entry.getValue() != null && key.length * Byte.SIZE > storageKeyOffset) {
-                    // cached account key
-                    currentStorageKey = getPartialKey(key);
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private DataWord getPartialKey(byte[] key) {
-            TrieKeySlice nodeKey = TrieKeySlice.fromKey(key);
-            byte[] storageExpandedKeySuffix = nodeKey.slice(storageKeyOffset, nodeKey.length()).encode();
-            return DataWord.valueOf(storageExpandedKeySuffix);
-        }
-
-        private ByteArrayWrapper getCompleteKey(DataWord subkey) {
-            byte[] secureKeyPrefix = trieKeyMapper.getAccountStorageKey(address, subkey);
-            return new ByteArrayWrapper(secureKeyPrefix);
-        }
-
-        @Override
-        public DataWord next() {
-            if (currentStorageKey == null && !hasNext()) {
-                throw new NoSuchElementException();
-            }
-
-            DataWord next = currentStorageKey;
-            currentStorageKey = null;
-            return next;
-        }
     }
 }
