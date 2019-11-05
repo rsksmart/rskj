@@ -17,9 +17,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.crypto.altbn128.rust;
+package org.ethereum.crypto.altbn128;
 
-import org.ethereum.crypto.altbn128.Field;
 import org.ethereum.crypto.altbn128.java.PairingCheck;
 
 import java.math.BigInteger;

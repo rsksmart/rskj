@@ -1,4 +1,4 @@
-package org.ethereum.crypto.altbn128.rust;
+package org.ethereum.crypto.altbn128;
 
 import java.math.BigInteger;
 

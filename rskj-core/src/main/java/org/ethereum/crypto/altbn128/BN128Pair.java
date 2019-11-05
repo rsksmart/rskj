@@ -18,7 +18,7 @@
  */
 
 
-package org.ethereum.crypto.altbn128.rust;
+package org.ethereum.crypto.altbn128;
 
 public class BN128Pair {
 

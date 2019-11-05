@@ -18,10 +18,10 @@
 
 package co.rsk.pcc.altBN128;
 
-import org.ethereum.crypto.altbn128.rust.BN128G1;
-import org.ethereum.crypto.altbn128.rust.BN128G2;
-import org.ethereum.crypto.altbn128.rust.BN128Pair;
-import org.ethereum.crypto.altbn128.rust.PairingCheck;
+import org.ethereum.crypto.altbn128.BN128G1;
+import org.ethereum.crypto.altbn128.BN128G2;
+import org.ethereum.crypto.altbn128.BN128Pair;
+import org.ethereum.crypto.altbn128.PairingCheck;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 

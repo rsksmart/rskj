@@ -1,6 +1,6 @@
 package com.mraof.rsk.bench;
 
-import org.ethereum.crypto.altbn128.rust.*;
+import org.ethereum.crypto.altbn128.*;
 import org.openjdk.jmh.annotations.Benchmark;
 
 import java.math.BigInteger;

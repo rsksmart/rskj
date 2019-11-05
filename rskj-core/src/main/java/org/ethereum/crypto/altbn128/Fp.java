@@ -1,6 +1,4 @@
-package org.ethereum.crypto.altbn128.rust;
-
-import org.ethereum.crypto.altbn128.Field;
+package org.ethereum.crypto.altbn128;
 
 import java.math.BigInteger;
 import java.util.Objects;

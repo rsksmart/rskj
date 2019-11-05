@@ -18,9 +18,9 @@
 
 package co.rsk.pcc.altBN128;
 
-import org.ethereum.crypto.altbn128.rust.BN128;
-import org.ethereum.crypto.altbn128.rust.BN128G1;
-import org.ethereum.crypto.altbn128.rust.Fp;
+import org.ethereum.crypto.altbn128.BN128;
+import org.ethereum.crypto.altbn128.BN128G1;
+import org.ethereum.crypto.altbn128.Fp;
 import org.ethereum.vm.PrecompiledContracts;
 
 import static org.ethereum.util.ByteUtil.*;
