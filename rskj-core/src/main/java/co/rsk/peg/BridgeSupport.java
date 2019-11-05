@@ -396,24 +396,7 @@ public class BridgeSupport {
                 RskAddress sender = new RskAddress(key.getAddress());
                 co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(totalAmount);
 
-                rskRepository.transfer(
-                        PrecompiledContracts.BRIDGE_ADDR,
-                        sender,
-                        amount
-                );
-
-                if (this.subtraces != null) {
-                    DataWord from = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
-                    DataWord to = DataWord.valueOf(sender.getBytes());
-                    long gas = 0L;
-                    DataWord value = DataWord.valueOf(amount.getBytes());
-
-                    TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
-                    ProgramResult result     = new ProgramResult();
-                    ProgramSubtrace subtrace = new ProgramSubtrace(CallType.CALL, invoke, result, Collections.EMPTY_LIST);
-
-                    this.subtraces.add(subtrace);
-                }
+                this.transferTo(sender, amount);
 
                 logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, sender);
 
@@ -449,6 +432,34 @@ public class BridgeSupport {
             saveNewUTXOs(btcTx);
         }
         logger.info("BTC Tx {} processed in RSK", btcTxHash);
+    }
+
+    /**
+     * Internal method to transfer RSK to an RSK account
+     * It also produce the appropiate internal transaction subtrace if needed
+     *
+     * @param receiver  address that receives the amount
+     * @param amount    amount to transfer
+     */
+    private void transferTo(RskAddress receiver, co.rsk.core.Coin amount) {
+        rskRepository.transfer(
+                PrecompiledContracts.BRIDGE_ADDR,
+                receiver,
+                amount
+        );
+
+        if (this.subtraces != null) {
+            DataWord from = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
+            DataWord to = DataWord.valueOf(receiver.getBytes());
+            long gas = 0L;
+            DataWord value = DataWord.valueOf(amount.getBytes());
+
+            TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
+            ProgramResult result     = new ProgramResult();
+            ProgramSubtrace subtrace = new ProgramSubtrace(CallType.CALL, invoke, result, Collections.EMPTY_LIST);
+
+            this.subtraces.add(subtrace);
+        }
     }
 
     /*
@@ -788,7 +799,7 @@ public class BridgeSupport {
         Coin spentByFederation = sumInputs.subtract(change);
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
-            rskRepository.transfer(PrecompiledContracts.BRIDGE_ADDR, BURN_ADDRESS, co.rsk.core.Coin.fromBitcoin(coinsToBurn));
+            this.transferTo(BURN_ADDRESS, co.rsk.core.Coin.fromBitcoin(coinsToBurn));
         }
     }
 
