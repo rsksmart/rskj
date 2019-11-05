@@ -28,17 +28,17 @@ import java.util.List;
  * Created by ajlopez on 5/11/2016.
  */
 public interface BlockProcessor {
-    BlockProcessResult processBlock(MessageChannel sender, Block block);
+    BlockProcessResult processBlock(Peer sender, Block block);
 
-    void processGetBlock(MessageChannel sender, byte[] hash);
+    void processGetBlock(Peer sender, byte[] hash);
 
     BlockNodeInformation getNodeInformation();
 
     long getLastKnownBlockNumber();
 
-    void processNewBlockHashesMessage(MessageChannel sender, NewBlockHashesMessage message);
+    void processNewBlockHashesMessage(Peer sender, NewBlockHashesMessage message);
 
-    void processBlockHeaders(MessageChannel sender, List<BlockHeader> blockHeaders);
+    void processBlockHeaders(Peer sender, List<BlockHeader> blockHeaders);
 
     boolean hasBlock(byte[] hash);
 
@@ -52,15 +52,15 @@ public interface BlockProcessor {
 
     // New messages for RSK's sync protocol
 
-    void processBlockRequest(MessageChannel sender, long requestId, byte[] hash);
+    void processBlockRequest(Peer sender, long requestId, byte[] hash);
 
-    void processBlockHeadersRequest(MessageChannel sender, long requestId, byte[] hash, int count);
+    void processBlockHeadersRequest(Peer sender, long requestId, byte[] hash, int count);
 
-    void processBodyRequest(MessageChannel sender, long requestId, byte[] hash);
+    void processBodyRequest(Peer sender, long requestId, byte[] hash);
 
-    void processBlockHashRequest(MessageChannel sender, long requestId, long height);
+    void processBlockHashRequest(Peer sender, long requestId, long height);
 
-    void processSkeletonRequest(MessageChannel sender, long requestId, long startNumber);
+    void processSkeletonRequest(Peer sender, long requestId, long startNumber);
 
     boolean canBeIgnoredForUnclesRewards(long blockNumber);
 }
