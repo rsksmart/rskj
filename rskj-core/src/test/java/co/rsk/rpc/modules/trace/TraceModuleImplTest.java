@@ -267,6 +267,11 @@ public class TraceModuleImplTest {
 
         Assert.assertNotNull(oresult.get("type"));
         Assert.assertEquals("\"suicide\"", oresult.get("type").toString());
+        Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNull(oresult.get("action").get("from"));
+        Assert.assertNotNull(oresult.get("action").get("address"));
+        Assert.assertNotNull(oresult.get("action").get("refundAddress"));
+        Assert.assertNotNull(oresult.get("action").get("balance"));
     }
 
     private static void retrieveSuicideInvocationBlockTrace(World world, ReceiptStore receiptStore, String blkname) throws Exception {
@@ -289,6 +294,11 @@ public class TraceModuleImplTest {
 
         Assert.assertNotNull(oresult.get("type"));
         Assert.assertEquals("\"suicide\"", oresult.get("type").toString());
+        Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNull(oresult.get("action").get("from"));
+        Assert.assertNotNull(oresult.get("action").get("address"));
+        Assert.assertNotNull(oresult.get("action").get("refundAddress"));
+        Assert.assertNotNull(oresult.get("action").get("balance"));
     }
 
     @Test
