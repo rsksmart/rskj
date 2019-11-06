@@ -4,12 +4,12 @@ import org.ethereum.util.RLP;
 
 public class AccountRequestMessage extends MessageWithId {
     private byte[] blockHash;
-    private byte[] addressHash;
+    private byte[] address;
     private long id;
 
-    public AccountRequestMessage(long id, byte[] blockHash, byte[] addressHash) {
+    public AccountRequestMessage(long id, byte[] blockHash, byte[] address) {
         this.blockHash = blockHash.clone();
-        this.addressHash = addressHash.clone();
+        this.address = address.clone();
         this.id = id;
     }
 
@@ -17,8 +17,8 @@ public class AccountRequestMessage extends MessageWithId {
         return blockHash.clone();
     }
 
-    public byte[] getAddressHash() {
-        return addressHash.clone();
+    public byte[] getAddress() {
+        return address.clone();
     }
 
     @Override
@@ -35,8 +35,8 @@ public class AccountRequestMessage extends MessageWithId {
     @Override
     public byte[] getEncodedMessageWithoutId() {
         byte[] rlpBlockHash = RLP.encodeElement(this.blockHash);
-        byte[] rlpAddressHash = RLP.encodeElement(this.addressHash);
-        return RLP.encodeList(rlpBlockHash, rlpAddressHash);
+        byte[] rlpAddress = RLP.encodeElement(this.address);
+        return RLP.encodeList(rlpBlockHash, rlpAddress);
     }
 
     @Override

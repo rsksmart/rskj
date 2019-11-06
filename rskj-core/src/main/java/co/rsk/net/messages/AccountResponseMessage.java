@@ -1,14 +1,16 @@
 package co.rsk.net.messages;
 
+import org.ethereum.util.RLP;
+
 public class AccountResponseMessage extends MessageWithId {
     private long id;
     private final byte[] merkleProof;
-    private final long nonce;
-    private final long balance;
+    private final byte[] nonce;
+    private final byte[] balance;
     private final byte[] codeHash;
     private final byte[] storageRoot;
 
-    public AccountResponseMessage(long id, byte[] merkleProof, long nonce, long balance, byte[] codeHash, byte[] storageRoot) {
+    public AccountResponseMessage(long id, byte[] merkleProof, byte[] nonce, byte[] balance, byte[] codeHash, byte[] storageRoot) {
         this.id = id;
         this.merkleProof = merkleProof;
         this.nonce = nonce;
@@ -26,11 +28,11 @@ public class AccountResponseMessage extends MessageWithId {
         return merkleProof;
     }
 
-    public long getNonce() {
+    public byte[] getNonce() {
         return nonce;
     }
 
-    public long getBalance() {
+    public byte[] getBalance() {
         return balance;
     }
 
@@ -44,7 +46,12 @@ public class AccountResponseMessage extends MessageWithId {
 
     @Override
     protected byte[] getEncodedMessageWithoutId() {
-        return new byte[0];
+        byte[] rlpMerkleProof = RLP.encodeElement(this.merkleProof);
+        byte[] rlpNonce = RLP.encodeElement(this.nonce);
+        byte[] rlpBalance = RLP.encodeElement(this.balance);
+        byte[] rlpCodeHash = RLP.encodeElement(this.codeHash);
+        byte[] rlpStorageRoot = RLP.encodeElement(this.storageRoot);
+        return RLP.encodeList(rlpMerkleProof, rlpNonce, rlpBalance, rlpCodeHash, rlpStorageRoot);
     }
 
     @Override

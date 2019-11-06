@@ -30,10 +30,7 @@ import co.rsk.net.messages.CodeResponseMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.*;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 import org.slf4j.Logger;
@@ -139,7 +136,7 @@ public class LightProcessor {
             throw new UnsupportedOperationException();
     }
 
-    public void processAccountRequest(Peer sender, long id, byte[] blockHash, byte[] addressHash) {
+    public void processAccountRequest(Peer sender, long id, byte[] blockHash, byte[] address) {
         final Block block = getBlock(blockHash);
 
         if (block == null) {
@@ -147,6 +144,24 @@ public class LightProcessor {
             return;
         }
 
+        RskAddress addr = new RskAddress(address);
+        RepositorySnapshot repositorySnapshot = repositoryLocator.snapshotAt(block.getHeader());
+        AccountState accountState = repositorySnapshot.getAccountState(addr);
+
+        byte[] nonce = accountState.getNonce().toByteArray();
+        // TODO: Implement merkle proof getter from unitrie, talk to Sergio and Licha
+        byte[] merkleProof = null;
+        byte[] balance = accountState.getBalance().getBytes();
+        byte[] codeHash = repositorySnapshot.getCodeHash(addr).getBytes();
+        byte[] storageRoot = repositorySnapshot.getRoot();
+
+        AccountResponseMessage response = new AccountResponseMessage(id,
+                merkleProof,
+                nonce,
+                balance,
+                codeHash,
+                storageRoot);
+        sender.sendMessage(response);
     }
 
     public void processAccountResponse(Peer sender, AccountResponseMessage message) {

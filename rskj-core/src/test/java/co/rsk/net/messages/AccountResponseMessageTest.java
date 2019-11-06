@@ -3,6 +3,8 @@ package co.rsk.net.messages;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Test;
 
+import java.math.BigInteger;
+
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
@@ -13,8 +15,8 @@ public class AccountResponseMessageTest {
     public void createMessage() {
         long id = 0;
         byte[] merkleProof = new byte[]{0x0F};
-        long nonce = 42;
-        long balance = 420;
+        byte[] nonce = new byte[]{0x0F};
+        byte[] balance = new byte[]{0x0F, (byte) 0xFF};
         byte[] codeHash = HashUtil.randomHash();
         byte[] storageRoot = new byte[]{0x0F, 0x0A, 0x0F};
 
@@ -33,8 +35,8 @@ public class AccountResponseMessageTest {
     public void accept() {
         long id = 0;
         byte[] merkleProof = new byte[]{0x0F};
-        long nonce = 42;
-        long balance = 420;
+        byte[] nonce = new byte[]{0x42};
+        byte[] balance = new byte[]{0x04, 0x02};
         byte[] codeHash = HashUtil.randomHash();
         byte[] storageRoot = new byte[]{0x0F, 0x0A, 0x0F};
 

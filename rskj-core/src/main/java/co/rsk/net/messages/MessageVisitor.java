@@ -243,7 +243,7 @@ public class MessageVisitor {
     }
 
     public void apply(AccountRequestMessage message) {
-        lightProcessor.processAccountRequest(sender, message.getId(), message.getBlockHash(), message.getAddressHash());
+        lightProcessor.processAccountRequest(sender, message.getId(), message.getBlockHash(), message.getAddress());
     }
 
     public void apply(AccountResponseMessage message) {

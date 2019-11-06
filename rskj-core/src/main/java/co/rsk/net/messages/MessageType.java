@@ -27,6 +27,7 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.bouncycastle.util.BigIntegers;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -147,10 +148,9 @@ public enum MessageType {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpId = list.get(0).getRLPData();
+            long id = getLongFromRLP(0,list);
             byte[] rlpBlock = message.get(0).getRLPData();
 
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             Block block = blockFactory.decodeBlock(rlpBlock);
 
             return new BlockResponseMessage(id, block);
@@ -173,11 +173,11 @@ public enum MessageType {
     BODY_REQUEST_MESSAGE(14) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
+            long id = getLongFromRLP(0,list);
+
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            byte[] rlpId = list.get(0).getRLPData();
             byte[] hash = message.get(0).getRLPData();
 
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             return new BodyRequestMessage(id, hash);
         }
     },
@@ -300,28 +300,28 @@ public enum MessageType {
         }
     },
 
-    ACCOUNT_REQUEST_MESSAGE(105) {
+    ACCOUNT_REQUEST_MESSAGE(107) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
 
             long id = getLongFromRLP(0, list);
             byte[] blockHash = message.get(0).getRLPData();
-            byte[] addressHash = message.get(1).getRLPData();
-            return new AccountRequestMessage(id, blockHash,addressHash);
+            byte[] address = message.get(1).getRLPData();
+            return new AccountRequestMessage(id, blockHash,address);
         }
     },
-    ACCOUNT_RESPONSE_MESSAGE(106) {
+    ACCOUNT_RESPONSE_MESSAGE(108) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
 
             long id = getLongFromRLP(0, list);
-            byte[] merkleProof = message.get(1).getRLPData();
-            long nonce = getLongFromRLP(2, message);
-            long balance = getLongFromRLP(3, message);
-            byte[] codeHash = message.get(4).getRLPData();
-            byte[] storageRoot = message.get(5).getRLPData();
+            byte[] merkleProof = message.get(0).getRLPData();
+            byte[] nonce = message.get(1).getRLPData();
+            byte[] balance = message.get(2).getRLPData();
+            byte[] codeHash = message.get(3).getRLPData();
+            byte[] storageRoot = message.get(4).getRLPData();
 
             return new AccountResponseMessage(id, merkleProof, nonce, balance, codeHash, storageRoot);
         }

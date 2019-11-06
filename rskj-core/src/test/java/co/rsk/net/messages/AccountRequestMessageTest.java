@@ -19,7 +19,7 @@ public class AccountRequestMessageTest {
 
         assertThat(message.getId(), is(id));
         assertThat(message.getBlockHash(), is(blockHash));
-        assertThat(message.getAddressHash(), is(addressHash));
+        assertThat(message.getAddress(), is(addressHash));
         assertThat(message.getMessageType(), is(MessageType.ACCOUNT_REQUEST_MESSAGE));
     }
 

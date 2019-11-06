@@ -618,7 +618,6 @@ public class MessageTest {
         long someId = 42;
         byte[] codeHash = HashUtil.randomHash();
         CodeResponseMessage message = new CodeResponseMessage(someId, codeHash);
-
         byte[] encoded = message.getEncoded();
 
         Message result = Message.create(blockFactory, encoded);
@@ -631,6 +630,56 @@ public class MessageTest {
 
         assertEquals(someId, newMessage.getId());
         assertArrayEquals(codeHash, newMessage.getCodeHash());
+    }
+
+    @Test
+    public void encodeDecodeAccountResponseMessage() {
+        long id = 0;
+        byte[] merkleProof = new byte[]{0x0F};
+        byte[] nonce = new byte[]{0x0F};
+        byte[] balance = new byte[]{0x0F, (byte) 0xFF};
+        byte[] codeHash = HashUtil.randomHash();
+        byte[] storageRoot = new byte[]{0x0F, 0x0A, 0x0F};
+
+        AccountResponseMessage message = new AccountResponseMessage(id, merkleProof, nonce, balance, codeHash, storageRoot);
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        assertNotNull(result);
+        assertThat(result.getEncoded(), is(encoded));
+        assertThat(result.getMessageType(), is(MessageType.ACCOUNT_RESPONSE_MESSAGE));
+
+        AccountResponseMessage newMessage = (AccountResponseMessage) result;
+
+        assertThat(newMessage.getId(),is(id));
+        assertThat(newMessage.getMerkleProof(),is(merkleProof));
+        assertThat(newMessage.getNonce(),is(nonce));
+        assertThat(newMessage.getBalance(),is(balance));
+        assertThat(newMessage.getCodeHash(),is(codeHash));
+        assertThat(newMessage.getStorageRoot(),is(storageRoot));
+    }
+
+    @Test
+    public void encodeDecodeAccountRequestMessage() {
+        long id = 42;
+        byte[] blockHash = HashUtil.randomHash();
+        byte[] address = HashUtil.randomHash();
+        AccountRequestMessage message = new AccountRequestMessage(id, blockHash,address);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(blockFactory, encoded);
+
+        assertNotNull(result);
+        assertThat(result.getEncoded(), is(encoded));
+        assertThat(result.getMessageType(), is(MessageType.ACCOUNT_REQUEST_MESSAGE));
+
+        AccountRequestMessage newMessage = (AccountRequestMessage) result;
+
+        assertThat(newMessage.getId(),is(id));
+        assertThat(newMessage.getBlockHash(),is(blockHash));
+        assertThat(newMessage.getAddress(),is(address));
     }
 
     private static Transaction createTransaction(int number) {
