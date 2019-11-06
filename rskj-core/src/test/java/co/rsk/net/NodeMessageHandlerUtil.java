@@ -25,7 +25,7 @@ public class NodeMessageHandlerUtil {
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
-    public static NodeMessageHandler createHandler(BlockValidationRule validationRule, Blockchain blockchain) {
+    public static NodeMessageHandler createHandler(Blockchain blockchain) {
         final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -39,7 +39,7 @@ public class NodeMessageHandlerUtil {
                 mock(Genesis.class));
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule, mock(StatusResolver.class));
+        return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration, ChannelManager channelManager) {
@@ -69,6 +69,7 @@ public class NodeMessageHandlerUtil {
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
                 mock(Genesis.class)
         );
-        return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, blockValidationRule, mock(StatusResolver.class));
+
+        return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, mock(StatusResolver.class));
     }
 }
