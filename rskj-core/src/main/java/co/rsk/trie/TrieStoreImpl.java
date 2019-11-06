@@ -57,6 +57,13 @@ public class TrieStoreImpl implements TrieStore {
      * @param forceSaveRoot allows saving the root node even if it's embeddable
      */
     private void save(Trie trie, boolean forceSaveRoot) {
+        byte[] trieKeyBytes = trie.getHash().getBytes();
+
+        if (forceSaveRoot && this.store.get(trieKeyBytes) != null) {
+            // the full trie is already saved
+            return;
+        }
+
         if (savedTries.contains(trie)) {
             // it is guaranteed that the children of a saved node are also saved
             return;
