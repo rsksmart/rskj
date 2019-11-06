@@ -652,12 +652,12 @@ public class MessageTest {
 
         AccountResponseMessage newMessage = (AccountResponseMessage) result;
 
-        assertThat(newMessage.getId(),is(id));
-        assertThat(newMessage.getMerkleProof(),is(merkleProof));
-        assertThat(newMessage.getNonce(),is(nonce));
-        assertThat(newMessage.getBalance(),is(balance));
-        assertThat(newMessage.getCodeHash(),is(codeHash));
-        assertThat(newMessage.getStorageRoot(),is(storageRoot));
+        assertThat(newMessage.getId(), is(id));
+        assertThat(newMessage.getMerkleProof(), is(merkleProof));
+        assertThat(newMessage.getNonce(), is(nonce));
+        assertThat(newMessage.getBalance(), is(balance));
+        assertThat(newMessage.getCodeHash(), is(codeHash));
+        assertThat(newMessage.getStorageRoot(), is(storageRoot));
     }
 
     @Test
@@ -665,7 +665,7 @@ public class MessageTest {
         long id = 42;
         byte[] blockHash = HashUtil.randomHash();
         byte[] address = HashUtil.randomHash();
-        AccountRequestMessage message = new AccountRequestMessage(id, blockHash,address);
+        AccountRequestMessage message = new AccountRequestMessage(id, blockHash, address);
 
         byte[] encoded = message.getEncoded();
 
@@ -677,9 +677,9 @@ public class MessageTest {
 
         AccountRequestMessage newMessage = (AccountRequestMessage) result;
 
-        assertThat(newMessage.getId(),is(id));
-        assertThat(newMessage.getBlockHash(),is(blockHash));
-        assertThat(newMessage.getAddress(),is(address));
+        assertThat(newMessage.getId(), is(id));
+        assertThat(newMessage.getBlockHash(), is(blockHash));
+        assertThat(newMessage.getAddress(), is(address));
     }
 
     private static Transaction createTransaction(int number) {
