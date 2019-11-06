@@ -152,6 +152,7 @@ public class TraceTransformer {
 
         String input = null;
         String value = null;
+        String address = null;
         String refundAddress = null;
         String balance = null;
 
@@ -169,6 +170,8 @@ public class TraceTransformer {
         }
 
         if (traceType == TraceType.SUICIDE) {
+            address = from;
+            from = null;
             balance = TypeConverter.toQuantityJsonHex(callValue.getData());
             refundAddress = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
         }
@@ -180,6 +183,7 @@ public class TraceTransformer {
                 gas,
                 input,
                 value,
+                address,
                 refundAddress,
                 balance
         );

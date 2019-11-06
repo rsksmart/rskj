@@ -29,6 +29,7 @@ public class TraceAction {
     private final String gas;
     private final String input;
     private final String value;
+    private final String address;
     private final String refundAddress;
     private final String balance;
 
@@ -39,6 +40,7 @@ public class TraceAction {
             String gas,
             String input,
             String value,
+            String address,
             String refundAddress,
             String balance
     ) {
@@ -48,6 +50,7 @@ public class TraceAction {
         this.gas = gas;
         this.input = input;
         this.value = value;
+        this.address = address;
         this.refundAddress = refundAddress;
         this.balance = balance;
     }
@@ -88,6 +91,9 @@ public class TraceAction {
 
     @JsonGetter("balance")
     public String getBalance() { return this.balance; }
+
+    @JsonGetter("address")
+    public String getAddress() { return this.address; }
 
     @JsonGetter("refundAddress")
     public String getRefundAddress() { return this.refundAddress; }
