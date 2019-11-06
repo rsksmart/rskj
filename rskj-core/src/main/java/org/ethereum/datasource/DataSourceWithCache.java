@@ -41,7 +41,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public byte[] get(byte[] key) {
+    public synchronized byte[] get(byte[] key) {
         Objects.requireNonNull(key);
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
 
@@ -67,7 +67,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public byte[] put(byte[] key, byte[] value) {
+    public synchronized byte[] put(byte[] key, byte[] value) {
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
         return put(wrappedKey, value);
     }
@@ -93,7 +93,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public void delete(byte[] key) {
+    public synchronized void delete(byte[] key) {
         delete(ByteUtil.wrap(key));
     }
 
@@ -145,7 +145,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
+    public synchronized void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
         if (rows.containsKey(null) || rows.containsValue(null)) {
             throw new IllegalArgumentException("Cannot update null values");
         }
@@ -180,15 +180,15 @@ public class DataSourceWithCache implements KeyValueDataSource {
         return base.getName() + "-with-uncommittedCache";
     }
 
-    public void init() {
+    public synchronized void init() {
         base.init();
     }
 
-    public boolean isAlive() {
+    public synchronized boolean isAlive() {
         return base.isAlive();
     }
 
-    public void close() {
+    public synchronized void close() {
         flush();
         base.close();
         uncommittedCache.clear();
