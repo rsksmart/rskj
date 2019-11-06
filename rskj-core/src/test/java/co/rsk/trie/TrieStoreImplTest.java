@@ -143,7 +143,7 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         verify(map, times(1)).put(trie.getHash().getBytes(), trie.toMessage());
-        verify(map, times(2)).get(trie.getHash().getBytes());
+        verify(map, times(1)).get(trie.getHash().getBytes());
         verifyNoMoreInteractions(map);
     }
 
