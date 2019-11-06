@@ -6,6 +6,7 @@ import org.ethereum.util.ByteUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -108,6 +109,24 @@ public class DataSourceWithCacheTest {
 
         dataSourceWithCache.flush();
         assertThat(baseDataSource.get(randomKey), is(randomValue));
+    }
+
+    @Test
+    public void putTwoKeyValuesWrittenInOrder() {
+        InOrder order = inOrder(baseDataSource);
+
+        byte[] randomKey1 = TestUtils.randomBytes(20);
+        byte[] randomValue1 = TestUtils.randomBytes(20);
+        byte[] randomKey2 = TestUtils.randomBytes(20);
+        byte[] randomValue2 = TestUtils.randomBytes(20);
+
+        dataSourceWithCache.put(randomKey1, randomValue1);
+        dataSourceWithCache.put(randomKey2, randomValue2);
+
+        dataSourceWithCache.flush();
+
+        order.verify(baseDataSource).put(randomKey1, randomValue1);
+        order.verify(baseDataSource).put(randomKey2, randomValue2);
     }
 
     @Test
