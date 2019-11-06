@@ -27,13 +27,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DataSourceWithCache implements KeyValueDataSource {
+    private final int cacheSize;
     private final KeyValueDataSource base;
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
     private final Map<ByteArrayWrapper, byte[]> committedCache;
 
     public DataSourceWithCache(KeyValueDataSource base, int cacheSize) {
+        this.cacheSize = cacheSize;
         this.base = base;
-        this.uncommittedCache = new HashMap<>();
+        this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float)0.75, true);
         this.committedCache = new MaxSizeHashMap<>(cacheSize, true);
     }
 
@@ -51,14 +53,17 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
 
         byte[] value = base.get(key);
+
         //null value, as expected, is allowed here to be stored in committedCache
         committedCache.put(wrappedKey, value);
+
         return value;
     }
 
     @Override
     public synchronized byte[] put(byte[] key, byte[] value) {
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
+
         return put(wrappedKey, value);
     }
 
@@ -72,8 +77,17 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
 
         committedCache.remove(wrappedKey);
-        uncommittedCache.put(wrappedKey, value);
+        this.putKeyValue(wrappedKey, value);
+
         return value;
+    }
+
+    private void putKeyValue(ByteArrayWrapper key, byte[] value) {
+        uncommittedCache.put(key, value);
+
+        if (uncommittedCache.size() > cacheSize) {
+            this.flush();
+        }
     }
 
     @Override
@@ -84,7 +98,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     private void delete(ByteArrayWrapper wrappedKey) {
         // always mark for deletion if we don't know the state in the underlying store
         if (!committedCache.containsKey(wrappedKey)) {
-            uncommittedCache.put(wrappedKey, null);
+            this.putKeyValue(wrappedKey, null);
             return;
         }
 
@@ -92,7 +106,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
         // a null value means we know for a fact that the key doesn't exist in the underlying store, so this is a noop
         if (valueToRemove != null) {
-            uncommittedCache.put(wrappedKey, null);
+            this.putKeyValue(wrappedKey, null);
             committedCache.remove(wrappedKey);
         }
     }
