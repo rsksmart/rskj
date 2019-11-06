@@ -49,8 +49,12 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.List;
 import java.util.Objects;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.util.BIUtil.toBI;
 
 /**
  * A transaction (formally, T) is a single cryptographically
@@ -100,34 +104,69 @@ public class Transaction {
     private byte[] rawRlpEncoding;
     private Keccak256 hash;
     private Keccak256 rawHash;
+    private int formatVersion = 0;
 
     protected Transaction(byte[] rawData) {
-        List<RLPElement> transaction = RLP.decodeList(rawData);
-        if (transaction.size() != 9) {
-            throw new IllegalArgumentException("A transaction must have exactly 9 elements");
-        }
+        if ((rawData[0] & 0xFF) == 0x01) {
+            this.formatVersion = 1;
 
-        this.nonce = transaction.get(0).getRLPData();
-        this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());
-        this.gasLimit = transaction.get(2).getRLPData();
-        this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
-        this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
-        this.data = transaction.get(5).getRLPData();
+            List<RLPElement> tx = RLP.decodeList(removePrefixByte(rawData));
 
-        // only parse signature in case tx is signed
-        byte[] vData = transaction.get(6).getRLPData();
-        if (vData != null) {
-            if (vData.length != 1) {
-                throw new TransactionException("Signature V is invalid");
+            Map<Integer, byte[]> fields = new HashMap<Integer, byte[]>();
+            fields.put(0, BigIntegers.asUnsignedByteArray(BigInteger.ONE)); // Nonce
+            fields.put(1, BigIntegers.asUnsignedByteArray(BigInteger.ZERO)); // Amount
+            fields.put(2, new byte[20]); // Address
+            fields.put(4, BigIntegers.asUnsignedByteArray(BigInteger.valueOf(30000))); // Gas Limit
+            fields.put(5, null); // Data
+
+            for (RLPElement e : tx) {
+                byte[] data = e.getRLPData();
+                if (data != null) {
+                    fields.put(new Integer((int)data[0]), removePrefixByte(data));
+                }
             }
-            byte v = vData[0];
-            this.chainId = extractChainIdFromV(v);
-            byte[] r = transaction.get(7).getRLPData();
-            byte[] s = transaction.get(8).getRLPData();
-            this.signature = ECDSASignature.fromComponents(r, s, getRealV(v));
-        } else {
+
+            this.nonce = fields.get(0);
+            this.value = new Coin(fields.get(1));
+            this.receiveAddress = new RskAddress(fields.get(2));
+            this.gasPrice = new Coin(fields.get(3));
+            this.gasLimit = fields.get(4);
+            this.data = fields.get(5);
+
             this.chainId = 0;
-            logger.trace("RLP encoded tx is not signed!");
+        } else if ((rawData[0] & 0xFF) >= 0xC0) {
+            // Version 0
+            this.formatVersion = 0;
+
+            List<RLPElement> transaction = RLP.decodeList(rawData);
+            if (transaction.size() != 9) {
+                throw new IllegalArgumentException("A transaction must have exactly 9 elements");
+            }
+
+            this.nonce = transaction.get(0).getRLPData();
+            this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());
+            this.gasLimit = transaction.get(2).getRLPData();
+            this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
+            this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
+            this.data = transaction.get(5).getRLPData();
+
+            // only parse signature in case tx is signed
+            byte[] vData = transaction.get(6).getRLPData();
+            if (vData != null) {
+                if (vData.length != 1) {
+                    throw new TransactionException("Signature V is invalid");
+                }
+                byte v = vData[0];
+                this.chainId = extractChainIdFromV(v);
+                byte[] r = transaction.get(7).getRLPData();
+                byte[] s = transaction.get(8).getRLPData();
+                this.signature = ECDSASignature.fromComponents(r, s, getRealV(v));
+            } else {
+                this.chainId = 0;
+                logger.trace("RLP encoded tx is not signed!");
+            }
+        } else {
+            throw new TransactionException("Invalid transaction format version");
         }
     }
 
@@ -277,6 +316,10 @@ public class Transaction {
         return this.rawHash;
     }
 
+    public int getFormatVersion() {
+        return this.formatVersion;
+    }
+
     public byte[] getNonce() {
         return nullToZeroArray(nonce);
     }
@@ -423,16 +466,20 @@ public class Transaction {
      * RLP of the transaction without any signature data
      */
     public byte[] getEncodedRaw() {
+        return getEncoded(0);
+    }
+
+    public byte[] getEncodedRaw(int format) {
         if (this.rawRlpEncoding == null) {
             // Since EIP-155 use chainId for v
             if (chainId == 0) {
-                this.rawRlpEncoding = encode(null, null, null);
+                this.rawRlpEncoding = encode(format, null, null, null);
             } else {
                 byte[] v = RLP.encodeByte(chainId);
                 byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
                 byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
 
-                this.rawRlpEncoding = encode(v, r, s);
+                this.rawRlpEncoding = encode(format, v, r, s);
             }
         }
 
@@ -440,6 +487,10 @@ public class Transaction {
     }
 
     public byte[] getEncoded() {
+        return getEncoded(0);
+    }
+
+    public byte[] getEncoded(int format) {
         if (this.rlpEncoding == null) {
             byte[] v;
             byte[] r;
@@ -455,13 +506,23 @@ public class Transaction {
                 s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
             }
 
-            this.rlpEncoding = encode(v, r, s);
+            this.rlpEncoding = encode(format, v, r, s);
         }
 
         return ByteUtil.cloneBytes(this.rlpEncoding);
     }
 
-    private byte[] encode(byte[] v, byte[] r, byte[] s) {
+    private byte[] encode(int format, byte[] v, byte[] r, byte[] s) {
+        if (format == 0) {
+            return encodeVersion0(v, r, s);
+        } else if (format == 1) {
+            return encodeVersion1();
+        } else {
+            throw new TransactionException("Unsupported version");
+        }
+    }
+
+    private byte[] encodeVersion0(byte[] v, byte[] r, byte[] s) {
         // parse null as 0 for nonce
         byte[] toEncodeNonce;
         if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
@@ -482,6 +543,46 @@ public class Transaction {
 
         return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
                 toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
+    }
+
+    private byte[] encodeVersion1() {
+        List<byte[]> transaction = new ArrayList<byte[]>();
+        if (this.nonce != null && toBI(this.nonce).compareTo(BigInteger.ONE) != 0) {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x00, this.nonce)));
+        }
+
+        if (this.value != null && this.value.asBigInteger().compareTo(BigInteger.ZERO) != 0) {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x01, BigIntegers.asUnsignedByteArray(this.value.asBigInteger()))));
+        }
+
+        if (this.receiveAddress != null && this.receiveAddress != RskAddress.nullAddress()) {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x02, this.receiveAddress.getBytes())));
+        }
+
+        transaction.add(RLP.encodeElement(addPrefixByte((byte)0x03, BigIntegers.asUnsignedByteArray(this.gasPrice.asBigInteger()))));
+
+        if (this.gasLimit != null && toBI(this.gasLimit).compareTo(BigInteger.valueOf(30000)) != 0) {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x04, this.gasLimit)));
+        }
+
+        if (this.data != null && this.data.length != 0) {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x05, this.data)));
+        }
+
+        return addPrefixByte((byte)0x01, RLP.encodeList(transaction.toArray(new byte[0][0])));
+    }
+
+    private byte[] addPrefixByte(byte prefix, byte[] data) {
+        byte[] result = new byte[data.length + 1];
+        System.arraycopy(data, 0, result, 1, data.length);
+        result[0] = prefix;
+        return result;
+    }
+
+    private byte[] removePrefixByte(byte[] data) {
+        byte[] result = new byte[data.length - 1];
+        System.arraycopy(data, 1, result, 0, data.length - 1);
+        return result;
     }
 
     public BigInteger getGasLimitAsInteger() {
