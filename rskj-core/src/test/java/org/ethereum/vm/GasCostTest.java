@@ -141,8 +141,8 @@ public class GasCostTest {
     public void calculateAddGasCostWithFirstNegativeInput() throws GasCost.InvalidGasException {
         GasCost.add(0, -1);
     }
-    @Test
 
+    @Test
     public void calculateSubtractGasCost() {
         Assert.assertEquals(1, GasCost.subtract(1, 0));
         Assert.assertEquals(0, GasCost.subtract(1, 1));
