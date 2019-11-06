@@ -87,6 +87,10 @@ public class TraceModuleImplTest {
 
         Assert.assertNotNull(oresult.get("type"));
         Assert.assertEquals("\"create\"", oresult.get("type").toString());
+
+        Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNotNull(oresult.get("action").get("init"));
+        Assert.assertNull(oresult.get("action").get("input"));
     }
 
     @Test
@@ -172,6 +176,10 @@ public class TraceModuleImplTest {
 
             Assert.assertNotNull(oresult.get("type"));
             Assert.assertEquals("\"create\"", oresult.get("type").toString());
+
+            Assert.assertNotNull(oresult.get("action"));
+            Assert.assertNotNull(oresult.get("action").get("init"));
+            Assert.assertNull(oresult.get("action").get("input"));
         }
     }
 

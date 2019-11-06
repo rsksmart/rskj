@@ -155,9 +155,10 @@ public class TraceTransformer {
         String address = null;
         String refundAddress = null;
         String balance = null;
+        String init = null;
 
         if (traceType == TraceType.CREATE) {
-            input = TypeConverter.toUnformattedJsonHex(creationInput);
+            init = TypeConverter.toUnformattedJsonHex(creationInput);
             value = TypeConverter.toQuantityJsonHex(callValue.getData());
             gas = TypeConverter.toQuantityJsonHex(invoke.getGas());
         }
@@ -182,6 +183,7 @@ public class TraceTransformer {
                 to,
                 gas,
                 input,
+                init,
                 value,
                 address,
                 refundAddress,
