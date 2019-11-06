@@ -23,6 +23,9 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -149,7 +152,14 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public synchronized void flush() {
-        Map<ByteArrayWrapper, byte[]> uncommittedBatch = uncommittedCache.entrySet().stream().filter(e -> e.getValue() != null).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<ByteArrayWrapper, byte[]> uncommittedBatch = new LinkedHashMap<>();
+
+        this.uncommittedCache.forEach((key, value) -> {
+            if (value != null) {
+                uncommittedBatch.put(key, value);
+            }
+        });
+
         Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
         base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
         committedCache.putAll(uncommittedCache);
