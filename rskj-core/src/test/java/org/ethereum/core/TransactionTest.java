@@ -712,6 +712,43 @@ public class TransactionTest {
         Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
     }
+	@Test 
+	public void testFormat1Hash(){
+		BigInteger value = new BigInteger("1000000000000000000000");
+
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
+        ECKey ecKey = ECKey.fromPrivate(privKey);
+
+        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
+
+        byte[] gasPrice = Hex.decode("09184e72a000");
+
+        // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
+        Transaction tx = new Transaction(null, gasPrice, null, ecKey.getAddress(),
+                value.toByteArray(),
+				null);
+		byte[] toEncodeNonce = RLP.encodeElement(new byte[]{0});
+		byte[] valueBytes = value.toByteArray(); 
+		byte[] toEncodeValue = new byte[1 + valueBytes.length];
+		toEncodeValue[0] = 1;
+		System.arraycopy(valueBytes, 0, toEncodeValue, 1, valueBytes.length);
+		toEncodeValue = RLP.encodeElement(toEncodeValue);
+		byte[] receiver = ecKey.getAddress();
+		byte[] toEncodeReceiver =  new byte[1 + receiver.length];
+		toEncodeReceiver[0] = 2 ;
+		System.arraycopy(receiver, 0, toEncodeReceiver, 1, receiver.length);
+		toEncodeReceiver =  RLP.encodeElement(toEncodeReceiver);
+		byte[] toEncodeGasPrice = new byte[1 + gasPrice.length];
+		toEncodeGasPrice[0] = 3;
+		System.arraycopy(gasPrice, 0, toEncodeGasPrice, 1, gasPrice.length);
+		toEncodeGasPrice =  RLP.encodeElement(toEncodeGasPrice);
+		byte[] toEncodeGasLimit =  RLP.encodeElement(new byte[]{4});
+		byte[] toEncodeData =  RLP.encodeElement(new byte[]{5});
+
+		byte[] fullRec = RLP.encodeList(toEncodeNonce, toEncodeValue, toEncodeReceiver, toEncodeGasPrice, toEncodeGasLimit, toEncodeData);
+		Keccak256 hash = new Keccak256(HashUtil.keccak256(fullRec));
+		Assert.assertEquals(hash, tx.getHash());
+	}
 
 	@Test
     public void testFormat1() throws IOException {
