@@ -462,34 +462,7 @@ public class Transaction {
     }
 
     public byte[] getFullRec(){
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            baos.write(NONCE_ID);
-            if (!(this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 1)) {
-                baos.write(this.nonce);
-            }
-            baos.write(AMOUNT_ID);
-            if ((this.value != null) && (!this.value.equals(Coin.ZERO))){
-                baos.write(this.value.getBytes());
-            }
-            baos.write(RECEIVER_ID);
-            if ((this.receiveAddress!=null) && (!this.receiveAddress.equals(RskAddress.nullAddress()))){
-                baos.write(this.receiveAddress.getBytes());
-            }
-            baos.write(GAS_PRICE_ID);
-            baos.write(this.gasPrice.getBytes());
-            baos.write(GAS_LIMIT_ID);
-            if ((this.gasLimit != null) && (!Arrays.equals(this.gasLimit, DEFAULT_GAS_LIMIT))){
-                baos.write(this.gasLimit);
-            }
-            baos.write(DATA_ID);
-            if (this.data != null){
-                baos.write(this.data);
-            }
-            return baos.toByteArray();
-        }catch (IOException e){
-            throw new TransactionException("Cannot generate fullRec");
-        }
+        return encode(null, null, null, false, true);
     }
 
     public void sign(byte[] privKeyBytes) throws MissingPrivateKeyException {
@@ -797,7 +770,9 @@ public class Transaction {
             if (toEncodeData != null){
                 toEncodedElements.add(toEncodeData);
             }
-            toEncodedElements.add(toEncodeSig);
+            if (toEncodeSig != null){
+                toEncodedElements.add(toEncodeSig);
+            }
             byte[] allEncodedElements = RLP.encodeList(toEncodedElements.toArray(new byte[toEncodedElements.size()][]));
             byte[] finalResult = new byte[1 + allEncodedElements.length];
             finalResult[0] = FORMAT_ONE_LEADING;
