@@ -65,7 +65,6 @@ public class CallTransaction {
     }
 
 
-
     public static Transaction createCallTransaction(long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
                                                     long value, Function callFunc, byte chainId, Object... funcArgs) {
 
@@ -94,7 +93,9 @@ public class CallTransaction {
          * The canonical type name (used for the method signature creation)
          * E.g. 'int' - canonical 'int256'
          */
-        public String getCanonicalName() {return getName();}
+        public String getCanonicalName() {
+            return getName();
+        }
 
         @JsonCreator
         public static Type getType(String typeName) {
@@ -111,21 +112,28 @@ public class CallTransaction {
 
         /**
          * Encodes the value according to specific type rules
+         *
          * @param value
          */
         public abstract byte[] encode(Object value);
 
         public abstract Object decode(byte[] encoded, int offset);
 
-        public Object decode(byte[] encoded) {return decode(encoded, 0);}
+        public Object decode(byte[] encoded) {
+            return decode(encoded, 0);
+        }
 
         /**
          * @return fixed size in bytes. For the dynamic types returns IntType.getFixedSize()
          * which is effectively the int offset to dynamic data
          */
-        public int getFixedSize() {return 32;}
+        public int getFixedSize() {
+            return 32;
+        }
 
-        public boolean isDynamicType() {return false;}
+        public boolean isDynamicType() {
+            return false;
+        }
 
         @Override
         public String toString() {
@@ -147,7 +155,7 @@ public class CallTransaction {
             if ("uint".equals(getName())) {
                 return "uint256";
             }
-            
+
             return super.getCanonicalName();
         }
 
@@ -156,7 +164,7 @@ public class CallTransaction {
             BigInteger bigInt;
 
             if (value instanceof String) {
-                String s = ((String)value).toLowerCase().trim();
+                String s = ((String) value).toLowerCase().trim();
                 int radix = 10;
                 if (s.startsWith("0x")) {
                     s = s.substring(2);
@@ -166,9 +174,9 @@ public class CallTransaction {
                     radix = 16;
                 }
                 bigInt = new BigInteger(s, radix);
-            } else  if (value instanceof BigInteger) {
+            } else if (value instanceof BigInteger) {
                 bigInt = (BigInteger) value;
-            } else  if (value instanceof Number) {
+            } else if (value instanceof Number) {
                 bigInt = new BigInteger(value.toString());
             } else {
                 throw new RuntimeException("Invalid value for type '" + this + "': " + value + " (" + value.getClass() + ")");
@@ -184,9 +192,11 @@ public class CallTransaction {
         public static BigInteger decodeInt(byte[] encoded, int offset) {
             return new BigInteger(Arrays.copyOfRange(encoded, offset, offset + 32));
         }
+
         public static byte[] encodeInt(int i) {
             return encodeInt(new BigInteger("" + i));
         }
+
         public static byte[] encodeInt(BigInteger bigInt) {
             byte[] ret = new byte[32];
             Arrays.fill(ret, bigInt.signum() < 0 ? (byte) 0xFF : 0);
@@ -221,6 +231,15 @@ public class CallTransaction {
         public String name;
         public SolidityType type;
 
+        public Param() {
+        }
+
+        public Param(Boolean indexed, String name, SolidityType type) {
+            this.indexed = indexed;
+            this.name = name;
+            this.type = type;
+        }
+
         @JsonGetter("type")
         public String getType() {
             return type.getName();
@@ -243,13 +262,14 @@ public class CallTransaction {
         public Param[] outputs = new Param[0];
         public FunctionType type;
 
-        private Function() {}
+        private Function() {
+        }
 
-        public byte[] encode(Object ... args) {
+        public byte[] encode(Object... args) {
             return ByteUtil.merge(encodeSignature(), encodeArguments(args));
         }
 
-        public byte[] encodeArguments(Param[] params, Object ... args) {
+        public byte[] encodeArguments(Param[] params, Object... args) {
             if (args.length > params.length) {
                 throw new RuntimeException("Too many arguments: " + args.length + " > " + params.length);
             }
@@ -270,29 +290,82 @@ public class CallTransaction {
             int curDynamicPtr = staticSize;
             int curDynamicCnt = 0;
             for (int i = 0; i < args.length; i++) {
-                if (params[i].type.isDynamicType()) {
-                    byte[] dynBB = params[i].type.encode(args[i]);
+                Param param = params[i];
+                if (param.type.isDynamicType()) {
+                    byte[] dynBB = param.type.encode(args[i]);
                     bb[i] = IntType.encodeInt(curDynamicPtr);
                     bb[args.length + curDynamicCnt] = dynBB;
                     curDynamicCnt++;
                     curDynamicPtr += dynBB.length;
                 } else {
-                    bb[i] = params[i].type.encode(args[i]);
+                    bb[i] = param.type.encode(args[i]);
                 }
             }
             return ByteUtil.merge(bb);
         }
 
-        public byte[] encodeArguments(Object ... args) {
-            if (args.length > inputs.length) {
-                throw new CallTransactionException("Too many arguments: " + args.length + " > " + inputs.length);
+        public byte[] encodeArguments(Object... args) {
+            return encodeData(inputs, args);
+        }
+
+        //args order should be the same as function params order
+        public byte[][] encodeEventTopics(Object... args) {
+            checkFunctionType(FunctionType.event);
+
+            Param[] topicInputs = Arrays.stream(inputs).filter(i -> i.indexed).toArray(Param[]::new);
+            int topicsCount = topicInputs.length;
+            checkArgumentsCount(topicsCount, args.length);
+
+            topicsCount++;  //Plus one for the event signature
+            byte[][] topics = new byte[topicsCount][];
+            int topicIndex = 1;
+            topics[0] = this.encodeSignatureLong();
+            for (int i = 0; i < args.length; i++) {
+                Param param = topicInputs[i];
+                if (param.type.isDynamicType()) {
+                    //Dynamic data types nor array (dynamic or static) are currently not supported as topics
+                    topics[topicIndex] = HashUtil.keccak256(param.type.encode(args[i]));
+                } else {
+                    topics[topicIndex] = param.type.encode(args[i]);
+                }
+                topicIndex++;
+            }
+
+            return topics;
+        }
+
+        //args order should be the same as function params order
+        public byte[] encodeEventData(Object... args) {
+            checkFunctionType(FunctionType.event);
+
+            Param[] dataInputs = Arrays.stream(inputs).filter(i -> !i.indexed).toArray(Param[]::new);
+            checkArgumentsCount(dataInputs.length, args.length);
+
+            return encodeData(dataInputs, args);
+        }
+
+        private void checkFunctionType(FunctionType expected) {
+            if (this.type != expected) {
+                throw new RuntimeException(String.format("Wrong function type. Expected %s, Received: %s", expected, this.type));
+            }
+        }
+
+        private void checkArgumentsCount(int expected, int received) {
+            if (expected != received) {
+                throw new RuntimeException(String.format("Wrong amount of arguments. Expected %d, Received %d", expected, received));
+            }
+        }
+
+        private byte[] encodeData(Param[] params, Object... args) {
+            if (args.length > params.length) {
+                throw new CallTransactionException("Too many arguments: " + args.length + " > " + params.length);
             }
 
             int staticSize = 0;
             int dynamicCnt = 0;
             // calculating static size and number of dynamic params
             for (int i = 0; i < args.length; i++) {
-                Param param = inputs[i];
+                Param param = params[i];
                 if (param.type.isDynamicType()) {
                     dynamicCnt++;
                 }
@@ -304,20 +377,21 @@ public class CallTransaction {
             int curDynamicPtr = staticSize;
             int curDynamicCnt = 0;
             for (int i = 0; i < args.length; i++) {
-                if (inputs[i].type.isDynamicType()) {
-                    byte[] dynBB = inputs[i].type.encode(args[i]);
+                Param param = params[i];
+                if (param.type.isDynamicType()) {
+                    byte[] dynBB = param.type.encode(args[i]);
                     bb[i] = SolidityType.IntType.encodeInt(curDynamicPtr);
                     bb[args.length + curDynamicCnt] = dynBB;
                     curDynamicCnt++;
                     curDynamicPtr += dynBB.length;
                 } else {
-                    bb[i] = inputs[i].type.encode(args[i]);
+                    bb[i] = param.type.encode(args[i]);
                 }
             }
             return ByteUtil.merge(bb);
         }
 
-        public byte[] encodeOutputs(Object ... args) {
+        public byte[] encodeOutputs(Object... args) {
             return encodeArguments(outputs, args);
         }
 
@@ -375,7 +449,7 @@ public class CallTransaction {
             }
         }
 
-        public static Function fromSignature(String funcName, String ... paramTypes) {
+        public static Function fromSignature(String funcName, String... paramTypes) {
             return fromSignature(funcName, paramTypes, new String[0]);
         }
 
@@ -397,6 +471,33 @@ public class CallTransaction {
                 ret.outputs[i].type = SolidityType.getType(resultTypes[i]);
             }
             return ret;
+        }
+
+        public static Function fromEventSignature(String eventName, Param[] params) {
+            validateEventParams(params);
+
+            Function event = new Function();
+            event.name = eventName;
+            event.constant = false;
+            event.type = FunctionType.event;
+            event.inputs = params;
+            return event;
+        }
+
+        private static void validateEventParams(Param[] params) {
+            int topicsCount = 0;
+            for (Param param : params) {
+                if (Boolean.TRUE.equals(param.indexed)) {
+                    topicsCount++;
+                    if (param.type.isDynamicType() || param.type.getName().contains("[")) {
+                        throw new RuntimeException("Dynamic or array type topics are not supported");
+                    }
+                }
+            }
+
+            if (topicsCount > 3) {
+                throw new RuntimeException("Too many indexed params: " + topicsCount + ". Max 3 indexed params allowed.");
+            }
         }
     }
 
@@ -429,13 +530,13 @@ public class CallTransaction {
         }
 
         private Function getBySignatureHash(byte[] hash) {
-            if (hash.length == 4 ) {
+            if (hash.length == 4) {
                 for (Function function : functions) {
                     if (FastByteComparisons.equalBytes(function.encodeSignature(), hash)) {
                         return function;
                     }
                 }
-            } else if (hash.length == 32 ) {
+            } else if (hash.length == 32) {
                 for (Function function : functions) {
                     if (FastByteComparisons.equalBytes(function.encodeSignatureLong(), hash)) {
                         return function;
