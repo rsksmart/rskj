@@ -69,6 +69,7 @@ public class BlockExecutorTest {
     public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private static final long GAS_PER_TRANSACTION = 21000;
 
     private Blockchain blockchain;
     private BlockExecutor executor;
@@ -115,12 +116,12 @@ public class BlockExecutorTest {
 
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
         Assert.assertEquals(tx, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
+        Assert.assertEquals(GAS_PER_TRANSACTION, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assert.assertEquals(GAS_PER_TRANSACTION, new BigInteger(1, receipt.getCumulativeGas()).longValue());
         Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
-        Assert.assertEquals(21000, result.getGasUsed());
-        Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
+        Assert.assertEquals(GAS_PER_TRANSACTION, result.getGasUsed());
+        Assert.assertEquals(GAS_PER_TRANSACTION, result.getPaidFees().asBigInteger().intValueExact());
 
         Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
 
@@ -139,7 +140,7 @@ public class BlockExecutorTest {
         accountState = finalRepository.getAccountState(account);
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(30000 - GAS_PER_TRANSACTION - 10), accountState.getBalance().asBigInteger());
     }
 
     @Test
@@ -161,18 +162,18 @@ public class BlockExecutorTest {
 
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
         Assert.assertEquals(tx1, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(21000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
+        Assert.assertEquals(GAS_PER_TRANSACTION, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assert.assertEquals(GAS_PER_TRANSACTION, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
         Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
         receipt = result.getTransactionReceipts().get(1);
         Assert.assertEquals(tx2, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(42000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
+        Assert.assertEquals(GAS_PER_TRANSACTION, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assert.assertEquals(2*GAS_PER_TRANSACTION, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
         Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
 
-        Assert.assertEquals(42000, result.getGasUsed());
-        Assert.assertEquals(42000, result.getPaidFees().asBigInteger().intValueExact());
+        Assert.assertEquals(2*GAS_PER_TRANSACTION, result.getGasUsed());
+        Assert.assertEquals(2*GAS_PER_TRANSACTION, result.getPaidFees().asBigInteger().intValueExact());
 
         //here is the problem: in the prior code repository root would never be overwritten by childs
         //while the new code does overwrite the root.
@@ -198,6 +199,91 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
+    }
+
+    @Test
+    public void executeBlockWithTwoTransactionsInParallel() {
+        Block block = getBlockWithTwoTransactionsDifferentsAccounts(); // this changes the best block
+        Block parent = blockchain.getBestBlock();
+        block.setPartitionEnds(new int[]{0});
+
+        Transaction tx1 = block.getTransactionsList().get(0);
+        Transaction tx2 = block.getTransactionsList().get(1);
+        RskAddress account = tx1.getSender();
+        RskAddress account2 = tx1.getReceiveAddress();
+        RskAddress account3 = tx2.getSender();
+        RskAddress account4 = tx2.getReceiveAddress();
+
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
+
+        Assert.assertNotNull(result);
+
+        Assert.assertNotNull(result.getTransactionReceipts());
+        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
+        Assert.assertEquals(2, result.getTransactionReceipts().size());
+
+        TransactionReceipt receipt1 = null;
+        TransactionReceipt receipt2 = null;
+        for (TransactionReceipt transactionReceipt : result.getTransactionReceipts()) {
+            if (transactionReceipt.getTransaction().getHash().equals(tx1.getHash())) {
+                receipt1 = transactionReceipt;
+            } else if (transactionReceipt.getTransaction().getHash().equals(tx2.getHash())) {
+                receipt2 = transactionReceipt;
+            }
+        }
+        Assert.assertNotNull(receipt1);
+        Assert.assertNotNull(receipt2);
+        Assert.assertEquals(tx1, receipt1.getTransaction());
+        Assert.assertEquals(GAS_PER_TRANSACTION, new BigInteger(1, receipt1.getGasUsed()).longValue());
+        // Assert.assertEquals(GAS_PER_TRANSACTION, BigIntegers.fromUnsignedByteArray(receipt1.getCumulativeGas()).longValue());
+        Assert.assertTrue(receipt1.hasTxStatus() && receipt1.isTxStatusOK() && receipt1.isSuccessful());
+
+        Assert.assertEquals(tx2, receipt2.getTransaction());
+        Assert.assertEquals(GAS_PER_TRANSACTION, new BigInteger(1, receipt2.getGasUsed()).longValue());
+        // Assert.assertEquals(2*GAS_PER_TRANSACTION, BigIntegers.fromUnsignedByteArray(receipt2.getCumulativeGas()).longValue());
+        Assert.assertTrue(receipt2.hasTxStatus() && receipt2.isTxStatusOK() && receipt2.isSuccessful());
+
+        Assert.assertEquals(2*GAS_PER_TRANSACTION, result.getGasUsed());
+        Assert.assertEquals(2*GAS_PER_TRANSACTION, result.getPaidFees().asBigInteger().intValueExact());
+
+        //here is the problem: in the prior code repository root would never be overwritten by childs
+        //while the new code does overwrite the root.
+        //Which semantic is correct ? I don't know
+
+        Assert.assertFalse(Arrays.equals(parent.getStateRoot(), result.getFinalState().getHash().getBytes()));
+
+        byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
+        Assert.assertEquals(256, calculatedLogsBloom.length);
+        Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
+
+        AccountState accountState = repository.getAccountState(account);
+        AccountState account2State = repository.getAccountState(account2);
+        AccountState account3State = repository.getAccountState(account3);
+        AccountState account4State = repository.getAccountState(account4);
+
+        Assert.assertNotNull(accountState);
+        Assert.assertNotNull(account3State);
+        Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(60000), account3State.getBalance().asBigInteger());
+
+        // here is the papa. my commit changes stateroot while previous commit did not.
+
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
+
+        accountState = finalRepository.getAccountState(account);
+        account2State = finalRepository.getAccountState(account2);
+        account3State = finalRepository.getAccountState(account3);
+        account4State = finalRepository.getAccountState(account4);
+
+        Assert.assertNotNull(accountState);
+        Assert.assertNotNull(account2State);
+        Assert.assertNotNull(account3State);
+        Assert.assertNotNull(account4State);
+        Assert.assertEquals(BigInteger.valueOf(60000 - GAS_PER_TRANSACTION - 10), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(20L), account2State.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(60000 - GAS_PER_TRANSACTION - 10), account3State.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(20L), account4State.getBalance().asBigInteger());
     }
 
     @Test
@@ -480,10 +566,36 @@ public class BlockExecutorTest {
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
+    private Block getBlockWithTwoTransactionsDifferentsAccounts() {
+        // first we modify the best block to have two accounts with balance
+        Repository track = repository.startTracking();
+
+        Account account = createAccount("acctest1", track, Coin.valueOf(60000));
+        Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
+        Account account3 = createAccount("acctest3", track, Coin.valueOf(60000));
+        Account account4 = createAccount("acctest4", track, Coin.valueOf(10L));
+
+        track.commit();
+
+        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+
+        Block bestBlock = blockchain.getBestBlock();
+        bestBlock.setStateRoot(repository.getRoot());
+
+        // then we create the new block to connect
+        List<Transaction> txs = Arrays.asList(
+                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress())),
+                createTransaction(account3, account4, BigInteger.TEN, repository.getNonce(account3.getAddress()))
+        );
+
+        List<BlockHeader> uncles = new ArrayList<>();
+        return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
+    }
+
     private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
         String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
+        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(GAS_PER_TRANSACTION), config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);
         return tx;
     }
@@ -562,11 +674,11 @@ public class BlockExecutorTest {
 
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
         Assert.assertEquals(tx, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
+        Assert.assertEquals(GAS_PER_TRANSACTION, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assert.assertEquals(GAS_PER_TRANSACTION, new BigInteger(1, receipt.getCumulativeGas()).longValue());
 
-        Assert.assertEquals(21000, result.getGasUsed());
-        Assert.assertEquals(Coin.valueOf(21000), result.getPaidFees());
+        Assert.assertEquals(GAS_PER_TRANSACTION, result.getGasUsed());
+        Assert.assertEquals(Coin.valueOf(GAS_PER_TRANSACTION), result.getPaidFees());
 
         Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
 
@@ -585,7 +697,7 @@ public class BlockExecutorTest {
         accountState = finalRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(30000 - GAS_PER_TRANSACTION - 10), accountState.getBalance().asBigInteger());
     }
 
     public TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
@@ -636,7 +748,7 @@ public class BlockExecutorTest {
             BigInteger value, BigInteger nonce, int strangeTransactionType) {
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         byte[] to = receiver.getAddress().getBytes();
-        byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21000));
+        byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(GAS_PER_TRANSACTION));
         byte[] valueData = BigIntegers.asUnsignedByteArray(value);
 
         if (strangeTransactionType == 0) {

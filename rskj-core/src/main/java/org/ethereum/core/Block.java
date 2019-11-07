@@ -118,6 +118,15 @@ public class Block {
         return this.header.getCoinbase();
     }
 
+    // RSKIP144
+    public int[] getPartitionEnds() { return this.header.getPartitionEnds(); }
+    // TODO : remove this method when the partitionEnds field is encoded/decoded in header, then set directly as
+    //  a constructor arguments as for other fields
+    public void setPartitionEnds(int[] partitionEnds) {
+        this.header.setPartitionEnds(partitionEnds);
+    }
+
+
     public byte[] getStateRoot() {
         return this.header.getStateRoot();
     }

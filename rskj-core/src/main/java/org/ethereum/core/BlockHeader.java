@@ -117,6 +117,9 @@ public class BlockHeader {
     /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
     private boolean includeForkDetectionData;
 
+    /* RSKIP144 */
+    private int[] partitionEnds = new int[0];
+
     public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
@@ -540,5 +543,16 @@ public class BlockHeader {
 
     public boolean isParentOf(BlockHeader header) {
         return this.getHash().equals(header.getParentHash());
+    }
+
+    // RSKIP144
+    public int[] getPartitionEnds() {
+        return this.partitionEnds;
+    }
+
+    // TODO : remove this method when the partitionEnds field is encoded/decoded in header, then set directly as
+    //  a constructor arguments as for other fields
+    public void setPartitionEnds(int[] partitionEnds) {
+        this.partitionEnds = partitionEnds;
     }
 }

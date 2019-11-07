@@ -18,9 +18,7 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.*;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
@@ -38,6 +36,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.IntStream;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
@@ -239,13 +239,81 @@ public class BlockExecutor {
         );
     }
 
+    /**
+     * Stores (and identifies) the data concurrently shared between transaction executions
+     */
+    public class BlockSharedData {
+        long totalGasUsed = 0;
+        Coin totalPaidFees = Coin.ZERO;
+        Repository track;
+        List<TransactionReceipt> receipts = new ArrayList<>();
+        List<Transaction> executedTransactions = new ArrayList<>();
+        Set<DataWord> deletedAccounts = new HashSet<>();
+        ProgramTraceProcessor programTraceProcessor;
+        BlockSharedData(Repository track, ProgramTraceProcessor programTraceProcessor) {
+            this.track = track;
+            this.programTraceProcessor = programTraceProcessor;
+        }
+
+        public synchronized void addPaidFees(Coin paidFees) {
+            totalPaidFees = totalPaidFees.add(paidFees);
+        }
+
+        public synchronized void addGasUsed(long gasUsed) {
+            this.totalGasUsed += gasUsed;
+        }
+
+        public synchronized int addReceipt(TransactionReceipt receipt) {
+            if (receipts.add(receipt)) {
+                return receipts.size() - 1;
+            }
+            return -1;
+        }
+
+        public synchronized void addExecutedTransaction(Transaction tx) {
+            executedTransactions.add(tx);
+        }
+
+        public synchronized void addDeletedAccounts(Collection<DataWord> deletedAccountsToAdd) {
+            deletedAccounts.addAll(deletedAccountsToAdd);
+        }
+
+        public Coin getTotalPaidFees() {
+            return totalPaidFees;
+        }
+
+        public long getTotalGasUsed() {
+            return totalGasUsed;
+        }
+
+        public List<TransactionReceipt> getReceipts() {
+            return receipts;
+        }
+
+        public List<Transaction> getExecutedTransactions() {
+            return executedTransactions;
+        }
+
+        public Set<DataWord> getDeletedAccounts() {
+            return deletedAccounts;
+        }
+
+        public Repository getRepository() {
+            return track;
+        }
+
+        public ProgramTraceProcessor getProgramTraceProcessor() {
+            return programTraceProcessor;
+        }
+
+    }
+
     private BlockResult executeInternal(
             @Nullable ProgramTraceProcessor programTraceProcessor,
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions) {
-        boolean vmTrace = programTraceProcessor != null;
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         // Forks the repo, does not change "repository". It will have a completely different
@@ -265,91 +333,55 @@ public class BlockExecutor {
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
-        int i = 1;
-        long totalGasUsed = 0;
-        Coin totalPaidFees = Coin.ZERO;
-        List<TransactionReceipt> receipts = new ArrayList<>();
-        List<Transaction> executedTransactions = new ArrayList<>();
-        Set<DataWord> deletedAccounts = new HashSet<>();
+        BlockSharedData blockSharedData = new BlockSharedData(track, programTraceProcessor);
 
         int txindex = 0;
 
-        for (Transaction tx : block.getTransactionsList()) {
-            logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
+        int[] partitionEnds = block.getPartitionEnds();
+        // Iterator<Integer> itPartitionEnds = Arrays.ite.asList(partitionEnds).ite
+        final Iterator<Integer> itPartitionEnds = IntStream.of(partitionEnds).boxed().iterator();
+        int nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : -1;
 
-            TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
+        TransactionsPartitionExecutor partExecutor = TransactionsPartitionExecutor.newTransactionsPartitionExecutor();
+
+        for ( Transaction tx : block.getTransactionsList() ) {
+
+            TransactionExecutorTask txExecutorTask = new TransactionExecutorTask(
+                    transactionExecutorFactory,
                     tx,
-                    txindex++,
-                    block.getCoinbase(),
-                    track,
+                    txindex,
                     block,
-                    totalGasUsed,
-                    vmTrace,
-                    deletedAccounts);
-            boolean transactionExecuted = txExecutor.executeTransaction();
+                    blockSharedData,
+                    logger,
+                    acceptInvalidTransactions,
+                    discardInvalidTxs);
 
+            partExecutor.addTransactionTask(txExecutorTask);
 
-            if (!acceptInvalidTransactions && !transactionExecuted) {
-                if (discardInvalidTxs) {
-                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
-                    continue;
-                } else {
-                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                                block.getNumber(), tx.getHash());
-                    profiler.stop(metric);
-                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
-                }
+            if (nextIndexPartition == txindex) {
+                nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : -1;
+                partExecutor = TransactionsPartitionExecutor.newTransactionsPartitionExecutor();
             }
 
-            executedTransactions.add(tx);
+            txindex++;
+        }
 
-            if (vmTrace) {
-                txExecutor.extractTrace(programTraceProcessor);
-            }
-
-            logger.trace("tx executed");
-
-            // No need to commit the changes here. track.commit();
-
-            logger.trace("track commit");
-
-            long gasUsed = txExecutor.getGasUsed();
-            totalGasUsed += gasUsed;
-            Coin paidFees = txExecutor.getPaidFees();
-            if (paidFees != null) {
-                totalPaidFees = totalPaidFees.add(paidFees);
-            }
-
-            deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
-
-            TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setGasUsed(gasUsed);
-            receipt.setCumulativeGas(totalGasUsed);
-
-            receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
-            receipt.setTransaction(tx);
-            receipt.setLogInfoList(txExecutor.getVMLogs());
-            receipt.setStatus(txExecutor.getReceipt().getStatus());
-
-            logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
-
-            logger.trace("tx[{}].receipt", i);
-
-            i++;
-
-            receipts.add(receipt);
-
-            logger.trace("tx done");
+        // Wait for all thread terminate
+        try {
+            TransactionsPartitionExecutor.waitForAllThreadTermination(10000);
+        } catch (InterruptedException | TimeoutException e) {
+            profiler.stop(metric);
+            return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
 
         track.save();
 
         BlockResult result = new BlockResult(
                 block,
-                executedTransactions,
-                receipts,
-                totalGasUsed,
-                totalPaidFees,
+                blockSharedData.getExecutedTransactions(),
+                blockSharedData.getReceipts(),
+                blockSharedData.getTotalGasUsed(),
+                blockSharedData.getTotalPaidFees(),
                 track.getTrie()
         );
         profiler.stop(metric);
