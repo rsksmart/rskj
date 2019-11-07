@@ -384,16 +384,7 @@ public class RskContext implements NodeBootstrapper {
 
     public TrieStore getTrieStore() {
         if (trieStore == null) {
-            GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
-            if (gcConfig.enabled()) {
-                try {
-                    trieStore = buildMultiTrieStore(gcConfig.numberOfEpochs());
-                } catch (IOException e) {
-                    throw new IllegalStateException("Unable to build multi trie store", e);
-                }
-            } else {
-                trieStore = buildTrieStore("unitrie");
-            }
+            trieStore = buildAbstractTrieStore();
         }
 
         return trieStore;
@@ -818,6 +809,20 @@ public class RskContext implements NodeBootstrapper {
 
     protected SolidityCompiler buildSolidityCompiler() {
         return new SolidityCompiler(getRskSystemProperties());
+    }
+    private TrieStore buildAbstractTrieStore() {
+        TrieStore newTrieStore;
+        GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
+        if (gcConfig.enabled()) {
+            try {
+                newTrieStore = buildMultiTrieStore(gcConfig.numberOfEpochs());
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to build multi trie store", e);
+            }
+        } else {
+            newTrieStore = buildTrieStore("unitrie");
+        }
+        return newTrieStore;
     }
 
     protected Web3 buildWeb3() {
