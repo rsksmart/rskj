@@ -39,6 +39,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -123,7 +124,11 @@ public class Transaction {
     private Keccak256 hash;
     private Keccak256 rawHash;
 
-    protected Transaction(byte[] rawData) {
+    protected Transaction(byte[] rawData){
+        this(rawData, null);
+    }
+    
+    protected Transaction(byte[] rawData, RLPList rsv) {
         if (rawData[0] != FORMAT_ONE_LEADING){
             version = 0;
             List<RLPElement> transaction = RLP.decodeList(rawData);
@@ -216,10 +221,15 @@ public class Transaction {
             this.gasLimit = gasLimit;
             this.data = data;
             
-            if (signature == null){
+            if (signature == null && rsv == null){
                 throw new IllegalArgumentException("A transaction must be signed");
             }else {
-                List<RLPElement> comps = RLP.decodeList(signature);
+                List<RLPElement> comps;
+                if (signature != null){
+                    comps =  RLP.decodeList(signature);
+                }else{
+                    comps =  rsv;
+                }
                 if (comps.size() != 3) {
                     throw new IllegalArgumentException("A signature must have exactly 3 elements");
                 }
@@ -495,6 +505,9 @@ public class Transaction {
         this.hash = null;
         this.sender = null;
     }
+    public void setSignature(byte[] r, byte[] s, byte[] v){
+        this.signature = ECDSASignature.fromComponents(r, s, getRealV(v[0]));
+    }
 
     public void setSignature(ECDSASignature signature) {
         this.signature = signature;
@@ -610,13 +623,13 @@ public class Transaction {
             // Since EIP-155 use chainId for v
             if (version == 0){
                 if (chainId == 0) {
-                    this.rawRlpEncoding = encode(null, null, null);
+                    this.rawRlpEncoding = encode(null, null, null, false);
                 } else {
                     byte[] v = RLP.encodeByte(chainId);
                     byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
                     byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
 
-                    this.rawRlpEncoding = encode(v, r, s);
+                    this.rawRlpEncoding = encode(v, r, s, true);
                 }
             }else{
                 throw new UnsupportedOperationException("version 1 need use getFullRec to compute signature");
@@ -639,8 +652,19 @@ public class Transaction {
         }
         return null;
     }
+    /*
+    public byte[] getEncoded(){
+        return getEncoded(false);
+    }*/
+    public byte[] getEncodedForBlock(){
+        return getEncoded(true);
+    }
 
-    public byte[] getEncoded() {
+    public byte[] getEncoded(){
+        return getEncoded(false);
+    }
+
+    public byte[] getEncoded(boolean forBlockContain) {
         if (this.rlpEncoding == null) {
             byte[] v;
             byte[] r;
@@ -655,13 +679,13 @@ public class Transaction {
                 s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
             }
 
-            this.rlpEncoding = encode(v, r, s);
+            this.rlpEncoding = encode(v, r, s, !forBlockContain);
         }
 
         return ByteUtil.cloneBytes(this.rlpEncoding);
     }
 
-    private byte[] encode(byte[] v, byte[] r, byte[] s) {
+    private byte[] encode(byte[] v, byte[] r, byte[] s, boolean versionOneContainSig) {
         if (version == 0){
             // parse null as 0 for nonce
             byte[] toEncodeNonce;
@@ -732,11 +756,14 @@ public class Transaction {
                 toEncodeData = RLP.encodeElement(toEncodeData);
             }
             
-            byte[] sigList = RLP.encodeList(r,s,v);
-            byte[] toEncodeSig = new byte[1 + sigList.length];
-            toEncodeSig[0] = SIGNATURE_ID;
-            System.arraycopy(sigList, 0, toEncodeSig, 1, sigList.length);
-            toEncodeSig = RLP.encodeElement(toEncodeSig);
+            byte[] toEncodeSig = null;
+            if (versionOneContainSig){
+                byte[] sigList = RLP.encodeList(r,s,v);
+                toEncodeSig = new byte[1 + sigList.length];
+                toEncodeSig[0] = SIGNATURE_ID;
+                System.arraycopy(sigList, 0, toEncodeSig, 1, sigList.length);
+                toEncodeSig = RLP.encodeElement(toEncodeSig);
+            }
 
             List<byte[]> toEncodedElements = new ArrayList<byte[]>();
             if (toEncodeNonce != null){

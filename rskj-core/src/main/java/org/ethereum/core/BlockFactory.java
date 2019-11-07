@@ -35,6 +35,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
@@ -59,19 +61,31 @@ public class BlockFactory {
 
     private Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
-        if (block.size() != 3) {
-            throw new IllegalArgumentException("A block must have 3 exactly items");
+        if (block.size() != 3 || block.size() != 4) {
+            throw new IllegalArgumentException("A block must have 3 or 4 items");
         }
 
         RLPList rlpHeader = (RLPList) block.get(0);
         BlockHeader header = decodeHeader(rlpHeader, sealed);
 
-        List<Transaction> transactionList = parseTxs((RLPList) block.get(1));
+        Map<Integer, RLPList> sigsMap = new HashMap<Integer, RLPList>();
+        if (block.size() == 4){
+            RLPList rlpSigsList = (RLPList)block.get(3);
+            for (RLPElement rlpSig: rlpSigsList){
+                RLPList rlpSigTuple = RLP.decodeList(rlpSig.getRLPData()); 
+                byte[] rlpIndex = rlpSigTuple.get(0).getRLPData();
+                Integer index = RLP.decodeInt(rlpIndex, 0);
+                sigsMap.put(index, RLP.decodeList(rlpSigTuple.get(1).getRLPData()));
+            }
+        }
+
+        List<Transaction> transactionList = parseTxs((RLPList) block.get(1), sigsMap);
 
         RLPList uncleHeadersRlp = (RLPList) block.get(2);
         List<BlockHeader> uncleList = uncleHeadersRlp.stream()
                 .map(uncleHeader -> decodeHeader((RLPList) uncleHeader, sealed))
                 .collect(Collectors.toList());
+
         return newBlock(header, transactionList, uncleList, sealed);
     }
 
@@ -241,13 +255,19 @@ public class BlockFactory {
         return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
     }
 
-    private static List<Transaction> parseTxs(RLPList txTransactions) {
+    private static List<Transaction> parseTxs(RLPList txTransactions, Map<Integer, RLPList> sigsMap) {
         List<Transaction> parsedTxs = new ArrayList<>();
 
         for (int i = 0; i < txTransactions.size(); i++) {
             RLPElement transactionRaw = txTransactions.get(i);
-            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
-
+            Transaction tx;
+            RLPList rsv = sigsMap.get(i);
+            if (rsv != null){
+                tx = new ImmutableTransaction(transactionRaw.getRLPData(), rsv);
+            }else{
+                tx = new ImmutableTransaction(transactionRaw.getRLPData());
+            }
+            
             if (tx.isRemascTransaction(i, txTransactions.size())) {
                 // It is the remasc transaction
                 tx = new RemascTransaction(transactionRaw.getRLPData());

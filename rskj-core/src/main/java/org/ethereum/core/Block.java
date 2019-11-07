@@ -29,6 +29,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.RLP;
+import org.ethereum.crypto.ECKey.ECDSASignature;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -56,6 +57,8 @@ public class Block {
 
     private List<BlockHeader> uncleList;
 
+    private List<ECDSASignature> sigsList;
+
     /* Private */
     private byte[] rlpEncoded;
 
@@ -63,6 +66,15 @@ public class Block {
     private volatile boolean sealed;
 
     public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed) {
+        this(header,
+                transactionsList,
+                uncleList,
+                new ArrayList<ECDSASignature>(),
+                isRskip126Enabled,
+                sealed);
+    }
+
+    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, List<ECDSASignature> sigsList, boolean isRskip126Enabled, boolean sealed) {
         byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskip126Enabled);
         if (!Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
             String message = String.format(
@@ -75,6 +87,7 @@ public class Block {
         this.header = header;
         this.transactionsList = Collections.unmodifiableList(transactionsList);
         this.uncleList = Collections.unmodifiableList(uncleList);
+        this.sigsList = Collections.unmodifiableList(sigsList);
         this.sealed = sealed;
     }
 
@@ -254,7 +267,7 @@ public class Block {
         byte[][] transactionsEncoded = new byte[transactionsList.size()][];
         int i = 0;
         for (Transaction tx : transactionsList) {
-            transactionsEncoded[i] = tx.getEncoded();
+            transactionsEncoded[i] = tx.getEncodedForBlock();
             ++i;
         }
         return RLP.encodeList(transactionsEncoded);
