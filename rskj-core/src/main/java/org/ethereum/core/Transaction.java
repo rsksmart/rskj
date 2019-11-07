@@ -623,13 +623,13 @@ public class Transaction {
             // Since EIP-155 use chainId for v
             if (version == 0){
                 if (chainId == 0) {
-                    this.rawRlpEncoding = encode(null, null, null, false);
+                    this.rawRlpEncoding = encode(null, null, null, false, false);
                 } else {
                     byte[] v = RLP.encodeByte(chainId);
                     byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
                     byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
 
-                    this.rawRlpEncoding = encode(v, r, s, true);
+                    this.rawRlpEncoding = encode(v, r, s, true, false);
                 }
             }else{
                 throw new UnsupportedOperationException("version 1 need use getFullRec to compute signature");
@@ -657,14 +657,14 @@ public class Transaction {
         return getEncoded(false);
     }*/
     public byte[] getEncodedForBlock(){
-        return getEncoded(true);
-    }
-
-    public byte[] getEncoded(){
         return getEncoded(false);
     }
 
-    public byte[] getEncoded(boolean forBlockContain) {
+    public byte[] getEncoded(){
+        return getEncoded(true);
+    }
+
+    public byte[] getEncoded(boolean versionOneContainSig) {
         if (this.rlpEncoding == null) {
             byte[] v;
             byte[] r;
@@ -679,13 +679,13 @@ public class Transaction {
                 s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
             }
 
-            this.rlpEncoding = encode(v, r, s, !forBlockContain);
+            this.rlpEncoding = encode(v, r, s, versionOneContainSig, false);
         }
 
         return ByteUtil.cloneBytes(this.rlpEncoding);
     }
 
-    private byte[] encode(byte[] v, byte[] r, byte[] s, boolean versionOneContainSig) {
+    private byte[] encode(byte[] v, byte[] r, byte[] s, boolean versionOneContainSig, boolean verisonOneContainDefaultEleId) {
         if (version == 0){
             // parse null as 0 for nonce
             byte[] toEncodeNonce;
@@ -715,6 +715,9 @@ public class Transaction {
                 toEncodeNonce[0] = NONCE_ID;
                 System.arraycopy(this.nonce, 0, toEncodeNonce, 1, this.nonce.length);
                 toEncodeNonce = RLP.encodeElement(toEncodeNonce);
+            }else if (verisonOneContainDefaultEleId){
+                toEncodeNonce = new byte[1];
+                toEncodeNonce[0] = NONCE_ID;
             }
 
             byte[] toEncodeValue = null;
@@ -724,6 +727,9 @@ public class Transaction {
                 toEncodeValue[0] = AMOUNT_ID;
                 System.arraycopy(valueBytes, 0, toEncodeValue, 1, valueBytes.length);
                 toEncodeValue = RLP.encodeElement(toEncodeValue);
+            }else if (verisonOneContainDefaultEleId){
+                toEncodeValue = new byte[1];
+                toEncodeValue[0] = AMOUNT_ID;
             }
 
             byte[] toEncodeReceiveAddress = null;
@@ -733,6 +739,9 @@ public class Transaction {
                 toEncodeReceiveAddress[0] = RECEIVER_ID;
                 System.arraycopy(addrBytes, 0, toEncodeReceiveAddress, 1, addrBytes.length);
                 toEncodeReceiveAddress = RLP.encodeElement(toEncodeReceiveAddress);
+            }else if (verisonOneContainDefaultEleId){
+                toEncodeReceiveAddress = new byte[1];
+                toEncodeReceiveAddress[0] = RECEIVER_ID;
             }
 
             byte[] toEncodeGasPrice = new byte[1 + this.gasPrice.getBytes().length];
@@ -746,6 +755,9 @@ public class Transaction {
                 toEncodeGasLimit[0] = GAS_LIMIT_ID;
                 System.arraycopy(this.gasLimit, 0, toEncodeGasLimit, 1, this.gasLimit.length);
                 toEncodeGasLimit = RLP.encodeElement(toEncodeGasLimit);
+            }else if (verisonOneContainDefaultEleId){
+                toEncodeGasLimit = new byte[1];
+                toEncodeGasLimit[0] = GAS_LIMIT_ID;
             }
 
             byte[] toEncodeData = null;
@@ -754,6 +766,9 @@ public class Transaction {
                 toEncodeData[0] = DATA_ID;
                 System.arraycopy(this.data, 0, toEncodeData, 1, this.data.length);
                 toEncodeData = RLP.encodeElement(toEncodeData);
+            }else if (verisonOneContainDefaultEleId){
+                toEncodeData = new byte[1];
+                toEncodeData[0] = DATA_ID;
             }
             
             byte[] toEncodeSig = null;
