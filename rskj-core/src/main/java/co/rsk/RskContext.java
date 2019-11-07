@@ -130,6 +130,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.HashMap;
 import java.util.List;
@@ -814,14 +815,32 @@ public class RskContext implements NodeBootstrapper {
     private TrieStore buildAbstractTrieStore(Path databasePath) {
         TrieStore newTrieStore;
         GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
+        final String multiTrieStoreNamePrefix = "unitrie_";
         if (gcConfig.enabled()) {
             try {
-                newTrieStore = buildMultiTrieStore(databasePath, "unitrie_", gcConfig.numberOfEpochs());
+                newTrieStore = buildMultiTrieStore(databasePath, multiTrieStoreNamePrefix, gcConfig.numberOfEpochs());
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to build multi trie store", e);
             }
         } else {
-            newTrieStore = buildTrieStore(databasePath.resolve("unitrie"));
+            Path trieStorePath = databasePath.resolve("unitrie");
+            try (Stream<Path> databasePathFilesStream = Files.list(databasePath)) {
+                List<Path> multiTrieStorePaths = databasePathFilesStream
+                        .filter(p -> p.getFileName().toString().startsWith(multiTrieStoreNamePrefix))
+                        .collect(Collectors.toList());
+
+                boolean gcWasEnabled = !multiTrieStorePaths.isEmpty();
+                if (gcWasEnabled) {
+                    LevelDbDataSource.mergeDataSources(trieStorePath, multiTrieStorePaths);
+                    // cleanup MultiTrieStore data sources
+                    multiTrieStorePaths.stream()
+                            .map(Path::toString)
+                            .forEach(FileUtil::recursiveDelete);
+                }
+            } catch (IOException e) {
+                logger.error("Unable to check if GC was ever enabled", e);
+            }
+            newTrieStore = buildTrieStore(trieStorePath);
         }
         return newTrieStore;
     }
@@ -934,7 +953,6 @@ public class RskContext implements NodeBootstrapper {
                 disposedEpoch -> FileUtil.recursiveDelete(databasePath.resolve(namePrefix + disposedEpoch).toString())
         );
     }
-
 
     protected RepositoryLocator buildRepositoryLocator() {
         return new RepositoryLocator(getTrieStore(), getStateRootHandler());
