@@ -22,11 +22,11 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.config.BridgeConstants;
 import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
-import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -55,29 +55,13 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     public void logUpdateCollections(Transaction rskTx) {
-        this.logs.add(
-                new LogInfo(BRIDGE_CONTRACT_ADDRESS,
-                            Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
-                            RLP.encodeElement(rskTx.getSender().getBytes())
-                )
-        );
-    }
+        CallTransaction.Function event = BridgeEvents.LOG_UPDATE_COLLECTIONS.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics();
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(rskTx.getSender().toString());
 
-//    public void logHelloWorld() {
-//        String param1Type = "bytes32";
-//        String param2Type = "uint";
-//        String param3Type = "uint";
-//        CallTransaction.Function event = CallTransaction.Function.fromEventSignature(
-//                "logMoneyReceived",
-//                new String[]{param1Type, param2Type, param3Type}
-//        );
-//        this.logs.add(
-//                new LogInfo(BRIDGE_CONTRACT_ADDRESS,
-//                        Collections.singletonList(DataWord.valueOf(event.encodeSignatureLong())),
-//                        event.encodeArguments("Holiiis", 200, 909)
-//                )
-//        );
-//    }
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
 
     public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
         List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
