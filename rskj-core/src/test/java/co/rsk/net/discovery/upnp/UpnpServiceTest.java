@@ -43,6 +43,7 @@ public final class UpnpServiceTest {
     private static final String LOCAL_ADDRESS_VALID_1 = "192.168.0.100";
     private static final String LOCAL_ADDRESS_VALID_2 = "192.168.1.100";
     private static final String LOCAL_ADDRESS_INVALID = "192.168.0.101";
+    private static final String LOCAL_ADDRESS_UNKNOWN_HOST = "[" + LOCAL_ADDRESS_VALID_1 + "]";
     private static final String VALID_GATEWAY_NAME_1 = "Valid Mock Gateway 1";
     private static final String VALID_GATEWAY_NAME_2 = "Valid Mock Gateway 2";
     private static final String INVALID_GATEWAY_NAME = "Invalid Mock Gateway";
@@ -154,6 +155,32 @@ public final class UpnpServiceTest {
         UpnpService upnpService = new UpnpService(query, DEFAULT_UPNP_TIMEOUT);
         upnpService.start();
         return upnpService;
+    }
+
+    @Test
+    public void testExceptionDuringStop() {
+        UpnpService testService = createAndStartUpnpService(mockWildcardDiscoverValid);
+        testService.findGateway();
+
+        // force a NPE during stop()'s Executor task construction
+        testService.getCachedGatewayManagers().clear();
+        testService.getCachedGatewayManagers().put(wildcardAddress, null);
+
+        try {
+            testService.stop();
+        } catch (Exception e) {
+            Assert.fail("Should not throw Exception when stop()'s cleanup fails.");
+        }
+    }
+
+    @Test
+    public void testStringAddressThrowsUnknownHost() {
+        UpnpService testService = createAndStartUpnpService(mockWildcardDiscoverValid);
+        Optional<UpnpGatewayManager> gdm = testService.findGateway(LOCAL_ADDRESS_UNKNOWN_HOST);
+        Assert.assertFalse(
+                "An unresolvable hostname should not return a gateway manager",
+                gdm.isPresent()
+        );
     }
 
     @Test
