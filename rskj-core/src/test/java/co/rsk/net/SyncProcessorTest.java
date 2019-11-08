@@ -754,7 +754,7 @@ public class SyncProcessorTest {
                 config.getActivationConfig());
 
         BlockExecutor blockExecutor = new BlockExecutor(
-                config.getActivationConfig(),
+                config,
                 new RepositoryLocator(blockChainBuilder.getTrieStore(), stateRootHandler),
                 stateRootHandler,
                 new TransactionExecutorFactory(

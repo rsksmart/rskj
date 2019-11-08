@@ -220,7 +220,7 @@ public class BlockChainBuilder {
                 transactionExecutorFactory, 10, 100
         );
         BlockExecutor blockExecutor = new BlockExecutor(
-                config.getActivationConfig(),
+                config,
                 repositoryLocator,
                 stateRootHandler,
                 transactionExecutorFactory

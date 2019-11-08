@@ -22,6 +22,7 @@ package org.ethereum.vm.program;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.ICacheTracking;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -216,5 +217,15 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void updateAccountState(RskAddress addr, AccountState accountState) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isCached() {
+        return repository.isCached();
+    }
+
+    @Override
+    public ICacheTracking getCacheTracking() {
+        return repository.getCacheTracking();
     }
 }

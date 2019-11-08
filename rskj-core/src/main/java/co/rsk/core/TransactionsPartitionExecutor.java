@@ -5,9 +5,30 @@ import org.ethereum.core.TransactionReceipt;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 public class TransactionsPartitionExecutor {
+
+    public interface PeriodicCheck {
+        /**
+         * Return false to interrupt waiting and raise PeriodicCheckException
+         * @return
+         */
+        boolean check();
+
+        /**
+         * Failure message
+         * @return
+         */
+        String getFailureMessage();
+    }
+
+    public static class PeriodicCheckException extends Exception {
+        PeriodicCheckException(String message) {
+            super(message);
+        }
+    }
     /**
      * List of the created instances
      */
@@ -32,7 +53,8 @@ public class TransactionsPartitionExecutor {
      * @throws InterruptedException
      * @throws TimeoutException
      */
-    public static void waitForAllThreadTermination(int timeoutMSec) throws InterruptedException, TimeoutException {
+    public static void waitForAllThreadTermination(int timeoutMSec, PeriodicCheck periodicCheck)
+            throws InterruptedException, TimeoutException, PeriodicCheckException {
         while (!partExecutors.isEmpty()) {
             // As soon as there are futures to wait for, wait for the first of each thread
             List<TransactionsPartitionExecutor> toRemove = new ArrayList<>();
@@ -40,6 +62,12 @@ public class TransactionsPartitionExecutor {
                 if (partExecutor.hasNextResult()) {
                     try {
                         Optional<TransactionReceipt> receipt = partExecutor.waitForNextResult(timeoutMSec);
+                        if (periodicCheck != null) {
+                            if (!periodicCheck.check()) {
+                                TransactionsPartitionExecutor.clearAll();
+                                throw new PeriodicCheckException(periodicCheck.getFailureMessage());
+                            }
+                        }
                     } catch (TimeoutException e) {
                         TransactionsPartitionExecutor.clearAll();
                         throw new TimeoutException();
@@ -70,9 +98,19 @@ public class TransactionsPartitionExecutor {
      * create a new instance and register it in partExecutors list
      */
     private TransactionsPartitionExecutor() {
+        int counter = partExecutors.size() + 1;
+        executor = Executors.newSingleThreadExecutor(
+                threadFactory -> new Thread(
+                        /* a new group is created for each partition thread.
+                         All cache accesses will be tracked according to that group, in order to track the
+                          accesses from some children threads of the partition thread (typically vmExecutor threads) */
+                        new ThreadGroup("Tx-part-grp-" + counter),
+                        threadFactory,
+                        "Tx-part-thread-" + counter)
+        );
     }
 
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private ExecutorService executor;
     List<Future<Optional<TransactionReceipt>>> futures = new ArrayList<>();
 
     /**

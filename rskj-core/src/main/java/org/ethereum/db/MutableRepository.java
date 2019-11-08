@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.ICacheTracking;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.MutableTrie;
@@ -326,6 +327,16 @@ public class MutableRepository implements Repository {
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
         mutableTrie.put(accountKey, accountState.getEncoded());
+    }
+
+    @Override
+    public boolean isCached() {
+        return mutableTrie instanceof ICacheTracking;
+    }
+
+    @Override
+    public ICacheTracking getCacheTracking() {
+        return isCached() ? (ICacheTracking)mutableTrie : null;
     }
 
     @VisibleForTesting

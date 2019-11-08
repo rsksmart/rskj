@@ -33,7 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 
-public class MutableTrieCache implements MutableTrie {
+public class MutableTrieCache implements MutableTrie, ICacheTracking {
 
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
 
@@ -74,6 +74,8 @@ public class MutableTrieCache implements MutableTrie {
             Function<byte[], T> cacheTransformer) {
         ByteArrayWrapper wrapper = new ByteArrayWrapper(key);
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
+
+        trackOnReadKey(wrapper);
 
         Map<ByteArrayWrapper, byte[]> accountItems = cache.get(accountWrapper);
         boolean isDeletedAccount = deleteRecursiveLog.contains(accountWrapper);
@@ -139,6 +141,7 @@ public class MutableTrieCache implements MutableTrie {
         // in cache with null or in deleteCache. Here we have the choice to
         // to add it to cache with null value or to deleteCache.
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
+        trackOnWriteKey(wrapper);
         Map<ByteArrayWrapper, byte[]> accountMap = cache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
         accountMap.put(wrapper, value);
     }
@@ -169,6 +172,7 @@ public class MutableTrieCache implements MutableTrie {
         // See TransactionExecutor.finalization(), when it iterates the list with getDeleteAccounts().forEach()
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
         deleteRecursiveLog.add(wrap);
+        trackOnDeleteKey(wrap);
         cache.remove(wrap);
     }
 
@@ -236,6 +240,43 @@ public class MutableTrieCache implements MutableTrie {
     @Override
     public Keccak256 getValueHash(byte[] key) {
         return internalGet(key, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
+    }
+
+    private List<ICacheTracking.Listener> cacheTrackingListeners = new ArrayList<>();
+
+    @Override
+    public void subscribe(ICacheTracking.Listener listener) {
+        cacheTrackingListeners.add(listener);
+    }
+
+    @Override
+    public void unsubscribe(ICacheTracking.Listener listener) {
+        cacheTrackingListeners.remove(listener);
+    }
+
+    private void trackOnReadKey(ByteArrayWrapper key) {
+        notifyCacheTrackingListeners(true, false, false, key);
+    }
+
+    private void trackOnWriteKey(ByteArrayWrapper key) {
+        notifyCacheTrackingListeners(false, true, false, key);
+    }
+
+    private void trackOnDeleteKey(ByteArrayWrapper key) {
+        notifyCacheTrackingListeners(false, false, true, key);
+    }
+
+    protected void notifyCacheTrackingListeners(boolean read, boolean write, boolean delete, ByteArrayWrapper key) {
+        ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
+        if (read) {
+            cacheTrackingListeners.forEach(listener -> listener.onReadKey(key, threadGroup.getName()));
+        }
+        if (write) {
+            cacheTrackingListeners.forEach(listener -> listener.onWriteKey(key, threadGroup.getName()));
+        }
+        if (delete) {
+            cacheTrackingListeners.forEach(listener -> listener.onDeleteKey(key, threadGroup.getName()));
+        }
     }
 
     private static class StorageKeysIterator implements Iterator<DataWord> {

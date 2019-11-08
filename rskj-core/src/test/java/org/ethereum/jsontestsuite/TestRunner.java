@@ -160,7 +160,7 @@ public class TestRunner {
                 null,
                 new DummyBlockValidator(),
                 new BlockExecutor(
-                        config.getActivationConfig(),
+                        config,
                         new RepositoryLocator(trieStore, stateRootHandler),
                         stateRootHandler,
                         transactionExecutorFactory

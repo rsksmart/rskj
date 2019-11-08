@@ -2,6 +2,7 @@ package co.rsk.core;
 
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockResult;
+import co.rsk.db.ICacheTracking;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import org.ethereum.core.*;
@@ -55,10 +56,9 @@ public class TransactionExecutorTask implements Callable<Optional<TransactionRec
         boolean vmTrace = blockSharedData.getProgramTraceProcessor() != null;
         logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), blockSharedData.getReceipts().size());
 
-        TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
+        TransactionConcurrentExecutor txExecutor = transactionExecutorFactory.newConcurrentInstance(
                 tx,
                 txindex,
-                block.getCoinbase(),
                 blockSharedData.getRepository(),
                 block,
                 blockSharedData.getTotalGasUsed(),

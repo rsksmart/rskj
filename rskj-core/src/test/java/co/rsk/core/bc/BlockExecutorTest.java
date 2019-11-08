@@ -205,6 +205,7 @@ public class BlockExecutorTest {
     public void executeBlockWithTwoTransactionsInParallel() {
         Block block = getBlockWithTwoTransactionsDifferentsAccounts(); // this changes the best block
         Block parent = blockchain.getBestBlock();
+        // split the 2 transactions is 2 different partitions (ie 2 concurrent threads)
         block.setPartitionEnds(new int[]{0});
 
         Transaction tx1 = block.getTransactionsList().get(0);
@@ -285,6 +286,34 @@ public class BlockExecutorTest {
         Assert.assertEquals(BigInteger.valueOf(60000 - GAS_PER_TRANSACTION - 10), account3State.getBalance().asBigInteger());
         Assert.assertEquals(BigInteger.valueOf(20L), account4State.getBalance().asBigInteger());
     }
+
+    @Test
+    public void executeBlockWithTwoConflictingTransactionsInParallel() {
+        Block block = getBlockWithTwoTransactions(); // this changes the best block
+        Block parent = blockchain.getBestBlock();
+        // split the 2 transactions is 2 different partitions (ie 2 concurrent threads)
+        block.setPartitionEnds(new int[]{0});
+
+        Transaction tx1 = block.getTransactionsList().get(0);
+        Transaction tx2 = block.getTransactionsList().get(1);
+        RskAddress account = tx1.getSender();
+        RskAddress account2 = tx1.getReceiveAddress();
+
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
+
+        // conflict between transaction running in different thread shall be detected and lead to an invalid block
+        Assert.assertSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        // World state shall not be impacted
+        AccountState accountState = repository.getAccountState(account);
+        AccountState account2State = repository.getAccountState(account2);
+
+        Assert.assertNotNull(accountState);
+        Assert.assertNotNull(account2State);
+        Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance().asBigInteger());
+        Assert.assertEquals(BigInteger.valueOf(10L), account2State.getBalance().asBigInteger());
+
+    }
+
 
     @Test
     public void executeAndFillBlockWithOneTransaction() {
@@ -793,7 +822,7 @@ public class BlockExecutorTest {
                 btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
 
         return new BlockExecutor(
-                config.getActivationConfig(),
+                config,
                 new RepositoryLocator(store, stateRootHandler),
                 stateRootHandler,
                 new TransactionExecutorFactory(

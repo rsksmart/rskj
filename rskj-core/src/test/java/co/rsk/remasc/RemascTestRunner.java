@@ -136,7 +136,7 @@ class RemascTestRunner {
                 builder.getConfig().getActivationConfig());
         PrecompiledContracts precompiledContracts = new PrecompiledContracts(builder.getConfig(), bridgeSupportFactory);
         BlockExecutor blockExecutor = new BlockExecutor(
-                builder.getConfig().getActivationConfig(),
+                builder.getConfig(),
                 builder.getRepositoryLocator(),
                 builder.getStateRootHandler(),
                 new TransactionExecutorFactory(

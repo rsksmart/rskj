@@ -148,7 +148,7 @@ public class StateTestRunner {
                 null,
                 null,
                 new BlockExecutor(
-                        config.getActivationConfig(),
+                        config,
                         new RepositoryLocator(trieStore, stateRootHandler),
                         stateRootHandler,
                         new TransactionExecutorFactory(

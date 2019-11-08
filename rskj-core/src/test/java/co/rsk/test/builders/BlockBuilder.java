@@ -107,7 +107,7 @@ public class BlockBuilder {
             final TestSystemProperties config = new TestSystemProperties();
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
             BlockExecutor executor = new BlockExecutor(
-                    config.getActivationConfig(),
+                    config,
                     new RepositoryLocator(trieStore, stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(

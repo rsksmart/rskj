@@ -18,7 +18,9 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.*;
+import co.rsk.db.ICacheTracking;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
@@ -28,6 +30,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
@@ -58,16 +61,18 @@ public class BlockExecutor {
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final StateRootHandler stateRootHandler;
     private final ActivationConfig activationConfig;
+    private final RskSystemProperties config;
 
     public BlockExecutor(
-            ActivationConfig activationConfig,
+            RskSystemProperties config,
             RepositoryLocator repositoryLocator,
             StateRootHandler stateRootHandler,
             TransactionExecutorFactory transactionExecutorFactory) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.stateRootHandler = stateRootHandler;
-        this.activationConfig = activationConfig;
+        this.config = config;
+        this.activationConfig = config.getActivationConfig();
     }
 
     /**
@@ -308,6 +313,67 @@ public class BlockExecutor {
 
     }
 
+    public class TransactionConflictException extends Exception {
+        public TransactionConflictException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * This class tracks accesses in repository (read/write or delete keys), per threadGroup
+     * and detect if there are confilcts between threadGroups, that means 2 different threadGroups
+     * have accessed to the same key, whatever the access type (read/write or delete)
+     */
+    private static class CacheTracker implements ICacheTracking.Listener {
+
+        private static int instancesCounter = 0;
+        private int instanceId;
+        boolean hasConflict = false;
+        String conflict = "";
+        public CacheTracker( ) {
+            instanceId = instancesCounter++;
+        }
+
+        Map<ByteArrayWrapper, String> lastThreadReadOrWrite = new HashMap<>();
+
+        @Override
+        public void onReadKey(ByteArrayWrapper key, String threadGroupName) {
+            onAccessKey(key, threadGroupName);
+        }
+
+        @Override
+        public void onWriteKey(ByteArrayWrapper key, String threadGroupName) {
+            onAccessKey(key, threadGroupName);
+        }
+
+        @Override
+        public void onDeleteKey(ByteArrayWrapper key, String threadGroupName) {
+            onAccessKey(key, threadGroupName);
+        }
+
+        private synchronized void onAccessKey(ByteArrayWrapper key, String threadGroupName)  {
+            // Check if any other thread already read or write this key
+            String otherThreadGroup = lastThreadReadOrWrite.get(key);
+            if (otherThreadGroup == null) {
+                lastThreadReadOrWrite.put(key, threadGroupName);
+            } else if (!otherThreadGroup.equals(threadGroupName)) {
+                conflict = "ThreadGroup " + threadGroupName + " attempts to access at key " +
+                        key.toString() + " but it has already been accessed by another ThreadGroup (" +
+                        otherThreadGroup + ")";
+                hasConflict = true;
+            }
+        }
+
+        public synchronized boolean hasConflict() {
+            return hasConflict;
+        }
+
+        public synchronized String getConflictMessage() {
+            return conflict;
+        }
+    }
+
+
     private BlockResult executeInternal(
             @Nullable ProgramTraceProcessor programTraceProcessor,
             Block block,
@@ -344,6 +410,11 @@ public class BlockExecutor {
 
         TransactionsPartitionExecutor partExecutor = TransactionsPartitionExecutor.newTransactionsPartitionExecutor();
 
+        CacheTracker cacheTracker = new CacheTracker();
+        if (track.isCached()) {
+            track.getCacheTracking().subscribe(cacheTracker);
+        }
+
         for ( Transaction tx : block.getTransactionsList() ) {
 
             TransactionExecutorTask txExecutorTask = new TransactionExecutorTask(
@@ -368,10 +439,42 @@ public class BlockExecutor {
 
         // Wait for all thread terminate
         try {
-            TransactionsPartitionExecutor.waitForAllThreadTermination(10000);
-        } catch (InterruptedException | TimeoutException e) {
+            TransactionsPartitionExecutor.waitForAllThreadTermination(
+                    10000,
+                    new TransactionsPartitionExecutor.PeriodicCheck() {
+                        @Override
+                        public boolean check() {
+                            return !cacheTracker.hasConflict();
+                        }
+
+                        @Override
+                        public String getFailureMessage() {
+                            return cacheTracker.getConflictMessage();
+                        }
+                    });
+        } catch (InterruptedException | TimeoutException | TransactionsPartitionExecutor.PeriodicCheckException e) {
             profiler.stop(metric);
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+        } finally {
+            if (track.isCached()) {
+                track.getCacheTracking().unsubscribe(cacheTracker);
+            }
+        }
+
+        // RSKIP144
+        // Transfer fees to coinbase or Remasc contract creates a conflicts between all transactions,
+        // that prevents us to execute them in parallel.
+        // Then in this case we transfer fees after all transactions are processed.
+        Coin summaryFee = blockSharedData.getTotalPaidFees();
+
+        if (!summaryFee.equals(Coin.valueOf(0))) {
+            //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
+            if(config.isRemascEnabled()) {
+                logger.trace("Adding fee to remasc contract account");
+                track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
+            } else {
+                track.addBalance(block.getCoinbase(), summaryFee);
+            }
         }
 
         track.save();
@@ -424,3 +527,4 @@ public class BlockExecutor {
         return logBloom.getData();
     }
 }
+
