@@ -2,8 +2,7 @@ package co.rsk.net.sync;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.MessageChannel;
-import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.messages.BodyResponseMessage;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -28,7 +27,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
     private BlockFactory blockFactory;
     private BlockStore blockStore;
     private Block child;
-    private NodeID selectedPeerId;
+    private Peer peer;
 
     @Before
     public void setUp() {
@@ -39,7 +38,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         blockFactory = mock(BlockFactory.class);
         blockStore = mock(BlockStore.class);
         child = mock(Block.class);
-        selectedPeerId = mock(NodeID.class);
+        peer = mock(Peer.class);
     }
 
     /**
@@ -59,7 +58,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
                 blockStore,
                 child,
                 toRequest,
-                selectedPeerId);
+                peer);
 
         when(child.getNumber()).thenReturn(1L);
         when(genesis.isParentOf(child)).thenReturn(false);
@@ -84,7 +83,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
                 blockStore,
                 child,
                 toRequest,
-                selectedPeerId);
+                peer);
 
         Keccak256 childHash = new Keccak256(new byte[32]);
         when(child.getHash()).thenReturn(childHash);
@@ -112,7 +111,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
                 blockStore,
                 child,
                 toRequest,
-                selectedPeerId);
+                peer);
 
         Keccak256 childHash = new Keccak256(new byte[32]);
         when(child.getHash()).thenReturn(childHash);
@@ -151,7 +150,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
             when(headerToRequest.getHash()).thenReturn(headerHash);
             toRequest.addFirst(headerToRequest);
-            when(syncEventsHandler.sendBodyRequest(eq(headerToRequest), any())).thenReturn(i);
+            when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
             BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
             responses.addFirst(response);
@@ -187,11 +186,11 @@ public class DownloadingBackwardsBodiesSyncStateTest {
                 blockStore,
                 child,
                 toRequest,
-                selectedPeerId);
+                peer);
 
         while (!responses.isEmpty()) {
             target.onEnter();
-            target.newBody(responses.pop(), mock(MessageChannel.class));
+            target.newBody(responses.pop(), mock(Peer.class));
 
             Block block = expectedBlocks.pop();
             BlockDifficulty expectedDifficulty = difficultyForBlockNumber.apply(block.getNumber());
@@ -217,7 +216,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
             when(headerToRequest.getHash()).thenReturn(headerHash);
             toRequest.addFirst(headerToRequest);
-            when(syncEventsHandler.sendBodyRequest(eq(headerToRequest), any())).thenReturn(i);
+            when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
 
             BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
             responses.addFirst(response);
@@ -251,11 +250,11 @@ public class DownloadingBackwardsBodiesSyncStateTest {
                 blockStore,
                 child,
                 toRequest,
-                selectedPeerId);
+                peer);
 
         while(!responses.isEmpty()) {
             target.onEnter();
-            target.newBody(responses.pop(), mock(MessageChannel.class));
+            target.newBody(responses.pop(), mock(Peer.class));
 
             Block block = expectedBlocks.pop();
             BlockDifficulty expectedDifficulty = difficultyForBlockNumber.apply(block.getNumber());

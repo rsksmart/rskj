@@ -108,26 +108,4 @@ public class ChannelManagerImplTest {
 
         assertTrue(nodeIds.isEmpty());
     }
-
-    @Test
-    public void sendMessageToActivePeer() {
-        ChannelManagerImpl target = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
-
-        Channel peer = mock(Channel.class);
-        when(peer.isUsingNewProtocol()).thenReturn(true);
-        when(peer.hasEthStatusSucceeded()).thenReturn(true);
-        when(peer.isProtocolsInitialized()).thenReturn(true);
-        when(peer.isActive()).thenReturn(true);
-        NodeID nodeId = mock(NodeID.class);
-        when(peer.getNodeId()).thenReturn(nodeId);
-        target.add(peer);
-        target.tryProcessNewPeers();
-
-        MessageWithId message = mock(MessageWithId.class);
-        target.sendMessageTo(nodeId, message);
-
-        verify(peer).sendMessage(eq(message));
-    }
-
-
 }

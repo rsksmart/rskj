@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 public class MessageVisitorTest {
 
     private MessageVisitor target;
-    private MessageChannel sender;
+    private Peer sender;
     private BlockValidationRule blockValidationRule;
     private ChannelManager channelManager;
     private PeerScoringManager peerScoringManager;
@@ -45,7 +45,7 @@ public class MessageVisitorTest {
         peerScoringManager = mock(PeerScoringManager.class);
         channelManager = mock(ChannelManager.class);
         blockValidationRule = mock(BlockValidationRule.class);
-        sender = mock(MessageChannel.class);
+        sender = mock(Peer.class);
 
         target = new MessageVisitor(
                 config,

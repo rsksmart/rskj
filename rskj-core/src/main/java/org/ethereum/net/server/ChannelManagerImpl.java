@@ -20,6 +20,7 @@
 package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
@@ -296,21 +297,11 @@ public class ChannelManagerImpl implements ChannelManager {
         }
     }
 
-    public Collection<Channel> getActivePeers() {
+    public Collection<Peer> getActivePeers() {
         // from the docs: it is imperative to synchronize when iterating
         synchronized (activePeersLock){
             return new ArrayList<>(activePeers.values());
         }
-    }
-
-    @Override
-    public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
-        Channel channel = activePeers.get(nodeID);
-        if (channel == null){
-            return false;
-        }
-        channel.sendMessage(message);
-        return true;
     }
 
     public boolean isAddressBlockAvailable(InetAddress inetAddress) {

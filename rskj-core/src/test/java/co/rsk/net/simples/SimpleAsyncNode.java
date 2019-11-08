@@ -69,7 +69,7 @@ public class SimpleAsyncNode extends SimpleNode {
 
     @Override
     public void receiveMessageFrom(SimpleNode peer, Message message) {
-        MessageChannel senderToPeer = simpleChannelManager.getMessageChannel(this, peer);
+        Peer senderToPeer = simpleChannelManager.getMessageChannel(this, peer);
         futures.add(
                 executor.submit(() -> this.getHandler().processMessage(senderToPeer, message)));
     }
@@ -137,7 +137,7 @@ public class SimpleAsyncNode extends SimpleNode {
         SimpleChannelManager channelManager = new SimpleChannelManager();
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, indexedBlockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration, blockFactory,
+                blockchain, indexedBlockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration, blockFactory,
                 blockValidationRule,
                 new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),

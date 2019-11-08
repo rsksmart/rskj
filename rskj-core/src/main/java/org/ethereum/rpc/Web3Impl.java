@@ -28,6 +28,7 @@ import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.Peer;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -51,7 +52,6 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.dto.BlockResultDTO;
@@ -340,7 +340,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String[] net_peerList() {
-        Collection<Channel> peers = channelManager.getActivePeers();
+        Collection<Peer> peers = channelManager.getActivePeers();
         List<String> response = new ArrayList<>();
         peers.forEach(channel -> response.add(channel.toString()));
 
