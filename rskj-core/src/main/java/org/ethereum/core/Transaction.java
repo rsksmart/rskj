@@ -128,7 +128,7 @@ public class Transaction {
         this(rawData, null);
     }
     
-    protected Transaction(byte[] rawData, RLPList rsv) {
+    protected Transaction(byte[] rawData, byte[] encodedRSV) {
         if (rawData[0] != FORMAT_ONE_LEADING){
             version = 0;
             List<RLPElement> transaction = RLP.decodeList(rawData);
@@ -221,14 +221,14 @@ public class Transaction {
             this.gasLimit = gasLimit;
             this.data = data;
             
-            if (signature == null && rsv == null){
+            if (signature == null && encodedRSV == null){
                 throw new IllegalArgumentException("A transaction must be signed");
             }else {
                 List<RLPElement> comps;
                 if (signature != null){
                     comps =  RLP.decodeList(signature);
                 }else{
-                    comps =  rsv;
+                    comps =  RLP.decodeList(encodedRSV);
                 }
                 if (comps.size() != 3) {
                     throw new IllegalArgumentException("A signature must have exactly 3 elements");

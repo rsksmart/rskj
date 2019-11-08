@@ -9,8 +9,8 @@ public class ImmutableTransaction extends Transaction {
     public ImmutableTransaction(byte[] rawData) {
         super(rawData);
     }
-    public ImmutableTransaction(byte[] rawDataWithoutSig, RLPList rsv){
-        super(rawDataWithoutSig, rsv);
+    public ImmutableTransaction(byte[] rawDataWithoutSig, byte[] encodedRSV){
+        super(rawDataWithoutSig, encodedRSV);
     }
     
     @Override

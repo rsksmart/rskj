@@ -68,14 +68,14 @@ public class BlockFactory {
         RLPList rlpHeader = (RLPList) block.get(0);
         BlockHeader header = decodeHeader(rlpHeader, sealed);
 
-        Map<Integer, RLPList> sigsMap = new HashMap<Integer, RLPList>();
+        Map<Integer, byte[]> sigsMap = new HashMap<Integer, byte[]>();
         if (block.size() == 4){
             RLPList rlpSigsList = (RLPList)block.get(3);
             for (RLPElement rlpSig: rlpSigsList){
                 RLPList rlpSigTuple = RLP.decodeList(rlpSig.getRLPData()); 
                 byte[] rlpIndex = rlpSigTuple.get(0).getRLPData();
                 Integer index = RLP.decodeInt(rlpIndex, 0);
-                sigsMap.put(index, RLP.decodeList(rlpSigTuple.get(1).getRLPData()));
+                sigsMap.put(index, rlpSigTuple.get(1).getRLPData());
             }
         }
 
@@ -255,13 +255,13 @@ public class BlockFactory {
         return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
     }
 
-    private static List<Transaction> parseTxs(RLPList txTransactions, Map<Integer, RLPList> sigsMap) {
+    private static List<Transaction> parseTxs(RLPList txTransactions, Map<Integer, byte[]> sigsMap) {
         List<Transaction> parsedTxs = new ArrayList<>();
 
         for (int i = 0; i < txTransactions.size(); i++) {
             RLPElement transactionRaw = txTransactions.get(i);
             Transaction tx;
-            RLPList rsv = sigsMap.get(i);
+            byte[] rsv = sigsMap.get(i);
             if (rsv != null){
                 tx = new ImmutableTransaction(transactionRaw.getRLPData(), rsv);
             }else{
