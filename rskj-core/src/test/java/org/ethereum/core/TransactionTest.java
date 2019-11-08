@@ -65,6 +65,7 @@ import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -714,9 +715,9 @@ public class TransactionTest {
         Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
     }
-	@Test 
-	public void testFormat1Hash(){
-		BigInteger value = new BigInteger("1000000000000000000000");
+    @Test 
+    public void testFormat1Hash(){
+        BigInteger value = new BigInteger("1000000000000000000000");
 
         byte[] privKey = HashUtil.keccak256("cat".getBytes());
         ECKey ecKey = ECKey.fromPrivate(privKey);
@@ -728,102 +729,114 @@ public class TransactionTest {
         // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
         Transaction tx = new Transaction(null, gasPrice, null, ecKey.getAddress(),
                 value.toByteArray(),
-				null);
-		byte[] toEncodeNonce = RLP.encodeElement(new byte[]{0});
-		byte[] valueBytes = value.toByteArray(); 
-		byte[] toEncodeValue = new byte[1 + valueBytes.length];
-		toEncodeValue[0] = 1;
-		System.arraycopy(valueBytes, 0, toEncodeValue, 1, valueBytes.length);
-		toEncodeValue = RLP.encodeElement(toEncodeValue);
-		byte[] receiver = ecKey.getAddress();
-		byte[] toEncodeReceiver =  new byte[1 + receiver.length];
-		toEncodeReceiver[0] = 2 ;
-		System.arraycopy(receiver, 0, toEncodeReceiver, 1, receiver.length);
-		toEncodeReceiver =  RLP.encodeElement(toEncodeReceiver);
-		byte[] toEncodeGasPrice = new byte[1 + gasPrice.length];
-		toEncodeGasPrice[0] = 3;
-		System.arraycopy(gasPrice, 0, toEncodeGasPrice, 1, gasPrice.length);
-		toEncodeGasPrice =  RLP.encodeElement(toEncodeGasPrice);
-		byte[] toEncodeGasLimit =  RLP.encodeElement(new byte[]{4});
-		byte[] toEncodeData =  RLP.encodeElement(new byte[]{5});
+                null);
+        byte[] toEncodeNonce = RLP.encodeElement(new byte[]{0});
+        byte[] valueBytes = value.toByteArray(); 
+        byte[] toEncodeValue = new byte[1 + valueBytes.length];
+        toEncodeValue[0] = 1;
+        System.arraycopy(valueBytes, 0, toEncodeValue, 1, valueBytes.length);
+        toEncodeValue = RLP.encodeElement(toEncodeValue);
+        byte[] receiver = ecKey.getAddress();
+        byte[] toEncodeReceiver =  new byte[1 + receiver.length];
+        toEncodeReceiver[0] = 2 ;
+        System.arraycopy(receiver, 0, toEncodeReceiver, 1, receiver.length);
+        toEncodeReceiver =  RLP.encodeElement(toEncodeReceiver);
+        byte[] toEncodeGasPrice = new byte[1 + gasPrice.length];
+        toEncodeGasPrice[0] = 3;
+        System.arraycopy(gasPrice, 0, toEncodeGasPrice, 1, gasPrice.length);
+        toEncodeGasPrice =  RLP.encodeElement(toEncodeGasPrice);
+        byte[] toEncodeGasLimit =  RLP.encodeElement(new byte[]{4});
+        byte[] toEncodeData =  RLP.encodeElement(new byte[]{5});
 
-		byte[] fullRec = RLP.encodeList(toEncodeNonce, toEncodeValue, toEncodeReceiver, toEncodeGasPrice, toEncodeGasLimit, toEncodeData);
-		Keccak256 hash = new Keccak256(HashUtil.keccak256(fullRec));
-		Assert.assertEquals(hash, tx.getHash());
-	}
+        byte[] fullRec = RLP.encodeList(toEncodeNonce, toEncodeValue, toEncodeReceiver, toEncodeGasPrice, toEncodeGasLimit, toEncodeData);
+        Keccak256 hash = new Keccak256(HashUtil.keccak256(fullRec));
+        Assert.assertEquals(hash, tx.getHash());
+    }
 
-	@Test
+    @Test
     public void testFormat1Decode() throws IOException {
-		//0x01 | RLPList( RLP(0x020102030405060708090A0102030405060708090A), RLP(0x0501020304), RLP(030102))
-		byte[] ele1 = RLP.encodeElement(Hex.decode("020102030405060708090A0102030405060708090A"));
-		byte[] ele2 = RLP.encodeElement(Hex.decode("0501020304"));
-		byte[] ele3 = RLP.encodeElement(Hex.decode("030102"));
-		//faked signature
-		byte[] r = RLP.encodeElement(Hex.decode("19"));
-		byte[] s = RLP.encodeElement(Hex.decode("11121314"));
-		byte[] v = RLP.encodeElement(Hex.decode("11121314"));
-		byte[] rsv = RLP.encodeList(r, s, v);
-		ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
-		baos1.write(6);
-		baos1.write(rsv);
-		byte[] ele4 = RLP.encodeElement(baos1.toByteArray());
-		byte[] eleList = RLP.encodeList(ele1, ele2, ele3, ele4);
+        //0x01 | RLPList( RLP(0x020102030405060708090A0102030405060708090A), RLP(0x0501020304), RLP(030102))
+        byte[] ele1 = RLP.encodeElement(Hex.decode("020102030405060708090A0102030405060708090A"));
+        byte[] ele2 = RLP.encodeElement(Hex.decode("0501020304"));
+        byte[] ele3 = RLP.encodeElement(Hex.decode("030102"));
+        //faked signature
+        byte[] r = RLP.encodeElement(Hex.decode("19"));
+        byte[] s = RLP.encodeElement(Hex.decode("11121314"));
+        byte[] v = RLP.encodeElement(Hex.decode("11121314"));
+        byte[] rsv = RLP.encodeList(r, s, v);
+        ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+        baos1.write(6);
+        baos1.write(rsv);
+        byte[] ele4 = RLP.encodeElement(baos1.toByteArray());
+        byte[] eleList = RLP.encodeList(ele1, ele2, ele3, ele4);
 
-		ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
-		baos2.write(0x1);
-		baos2.write(eleList);
-		byte[] format1Tx = baos2.toByteArray();
-		ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
-		Assert.assertEquals(Arrays.equals(tx.getNonce(), new byte[]{1}),true);
-		Assert.assertEquals(tx.getValue().equals(Coin.ZERO), true);
-		Assert.assertEquals(tx.getReceiveAddress(), new RskAddress("0102030405060708090A0102030405060708090A"));
-		Assert.assertEquals(tx.getGasPrice(), new Coin(Hex.decode("0102")));
-		Assert.assertEquals(Arrays.equals(tx.getGasLimit(), new byte[]{0x75,0x30}), true);
-		Assert.assertEquals(Arrays.equals(tx.getData(), new byte[]{1,2,3,4}), true);
-		
-	}
+        ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
+        baos2.write(0x1);
+        baos2.write(eleList);
+        byte[] format1Tx = baos2.toByteArray();
+        ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+        Assert.assertEquals(Arrays.equals(tx.getNonce(), new byte[]{1}),true);
+        Assert.assertEquals(tx.getValue().equals(Coin.ZERO), true);
+        Assert.assertEquals(tx.getReceiveAddress(), new RskAddress("0102030405060708090A0102030405060708090A"));
+        Assert.assertEquals(tx.getGasPrice(), new Coin(Hex.decode("0102")));
+        Assert.assertEquals(Arrays.equals(tx.getGasLimit(), new byte[]{0x75,0x30}), true);
+        Assert.assertEquals(Arrays.equals(tx.getData(), new byte[]{1,2,3,4}), true);
+        
+    }
 
-	@Test
-	public void testFormat1Encode1() throws InterruptedException
-	{
-		byte[] privKey = HashUtil.keccak256("cat".getBytes());
+    @Test
+    public void testFormat1Encode1() throws InterruptedException
+    {
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
         ECKey ecKey = ECKey.fromPrivate(privKey);
 
         byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
 
         byte[] nonce = new byte[]{5};
-		byte[] value = new byte[]{6};
-		byte[] receiveAddress = Hex.decode("0102030405060708090A0102030405060708090A");
-		byte[] data = new byte[]{1,2,3,4,5,6};
+        byte[] value = new byte[]{6};
+        byte[] receiveAddress = Hex.decode("0102030405060708090A0102030405060708090A");
+        byte[] data = new byte[]{1,2,3,4,5,6};
         byte[] gasPrice = Hex.decode("09184e72a000");
         byte[] gasLimit = Hex.decode("1000");
-		Transaction tx = new Transaction(
+        Transaction tx = new Transaction(
                 nonce,
                 gasPrice,
                 gasLimit,
                 receiveAddress,
-				value,
+                value,
                 data);
-		tx.sign(privKey);
-		byte[] encoded = tx.getEncoded();
-		Assert.assertEquals(encoded[0], 1);
+        tx.sign(privKey);
+        byte[] encoded = tx.getEncoded();
+        
+        Assert.assertEquals(encoded[0], 1);
 
         byte[] encodedWithoutLeadingOne = Arrays.copyOfRange(encoded, 1, encoded.length);
-		List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
-		Assert.assertEquals(rlpList.size(), 7);
-		Assert.assertEquals(Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0005")), true);
-		Assert.assertEquals(Arrays.equals(rlpList.get(1).getRLPData(), Hex.decode("0106")), true);
-		Assert.assertEquals(Arrays.equals(rlpList.get(2).getRLPData(), Hex.decode("020102030405060708090A0102030405060708090A")), true);
-		Assert.assertEquals(Arrays.equals(rlpList.get(3).getRLPData(), Hex.decode("0309184e72a000")), true);
-		Assert.assertEquals(Arrays.equals(rlpList.get(4).getRLPData(), Hex.decode("041000")), true);
+        List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
+        Assert.assertEquals(rlpList.size(), 7);
+        Assert.assertEquals(Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0005")), true);
+        Assert.assertEquals(Arrays.equals(rlpList.get(1).getRLPData(), Hex.decode("0106")), true);
+        Assert.assertEquals(Arrays.equals(rlpList.get(2).getRLPData(), Hex.decode("020102030405060708090A0102030405060708090A")), true);
+        Assert.assertEquals(Arrays.equals(rlpList.get(3).getRLPData(), Hex.decode("0309184e72a000")), true);
+        Assert.assertEquals(Arrays.equals(rlpList.get(4).getRLPData(), Hex.decode("041000")), true);
         Assert.assertEquals(Arrays.equals(rlpList.get(5).getRLPData(), Hex.decode("05010203040506")), true);
+        
+        byte[] rsv = tx.getEncodedRSV();
+        byte[] rsvWithId = new byte[1 + rsv.length];
+        rsvWithId[0] = 6;
+        System.arraycopy(rsv, 0, rsvWithId, 1, rsv.length);
+        Assert.assertEquals(Arrays.equals(rlpList.get(6).getRLPData(), rsvWithId), true);
 
-	}
+        byte[] encodedForBlock = tx.getEncodedForBlock();
+        Transaction tx2 = new ImmutableTransaction(encodedForBlock, rsv);
+        Assert.assertEquals(tx, tx2);
+        Assert.assertEquals(Objects.equals(tx, tx2), true);
+
+    }
 
     @Test
-	public void testFormat1Encode2() throws InterruptedException
-	{
-		byte[] privKey = HashUtil.keccak256("cat".getBytes());
+    public void testFormat1Encode2() throws InterruptedException
+    {
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
         ECKey ecKey = ECKey.fromPrivate(privKey);
 
         byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
@@ -833,19 +846,19 @@ public class TransactionTest {
                 gasPrice,
                 null,
                 null,
-				null,
+                null,
                 null);
-		tx.sign(privKey);
-		byte[] encoded = tx.getEncoded();
-		Assert.assertEquals(encoded[0], 1);
+        tx.sign(privKey);
+        byte[] encoded = tx.getEncoded();
+        Assert.assertEquals(encoded[0], 1);
         byte[] encodedWithoutLeadingOne = Arrays.copyOfRange(encoded, 1, encoded.length);
-		List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
-		Assert.assertEquals(rlpList.size(), 2);
-		Assert.assertEquals(Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0309184e72a000")), true);
-	}
+        List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
+        Assert.assertEquals(rlpList.size(), 2);
+        Assert.assertEquals(Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0309184e72a000")), true);
+    }
 
     @Test
-	public void testFormat1EncodeForBlock() throws InterruptedException{
+    public void testFormat1EncodeForBlock() throws InterruptedException{
 byte[] privKey = HashUtil.keccak256("cat".getBytes());
         ECKey ecKey = ECKey.fromPrivate(privKey);
 
@@ -856,17 +869,17 @@ byte[] privKey = HashUtil.keccak256("cat".getBytes());
                 gasPrice,
                 null,
                 null,
-				null,
+                null,
                 null);
-		tx.sign(privKey);
-		byte[] encoded = tx.getEncodedForBlock();
-		Assert.assertEquals(encoded[0], 1);
+        tx.sign(privKey);
+        byte[] encoded = tx.getEncodedForBlock();
+        Assert.assertEquals(encoded[0], 1);
         byte[] encodedWithoutLeadingOne = Arrays.copyOfRange(encoded, 1, encoded.length);
-		List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
-		Assert.assertEquals(rlpList.size(), 1);
-		Assert.assertEquals(Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0309184e72a000")), true);
-	}
-	
+        List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
+        Assert.assertEquals(rlpList.size(), 1);
+        Assert.assertEquals(Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0309184e72a000")), true);
+    }
+    
 
 
     private Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, final Repository repository) throws InterruptedException {
