@@ -19,6 +19,7 @@
 package co.rsk.net.discovery.upnp;
 
 import co.rsk.config.InternalService;
+import com.google.common.annotations.VisibleForTesting;
 import org.bitlet.weupnp.GatewayDevice;
 import org.bitlet.weupnp.GatewayDiscover;
 import org.ethereum.config.SystemProperties;
@@ -205,5 +206,10 @@ public class UpnpService implements InternalService {
             ), e);
             return false;
         }
+    }
+
+    @VisibleForTesting
+    Map<InetAddress, UpnpGatewayManager> getCachedGatewayManagers() {
+        return cachedGatewayManagers;
     }
 }
