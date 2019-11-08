@@ -294,12 +294,24 @@ public class Transaction {
 
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
                        byte chainId) {
-        this.nonce = ByteUtil.cloneBytes(nonce);
+        if (nonce != null){
+            this.nonce = ByteUtil.cloneBytes(nonce);
+        }else{
+            this.nonce = new byte[]{1};
+        }
         this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
-        this.gasLimit = ByteUtil.cloneBytes(gasLimit);
+        if (gasLimit != null){
+            this.gasLimit = ByteUtil.cloneBytes(gasLimit);
+        }else{
+            this.gasLimit = DEFAULT_GAS_LIMIT;
+        }
         this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
         this.value = RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw));
-        this.data = ByteUtil.cloneBytes(data);
+        if (data != null){
+            this.data = ByteUtil.cloneBytes(data);
+        }else{
+            this.data = null;
+        }
         this.chainId = chainId;
         this.isLocalCall = false;
         this.version = 1;
@@ -693,7 +705,7 @@ public class Transaction {
             }
 
             byte[] toEncodeValue = null;
-            if (this.value != null){
+            if (this.value != null && !this.value.equals(Coin.ZERO)){
                 byte[] valueBytes = this.value.getBytes();
                 toEncodeValue = new byte[1 + valueBytes.length];
                 toEncodeValue[0] = AMOUNT_ID;

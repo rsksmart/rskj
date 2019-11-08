@@ -46,6 +46,8 @@ import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -751,8 +753,8 @@ public class TransactionTest {
 	}
 
 	@Test
-    public void testFormat1() throws IOException {
-		//0x01 | RLPList( RLP(0x020102030405060708090A0102030405060708090A), RLP(0x0501020304))
+    public void testFormat1Decode() throws IOException {
+		//0x01 | RLPList( RLP(0x020102030405060708090A0102030405060708090A), RLP(0x0501020304), RLP(030102))
 		byte[] ele1 = RLP.encodeElement(Hex.decode("020102030405060708090A0102030405060708090A"));
 		byte[] ele2 = RLP.encodeElement(Hex.decode("0501020304"));
 		byte[] ele3 = RLP.encodeElement(Hex.decode("030102"));
@@ -770,14 +772,102 @@ public class TransactionTest {
 		ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
 		baos2.write(0x1);
 		baos2.write(eleList);
-		byte[] format1Trx = baos2.toByteArray();
-		ImmutableTransaction trx = new ImmutableTransaction(format1Trx);
-		Assert.assertEquals(trx.getReceiveAddress(), new RskAddress("0102030405060708090A0102030405060708090A"));
-		Assert.assertEquals(Arrays.equals(trx.getData(), new byte[]{1,2,3,4}), true);
-		Assert.assertEquals(Arrays.equals(trx.getNonce(), new byte[]{1}),true);
-		Assert.assertEquals(trx.getValue().equals(Coin.ZERO), true);
-		Assert.assertEquals(Arrays.equals(trx.getGasLimit(), new byte[]{0x75,0x30}), true);
+		byte[] format1Tx = baos2.toByteArray();
+		ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+		Assert.assertEquals(Arrays.equals(tx.getNonce(), new byte[]{1}),true);
+		Assert.assertEquals(tx.getValue().equals(Coin.ZERO), true);
+		Assert.assertEquals(tx.getReceiveAddress(), new RskAddress("0102030405060708090A0102030405060708090A"));
+		Assert.assertEquals(tx.getGasPrice(), new Coin(Hex.decode("0102")));
+		Assert.assertEquals(Arrays.equals(tx.getGasLimit(), new byte[]{0x75,0x30}), true);
+		Assert.assertEquals(Arrays.equals(tx.getData(), new byte[]{1,2,3,4}), true);
+		
 	}
+
+	@Test
+	public void testFormat1Encode1() throws InterruptedException
+	{
+		byte[] privKey = HashUtil.keccak256("cat".getBytes());
+        ECKey ecKey = ECKey.fromPrivate(privKey);
+
+        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
+
+        byte[] nonce = new byte[]{5};
+		byte[] value = new byte[]{6};
+		byte[] receiveAddress = Hex.decode("0102030405060708090A0102030405060708090A");
+		byte[] data = new byte[]{1,2,3,4,5,6};
+        byte[] gasPrice = Hex.decode("09184e72a000");
+        byte[] gasLimit = Hex.decode("1000");
+		Transaction tx = new Transaction(
+                nonce,
+                gasPrice,
+                gasLimit,
+                receiveAddress,
+				value,
+                data);
+		tx.sign(privKey);
+		byte[] encoded = tx.getEncoded();
+		Assert.assertEquals(encoded[0], 1);
+
+        byte[] encodedWithoutLeadingOne = Arrays.copyOfRange(encoded, 1, encoded.length);
+		List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
+		Assert.assertEquals(rlpList.size(), 7);
+		Assert.assertEquals(Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0005")), true);
+		Assert.assertEquals(Arrays.equals(rlpList.get(1).getRLPData(), Hex.decode("0106")), true);
+		Assert.assertEquals(Arrays.equals(rlpList.get(2).getRLPData(), Hex.decode("020102030405060708090A0102030405060708090A")), true);
+		Assert.assertEquals(Arrays.equals(rlpList.get(3).getRLPData(), Hex.decode("0309184e72a000")), true);
+		Assert.assertEquals(Arrays.equals(rlpList.get(4).getRLPData(), Hex.decode("041000")), true);
+        Assert.assertEquals(Arrays.equals(rlpList.get(5).getRLPData(), Hex.decode("05010203040506")), true);
+
+	}
+
+    @Test
+	public void testFormat1Encode2() throws InterruptedException
+	{
+		byte[] privKey = HashUtil.keccak256("cat".getBytes());
+        ECKey ecKey = ECKey.fromPrivate(privKey);
+
+        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
+        byte[] gasPrice = Hex.decode("09184e72a000");
+        Transaction tx = new Transaction(
+                null,
+                gasPrice,
+                null,
+                null,
+				null,
+                null);
+		tx.sign(privKey);
+		byte[] encoded = tx.getEncoded();
+		Assert.assertEquals(encoded[0], 1);
+        byte[] encodedWithoutLeadingOne = Arrays.copyOfRange(encoded, 1, encoded.length);
+		List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
+		Assert.assertEquals(rlpList.size(), 2);
+		Assert.assertEquals(Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0309184e72a000")), true);
+	}
+
+    @Test
+	public void testFormat1EncodeForBlock() throws InterruptedException{
+byte[] privKey = HashUtil.keccak256("cat".getBytes());
+        ECKey ecKey = ECKey.fromPrivate(privKey);
+
+        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
+        byte[] gasPrice = Hex.decode("09184e72a000");
+        Transaction tx = new Transaction(
+                null,
+                gasPrice,
+                null,
+                null,
+				null,
+                null);
+		tx.sign(privKey);
+		byte[] encoded = tx.getEncodedForBlock();
+		Assert.assertEquals(encoded[0], 1);
+        byte[] encodedWithoutLeadingOne = Arrays.copyOfRange(encoded, 1, encoded.length);
+		List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
+		Assert.assertEquals(rlpList.size(), 1);
+		Assert.assertEquals(Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0309184e72a000")), true);
+	}
+	
+
 
     private Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, final Repository repository) throws InterruptedException {
         return createTx(sender, receiveAddress, data, 0, repository.getNonce(new RskAddress(sender.getAddress())));
