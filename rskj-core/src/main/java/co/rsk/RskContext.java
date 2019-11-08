@@ -49,6 +49,7 @@ import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.net.discovery.upnp.UpnpService;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -235,6 +236,7 @@ public class RskContext implements NodeBootstrapper {
     private StatusResolver statusResolver;
     private Web3InformationRetriever web3InformationRetriever;
     private BootstrapImporter bootstrapImporter;
+    private UpnpService upnpService;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -772,10 +774,15 @@ public class RskContext implements NodeBootstrapper {
             internalServices.add(getWeb3WebSocketServer());
         }
         if (getRskSystemProperties().isPeerDiscoveryEnabled()) {
+            boolean isUpnpEnabled = getRskSystemProperties().isPeerDiscoveryByUpnpEnabled();
+            if (isUpnpEnabled) {
+                internalServices.add(getUpnpService());
+            }
             internalServices.add(new UDPServer(
                     getRskSystemProperties().getBindAddress().getHostAddress(),
                     getRskSystemProperties().getPeerPort(),
-                    getPeerExplorer()
+                    getPeerExplorer(),
+                    isUpnpEnabled ? Optional.of(getUpnpService()) : Optional.empty()
             ));
         }
         if (getRskSystemProperties().isSyncEnabled()) {
@@ -1624,6 +1631,13 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return minerClock;
+    }
+
+    private UpnpService getUpnpService() {
+        if (upnpService == null) {
+            upnpService = new UpnpService();
+        }
+        return upnpService;
     }
 
     public org.ethereum.db.BlockStore buildBlockStore(String databaseDir) {
