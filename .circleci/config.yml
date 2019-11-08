@@ -80,6 +80,10 @@ jobs:
           path: ~/junit
       - store_artifacts:
           path: ~/junit
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
   mining-tests:
     executor: mit-executor
     steps:
@@ -154,12 +158,12 @@ workflows:
   build-and-test:
     jobs:
       - build
-      - sonarqube:
-          requires:
-            - build
       - rskj-tests:
           requires:
             - build
+      - sonarqube:
+          requires:
+            - rskj-tests
       - mining-tests:
           requires:
             - rskj-tests
