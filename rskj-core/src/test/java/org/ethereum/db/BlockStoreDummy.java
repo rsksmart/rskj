@@ -54,11 +54,6 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public Block getBlockByHashAndDepth(byte[] hash, long depth) {
-        return null;
-    }
-
-    @Override
     public Block getBlockAtDepthStartingAt(long depth, byte[] hash) {
         return null;
     }

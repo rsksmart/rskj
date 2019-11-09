@@ -926,7 +926,7 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return new MultiTrieStore(
-                currentEpoch,
+                currentEpoch + 1,
                 numberOfEpochs,
                 name -> buildTrieStore(multiTrieStoreNamePrefix + name),
                 disposedEpoch -> FileUtil.recursiveDelete(databasePath.resolve(multiTrieStoreNamePrefix + disposedEpoch).toString())
