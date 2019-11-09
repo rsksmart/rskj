@@ -174,6 +174,28 @@ public class Transaction {
         return elements;
     }
 
+    private static byte[][] parseSignature(byte[] rsvFromEncodeTx, byte[] encodedRSV){
+        if (rsvFromEncodeTx == null && encodedRSV == null){
+                throw new IllegalArgumentException("A transaction must be signed");
+        }
+        byte[] encoded = null;
+        if(rsvFromEncodeTx != null) {
+            encoded = rsvFromEncodeTx;
+        }else{
+            encoded = encodedRSV;
+        }
+        List<RLPElement> comps =  RLP.decodeList(encoded);
+        if (comps.size() != 3) {
+             throw new IllegalArgumentException("A signature must have exactly 3 elements");
+        }
+        byte[][] rsv = new byte[3][];
+
+        rsv[0] = comps.get(0).getRLPData();
+        rsv[1] = comps.get(1).getRLPData();
+        rsv[2] = comps.get(2).getRLPData();
+        return rsv;
+    }
+
     protected Transaction(byte[] rawData, byte[] encodedRSV) {
         if (rawData[0] != FORMAT_ONE_LEADING){
             this.version = 0;
@@ -223,24 +245,9 @@ public class Transaction {
             }
             this.data = elements.get(DATA_ID);
             byte[] tmpSignature = elements.get(SIGNATURE_ID);
-            if (tmpSignature == null && encodedRSV == null){
-                throw new IllegalArgumentException("A transaction must be signed");
-            }else {
-                List<RLPElement> comps;
-                if (tmpSignature != null){
-                    comps =  RLP.decodeList(tmpSignature);
-                }else{
-                    comps =  RLP.decodeList(encodedRSV);
-                }
-                if (comps.size() != 3) {
-                    throw new IllegalArgumentException("A signature must have exactly 3 elements");
-                }
-                byte[] r = comps.get(0).getRLPData();
-                byte[] s = comps.get(1).getRLPData();
-                byte[] v = comps.get(2).getRLPData();
-                this.signature = ECDSASignature.fromComponents(r, s, getRealV(v[0]));
-                this.chainId = extractChainIdFromV(v[0]);
-            }
+            byte[][] rsv = parseSignature(tmpSignature, encodedRSV);
+            this.signature = ECDSASignature.fromComponents(rsv[0], rsv[1], getRealV(rsv[2][0]));
+            this.chainId = extractChainIdFromV(rsv[2][0]);
         }
     }
 

@@ -42,7 +42,7 @@ public class BodyResponseMessage extends MessageWithId {
             rlpUncles[k] = this.uncles.get(k).getFullEncoded();
         }
         
-        List<byte[]> encodeSigs = new ArrayList<byte[]>();
+        List<byte[]> encodeSigs = new ArrayList<>();
         for (int j = 0; j < transactions.size(); j++) {
             Transaction tx = transactions.get(j);
             if (tx.getVersion() == 1){
@@ -51,7 +51,7 @@ public class BodyResponseMessage extends MessageWithId {
                 encodeSigs.add(RLP.encodeList(txIdx, rsv));
             }
         }
-        if (encodeSigs.size()>0){
+        if (!encodeSigs.isEmpty()){
             rlpSigs = encodeSigs.toArray(new byte[encodeSigs.size()][]);
         }
 

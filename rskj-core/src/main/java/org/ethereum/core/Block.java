@@ -29,7 +29,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.RLP;
-import org.ethereum.crypto.ECKey.ECDSASignature;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
