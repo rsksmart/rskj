@@ -57,8 +57,6 @@ public class Block {
 
     private List<BlockHeader> uncleList;
 
-    private List<ECDSASignature> sigsList;
-
     /* Private */
     private byte[] rlpEncoded;
 
@@ -66,15 +64,6 @@ public class Block {
     private volatile boolean sealed;
 
     public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed) {
-        this(header,
-                transactionsList,
-                uncleList,
-                new ArrayList<ECDSASignature>(),
-                isRskip126Enabled,
-                sealed);
-    }
-
-    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, List<ECDSASignature> sigsList, boolean isRskip126Enabled, boolean sealed) {
         byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskip126Enabled);
         if (!Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
             String message = String.format(
@@ -87,7 +76,6 @@ public class Block {
         this.header = header;
         this.transactionsList = Collections.unmodifiableList(transactionsList);
         this.uncleList = Collections.unmodifiableList(uncleList);
-        this.sigsList = Collections.unmodifiableList(sigsList);
         this.sealed = sealed;
     }
 
@@ -298,7 +286,7 @@ public class Block {
     }
 
     private byte[] getVersionOneSigList(){
-        List<byte[]> encodeSigs = new ArrayList<byte[]>();
+        List<byte[]> encodeSigs = new ArrayList<>();
         for (int j = 0; j < transactionsList.size(); j++) {
             Transaction tx = transactionsList.get(j);
             if (tx.getVersion() == 1){
@@ -307,11 +295,11 @@ public class Block {
                 encodeSigs.add(RLP.encodeList(txIdx, rsv));
             }
         }
-        if (encodeSigs.size()>0){
+        if (!encodeSigs.isEmpty()){
             byte[][] sigsArray = encodeSigs.toArray(new byte[encodeSigs.size()][]);
             return RLP.encodeList(sigsArray);
         }
-        return null;
+        return new byte[0];
 
     }
 
@@ -323,7 +311,7 @@ public class Block {
         List<byte[]> body = new ArrayList<>();
         body.add(transactions);
         body.add(uncles);
-        if (sigs != null){
+        if (sigs != null && sigs.length > 0){
             body.add(sigs);
         }
         return body;

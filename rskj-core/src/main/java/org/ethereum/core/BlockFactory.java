@@ -68,7 +68,7 @@ public class BlockFactory {
         RLPList rlpHeader = (RLPList) block.get(0);
         BlockHeader header = decodeHeader(rlpHeader, sealed);
 
-        Map<Integer, byte[]> sigsMap = new HashMap<Integer, byte[]>();
+        Map<Integer, byte[]> sigsMap = new HashMap<>();
         if (block.size() == 4){
             RLPList rlpSigsList = (RLPList)block.get(3);
             for (RLPElement rlpSig: rlpSigsList){

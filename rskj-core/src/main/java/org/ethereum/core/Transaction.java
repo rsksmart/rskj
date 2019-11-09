@@ -39,7 +39,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -48,8 +47,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Arrays;
@@ -160,13 +157,13 @@ public class Transaction {
             }
         }else{
             version = 1;
-            byte[] nonce = new byte[]{1};
-            RskAddress receiveAddress = RskAddress.nullAddress();
-            Coin value = Coin.ZERO;
-            Coin gasPrice = null;
-            byte[] gasLimit = DEFAULT_GAS_LIMIT;
-            byte[] data = null;
-            byte[] signature = null;
+            byte[] tmpNonce = new byte[]{1};
+            RskAddress tmpReceiveAddress = RskAddress.nullAddress();
+            Coin tmpValue = Coin.ZERO;
+            Coin tmpGasPrice = null;
+            byte[] tmpGasLimit = DEFAULT_GAS_LIMIT;
+            byte[] tmpData = null;
+            byte[] tmpSignature = null;
 
             byte[] realRLPEncoded = Arrays.copyOfRange(rawData, 1, rawData.length);
             List<RLPElement> transaction = RLP.decodeList(realRLPEncoded);
@@ -177,56 +174,56 @@ public class Transaction {
                 byte[] realElementData = Arrays.copyOfRange(eleData, 1, eleData.length);
                 switch (type) {
                     case NONCE_ID:
-                        nonce = realElementData;
+                        tmpNonce = realElementData;
                         break;
                     case RECEIVER_ID:
-                        receiveAddress = RLP.parseRskAddress(realElementData);
-                        if (receiveAddress.equals(RskAddress.nullAddress())){
+                        tmpReceiveAddress = RLP.parseRskAddress(realElementData);
+                        if (tmpReceiveAddress.equals(RskAddress.nullAddress())){
                             throw new IllegalArgumentException("Transaction format one should not contain default receiver address");   
                         }   
                         break;
                     case AMOUNT_ID:
-                        value = RLP.parseCoinNonNullZero(realElementData);
-                        if (value.equals(Coin.ZERO)){
+                        tmpValue = RLP.parseCoinNonNullZero(realElementData);
+                        if (tmpValue.equals(Coin.ZERO)){
                             throw new IllegalArgumentException("Transaction format one should not contain default value");   
                         }
                         break;
                     case GAS_PRICE_ID:
-                        gasPrice = RLP.parseCoinNonNullZero(realElementData);
+                        tmpGasPrice = RLP.parseCoinNonNullZero(realElementData);
                         break;
                     case GAS_LIMIT_ID:
-                        gasLimit = realElementData;
+                        tmpGasLimit = realElementData;
                         if (Arrays.equals(gasLimit, DEFAULT_GAS_LIMIT)){
                             throw new IllegalArgumentException("Transaction format one should not contain default gas limit");   
                         }
                         break;
                     case DATA_ID:
-                        data = realElementData;
+                        tmpData = realElementData;
                         break;
                     case SIGNATURE_ID:
-                        signature = realElementData;
+                        tmpSignature = realElementData;
                         break;
                     default:
                         throw new IllegalArgumentException("A transaction contain a unknown element id");     
                 }
             } 
-            this.nonce = nonce;
-            this.value = value;
-            this.receiveAddress = receiveAddress;
-            if (gasPrice == null){
+            this.nonce = tmpNonce;
+            this.value = tmpValue;
+            this.receiveAddress = tmpReceiveAddress;
+            if (tmpGasPrice == null){
                 throw new IllegalArgumentException("A transaction must contain gas price");
             }else{
-                this.gasPrice = gasPrice;
+                this.gasPrice = tmpGasPrice;
             }
-            this.gasLimit = gasLimit;
-            this.data = data;
+            this.gasLimit = tmpGasLimit;
+            this.data = tmpData;
             
-            if (signature == null && encodedRSV == null){
+            if (tmpSignature == null && encodedRSV == null){
                 throw new IllegalArgumentException("A transaction must be signed");
             }else {
                 List<RLPElement> comps;
-                if (signature != null){
-                    comps =  RLP.decodeList(signature);
+                if (tmpSignature != null){
+                    comps =  RLP.decodeList(tmpSignature);
                 }else{
                     comps =  RLP.decodeList(encodedRSV);
                 }
@@ -756,17 +753,15 @@ public class Transaction {
             }
             
             byte[] toEncodeSig = null;
-            if (versionOneContainSig){
-                if (v != null && r != null && s != null){
-                    byte[] sigList = RLP.encodeList(r,s,v);
-                    toEncodeSig = new byte[1 + sigList.length];
-                    toEncodeSig[0] = SIGNATURE_ID;
-                    System.arraycopy(sigList, 0, toEncodeSig, 1, sigList.length);
-                    toEncodeSig = RLP.encodeElement(toEncodeSig);
-                }
+            if (versionOneContainSig && v != null && r != null && s != null){
+                byte[] sigList = RLP.encodeList(r,s,v);
+                toEncodeSig = new byte[1 + sigList.length];
+                toEncodeSig[0] = SIGNATURE_ID;
+                System.arraycopy(sigList, 0, toEncodeSig, 1, sigList.length);
+                toEncodeSig = RLP.encodeElement(toEncodeSig);
             }
 
-            List<byte[]> toEncodedElements = new ArrayList<byte[]>();
+            List<byte[]> toEncodedElements = new ArrayList<>();
             if (toEncodeNonce != null){
                 toEncodedElements.add(toEncodeNonce);
             }

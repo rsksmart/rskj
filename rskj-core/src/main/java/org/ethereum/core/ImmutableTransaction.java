@@ -1,6 +1,5 @@
 package org.ethereum.core;
 
-import org.ethereum.util.RLPList;
 
 /**
  * Created by ajlopez on 02/08/2017.
