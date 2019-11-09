@@ -253,20 +253,20 @@ public class Transaction {
     }
 
     private void checkVersionOneDoesNotContainDefaultValue(Map<Byte, byte[]> elements){
-        byte[] nonce = elements.get(NONCE_ID);
-        if (nonce != null && Arrays.equals(nonce, DEFAULT_NONCE)){
+        byte[] tmpNonce = elements.get(NONCE_ID);
+        if (tmpNonce != null && Arrays.equals(tmpNonce, DEFAULT_NONCE)){
             throw new IllegalArgumentException("Transaction format one should not contain default nonce");  
         }
-        byte[] receiveAddress = elements.get(RECEIVER_ID);
-        if (receiveAddress != null && RLP.parseRskAddress(receiveAddress).equals(RskAddress.nullAddress())){
+        byte[] tmpReceiveAddress = elements.get(RECEIVER_ID);
+        if (tmpReceiveAddress != null && RLP.parseRskAddress(tmpReceiveAddress).equals(RskAddress.nullAddress())){
             throw new IllegalArgumentException("Transaction format one should not contain default receiver address");   
         }
-        byte[] value = elements.get(AMOUNT_ID);
-        if (value != null && Arrays.equals(value, Coin.ZERO.getBytes())){
+        byte[] tmpValue = elements.get(AMOUNT_ID);
+        if (tmpValue != null && Arrays.equals(tmpValue, Coin.ZERO.getBytes())){
             throw new IllegalArgumentException("Transaction format one should not contain default value");
         }
-        byte[] gasLimit = elements.get(GAS_LIMIT_ID);
-        if (gasLimit != null && Arrays.equals(gasLimit, DEFAULT_GAS_LIMIT)){
+        byte[] tmpGasLimit = elements.get(GAS_LIMIT_ID);
+        if (tmpGasLimit != null && Arrays.equals(tmpGasLimit, DEFAULT_GAS_LIMIT)){
             throw new IllegalArgumentException("Transaction format one should not contain default gas limit");   
         }
     }
