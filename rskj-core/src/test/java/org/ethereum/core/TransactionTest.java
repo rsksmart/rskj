@@ -860,7 +860,7 @@ public class TransactionTest {
 
     @Test
     public void testFormat1EncodeForBlock() throws InterruptedException{
-byte[] privKey = HashUtil.keccak256("cat".getBytes());
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
         ECKey ecKey = ECKey.fromPrivate(privKey);
 
         byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
@@ -873,12 +873,16 @@ byte[] privKey = HashUtil.keccak256("cat".getBytes());
                 null,
                 null);
         tx.sign(privKey);
+        byte[] encodedRSV = tx.getEncodedRSV();
         byte[] encoded = tx.getEncodedForBlock();
         Assert.assertEquals(1, encoded[0]);
         byte[] encodedWithoutLeadingOne = Arrays.copyOfRange(encoded, 1, encoded.length);
         List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
         Assert.assertEquals(1, rlpList.size());
         Assert.assertEquals(true, Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0309184e72a000")));
+        Transaction tx2 = new Transaction(encoded, encodedRSV);
+        Assert.assertEquals(tx, tx2);
+
     }
     
 
