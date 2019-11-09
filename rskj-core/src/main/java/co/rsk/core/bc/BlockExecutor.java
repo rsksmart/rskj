@@ -104,6 +104,7 @@ public class BlockExecutor {
     private void fill(Block block, BlockResult result) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.FILLING_EXECUTED_BLOCK);
         BlockHeader header = block.getHeader();
+        // TODO RSKIP144 ExecutedTransactions shall be ordered according to the partition scheme
         block.setTransactionsList(result.getExecutedTransactions());
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, block.getNumber());
         header.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskip126Enabled));
@@ -481,6 +482,7 @@ public class BlockExecutor {
 
         BlockResult result = new BlockResult(
                 block,
+                // TODO : RSKIP144 : rework executedTransactions so that there shall be ordered according to the partition scheme
                 blockSharedData.getExecutedTransactions(),
                 blockSharedData.getReceipts(),
                 blockSharedData.getTotalGasUsed(),
