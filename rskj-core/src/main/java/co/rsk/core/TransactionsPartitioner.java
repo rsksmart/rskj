@@ -35,17 +35,17 @@ public class TransactionsPartitioner {
         clearPartitionEnds(); // force to recompute it because the partitions map has changed
     }
 
-    public Collection<Transaction> getAllTransactionsSortedPerPartition() {
-        Collection<Transaction> listTransations = new ArrayList<>();
+    public List<Transaction> getAllTransactionsSortedPerPartition() {
+        List<Transaction> listTransactions = new ArrayList<>();
         int indexTx = 0;
         partitionEnds = new int[partitions.size()];
         for (int partId = 0; partId < partitions.size(); partId++) {
             Collection<Transaction> txs = partitions.get(partId);
-            listTransations.addAll(txs);
+            listTransactions.addAll(txs);
             indexTx += txs.size();
             partitionEnds[partId] = indexTx - 1;
         }
-        return listTransations;
+        return listTransactions;
     }
 
     private void clearPartitionEnds() {

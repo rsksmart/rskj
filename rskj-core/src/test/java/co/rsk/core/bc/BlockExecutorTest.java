@@ -836,6 +836,68 @@ public class BlockExecutorTest {
         );
     }
 
+    @Test
+    public void reorderTransactionAndReceiptLists() {
+// first we modify the best block to have two accounts with balance
+        Repository track = repository.startTracking();
+
+        long balance = 60000;
+        Account account1 = createAccount("acctest1", track, Coin.valueOf(balance));
+        balance += 10L;
+        Account account2 = createAccount("acctest2", track, Coin.valueOf(balance));
+        balance += 10L;
+        Account account3 = createAccount("acctest3", track, Coin.valueOf(balance));
+        balance += 10L;
+        Account account4 = createAccount("acctest4", track, Coin.valueOf(balance));
+        balance += 10L;
+        Account account5 = createAccount("acctest5", track, Coin.valueOf(balance));
+        balance += 10L;
+        Account account6 = createAccount("acctest6", track, Coin.valueOf(balance));
+        balance += 10L;
+        Account account7 = createAccount("acctest7", track, Coin.valueOf(balance));
+        balance += 10L;
+        Account account8 = createAccount("acctest8", track, Coin.valueOf(balance));
+        balance += 10L;
+        Account account9 = createAccount("acctest9", track, Coin.valueOf(balance));
+
+        track.commit();
+
+        Transaction tx1 = createTransaction(account1, account2, BigInteger.TEN, repository.getNonce(account1.getAddress()));
+        TransactionReceipt r1 = createReceipt(tx1);
+        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
+        TransactionReceipt r2 = createReceipt(tx2);
+        Transaction tx3 = createTransaction(account4, account5, BigInteger.TEN, repository.getNonce(account4.getAddress()));
+        TransactionReceipt r3 = createReceipt(tx3);
+        Transaction tx4 = createTransaction(account1, account6, BigInteger.TEN, repository.getNonce(account1.getAddress()).add(BigInteger.ONE));
+        TransactionReceipt r4 = createReceipt(tx4);
+        Transaction tx5 = createTransaction(account7, account8, BigInteger.TEN, repository.getNonce(account7.getAddress()));
+        TransactionReceipt r5 = createReceipt(tx5);
+        Transaction tx6 = createTransaction(account9, account5, BigInteger.TEN, repository.getNonce(account9.getAddress()));
+        TransactionReceipt r6 = createReceipt(tx6);
+
+        Transaction[] transactions = new Transaction[]{tx1, tx2, tx3, tx4, tx5, tx6};
+        List<Transaction> lstTransactions = new ArrayList<>(Arrays.asList(transactions));
+        TransactionReceipt[] receipts = new TransactionReceipt[]{r1, r2, r3, r4, r5, r6};
+        List<TransactionReceipt> lstReceipts = new ArrayList<>(Arrays.asList(receipts));
+
+        Transaction[] refTransactions = new Transaction[]{tx1, tx2, tx4, tx3, tx6, tx5};
+        TransactionReceipt[] expectedReceipts = new TransactionReceipt[]{r1, r2, r4, r3, r6, r5};
+
+        List<Transaction> referenceList = Arrays.asList(refTransactions);
+
+        BlockExecutor.reorderTransactionList(lstTransactions, referenceList);
+        Assert.assertArrayEquals(refTransactions, lstTransactions.toArray());
+
+        BlockExecutor.reorderTransactionReceiptList(lstReceipts, referenceList);
+        Assert.assertArrayEquals(expectedReceipts, lstReceipts.toArray());
+    }
+
+    private static TransactionReceipt createReceipt(Transaction tx) {
+        TransactionReceipt receipt = new TransactionReceipt();
+        receipt.setTransaction(tx);
+        return receipt;
+    }
+
     public static class TestObjects {
         private TrieStore trieStore;
         private Block block;

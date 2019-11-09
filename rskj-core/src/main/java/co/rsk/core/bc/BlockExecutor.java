@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.*;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.ICacheTracking;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
@@ -40,7 +41,9 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
@@ -104,7 +107,6 @@ public class BlockExecutor {
     private void fill(Block block, BlockResult result) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.FILLING_EXECUTED_BLOCK);
         BlockHeader header = block.getHeader();
-        // TODO RSKIP144 ExecutedTransactions shall be ordered according to the partition scheme
         block.setTransactionsList(result.getExecutedTransactions());
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, block.getNumber());
         header.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskip126Enabled));
@@ -416,6 +418,14 @@ public class BlockExecutor {
             track.getCacheTracking().subscribe(cacheTracker);
         }
 
+        TransactionsPartitioner partitioner = null;
+        if (!block.isSealed()) {
+            // filling block
+            partitioner = new TransactionsPartitioner();
+            // TODO when cacheTracker is replaced with transactionConflictDetector
+            //   transactionConflictDetector.addPartitioner(partitioner)
+        }
+
         for ( Transaction tx : block.getTransactionsList() ) {
 
             TransactionExecutorTask txExecutorTask = new TransactionExecutorTask(
@@ -480,6 +490,28 @@ public class BlockExecutor {
 
         track.save();
 
+        // RSKIP144 - now the transactions can be executed by several threads in parallel, meaning that the real order
+        // of executions (blockSharedData.getExecutedTransactions()) and the receipts list (blockSharedData.getReceipts())
+        // are not ordered according to the submission order specified (validating block) or to be specified (filling block)
+        // in the block.
+        // Here we need to reorder the 2 lists in the submission order before saving them in the BlockResult instance
+        // When filling the block, the submission order is determined taking into account the transaction partitioning
+        // across threads.
+        // When validating the block, the submission order is the one specified in the block to be validated
+        List<Transaction> transactionsList;
+        if (block.isSealed()) {
+            // validating block
+            transactionsList = block.getTransactionsList();
+            reorderTransactionList(blockSharedData.getExecutedTransactions(), transactionsList);
+            reorderTransactionReceiptList(blockSharedData.getReceipts(), transactionsList);
+        } else {
+            // filling block
+            transactionsList = partitioner.getAllTransactionsSortedPerPartition();
+            // TODO : now we dont use the partitioner during tx execution yet, then transactionsList is not correct yet
+            //  reorderTransactionList(blockSharedData.getExecutedTransactions(), transactionsList);
+            //  reorderTransactionReceiptList(blockSharedData.getReceipts(), transactionsList);
+        }
+
         BlockResult result = new BlockResult(
                 block,
                 // TODO : RSKIP144 : rework executedTransactions so that there shall be ordered according to the partition scheme
@@ -491,6 +523,31 @@ public class BlockExecutor {
         );
         profiler.stop(metric);
         return result;
+    }
+
+    @VisibleForTesting
+    public static void reorderTransactionList(List<Transaction> txs, List<Transaction> refList) {
+        List<Transaction> lstCopy = new ArrayList<>(txs);
+        txs.clear();
+        for (Transaction tx : refList) {
+            if (lstCopy.contains(tx)) {
+                txs.add(tx);
+            }
+        }
+    }
+
+    @VisibleForTesting
+    public static void reorderTransactionReceiptList(List<TransactionReceipt> receipts, List<Transaction> refList) {
+        List<Transaction> lstTxs = receipts.stream().map(receipt -> receipt.getTransaction()).collect(
+                                Collectors.toList());
+        Map<Keccak256, TransactionReceipt> mapReceipts = receipts.stream().collect(
+                Collectors.toMap(x -> x.getTransaction().getHash(), x -> x));
+        receipts.clear();
+        for (Transaction tx : refList) {
+            if (lstTxs.contains(tx)) {
+                receipts.add( mapReceipts.get(tx.getHash()) );
+            }
+        }
     }
 
     /**
