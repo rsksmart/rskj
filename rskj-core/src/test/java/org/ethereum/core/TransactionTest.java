@@ -872,6 +872,7 @@ public class TransactionTest {
                 null,
                 null,
                 null);
+        Assert.assertEquals(1, tx.getVersion());
         tx.sign(privKey);
         byte[] encodedRSV = tx.getEncodedRSV();
         byte[] encoded = tx.getEncodedForBlock();
@@ -882,7 +883,6 @@ public class TransactionTest {
         Assert.assertEquals(true, Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0309184e72a000")));
         Transaction tx2 = new Transaction(encoded, encodedRSV);
         Assert.assertEquals(tx, tx2);
-
     }
     
 
