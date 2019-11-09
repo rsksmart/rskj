@@ -51,6 +51,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -83,7 +85,7 @@ public class Transaction {
     // default gaslimit is 30000
     private static final byte[] DEFAULT_GAS_LIMIT = new byte[]{0x75,0x30};
 
-    private final int version;
+    private int version;
     
     /**
      * Since EIP-155, we could encode chainId in V
@@ -125,9 +127,56 @@ public class Transaction {
         this(rawData, null);
     }
     
+    private Map<Byte, byte[]> parseVersionOne(byte[] rawData){
+        Map<Byte, byte[]> elements = new HashMap<>();
+        byte[] realRLPEncoded = Arrays.copyOfRange(rawData, 1, rawData.length);
+        List<RLPElement> transaction = RLP.decodeList(realRLPEncoded);
+        for (RLPElement element : transaction){
+            byte[] eleData = element.getRLPData();
+            //elememt id contained in lower 5 bits 
+            int type = eleData[0] & (byte)0x1f; 
+            byte[] realElementData = Arrays.copyOfRange(eleData, 1, eleData.length);
+            switch (type) {
+                case NONCE_ID:
+                    elements.put(NONCE_ID, realElementData);
+                    break;
+                case RECEIVER_ID:
+                    elements.put(RECEIVER_ID, realElementData);
+                    if (RLP.parseRskAddress(realElementData).equals(RskAddress.nullAddress())){
+                        throw new IllegalArgumentException("Transaction format one should not contain default receiver address");   
+                    }   
+                    break;
+                case AMOUNT_ID:
+                    elements.put(AMOUNT_ID, realElementData);
+                    if (RLP.parseCoinNonNullZero(realElementData).equals(Coin.ZERO)){
+                        throw new IllegalArgumentException("Transaction format one should not contain default value");   
+                    }
+                    break;
+                case GAS_PRICE_ID:
+                    elements.put(GAS_PRICE_ID, realElementData);
+                    break;
+                case GAS_LIMIT_ID:
+                    elements.put(GAS_LIMIT_ID, realElementData);
+                    if (Arrays.equals(realElementData, DEFAULT_GAS_LIMIT)){
+                        throw new IllegalArgumentException("Transaction format one should not contain default gas limit");   
+                    }
+                    break;
+                case DATA_ID:
+                    elements.put(DATA_ID, realElementData);
+                    break;
+                case SIGNATURE_ID:
+                    elements.put(SIGNATURE_ID, realElementData);
+                    break;
+                default:
+                    throw new IllegalArgumentException("A transaction contain a unknown element id");     
+            }
+        } 
+        return elements;
+    }
+
     protected Transaction(byte[] rawData, byte[] encodedRSV) {
         if (rawData[0] != FORMAT_ONE_LEADING){
-            version = 0;
+            this.version = 0;
             List<RLPElement> transaction = RLP.decodeList(rawData);
             if (transaction.size() != 9) {
                 throw new IllegalArgumentException("A transaction must have exactly 9 elements");
@@ -142,10 +191,9 @@ public class Transaction {
 
             // only parse signature in case tx is signed
             byte[] vData = transaction.get(6).getRLPData();
-            if (vData != null) {
-                if (vData.length != 1) {
-                    throw new TransactionException("Signature V is invalid");
-                }
+            if (vData != null && vData.length != 1) {  
+                throw new TransactionException("Signature V is invalid");
+            }else if (vData != null){
                 byte v = vData[0];
                 this.chainId = extractChainIdFromV(v);
                 byte[] r = transaction.get(7).getRLPData();
@@ -156,68 +204,25 @@ public class Transaction {
                 logger.trace("RLP encoded tx is not signed!");
             }
         }else{
-            version = 1;
-            byte[] tmpNonce = new byte[]{1};
-            RskAddress tmpReceiveAddress = RskAddress.nullAddress();
-            Coin tmpValue = Coin.ZERO;
-            Coin tmpGasPrice = null;
-            byte[] tmpGasLimit = DEFAULT_GAS_LIMIT;
-            byte[] tmpData = null;
-            byte[] tmpSignature = null;
-
-            byte[] realRLPEncoded = Arrays.copyOfRange(rawData, 1, rawData.length);
-            List<RLPElement> transaction = RLP.decodeList(realRLPEncoded);
-            for (RLPElement element : transaction){
-                byte[] eleData = element.getRLPData();
-                //elememt id contained in lower 5 bits 
-                int type = eleData[0] & (byte)0x1f; 
-                byte[] realElementData = Arrays.copyOfRange(eleData, 1, eleData.length);
-                switch (type) {
-                    case NONCE_ID:
-                        tmpNonce = realElementData;
-                        break;
-                    case RECEIVER_ID:
-                        tmpReceiveAddress = RLP.parseRskAddress(realElementData);
-                        if (tmpReceiveAddress.equals(RskAddress.nullAddress())){
-                            throw new IllegalArgumentException("Transaction format one should not contain default receiver address");   
-                        }   
-                        break;
-                    case AMOUNT_ID:
-                        tmpValue = RLP.parseCoinNonNullZero(realElementData);
-                        if (tmpValue.equals(Coin.ZERO)){
-                            throw new IllegalArgumentException("Transaction format one should not contain default value");   
-                        }
-                        break;
-                    case GAS_PRICE_ID:
-                        tmpGasPrice = RLP.parseCoinNonNullZero(realElementData);
-                        break;
-                    case GAS_LIMIT_ID:
-                        tmpGasLimit = realElementData;
-                        if (Arrays.equals(gasLimit, DEFAULT_GAS_LIMIT)){
-                            throw new IllegalArgumentException("Transaction format one should not contain default gas limit");   
-                        }
-                        break;
-                    case DATA_ID:
-                        tmpData = realElementData;
-                        break;
-                    case SIGNATURE_ID:
-                        tmpSignature = realElementData;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("A transaction contain a unknown element id");     
-                }
-            } 
-            this.nonce = tmpNonce;
-            this.value = tmpValue;
-            this.receiveAddress = tmpReceiveAddress;
-            if (tmpGasPrice == null){
-                throw new IllegalArgumentException("A transaction must contain gas price");
-            }else{
-                this.gasPrice = tmpGasPrice;
+            this.version = 1;
+            Map<Byte, byte[]> elements = parseVersionOne(rawData);
+            byte[] tmpNonce = elements.get(NONCE_ID);
+            if (tmpNonce == null){
+                tmpNonce = new byte[]{1};
             }
-            this.gasLimit = tmpGasLimit;
-            this.data = tmpData;
-            
+            this.nonce = tmpNonce;
+            this.value = RLP.parseCoinNullZero(elements.get(AMOUNT_ID));
+            this.receiveAddress = RLP.parseRskAddress(elements.get(RECEIVER_ID));
+            this.gasPrice = RLP.parseCoinNullZero(elements.get(GAS_PRICE_ID));
+            if (gasPrice.equals(Coin.ZERO)){
+                throw new IllegalArgumentException("A transaction must contain gas price");
+            }
+            this.gasLimit = elements.get(GAS_LIMIT_ID);
+            if (this.gasLimit == null){
+                this.gasLimit = DEFAULT_GAS_LIMIT;
+            }
+            this.data = elements.get(DATA_ID);
+            byte[] tmpSignature = elements.get(SIGNATURE_ID);
             if (tmpSignature == null && encodedRSV == null){
                 throw new IllegalArgumentException("A transaction must be signed");
             }else {
@@ -243,10 +248,6 @@ public class Transaction {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
     }
 
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, int version) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, version);
-    }
-
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
 
@@ -257,12 +258,6 @@ public class Transaction {
         this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
                 BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
                 data, chainId);
-    }
-
-    public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId, int version) {
-        this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
-                BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
-                data, chainId, version);
     }
 
     public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data,
@@ -312,19 +307,6 @@ public class Transaction {
         this.chainId = chainId;
         this.isLocalCall = false;
         this.version = 1;
-    }
-
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
-                       byte chainId, int version) {
-        this.nonce = ByteUtil.cloneBytes(nonce);
-        this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
-        this.gasLimit = ByteUtil.cloneBytes(gasLimit);
-        this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
-        this.value = RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw));
-        this.data = ByteUtil.cloneBytes(data);
-        this.chainId = chainId;
-        this.isLocalCall = false;
-        this.version = version;
     }
 
     public Transaction toImmutableTransaction() {
@@ -486,6 +468,10 @@ public class Transaction {
         this.rlpEncoding = null;
         this.hash = null;
         this.sender = null;
+    }
+
+    public void setVersion(int version){
+        this.version = version;
     }
     public void setSignature(byte[] r, byte[] s, byte[] v){
         this.signature = ECDSASignature.fromComponents(r, s, getRealV(v[0]));

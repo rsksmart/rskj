@@ -305,7 +305,8 @@ public class TransactionTest {
 
 
         Transaction tx1 = new Transaction(nonce, gasPrice, gas,
-                recieveAddress, endowment, init, 0);
+                recieveAddress, endowment, init);
+        tx1.setVersion(0);
         tx1.sign(senderPrivKey);
 
         byte[] payload = tx1.getEncoded();
