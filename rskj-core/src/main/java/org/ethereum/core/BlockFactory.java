@@ -61,7 +61,7 @@ public class BlockFactory {
 
     private Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
-        if (block.size() != 3 || block.size() != 4) {
+        if (block.size() != 3 && block.size() != 4) {
             throw new IllegalArgumentException("A block must have 3 or 4 items");
         }
 
