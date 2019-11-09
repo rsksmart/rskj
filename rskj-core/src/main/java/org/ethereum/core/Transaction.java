@@ -663,6 +663,12 @@ public class Transaction {
         return ByteUtil.cloneBytes(this.rlpEncoding);
     }
     
+    private void addNonNull(List<byte[]> list, byte[] element){
+        if (element != null){
+           list.add(element);
+        }
+    }
+
     private List<byte[]> getVersionOneToBeEncoded(boolean versionOneContainSig, boolean forVersionOneFullRec, byte[] r, byte[] s, byte[] v){
             byte[] toEncodeNonce = null;
             if (!(this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 1)) {
@@ -736,25 +742,16 @@ public class Transaction {
             }
 
             List<byte[]> toEncodedElements = new ArrayList<>();
-            if (toEncodeNonce != null){
-                toEncodedElements.add(toEncodeNonce);
-            }
-            if (toEncodeValue != null){
-                toEncodedElements.add(toEncodeValue);
-            }
-            if (toEncodeReceiveAddress != null){
-                toEncodedElements.add(toEncodeReceiveAddress);
-            }
+            addNonNull(toEncodedElements, toEncodeNonce);
+            addNonNull(toEncodedElements, toEncodeValue);
+            addNonNull(toEncodedElements, toEncodeReceiveAddress);
             toEncodedElements.add(toEncodeGasPrice);
-            if (toEncodeGasLimit != null){
-                toEncodedElements.add(toEncodeGasLimit);
-            }
-            if (toEncodeData != null){
-                toEncodedElements.add(toEncodeData);
-            }
-            if (toEncodeSig != null){
-                toEncodedElements.add(toEncodeSig);
-            }
+            addNonNull(toEncodedElements, toEncodeGasLimit);
+            addNonNull(toEncodedElements, toEncodeData);
+            addNonNull(toEncodedElements, toEncodeSig);
+            
+
+
             return toEncodedElements;
     }
 
