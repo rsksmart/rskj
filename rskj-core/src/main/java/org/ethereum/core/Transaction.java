@@ -127,79 +127,6 @@ public class Transaction {
         this(rawData, null);
     }
     
-    private Map<Byte, byte[]> parseVersionOne(byte[] rawData){
-        Map<Byte, byte[]> elements = new HashMap<>();
-        byte[] realRLPEncoded = Arrays.copyOfRange(rawData, 1, rawData.length);
-        List<RLPElement> transaction = RLP.decodeList(realRLPEncoded);
-        for (RLPElement element : transaction){
-            byte[] eleData = element.getRLPData();
-            //elememt id contained in lower 5 bits 
-            int type = eleData[0] & (byte)0x1f; 
-            byte[] realElementData = Arrays.copyOfRange(eleData, 1, eleData.length);
-            switch (type) {
-                case NONCE_ID:
-                    elements.put(NONCE_ID, realElementData);
-                    break;
-                case RECEIVER_ID:
-                    elements.put(RECEIVER_ID, realElementData);
-                    if (RLP.parseRskAddress(realElementData).equals(RskAddress.nullAddress())){
-                        throw new IllegalArgumentException("Transaction format one should not contain default receiver address");   
-                    }   
-                    break;
-                case AMOUNT_ID:
-                    elements.put(AMOUNT_ID, realElementData);
-                    if (RLP.parseCoinNonNullZero(realElementData).equals(Coin.ZERO)){
-                        throw new IllegalArgumentException("Transaction format one should not contain default value");   
-                    }
-                    break;
-                case GAS_PRICE_ID:
-                    elements.put(GAS_PRICE_ID, realElementData);
-                    break;
-                case GAS_LIMIT_ID:
-                    elements.put(GAS_LIMIT_ID, realElementData);
-                    if (Arrays.equals(realElementData, DEFAULT_GAS_LIMIT)){
-                        throw new IllegalArgumentException("Transaction format one should not contain default gas limit");   
-                    }
-                    break;
-                case DATA_ID:
-                    elements.put(DATA_ID, realElementData);
-                    break;
-                case SIGNATURE_ID:
-                    elements.put(SIGNATURE_ID, realElementData);
-                    break;
-                default:
-                    throw new IllegalArgumentException("A transaction contain a unknown element id");     
-            }
-        } 
-        return elements;
-    }
-
-    private static byte[][] parseSignature(byte[] rsvFromEncodeTx, byte[] encodedRSV){
-        if (rsvFromEncodeTx == null && encodedRSV == null){
-                throw new IllegalArgumentException("A transaction must be signed");
-        }
-        byte[] encoded = null;
-        if(rsvFromEncodeTx != null) {
-            encoded = rsvFromEncodeTx;
-        }else{
-            encoded = encodedRSV;
-        }
-        return parseSignature(encoded);
-    }
-
-    private static byte[][] parseSignature(byte[] encodedRSV){
-        List<RLPElement> comps =  RLP.decodeList(encodedRSV);
-        if (comps.size() != 3) {
-             throw new IllegalArgumentException("A signature must have exactly 3 elements");
-        }
-        byte[][] rsv = new byte[3][];
-
-        rsv[0] = comps.get(0).getRLPData();
-        rsv[1] = comps.get(1).getRLPData();
-        rsv[2] = comps.get(2).getRLPData();
-        return rsv;
-    }
-
     protected Transaction(byte[] rawData, byte[] encodedRSV) {
         if (rawData[0] != FORMAT_ONE_LEADING){
             this.version = 0;
@@ -322,6 +249,82 @@ public class Transaction {
 
     public Transaction toImmutableTransaction() {
         return new ImmutableTransaction(this.getEncoded());
+    }
+
+    private void checkVersionOneDoesNotContainDefaultValue(Map<Byte, byte[]> elements){
+        if (RLP.parseRskAddress(elements.get(RECEIVER_ID)).equals(RskAddress.nullAddress())){
+            throw new IllegalArgumentException("Transaction format one should not contain default receiver address");   
+        }   
+        if (RLP.parseCoinNonNullZero(elements.get(AMOUNT_ID)).equals(Coin.ZERO)){
+            throw new IllegalArgumentException("Transaction format one should not contain default value");
+        }
+        if (Arrays.equals(elements.get(GAS_LIMIT_ID), DEFAULT_GAS_LIMIT)){
+            throw new IllegalArgumentException("Transaction format one should not contain default gas limit");   
+        }
+    }
+
+    private Map<Byte, byte[]> parseVersionOne(byte[] rawData){
+        Map<Byte, byte[]> elements = new HashMap<>();
+        byte[] realRLPEncoded = Arrays.copyOfRange(rawData, 1, rawData.length);
+        List<RLPElement> transaction = RLP.decodeList(realRLPEncoded);
+        for (RLPElement element : transaction){
+            byte[] eleData = element.getRLPData();
+            //elememt id contained in lower 5 bits 
+            int type = eleData[0] & (byte)0x1f; 
+            byte[] realElementData = Arrays.copyOfRange(eleData, 1, eleData.length);
+            switch (type) {
+                case NONCE_ID:
+                    elements.put(NONCE_ID, realElementData);
+                    break;
+                case RECEIVER_ID:
+                    elements.put(RECEIVER_ID, realElementData);
+                    break;
+                case AMOUNT_ID:
+                    elements.put(AMOUNT_ID, realElementData);
+                    break;
+                case GAS_PRICE_ID:
+                    elements.put(GAS_PRICE_ID, realElementData);
+                    break;
+                case GAS_LIMIT_ID:
+                    elements.put(GAS_LIMIT_ID, realElementData);
+                    break;
+                case DATA_ID:
+                    elements.put(DATA_ID, realElementData);
+                    break;
+                case SIGNATURE_ID:
+                    elements.put(SIGNATURE_ID, realElementData);
+                    break;
+                default:
+                    throw new IllegalArgumentException("A transaction contain a unknown element id");     
+            }
+        } 
+        return elements;
+    }
+
+    private static byte[][] parseSignature(byte[] rsvFromEncodeTx, byte[] encodedRSV){
+        if (rsvFromEncodeTx == null && encodedRSV == null){
+                throw new IllegalArgumentException("A transaction must be signed");
+        }
+        byte[] encoded = null;
+        if(rsvFromEncodeTx != null) {
+            encoded = rsvFromEncodeTx;
+        }else{
+            encoded = encodedRSV;
+        }
+        return parseSignature(encoded);
+    }
+
+    private static byte[][] parseSignature(byte[] encodedRSV){
+        List<RLPElement> comps =  RLP.decodeList(encodedRSV);
+        if (comps.size() != 3) {
+             throw new IllegalArgumentException("A signature must have exactly 3 elements");
+        }
+        byte[][] rsv = new byte[3][];
+
+        rsv[0] = comps.get(0).getRLPData();
+        rsv[1] = comps.get(1).getRLPData();
+        rsv[2] = comps.get(2).getRLPData();
+        return rsv;
     }
 
     private byte extractChainIdFromV(byte v) {
@@ -668,91 +671,105 @@ public class Transaction {
            list.add(element);
         }
     }
+    
+    private byte[] toEncodeNonce(boolean forVersionOneFullRec){
+        byte[] toEncodeNonce = null;
+        if (!(this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 1)) {
+            toEncodeNonce = new byte[1 + this.nonce.length];
+            toEncodeNonce[0] = NONCE_ID;
+            System.arraycopy(this.nonce, 0, toEncodeNonce, 1, this.nonce.length);
+            toEncodeNonce = RLP.encodeElement(toEncodeNonce);
+        }else if (forVersionOneFullRec){
+            toEncodeNonce = new byte[1];
+            toEncodeNonce[0] = NONCE_ID;
+        }
+        return toEncodeNonce;
+    }
+
+    private byte[] toEncodeValue(boolean forVersionOneFullRec){
+        byte[] toEncodeValue = null;
+        if (this.value != null && !this.value.equals(Coin.ZERO)){
+            byte[] valueBytes = this.value.getBytes();
+            toEncodeValue = new byte[1 + valueBytes.length];
+            toEncodeValue[0] = AMOUNT_ID;
+            System.arraycopy(valueBytes, 0, toEncodeValue, 1, valueBytes.length);
+            toEncodeValue = RLP.encodeElement(toEncodeValue);
+        }else if (forVersionOneFullRec){
+            toEncodeValue = new byte[1];
+            toEncodeValue[0] = AMOUNT_ID;
+        }
+        return toEncodeValue;
+
+    }
+
+    private byte[] toEncodeReceiveAddress(boolean forVersionOneFullRec){
+        byte[] toEncodeReceiveAddress = null;
+        if (!this.receiveAddress.equals(RskAddress.nullAddress())){
+            byte[] addrBytes = this.receiveAddress.getBytes();
+            toEncodeReceiveAddress = new byte[1 + addrBytes.length];
+            toEncodeReceiveAddress[0] = RECEIVER_ID;
+            System.arraycopy(addrBytes, 0, toEncodeReceiveAddress, 1, addrBytes.length);
+            toEncodeReceiveAddress = RLP.encodeElement(toEncodeReceiveAddress);
+        }else if (forVersionOneFullRec){
+            toEncodeReceiveAddress = new byte[1];
+            toEncodeReceiveAddress[0] = RECEIVER_ID;
+        }
+        return toEncodeReceiveAddress;
+    }
+
+    private byte[] toEncodeGasLimit(boolean forVersionOneFullRec){
+         byte[] toEncodeGasLimit = null;
+        if (!Arrays.equals(this.gasLimit, DEFAULT_GAS_LIMIT)){
+            toEncodeGasLimit = new byte[1 + this.gasLimit.length];
+            toEncodeGasLimit[0] = GAS_LIMIT_ID;
+            System.arraycopy(this.gasLimit, 0, toEncodeGasLimit, 1, this.gasLimit.length);
+            toEncodeGasLimit = RLP.encodeElement(toEncodeGasLimit);
+        }else if (forVersionOneFullRec){
+            toEncodeGasLimit = new byte[1];
+            toEncodeGasLimit[0] = GAS_LIMIT_ID;
+        }
+        return toEncodeGasLimit;
+    }
+
+    private byte[] toEncodeData(boolean forVersionOneFullRec){
+        byte[] toEncodeData = null;
+        if (this.data != null){
+            toEncodeData = new byte[1 + this.data.length];
+            toEncodeData[0] = DATA_ID;
+            System.arraycopy(this.data, 0, toEncodeData, 1, this.data.length);
+            toEncodeData = RLP.encodeElement(toEncodeData);
+        }else if (forVersionOneFullRec){
+            toEncodeData = new byte[1];
+            toEncodeData[0] = DATA_ID;
+        }   
+        return toEncodeData;
+    }
 
     private List<byte[]> getVersionOneToBeEncoded(boolean versionOneContainSig, boolean forVersionOneFullRec, byte[] r, byte[] s, byte[] v){
-            byte[] toEncodeNonce = null;
-            if (!(this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 1)) {
-                toEncodeNonce = new byte[1 + this.nonce.length];
-                toEncodeNonce[0] = NONCE_ID;
-                System.arraycopy(this.nonce, 0, toEncodeNonce, 1, this.nonce.length);
-                toEncodeNonce = RLP.encodeElement(toEncodeNonce);
-            }else if (forVersionOneFullRec){
-                toEncodeNonce = new byte[1];
-                toEncodeNonce[0] = NONCE_ID;
-            }
-
-            byte[] toEncodeValue = null;
-            if (this.value != null && !this.value.equals(Coin.ZERO)){
-                byte[] valueBytes = this.value.getBytes();
-                toEncodeValue = new byte[1 + valueBytes.length];
-                toEncodeValue[0] = AMOUNT_ID;
-                System.arraycopy(valueBytes, 0, toEncodeValue, 1, valueBytes.length);
-                toEncodeValue = RLP.encodeElement(toEncodeValue);
-            }else if (forVersionOneFullRec){
-                toEncodeValue = new byte[1];
-                toEncodeValue[0] = AMOUNT_ID;
-            }
-
-            byte[] toEncodeReceiveAddress = null;
-            if (!this.receiveAddress.equals(RskAddress.nullAddress())){
-                byte[] addrBytes = this.receiveAddress.getBytes();
-                toEncodeReceiveAddress = new byte[1 + addrBytes.length];
-                toEncodeReceiveAddress[0] = RECEIVER_ID;
-                System.arraycopy(addrBytes, 0, toEncodeReceiveAddress, 1, addrBytes.length);
-                toEncodeReceiveAddress = RLP.encodeElement(toEncodeReceiveAddress);
-            }else if (forVersionOneFullRec){
-                toEncodeReceiveAddress = new byte[1];
-                toEncodeReceiveAddress[0] = RECEIVER_ID;
-            }
-
-            byte[] toEncodeGasPrice = new byte[1 + this.gasPrice.getBytes().length];
-            toEncodeGasPrice[0] = GAS_PRICE_ID;
-            System.arraycopy(this.gasPrice.getBytes(), 0, toEncodeGasPrice, 1, this.gasPrice.getBytes().length);
-            toEncodeGasPrice = RLP.encodeElement(toEncodeGasPrice);
-
-            byte[] toEncodeGasLimit = null;
-            if (!Arrays.equals(this.gasLimit, DEFAULT_GAS_LIMIT)){
-                toEncodeGasLimit = new byte[1 + this.gasLimit.length];
-                toEncodeGasLimit[0] = GAS_LIMIT_ID;
-                System.arraycopy(this.gasLimit, 0, toEncodeGasLimit, 1, this.gasLimit.length);
-                toEncodeGasLimit = RLP.encodeElement(toEncodeGasLimit);
-            }else if (forVersionOneFullRec){
-                toEncodeGasLimit = new byte[1];
-                toEncodeGasLimit[0] = GAS_LIMIT_ID;
-            }
-
-            byte[] toEncodeData = null;
-            if (this.data != null){
-                toEncodeData = new byte[1 + this.data.length];
-                toEncodeData[0] = DATA_ID;
-                System.arraycopy(this.data, 0, toEncodeData, 1, this.data.length);
-                toEncodeData = RLP.encodeElement(toEncodeData);
-            }else if (forVersionOneFullRec){
-                toEncodeData = new byte[1];
-                toEncodeData[0] = DATA_ID;
-            }
+        byte[] toEncodeGasPrice = new byte[1 + this.gasPrice.getBytes().length];
+        toEncodeGasPrice[0] = GAS_PRICE_ID;
+        System.arraycopy(this.gasPrice.getBytes(), 0, toEncodeGasPrice, 1, this.gasPrice.getBytes().length);
+        toEncodeGasPrice = RLP.encodeElement(toEncodeGasPrice);
             
-            byte[] toEncodeSig = null;
-            if (versionOneContainSig && v != null && r != null && s != null){
-                byte[] sigList = RLP.encodeList(r,s,v);
-                toEncodeSig = new byte[1 + sigList.length];
-                toEncodeSig[0] = SIGNATURE_ID;
-                System.arraycopy(sigList, 0, toEncodeSig, 1, sigList.length);
-                toEncodeSig = RLP.encodeElement(toEncodeSig);
-            }
+        byte[] toEncodeSig = null;
+        if (versionOneContainSig && v != null && r != null && s != null){
+            byte[] sigList = RLP.encodeList(r,s,v);
+            toEncodeSig = new byte[1 + sigList.length];
+            toEncodeSig[0] = SIGNATURE_ID;
+            System.arraycopy(sigList, 0, toEncodeSig, 1, sigList.length);
+            toEncodeSig = RLP.encodeElement(toEncodeSig);
+        }
 
-            List<byte[]> toEncodedElements = new ArrayList<>();
-            addNonNull(toEncodedElements, toEncodeNonce);
-            addNonNull(toEncodedElements, toEncodeValue);
-            addNonNull(toEncodedElements, toEncodeReceiveAddress);
-            toEncodedElements.add(toEncodeGasPrice);
-            addNonNull(toEncodedElements, toEncodeGasLimit);
-            addNonNull(toEncodedElements, toEncodeData);
-            addNonNull(toEncodedElements, toEncodeSig);
+        List<byte[]> toEncodedElements = new ArrayList<>();
+        addNonNull(toEncodedElements, toEncodeNonce(forVersionOneFullRec));
+        addNonNull(toEncodedElements, toEncodeValue(forVersionOneFullRec));
+        addNonNull(toEncodedElements, toEncodeReceiveAddress(forVersionOneFullRec));
+        toEncodedElements.add(toEncodeGasPrice);
+        addNonNull(toEncodedElements, toEncodeGasLimit(forVersionOneFullRec));
+        addNonNull(toEncodedElements, toEncodeData(forVersionOneFullRec));
+        addNonNull(toEncodedElements, toEncodeSig);
             
-
-
-            return toEncodedElements;
+        return toEncodedElements;
     }
 
     private byte[] encode(byte[] v, byte[] r, byte[] s, boolean versionOneContainSig, boolean forVersionOneFullRec) {
