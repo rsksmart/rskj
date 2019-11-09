@@ -184,7 +184,11 @@ public class Transaction {
         }else{
             encoded = encodedRSV;
         }
-        List<RLPElement> comps =  RLP.decodeList(encoded);
+        return parseSignature(encoded);
+    }
+
+    private static byte[][] parseSignature(byte[] encodedRSV){
+        List<RLPElement> comps =  RLP.decodeList(encodedRSV);
         if (comps.size() != 3) {
              throw new IllegalArgumentException("A signature must have exactly 3 elements");
         }
@@ -658,31 +662,8 @@ public class Transaction {
 
         return ByteUtil.cloneBytes(this.rlpEncoding);
     }
-
-    private byte[] encode(byte[] v, byte[] r, byte[] s, boolean versionOneContainSig, boolean forVersionOneFullRec) {
-        if (version == 0){
-            // parse null as 0 for nonce
-            byte[] toEncodeNonce;
-            if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
-                toEncodeNonce = RLP.encodeElement(null);
-            } else {
-                toEncodeNonce = RLP.encodeElement(this.nonce);
-            }
-            byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
-            byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
-            byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
-            byte[] toEncodeValue = RLP.encodeCoinNullZero(this.value);
-            byte[] toEncodeData = RLP.encodeElement(this.data);
-
-            if (v == null && r == null && s == null) {
-                return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
-                    toEncodeReceiveAddress, toEncodeValue, toEncodeData);
-            } 
-
-            return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
-                toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
-        }else {
-            //version 1
+    
+    private List<byte[]> getVersionOneToBeEncoded(boolean versionOneContainSig, boolean forVersionOneFullRec, byte[] r, byte[] s, byte[] v){
             byte[] toEncodeNonce = null;
             if (!(this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 1)) {
                 toEncodeNonce = new byte[1 + this.nonce.length];
@@ -774,7 +755,35 @@ public class Transaction {
             if (toEncodeSig != null){
                 toEncodedElements.add(toEncodeSig);
             }
-            byte[] allEncodedElements = RLP.encodeList(toEncodedElements.toArray(new byte[toEncodedElements.size()][]));
+            return toEncodedElements;
+    }
+
+    private byte[] encode(byte[] v, byte[] r, byte[] s, boolean versionOneContainSig, boolean forVersionOneFullRec) {
+        if (version == 0){
+            // parse null as 0 for nonce
+            byte[] toEncodeNonce;
+            if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
+                toEncodeNonce = RLP.encodeElement(null);
+            } else {
+                toEncodeNonce = RLP.encodeElement(this.nonce);
+            }
+            byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
+            byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
+            byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
+            byte[] toEncodeValue = RLP.encodeCoinNullZero(this.value);
+            byte[] toEncodeData = RLP.encodeElement(this.data);
+
+            if (v == null && r == null && s == null) {
+                return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
+                    toEncodeReceiveAddress, toEncodeValue, toEncodeData);
+            } 
+
+            return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
+                toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
+        }else {
+            //version 1
+            List<byte[]> toBeEncoded = getVersionOneToBeEncoded(versionOneContainSig, forVersionOneFullRec, r, s, v);
+            byte[] allEncodedElements = RLP.encodeList(toBeEncoded.toArray(new byte[toBeEncoded.size()][]));
             if (forVersionOneFullRec){
                 return allEncodedElements;
             }else{
