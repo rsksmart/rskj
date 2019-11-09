@@ -21,7 +21,6 @@ package co.rsk.core.bc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.*;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.ICacheTracking;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
@@ -31,7 +30,6 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
@@ -43,7 +41,6 @@ import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
@@ -322,60 +319,6 @@ public class BlockExecutor {
         }
     }
 
-    /**
-     * This class tracks accesses in repository (read/write or delete keys), per threadGroup
-     * and detect if there are confilcts between threadGroups, that means 2 different threadGroups
-     * have accessed to the same key, whatever the access type (read/write or delete)
-     */
-    private static class CacheTracker implements ICacheTracking.Listener {
-
-        private static int instancesCounter = 0;
-        private int instanceId;
-        boolean hasConflict = false;
-        String conflict = "";
-        public CacheTracker( ) {
-            instanceId = instancesCounter++;
-        }
-
-        Map<ByteArrayWrapper, String> lastThreadReadOrWrite = new HashMap<>();
-
-        @Override
-        public void onReadKey(ByteArrayWrapper key, String threadGroupName) {
-            onAccessKey(key, threadGroupName);
-        }
-
-        @Override
-        public void onWriteKey(ByteArrayWrapper key, String threadGroupName) {
-            onAccessKey(key, threadGroupName);
-        }
-
-        @Override
-        public void onDeleteKey(ByteArrayWrapper key, String threadGroupName) {
-            onAccessKey(key, threadGroupName);
-        }
-
-        private synchronized void onAccessKey(ByteArrayWrapper key, String threadGroupName)  {
-            // Check if any other thread already read or write this key
-            String otherThreadGroup = lastThreadReadOrWrite.get(key);
-            if (otherThreadGroup == null) {
-                lastThreadReadOrWrite.put(key, threadGroupName);
-            } else if (!otherThreadGroup.equals(threadGroupName)) {
-                conflict = "ThreadGroup " + threadGroupName + " attempts to access at key " +
-                        key.toString() + " but it has already been accessed by another ThreadGroup (" +
-                        otherThreadGroup + ")";
-                hasConflict = true;
-            }
-        }
-
-        public synchronized boolean hasConflict() {
-            return hasConflict;
-        }
-
-        public synchronized String getConflictMessage() {
-            return conflict;
-        }
-    }
-
 
     private BlockResult executeInternal(
             @Nullable ProgramTraceProcessor programTraceProcessor,
@@ -413,9 +356,9 @@ public class BlockExecutor {
 
         TransactionsPartitionExecutor partExecutor = TransactionsPartitionExecutor.newTransactionsPartitionExecutor();
 
-        CacheTracker cacheTracker = new CacheTracker();
+        TransactionConflictDetector transactionConflictDetector = new TransactionConflictDetector();
         if (track.isCached()) {
-            track.getCacheTracking().subscribe(cacheTracker);
+            track.getCacheTracking().subscribe(transactionConflictDetector);
         }
 
         TransactionsPartitioner partitioner = null;
@@ -455,12 +398,12 @@ public class BlockExecutor {
                     new TransactionsPartitionExecutor.PeriodicCheck() {
                         @Override
                         public boolean check() {
-                            return !cacheTracker.hasConflict();
+                            return !transactionConflictDetector.hasConflict();
                         }
 
                         @Override
                         public String getFailureMessage() {
-                            return cacheTracker.getConflictMessage();
+                            return transactionConflictDetector.getConflictMessage();
                         }
                     });
         } catch (InterruptedException | TimeoutException | TransactionsPartitionExecutor.PeriodicCheckException e) {
@@ -468,7 +411,7 @@ public class BlockExecutor {
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         } finally {
             if (track.isCached()) {
-                track.getCacheTracking().unsubscribe(cacheTracker);
+                track.getCacheTracking().unsubscribe(transactionConflictDetector);
             }
         }
 
