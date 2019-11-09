@@ -231,12 +231,7 @@ public class ForkDetectionDataRuleTest {
 
     private byte[] getRandomHash() {
         byte[] byteArray = new byte[32];
-        try {
-            SecureRandom.getInstanceStrong().nextBytes(byteArray);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-
+        new SecureRandom().nextBytes(byteArray);
         return byteArray;
     }
 }

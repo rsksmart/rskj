@@ -20,7 +20,7 @@ package co.rsk.net;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -77,7 +77,7 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(null, uncle1);
         processor.processBlock(null, uncle2);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
 
         processor.processBlock(sender, block2);
 
@@ -110,7 +110,7 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(null, block1);
 
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
 
         processor.processBlock(sender, block2);
 
@@ -138,7 +138,7 @@ public class NodeBlockProcessorUnclesTest {
         Block block2 = new BlockBuilder(null, null, null)
                 .parent(block1).uncles(uncles).build();
 
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
 
         processor.processBlock(sender, block2);
 

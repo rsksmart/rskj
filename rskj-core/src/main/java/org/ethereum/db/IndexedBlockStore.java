@@ -131,17 +131,6 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     @Override
-    public Block getBlockByHashAndDepth(byte[] hash, long depth) {
-        Block block = this.getBlockByHash(hash);
-
-        for (long i = 0; i < depth; i++) {
-            block = this.getBlockByHash(block.getParentHash().getBytes());
-        }
-
-        return block;
-    }
-
-    @Override
     // This method is an optimized way to traverse a branch in search for a block at a given depth. Starting at a given
     // block (by hash) it tries to find the first block that is part of the best chain, when it finds one we now that
     // we can jump to the block that is at the remaining depth. If not block is found then it continues traversing the

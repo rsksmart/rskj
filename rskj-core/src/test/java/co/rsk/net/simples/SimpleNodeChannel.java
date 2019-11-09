@@ -18,13 +18,14 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
 
 import java.net.InetAddress;
+import java.util.Objects;
 
-public class SimpleNodeChannel implements MessageChannel {
+public class SimpleNodeChannel implements Peer {
     private SimpleNode sender;
     private SimpleNode receiver;
     private NodeID nodeID = new NodeID(new byte[]{});
@@ -49,4 +50,24 @@ public class SimpleNodeChannel implements MessageChannel {
 
     @Override
     public InetAddress getAddress() { return null; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SimpleNodeChannel channel = (SimpleNodeChannel) o;
+
+        return Objects.equals(nodeID, channel.nodeID);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return nodeID != null ? nodeID.hashCode() : 0;
+    }
 }

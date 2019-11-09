@@ -19,7 +19,7 @@
 package co.rsk.net.simples;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
@@ -30,19 +30,20 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class SimpleMessageChannel implements MessageChannel {
+public class SimplePeer implements Peer {
     private static Random random = new Random();
     private List<Message> messages = new ArrayList<>();
     private NodeID nodeID;
     private InetAddress address;
 
-    public SimpleMessageChannel(NodeID nodeID) {
+    public SimplePeer(NodeID nodeID) {
         this.nodeID = nodeID;
 
         try {
@@ -51,11 +52,11 @@ public class SimpleMessageChannel implements MessageChannel {
             random.nextBytes(bytes);
             this.address = InetAddress.getByAddress(addressBytes);
         } catch (UnknownHostException e) {
-            Assert.fail("SimpleMessageChannel creation failed");
+            Assert.fail("SimplePeer creation failed");
         }
     }
 
-    public SimpleMessageChannel() {
+    public SimplePeer() {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         this.nodeID = new NodeID(bytes);
@@ -65,11 +66,11 @@ public class SimpleMessageChannel implements MessageChannel {
             random.nextBytes(bytes);
             this.address = InetAddress.getByAddress(addressBytes);
         } catch (UnknownHostException e) {
-            Assert.fail("SimpleMessageChannel creation failed");
+            Assert.fail("SimplePeer creation failed");
         }
     }
 
-    public SimpleMessageChannel(byte[] nodeID) {
+    public SimplePeer(byte[] nodeID) {
         this.nodeID = new NodeID(nodeID);
     }
 
@@ -100,4 +101,27 @@ public class SimpleMessageChannel implements MessageChannel {
 
     @Override
     public InetAddress getAddress() { return this.address; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SimplePeer channel = (SimplePeer) o;
+
+        return Objects.equals(address, channel.address) &&
+                Objects.equals(nodeID, channel.nodeID);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = address != null ? address.hashCode() : 0;
+        result = 31 * result + (nodeID != null ? nodeID.hashCode() : 0);
+        return result;
+    }
 }
