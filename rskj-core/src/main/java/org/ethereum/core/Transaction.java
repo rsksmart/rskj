@@ -84,6 +84,7 @@ public class Transaction {
     private static final byte SIGNATURE_ID = 6;
     // default gaslimit is 30000
     private static final byte[] DEFAULT_GAS_LIMIT = new byte[]{0x75,0x30};
+    private static final byte[] DEFAULT_NONCE = new byte[]{1};
 
     private int version;
     
@@ -161,7 +162,7 @@ public class Transaction {
             Map<Byte, byte[]> elements = parseVersionOne(rawData);
             byte[] tmpNonce = elements.get(NONCE_ID);
             if (tmpNonce == null){
-                tmpNonce = new byte[]{1};
+                tmpNonce = DEFAULT_NONCE;
             }
             this.nonce = tmpNonce;
             this.value = RLP.parseCoinNullZero(elements.get(AMOUNT_ID));
@@ -227,7 +228,7 @@ public class Transaction {
         if (nonce != null){
             this.nonce = ByteUtil.cloneBytes(nonce);
         }else{
-            this.nonce = new byte[]{1};
+            this.nonce = DEFAULT_NONCE;
         }
         this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
         if (gasLimit != null){
@@ -252,13 +253,20 @@ public class Transaction {
     }
 
     private void checkVersionOneDoesNotContainDefaultValue(Map<Byte, byte[]> elements){
-        if (RLP.parseRskAddress(elements.get(RECEIVER_ID)).equals(RskAddress.nullAddress())){
+        byte[] nonce = elements.get(NONCE_ID);
+        if (nonce != null && Arrays.equals(nonce, DEFAULT_NONCE)){
+            throw new IllegalArgumentException("Transaction format one should not contain default nonce");  
+        }
+        byte[] receiveAddress = elements.get(RECEIVER_ID);
+        if (receiveAddress != null && RLP.parseRskAddress(receiveAddress).equals(RskAddress.nullAddress())){
             throw new IllegalArgumentException("Transaction format one should not contain default receiver address");   
-        }   
-        if (RLP.parseCoinNonNullZero(elements.get(AMOUNT_ID)).equals(Coin.ZERO)){
+        }
+        byte[] value = elements.get(AMOUNT_ID);
+        if (value != null && Arrays.equals(value, Coin.ZERO.getBytes())){
             throw new IllegalArgumentException("Transaction format one should not contain default value");
         }
-        if (Arrays.equals(elements.get(GAS_LIMIT_ID), DEFAULT_GAS_LIMIT)){
+        byte[] gasLimit = elements.get(GAS_LIMIT_ID);
+        if (gasLimit != null && Arrays.equals(gasLimit, DEFAULT_GAS_LIMIT)){
             throw new IllegalArgumentException("Transaction format one should not contain default gas limit");   
         }
     }
@@ -298,6 +306,7 @@ public class Transaction {
                     throw new IllegalArgumentException("A transaction contain a unknown element id");     
             }
         } 
+        checkVersionOneDoesNotContainDefaultValue(elements);
         return elements;
     }
 
