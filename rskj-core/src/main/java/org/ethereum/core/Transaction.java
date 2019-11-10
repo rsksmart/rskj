@@ -238,7 +238,7 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
-        this.version = 1;
+        this.version = 0;
     }
 
     public Transaction toImmutableTransaction() {
