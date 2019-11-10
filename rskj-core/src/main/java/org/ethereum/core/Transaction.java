@@ -78,7 +78,7 @@ public class Transaction {
 
     private static final byte LOWER_REAL_V = 27;
     private final int version;
-    private final byte[] ownerCount;
+    private final int ownerCount;
     /* a counter used to make sure each transaction can only be processed once */
     private final List<byte[]> nonce;
     private final Coin value;
@@ -117,7 +117,7 @@ public class Transaction {
 
         if (transaction.get(0) instanceof RLPList) {
             // Transaction format 1
-            this.version = Objects.requireNonNull(((RLPList) transaction.get(0)).get(0).getRLPData())[0];
+            this.version = RLP.decodeInt(nullToZeroArray(((RLPList) transaction.get(0)).get(0).getRLPData()), 0);
             if (this.version != 1) {
                 throw new TransactionException("Transaction has unknown version");
             }
@@ -135,11 +135,11 @@ public class Transaction {
             this.receiveAddress = RLP.parseRskAddress(transaction.get(4).getRLPData());
             this.value = RLP.parseCoinNullZero(transaction.get(5).getRLPData());
             this.data = transaction.get(6).getRLPData();
-            this.ownerCount = transaction.get(7).getRLPData();
+            this.ownerCount = RLP.decodeInt(nullToZeroArray(transaction.get(7).getRLPData()), 0);
 
             if (transaction.get(8) instanceof RLPList) {
                 RLPList signaturesField = (RLPList) transaction.get(8);
-                if (signaturesField.get(0) instanceof RLPList) {
+                if (signaturesField.isEmpty() || signaturesField.get(0) instanceof RLPList) {
                     List<ECDSASignature> signatures = new ArrayList<>();
                     byte chainId = 0;
                     boolean chainIdUnset = true;
@@ -215,7 +215,7 @@ public class Transaction {
                 logger.trace("RLP encoded tx is not signed!");
                 this.signatures = Collections.emptyList();
             }
-            this.ownerCount = null;
+            this.ownerCount = 0;
         }
     }
 
@@ -322,7 +322,7 @@ public class Transaction {
         this.chainId = chainId;
         this.isLocalCall = false;
         this.version = 0;
-        this.ownerCount = null;
+        this.ownerCount = 0;
         this.signatures = Collections.emptyList();
     }
 
@@ -380,6 +380,9 @@ public class Transaction {
     }
 
     private void validate() {
+        if (nonce.size() != this.ownerCount && nonce.size() != this.ownerCount + 1) {
+            throw new RuntimeException("Invalid nonce count");
+        }
         for (byte[] nonce : nonce) {
             if (nonce.length > DATAWORD_LENGTH) {
                 throw new RuntimeException("Nonce is not valid");
@@ -612,6 +615,8 @@ public class Transaction {
 
                     this.rawRlpEncoding = encodeFormat0(v, r, s);
                 }
+            } else {
+                this.rlpEncoding = encodeFormat1(false);
             }
         }
 
@@ -620,23 +625,25 @@ public class Transaction {
 
     public byte[] getEncoded() {
         if (this.rlpEncoding == null) {
-            byte[] v;
-            byte[] r;
-            byte[] s;
-
-            if (!this.signatures.isEmpty()) {
-                ECDSASignature signature = this.signatures.get(0);
-                v = RLP.encodeByte((byte) (chainId == 0 ? signature.v : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
-                r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
-                s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
-            } else {
-                v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
-                r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-                s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
-            }
-
             if (this.version == 0) {
+                byte[] v;
+                byte[] r;
+                byte[] s;
+
+                if (!this.signatures.isEmpty()) {
+                    ECDSASignature signature = this.signatures.get(0);
+                    v = RLP.encodeByte((byte) (chainId == 0 ? signature.v : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
+                    r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
+                    s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
+                } else {
+                    v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
+                    r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                    s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                }
+
                 this.rlpEncoding = encodeFormat0(v, r, s);
+            } else {
+                this.rlpEncoding = encodeFormat1(true);
             }
         }
 
@@ -665,6 +672,63 @@ public class Transaction {
 
         return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
                               toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s
+        );
+    }
+
+    private byte[] encodeFormat1(boolean signed) {
+        byte[] toEncodeVersion = RLP.encodeList(RLP.encodeInt(version));
+        // parse null as 0 for nonce
+        byte[] toEncodeNonce;
+        if (this.nonce.isEmpty() || this.nonce.get(0).length == 1 && this.nonce.get(0)[0] == 0) {
+            toEncodeNonce = RLP.encodeElement(null);
+        } else if (this.nonce.size() == 1) {
+            toEncodeNonce = RLP.encodeElement(this.nonce.get(0));
+        } else {
+            byte[][] toEncodeNonceElements = new byte[this.nonce.size()][];
+            for (int i = 0; i < this.nonce.size(); i++) {
+                toEncodeNonceElements[i] = RLP.encodeElement(this.nonce.get(i));
+            }
+            toEncodeNonce = RLP.encodeList(toEncodeNonceElements);
+        }
+        byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
+        byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
+        byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
+        byte[] toEncodeValue = RLP.encodeCoinNullZero(this.value);
+        byte[] toEncodeData = RLP.encodeElement(this.data);
+        byte[] toEncodeOwnerCount = RLP.encodeInt(this.ownerCount);
+        byte[] toEncodeSignature;
+        if (signed && !signatures.isEmpty()) {
+            byte[][] toEncodeSignatureElements = new byte[signatures.size()][];
+            for (int i = 0; i < signatures.size(); i++) {
+                ECDSASignature signature = signatures.get(i);
+                byte[] v = RLP.encodeByte((byte) (chainId == 0 ? signature.v : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
+                byte[] r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
+                byte[] s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
+                toEncodeSignatureElements[i] = RLP.encodeList(v, r, s);
+            }
+            toEncodeSignature = RLP.encodeList(toEncodeSignatureElements);
+        } else {
+            if (chainId == 0) {
+                toEncodeSignature = RLP.encodedEmptyList();
+            } else {
+                byte[] v = RLP.encodeByte(chainId);
+                byte[] r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+                byte[] s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+
+                toEncodeSignature = RLP.encodeList(v, r, s);
+            }
+        }
+
+        return RLP.encodeList(
+                toEncodeVersion,
+                toEncodeNonce,
+                toEncodeGasPrice,
+                toEncodeGasLimit,
+                toEncodeReceiveAddress,
+                toEncodeValue,
+                toEncodeData,
+                toEncodeOwnerCount,
+                toEncodeSignature
         );
     }
 
