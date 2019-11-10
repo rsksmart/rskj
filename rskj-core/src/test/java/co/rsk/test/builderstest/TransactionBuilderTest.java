@@ -49,7 +49,7 @@ public class TransactionBuilderTest {
         Assert.assertEquals(BigInteger.TEN, tx.getValue().asBigInteger());
         Assert.assertEquals(BigInteger.ONE, tx.getGasPrice().asBigInteger());
         Assert.assertEquals(BigInteger.valueOf(2), new BigInteger(1, tx.getNonce()));
-        Assert.assertEquals(BigInteger.valueOf(21000), new BigInteger(1, tx.getGasLimit()));
+        Assert.assertEquals(BigInteger.valueOf(30000), new BigInteger(1, tx.getGasLimit()));
         Assert.assertNotNull(tx.getData());
         Assert.assertEquals(0, tx.getData().length);
     }
