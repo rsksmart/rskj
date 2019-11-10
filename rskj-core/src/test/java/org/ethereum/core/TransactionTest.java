@@ -306,7 +306,6 @@ public class TransactionTest {
 
         Transaction tx1 = new Transaction(nonce, gasPrice, gas,
                 recieveAddress, endowment, init);
-        tx1.setVersion(0);
         tx1.sign(senderPrivKey);
 
         byte[] payload = tx1.getEncoded();
@@ -731,6 +730,7 @@ public class TransactionTest {
         Transaction tx = new Transaction(null, gasPrice, null, ecKey.getAddress(),
                 value.toByteArray(),
                 null);
+        tx.setVersion(1);
         byte[] toEncodeNonce = RLP.encodeElement(new byte[]{0});
         byte[] valueBytes = value.toByteArray(); 
         byte[] toEncodeValue = new byte[1 + valueBytes.length];
@@ -804,6 +804,7 @@ public class TransactionTest {
                 receiveAddress,
                 value,
                 data);
+        tx.setVersion(1);
         tx.sign(privKey);
         byte[] encoded = tx.getEncoded();
         
@@ -845,6 +846,7 @@ public class TransactionTest {
                 null,
                 null,
                 null);
+        tx.setVersion(1);
         tx.sign(privKey);
         byte[] encoded = tx.getEncoded();
         List<RLPElement> decoded = RLP.decodeList(encoded);
@@ -868,6 +870,7 @@ public class TransactionTest {
                 null,
                 null,
                 null);
+        tx.setVersion(1);
         Assert.assertEquals(1, tx.getVersion());
         tx.sign(privKey);
         byte[] encodedRSV = tx.getEncodedRSV();
