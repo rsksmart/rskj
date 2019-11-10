@@ -119,7 +119,6 @@ public class Transaction {
     /* the elliptic curve signature
      * (including public key recovery bits) */
     private ECDSASignature signature;
-    private byte[] rlpEncoding;
     private byte[] rawRlpEncoding;
     private Keccak256 hash;
     private Keccak256 rawHash;
@@ -486,7 +485,6 @@ public class Transaction {
         }
         ECKey key = ECKey.fromPrivate(privKeyBytes).decompress();
         this.signature = key.sign(raw);
-        this.rlpEncoding = null;
         this.hash = null;
         this.sender = null;
     }
@@ -500,7 +498,6 @@ public class Transaction {
 
     public void setSignature(ECDSASignature signature) {
         this.signature = signature;
-        this.rlpEncoding = null;
         this.hash = null;
         this.sender = null;
     }
