@@ -90,16 +90,20 @@ public class TransactionBuilder {
         return this;
     }
 
-    public Transaction build() {
+    public Transaction build (int version){
         Transaction tx = new Transaction(
                 receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
                 value, nonce, gasPrice, gasLimit, data, Constants.REGTEST_CHAIN_ID);
+        tx.setVersion(version);
         tx.sign(sender.getEcKey().getPrivKeyBytes());
-
+        
         if (this.immutable) {
             return new ImmutableTransaction(tx.getEncoded());
         }
 
         return tx;
+    }
+    public Transaction build() {
+        return build(0);
     }
 }
