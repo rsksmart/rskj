@@ -270,6 +270,25 @@ public class Block {
         return RLP.encodeList(unclesEncoded);
     }
 
+    private byte[] getSignatureList() {
+        List<byte[]> signatures = new ArrayList<>();
+        int i = 0;
+        for (Transaction tx : transactionsList) {
+            if (tx.getFormatVersion() == 1) {
+                byte[] rsv = tx.getRLPSignature();
+                byte[] txIndex = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(i));
+
+                byte[] wireSig = RLP.encodeList(txIndex, rsv);
+                signatures.add(wireSig);
+            }
+            ++i;
+        }
+        if (signatures.size() == 0) {
+            return new byte[0];
+        }
+        return RLP.encodeList(signatures.toArray(new byte[0][0]));
+    }
+
     public byte[] getEncoded() {
         if (rlpEncoded == null) {
             byte[] header = this.header.getFullEncoded();
@@ -286,10 +305,14 @@ public class Block {
     private List<byte[]> getBodyElements() {
         byte[] transactions = getTransactionsEncoded();
         byte[] uncles = getUnclesEncoded();
+        byte[] signature_list = getSignatureList();
 
         List<byte[]> body = new ArrayList<>();
         body.add(transactions);
         body.add(uncles);
+        if (signature_list.length > 0) {
+            body.add(signature_list);
+        }
 
         return body;
     }

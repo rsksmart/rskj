@@ -107,6 +107,9 @@ public class Transaction {
     private int formatVersion = 0;
 
     protected Transaction(byte[] rawData) {
+        if (rawData == null) {
+            throw new IllegalArgumentException("Binary data must not be null");
+        }
         if ((rawData[0] & 0xFF) == 0x01) {
             this.formatVersion = 1;
 
@@ -225,6 +228,7 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
+        this.formatVersion = 0;
     }
 
     public Transaction toImmutableTransaction() {
@@ -365,6 +369,9 @@ public class Transaction {
 
     public void sign(byte[] privKeyBytes) throws MissingPrivateKeyException {
         byte[] raw = this.getRawHash().getBytes();
+        if (this.formatVersion == 1) {
+            raw = this.getFullRec();
+        }
         ECKey key = ECKey.fromPrivate(privKeyBytes).decompress();
         this.signature = key.sign(raw);
         this.rlpEncoding = null;
@@ -466,7 +473,7 @@ public class Transaction {
      * RLP of the transaction without any signature data
      */
     public byte[] getEncodedRaw() {
-        return getEncoded(0);
+        return getEncodedRaw(0);
     }
 
     public byte[] getEncodedRaw(int format) {
@@ -570,6 +577,61 @@ public class Transaction {
         }
 
         return addPrefixByte((byte)0x01, RLP.encodeList(transaction.toArray(new byte[0][0])));
+    }
+
+    byte[] getFullRec() {
+        List<byte[]> transaction = new ArrayList<byte[]>();
+        if (this.nonce != null && toBI(this.nonce).compareTo(BigInteger.ONE) != 0) {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x00, this.nonce)));
+        } else {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x00, new byte[0])));
+        }
+
+        if (this.value != null && this.value.asBigInteger().compareTo(BigInteger.ZERO) != 0) {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x01, BigIntegers.asUnsignedByteArray(this.value.asBigInteger()))));
+        } else {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x01, new byte[0])));
+        }
+
+        if (this.receiveAddress != null && this.receiveAddress != RskAddress.nullAddress()) {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x02, this.receiveAddress.getBytes())));
+        } else {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x02, new byte[0])));
+        }
+
+        transaction.add(RLP.encodeElement(addPrefixByte((byte)0x03, BigIntegers.asUnsignedByteArray(this.gasPrice.asBigInteger()))));
+
+        if (this.gasLimit != null && toBI(this.gasLimit).compareTo(BigInteger.valueOf(30000)) != 0) {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x04, this.gasLimit)));
+        } else {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x04, new byte[0])));
+        }
+
+        if (this.data != null && this.data.length != 0) {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x05, this.data)));
+        } else {
+            transaction.add(RLP.encodeElement(addPrefixByte((byte)0x05, new byte[0])));
+        }
+
+        return RLP.encodeList(transaction.toArray(new byte[0][0]));
+    }
+
+    byte[] getRLPSignature() {
+        byte[] v;
+        byte[] r;
+        byte[] s;
+
+        if (this.signature != null) {
+            v = RLP.encodeByte((byte) (chainId == 0 ? signature.v : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
+            r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
+            s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
+        } else {
+            v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
+            r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+            s = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        }
+
+        return RLP.encodeList(v, r, s);
     }
 
     private byte[] addPrefixByte(byte prefix, byte[] data) {

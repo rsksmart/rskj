@@ -764,6 +764,27 @@ public class TransactionTest {
         Assert.assertEquals(new String(rx.getData()), "data in a string");
     }
 
+    @Test
+    public void testFullRecAndSignature() throws IOException, InterruptedException {
+        byte[] key = Hex.decode("c28d6524a502b55869e9f32922f5378e7607ff443c74c0e3fb1278bb7a0de5b2");
+
+        Transaction def = new Transaction(BigIntegers.asUnsignedByteArray(BigInteger.ONE), BigIntegers.asUnsignedByteArray(BigInteger.ONE), BigIntegers.asUnsignedByteArray(BigInteger.valueOf(30000)), RskAddress.nullAddress().getBytes(), BigIntegers.asUnsignedByteArray(BigInteger.ZERO), null);
+
+        Assert.assertEquals(Hex.toHexString(def.getFullRec()), "c80001028203010405");
+
+        // Test encoding
+        byte[] nonce = BigIntegers.asUnsignedByteArray(BigInteger.ZERO);
+        byte[] gasPrice = Hex.decode("e8d4a51000");     // 1000000000000
+        byte[] gas = Hex.decode("2710");           // 10000
+        byte[] recieveAddress = Hex.decode("13978aee95f38490e9769c39b2773ed763d9cd5f");
+        byte[] value = Hex.decode("2386f26fc10000"); //10000000000000000"
+        byte[] data = "data in a string".getBytes();
+
+        Transaction tx = new Transaction(nonce, gasPrice, gas, recieveAddress, value, data);
+
+        Assert.assertEquals(Hex.toHexString(tx.getFullRec()), "f83d0088012386f26fc10000950213978aee95f38490e9769c39b2773ed763d9cd5f8603e8d4a510008304271091056461746120696e206120737472696e67");
+    }
+
     private Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, final Repository repository) throws InterruptedException {
         return createTx(sender, receiveAddress, data, 0, repository.getNonce(new RskAddress(sender.getAddress())));
     }
