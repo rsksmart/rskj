@@ -477,10 +477,7 @@ public class RskForksBridgeTest {
                 .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), track, blockChain.getBestBlock(), 0)
                 .setLocalCall(true);
 
-        executor.init();
-        executor.execute();
-        executor.go();
-        executor.finalization();
+        executor.executeTransaction();
 
         ProgramResult res = executor.getResult();
 

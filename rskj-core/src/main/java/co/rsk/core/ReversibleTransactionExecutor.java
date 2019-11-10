@@ -92,10 +92,8 @@ public class ReversibleTransactionExecutor {
                 .newInstance(tx, 0, coinbase, track, executionBlock, 0)
                 .setLocalCall(true);
 
-        executor.init();
-        executor.execute();
-        executor.go();
-        executor.finalization();
+        executor.executeTransaction();
+
         return executor.getResult();
     }
 

@@ -78,7 +78,6 @@ public class TransactionExecutor {
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
-    private boolean readyToExecute = false;
 
     private final ProgramInvokeFactory programInvokeFactory;
     private final RskAddress coinbase;
@@ -126,16 +125,32 @@ public class TransactionExecutor {
     }
 
     /**
+     * Validates and executes the transaction
+     *
+     * @return true if the transaction is valid and executed, false if the transaction is invalid
+     */
+    public boolean executeTransaction() {
+        if (!this.init()) {
+            return false;
+        }
+
+        this.execute();
+        this.go();
+        this.finalization();
+
+        return true;
+    }
+
+    /**
      * Do all the basic validation, if the executor
      * will be ready to run the transaction at the end
      * set readyToExecute = true
      */
-    public boolean init() {
+    private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations);
 
         if (localCall) {
-            readyToExecute = true;
-            return readyToExecute;
+            return true;
         }
 
         BigInteger txGasLimit = new BigInteger(1, tx.getGasLimit());
@@ -213,16 +228,10 @@ public class TransactionExecutor {
             return false;
         }
 
-        readyToExecute = true;
         return true;
     }
 
-    public void execute() {
-
-        if (!readyToExecute) {
-            return;
-        }
-
+    private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
@@ -244,10 +253,6 @@ public class TransactionExecutor {
     }
 
     private void call() {
-        if (!readyToExecute) {
-            return;
-        }
-
         logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         RskAddress targetAddress = tx.getReceiveAddress();
@@ -362,11 +367,7 @@ public class TransactionExecutor {
         executionError = err;
     }
 
-    public void go() {
-        if (!readyToExecute) {
-            return;
-        }
-
+    private void go() {
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
             cacheTrack.commit();
@@ -466,11 +467,7 @@ public class TransactionExecutor {
     }
 
 
-    public void finalization() {
-        if (!readyToExecute) {
-            return;
-        }
-
+    private void finalization() {
         // RSK if local call gas balances must not be changed
         if (localCall) {
             return;
