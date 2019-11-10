@@ -29,6 +29,8 @@ import org.bouncycastle.util.BigIntegers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
@@ -194,11 +196,21 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             RLPList rlpTransactions = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
             RLPList rlpUncles = (RLPList)RLP.decode2(message.get(1).getRLPData()).get(0);
-
+            Map<Integer, byte[]> sigsMap = new HashMap<>();
+            if (message.size() == 3){
+                RLPList rlpSigs = (RLPList)RLP.decode2(message.get(2).getRLPData()).get(0);
+                for (RLPElement rlpSig: rlpSigs){
+                    RLPList rlpSigTuple = RLP.decodeList(rlpSig.getRLPData()); 
+                    byte[] rlpIndex = rlpSigTuple.get(0).getRLPData();
+                    Integer index2 = RLP.decodeInt(rlpIndex, 0);
+                    sigsMap.put(index2, rlpSigTuple.get(1).getRLPData());
+                }
+            }
             List<Transaction> transactions = new ArrayList<>();
             for (int k = 0; k < rlpTransactions.size(); k++) {
                 byte[] txdata = rlpTransactions.get(k).getRLPData();
-                Transaction tx = new ImmutableTransaction(txdata);
+                byte[] rsv = sigsMap.get(k+1);
+                Transaction tx = new ImmutableTransaction(txdata, rsv);
 
                 if (tx.isRemascTransaction(k, rlpTransactions.size())) {
                     tx = new RemascTransaction(txdata);

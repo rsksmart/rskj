@@ -3,7 +3,6 @@ package co.rsk.net.messages;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
-
 import java.util.List;
 import java.util.ArrayList;
 
@@ -46,15 +45,17 @@ public class BodyResponseMessage extends MessageWithId {
         for (int j = 0; j < transactions.size(); j++) {
             Transaction tx = transactions.get(j);
             if (tx.getVersion() == 1){
-                byte[] txIdx = RLP.encodeInt(j);
+                byte[] txIdx = RLP.encodeInt(j+1);
                 byte[] rsv = tx.getEncodedRSV();
-                encodeSigs.add(RLP.encodeList(txIdx, rsv));
+                if (rsv != null){
+                    encodeSigs.add(RLP.encodeList(txIdx, rsv));
+                }
             }
         }
         if (!encodeSigs.isEmpty()){
             rlpSigs = encodeSigs.toArray(new byte[encodeSigs.size()][]);
         }
-
+        
         if (rlpSigs == null){
             return RLP.encodeList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
         }else{

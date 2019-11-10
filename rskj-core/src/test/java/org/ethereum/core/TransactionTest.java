@@ -770,11 +770,9 @@ public class TransactionTest {
         baos1.write(rsv);
         byte[] ele4 = RLP.encodeElement(baos1.toByteArray());
         byte[] eleList = RLP.encodeList(ele1, ele2, ele3, ele4);
+        byte[] eleVersion = RLP.encodeByte((byte)1);
+        byte[] format1Tx = RLP.encodeList(eleVersion, eleList);
 
-        ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
-        baos2.write(0x1);
-        baos2.write(eleList);
-        byte[] format1Tx = baos2.toByteArray();
         ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
         Assert.assertEquals(true, Arrays.equals(tx.getNonce(), new byte[]{1}));
         Assert.assertEquals(true, tx.getValue().equals(Coin.ZERO));
@@ -809,10 +807,9 @@ public class TransactionTest {
         tx.sign(privKey);
         byte[] encoded = tx.getEncoded();
         
-        Assert.assertEquals(1, encoded[0]);
-
-        byte[] encodedWithoutLeadingOne = Arrays.copyOfRange(encoded, 1, encoded.length);
-        List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
+        List<RLPElement> decoded = RLP.decodeList(encoded);
+        Assert.assertEquals(2, decoded.size());
+        List<RLPElement> rlpList = RLP.decodeList(decoded.get(1).getRLPData());
         Assert.assertEquals(7, rlpList.size());
         Assert.assertEquals(true, Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0005")));
         Assert.assertEquals(true, Arrays.equals(rlpList.get(1).getRLPData(), Hex.decode("0106")));
@@ -831,7 +828,6 @@ public class TransactionTest {
         Transaction tx2 = new ImmutableTransaction(encodedForBlock, rsv);
         Assert.assertEquals(tx, tx2);
         Assert.assertEquals(true, Objects.equals(tx, tx2));
-
     }
 
     @Test
@@ -851,9 +847,9 @@ public class TransactionTest {
                 null);
         tx.sign(privKey);
         byte[] encoded = tx.getEncoded();
-        Assert.assertEquals(1, encoded[0]);
-        byte[] encodedWithoutLeadingOne = Arrays.copyOfRange(encoded, 1, encoded.length);
-        List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
+        List<RLPElement> decoded = RLP.decodeList(encoded);
+        Assert.assertEquals(2, decoded.size());
+        List<RLPElement> rlpList = RLP.decodeList(decoded.get(1).getRLPData());
         Assert.assertEquals(2, rlpList.size());
         Assert.assertEquals(true, Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0309184e72a000")));
     }
@@ -875,10 +871,10 @@ public class TransactionTest {
         Assert.assertEquals(1, tx.getVersion());
         tx.sign(privKey);
         byte[] encodedRSV = tx.getEncodedRSV();
-        byte[] encoded = tx.getEncodedForBlock();
-        Assert.assertEquals(1, encoded[0]);
-        byte[] encodedWithoutLeadingOne = Arrays.copyOfRange(encoded, 1, encoded.length);
-        List<RLPElement> rlpList = RLP.decodeList(encodedWithoutLeadingOne);
+        byte[] encoded = tx.getEncodedForBlock();        
+        List<RLPElement> decoded = RLP.decodeList(encoded);
+        Assert.assertEquals(2, decoded.size());
+        List<RLPElement> rlpList = RLP.decodeList(decoded.get(1).getRLPData());
         Assert.assertEquals(1, rlpList.size());
         Assert.assertEquals(true, Arrays.equals(rlpList.get(0).getRLPData(), Hex.decode("0309184e72a000")));
         Transaction tx2 = new Transaction(encoded, encodedRSV);

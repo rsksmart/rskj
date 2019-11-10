@@ -261,7 +261,7 @@ public class BlockFactory {
         for (int i = 0; i < txTransactions.size(); i++) {
             RLPElement transactionRaw = txTransactions.get(i);
             Transaction tx;
-            byte[] rsv = sigsMap.get(i);
+            byte[] rsv = sigsMap.get(i+1);
             if (rsv != null){
                 tx = new ImmutableTransaction(transactionRaw.getRLPData(), rsv);
             }else{
