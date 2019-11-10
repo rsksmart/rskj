@@ -379,17 +379,10 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         if (headers.isEmpty()) {
             return;
         }
-        Long messageId = syncEventsHandler.sendBodyRequest(peer, headers);
-        if (messageId != null){
-            pendingBodyResponses.put(messageId, new PendingBodyResponse(peer.getPeerNodeID(), headers));
-            timeElapsedByPeer.put(peer, Duration.ZERO);
-            messagesByPeers.put(peer, messageId);
-        } else {
-            // since a message could fail to be delivered we have to discard peer if can't be reached
-            clearPeerInfo(peer);
-            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
-                    this.getClass(), peer);
-        }
+        long messageId = syncEventsHandler.sendBodyRequest(peer, headers);
+        pendingBodyResponses.put(messageId, new PendingBodyResponse(peer.getPeerNodeID(), headers));
+        timeElapsedByPeer.put(peer, Duration.ZERO);
+        messagesByPeers.put(peer, messageId);
     }
 
     private boolean isExpectedBody(long requestId, NodeID peerId) {
