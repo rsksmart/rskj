@@ -235,11 +235,7 @@ public class Transaction {
         }
         this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
         this.value = RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw));
-        if (data != null){
-            this.data = ByteUtil.cloneBytes(data);
-        }else{
-            this.data = null;
-        }
+        this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
         this.version = 1;
@@ -741,7 +737,7 @@ public class Transaction {
 
     private byte[] toEncodeData(boolean forVersionOneFullRec){
         byte[] toEncodeData = null;
-        if (this.data != null){
+        if (this.data != null && this.data.length > 0){
             toEncodeData = new byte[1 + this.data.length];
             toEncodeData[0] = DATA_ID;
             System.arraycopy(this.data, 0, toEncodeData, 1, this.data.length);

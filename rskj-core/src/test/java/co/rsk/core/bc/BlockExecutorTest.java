@@ -480,12 +480,23 @@ public class BlockExecutorTest {
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
-    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
+    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce, int version) {
         String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
+        Transaction tx;
+        if (version == 0){ 
+            tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
+        }else{
+            tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(30000), config.getNetworkConstants().getChainId());
+        }
+        tx.setVersion(version);
         tx.sign(privateKeyBytes);
+
         return tx;
+    }
+
+    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
+        return createTransaction(sender, receiver, value, nonce, 0);
     }
 
     public static Account createAccount(String seed, Repository repository, Coin balance) {
@@ -636,7 +647,7 @@ public class BlockExecutorTest {
             BigInteger value, BigInteger nonce, int strangeTransactionType) {
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         byte[] to = receiver.getAddress().getBytes();
-        byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21000));
+        byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(30000));
         byte[] valueData = BigIntegers.asUnsignedByteArray(value);
 
         if (strangeTransactionType == 0) {

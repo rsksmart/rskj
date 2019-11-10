@@ -289,7 +289,7 @@ public class Block {
         for (int j = 0; j < transactionsList.size(); j++) {
             Transaction tx = transactionsList.get(j);
             if (tx.getVersion() == 1){
-                byte[] txIdx = RLP.encodeInt(j);
+                byte[] txIdx = RLP.encodeInt(j+1);
                 byte[] rsv = tx.getEncodedRSV();
                 encodeSigs.add(RLP.encodeList(txIdx, rsv));
             }
