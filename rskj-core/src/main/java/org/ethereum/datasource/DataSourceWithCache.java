@@ -21,16 +21,17 @@ package org.ethereum.datasource;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DataSourceWithCache implements KeyValueDataSource {
+    private static final Logger logger = LoggerFactory.getLogger(DataSourceWithCache.class);
+
     private final int cacheSize;
     private final KeyValueDataSource base;
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
@@ -203,6 +204,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.lock.writeLock().lock();
 
         try {
+            long saveTime = System.nanoTime();
+
             this.uncommittedCache.forEach((key, value) -> {
                 if (value != null) {
                     uncommittedBatch.put(key, value);
@@ -213,6 +216,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
             base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
             committedCache.putAll(uncommittedCache);
             uncommittedCache.clear();
+
+            long totalTime = System.nanoTime() - saveTime;
+
+            logger.trace("datasource flush: [{}]nano", totalTime);
         }
         finally {
             this.lock.writeLock().unlock();
