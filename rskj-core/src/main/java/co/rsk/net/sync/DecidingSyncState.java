@@ -1,7 +1,7 @@
 package co.rsk.net.sync;
 
 
-import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import org.ethereum.db.BlockStore;
 
 import java.time.Duration;
@@ -41,7 +41,7 @@ public class DecidingSyncState extends BaseSyncState {
 
     private void tryStartSyncing() {
 
-        Optional<NodeID> bestPeer = peersInformation.getBestPeer();
+        Optional<Peer> bestPeer = peersInformation.getBestPeer();
         if (!bestPeer.isPresent()) {
             return;
         }

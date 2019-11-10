@@ -115,11 +115,11 @@ public class Remasc {
         int uncleGenerationLimit = constants.getUncleGenerationLimit();
         Deque<Map<Long, List<Sibling>>> descendantsBlocks = new LinkedList<>();
 
-        // this search can be optimized if have certainty that the execution block is not in a fork
-        // larger than depth
-        Block currentBlock = blockStore.getBlockByHashAndDepth(
-                executionBlock.getParentHash().getBytes(),
-                remascConstants.getMaturity() - 1 - uncleGenerationLimit
+        // this search is noe optimized if have certainty that the execution block is not in a fork
+        // larger than depth. The optimized algorithm already covers this case
+        Block currentBlock = blockStore.getBlockAtDepthStartingAt(
+                remascConstants.getMaturity() - 1 - uncleGenerationLimit,
+                executionBlock.getParentHash().getBytes()
         );
         descendantsBlocks.push(blockStore.getSiblingsFromBlockByHash(currentBlock.getHash()));
 

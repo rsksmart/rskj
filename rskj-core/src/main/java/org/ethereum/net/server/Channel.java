@@ -19,7 +19,7 @@
 
 package org.ethereum.net.server;
 
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.eth.RskMessage;
 import co.rsk.net.eth.RskWireProtocol;
@@ -52,7 +52,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Objects;
 
-public class Channel implements MessageChannel {
+public class Channel implements Peer {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
@@ -212,6 +212,20 @@ public class Channel implements MessageChannel {
         eth.dropConnection();
     }
 
+    public void sendMessage(Message message) {
+        eth.sendMessage(new RskMessage(message));
+    }
+
+    @Override
+    public NodeID getPeerNodeID() {
+        return node.getId();
+    }
+
+    @Override
+    public InetAddress getAddress() {
+        return inetSocketAddress.getAddress();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -238,19 +252,5 @@ public class Channel implements MessageChannel {
     @Override
     public String toString() {
         return String.format("%s | %s", getPeerIdShort(), inetSocketAddress);
-    }
-
-    public void sendMessage(Message message) {
-        eth.sendMessage(new RskMessage(message));
-    }
-
-    @Override
-    public NodeID getPeerNodeID() {
-        return node.getId();
-    }
-
-    @Override
-    public InetAddress getAddress() {
-        return inetSocketAddress.getAddress();
     }
 }

@@ -25,7 +25,7 @@ import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleBlockProcessor;
-import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.TransactionUtils;
@@ -39,7 +39,6 @@ import co.rsk.validators.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
@@ -67,8 +66,8 @@ public class NodeMessageHandlerTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
-    public void processBlockMessageUsingProcessor() throws UnknownHostException {
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+    public void processBlockMessageUsingProcessor() {
+        SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
@@ -100,7 +99,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void skipProcessGenesisBlock() throws UnknownHostException {
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, new DummyBlockValidationRule(), mock(StatusResolver.class));
@@ -121,7 +120,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void skipAdvancedBlock() throws UnknownHostException {
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         sbp.setBlockGap(100000);
@@ -143,7 +142,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void postBlockMessageTwice() throws InterruptedException, UnknownHostException {
-        MessageChannel sender = new SimpleMessageChannel();
+        Peer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
@@ -171,7 +170,7 @@ public class NodeMessageHandlerTest {
         Message message = new BlockMessage(block);
 
         processor.start();
-        processor.postMessage(new SimpleMessageChannel(), message);
+        processor.postMessage(new SimplePeer(), message);
 
         Thread.sleep(1000);
 
@@ -186,7 +185,7 @@ public class NodeMessageHandlerTest {
     // This should be executed in a special mode where difficulty is high.
     @Ignore
     public void processInvalidPoWMessageUsingProcessor() throws UnknownHostException {
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
@@ -213,7 +212,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processMissingPoWBlockMessageUsingProcessor() throws UnknownHostException {
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, new DummyBlockValidationRule(), mock(StatusResolver.class));
@@ -248,7 +247,7 @@ public class NodeMessageHandlerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
         Block block = new BlockGenerator().getGenesisBlock();
         Message message = new BlockMessage(block);
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
@@ -264,7 +263,7 @@ public class NodeMessageHandlerTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
@@ -289,17 +288,11 @@ public class NodeMessageHandlerTest {
 
     @Test()
     public void processStatusMessageUsingSyncProcessor() {
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
-        when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
-        final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
+        when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
+
         final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -308,12 +301,12 @@ public class NodeMessageHandlerTest {
         final Message message = new StatusMessage(status);
         handler.processMessage(sender, message);
 
-        Assert.assertNotNull(msg[0]);
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, msg[0].getMessageType());
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
     }
 
     @Test
-    public void processStatusMessageWithKnownBestBlock() throws UnknownHostException {
+    public void processStatusMessageWithKnownBestBlock() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final NetBlockStore store = new NetBlockStore();
@@ -322,12 +315,11 @@ public class NodeMessageHandlerTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
         final SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain,
                 mock(BlockStore.class), mock(ConsensusValidationMainchainView.class),
                 blockSyncService,
-                RskMockFactory.getChannelManager(),
                 syncConfiguration,
                 blockFactory,
                 new DummyBlockValidationRule(),
@@ -368,7 +360,7 @@ public class NodeMessageHandlerTest {
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null,
                 null, new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         handler.processMessage(sender, new GetBlockMessage(block.getHash().getBytes()));
 
@@ -403,7 +395,7 @@ public class NodeMessageHandlerTest {
         NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
 
         handler.processMessage(sender, new GetBlockMessage(blocks.get(4).getHash().getBytes()));
 
@@ -434,7 +426,7 @@ public class NodeMessageHandlerTest {
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, new DummyBlockValidationRule(), mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         handler.processMessage(sender, new GetBlockMessage(block.getHash().getBytes()));
 
@@ -459,7 +451,7 @@ public class NodeMessageHandlerTest {
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         handler.processMessage(sender, new BlockHeadersRequestMessage(1,block.getHash().getBytes(), 1));
 
@@ -494,7 +486,7 @@ public class NodeMessageHandlerTest {
         NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
 
         handler.processMessage(sender, new BlockHeadersRequestMessage(1, blocks.get(4).getHash().getBytes(), 1));
 
@@ -591,7 +583,7 @@ public class NodeMessageHandlerTest {
 
         for (int i = 0; i < testCases.length; i += 1) {
             final TestCase testCase = testCases[i];
-            final SimpleMessageChannel sender = new SimpleMessageChannel();
+            final SimplePeer sender = new SimplePeer();
 
             handler.processMessage(sender, testCase.message);
 
@@ -656,8 +648,8 @@ public class NodeMessageHandlerTest {
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, scoring,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel(new NodeID(new byte[] {1}));
-        final SimpleMessageChannel sender2 = new SimpleMessageChannel(new NodeID(new byte[] {2}));
+        final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
+        final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         final TransactionsMessage message = new TransactionsMessage(txs);
@@ -698,7 +690,7 @@ public class NodeMessageHandlerTest {
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionGateway, scoring,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         final List<Transaction> txs = TransactionUtils.getTransactions(0);
         final TransactionsMessage message = new TransactionsMessage(txs);
@@ -729,7 +721,7 @@ public class NodeMessageHandlerTest {
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionGateway, scoring,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         final List<Transaction> txs = new ArrayList<>();
         BigInteger value = BigInteger.ONE;
@@ -765,8 +757,8 @@ public class NodeMessageHandlerTest {
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel(new NodeID(new byte[] {1}));
-        final SimpleMessageChannel sender2 = new SimpleMessageChannel(new NodeID(new byte[] {2}));
+        final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
+        final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         final TransactionsMessage message = new TransactionsMessage(txs);
@@ -788,7 +780,7 @@ public class NodeMessageHandlerTest {
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockRequestMessage(100, block.getHash().getBytes());
 
-        processor.processMessage(new SimpleMessageChannel(), message);
+        processor.processMessage(new SimplePeer(), message);
 
         Assert.assertEquals(100, sbp.getRequestId());
         Assert.assertArrayEquals(block.getHash().getBytes(), sbp.getHash());
@@ -802,7 +794,7 @@ public class NodeMessageHandlerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false), mock(StatusResolver.class));
         Message message = new BlockHeadersRequestMessage(100, hash, 50);
 
-        processor.processMessage(new SimpleMessageChannel(), message);
+        processor.processMessage(new SimplePeer(), message);
 
         Assert.assertEquals(100, sbp.getRequestId());
         Assert.assertArrayEquals(hash, sbp.getHash());
