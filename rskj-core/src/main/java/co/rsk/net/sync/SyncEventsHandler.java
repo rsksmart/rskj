@@ -18,7 +18,7 @@ public interface SyncEventsHandler {
 
     void sendBlockHeadersRequest(Peer peer, ChunkDescriptor chunk);
 
-    long sendBodyRequest(Peer peer, BlockHeader header);
+    long sendBodyRequest(Peer peer, List<BlockHeader> headers);
 
     void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer);
 

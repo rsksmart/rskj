@@ -5,6 +5,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockBody;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
@@ -12,6 +13,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -36,22 +38,22 @@ public class BodyResponseMessageTest {
             parent = block;
         }
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, Collections.singletonList(new BlockBody(transactions, uncles)));
 
         Assert.assertEquals(100, message.getId());
 
-        Assert.assertNotNull(message.getTransactions());
-        Assert.assertEquals(transactions.size(), message.getTransactions().size());
+        Assert.assertNotNull(message.getBlocks().get(0).getTransactionsList());
+        Assert.assertEquals(transactions.size(), message.getBlocks().get(0).getTransactionsList().size());
 
         Assert.assertEquals(
                 transactions,
-                message.getTransactions());
+                message.getBlocks().get(0).getTransactionsList());
 
-        Assert.assertNotNull(message.getUncles());
-        Assert.assertEquals(uncles.size(), message.getUncles().size());
+        Assert.assertNotNull(message.getBlocks().get(0).getUncleList());
+        Assert.assertEquals(uncles.size(), message.getBlocks().get(0).getUncleList().size());
 
         for (int k = 0; k < uncles.size(); k++)
-            Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), message.getUncles().get(k).getFullEncoded());
+            Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), message.getBlocks().get(0).getUncleList().get(k).getFullEncoded());
     }
 
     private static Transaction createTransaction(int number) {
@@ -69,7 +71,7 @@ public class BodyResponseMessageTest {
         List<Transaction> transactions = new LinkedList<>();
         List<BlockHeader> uncles = new LinkedList<>();
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, Collections.singletonList(new BlockBody(transactions, uncles)));
 
         MessageVisitor visitor = mock(MessageVisitor.class);
 

@@ -193,11 +193,15 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public long sendBodyRequest(Peer peer, @Nonnull BlockHeader header) {
-        logger.debug("Send body request block {} hash {} to peer {}", header.getNumber(),
-                HashUtil.shortHash(header.getHash().getBytes()), peer.getPeerNodeID());
+    public long sendBodyRequest(Peer peer, @Nonnull List<BlockHeader> headers) {
+        byte[][] headerBytes = new byte[headers.size()][];
+        for (int i = 0 ; i < headers.size() ; i++) {
+            BlockHeader header = headers.get(i);
+            logger.debug("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash().getBytes()), peer.getPeerNodeID());
+            headerBytes[i] = header.getHash().getBytes();
+        }
 
-        BodyRequestMessage message = new BodyRequestMessage(++lastRequestId, header.getHash().getBytes());
+        BodyRequestMessage message = new BodyRequestMessage(++lastRequestId, headerBytes);
         sendMessage(peer, message);
         return message.getId();
     }

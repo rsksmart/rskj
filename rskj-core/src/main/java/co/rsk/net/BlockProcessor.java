@@ -56,7 +56,7 @@ public interface BlockProcessor {
 
     void processBlockHeadersRequest(Peer sender, long requestId, byte[] hash, int count);
 
-    void processBodyRequest(Peer sender, long requestId, byte[] hash);
+    void processBodyRequest(Peer sender, long requestId, byte[][] hashes);
 
     void processBlockHashRequest(Peer sender, long requestId, long height);
 

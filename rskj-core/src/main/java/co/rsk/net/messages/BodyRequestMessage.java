@@ -7,19 +7,19 @@ import org.ethereum.util.RLP;
  */
 public class BodyRequestMessage extends MessageWithId {
     private long id;
-    private byte[] hash;
+    private byte[][] hashes;
 
-    public BodyRequestMessage(long id, byte[] hash) {
+    public BodyRequestMessage(long id, byte[]... hashes) {
         this.id = id;
-        this.hash = hash;
+        this.hashes = hashes;
     }
 
     public long getId() {
         return this.id;
     }
 
-    public byte[] getBlockHash() {
-        return this.hash;
+    public byte[][] getBlockHashes() {
+        return this.hashes;
     }
 
     @Override
@@ -34,8 +34,12 @@ public class BodyRequestMessage extends MessageWithId {
 
     @Override
     public byte[] getEncodedMessageWithoutId() {
-        byte[] rlpHash = RLP.encodeElement(this.hash);
-        return RLP.encodeList(rlpHash);
+        byte[][] encoded = new byte[hashes.length][];
+        for (int i = 0 ; i < this.hashes.length ; i++) {
+            byte[] hash = hashes[i];
+            encoded[i] = RLP.encodeElement(hash);
+        }
+        return RLP.encodeList(encoded);
     }
 
     @Override

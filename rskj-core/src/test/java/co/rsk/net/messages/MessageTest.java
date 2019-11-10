@@ -446,11 +446,12 @@ public class MessageTest {
         BodyRequestMessage newmessage = (BodyRequestMessage) result;
 
         Assert.assertEquals(100, newmessage.getId());
-        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), newmessage.getBlockHashes()[0]);
     }
 
     @Test
     public void encodeDecodeBodyResponseMessage() {
+        List<BlockBody> bodies = new ArrayList<>();
         List<Transaction> transactions = new ArrayList<>();
 
         for (int k = 1; k <= 10; k++)
@@ -466,8 +467,9 @@ public class MessageTest {
             uncles.add(block.getHeader());
             parent = block;
         }
+        bodies.add(new BlockBody(transactions, uncles));
 
-        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, bodies);
 
         byte[] encoded = message.getEncoded();
 
@@ -483,16 +485,16 @@ public class MessageTest {
 
         Assert.assertEquals(100, newmessage.getId());
 
-        Assert.assertNotNull(newmessage.getTransactions());
-        Assert.assertEquals(transactions.size(), newmessage.getTransactions().size());
+        Assert.assertNotNull(newmessage.getBlocks());
+        Assert.assertEquals(transactions.size(), newmessage.getBlocks().get(0).getTransactionsList().size());
 
-        Assert.assertEquals(transactions, newmessage.getTransactions());
+        Assert.assertEquals(transactions, newmessage.getBlocks().get(0).getTransactionsList());
 
-        Assert.assertNotNull(newmessage.getUncles());
-        Assert.assertEquals(uncles.size(), newmessage.getUncles().size());
+        Assert.assertNotNull(newmessage.getBlocks().get(0).getUncleList());
+        Assert.assertEquals(uncles.size(), newmessage.getBlocks().get(0).getUncleList().size());
 
         for (int k = 0; k < uncles.size(); k++)
-            Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getUncles().get(k).getFullEncoded());
+            Assert.assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getBlocks().get(0).getUncleList().get(k).getFullEncoded());
     }
 
     private static Transaction createTransaction(int number) {

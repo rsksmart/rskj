@@ -22,6 +22,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockBody;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
@@ -214,19 +215,18 @@ public class NodeBlockProcessor implements BlockProcessor {
      *
      * @param sender the sender of the BodyRequest message.
      * @param requestId the id of the request
-     * @param hash   the requested block's hash.
+     * @param hashes   the requested blocks hashes.
      */
     @Override
-    public void processBodyRequest(@Nonnull final Peer sender, long requestId, @Nonnull final byte[] hash) {
-        logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
-        final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
-
-        if (block == null) {
-            // Don't waste time sending an empty response.
-            return;
+    public void processBodyRequest(@Nonnull final Peer sender, long requestId, @Nonnull final byte[][] hashes) {
+        List<BlockBody> blocks = new ArrayList<>();
+        for (byte[] hash : hashes) {
+            logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
+            final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
+            blocks.add(new BlockBody(block.getTransactionsList(), block.getUncleList()));
         }
 
-        Message responseMessage = new BodyResponseMessage(requestId, block.getTransactionsList(), block.getUncleList());
+        Message responseMessage = new BodyResponseMessage(requestId, blocks);
         sender.sendMessage(responseMessage);
     }
 

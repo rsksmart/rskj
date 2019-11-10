@@ -31,7 +31,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public long sendBodyRequest(Peer peer, BlockHeader header) { return 0L; }
+    public long sendBodyRequest(Peer peer, @Nonnull List<BlockHeader> headers) { return 0L; }
 
     @Override
     public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer) {

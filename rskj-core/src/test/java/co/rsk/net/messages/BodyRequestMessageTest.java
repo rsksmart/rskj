@@ -27,11 +27,13 @@ import static org.mockito.Mockito.*;
 public class BodyRequestMessageTest {
     @Test
     public void createWithBlockHash() {
-        byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
+        byte[][] hash = new byte[][]{new BlockGenerator().getGenesisBlock().getHash().getBytes(),
+                new BlockGenerator().getGenesisBlock().getHash().getBytes(),
+                new BlockGenerator().getGenesisBlock().getHash().getBytes()};
         BodyRequestMessage message = new BodyRequestMessage(100, hash);
 
         Assert.assertEquals(100, message.getId());
-        Assert.assertArrayEquals(hash, message.getBlockHash());
+        Assert.assertArrayEquals(hash, message.getBlockHashes());
         Assert.assertEquals(MessageType.BODY_REQUEST_MESSAGE, message.getMessageType());
     }
 

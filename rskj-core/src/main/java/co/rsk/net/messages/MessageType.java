@@ -189,29 +189,37 @@ public enum MessageType {
     BODY_RESPONSE_MESSAGE(15) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            RLPList rlpBlocks = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            RLPList rlpTransactions = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
-            RLPList rlpUncles = (RLPList)RLP.decode2(message.get(1).getRLPData()).get(0);
 
-            List<Transaction> transactions = new ArrayList<>();
-            for (int k = 0; k < rlpTransactions.size(); k++) {
-                byte[] txdata = rlpTransactions.get(k).getRLPData();
-                Transaction tx = new ImmutableTransaction(txdata);
+            List<BlockBody> blocks = new ArrayList<>();
 
-                if (tx.isRemascTransaction(k, rlpTransactions.size())) {
-                    tx = new RemascTransaction(txdata);
+            for (RLPElement rlpBlock : rlpBlocks) {
+                RLPList rlpTransactions = (RLPList) ((RLPList) rlpBlock).get(0);
+                RLPList rlpUncles = (RLPList) ((RLPList) rlpBlock).get(1);
+
+                List<Transaction> transactions = new ArrayList<>();
+                for (int k = 0; k < rlpTransactions.size(); k++) {
+                    byte[] txdata = rlpTransactions.get(k).getRLPData();
+                    Transaction tx = new ImmutableTransaction(txdata);
+
+                    if (tx.isRemascTransaction(k, rlpTransactions.size())) {
+                        tx = new RemascTransaction(txdata);
+                    }
+
+                    transactions.add(tx);
                 }
 
-                transactions.add(tx);
+                List<BlockHeader> uncles = rlpUncles.stream()
+                        .map(el -> blockFactory.decodeHeader(el.getRLPData()))
+                        .collect(Collectors.toList());
+
+                BlockBody block = new BlockBody(transactions, uncles);
+                blocks.add(block);
             }
 
-            List<BlockHeader> uncles = rlpUncles.stream()
-                    .map(el -> blockFactory.decodeHeader(el.getRLPData()))
-                    .collect(Collectors.toList());
-
-            return new BodyResponseMessage(id, transactions, uncles);
+            return new BodyResponseMessage(id, blocks);
         }
     },
     SKELETON_REQUEST_MESSAGE(16) {

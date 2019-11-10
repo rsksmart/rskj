@@ -786,7 +786,7 @@ public class NodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        processor.processBodyRequest(sender, 100, block.getHash().getBytes());
+        processor.processBodyRequest(sender, 100, new byte[][] {block.getHash().getBytes()});
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -798,8 +798,9 @@ public class NodeBlockProcessorTest {
         final BodyResponseMessage bMessage = (BodyResponseMessage) message;
 
         Assert.assertEquals(100, bMessage.getId());
-        Assert.assertEquals(block.getTransactionsList(), bMessage.getTransactions());
-        Assert.assertEquals(block.getUncleList(), bMessage.getUncles());
+        Assert.assertEquals(block.getTransactionsList(), bMessage.getBlocks().get(0).getTransactionsList());
+        Assert.assertEquals(block.getUncleList(), bMessage.getBlocks().get(0).getUncleList());
+
     }
 
     @Test

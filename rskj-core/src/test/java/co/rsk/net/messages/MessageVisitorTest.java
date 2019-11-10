@@ -335,10 +335,10 @@ public class MessageVisitorTest {
     @Test
     public void bodyRequestMessage() {
         BodyRequestMessage message = mock(BodyRequestMessage.class);
-        byte[] blockHash = new byte[]{0x0F};
+        byte[][] blockHash = new byte[][]{{0x0F}};
 
         when(message.getId()).thenReturn(1L);
-        when(message.getBlockHash()).thenReturn(blockHash);
+        when(message.getBlockHashes()).thenReturn(blockHash);
 
         target.apply(message);
 

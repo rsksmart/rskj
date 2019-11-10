@@ -40,6 +40,7 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -49,7 +50,7 @@ import static org.ethereum.util.BIUtil.isIn20PercentRange;
 
 /**
  * <p>Encapsulates logic which manages peers involved in blockchain sync</p>
- *
+ * <p>
  * Holds connections, bans, disconnects and other peers logic<br>
  * The pool is completely threadsafe<br>
  * Implements {@link Iterable} and can be used in "foreach" loop<br>
@@ -65,9 +66,9 @@ public class SyncPool implements InternalService {
 
     private static final Duration CONNECTION_TIMEOUT = Duration.ofSeconds(30);
 
-    private final Map<NodeID, Channel> peers = new HashMap<>();
+    private final Map<NodeID, Channel> peers = new ConcurrentHashMap<>();
     private final List<Channel> activePeers = Collections.synchronizedList(new ArrayList<>());
-    private final Map<String, Instant> pendingConnections = new HashMap<>();
+    private final Map<String, Instant> pendingConnections = new ConcurrentHashMap<>();
 
     private BlockDifficulty lowerUsefulDifficulty = BlockDifficulty.ZERO;
 
@@ -102,17 +103,17 @@ public class SyncPool implements InternalService {
         updateLowerUsefulDifficulty();
 
         syncPoolExecutor.scheduleWithFixedDelay(
-            () -> {
-                try {
-                    heartBeat();
-                    processConnections();
-                    updateLowerUsefulDifficulty();
-                    fillUp();
-                    prepareActive();
-                } catch (Throwable t) {
-                    logger.error("Unhandled exception", t);
-                }
-            }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS
+                () -> {
+                    try {
+                        heartBeat();
+                        processConnections();
+                        updateLowerUsefulDifficulty();
+                        fillUp();
+                        prepareActive();
+                    } catch (Throwable t) {
+                        logger.error("Unhandled exception", t);
+                    }
+                }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS
         );
 
         if (config.waitForSync()) {
@@ -141,22 +142,16 @@ public class SyncPool implements InternalService {
         String shortPeerId = peer.getPeerIdShort();
         logger.trace("Peer {}: adding", shortPeerId);
 
-        synchronized (peers) {
-            peers.put(peer.getNodeId(), peer);
-        }
+        peers.put(peer.getNodeId(), peer);
 
-        synchronized (pendingConnections) {
-            pendingConnections.remove(peer.getPeerId());
-        }
+        pendingConnections.remove(peer.getPeerId());
 
         ethereumListener.onPeerAddedToSyncPool(peer);
         logger.info("Peer {}: added to pool", shortPeerId);
     }
 
     public void remove(Channel peer) {
-        synchronized (peers) {
-            peers.values().remove(peer);
-        }
+        peers.values().remove(peer);
     }
 
     public void onDisconnect(Channel peer) {
@@ -165,14 +160,9 @@ public class SyncPool implements InternalService {
             return;
         }
 
-        boolean existed;
+        boolean existed = peers.values().remove(peer);
+        activePeers.remove(peer);
 
-        synchronized (peers) {
-            existed = peers.values().remove(peer);
-            synchronized (activePeers) {
-                activePeers.remove(peer);
-            }
-        }
 
         // do not count disconnects for nodeId
         // if exact peer is not an active one
@@ -186,45 +176,42 @@ public class SyncPool implements InternalService {
     private void connect(Node node) {
         if (logger.isTraceEnabled()) {
             logger.trace(
-                "Peer {}: initiate connection",
-                node.getHexIdShort()
+                    "Peer {}: initiate connection",
+                    node.getHexIdShort()
             );
         }
 
         if (isInUse(node.getHexId())) {
             if (logger.isTraceEnabled()) {
                 logger.trace(
-                    "Peer {}: connection already initiated",
-                    node.getHexIdShort()
+                        "Peer {}: connection already initiated",
+                        node.getHexIdShort()
                 );
             }
 
             return;
         }
 
-        synchronized (pendingConnections) {
-            String ip = node.getHost();
-            int port = node.getPort();
-            String remoteId = Hex.toHexString(node.getId().getID());
-            logger.info("Connecting to: {}:{}", ip, port);
-            PeerClient peerClient = peerClientFactory.newInstance();
-            peerClient.connectAsync(ip, port, remoteId);
-            pendingConnections.put(node.getHexId(), Instant.now());
-        }
+        String ip = node.getHost();
+        int port = node.getPort();
+        String remoteId = Hex.toHexString(node.getId().getID());
+        logger.info("Connecting to: {}:{}", ip, port);
+        PeerClient peerClient = peerClientFactory.newInstance();
+        peerClient.connectAsync(ip, port, remoteId);
+        pendingConnections.put(node.getHexId(), Instant.now());
+
     }
 
     private Set<String> nodesInUse() {
         Set<String> ids = new HashSet<>();
 
-        synchronized (peers) {
-            for (Channel peer : peers.values()) {
-                ids.add(peer.getPeerId());
-            }
+        for (Channel peer : peers.values()) {
+            ids.add(peer.getPeerId());
         }
 
-        synchronized (pendingConnections) {
-            ids.addAll(pendingConnections.keySet());
-        }
+
+        ids.addAll(pendingConnections.keySet());
+
 
         return ids;
     }
@@ -234,15 +221,13 @@ public class SyncPool implements InternalService {
     }
 
     private void processConnections() {
-        synchronized (pendingConnections) {
-            Instant earliestAcceptableTime = Instant.now().minus(CONNECTION_TIMEOUT);
-            pendingConnections.values().removeIf(e -> e.isBefore(earliestAcceptableTime));
-        }
+        Instant earliestAcceptableTime = Instant.now().minus(CONNECTION_TIMEOUT);
+        pendingConnections.values().removeIf(e -> e.isBefore(earliestAcceptableTime));
     }
 
     private void fillUp() {
         int lackSize = config.maxActivePeers() - peers.size();
-        if(lackSize <= 0) {
+        if (lackSize <= 0) {
             return;
         }
 
@@ -254,54 +239,51 @@ public class SyncPool implements InternalService {
             logDiscoveredNodes(newNodes);
         }
 
-        for(NodeHandler n : newNodes) {
+        for (NodeHandler n : newNodes) {
             connect(n.getNode());
         }
     }
 
     private void prepareActive() {
-        synchronized (peers) {
 
-            List<Channel> active = new ArrayList<>(peers.values());
+        List<Channel> active = new ArrayList<>(peers.values());
 
-            if (active.isEmpty()) {
-                return;
-            }
+        if (active.isEmpty()) {
+            return;
+        }
 
-            // filtering by 20% from top difficulty
-            active.sort(Comparator.comparing(Channel::getTotalDifficulty).reversed());
+        // filtering by 20% from top difficulty
+        active.sort(Comparator.comparing(Channel::getTotalDifficulty).reversed());
 
-            BigInteger highestDifficulty = active.get(0).getTotalDifficulty();
-            int thresholdIdx = min(config.syncPeerCount(), active.size()) - 1;
+        BigInteger highestDifficulty = active.get(0).getTotalDifficulty();
+        int thresholdIdx = min(config.syncPeerCount(), active.size()) - 1;
 
-            for (int i = thresholdIdx; i >= 0; i--) {
-                if (isIn20PercentRange(active.get(i).getTotalDifficulty(), highestDifficulty)) {
-                    thresholdIdx = i;
-                    break;
-                }
-            }
-
-            List<Channel> filtered = active.subList(0, thresholdIdx + 1);
-
-            // sorting by latency in asc order
-            filtered.sort(Comparator.comparingDouble(c -> c.getPeerStats().getAvgLatency()));
-
-            synchronized (activePeers) {
-                activePeers.clear();
-                activePeers.addAll(filtered);
+        for (int i = thresholdIdx; i >= 0; i--) {
+            if (isIn20PercentRange(active.get(i).getTotalDifficulty(), highestDifficulty)) {
+                thresholdIdx = i;
+                break;
             }
         }
+
+        List<Channel> filtered = active.subList(0, thresholdIdx + 1);
+
+        // sorting by latency in asc order
+        filtered.sort(Comparator.comparingDouble(c -> c.getPeerStats().getAvgLatency()));
+
+        activePeers.clear();
+        activePeers.addAll(filtered);
+
     }
 
     private void logDiscoveredNodes(List<NodeHandler> nodes) {
         StringBuilder sb = new StringBuilder();
 
-        for(NodeHandler n : nodes) {
+        for (NodeHandler n : nodes) {
             sb.append(Utils.getNodeIdShort(Hex.toHexString(n.getNode().getId().getID())));
             sb.append(", ");
         }
 
-        if(sb.length() > 0) {
+        if (sb.length() > 0) {
             sb.delete(sb.length() - 2, sb.length());
         }
 
@@ -320,12 +302,10 @@ public class SyncPool implements InternalService {
     }
 
     private void heartBeat() {
-        synchronized (peers) {
-            for (Channel peer : peers.values()) {
-                if (peer.getSyncStats().secondsSinceLastUpdate() > config.peerChannelReadTimeout()) {
-                    logger.info("Peer {}: no response after {} seconds", peer.getPeerIdShort(), config.peerChannelReadTimeout());
-                    peer.dropConnection();
-                }
+        for (Channel peer : peers.values()) {
+            if (peer.getSyncStats().secondsSinceLastUpdate() > config.peerChannelReadTimeout()) {
+                logger.info("Peer {}: no response after {} seconds", peer.getPeerIdShort(), config.peerChannelReadTimeout());
+                peer.dropConnection();
             }
         }
     }

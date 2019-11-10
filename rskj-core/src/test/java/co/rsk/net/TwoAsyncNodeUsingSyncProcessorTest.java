@@ -95,6 +95,31 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
+    public void buildBlockchainAndSynchronize400BlocksWithMoreBlocksPerMessage() {
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(400, false, true);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
+
+        node1.sendFullStatusTo(node2);
+        // sync setup
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(400, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        // get blocks
+        node2.waitExactlyNTasksWithTimeout(400);
+
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
+
+        Assert.assertEquals(400, node1.getBestBlock().getNumber());
+        Assert.assertEquals(400, node2.getBestBlock().getNumber());
+        Assert.assertEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+
+        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
+
+        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+    }
+
+    @Test
     public void buildBlockchainWithUnclesAndSynchronize() {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(10, true, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
@@ -212,7 +237,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         // sync setup
         node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(2030, 30, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // request bodies
-        node1.waitExactlyNTasksWithTimeout(930);
+        node1.waitExactlyNTasksWithTimeout(97);
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -233,21 +258,23 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Blockchain b1 = builder.ofSize(300, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 4000, false);
 
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING, builder.getBlockStore());
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SyncConfiguration config = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 1);
+
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, config, builder.getBlockStore());
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, config);
 
         Assert.assertEquals(300, node1.getBestBlock().getNumber());
         Assert.assertEquals(4300, node2.getBestBlock().getNumber());
 
         for (int i = 0; i < 5; i++) {
-            int skippedChunks = 300 / 192;
-            int expectedBestBlockNumber = Math.min(4300, 192 * skippedChunks + 192 * 5 * (i + 1));
             long currentBestBlock = node1.getBestBlock().getNumber();
+            int skippedChunks = 300/192;
+            int expectedBestBlockNumber = Math.min(4300, 192 * skippedChunks + 192 * 5 * (i + 1));
             // at the beginning and the end we might have different number of blocks to download
             int blocksToDownload = Math.toIntExact(expectedBestBlockNumber - currentBestBlock);
 
             node2.sendFullStatusTo(node1);
-            node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(4300, currentBestBlock, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+            node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(4300, currentBestBlock, config));
 
             // request bodies
             node1.waitExactlyNTasksWithTimeout(blocksToDownload);

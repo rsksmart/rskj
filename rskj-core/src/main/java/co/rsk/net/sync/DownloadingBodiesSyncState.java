@@ -97,27 +97,33 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
             return;
         }
 
-        // we already checked that this message was expected
-        BlockHeader header = pendingBodyResponses.remove(requestId).header;
-        Block block;
-        try {
-            block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles());
-            block.seal();
-        } catch (IllegalArgumentException ex) {
-            handleInvalidMessage(peer, header);
-            return;
-        }
+        List<BlockHeader> headers = pendingBodyResponses.remove(requestId).headers;
 
-        if (!blockValidationRule.isValid(block)) {
-            handleInvalidMessage(peer, header);
-            return;
-        }
+        for (int i = 0 ; i < message.getBlocks().size() ; i++) {
+            BlockBody receivedBlock = message.getBlocks().get(i);
+            if (receivedBlock == null) {
+                continue;
+            }
+            BlockHeader header = headers.get(i);
+            Block block;
+            try {
+                block = blockFactory.newBlock(header, receivedBlock.getTransactionsList(), receivedBlock.getUncleList());
+                block.seal();
+            } catch (IllegalArgumentException ex) {
+                handleInvalidMessage(peer, header);
+                return;
+            }
 
-        // handle block
-        // this is a controled place where we ask for blocks, we never should look for missing hashes
-        if (blockSyncService.processBlock(block, peer, true).isInvalidBlock()){
-            handleInvalidBlock(peer, header);
-            return;
+            if (!blockValidationRule.isValid(block)) {
+                handleInvalidMessage(peer, header);
+                return;
+            }
+
+            // handle block
+            // this is a controled place where we ask for blocks, we never should look for missing hashes
+            if (blockSyncService.processBlock(block, peer, true).isInvalidBlock()) {
+                handleInvalidBlock(peer, header);
+            }
         }
         // updates peer downloading information
         tryRequestNextBody(peer);
@@ -136,9 +142,10 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         }
     }
 
+
     private void tryRequestNextBody(Peer peer) {
-        updateHeadersAndChunks(peer, chunksBeingDownloaded.get(peer))
-                .ifPresent(blockHeader -> tryRequestBody(peer, blockHeader));
+        List<BlockHeader> headers = updateHeadersAndChunks(peer);
+        tryRequestBodies(peer, headers);
     }
 
     private void handleInvalidBlock(Peer peer, BlockHeader header) {
@@ -186,7 +193,9 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         // if this peer has another different message pending then its restored to the stack
         Long messageId = messagesByPeers.remove(peer);
         if (messageId != null) {
-            resetChunkAndHeader(peer, pendingBodyResponses.remove(messageId).header);
+            for (BlockHeader header : pendingBodyResponses.remove(messageId).headers) {
+                resetChunkAndHeader(peer, header);
+            }
         }
         startDownloading(getInactivePeers());
     }
@@ -203,52 +212,60 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         timeElapsedByPeer.remove(peer);
     }
 
-    private Optional<BlockHeader> updateHeadersAndChunks(Peer peer, Integer currentChunk) {
-        Deque<BlockHeader> headers = pendingHeaders.get(currentChunk);
-        BlockHeader header = headers.poll();
-        while (header != null) {
-            // we double check if the header was not downloaded or obtained by another way
-            if (!isKnownBlock(header.getHash())) {
-                return Optional.of(header);
-            }
-            header = headers.poll();
-        }
-
-        Optional<BlockHeader> blockHeader = tryFindBlockHeader(peer);
-        if (!blockHeader.isPresent()){
+    private List<BlockHeader> updateHeadersAndChunks(Peer peer) {
+        List<BlockHeader> blockHeaders = tryFindBlockHeaders(peer);
+        if (blockHeaders.isEmpty()) {
             chunksBeingDownloaded.remove(peer);
             segmentsBeingDownloaded.remove(peer);
             messagesByPeers.remove(peer);
         }
 
-        return blockHeader;
+        return blockHeaders;
     }
 
     private boolean isKnownBlock(Keccak256 hash) {
         return blockchain.getBlockByHash(hash.getBytes()) != null;
     }
 
-    private Optional<BlockHeader> tryFindBlockHeader(Peer peer) {
+    private List<BlockHeader> tryFindBlockHeaders(Peer peer) {
+        List<BlockHeader> found = new ArrayList<>();
         // we start from the last chunk that can be downloaded
         for (int segmentNumber = segmentByNode.get(peer); segmentNumber >= 0; segmentNumber--){
             Deque<Integer> chunks = chunksBySegment.get(segmentNumber);
             // if the segment stack is empty then continue to next segment
             if (!chunks.isEmpty()) {
-                int chunkNumber = chunks.pollLast();
-                Deque<BlockHeader> headers = pendingHeaders.get(chunkNumber);
+                Deque<BlockHeader> headers = null;
+                int chunkNumber = 0;
+                while((headers == null || headers.isEmpty()) && !chunks.isEmpty()) {
+                    chunkNumber = chunks.peekLast();
+                    headers = pendingHeaders.get(chunkNumber);
+                    if (headers == null || headers.isEmpty()) {
+                        chunks.pollLast();
+                    }
+                }
+                if (headers == null) {
+                    continue;
+                }
+
                 BlockHeader header = headers.poll();
                 while (header != null) {
                     // we double check if the header was not downloaded or obtained by another way
                     if (!isBlockKnown(header.getHash())) {
                         chunksBeingDownloaded.put(peer, chunkNumber);
                         segmentsBeingDownloaded.put(peer, segmentNumber);
-                        return Optional.of(header);
+                        found.add(header);
+                        if (found.size() == syncConfiguration.getMaxMessageCount()) {
+                            break;
+                        }
                     }
                     header = headers.poll();
                 }
             }
+            if (!found.isEmpty()) {
+                return found;
+            }
         }
-        return Optional.empty();
+        return found;
     }
 
     private boolean isBlockKnown(Keccak256 hash) {
@@ -261,7 +278,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void startDownloading(List<Peer> peers) {
-        peers.forEach(p -> tryFindBlockHeader(p).ifPresent(header -> tryRequestBody(p, header)));
+        peers.forEach(p -> tryRequestBodies(p, tryFindBlockHeaders(p)));
     }
 
     @Override
@@ -292,11 +309,13 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private void handleTimeoutMessage(Peer peer) {
         peersInformation.reportEventWithLog("Timeout waiting body from node {}",
-                peer.getPeerNodeID(), EventType.TIMEOUT_MESSAGE, peer);
+        peer.getPeerNodeID(), EventType.TIMEOUT_MESSAGE, peer);
         Long messageId = messagesByPeers.remove(peer);
-        BlockHeader header = pendingBodyResponses.remove(messageId).header;
+        List<BlockHeader> headers = pendingBodyResponses.remove(messageId).headers;
         clearPeerInfo(peer);
-        resetChunkAndHeader(peer, header);
+        for (BlockHeader header : headers) {
+            resetChunkAndHeader(peer, header);
+        }
     }
 
     private List<Peer> getInactivePeers() {
@@ -356,11 +375,21 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         nodes.forEach(peer -> segmentByNode.put(peer, segmentNumber));
     }
 
-    private void tryRequestBody(Peer peer, BlockHeader header){
-        long messageId = syncEventsHandler.sendBodyRequest(peer, header);
-        pendingBodyResponses.put(messageId, new PendingBodyResponse(peer.getPeerNodeID(), header));
-        timeElapsedByPeer.put(peer, Duration.ZERO);
-        messagesByPeers.put(peer, messageId);
+    private void tryRequestBodies(Peer peer, List<BlockHeader> headers){
+        if (headers.isEmpty()) {
+            return;
+        }
+        Long messageId = syncEventsHandler.sendBodyRequest(peer, headers);
+        if (messageId != null){
+            pendingBodyResponses.put(messageId, new PendingBodyResponse(peer.getPeerNodeID(), headers));
+            timeElapsedByPeer.put(peer, Duration.ZERO);
+            messagesByPeers.put(peer, messageId);
+        } else {
+            // since a message could fail to be delivered we have to discard peer if can't be reached
+            clearPeerInfo(peer);
+            syncEventsHandler.onSyncIssue("Channel failed to sent on {} to {}",
+                    this.getClass(), peer);
+        }
     }
 
     private boolean isExpectedBody(long requestId, NodeID peerId) {
@@ -374,17 +403,17 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     @VisibleForTesting
-    public void expectBodyResponseFor(long requestId, NodeID nodeID, BlockHeader header) {
-        pendingBodyResponses.put(requestId, new PendingBodyResponse(nodeID, header));
+    public void expectBodyResponseFor(long requestId, NodeID nodeID, List<BlockHeader> headers) {
+        pendingBodyResponses.put(requestId, new PendingBodyResponse(nodeID, headers));
     }
 
     private static class PendingBodyResponse {
         private NodeID nodeID;
-        private BlockHeader header;
+        private List<BlockHeader> headers;
 
-        PendingBodyResponse(NodeID nodeID, BlockHeader header) {
+        PendingBodyResponse(NodeID nodeID, List<BlockHeader> headers) {
             this.nodeID = nodeID;
-            this.header = header;
+            this.headers = headers;
         }
     }
 }

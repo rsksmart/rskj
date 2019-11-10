@@ -551,7 +551,7 @@ public class SyncProcessorTest {
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class));
 
-        BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), null, null);
+        BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), Collections.singletonList(null));
         processor.registerExpectedMessage(response);
 
         processor.processBodyResponse(sender, response);
@@ -588,7 +588,7 @@ public class SyncProcessorTest {
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         long lastRequestId = new Random().nextLong();
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, Collections.singletonList(new BlockBody(transactions, uncles)));
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();
@@ -601,7 +601,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
         processor.startDownloadingBodies(headers, Collections.singletonMap(sender, bids), sender);
-        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), Collections.singletonList(block.getHeader()));
 
         processor.processBodyResponse(sender, response);
 
@@ -644,7 +644,7 @@ public class SyncProcessorTest {
         txs.add(tx);
 
         long lastRequestId = new Random().nextLong();
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, txs, uncles);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, Collections.singletonList(new BlockBody(txs, uncles)));
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();
@@ -659,7 +659,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
         processor.startDownloadingBodies(headers, Collections.singletonMap(sender, bids), sender);
-        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), Collections.singletonList(block.getHeader()));
         processor.processBodyResponse(sender, response);
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
@@ -700,7 +700,7 @@ public class SyncProcessorTest {
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         long lastRequestId = new Random().nextLong();
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, Collections.singletonList(new BlockBody(transactions, uncles)));
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();
@@ -790,7 +790,7 @@ public class SyncProcessorTest {
         List<Transaction> transactions = block.getTransactionsList();
         List<BlockHeader> uncles = block.getUncleList();
         long lastRequestId = new Random().nextLong();
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, Collections.singletonList(new BlockBody(transactions, uncles)));
         processor.registerExpectedMessage(response);
 
         Deque<BlockHeader> headerStack = new ArrayDeque<>();
@@ -803,7 +803,7 @@ public class SyncProcessorTest {
         bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
 
         processor.startDownloadingBodies(headers, Collections.singletonMap(sender, bids), sender);
-        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), Collections.singletonList(block.getHeader()));
 
         processor.processBodyResponse(sender, response);
 

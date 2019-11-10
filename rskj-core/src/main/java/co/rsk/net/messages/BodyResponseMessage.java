@@ -1,5 +1,7 @@
 package co.rsk.net.messages;
 
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockBody;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
@@ -10,37 +12,41 @@ import java.util.List;
  * Created by ajlopez on 25/08/2017.
  */
 public class BodyResponseMessage extends MessageWithId {
+    private final List<BlockBody> blocks;
     private long id;
-    private List<Transaction> transactions;
-    private List<BlockHeader> uncles;
 
-    public BodyResponseMessage(long id, List<Transaction> transactions, List<BlockHeader> uncles) {
+    public BodyResponseMessage(long id, List<BlockBody> blocks) {
         this.id = id;
-        this.transactions = transactions;
-        this.uncles = uncles;
+        this.blocks = blocks;
     }
 
     @Override
     public long getId() { return this.id; }
 
-    public List<Transaction> getTransactions() { return this.transactions; }
-
-    public List<BlockHeader> getUncles() { return this.uncles; }
+    public List<BlockBody> getBlocks() { return this.blocks; }
 
     @Override
     protected byte[] getEncodedMessageWithoutId() {
-        byte[][] rlpTransactions = new byte[this.transactions.size()][];
-        byte[][] rlpUncles = new byte[this.uncles.size()][];
+        byte[][] rlpBlocks = new byte[blocks.size()][];
+        for (int i = 0 ; i < blocks.size() ; i++) {
+            BlockBody block = blocks.get(i);
+            if (block == null) {
+                rlpBlocks[i] = null;
+            } else {
+                byte[][] rlpTransactions = new byte[block.getTransactionsList().size()][];
+                byte[][] rlpUncles = new byte[block.getUncleList().size()][];
 
-        for (int k = 0; k < this.transactions.size(); k++) {
-            rlpTransactions[k] = this.transactions.get(k).getEncoded();
+                for (int k = 0; k < block.getTransactionsList().size(); k++) {
+                    rlpTransactions[k] = block.getTransactionsList().get(k).getEncoded();
+                }
+
+                for (int k = 0; k < block.getUncleList().size(); k++) {
+                    rlpUncles[k] = block.getUncleList().get(k).getFullEncoded();
+                }
+                rlpBlocks[i] = RLP.encodeList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
+            }
         }
-
-        for (int k = 0; k < this.uncles.size(); k++) {
-            rlpUncles[k] = this.uncles.get(k).getFullEncoded();
-        }
-
-        return RLP.encodeList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
+        return RLP.encodeList(rlpBlocks);
     }
 
     @Override

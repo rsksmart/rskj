@@ -300,6 +300,10 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("sync.longSyncLimit");
     }
 
+    public int getMaxMessageCount() {
+        return configFromFiles.getInt("sync.maxMessageCount");
+    }
+
     // its fixed, cannot be set by config file
     public int getChunkSize() {
         return CHUNK_SIZE;

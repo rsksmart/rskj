@@ -54,7 +54,6 @@ public class ChannelManagerImpl implements ChannelManager {
     // then we ban that peer IP on any connections for some time to protect from
     // too active peers
     private static final Duration INBOUND_CONNECTION_BAN_TIMEOUT = Duration.ofSeconds(10);
-    private final Object activePeersLock = new Object();
     private final Map<NodeID, Channel> activePeers;
 
     // Using a concurrent list
@@ -94,7 +93,7 @@ public class ChannelManagerImpl implements ChannelManager {
         mainWorker.shutdown();
     }
 
-    private void handleNewPeersAndDisconnections(){
+    private void handleNewPeersAndDisconnections() {
         this.tryProcessNewPeers();
         this.cleanDisconnections();
     }
@@ -150,9 +149,9 @@ public class ChannelManagerImpl implements ChannelManager {
     private void disconnect(Channel peer, ReasonCode reason) {
         logger.debug("Disconnecting peer with reason {} : {}", reason, peer);
         peer.disconnect(reason);
-        synchronized (disconnectionTimeoutsLock){
+        synchronized (disconnectionTimeoutsLock) {
             disconnectionsTimeouts.put(peer.getInetSocketAddress().getAddress(),
-                                       Instant.now().plus(INBOUND_CONNECTION_BAN_TIMEOUT));
+                    Instant.now().plus(INBOUND_CONNECTION_BAN_TIMEOUT));
         }
     }
 
@@ -169,9 +168,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private void addToActives(Channel peer) {
         if (peer.isUsingNewProtocol() || peer.hasEthStatusSucceeded()) {
             syncPool.add(peer);
-            synchronized (activePeersLock){
-                activePeers.put(peer.getNodeId(), peer);
-            }
+            activePeers.put(peer.getNodeId(), peer);
         }
     }
 
@@ -188,25 +185,24 @@ public class ChannelManagerImpl implements ChannelManager {
         final BlockIdentifier bi = new BlockIdentifier(block.getHash().getBytes(), block.getNumber());
         final Message newBlock = new BlockMessage(block);
         final Message newBlockHashes = new NewBlockHashesMessage(Arrays.asList(bi));
-        synchronized (activePeersLock){
-            // Get a randomized list with all the peers that don't have the block yet.
-            activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
-            List<Channel> peers = new ArrayList<>(activePeers.values());
-            Collections.shuffle(peers);
+        // Get a randomized list with all the peers that don't have the block yet.
+        activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
+        List<Channel> peers = new ArrayList<>(activePeers.values());
+        Collections.shuffle(peers);
 
-            int sqrt = (int) Math.floor(Math.sqrt(peers.size()));
-            for (int i = 0; i < sqrt; i++) {
-                Channel peer = peers.get(i);
-                nodesIdsBroadcastedTo.add(peer.getNodeId());
-                logger.trace("RSK propagate: {}", peer);
-                peer.sendMessage(newBlock);
-            }
-            for (int i = sqrt; i < peers.size(); i++) {
-                Channel peer = peers.get(i);
-                logger.trace("RSK announce: {}", peer);
-                peer.sendMessage(newBlockHashes);
-            }
+        int sqrt = (int) Math.floor(Math.sqrt(peers.size()));
+        for (int i = 0; i < sqrt; i++) {
+            Channel peer = peers.get(i);
+            nodesIdsBroadcastedTo.add(peer.getNodeId());
+            logger.trace("RSK propagate: {}", peer);
+            peer.sendMessage(newBlock);
         }
+        for (int i = sqrt; i < peers.size(); i++) {
+            Channel peer = peers.get(i);
+            logger.trace("RSK announce: {}", peer);
+            peer.sendMessage(newBlockHashes);
+        }
+
 
         return nodesIdsBroadcastedTo;
     }
@@ -216,16 +212,15 @@ public class ChannelManagerImpl implements ChannelManager {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
         final Message newBlockHash = new NewBlockHashesMessage(identifiers);
 
-        synchronized (activePeersLock){
-            activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
+        activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
 
-            activePeers.values().stream()
-                    .filter(p -> targets.contains(p.getNodeId()))
-                    .forEach(peer -> {
-                        logger.trace("RSK announce hash: {}", peer);
-                        peer.sendMessage(newBlockHash);
-                    });
-        }
+        activePeers.values().stream()
+                .filter(p -> targets.contains(p.getNodeId()))
+                .forEach(peer -> {
+                    logger.trace("RSK announce hash: {}", peer);
+                    peer.sendMessage(newBlockHash);
+                });
+
 
         return nodesIdsBroadcastedTo;
     }
@@ -235,7 +230,7 @@ public class ChannelManagerImpl implements ChannelManager {
      * the peers with an id belonging to the skip set.
      *
      * @param transaction new Transaction to be sent
-     * @param skip  the set of peers to avoid sending the message.
+     * @param skip        the set of peers to avoid sending the message.
      * @return a set containing the ids of the peers that received the transaction.
      */
     @Nonnull
@@ -246,11 +241,11 @@ public class ChannelManagerImpl implements ChannelManager {
         final Message newTransactions = new TransactionsMessage(transactions);
 
         activePeers.values().stream()
-            .filter(p -> !skip.contains(p.getNodeId()))
-            .forEach(peer -> {
-                peer.sendMessage(newTransactions);
-                nodesIdsBroadcastedTo.add(peer.getNodeId());
-            });
+                .filter(p -> !skip.contains(p.getNodeId()))
+                .forEach(peer -> {
+                    peer.sendMessage(newTransactions);
+                    nodesIdsBroadcastedTo.add(peer.getNodeId());
+                });
 
         return nodesIdsBroadcastedTo;
     }
@@ -258,19 +253,18 @@ public class ChannelManagerImpl implements ChannelManager {
     @Override
     public int broadcastStatus(Status status) {
         final Message message = new StatusMessage(status);
-        synchronized (activePeersLock){
-            if (activePeers.isEmpty()) {
-                return 0;
-            }
-
-            int numberOfPeersToSendStatusTo = getNumberOfPeersToSendStatusTo(activePeers.size());
-            List<Channel> shuffledPeers = new ArrayList<>(activePeers.values());
-            Collections.shuffle(shuffledPeers);
-            shuffledPeers.stream()
-                    .limit(numberOfPeersToSendStatusTo)
-                    .forEach(c -> c.sendMessage(message));
-            return numberOfPeersToSendStatusTo;
+        if (activePeers.isEmpty()) {
+            return 0;
         }
+
+        int numberOfPeersToSendStatusTo = getNumberOfPeersToSendStatusTo(activePeers.size());
+        List<Channel> shuffledPeers = new ArrayList<>(activePeers.values());
+        Collections.shuffle(shuffledPeers);
+        shuffledPeers.stream()
+                .limit(numberOfPeersToSendStatusTo)
+                .forEach(c -> c.sendMessage(message));
+        return numberOfPeersToSendStatusTo;
+
     }
 
     @VisibleForTesting
@@ -289,30 +283,25 @@ public class ChannelManagerImpl implements ChannelManager {
         logger.debug("Peer {}: notifies about disconnect", channel.getPeerIdShort());
         channel.onDisconnect();
         syncPool.onDisconnect(channel);
-        synchronized (activePeersLock){
-            activePeers.values().remove(channel);
-        }
-        if(newPeers.remove(channel)) {
+        activePeers.values().remove(channel);
+
+        if (newPeers.remove(channel)) {
             logger.info("Peer removed from active peers: {}", channel.getPeerId());
         }
     }
 
     public Collection<Peer> getActivePeers() {
-        // from the docs: it is imperative to synchronize when iterating
-        synchronized (activePeersLock){
-            return new ArrayList<>(activePeers.values());
-        }
+        return new ArrayList<>(activePeers.values());
     }
 
     public boolean isAddressBlockAvailable(InetAddress inetAddress) {
-        synchronized (activePeersLock) {
-            //TODO(lsebrie): save block address in a data structure and keep updated on each channel add/remove
-            //TODO(lsebrie): check if we need to use a different networkCIDR for ipv6
-            return activePeers.values().stream()
-                    .map(ch -> new InetAddressBlock(ch.getInetSocketAddress().getAddress(), networkCIDR))
-                    .filter(block -> block.contains(inetAddress))
-                    .count() < maxConnectionsAllowed;
-        }
+        //TODO(lsebrie): save block address in a data structure and keep updated on each channel add/remove
+        //TODO(lsebrie): check if we need to use a different networkCIDR for ipv6
+        return activePeers.values().stream()
+                .map(ch -> new InetAddressBlock(ch.getInetSocketAddress().getAddress(), networkCIDR))
+                .filter(block -> block.contains(inetAddress))
+                .count() < maxConnectionsAllowed;
+
     }
 
 }

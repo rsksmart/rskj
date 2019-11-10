@@ -12,6 +12,8 @@ import org.junit.Test;
 
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
@@ -31,7 +33,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
     @Before
     public void setUp() {
-        syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        syncConfiguration = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 1);
         syncEventsHandler = mock(SyncEventsHandler.class);
         peersInformation = mock(PeersInformation.class);
         genesis = mock(Genesis.class);
@@ -150,16 +152,16 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
             when(headerToRequest.getHash()).thenReturn(headerHash);
             toRequest.addFirst(headerToRequest);
-            when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
+            when(syncEventsHandler.sendBodyRequest(any(), eq(Collections.singletonList(headerToRequest)))).thenReturn(i);
 
-            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
+            BodyResponseMessage response = new BodyResponseMessage(i, Collections.singletonList(new BlockBody(new ArrayList<>(), new ArrayList<>())));
             responses.addFirst(response);
 
             Block block = mock(Block.class);
             expectedBlocks.addFirst(block);
             when(block.getNumber()).thenReturn(i);
             when(block.getHash()).thenReturn(headerHash);
-            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles()))
+            when(blockFactory.newBlock(headerToRequest, response.getBlocks().get(0).getTransactionsList(), response.getBlocks().get(0).getUncleList()))
                     .thenReturn(block);
 
             when(block.isParentOf(any())).thenReturn(true);
@@ -216,16 +218,16 @@ public class DownloadingBackwardsBodiesSyncStateTest {
 
             when(headerToRequest.getHash()).thenReturn(headerHash);
             toRequest.addFirst(headerToRequest);
-            when(syncEventsHandler.sendBodyRequest(any(), eq(headerToRequest))).thenReturn(i);
+            when(syncEventsHandler.sendBodyRequest(any(),eq(Collections.singletonList(headerToRequest)))).thenReturn(i);
 
-            BodyResponseMessage response = new BodyResponseMessage(i, new LinkedList<>(), new LinkedList<>());
+            BodyResponseMessage response = new BodyResponseMessage(i, Collections.singletonList(new BlockBody(new ArrayList<>(), new ArrayList<>())));
             responses.addFirst(response);
 
             Block block = mock(Block.class);
             expectedBlocks.addFirst(block);
             when(block.getNumber()).thenReturn(i);
             when(block.getHash()).thenReturn(headerHash);
-            when(blockFactory.newBlock(headerToRequest, response.getTransactions(), response.getUncles()))
+            when(blockFactory.newBlock(headerToRequest, response.getBlocks().get(0).getTransactionsList(), response.getBlocks().get(0).getUncleList()))
                     .thenReturn(block);
 
             when(block.isParentOf(any())).thenReturn(true);

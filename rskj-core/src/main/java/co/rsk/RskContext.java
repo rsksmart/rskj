@@ -956,7 +956,8 @@ public class RskContext implements NodeBootstrapper {
                 rskSystemProperties.getMaxSkeletonChunks(),
                 rskSystemProperties.getChunkSize(),
                 rskSystemProperties.getMaxRequestedBodies(),
-                rskSystemProperties.getLongSyncLimit());
+                rskSystemProperties.getLongSyncLimit(),
+                rskSystemProperties.getMaxMessageCount());
     }
 
     protected StateRootHandler buildStateRootHandler() {

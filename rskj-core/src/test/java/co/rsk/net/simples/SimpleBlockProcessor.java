@@ -81,7 +81,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processBodyRequest(Peer sender, long requestId, byte[] hash) {
+    public void processBodyRequest(Peer sender, long requestId, byte[][] hashes) {
     }
 
     @Override

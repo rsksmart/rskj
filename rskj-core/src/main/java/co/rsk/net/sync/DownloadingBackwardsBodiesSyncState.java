@@ -5,6 +5,7 @@ import co.rsk.net.Peer;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockBody;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Genesis;
@@ -20,7 +21,7 @@ import java.util.*;
  * <p>
  * If the child is block number 1 or the requested list contains block number 1 it is connected to genesis.
  * <p>
- * Assuming that child is valid, the previous block can be validated by comparing it's hash to the child's parent.
+ * Assuming that child is valid, the previous block can be validated by comparing its hash to the child's parent.
  */
 public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
 
@@ -34,7 +35,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
     private final Peer selectedPeer;
 
     private final PriorityQueue<Block> responses;
-    private final Map<Long, BlockHeader> inTransit;
+    private final Map<Long, List<BlockHeader>> inTransit;
     private Block child;
 
     public DownloadingBackwardsBodiesSyncState(
@@ -70,52 +71,66 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
      * @param peer The peer sending the message.
      */
     @Override
+
     public void newBody(BodyResponseMessage body, Peer peer) {
-        BlockHeader requestedHeader = inTransit.get(body.getId());
-        if (requestedHeader == null) {
+        List<BlockHeader> requestedHeaders = inTransit.get(body.getId());
+        if (requestedHeaders == null) {
             peersInformation.reportEvent(peer.getPeerNodeID(), EventType.INVALID_MESSAGE);
             return;
         }
 
-        Block block = blockFactory.newBlock(requestedHeader, body.getTransactions(), body.getUncles());
-        block.seal();
+        for (int i = 0 ; i < body.getBlocks().size() ; i++) {
+            BlockHeader requestedHeader = requestedHeaders.get(i);
+            BlockBody receivedBlock = body.getBlocks().get(i);
+            if (receivedBlock == null) {
+                toRequest.add(requestedHeader);
+                continue;
+            }
 
-        if (!block.getHash().equals(requestedHeader.getHash())) {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.INVALID_MESSAGE);
-            return;
+            Block block = blockFactory.newBlock(requestedHeader, receivedBlock.getTransactionsList(), receivedBlock.getUncleList());
+            block.seal();
+
+            if (!block.getHash().equals(requestedHeader.getHash())) {
+                peersInformation.reportEvent(peer.getPeerNodeID(), EventType.INVALID_MESSAGE);
+                return;
+            }
+
+            resetTimeElapsed();
+            inTransit.remove(body.getId());
+            responses.add(block);
         }
 
-        resetTimeElapsed();
-        inTransit.remove(body.getId());
-        responses.add(block);
+            while (!responses.isEmpty() && responses.peek().isParentOf(child)) {
+                Block connectedBlock = responses.poll();
+                BlockDifficulty blockchainDifficulty = blockStore.getTotalDifficultyForHash(child.getHash().getBytes());
+                blockStore.saveBlock(
+                        connectedBlock,
+                        blockchainDifficulty.subtract(child.getCumulativeDifficulty()),
+                        true);
+                child = connectedBlock;
+            }
 
-        while (!responses.isEmpty() && responses.peek().isParentOf(child)) {
-            Block connectedBlock = responses.poll();
-            BlockDifficulty blockchainDifficulty = blockStore.getTotalDifficultyForHash(child.getHash().getBytes());
-            blockStore.saveBlock(
-                    connectedBlock,
-                    blockchainDifficulty.subtract(child.getCumulativeDifficulty()),
-                    true);
-            child = connectedBlock;
-        }
+            if (child.getNumber() == 1) {
+                connectGenesis(child);
+                blockStore.flush();
+                logger.info("Backward syncing complete");
+                syncEventsHandler.stopSyncing();
+                return;
+            }
 
-        if (child.getNumber() == 1) {
-            connectGenesis(child);
-            blockStore.flush();
-            logger.info("Backward syncing complete");
-            syncEventsHandler.stopSyncing();
-            return;
-        }
 
-        while (!toRequest.isEmpty() && inTransit.size() < syncConfiguration.getMaxRequestedBodies()) {
-            requestBodies(toRequest.remove());
-        }
+            List<BlockHeader> headersToRequest = new ArrayList<>();
+            while (!toRequest.isEmpty() && inTransit.size() < syncConfiguration.getMaxRequestedBodies() && headersToRequest.size() < syncConfiguration.getMaxMessageCount()) {
+                headersToRequest.add(toRequest.remove());
+            }
+        requestBodies(headersToRequest);
 
-        if (toRequest.isEmpty() && inTransit.isEmpty()) {
-            blockStore.flush();
-            logger.info("Backward syncing phase complete {}", block.getNumber());
-            syncEventsHandler.stopSyncing();
-        }
+            if (toRequest.isEmpty() && inTransit.isEmpty()) {
+                blockStore.flush();
+                logger.info("Backward syncing phase complete");
+                syncEventsHandler.stopSyncing();
+            }
+
     }
 
     @Override
@@ -132,15 +147,17 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
             return;
         }
 
-        while (!toRequest.isEmpty() && inTransit.size() < syncConfiguration.getMaxRequestedBodies()) {
+        List<BlockHeader> headersToRequest = new ArrayList<>();
+        while (!toRequest.isEmpty() && inTransit.size() < syncConfiguration.getMaxRequestedBodies()  && headersToRequest.size() < syncConfiguration.getMaxMessageCount()) {
             BlockHeader headerToRequest = toRequest.remove();
-                requestBodies(headerToRequest);
+            headersToRequest.add(headerToRequest);
         }
+        requestBodies(headersToRequest);
     }
 
-    private void requestBodies(BlockHeader headerToRequest) {
-        long requestNumber = syncEventsHandler.sendBodyRequest(selectedPeer, headerToRequest);
-        inTransit.put(requestNumber, headerToRequest);
+    private void requestBodies(List<BlockHeader> headersToRequest) {
+        long requestNumber = syncEventsHandler.sendBodyRequest(selectedPeer, headersToRequest);
+        inTransit.put(requestNumber, headersToRequest);
     }
 
     private void connectGenesis(Block child) {

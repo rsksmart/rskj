@@ -172,8 +172,8 @@ public class MessageVisitor {
     }
 
     public void apply(BodyRequestMessage message) {
-        final byte[] hash = message.getBlockHash();
-        this.blockProcessor.processBodyRequest(sender, message.getId(), hash);
+        final byte[][] hashes = message.getBlockHashes();
+        this.blockProcessor.processBodyRequest(sender, message.getId(), hashes);
     }
 
     public void apply(BodyResponseMessage message) {

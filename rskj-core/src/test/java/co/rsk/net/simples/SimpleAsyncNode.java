@@ -158,9 +158,14 @@ public class SimpleAsyncNode extends SimpleNode {
     }
 
     public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles, boolean mining) {
+        SyncConfiguration config = new SyncConfiguration(1, 1, 3, 1, 5, 192, 20, 10, 1);
+        return createNodeWithWorldBlockChain(size, withUncles, mining, config);
+    }
+
+    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles, boolean mining, SyncConfiguration config) {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, size, withUncles, mining);
-        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING, world.getBlockStore());
+        return createNode(blockchain, config, world.getBlockStore());
     }
 }
