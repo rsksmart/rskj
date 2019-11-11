@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -128,7 +129,7 @@ public class Transaction {
                 }
                 this.nonce = Collections.unmodifiableList(nonce);
             } else {
-                this.nonce = Collections.singletonList(transaction.get(1).getRLPData());
+                this.nonce = Collections.singletonList(nullToZeroArray(transaction.get(1).getRLPData()));
             }
             this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(2).getRLPData());
             this.gasLimit = transaction.get(3).getRLPData();
@@ -215,7 +216,7 @@ public class Transaction {
                 logger.trace("RLP encoded tx is not signed!");
                 this.signatures = Collections.emptyList();
             }
-            this.ownerCount = 0;
+            this.ownerCount = 1;
         }
     }
 
@@ -250,7 +251,19 @@ public class Transaction {
     }
 
     public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
-        this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
+        this(1, nonce, gasPrice, gas, to, value, data, chainId);
+    }
+
+    public Transaction(
+            int version,
+            long nonce,
+            long gasPrice,
+            long gas,
+            String to,
+            long value,
+            byte[] data,
+            byte chainId) {
+        this(version, BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
              BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
              data, chainId
         );
@@ -313,6 +326,19 @@ public class Transaction {
     public Transaction(
             byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
             byte chainId) {
+        this(1, nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId);
+    }
+
+
+    public Transaction(
+            int version,
+            byte[] nonce,
+            byte[] gasPriceRaw,
+            byte[] gasLimit,
+            byte[] receiveAddress,
+            byte[] valueRaw,
+            byte[] data,
+            byte chainId) {
         this.nonce = Collections.singletonList(ByteUtil.cloneBytes(nonce));
         this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
@@ -321,8 +347,8 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
-        this.version = 0;
-        this.ownerCount = 0;
+        this.version = version;
+        this.ownerCount = 1;
         this.signatures = Collections.emptyList();
     }
 
@@ -433,6 +459,9 @@ public class Transaction {
 
     public byte[] getNonce() {
         //TODO return all nonces
+        if(nonce.size() > 1) {
+            throw new UnsupportedOperationException("Tried get only one nonce");
+        }
         return nonce.isEmpty() ? EMPTY_BYTE_ARRAY : nonce.get(0);
     }
 
@@ -463,8 +492,10 @@ public class Transaction {
     }
 
     //Returns null when multi-signature because you shouldn't be using only one of the signatures
-    //TODO Maybe it should throw an exception when size is greater than 1 instead?
     public ECDSASignature getSignature() {
+        if(signatures.size() > 1) {
+            throw new UnsupportedOperationException("Tried getting only one signature of multi-signature transaction");
+        }
         return signatures.size() == 1 ? signatures.get(0) : null;
     }
 
@@ -542,11 +573,26 @@ public class Transaction {
 
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         try {
-            if (signatures.size() == 1) {
+            if (ownerCount > 1) {
+                byte[] hash = getRawHash().getBytes();
+                int length = 0;
+                ArrayList<byte[]> keys = new ArrayList<>(signatures.size());
+                for(ECDSASignature signature : signatures) {
+                    ECKey key = ECKey.signatureToKey(hash, signature);
+                    byte[] pubKey = key.getPubKey();
+                    keys.add(pubKey);
+                    length += pubKey.length;
+                }
+                ByteBuffer buf = ByteBuffer.allocate(length);
+                for(byte[] pubKey : keys) {
+                    buf.put(pubKey);
+                }
+                //TODO This seems to be the last 20 bytes rather than the first 20, is this okay
+                byte[] pubKeyHash = HashUtil.keccak256Omit12(buf.array());
+                sender = new RskAddress(pubKeyHash);
+            } else {
                 ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature());
                 sender = new RskAddress(key.getAddress());
-            } else {
-                throw new UnsupportedOperationException("Signatures size = " + signatures.size());
             }
         } catch (SignatureException e) {
             logger.error(e.getMessage(), e);
@@ -616,7 +662,7 @@ public class Transaction {
                     this.rawRlpEncoding = encodeFormat0(v, r, s);
                 }
             } else {
-                this.rlpEncoding = encodeFormat1(false);
+                this.rawRlpEncoding = encodeFormat1(false);
             }
         }
 
