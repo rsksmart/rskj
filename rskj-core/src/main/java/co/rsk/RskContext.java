@@ -238,12 +238,14 @@ public class RskContext implements NodeBootstrapper {
     private StatusResolver statusResolver;
     private Web3InformationRetriever web3InformationRetriever;
     private BootstrapImporter bootstrapImporter;
+    private PluginLoader pluginLoader;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
                 NodeCliOptions.class,
                 NodeCliFlags.class
         ).parse(args));
+        getPluginLoader();
     }
 
     private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
@@ -812,9 +814,17 @@ public class RskContext implements NodeBootstrapper {
         return Collections.unmodifiableList(internalServices);
     }
 
+    private PluginLoader getPluginLoader() {
+        if (pluginLoader == null) {
+            pluginLoader = new PluginLoader();
+        }
+
+        return pluginLoader;
+    }
+
     public List<PluginService> buildPluginServices() {
         PluginServiceRegistryImpl registry = new PluginServiceRegistryImpl();
-        new PluginLoader(this, registry).load();
+        getPluginLoader().load(this, registry);
         return registry.registeredServices();
     }
 

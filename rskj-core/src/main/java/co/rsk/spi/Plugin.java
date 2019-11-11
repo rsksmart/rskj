@@ -28,6 +28,16 @@ import co.rsk.RskContext;
  * 3. the node is ran
  */
 public interface Plugin {
+
+    /**
+     * Executes before the node context is created
+     */
+    void init();
+
+    /**
+     * Executes after the context is created
+     * @param parameters
+     */
     void load(Parameters parameters);
 
     /**
@@ -35,7 +45,7 @@ public interface Plugin {
      */
     interface Parameters {
         /**
-         * We chose to deprecate this method from start because it exposes a lot of internal details which should be
+         * @deprecated We chose to deprecate this method from start because it exposes a lot of internal details which should be
          * hidden. We expect to remove this as soon as we develop and are able to provide smaller interfaces.
          */
         @Deprecated

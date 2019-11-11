@@ -22,25 +22,24 @@ import co.rsk.RskContext;
 import java.util.ServiceLoader;
 
 public class PluginLoader {
-    private final RskContext rskContext;
-    private final PluginServiceRegistry registry;
 
-    public PluginLoader(RskContext rskContext, PluginServiceRegistry registry) {
-        this.rskContext = rskContext;
-        this.registry = registry;
+    private final ServiceLoader<Plugin> loader;
+
+    public PluginLoader() {
+        loader = ServiceLoader.load(Plugin.class);
+        loader.iterator().forEachRemaining(Plugin::init);
     }
 
-    public void load() {
-        ServiceLoader<Plugin> loader = ServiceLoader.load(Plugin.class);
-        Plugin.Parameters parameters = new Parameters(rskContext, registry);
+    public void load(RskContext rskContext, PluginServiceRegistry registry) {
+        Plugin.Parameters parameters = new PluginParameters(rskContext, registry);
         loader.iterator().forEachRemaining(c -> c.load(parameters));
     }
 
-    private static class Parameters implements Plugin.Parameters {
+    private static class PluginParameters implements Plugin.Parameters {
         private final RskContext rskContext;
         private final PluginServiceRegistry registry;
 
-        private Parameters(RskContext rskContext, PluginServiceRegistry registry) {
+        private PluginParameters(RskContext rskContext, PluginServiceRegistry registry) {
             this.rskContext = rskContext;
             this.registry = registry;
         }

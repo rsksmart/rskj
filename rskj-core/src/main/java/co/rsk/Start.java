@@ -27,11 +27,10 @@ public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
     public static void main(String[] args) {
+
         RskContext ctx = new RskContext(args);
         NodeRunner runner = ctx.getNodeRunner();
         try {
-//            ctx.getPluginLoader().load();
-//            new PluginLoader(ctx).load();
             runner.run();
             Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
         } catch (Exception e) {
