@@ -39,7 +39,7 @@ public class TrieStoreImpl implements TrieStore {
     private KeyValueDataSource store;
 
     /** Weak references are removed once the tries are garbage collected */
-    private Set<Trie> savedTries = Collections.newSetFromMap(new WeakHashMap<>());
+    private Set<Trie> savedTries = Collections.newSetFromMap(Collections.synchronizedMap(new WeakHashMap<>()));
 
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
