@@ -402,7 +402,7 @@ public class TransactionExecutor {
 
             if (tx.isContractCreation() && !result.isRevert()) {
                 int createdContractSize = getLength(program.getResult().getHReturn());
-                int returnDataGasValue = createdContractSize * GasCost.CREATE_DATA;
+                long returnDataGasValue = createdContractSize * GasCost.CREATE_DATA;
                 if (mEndGas.compareTo(BigInteger.valueOf(returnDataGasValue)) < 0) {
                     program.setRuntimeFailure(
                             Program.ExceptionHelper.notEnoughSpendingGas(
