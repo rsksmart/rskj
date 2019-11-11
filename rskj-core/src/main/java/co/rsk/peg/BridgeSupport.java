@@ -704,7 +704,7 @@ public class BridgeSupport {
             adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount());
 
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                eventLogger.logReleaseRequestedBtc(rskTx, result.get().getBtcTx(), releaseRequest.getDestination(), releaseRequest.getAmount());
+                eventLogger.logReleaseRequestedBtc(releaseRequest.getDestination(), rskTx, result.get().getBtcTx(), releaseRequest.getAmount());
             }
 
             return true;

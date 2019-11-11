@@ -98,22 +98,14 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
     }
 
-    public void logReleaseRequestedBtc(Transaction rskTransaction, BtcTransaction btcTx, Address rskAddress, Coin Amount) {
-        String rskaddress = "address";
-        String rsktx = "bytes32";
-        String btctx = "bytes32";
-        String amount = "int256";
+    public void logReleaseRequestedBtc(Address sender, Transaction rskTransaction, BtcTransaction btcTx, Coin Amount) {
+        CallTransaction.Function event = BridgeEvents.LOG_RELEASE_REQUESTED.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender, rskTransaction, btcTx);
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(Amount.getValue());
 
-        CallTransaction.Function event = CallTransaction.Function.fromEventSignature(
-                "logReleaseRequestedBtc",
-                new String[]{rskaddress, rsktx, btctx, amount}
-        );
-        this.logs.add(
-                new LogInfo(BRIDGE_CONTRACT_ADDRESS,
-                        Collections.singletonList(DataWord.valueOf(event.encodeSignatureLong())),
-                        event.encodeArguments(rskAddress, rskTransaction, btcTx, Amount)
-            )
-        );
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+
     }
 
     private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
