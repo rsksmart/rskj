@@ -76,7 +76,7 @@ public class UpnpGatewayManager {
      * @param description  describes the purpose of this port mapping.
      * @return true if successful.
      */
-    public boolean addPortMapping(int externalPort, int internalPort, UpnpProtocol protocol, String description) {
+    public synchronized boolean addPortMapping(int externalPort, int internalPort, UpnpProtocol protocol, String description) {
         String strProtocol = protocol.toString();
         String strLocalAddress = gateway.getLocalAddress().getHostAddress();
 
@@ -173,7 +173,7 @@ public class UpnpGatewayManager {
      * Deletes all port mappings which were created by calls to
      * {@link #addPortMapping(int, int, UpnpProtocol, String)}.
      */
-    public void deleteAllPortMappings() {
+    public synchronized void deleteAllPortMappings() {
         ListIterator<PortMappingEntry> iter = portMappings.listIterator();
         while (iter.hasNext()) {
             PortMappingEntry entry = iter.next();
