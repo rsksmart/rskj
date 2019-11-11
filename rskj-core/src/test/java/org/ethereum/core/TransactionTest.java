@@ -772,7 +772,7 @@ public class TransactionTest {
         byte[] eleVersion = RLP.encodeByte((byte)1);
         byte[] format1Tx = RLP.encodeList(eleVersion, eleList);
 
-        ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+        Transaction tx = new Transaction(format1Tx);
         Assert.assertEquals(true, Arrays.equals(tx.getNonce(), new byte[]{1}));
         Assert.assertEquals(true, tx.getValue().equals(Coin.ZERO));
         Assert.assertEquals(tx.getReceiveAddress(), new RskAddress("0102030405060708090A0102030405060708090A"));
@@ -800,7 +800,7 @@ public class TransactionTest {
         byte[] eleVersion = RLP.encodeByte((byte)1);
         byte[] format1Tx = RLP.encodeList(eleVersion, eleList);
         try {
-            ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+            Transaction tx = new Transaction(format1Tx);
         }catch (Exception e){
             Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default receiver address").toString());
         }
@@ -825,7 +825,7 @@ public class TransactionTest {
         byte[] eleVersion = RLP.encodeByte((byte)1);
         byte[] format1Tx = RLP.encodeList(eleVersion, eleList);
         try {
-            ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+            Transaction tx = new Transaction(format1Tx);
         }catch (Exception e){
             Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default gas limit").toString());
         }
@@ -850,7 +850,7 @@ public class TransactionTest {
         byte[] eleVersion = RLP.encodeByte((byte)1);
         byte[] format1Tx = RLP.encodeList(eleVersion, eleList);
         try {
-            ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+            Transaction tx = new Transaction(format1Tx);
         }catch (Exception e){
             Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default value").toString());
         }
@@ -875,7 +875,7 @@ public class TransactionTest {
         byte[] eleVersion = RLP.encodeByte((byte)1);
         byte[] format1Tx = RLP.encodeList(eleVersion, eleList);
         try {
-            ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+            Transaction tx = new Transaction(format1Tx);
         }catch (Exception e){
             Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default nonce").toString());
         }
@@ -926,7 +926,7 @@ public class TransactionTest {
         Assert.assertEquals(true, Arrays.equals(rlpList.get(6).getRLPData(), rsvWithId));
 
         byte[] encodedForBlock = tx.getEncodedForBlock();
-        Transaction tx2 = new ImmutableTransaction(encodedForBlock, rsv);
+        Transaction tx2 = new Transaction(encodedForBlock, rsv);
         Assert.assertEquals(tx, tx2);
         Assert.assertEquals(true, Objects.equals(tx, tx2));
     }
