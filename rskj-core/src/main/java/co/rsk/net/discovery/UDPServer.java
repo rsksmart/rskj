@@ -30,7 +30,6 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -47,13 +46,13 @@ public class UDPServer implements InternalService {
     private volatile boolean shutdown = false;
 
     private PeerExplorer peerExplorer;
-    private final Optional<UpnpService> upnpService;
+    private UpnpService upnpService;
 
     public UDPServer(String address, int port, PeerExplorer peerExplorer) {
-        this(address, port, peerExplorer, Optional.empty());
+        this(address, port, peerExplorer, null);
     }
 
-    public UDPServer(String address, int port, PeerExplorer peerExplorer, Optional<UpnpService> upnpService) {
+    public UDPServer(String address, int port, PeerExplorer peerExplorer, UpnpService upnpService) {
         this.address = address;
         this.port = port;
         this.peerExplorer = peerExplorer;
@@ -98,14 +97,15 @@ public class UDPServer implements InternalService {
     }
 
     private void doPortMappingIfEnabled() {
-        upnpService
-                .flatMap(service -> service.findGateway(address))
-                .ifPresent(gateway -> gateway.addPortMapping(
-                        port,
-                        port,
-                        UpnpProtocol.UDP,
-                        PEER_DISCOVERY_PORT_MAPPING_DESCRIPTION
-                ));
+        if (upnpService != null) {
+            upnpService.findGateway(address)
+                    .ifPresent(gateway -> gateway.addPortMapping(
+                            port,
+                            port,
+                            UpnpProtocol.UDP,
+                            PEER_DISCOVERY_PORT_MAPPING_DESCRIPTION
+                    ));
+        }
     }
 
     @Override

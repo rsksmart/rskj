@@ -773,17 +773,11 @@ public class RskContext implements NodeBootstrapper {
         if (rpcWebSocketEnabled) {
             internalServices.add(getWeb3WebSocketServer());
         }
+        if (getRskSystemProperties().isPeerDiscoveryByUpnpEnabled()) {
+            internalServices.add(getUpnpService());
+        }
         if (getRskSystemProperties().isPeerDiscoveryEnabled()) {
-            boolean isUpnpEnabled = getRskSystemProperties().isPeerDiscoveryByUpnpEnabled();
-            if (isUpnpEnabled) {
-                internalServices.add(getUpnpService());
-            }
-            internalServices.add(new UDPServer(
-                    getRskSystemProperties().getBindAddress().getHostAddress(),
-                    getRskSystemProperties().getPeerPort(),
-                    getPeerExplorer(),
-                    isUpnpEnabled ? Optional.of(getUpnpService()) : Optional.empty()
-            ));
+            internalServices.add(getUDPServer());
         }
         if (getRskSystemProperties().isSyncEnabled()) {
             internalServices.add(getSyncPool());
@@ -1631,6 +1625,23 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return minerClock;
+    }
+
+    private UDPServer getUDPServer() {
+        if (getRskSystemProperties().isPeerDiscoveryByUpnpEnabled()) {
+            return new UDPServer(
+                    getRskSystemProperties().getBindAddress().getHostAddress(),
+                    getRskSystemProperties().getPeerPort(),
+                    getPeerExplorer(),
+                    getUpnpService()
+            );
+        } else {
+            return new UDPServer(
+                    getRskSystemProperties().getBindAddress().getHostAddress(),
+                    getRskSystemProperties().getPeerPort(),
+                    getPeerExplorer()
+            );
+        }
     }
 
     private UpnpService getUpnpService() {

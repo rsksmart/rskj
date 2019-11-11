@@ -98,7 +98,7 @@ public class UpnpService implements InternalService {
                 );
             } catch (Exception e) {
                 // best effort was made; continue with service shutdown
-                logger.warn("Exception caught while waiting for port mappings to be released; ignoring.");
+                logger.warn("Exception caught while waiting for port mappings to be released; ignoring.", e);
             } finally {
                 executor.shutdown();
             }

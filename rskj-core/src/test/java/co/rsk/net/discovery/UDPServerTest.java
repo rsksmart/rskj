@@ -181,7 +181,7 @@ public class UDPServerTest {
                 .thenReturn(true);
 
         // start UDPServer, but prevent it from opening an actual channel
-        UDPServer testServer = spy(new UDPServer(HOST, PORT_1, mockPeerExplorer, Optional.of(mockUpnpService)));
+        UDPServer testServer = spy(new UDPServer(HOST, PORT_1, mockPeerExplorer, mockUpnpService));
         doNothing().when(testServer).startUDPServer();
         testServer.start();
 
