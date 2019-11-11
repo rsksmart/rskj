@@ -255,6 +255,7 @@ public class MessageTest {
         List<Transaction> txs = TransactionUtils.getTransactions(10);
         byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
         for (Transaction tx :txs){
+            tx.setVersion(1);
             tx.sign(senderPrivKey);
         }
         TransactionsMessage message = new TransactionsMessage(txs);
@@ -481,7 +482,7 @@ public class MessageTest {
         BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
 
         byte[] encoded = message.getEncoded();
-        
+
         Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
