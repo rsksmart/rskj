@@ -251,7 +251,7 @@ public class Transaction {
             throw new IllegalArgumentException("Transaction format one should not contain default nonce");  
         }
         byte[] tmpReceiveAddress = elements.get(RECEIVER_ID);
-        if (tmpReceiveAddress != null && RLP.parseRskAddress(tmpReceiveAddress).equals(RskAddress.nullAddress())){
+        if (tmpReceiveAddress != null && Arrays.equals(tmpReceiveAddress, new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0})){
             throw new IllegalArgumentException("Transaction format one should not contain default receiver address");   
         }
         byte[] tmpValue = elements.get(AMOUNT_ID);

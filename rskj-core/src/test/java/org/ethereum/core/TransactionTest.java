@@ -756,7 +756,6 @@ public class TransactionTest {
 
     @Test
     public void testFormat1Decode() throws IOException {
-        //0x01 | RLPList( RLP(0x020102030405060708090A0102030405060708090A), RLP(0x0501020304), RLP(030102))
         byte[] ele1 = RLP.encodeElement(Hex.decode("020102030405060708090A0102030405060708090A"));
         byte[] ele2 = RLP.encodeElement(Hex.decode("0501020304"));
         byte[] ele3 = RLP.encodeElement(Hex.decode("030102"));
@@ -782,6 +781,107 @@ public class TransactionTest {
         Assert.assertEquals(true, Arrays.equals(tx.getData(), new byte[]{1,2,3,4}));
         
     }
+
+    @Test
+    public void testFormat1DoNotHasDefaultAddress() throws IOException {
+        byte[] ele1 = RLP.encodeElement(Hex.decode("020000000000000000000000000000000000000000"));
+        byte[] ele2 = RLP.encodeElement(Hex.decode("0501020304"));
+        byte[] ele3 = RLP.encodeElement(Hex.decode("030102"));
+        //faked signature
+        byte[] r = RLP.encodeElement(Hex.decode("19"));
+        byte[] s = RLP.encodeElement(Hex.decode("11121314"));
+        byte[] v = RLP.encodeElement(Hex.decode("11121314"));
+        byte[] rsv = RLP.encodeList(r, s, v);
+        ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+        baos1.write(6);
+        baos1.write(rsv);
+        byte[] ele4 = RLP.encodeElement(baos1.toByteArray());
+        byte[] eleList = RLP.encodeList(ele1, ele2, ele3, ele4);
+        byte[] eleVersion = RLP.encodeByte((byte)1);
+        byte[] format1Tx = RLP.encodeList(eleVersion, eleList);
+        try {
+            ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+        }catch (Exception e){
+            Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default receiver address").toString());
+        }
+        
+    }
+
+    @Test
+    public void testFormat1DoNotHasDefaultGasLimit() throws IOException {
+        byte[] ele1 = RLP.encodeElement(Hex.decode("020100000000000000000000000000000000000000"));
+        byte[] ele2 = RLP.encodeElement(Hex.decode("047530"));
+        byte[] ele3 = RLP.encodeElement(Hex.decode("030102"));
+        //faked signature
+        byte[] r = RLP.encodeElement(Hex.decode("19"));
+        byte[] s = RLP.encodeElement(Hex.decode("11121314"));
+        byte[] v = RLP.encodeElement(Hex.decode("11121314"));
+        byte[] rsv = RLP.encodeList(r, s, v);
+        ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+        baos1.write(6);
+        baos1.write(rsv);
+        byte[] ele4 = RLP.encodeElement(baos1.toByteArray());
+        byte[] eleList = RLP.encodeList(ele1, ele2, ele3, ele4);
+        byte[] eleVersion = RLP.encodeByte((byte)1);
+        byte[] format1Tx = RLP.encodeList(eleVersion, eleList);
+        try {
+            ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+        }catch (Exception e){
+            Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default gas limit").toString());
+        }
+        
+    }
+
+    @Test
+    public void testFormat1DoNotHasDefaultValue() throws IOException {
+        byte[] ele1 = RLP.encodeElement(Hex.decode("020100000000000000000000000000000000000000"));
+        byte[] ele2 = RLP.encodeElement(Hex.decode("0100"));
+        byte[] ele3 = RLP.encodeElement(Hex.decode("030102"));
+        //faked signature
+        byte[] r = RLP.encodeElement(Hex.decode("19"));
+        byte[] s = RLP.encodeElement(Hex.decode("11121314"));
+        byte[] v = RLP.encodeElement(Hex.decode("11121314"));
+        byte[] rsv = RLP.encodeList(r, s, v);
+        ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+        baos1.write(6);
+        baos1.write(rsv);
+        byte[] ele4 = RLP.encodeElement(baos1.toByteArray());
+        byte[] eleList = RLP.encodeList(ele1, ele2, ele3, ele4);
+        byte[] eleVersion = RLP.encodeByte((byte)1);
+        byte[] format1Tx = RLP.encodeList(eleVersion, eleList);
+        try {
+            ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+        }catch (Exception e){
+            Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default value").toString());
+        }
+        
+    }
+
+    @Test
+    public void testFormat1DoNotHasDefaultNonce() throws IOException {
+        byte[] ele1 = RLP.encodeElement(Hex.decode("020100000000000000000000000000000000000000"));
+        byte[] ele2 = RLP.encodeElement(Hex.decode("0001"));
+        byte[] ele3 = RLP.encodeElement(Hex.decode("030102"));
+        //faked signature
+        byte[] r = RLP.encodeElement(Hex.decode("19"));
+        byte[] s = RLP.encodeElement(Hex.decode("11121314"));
+        byte[] v = RLP.encodeElement(Hex.decode("11121314"));
+        byte[] rsv = RLP.encodeList(r, s, v);
+        ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
+        baos1.write(6);
+        baos1.write(rsv);
+        byte[] ele4 = RLP.encodeElement(baos1.toByteArray());
+        byte[] eleList = RLP.encodeList(ele1, ele2, ele3, ele4);
+        byte[] eleVersion = RLP.encodeByte((byte)1);
+        byte[] format1Tx = RLP.encodeList(eleVersion, eleList);
+        try {
+            ImmutableTransaction tx = new ImmutableTransaction(format1Tx);
+        }catch (Exception e){
+            Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default nonce").toString());
+        }
+        
+    }
+
 
     @Test
     public void testFormat1Encode1() throws InterruptedException
