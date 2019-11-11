@@ -170,11 +170,11 @@ public class TransactionExecutor {
         }
 
 
-        Coin totalCost = Coin.ZERO;
+        Coin totalCost = tx.getValue();
         if (basicTxCost > 0 ) {
-            // Estimate transaction cost only if is not a free trx
+            // add gas cost only for priced transactions
             Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
-            totalCost = tx.getValue().add(txGasCost);
+            totalCost = totalCost.add(txGasCost);
         }
 
         Coin senderBalance = track.getBalance(tx.getSender());
