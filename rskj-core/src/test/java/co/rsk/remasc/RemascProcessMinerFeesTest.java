@@ -638,7 +638,6 @@ public class RemascProcessMinerFeesTest {
                 Coin.valueOf(txValue*2).getBytes(),
                 null,
                 config.getNetworkConstants().getChainId());
-        tx.setVersion(0);
         tx.sign(cowKey.getPrivKeyBytes());
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                 PegTestUtils.createHash3(), TestUtils.randomAddress(), Collections.emptyList(), null, tx);
@@ -715,7 +714,6 @@ public class RemascProcessMinerFeesTest {
                 Coin.ZERO.getBytes(),
                 Hex.decode("6060604052346000575b6077806100176000396000f30060606040525b3460005760495b6000600890508073ffffffffffffffffffffffffffffffffffffffff166040518090506000604051808303816000866161da5a03f1915050505b50565b0000a165627a7a7230582036692fbb1395da1688af0189be5b0ac18df3d93a2402f4fc8f927b31c1baa2460029"),
                 config.getNetworkConstants().getChainId());
-        txCreateContract.setVersion(0);
         txCreateContract.sign(cowKey.getPrivKeyBytes());
         long txCallRemascGasLimit = 21828;
         Transaction txCallRemasc = new Transaction(
@@ -726,7 +724,6 @@ public class RemascProcessMinerFeesTest {
                 Coin.ZERO.getBytes(),
                 null,
                 config.getNetworkConstants().getChainId());
-        txCallRemasc.setVersion(0);
         txCallRemasc.sign(cowKey.getPrivKeyBytes());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),

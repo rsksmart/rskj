@@ -237,7 +237,6 @@ class RemascTestRunner {
                 //TODO(mc): inject network chain id
                 Constants.REGTEST_CHAIN_ID
         );
-        tx.setVersion(0);
         tx.sign(txSigningKey.getPrivKeyBytes());
         //createBlook 1
         return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, difficulty, tx);
@@ -248,13 +247,11 @@ class RemascTestRunner {
         List<Transaction> txs = new ArrayList<>();
         if (txsToInlcude != null) {
             for (Transaction tx : txsToInlcude) {
-                tx.setVersion(0);
                 txs.add(tx);
             }
         }
 
         Transaction remascTx = new RemascTransaction(parentBlock.getNumber() + 1);
-        remascTx.setVersion(0);
         txs.add(remascTx);
 
         BigInteger difficultyAsBI = difficulty == null ? parentBlock.getDifficulty().asBigInteger() : BigInteger.valueOf(difficulty);
