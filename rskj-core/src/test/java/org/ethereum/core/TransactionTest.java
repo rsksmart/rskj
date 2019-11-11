@@ -778,8 +778,7 @@ public class TransactionTest {
         Assert.assertEquals(tx.getReceiveAddress(), new RskAddress("0102030405060708090A0102030405060708090A"));
         Assert.assertEquals(tx.getGasPrice(), new Coin(Hex.decode("0102")));
         Assert.assertEquals(true, Arrays.equals(tx.getGasLimit(), new byte[]{0x75,0x30}));
-        Assert.assertEquals(true, Arrays.equals(tx.getData(), new byte[]{1,2,3,4}));
-        
+        Assert.assertEquals(true, Arrays.equals(tx.getData(), new byte[]{1,2,3,4}));   
     }
 
     @Test
@@ -804,7 +803,6 @@ public class TransactionTest {
         }catch (Exception e){
             Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default receiver address").toString());
         }
-        
     }
 
     @Test
@@ -829,7 +827,6 @@ public class TransactionTest {
         }catch (Exception e){
             Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default gas limit").toString());
         }
-        
     }
 
     @Test
@@ -854,7 +851,6 @@ public class TransactionTest {
         }catch (Exception e){
             Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default value").toString());
         }
-        
     }
 
     @Test
@@ -879,9 +875,7 @@ public class TransactionTest {
         }catch (Exception e){
             Assert.assertEquals(e.toString(), new IllegalArgumentException("Transaction format one should not contain default nonce").toString());
         }
-        
     }
-
 
     @Test
     public void testFormat1Encode1() throws InterruptedException

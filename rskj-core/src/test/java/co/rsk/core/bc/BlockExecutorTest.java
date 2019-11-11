@@ -200,7 +200,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
     }
 
-@Test
+    @Test
     public void executeBlockWithMixedFormatTwoTransactions() {
         Block block = getBlockWithMixedFormatTwoTransactions(); // this changes the best block
         Block parent = blockchain.getBestBlock();
@@ -728,7 +728,7 @@ public class BlockExecutorTest {
             BigInteger value, BigInteger nonce, int strangeTransactionType) {
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         byte[] to = receiver.getAddress().getBytes();
-        byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(30000));
+        byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21000));
         byte[] valueData = BigIntegers.asUnsignedByteArray(value);
 
         if (strangeTransactionType == 0) {
