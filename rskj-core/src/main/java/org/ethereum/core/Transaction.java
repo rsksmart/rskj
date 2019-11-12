@@ -576,9 +576,9 @@ public class Transaction {
             if (ownerCount > 1) {
                 byte[] hash = getRawHash().getBytes();
                 int length = 0;
-                ArrayList<byte[]> keys = new ArrayList<>(signatures.size());
-                for(ECDSASignature signature : signatures) {
-                    ECKey key = ECKey.signatureToKey(hash, signature);
+                ArrayList<byte[]> keys = new ArrayList<>(ownerCount);
+                for(int i = 0; i < ownerCount; i++) {
+                    ECKey key = ECKey.signatureToKey(hash, signatures.get(i));
                     byte[] pubKey = key.getPubKey();
                     keys.add(pubKey);
                     length += pubKey.length;
