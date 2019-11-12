@@ -43,7 +43,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.cacheSize = cacheSize;
         this.base = base;
         this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float)0.75, false);
-        this.committedCache = new MaxSizeHashMap<>(cacheSize, true);
+        this.committedCache = Collections.synchronizedMap(new MaxSizeHashMap<>(cacheSize, true));
     }
 
     @Override
