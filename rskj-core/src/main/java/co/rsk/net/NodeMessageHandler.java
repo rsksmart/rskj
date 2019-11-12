@@ -24,7 +24,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
-import co.rsk.validators.BlockValidationRule;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -53,7 +52,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
 
-    private BlockValidationRule blockValidationRule;
     private final StatusResolver statusResolver;
 
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
@@ -71,14 +69,12 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                               @Nullable final ChannelManager channelManager,
                               @Nullable final TransactionGateway transactionGateway,
                               @Nullable final PeerScoringManager peerScoringManager,
-                              BlockValidationRule blockValidationRule,
                               StatusResolver statusResolver) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
         this.transactionGateway = transactionGateway;
-        this.blockValidationRule = blockValidationRule;
         this.statusResolver = statusResolver;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
@@ -100,7 +96,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 transactionGateway,
                 peerScoringManager,
                 channelManager,
-                blockValidationRule,
                 sender);
         message.accept(mv);
 

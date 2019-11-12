@@ -4,11 +4,11 @@
 
 
 # About
-RskJ is a Java implementation of the RSK node. For more information about RSK, visit [www.rsk.co](http://www.rsk.co). The [RSK white paper](https://www.rsk.co/wp-content/uploads/2019/02/RSK-White-Paper-Updated.pdf) provides a complete conceptual overview of the platform.
+RskJ is a Java implementation of the RSK node. For more information about RSK, visit [www.rsk.co](http://www.rsk.co). The [RSK white paper](https://www.rsk.co/Whitepapers/RSK-White-Paper-Updated.pdf) provides a complete conceptual overview of the platform.
 
 If you have questions about the code please find us on [![Gitter](https://badges.gitter.im/rsksmart/rskj.svg)](https://gitter.im/rsksmart/rskj?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-You may also want to check [our blog](https://www.rsk.co/noticias/) for articles and updates on the project.
+You may also want to check [our blog](https://blog.rsk.co/) for articles and updates on the project.
 
 
 # Getting Started
