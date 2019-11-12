@@ -24,8 +24,8 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
-import org.ethereum.crypto.ECKey;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -112,5 +112,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
         );
 
         genesisFeePerKb = Coin.MILLICOIN;
+
+        maxFeePerKb = Coin.valueOf(5_000_000L);
     }
 }
