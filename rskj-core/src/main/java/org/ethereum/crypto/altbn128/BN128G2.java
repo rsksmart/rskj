@@ -7,7 +7,7 @@ import java.math.BigInteger;
  */
 public class BN128G2 extends BN128<Fp2> {
     // the point at infinity
-    static public final BN128<Fp2> ZERO = new BN128G2(Fp2.ZERO, Fp2.ZERO, Fp2.ZERO);
+    static public final BN128G2 ZERO = new BN128G2(Fp2.ZERO, Fp2.ZERO, Fp2.ZERO);
 
     static {
         System.loadLibrary("rskj_bn128");
@@ -159,11 +159,12 @@ public class BN128G2 extends BN128<Fp2> {
         valid &= Fp.newFq(xbBytes, xbRet);
         valid &= Fp.newFq(yaBytes, yaRet);
         valid &= Fp.newFq(ybBytes, ybRet);
-        BN128G2 p = new BN128G2(
-                new Fp2(xaRet[0], xaRet[1], xaRet[2], xaRet[3], xbRet[0], xbRet[1], xbRet[2], xbRet[3]),
-                new Fp2(yaRet[0], yaRet[1], yaRet[2], yaRet[3], ybRet[0], ybRet[1], ybRet[2], ybRet[3]),
-                Fp2.ONE
-        );
+        Fp2 x = new Fp2(xaRet[0], xaRet[1], xaRet[2], xaRet[3], xbRet[0], xbRet[1], xbRet[2], xbRet[3]);
+        Fp2 y = new Fp2(yaRet[0], yaRet[1], yaRet[2], yaRet[3], ybRet[0], ybRet[1], ybRet[2], ybRet[3]);
+        if(x.isZero() && y.isZero()) {
+            return ZERO;
+        }
+        BN128G2 p = new BN128G2(x, y, Fp2.ONE);
         if (valid && p.isOnCurve()) {
             return p;
         } else {

@@ -8,7 +8,7 @@ import java.math.BigInteger;
 public class BN128G1 extends BN128<Fp> {
     public static final Fp B_Fp = new Fp(BigInteger.valueOf(3));
     // the point at infinity
-    static public final BN128<Fp> ZERO = new BN128G1(Fp.ZERO, Fp.ZERO, Fp.ZERO);
+    static public final BN128G1 ZERO = new BN128G1(Fp.ZERO, Fp.ZERO, Fp.ZERO);
 
     static {
         System.loadLibrary("rskj_bn128");
@@ -99,7 +99,12 @@ public class BN128G1 extends BN128<Fp> {
         long[] yRet = new long[4];
         Fp.newFq(xBytes, xRet);
         Fp.newFq(yBytes, yRet);
-        BN128G1 p = new BN128G1(new Fp(xRet), new Fp(yRet), Fp.ONE);
+        Fp x = new Fp(xRet);
+        Fp y = new Fp(yRet);
+        if(x.isZero() && y.isZero()) {
+            return ZERO;
+        }
+        BN128G1 p = new BN128G1(x, y, Fp.ONE);
         if (p.isValid()) {
             return p;
         } else {

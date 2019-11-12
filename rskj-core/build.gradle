@@ -17,6 +17,7 @@ buildscript {
 
 plugins {
     id 'application'
+    id 'org.ysb33r.rust.base'  version '0.2'
 }
 
 apply plugin: 'witness'
@@ -70,6 +71,38 @@ tasks.withType(AbstractArchiveTask) {
 
 jmh {
     jvmArgsAppend = ["-Djava.library.path=" + System.getProperty("java.library.path") + ":" + project.nativeLibsDir]
+}
+
+rust {
+    executable version : '1.39.0'
+}
+
+task copyNatives(type:Copy) {
+    from 'src/main/rust/rskj-bn128/target/release/'
+    include '*rskj_bn128.so'
+    include '*rskj_bn128.dylib'
+    include '*rskj_bn128.dll'
+    into 'libs/natives/'
+}
+
+task buildNatives(type:Exec) {
+    workingDir 'src/main/rust/rskj-bn128/'
+    commandLine "${rust.resolveCargoPath()}", 'build', '--release'
+}
+
+buildNatives.finalizedBy copyNatives
+
+tasks.assemble.dependsOn(buildNatives)
+tasks.test.dependsOn(buildNatives)
+
+tasks.withType(JavaExec) {
+    mustRunAfter buildNatives
+    systemProperty "java.library.path", project.nativeLibsDir
+}
+
+tasks.withType(Test) {
+    mustRunAfter buildNatives
+    systemProperty "java.library.path", project.nativeLibsDir
 }
 
 ext {
