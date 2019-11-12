@@ -147,11 +147,11 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     private boolean init() {
+        basicTxCost = tx.transactionCost(constants, activations);
+
         if (localCall) {
             return true;
         }
-
-        basicTxCost = tx.transactionCost(constants, activations);
 
         BigInteger txGasLimit = new BigInteger(1, tx.getGasLimit());
         BigInteger curBlockGasLimit = new BigInteger(1, executionBlock.getGasLimit());
