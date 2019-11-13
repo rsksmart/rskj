@@ -43,7 +43,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.cacheSize = cacheSize;
         this.base = base;
         this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float)0.75, false);
-        this.committedCache = Collections.synchronizedMap(new MaxSizeHashMap<>(cacheSize, true));
+        this.committedCache = new MaxSizeHashMap<>(cacheSize, true);
     }
 
     @Override
@@ -64,12 +64,19 @@ public class DataSourceWithCache implements KeyValueDataSource {
             }
 
             value = base.get(key);
+        }
+        finally {
+            this.lock.readLock().unlock();
+        }
 
+        this.lock.writeLock().lock();
+
+        try {
             //null value, as expected, is allowed here to be stored in committedCache
             committedCache.put(wrappedKey, value);
         }
         finally {
-            this.lock.readLock().unlock();
+            this.lock.writeLock().unlock();
         }
 
         return value;
