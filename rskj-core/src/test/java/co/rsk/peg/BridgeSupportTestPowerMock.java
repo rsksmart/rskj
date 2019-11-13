@@ -59,6 +59,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -4018,9 +4019,9 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void eventLoggerBeforeRskip121Fork() throws Exception {
+    public void eventLoggerBeforeRskip146Fork() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP121)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
 
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
 
@@ -4077,13 +4078,13 @@ public class BridgeSupportTestPowerMock {
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
-        verify(mockedEventLogger, never()).logLockBtc(any(BtcTransaction.class), any(Address.class), any(RskAddress.class), any(Coin.class));
+        verify(mockedEventLogger, never()).logLockBtc(any(RskAddress.class), any(BtcTransaction.class), any(Address.class), any(Coin.class));
     }
 
     @Test
-    public void eventLoggerAfterRskip121Fork() throws Exception {
+    public void eventLoggerAfterRskip146Fork() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP121)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         BridgeEventLogger mockedEventLogger = mock(BridgeEventLogger.class);
 
@@ -4140,7 +4141,7 @@ public class BridgeSupportTestPowerMock {
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
 
-        verify(mockedEventLogger, atLeastOnce()).logLockBtc(any(BtcTransaction.class), any(Address.class), any(RskAddress.class), any(Coin.class));
+        verify(mockedEventLogger, atLeastOnce()).logLockBtc(any(RskAddress.class), any(BtcTransaction.class), any(Address.class), any(Coin.class));
     }
 
     private BridgeStorageProvider getBridgeStorageProviderMockWithProcessedHashes() throws IOException {

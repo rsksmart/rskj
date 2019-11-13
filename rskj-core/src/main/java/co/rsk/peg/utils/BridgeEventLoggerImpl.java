@@ -25,8 +25,10 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
@@ -96,12 +98,14 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
     }
 
-    public void logLockBtc(BtcTransaction btcTx, Address senderBtcAddress, RskAddress RskReceiver, Coin Amount) {
-        List<DataWord> topics = Collections.singletonList(Bridge.LOCK_BTC_TOPIC);
-        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()), RLP.encodeString(senderBtcAddress.toString()),
-                      RLP.encodeRskAddress(RskReceiver), RLP.encodeString(Amount.toString()));
+    public void logLockBtc(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin Amount) {
+        CallTransaction.Function event = BridgeEvents.LOG_BTC.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(receiver.toString());
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(btcTx.getHashAsString(), senderBtcAddress.toString(), Amount.getValue());
 
-        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+
     }
 
     private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {

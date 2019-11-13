@@ -9,7 +9,15 @@ public enum BridgeEvents {
             new CallTransaction.Param[]{
                     new CallTransaction.Param(false, "sender", SolidityType.getType("address"))
             }
-    );
+    ),
+    LOG_BTC("lock_btc",
+            new CallTransaction.Param[]{
+                    new CallTransaction.Param(true, "receiver", SolidityType.getType("address")),
+                    new CallTransaction.Param(false, "btcTxHash", SolidityType.getType("bytes32")),
+                    new CallTransaction.Param(false, "senderBtcAddress", SolidityType.getType("string")),
+                    new CallTransaction.Param(false, "amount", SolidityType.getType("int"))
+            })
+    ;
 
     private String eventName;
     private CallTransaction.Param[] params;

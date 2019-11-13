@@ -401,8 +401,8 @@ public class BridgeSupport {
                 // Consume this whitelisted address
                 lockWhitelist.consume(senderBtcAddress);
 
-                if (activations.isActive(ConsensusRule.RSKIP121)) {
-                    eventLogger.logLockBtc(btcTx, senderBtcAddress, sender, totalAmount);
+                if (activations.isActive(ConsensusRule.RSKIP146)) {
+                    eventLogger.logLockBtc(sender, btcTx, senderBtcAddress, totalAmount);
                 }
             }
         } else if (BridgeUtils.isReleaseTx(btcTx, getLiveFederations())) {

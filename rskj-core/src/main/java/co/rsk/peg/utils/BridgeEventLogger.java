@@ -42,5 +42,5 @@ public interface BridgeEventLogger {
 
     void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation);
 
-    void logLockBtc(BtcTransaction btcTx, Address senderBtcAddress, RskAddress RskReceiver, Coin Amount);
+    void logLockBtc(RskAddress RskReceiver, BtcTransaction btcTx, Address senderBtcAddress, Coin Amount);
 }

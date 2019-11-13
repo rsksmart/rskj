@@ -22,13 +22,11 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
-import co.rsk.peg.Bridge;
-import co.rsk.peg.Federation;
-import co.rsk.peg.FederationMember;
-import co.rsk.peg.FederationTestUtils;
+import co.rsk.peg.*;
 import com.sun.org.apache.bcel.internal.generic.ANEWARRAY;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -143,8 +141,12 @@ public class BridgeEventLoggerImplTest {
         // Setup event logger
         List<LogInfo> eventLogs = new LinkedList<>();
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+
         Address senderAddress = mock(Address.class);
+        when(senderAddress.toString()).thenReturn("mixzLp4xx5bUsHuYUEyPpL42BzEDp8kSTv");
+
         RskAddress rskAddress = mock(RskAddress.class);
+        when(rskAddress.toString()).thenReturn("0x00000000000000000000000000000000000000");
 
         // Mock btc transaction
         BtcTransaction mockedTx = mock(BtcTransaction.class);
@@ -152,19 +154,28 @@ public class BridgeEventLoggerImplTest {
 
         Coin amount = Coin.SATOSHI;
 
-        eventLogger.logLockBtc(mockedTx, senderAddress, rskAddress, amount);
+        eventLogger.logLockBtc(rskAddress, mockedTx, senderAddress, amount);
 
         Assert.assertEquals(1, eventLogs.size());
         LogInfo entry = eventLogs.get(0);
 
         Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
 
-        Assert.assertEquals(1, entry.getTopics().size());
-        Assert.assertEquals(Bridge.LOCK_BTC_TOPIC, entry.getTopics().get(0));
+        // Assert address that made the log
+        LogInfo result = eventLogs.get(0);
+        Assert.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
 
-        byte[] data = entry.getData();
-        byte[] expectedData = RLP.encodeList(RLP.encodeString("a-tx-hash"), RLP.encodeString(senderAddress.toString()),
-                              RLP.encodeRskAddress(rskAddress), RLP.encodeString(amount.toString()));
-        Assert.assertArrayEquals(data, expectedData);
+        // Assert log topics
+        Assert.assertEquals(2, result.getTopics().size());
+        CallTransaction.Function event = BridgeEvents.LOG_BTC.getEvent();
+
+        byte[][] topics = event.encodeEventTopics(rskAddress.toString());
+
+        for (int i=0; i<topics.length; i++) {
+            Assert.assertArrayEquals(topics[i], result.getTopics().get(i).getData());
+        }
+
+        // Assert log data
+        Assert.assertArrayEquals(event.encodeEventData(mockedTx.getHashAsString(), senderAddress.toString(), amount.getValue()), result.getData());
     }
 }
