@@ -261,10 +261,7 @@ public class TransactionTest {
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
 
-                    executor.init();
-                    executor.execute();
-                    executor.go();
-                    executor.finalization();
+                    executor.executeTransaction();
 
                     track.rollback();
 
