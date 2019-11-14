@@ -155,18 +155,29 @@ public class TransactionExecutor {
             return false;
         }
 
-        BigInteger reqNonce = track.getNonce(tx.getSender());
-        BigInteger txNonce = toBI(tx.getNonce());
-        if (isNotEqual(reqNonce, txNonce)) {
+        List<RskAddress> senders = tx.getSenders();
+        List<byte[]> nonces = tx.getNonces();
 
-            if (logger.isWarnEnabled()) {
-                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, tx.getHash());
-                logger.warn("Transaction Data: {}", tx);
-                logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
+        for(int i = 0; i < senders.size(); i++) {
+            BigInteger reqNonce = track.getNonce(senders.get(i));
+            BigInteger txNonce = toBI(nonces.get(i));
+            if (isNotEqual(reqNonce, txNonce)) {
+
+                if (logger.isWarnEnabled()) {
+                    logger.warn(
+                            "Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}",
+                            senders.get(i),
+                            reqNonce,
+                            txNonce,
+                            tx.getHash()
+                    );
+                    logger.warn("Transaction Data: {}", tx);
+                    logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
+                }
+
+                execError(String.format("Invalid nonce: required: %s , tx.nonce: %s", reqNonce, txNonce));
+                return false;
             }
-
-            execError(String.format("Invalid nonce: required: %s , tx.nonce: %s", reqNonce, txNonce));
-            return false;
         }
 
 
@@ -201,14 +212,14 @@ public class TransactionExecutor {
         }
 
         if (!tx.acceptTransactionSignature(constants.getChainId())) {
-            logger.warn("Transaction {} signature not accepted: {}", tx.getHash(), tx.getSignature());
+            logger.warn("Transaction {} signature(s) not accepted: {}", tx.getHash(), tx.getSignatures());
             logger.warn("Transaction Data: {}", tx);
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             panicProcessor.panic("invalidsignature",
-                                 String.format("Transaction %s signature not accepted: %s",
-                                               tx.getHash(), tx.getSignature()));
-            execError(String.format("Transaction signature not accepted: %s", tx.getSignature()));
+                                 String.format("Transaction %s signature(s) not accepted: %s",
+                                               tx.getHash(), tx.getSignatures()));
+            execError(String.format("Transaction signature(s) not accepted: %s", tx.getSignatures()));
 
             return false;
         }
@@ -223,15 +234,19 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+        logger.trace("Execute transaction {} {}", toBI(tx.getSingleNonce()), tx.getHash());
 
         if (!localCall) {
+            List<RskAddress> senders = tx.getSenders();
+            List<byte[]> nonces = tx.getNonces();
 
-            track.increaseNonce(tx.getSender());
+            for(RskAddress sender : senders) {
+                track.increaseNonce(sender);
+            }
 
             BigInteger txGasLimit = toBI(tx.getGasLimit());
             Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
-            track.addBalance(tx.getSender(), txGasCost.negate());
+            track.addBalance(tx.getChargedSender(), txGasCost.negate());
 
             logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
         }
@@ -248,7 +263,7 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+        logger.trace("Call transaction {} {}", toBI(tx.getSingleNonce()), tx.getHash());
 
         RskAddress targetAddress = tx.getReceiveAddress();
 
@@ -373,7 +388,7 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.trace("Go transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+        logger.trace("Go transaction {} {}", toBI(tx.getSingleNonce()), tx.getHash());
 
         //Set the deleted accounts in the block in the remote case there is a CREATE2 creating a deleted account
 
@@ -476,7 +491,7 @@ public class TransactionExecutor {
             return;
         }
 
-        logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+        logger.trace("Finalize transaction {} {}", toBI(tx.getSingleNonce()), tx.getHash());
 
         cacheTrack.commit();
 
@@ -510,8 +525,8 @@ public class TransactionExecutor {
         TransactionExecutionSummary summary = summaryBuilder.build();
 
         // Refund for gas leftover
-        track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
-        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
+        track.addBalance(tx.getChargedSender(), summary.getLeftover().add(summary.getRefund()));
+        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getChargedSender(), summary.getRefund());
 
         // Transfer fees to miner
         Coin summaryFee = summary.getFee();

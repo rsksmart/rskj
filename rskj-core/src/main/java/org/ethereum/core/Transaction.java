@@ -92,6 +92,8 @@ public class Transaction {
      * Initialization code for a new contract */
     private final byte[] data;
     private final byte chainId;
+    /* List of  */
+    protected List<RskAddress> senders;
     protected RskAddress sender;
     /* whether this is a local call transaction */
     private boolean isLocalCall;
@@ -457,12 +459,20 @@ public class Transaction {
         return this.rawHash;
     }
 
-    public byte[] getNonce() {
-        //TODO return all nonces
-        if(nonce.size() > 1) {
+    public Keccak256 getRawHash(int signerIndex) {
+        byte[] plainMsg = this.getEncodedRaw();
+        return new Keccak256(HashUtil.keccak256(plainMsg));
+    }
+
+    public byte[] getSingleNonce() {
+        if (nonce.size() > 1) {
             throw new UnsupportedOperationException("Tried get only one nonce");
         }
         return nonce.isEmpty() ? EMPTY_BYTE_ARRAY : nonce.get(0);
+    }
+
+    public List<byte[]> getNonces() {
+        return Collections.unmodifiableList(this.nonce);
     }
 
     public Coin getValue() {
@@ -491,12 +501,16 @@ public class Transaction {
         return data;
     }
 
-    //Returns null when multi-signature because you shouldn't be using only one of the signatures
-    public ECDSASignature getSignature() {
-        if(signatures.size() > 1) {
+    //Throws exception when multi-signature because you shouldn't be using only one of the signatures
+    public ECDSASignature getSingleSignature() {
+        if (signatures.size() > 1) {
             throw new UnsupportedOperationException("Tried getting only one signature of multi-signature transaction");
         }
         return signatures.size() == 1 ? signatures.get(0) : null;
+    }
+
+    public List<ECDSASignature> getSignatures() {
+        return Collections.unmodifiableList(this.signatures);
     }
 
     public void setSignature(ECDSASignature signature) {
@@ -507,9 +521,13 @@ public class Transaction {
     }
 
     public boolean acceptTransactionSignature(byte currentChainId) {
-        ECDSASignature signature = getSignature();
-        if (signature == null || !signature.validateComponents() || signature.s.compareTo(SECP256K1N_HALF) >= 0) {
+        if (this.signatures.size() == 0) {
             return false;
+        }
+        for (ECDSASignature signature : this.signatures) {
+            if (signature == null || !signature.validateComponents() || signature.s.compareTo(SECP256K1N_HALF) >= 0) {
+                return false;
+            }
         }
 
         return this.getChainId() == 0 || this.getChainId() == currentChainId;
@@ -524,13 +542,26 @@ public class Transaction {
         this.sender = null;
     }
 
+    public void sign(List<byte[]> privKeyBytesList) throws MissingPrivateKeyException {
+        List<ECDSASignature> signatures = new ArrayList<>();
+        for (int i = 0; i < privKeyBytesList.size(); i++) {
+            byte[] raw = this.getRawHash(i).getBytes();
+            ECKey key = ECKey.fromPrivate(privKeyBytesList.get(i)).decompress();
+            signatures.add(key.sign(raw));
+        }
+        this.signatures = Collections.unmodifiableList(signatures);
+        this.rlpEncoding = null;
+        this.hash = null;
+        this.sender = null;
+    }
+
     @Nullable
     public RskAddress getContractAddress() {
         if (!isContractCreation()) {
             return null;
         }
 
-        return new RskAddress(HashUtil.calcNewAddr(this.getSender().getBytes(), this.getNonce()));
+        return new RskAddress(HashUtil.calcNewAddr(this.getSender().getBytes(), this.getSingleNonce()));
     }
 
     public boolean isContractCreation() {
@@ -556,13 +587,39 @@ public class Transaction {
      */
 
     public ECKey getKey() {
-        ECDSASignature signature = signatures.get(0);
+        ECDSASignature signature = getSingleSignature();
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         byte[] raw = getRawHash().getBytes();
         //We clear the 4th bit, the compress bit, in case a signature is using compress in true
         ECKey key = ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, raw, true);
         profiler.stop(metric);
         return key;
+    }
+
+    public synchronized List<RskAddress> getSenders() {
+        if(this.senders != null) {
+            return this.senders;
+        }
+
+        if (ownerCount == 1) {
+            this.senders = Collections.singletonList(getSender());
+        } else {
+            ArrayList<RskAddress> senders = new ArrayList<>(ownerCount);
+            try {
+                for (int i = 0; i < ownerCount; i++) {
+                    byte[] hash = getRawHash(i).getBytes();
+                    ECKey key = ECKey.signatureToKey(hash, signatures.get(i));
+                    senders.add(new RskAddress(key.getAddress()));
+                }
+                this.senders = Collections.unmodifiableList(senders);
+
+            } catch (SignatureException e) {
+                logger.error(e.getMessage(), e);
+                panicProcessor.panic("transaction", e.getMessage());
+                this.senders = Collections.singletonList(RskAddress.nullAddress());
+            }
+        }
+        return this.senders;
     }
 
     public synchronized RskAddress getSender() {
@@ -574,24 +631,24 @@ public class Transaction {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         try {
             if (ownerCount > 1) {
-                byte[] hash = getRawHash().getBytes();
                 int length = 0;
                 ArrayList<byte[]> keys = new ArrayList<>(ownerCount);
-                for(int i = 0; i < ownerCount; i++) {
+                for (int i = 0; i < ownerCount; i++) {
+                    byte[] hash = getRawHash(i).getBytes();
                     ECKey key = ECKey.signatureToKey(hash, signatures.get(i));
                     byte[] pubKey = key.getPubKey();
                     keys.add(pubKey);
                     length += pubKey.length;
                 }
                 ByteBuffer buf = ByteBuffer.allocate(length);
-                for(byte[] pubKey : keys) {
+                for (byte[] pubKey : keys) {
                     buf.put(pubKey);
                 }
                 //TODO This seems to be the last 20 bytes rather than the first 20, is this okay
                 byte[] pubKeyHash = HashUtil.keccak256Omit12(buf.array());
                 sender = new RskAddress(pubKeyHash);
             } else {
-                ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature());
+                ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSingleSignature());
                 sender = new RskAddress(key.getAddress());
             }
         } catch (SignatureException e) {
@@ -603,6 +660,16 @@ public class Transaction {
         }
 
         return sender;
+    }
+
+    /* Gets sender charged (and reimbursed) gas fees */
+    public RskAddress getChargedSender() {
+        List<RskAddress> senders = this.getSenders();
+        if(this.nonce.size() == senders.size()) {
+            return this.getSender();
+        } else {
+            return senders.get(senders.size() - 1);
+        }
     }
 
     public byte getChainId() {
@@ -662,11 +729,15 @@ public class Transaction {
                     this.rawRlpEncoding = encodeFormat0(v, r, s);
                 }
             } else {
-                this.rawRlpEncoding = encodeFormat1(false);
+                this.rawRlpEncoding = encodeFormat1(false, -1);
             }
         }
 
         return ByteUtil.cloneBytes(this.rawRlpEncoding);
+    }
+
+    public byte[] getEncodedRaw(int signerIndex) {
+        return encodeFormat1(false, signerIndex);
     }
 
     public byte[] getEncoded() {
@@ -689,7 +760,7 @@ public class Transaction {
 
                 this.rlpEncoding = encodeFormat0(v, r, s);
             } else {
-                this.rlpEncoding = encodeFormat1(true);
+                this.rlpEncoding = encodeFormat1(true, -1);
             }
         }
 
@@ -721,7 +792,7 @@ public class Transaction {
         );
     }
 
-    private byte[] encodeFormat1(boolean signed) {
+    private byte[] encodeFormat1(boolean signed, int signerIndex) {
         byte[] toEncodeVersion = RLP.encodeList(RLP.encodeInt(version));
         // parse null as 0 for nonce
         byte[] toEncodeNonce;
@@ -753,7 +824,7 @@ public class Transaction {
                 toEncodeSignatureElements[i] = RLP.encodeList(v, r, s);
             }
             toEncodeSignature = RLP.encodeList(toEncodeSignatureElements);
-        } else {
+        } else if (signerIndex == -1) {
             if (chainId == 0) {
                 toEncodeSignature = RLP.encodedEmptyList();
             } else {
@@ -763,6 +834,8 @@ public class Transaction {
 
                 toEncodeSignature = RLP.encodeList(v, r, s);
             }
+        } else {
+            toEncodeSignature = RLP.encodeList(RLP.encodeInt(this.chainId), RLP.encodeInt(signerIndex));
         }
 
         return RLP.encodeList(
@@ -783,7 +856,7 @@ public class Transaction {
     }
 
     public BigInteger getNonceAsInteger() {
-        return (this.getNonce() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getNonce());
+        return (this.getSingleNonce() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getSingleNonce());
     }
 
     @Override
@@ -829,7 +902,7 @@ public class Transaction {
     }
 
     private boolean checkRemascTxZeroValues() {
-        if (null != getData() || null != getSignature()) {
+        if (null != getData() || !this.signatures.isEmpty()) {
             return false;
         }
 

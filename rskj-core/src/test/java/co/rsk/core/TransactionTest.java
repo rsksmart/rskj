@@ -71,14 +71,14 @@ public class TransactionTest {
 
         tx.sign(senderPrivKey);
 
-        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
-        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
-        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().s)));
+        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSingleSignature().v}));
+        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSingleSignature().r)));
+        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSingleSignature().s)));
 
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature());
+        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSingleSignature());
 
         System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
         System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
@@ -111,9 +111,9 @@ public class TransactionTest {
 
         tx.sign(senderPrivateKey);
 
-        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
-        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
-        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().s)));
+        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSingleSignature().v}));
+        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSingleSignature().r)));
+        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSingleSignature().s)));
 
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 

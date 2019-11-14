@@ -32,8 +32,10 @@ public class TxsPerAccount {
 
     boolean containsNonce(BigInteger nonce) {
         for (Transaction tx : txs) {
-            if (new BigInteger(1, tx.getNonce()).equals(nonce)) {
-                return true;
+            for(byte[] txNonce : tx.getNonces()) {
+                if (new BigInteger(1, txNonce).equals(nonce)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -54,10 +56,12 @@ public class TxsPerAccount {
 
         List<Transaction> ret = new LinkedList<>();
         for (Transaction tx : txs) {
-            BigInteger nonce = new BigInteger(1, tx.getNonce());
-            if (nextNonce.compareTo(nonce) == 0) {
-                nextNonce = nonce.add(BigInteger.valueOf(1));
-                ret.add(tx);
+            for(byte[] txNonce : tx.getNonces()) {
+                BigInteger nonce = new BigInteger(1, txNonce);
+                if (nextNonce.compareTo(nonce) == 0) {
+                    nextNonce = nonce.add(BigInteger.valueOf(1));
+                    ret.add(tx);
+                }
             }
         }
 
@@ -68,7 +72,7 @@ public class TxsPerAccount {
         List<Transaction> newlist = new LinkedList<>();
 
         for (Transaction tx : this.txs) {
-            if (new BigInteger(1, tx.getNonce()).compareTo(nonce) == 0) {
+            if (new BigInteger(1, tx.getSingleNonce()).compareTo(nonce) == 0) {
                 continue;
             }
 
