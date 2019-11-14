@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * TrieStoreImpl store and retrieve Trie node by hash
@@ -39,10 +41,14 @@ public class TrieStoreImpl implements TrieStore {
     private KeyValueDataSource store;
 
     /** Weak references are removed once the tries are garbage collected */
-    private Set<Trie> savedTries = Collections.newSetFromMap(new WeakHashMap<>());
+    private final Set<Trie> savedTries = Collections.newSetFromMap(new WeakHashMap<>());
+
+    private final ReadWriteLock lock;
 
     public TrieStoreImpl(KeyValueDataSource store) {
+
         this.store = store;
+        this.lock = new ReentrantReadWriteLock();
     }
 
     /**
@@ -57,10 +63,16 @@ public class TrieStoreImpl implements TrieStore {
      * @param forceSaveRoot allows saving the root node even if it's embeddable
      */
     private void save(Trie trie, boolean forceSaveRoot) {
-        if (savedTries.contains(trie)) {
-            // it is guaranteed that the children of a saved node are also saved
-            return;
+        lock.readLock().lock();
+        try {
+            if (savedTries.contains(trie)) {
+                // it is guaranteed that the children of a saved node are also saved
+                return;
+            }
+        } finally {
+            lock.readLock().unlock();
         }
+
 
         trie.getLeft().getNode().ifPresent(t -> save(t, false));
         trie.getRight().getNode().ifPresent(t -> save(t, false));
@@ -83,7 +95,13 @@ public class TrieStoreImpl implements TrieStore {
         }
 
         this.store.put(trie.getHash().getBytes(), trie.toMessage());
-        savedTries.add(trie);
+
+        lock.writeLock().lock();
+        try {
+            savedTries.add(trie);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
@@ -99,7 +117,14 @@ public class TrieStoreImpl implements TrieStore {
         }
 
         Trie trie = Trie.fromMessage(message, this);
-        savedTries.add(trie);
+
+        lock.writeLock().lock();
+        try {
+            savedTries.add(trie);
+        } finally {
+            lock.writeLock().unlock();
+        }
+
         return Optional.of(trie);
     }
 
