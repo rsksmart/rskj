@@ -1389,7 +1389,11 @@ public class Program {
                 this.returnDataBuffer = out;
             }
 
-            this.memorySaveLimited(msg.getOutDataOffs().intValue(), out, msg.getOutDataSize().intValue());
+            if (getActivations().isActive(ConsensusRule.RSKIP150)) {
+                this.memorySaveLimited(msg.getOutDataOffs().intValue(), out, msg.getOutDataSize().intValue());
+            } else {
+                this.memorySave(msg.getOutDataOffs().intValue(), out);
+            }
             this.stackPushOne();
             track.commit();
         }

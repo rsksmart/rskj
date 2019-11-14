@@ -27,7 +27,6 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.vm.BitSet;
 import co.rsk.vm.BytecodeCompiler;
-import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -51,7 +50,6 @@ import java.util.*;
 
 import static java.lang.StrictMath.min;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
-import static org.ethereum.util.ByteUtil.toHexString;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -3241,6 +3239,7 @@ public class VMTest {
 
         when(activations.isActive(ConsensusRule.RSKIP90)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP89)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP150)).thenReturn(true);
         return activations;
     }
 
