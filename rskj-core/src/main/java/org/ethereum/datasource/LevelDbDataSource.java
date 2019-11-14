@@ -40,6 +40,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.lang.System.getProperty;
 import static org.fusesource.leveldbjni.JniDBFactory.factory;
+import static org.xerial.snappy.Snappy.compress;
+import static org.xerial.snappy.Snappy.uncompress;
 
 public class LevelDbDataSource implements KeyValueDataSource {
 
@@ -151,7 +153,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
             }
 
             try {
-                byte[] ret = db.get(key);
+                byte[] ret = getValue(key);
+
                 if (logger.isTraceEnabled()) {
                     logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
                 }
@@ -160,7 +163,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
             } catch (DBException e) {
                 logger.error("Exception. Retrying again...", e);
                 try {
-                    byte[] ret = db.get(key);
+                    byte[] ret = getValue(key);
+
                     if (logger.isTraceEnabled()) {
                         logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
                     }
@@ -190,7 +194,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 logger.trace("~> LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
             }
 
-            db.put(key, value);
+            putValue(key, value);
             if (logger.isTraceEnabled()) {
                 logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
             }
@@ -252,6 +256,31 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
+    private byte[] getValue(byte[] key) {
+        byte[] ret = db.get(key);
+
+        if (ret != null) {
+            try {
+                ret = uncompress(ret);
+            } catch (IOException e) {
+                logger.error("Snappy problem. ", e);
+                panicProcessor.panic("leveldb", String.format("Exception. Snappy problem. Not retrying. %s", e.getMessage()));
+                throw new RuntimeException(e);
+            }
+        }
+        return ret;
+    }
+
+    private void putValue(byte[] key, byte[] value) {
+        try {
+            db.put(key, compress(value));
+        } catch (IOException e) {
+            logger.error("Snappy problem. ", e);
+            panicProcessor.panic("Snappy", String.format("Unexpected %s", e.getMessage()));
+            throw new RuntimeException(e);
+        }
+    }
+
     private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) throws IOException {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         if (rows.containsKey(null) || rows.containsValue(null)) {
@@ -261,7 +290,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         // Note that this is not atomic.
         try (WriteBatch batch = db.createWriteBatch()) {
             for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
-                batch.put(entry.getKey().getData(), entry.getValue());
+                batch.put(entry.getKey().getData(), compress(entry.getValue()));
             }
             for (ByteArrayWrapper deleteKey : deleteKeys) {
                 batch.delete(deleteKey.getData());
