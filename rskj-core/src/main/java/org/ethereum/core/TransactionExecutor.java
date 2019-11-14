@@ -497,7 +497,7 @@ public class TransactionExecutor {
         return receipt;
     }
 
-    public void finalization() {
+    protected void finalization() {
         finalization(true);
     }
 
