@@ -38,7 +38,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
- * @see co.rsk.peg.BridgeStorageProvider
+ * @see co.rsk.remasc.RemascStorageProvider
  * @author ajlopez
  * @author Oscar Guindzberg
  */
