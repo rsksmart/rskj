@@ -64,6 +64,7 @@ public class BlocksFileExporter {
             return;
         }
 
+        args = new String[]{"-base-path","/Users/julian/workspace/rskj-projects/dbs/database","/Users/julian/workspace/rskj-projects/dbs/fileExporter"}; // db src + fileExporter
         String[] nodeCliArgs = Arrays.copyOf(args, args.length - 1);
         RskContext objects = new RskContext(nodeCliArgs);
         BlocksFileExporter bplayer = new BlocksFileExporter(args[args.length - 1], objects);
