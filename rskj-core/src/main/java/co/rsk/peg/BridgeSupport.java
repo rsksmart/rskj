@@ -878,6 +878,7 @@ public class BridgeSupport {
         if (hasEnoughSignatures(btcTx)) {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
             provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
+
             eventLogger.logReleaseBtc(btcTx);
         } else {
             logger.debug("Tx not yet fully signed {}.", new Keccak256(rskTxHash));
@@ -1930,22 +1931,22 @@ public class BridgeSupport {
         // Only pre configured addresses can modify locking cap
         AddressBasedAuthorizer authorizer = bridgeConstants.getIncreaseLockingCapAuthorizer();
         if (!authorizer.isAuthorized(tx)) {
-            logger.warn("not authorized address tried to increase locking cap. Address: " + tx.getSender());
+            logger.warn("not authorized address tried to increase locking cap. Address: {}", tx.getSender());
             return false;
         }
         // new locking cap must be bigger than current locking cap
         Coin currentLockingCap = this.getLockingCap();
         if (newCap.compareTo(currentLockingCap) < 0) {
-            logger.warn("attempted value doesn't increase locking cap. Attempted: " + newCap.value);
+            logger.warn("attempted value doesn't increase locking cap. Attempted: {}", newCap.value);
             return false;
         }
         Coin maxLockingCap = currentLockingCap.multiply(bridgeConstants.getLockingCapIncrementsMultiplier());
         if (newCap.compareTo(maxLockingCap) > 0) {
-            logger.warn("attempted value increases locking cap above its limit. Attempted: " + newCap.value);
+            logger.warn("attempted value increases locking cap above its limit. Attempted: {}", newCap.value);
             return false;
         }
 
-        logger.info("increased locking cap: " + newCap.value);
+        logger.info("increased locking cap: {}", newCap.value);
         this.provider.setLockingCap(newCap);
 
         return true;
@@ -2073,7 +2074,7 @@ public class BridgeSupport {
             return true;
         }
 
-        Coin fedCurrentFunds = getFederationCurrentFunds();
+        Coin fedCurrentFunds = getBtcLockedInFederation();
         Coin lockingCap = this.getLockingCap();
         logger.trace("Evaluating locking cap for: Sender {}. Value to lock {}. Current funds {}. Current locking cap {}", senderBtcAddress, totalAmount, fedCurrentFunds, lockingCap);
         Coin fedUTXOsAfterThisLock = fedCurrentFunds.add(totalAmount);
@@ -2122,17 +2123,32 @@ public class BridgeSupport {
         return txBuilder.buildEmptyWalletTo(senderBtcAddress);
     }
 
-    private Coin getFederationCurrentFunds() throws IOException {
-        Coin amountToActive = getActiveFederationWallet().getBalance();
+    private Coin getBtcLockedInFederation() throws IOException {
+        Coin lockedInFederation = getActiveFederationWallet().getBalance();
+
+        // Funds not in wallet but waiting to be released
+        Coin amounWaitingForConfirmations = provider.getReleaseTransactionSet().getEntries().stream()
+                .map(e -> e.getTransaction().getInputSum()).reduce(Coin.ZERO, (a,b) -> a.add(b));
+        if (amounWaitingForConfirmations != null) {
+            lockedInFederation = lockedInFederation.add(amounWaitingForConfirmations);
+        }
+
+        Coin amountWaitingForSignatures = provider.getRskTxsWaitingForSignatures().values().stream()
+                .map(BtcTransaction::getInputSum).reduce(Coin.ZERO, (a, b) -> a.add(b));
+        if (amountWaitingForSignatures != null) {
+            lockedInFederation = lockedInFederation.add(amountWaitingForSignatures);
+        }
+
         Wallet retiringFedWallet = getRetiringFederationWallet();
         if (retiringFedWallet == null) {
-            return amountToActive;
+            return lockedInFederation;
         }
         Coin amountToRetiring = retiringFedWallet.getBalance();
         if (amountToRetiring == null) {
-            return amountToActive;
+            return lockedInFederation;
         }
-        return amountToActive.add(amountToRetiring);
+
+        return lockedInFederation.add(amountToRetiring);
     }
 }
 

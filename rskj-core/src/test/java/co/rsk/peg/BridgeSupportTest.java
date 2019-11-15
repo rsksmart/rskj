@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
@@ -30,9 +31,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
@@ -328,33 +327,77 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerBtcTransaction_aboveLockingCap_newFed_beforeRSKIP134Activation() throws IOException, BlockStoreException {
-        assertLockingCap(false, true, true);
+    public void registerBtcTransaction_before_RSKIP134_activation_sends_above_lockingcap() throws IOException, BlockStoreException {
+        // Sending above locking cap evaluating different conditions (sending to both fed, to one, including funds in wallet and in utxos waiting for signatures...)
+        assertLockingCap(true, false , Coin.COIN.multiply(3), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.ZERO, Coin.COIN.multiply(2), Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.COIN.multiply(2), Coin.ZERO, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.COIN.multiply(2), Coin.ZERO, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.COIN.multiply(2), Coin.ZERO, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.COIN.multiply(2), Coin.ZERO, Coin.COIN.multiply(2), Coin.ZERO);
+        assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.COIN.multiply(2), Coin.ZERO, Coin.ZERO, Coin.COIN.multiply(2));
+
+        // Right above locking cap
+        assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.COIN.multiply(5), Coin.ZERO, Coin.ZERO, Coin.SATOSHI);
+        assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.COIN.multiply(5), Coin.ZERO, Coin.SATOSHI, Coin.ZERO);
     }
 
     @Test
-    public void registerBtcTransaction_aboveLockingCap_oldFed_beforeRSKIP134Activation() throws IOException, BlockStoreException {
-        assertLockingCap(false, false, true);
+    public void registerBtcTransaction_before_RSKIP134_activation_sends_exactly_lockingcap() throws IOException, BlockStoreException {
+        assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.COIN, Coin.COIN, Coin.ZERO, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(5), Coin.COIN, Coin.COIN, Coin.COIN, Coin.ZERO);
     }
 
     @Test
-    public void registerBtcTransaction_aboveLockingCap_newFed_afterRSKIP134Activation() throws IOException, BlockStoreException {
-        assertLockingCap(true, true, true);
+    public void registerBtcTransaction_before_RSKIP134_activation_sends_below_lockingcap() throws IOException, BlockStoreException {
+        assertLockingCap(true, false, Coin.COIN.multiply(6), Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(6), Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.COIN, Coin.ZERO);
+        assertLockingCap(true, false, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.ZERO, Coin.COIN);
     }
 
     @Test
-    public void registerBtcTransaction_aboveLockingCap_oldFed_afterRSKIP134Activation() throws IOException, BlockStoreException {
-        assertLockingCap(true, false, true);
+    public void registerBtcTransaction_after_RSKIP134_activation_sends_above_lockingcap() throws IOException, BlockStoreException {
+        // Sending above locking cap evaluating different conditions (sending to both fed, to one, including funds in wallet and in utxos waiting for signatures...)
+        assertLockingCap(false, true, Coin.COIN.multiply(4), Coin.COIN, Coin.COIN.multiply(2), Coin.COIN, Coin.COIN);
+        assertLockingCap(false, true, Coin.COIN.multiply(4), Coin.ZERO, Coin.COIN.multiply(3), Coin.COIN, Coin.COIN);
+        assertLockingCap(false, true, Coin.COIN.multiply(4), Coin.COIN.multiply(3), Coin.ZERO, Coin.COIN, Coin.COIN);
+        assertLockingCap(false, true, Coin.COIN.multiply(4), Coin.COIN.multiply(3), Coin.ZERO, Coin.COIN, Coin.COIN);
+        assertLockingCap(false, true, Coin.COIN.multiply(4), Coin.COIN.multiply(3), Coin.ZERO, Coin.COIN, Coin.COIN);
+        assertLockingCap(false, true, Coin.COIN.multiply(4), Coin.COIN.multiply(3), Coin.ZERO, Coin.COIN.multiply(2), Coin.ZERO);
+        assertLockingCap(false, true, Coin.COIN.multiply(4), Coin.COIN.multiply(3), Coin.ZERO, Coin.ZERO, Coin.COIN.multiply(2));
+
+        // Right above locking cap
+        assertLockingCap(false, true, Coin.COIN.multiply(5), Coin.COIN.multiply(5), Coin.ZERO, Coin.ZERO, Coin.SATOSHI);
+        assertLockingCap(false, true, Coin.COIN.multiply(5), Coin.COIN.multiply(5), Coin.ZERO, Coin.SATOSHI, Coin.ZERO);
+        assertLockingCap(false, true, Coin.COIN.multiply(5), Coin.COIN.multiply(5), Coin.SATOSHI, Coin.ZERO, Coin.ZERO);
+        assertLockingCap(false, true, Coin.COIN.multiply(5), Coin.COIN.multiply(5).add(Coin.SATOSHI), Coin.ZERO, Coin.ZERO, Coin.ZERO);
     }
 
     @Test
-    public void registerBtcTransaction_belowLockingCap_newFed_afterRSKIP134Activation() throws IOException, BlockStoreException {
-        assertLockingCap(true, true, false);
+    public void registerBtcTransaction_after_RSKIP134_activation_sends_exactly_lockingcap() throws IOException, BlockStoreException {
+        assertLockingCap(true, true, Coin.COIN.multiply(5), Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, true, Coin.COIN.multiply(5), Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, true, Coin.COIN.multiply(5), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, true, Coin.COIN.multiply(5), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, true, Coin.COIN.multiply(5), Coin.COIN, Coin.COIN, Coin.ZERO, Coin.COIN);
+        assertLockingCap(true, true, Coin.COIN.multiply(5), Coin.COIN, Coin.COIN, Coin.COIN, Coin.ZERO);
     }
 
     @Test
-    public void registerBtcTransaction_belowLockingCap_oldFed_afterRSKIP134Activation() throws IOException, BlockStoreException {
-        assertLockingCap(true, false, false);
+    public void registerBtcTransaction_after_RSKIP134_activation_sends_below_lockingcap() throws IOException, BlockStoreException {
+        assertLockingCap(true, true, Coin.COIN.multiply(6), Coin.ZERO, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, true, Coin.COIN.multiply(6), Coin.COIN, Coin.ZERO, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, true, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, true, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, true, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.COIN, Coin.ZERO);
+        assertLockingCap(true, true, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.ZERO, Coin.COIN);
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider) {
@@ -392,8 +435,9 @@ public class BridgeSupportTest {
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 
-    private void assertLockingCap(boolean isLockingCapEnabled, boolean useNewFederation, boolean sendsAboveLockingCap) throws BlockStoreException, IOException {
-
+    private void assertLockingCap(boolean shouldLock, boolean isLockingCapEnabled, Coin lockingCap, Coin amountSentToNewFed, Coin amountSentToOldFed,
+                                  Coin amountInNewFed, Coin amountInOldFed) throws BlockStoreException, IOException {
+        // Configure if locking cap should be evaluated
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(isLockingCapEnabled);
 
@@ -402,8 +446,9 @@ public class BridgeSupportTest {
         when(bridgeConstants.getBtcParams()).thenReturn(BridgeRegTestConstants.getInstance().getBtcParams());
         when(bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()).thenReturn(1);
         when(bridgeConstants.getGenesisFeePerKb()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFeePerKb());
-        // Force the initial locking cap to 1 BTC
-        when(bridgeConstants.getInitialLockingCap()).thenReturn(Coin.COIN);
+
+        // Configure locking cap
+        when(bridgeConstants.getInitialLockingCap()).thenReturn(lockingCap);
 
         Repository repository = createRepository();
         // Fund bridge
@@ -412,14 +457,54 @@ public class BridgeSupportTest {
 
         Federation federation = this.getFederation(bridgeConstants, null);
 
-        // Send 50BTC or 0.0001BTC depending on the configuration
-        Coin lockValue = sendsAboveLockingCap ? Coin.FIFTY_COINS : Coin.MILLICOIN;
+        BridgeStorageProvider provider =
+                new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
+        // We need a random new fed
+        provider.setNewFederation(this.getFederation(bridgeConstants,
+                Arrays.asList(new BtcECKey[]{
+                        BtcECKey.fromPrivate(Hex.decode("fb01")),
+                        BtcECKey.fromPrivate(Hex.decode("fb02")),
+                        BtcECKey.fromPrivate(Hex.decode("fb03"))
+                })
+        ));
+        // Use genesis fed as old
+        provider.setOldFederation(federation);
 
-        // Create transaction
+        Coin currentFunds = Coin.ZERO;
+
+        // Configure existing utxos in both federations
+        if (amountInOldFed != null) {
+            UTXO utxo = new UTXO(Sha256Hash.wrap(HashUtil.randomHash()),0, amountInOldFed, 1, false, new Script(new byte[]{}));
+            provider.getOldFederationBtcUTXOs().add(utxo);
+            currentFunds = currentFunds.add(amountInOldFed);
+        }
+        if (amountInNewFed != null) {
+            UTXO utxo = new UTXO(Sha256Hash.wrap(HashUtil.randomHash()),0, amountInNewFed, 1, false, new Script(new byte[]{}));
+            provider.getNewFederationBtcUTXOs().add(utxo);
+            currentFunds = currentFunds.add(amountInNewFed);
+        }
+
+        // The locking cap shouldn't be surpassed by the initial configuration
+        Assert.assertFalse(isLockingCapEnabled && currentFunds.isGreaterThan(lockingCap));
+
+        Coin lockValue = Coin.ZERO;
+        int newUtxos = 0;
+
+        // Create transaction setting the outputs to the configured values
         BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(lockValue, federation.getAddress());
+        if (amountSentToOldFed != null) {
+            tx.addOutput(amountSentToOldFed, provider.getOldFederation().getAddress());
+            lockValue = lockValue.add(amountSentToOldFed);
+            newUtxos++;
+        }
+        if (amountSentToNewFed!= null) {
+            tx.addOutput(amountSentToNewFed, provider.getNewFederation().getAddress());
+            lockValue = lockValue.add(amountSentToNewFed);
+            newUtxos++;
+        }
         BtcECKey srcKey = new BtcECKey();
         tx.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey));
+
 
         // Create header and PMT
         byte[] bits = new byte[1];
@@ -438,22 +523,6 @@ public class BridgeSupportTest {
 
         Block executionBlock = Mockito.mock(Block.class);
         when(executionBlock.getNumber()).thenReturn(10L);
-
-        BridgeStorageProvider provider =
-                new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
-        if (useNewFederation) {
-            provider.setNewFederation(federation);
-        } else {
-            // We need a random new fed
-            provider.setNewFederation(this.getFederation(bridgeConstants,
-                    Arrays.asList(new BtcECKey[]{
-                        BtcECKey.fromPrivate(Hex.decode("fb01")),
-                        BtcECKey.fromPrivate(Hex.decode("fb02")),
-                        BtcECKey.fromPrivate(Hex.decode("fb03")),
-                    })
-            ));
-            provider.setOldFederation(federation);
-        }
 
         // Get the tx sender public key
         byte[] data = tx.getInput(0).getScriptSig().getChunks().get(1).data;
@@ -485,16 +554,14 @@ public class BridgeSupportTest {
         // If the address is no longer whitelisted, it means it was consumed, whether the lock was rejected by lockingCap or not
         Assert.assertThat(whitelist.isWhitelisted(address), is(false));
 
-        boolean shouldHaveLocked = !isLockingCapEnabled || isLockingCapEnabled && !sendsAboveLockingCap;
-
-        co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(shouldHaveLocked ? lockValue : Coin.ZERO);
+        co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(shouldLock ? lockValue : Coin.ZERO);
         RskAddress srcKeyRskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey.getPrivKey()).getAddress());
 
         // Verify amount was locked
         Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(srcKeyRskAddress));
         Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        if (!shouldHaveLocked) {
+        if (!shouldLock) {
             // Release tx should have been created directly to the signatures stack
             BtcTransaction releaseTx = provider.getRskTxsWaitingForSignatures().get(hash);
             Assert.assertNotNull(releaseTx);
@@ -502,10 +569,13 @@ public class BridgeSupportTest {
             Assert.assertEquals(1, releaseTx.getOutputs().size());
             Assert.assertEquals(address, releaseTx.getOutputs().get(0).getAddressFromP2PKHScript(bridgeConstants.getBtcParams()));
             Assert.assertEquals(lockValue, releaseTx.getOutputs().get(0).getValue().add(releaseTx.getFee()));
-            // Uses the same UTXO
-            Assert.assertEquals(1, releaseTx.getInputs().size());
-            Assert.assertEquals(tx.getHash(), releaseTx.getInputs().get(0).getOutpoint().getHash());
-            Assert.assertEquals(0, releaseTx.getInputs().get(0).getOutpoint().getIndex());
+            // Uses the same UTXO(s)
+            Assert.assertEquals(newUtxos, releaseTx.getInputs().size());
+            for (int i = 0; i < newUtxos; i++) {
+                TransactionInput input = releaseTx.getInput(i);
+                Assert.assertEquals(tx.getHash(), input.getOutpoint().getHash());
+                Assert.assertEquals(i, input.getOutpoint().getIndex());
+            }
         }
     }
 

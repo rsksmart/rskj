@@ -20,7 +20,6 @@
 
 package org.ethereum.vm;
 
-import co.rsk.crypto.Keccak256;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.bouncycastle.util.Arrays;
