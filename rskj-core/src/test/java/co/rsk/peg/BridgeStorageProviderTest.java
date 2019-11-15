@@ -22,11 +22,13 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -38,8 +40,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.util.RLP;
 import org.ethereum.db.MutableRepository;
@@ -1425,65 +1427,297 @@ public class BridgeStorageProviderTest {
     }
 
     @Test
-    public void getReleaseRequestQueue() throws IOException {
-        List<Integer> calls = new ArrayList<>();
-        ReleaseRequestQueue requestQueueMock = mock(ReleaseRequestQueue.class);
-        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+    public void getReleaseRequestQueue_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
-            calls.add(0);
-            RskAddress contractAddress = invocation.getArgument(0);
-            DataWord address = invocation.getArgument(1);
-            // Make sure the bytes are got from the correct address in the repo
-            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(DataWord.valueOf("releaseRequestQueue".getBytes(StandardCharsets.UTF_8)), address);
-            return new byte[]{(byte)0xaa};
-        });
-        PowerMockito.when(BridgeSerializationUtils.deserializeReleaseRequestQueue(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
-            calls.add(0);
-            byte[] data = invocation.getArgument(0);
-            NetworkParameters parameters = invocation.getArgument(1);
-            Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), parameters);
-            // Make sure we're deserializing what just came from the repo
-            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
-            return requestQueueMock;
-        });
+        List<ReleaseRequestQueue.Entry> oldEntriesList = new ArrayList<>(Collections.singletonList(
+                new ReleaseRequestQueue.Entry(
+                        Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
+                        Coin.COIN)));
 
-        Assert.assertSame(requestQueueMock, storageProvider.getReleaseRequestQueue());
-        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue"))))
+                .then((InvocationOnMock invocation) ->
+                        BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(oldEntriesList)));
+
+        ReleaseRequestQueue result = storageProvider.getReleaseRequestQueue();
+
+        verify(repositoryMock, never()).getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash")));
+
+        Assert.assertEquals(1, result.getEntries().size());
+        Assert.assertTrue(result.getEntries().containsAll(oldEntriesList));
     }
 
     @Test
-    public void getReleaseTransactionSet() throws IOException {
-        List<Integer> calls = new ArrayList<>();
-        ReleaseTransactionSet transactionSetMock = mock(ReleaseTransactionSet.class);
-        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+    public void getReleaseRequestQueue_after_rskip_146_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+
+        ReleaseRequestQueue.Entry oldEntry = new ReleaseRequestQueue.Entry(
+                Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
+                Coin.COIN);
+
+        ReleaseRequestQueue.Entry newEntry = new ReleaseRequestQueue.Entry(
+                Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+                Coin.COIN,
+                PegTestUtils.createHash3(0)
+        );
+
+        Repository repositoryMock = mock(Repository.class);
+
+        when(repositoryMock.getStorageBytes(any(),eq(DataWord.fromString("releaseRequestQueue")))).
+                thenReturn(BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
+
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
+                activations);
+
+        ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
+
+        releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+                Coin.COIN,
+                PegTestUtils.createHash3(0));
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash"))))
+                .then((InvocationOnMock invocation) ->
+                        BridgeSerializationUtils.serializeReleaseRequestQueueWithTxHash(new ReleaseRequestQueue(new ArrayList<>(Collections.singletonList(newEntry)))));
+
+        ReleaseRequestQueue result = storageProvider.getReleaseRequestQueue();
+
+        Assert.assertEquals(2, result.getEntries().size());
+        Assert.assertEquals(result.getEntries().get(0), oldEntry);
+        Assert.assertEquals(result.getEntries().get(1), newEntry);
+    }
+
+    @Test
+    public void saveReleaseRequestQueue_before_rskip_146_activation() throws IOException {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
-        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
-            calls.add(0);
-            RskAddress contractAddress = invocation.getArgument(0);
-            DataWord address = invocation.getArgument(1);
-            // Make sure the bytes are got from the correct address in the repo
-            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
-            Assert.assertEquals(DataWord.valueOf("releaseTransactionSet".getBytes(StandardCharsets.UTF_8)), address);
-            return new byte[]{(byte)0xaa};
-        });
-        PowerMockito.when(BridgeSerializationUtils.deserializeReleaseTransactionSet(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
-            calls.add(0);
-            byte[] data = invocation.getArgument(0);
-            NetworkParameters parameters = invocation.getArgument(1);
-            Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), parameters);
-            // Make sure we're deserializing what just came from the repo
-            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
-            return transactionSetMock;
-        });
+        List<ReleaseRequestQueue.Entry> oldEntriesList = new ArrayList<>(Collections.singletonList(
+                new ReleaseRequestQueue.Entry(
+                        Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
+                        Coin.COIN)));
 
-        Assert.assertSame(transactionSetMock, storageProvider.getReleaseTransactionSet());
-        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederationOnlyBtcKeys & getStorageBytes
+        ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
+        releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
+                Coin.COIN);
+
+        doAnswer((i) -> {
+            List<ReleaseRequestQueue.Entry> entries = BridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), networkParameters);
+            Assert.assertEquals(oldEntriesList, entries);
+            return true;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue")), any(byte[].class));
+
+        storageProvider.saveReleaseRequestQueue();
+
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue")), any(byte[].class));
+        verify(repositoryMock, never()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash")), any(byte[].class));
+    }
+
+    @Test
+    public void saveReleaseRequestQueue_after_rskip_146_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+
+        ReleaseRequestQueue.Entry newEntry =
+                new ReleaseRequestQueue.Entry(
+                        Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+                        Coin.COIN,
+                        PegTestUtils.createHash3(0)
+                        );
+
+        ReleaseRequestQueue.Entry oldEntry =
+                new ReleaseRequestQueue.Entry(
+                        Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+                        Coin.COIN
+                );
+
+        Repository repositoryMock = mock(Repository.class);
+        when(repositoryMock.getStorageBytes(any(),eq(DataWord.fromString("releaseRequestQueue")))).
+                thenReturn(BridgeSerializationUtils.serializeReleaseRequestQueue(new ReleaseRequestQueue(new ArrayList<>(Arrays.asList(oldEntry)))));
+
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activations);
+        ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
+
+        releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+                Coin.COIN,
+                PegTestUtils.createHash3(0)
+        );
+
+        doAnswer((i) -> {
+            List<ReleaseRequestQueue.Entry> entries = BridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), networkParameters);
+            Assert.assertEquals(entries, new ArrayList<>(Arrays.asList(oldEntry)));
+            return true;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue")), any(byte[].class));
+
+        doAnswer((i) -> {
+            List<ReleaseRequestQueue.Entry> entries = BridgeSerializationUtils.deserializeReleaseRequestQueue(i.getArgument(2), networkParameters, true);
+            Assert.assertEquals(entries, new ArrayList<>(Arrays.asList(newEntry)));
+            return true;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash")), any(byte[].class));
+
+        storageProvider.saveReleaseRequestQueue();
+
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue")), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueueWithTxHash")), any(byte[].class));
+        Assert.assertEquals(2, storageProvider.getReleaseRequestQueue().getEntries().size());
+    }
+
+    @Test
+    public void getReleaseTransactionSet_before_rskip_146_activation() throws IOException {
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"),
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
+
+        Set<ReleaseTransactionSet.Entry> oldEntriesSet = new HashSet<>(Collections.singletonList(
+                new ReleaseTransactionSet.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
+        ));
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet"))))
+                .then((InvocationOnMock invocation) ->
+                        BridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
+
+        ReleaseTransactionSet result = storageProvider.getReleaseTransactionSet();
+
+        verify(repositoryMock, never()).getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash")));
+
+        Assert.assertEquals(1, result.getEntries().size());
+        Assert.assertTrue(result.getEntries().containsAll(oldEntriesSet));
+    }
+
+    @Test
+    public void getReleaseTransactionSet_after_rskip_146_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+
+        Set<ReleaseTransactionSet.Entry> oldEntriesSet = new HashSet<>(Collections.singletonList(
+                new ReleaseTransactionSet.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
+        ));
+
+        Set<ReleaseTransactionSet.Entry> newEntriesSet = new HashSet<>(Collections.singletonList(
+                new ReleaseTransactionSet.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                        1L,
+                        PegTestUtils.createHash3(0)
+        )));
+
+        Repository repositoryMock = mock(Repository.class);
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet"))))
+                .thenReturn(BridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
+
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"),
+                config.getNetworkConstants().getBridgeConstants(), activations);
+
+        ReleaseTransactionSet releaseTransactionSet = storageProvider.getReleaseTransactionSet();
+
+        releaseTransactionSet.add(new SimpleBtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams(), PegTestUtils.createHash(0)),
+                1L,
+                PegTestUtils.createHash3(0));
+
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash"))))
+                .then((InvocationOnMock invocation) ->
+                        BridgeSerializationUtils.serializeReleaseTransactionSetWithTxHash(new ReleaseTransactionSet(newEntriesSet)));
+
+        ReleaseTransactionSet result = storageProvider.getReleaseTransactionSet();
+
+        Assert.assertEquals(2, result.getEntries().size());
+    }
+
+    @Test
+    public void saveReleaseTransactionSet_before_rskip_146_activations() throws IOException {
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
+
+        Set<ReleaseTransactionSet.Entry> oldEntriesSet = new HashSet<>(Collections.singletonList(
+                new ReleaseTransactionSet.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
+        ));
+
+        ReleaseTransactionSet releaseTransactionSet = storageProvider.getReleaseTransactionSet();
+        releaseTransactionSet.add(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L);
+
+        doAnswer((i) -> {
+            Set<ReleaseTransactionSet.Entry> entries = BridgeSerializationUtils.deserializeReleaseTransactionSet(i.getArgument(2), networkParameters).getEntries();
+            Assert.assertEquals(oldEntriesSet, entries);
+            return true;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet")), any(byte[].class));
+
+        storageProvider.saveReleaseTransactionSet();
+
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet")), any(byte[].class));
+        verify(repositoryMock, never()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash")), any(byte[].class));
+    }
+
+    @Test
+    public void saveReleaseTransactionSet_after_rskip_146_activations() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+
+        Set<ReleaseTransactionSet.Entry> newEntriesSet = new HashSet<>(Collections.singletonList(
+                new ReleaseTransactionSet.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L, PegTestUtils.createHash3(0))
+        ));
+
+        Set<ReleaseTransactionSet.Entry> oldEntriesSet = new HashSet<>(Collections.singletonList(
+                new ReleaseTransactionSet.Entry(new BtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams()), 1L)
+        ));
+
+        Repository repositoryMock = mock(Repository.class);
+
+        when(repositoryMock.getStorageBytes(any(),eq(DataWord.fromString("releaseTransactionSet")))).
+                thenReturn(BridgeSerializationUtils.serializeReleaseTransactionSet(new ReleaseTransactionSet(oldEntriesSet)));
+
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activations);
+        ReleaseTransactionSet releaseTransactionSet = storageProvider.getReleaseTransactionSet();
+
+        releaseTransactionSet.add(new SimpleBtcTransaction(config.getNetworkConstants().getBridgeConstants().getBtcParams(), PegTestUtils.createHash(1)),
+                1L,
+                PegTestUtils.createHash3(0));
+
+        doAnswer((i) -> {
+            Set<ReleaseTransactionSet.Entry> entries = BridgeSerializationUtils.deserializeReleaseTransactionSet(i.getArgument(2), networkParameters).getEntries();
+            Assert.assertEquals(entries, oldEntriesSet);
+            return true;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet")), any(byte[].class));
+
+        doAnswer((i) -> {
+            Set<ReleaseTransactionSet.Entry> entries = BridgeSerializationUtils.deserializeReleaseTransactionSet(i.getArgument(2), networkParameters, true).getEntries();
+            Assert.assertEquals(entries, newEntriesSet);
+            return true;
+        }).when(repositoryMock).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash")), any(byte[].class));
+
+        storageProvider.saveReleaseTransactionSet();
+
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSet")), any(byte[].class));
+        verify(repositoryMock, atLeastOnce()).addStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseTransactionSetWithTxHash")), any(byte[].class));
+        Assert.assertEquals(2, storageProvider.getReleaseTransactionSet().getEntries().size());
+    }
+
+    @Test
+    public void getReleaseTransaction_after_rskip_146_activations() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+
+        BtcTransaction tx1 = createTransaction();
+        BtcTransaction tx2 = createTransaction();
+        BtcTransaction tx3 = createTransaction();
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activations);
+
+        provider0.getReleaseTransactionSet().add(tx1, 1L, PegTestUtils.createHash3(0));
+        provider0.getReleaseTransactionSet().add(tx2, 2L, PegTestUtils.createHash3(1));
+        provider0.getReleaseTransactionSet().add(tx3, 3L, PegTestUtils.createHash3(2));
+
+        provider0.save();
+
+        track.commit();
+
+        //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activations);
+
+        Assert.assertEquals(3, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
     }
 
     @Test

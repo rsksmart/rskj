@@ -38,6 +38,13 @@ public enum BridgeEvents {
                     new CallTransaction.Param(false, "newFederationBtcAddress", SolidityType.getType("string")),
                     new CallTransaction.Param(false, "activationHeight", SolidityType.getType("int256"))
             }
+    ),
+    RELEASE_REQUESTED("release_requested",
+            new CallTransaction.Param[]{
+                    new CallTransaction.Param(true, "rskTxHash", SolidityType.getType("bytes32")),
+                    new CallTransaction.Param(true, "btcTxHash", SolidityType.getType("bytes32")),
+                    new CallTransaction.Param(false, "amount", SolidityType.getType("uint"))
+            }
     );
 
     private String eventName;

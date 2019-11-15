@@ -142,7 +142,7 @@ public class BridgeTestPowerMock {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
-        provider0.getReleaseTransactionSet().add(tx1, 1L);
+        provider0.getReleaseTransactionSet().add(tx1, 1L, PegTestUtils.createHash3(0));
         provider0.save();
 
         track.commit();
@@ -151,7 +151,6 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(new ECKey().getPrivKeyBytes());
-
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
@@ -178,7 +177,7 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock(0));
 
         provider0.getReleaseTransactionSet().add(tx1, 1L);
         provider0.getReleaseTransactionSet().add(tx2, 2L);
@@ -196,8 +195,10 @@ public class BridgeTestPowerMock {
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
                 activationConfig);
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
                 bridgeSupportFactory);
+
         World world = new World();
         bridge.init(rskTx, world.getBlockChain().getBestBlock(), track, world.getBlockStore(), null, new LinkedList<>());
 
@@ -205,7 +206,7 @@ public class BridgeTestPowerMock {
 
         track.commit();
 
-        // reusing same storage configuration as the height doesn't affect storage configurations for releases.
+        //Reusing same storage configuration as the height doesn't affect storage configurations for releases.
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
         Assert.assertEquals(3, provider.getReleaseTransactionSet().getEntries().size());
@@ -221,7 +222,7 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock(0));
 
         provider0.getReleaseTransactionSet().add(tx1, 1L);
         provider0.getReleaseTransactionSet().add(tx2, 2L);
@@ -235,7 +236,6 @@ public class BridgeTestPowerMock {
 
         World world = new World();
         List<Block> blocks = new BlockGenerator().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
-
 
         Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
@@ -2576,7 +2576,7 @@ public class BridgeTestPowerMock {
 
         byte[][] arr = new byte[1][];
         arr[0] = new byte[]{};
-        Object[] params = new Object[]{new byte[0], new byte[0], BigInteger.valueOf(1), arr};
+        Object[] params = new Object[]{ new byte[0], new byte[0], BigInteger.valueOf(1), arr };
         Assert.assertNull(bridge.execute(Bridge.GET_BTC_TRANSACTION_CONFIRMATIONS.encode(params)));
     }
 
@@ -2608,9 +2608,9 @@ public class BridgeTestPowerMock {
             // Check constructor parameters are correct
 
             List<Sha256Hash> hashes = invocation.getArgument(0);
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[0], hashes.get(0).getBytes()));
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[1], hashes.get(1).getBytes()));
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[2], hashes.get(2).getBytes()));
+            Assert.assertArrayEquals(merkleBranchHashes[0], hashes.get(0).getBytes());
+            Assert.assertArrayEquals(merkleBranchHashes[1], hashes.get(1).getBytes());
+            Assert.assertArrayEquals(merkleBranchHashes[2], hashes.get(2).getBytes());
 
             Integer bits = invocation.getArgument(1);
             Assert.assertEquals(123, bits.intValue());
@@ -2621,10 +2621,10 @@ public class BridgeTestPowerMock {
         when(bridgeSupportMock.getBtcTransactionConfirmations(any(Sha256Hash.class), any(Sha256Hash.class), any(MerkleBranch.class))).then((Answer<Integer>) invocation -> {
             // Check parameters are correct
             Sha256Hash txHash = invocation.getArgument(0);
-            Assert.assertTrue(Arrays.equals(btcTxHash, txHash.getBytes()));
+            Assert.assertArrayEquals(btcTxHash, txHash.getBytes());
 
             Sha256Hash blockHash = invocation.getArgument(1);
-            Assert.assertTrue(Arrays.equals(btcBlockHash, blockHash.getBytes()));
+            Assert.assertArrayEquals(btcBlockHash, blockHash.getBytes());
 
             MerkleBranch merkleBranchArg = invocation.getArgument(2);
             Assert.assertEquals(merkleBranch, merkleBranchArg);
@@ -2667,9 +2667,9 @@ public class BridgeTestPowerMock {
             // Check constructor parameters are correct
 
             List<Sha256Hash> hashes = invocation.getArgument(0);
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[0], hashes.get(0).getBytes()));
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[1], hashes.get(1).getBytes()));
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[2], hashes.get(2).getBytes()));
+            Assert.assertArrayEquals(merkleBranchHashes[0], hashes.get(0).getBytes());
+            Assert.assertArrayEquals(merkleBranchHashes[1], hashes.get(1).getBytes());
+            Assert.assertArrayEquals(merkleBranchHashes[2], hashes.get(2).getBytes());
 
             Integer bits = invocation.getArgument(1);
             Assert.assertEquals(123, bits.intValue());
@@ -2680,10 +2680,10 @@ public class BridgeTestPowerMock {
         when(bridgeSupportMock.getBtcTransactionConfirmations(any(Sha256Hash.class), any(Sha256Hash.class), any(MerkleBranch.class))).then((Answer<Integer>) invocation -> {
             // Check parameters are correct
             Sha256Hash txHash = invocation.getArgument(0);
-            Assert.assertTrue(Arrays.equals(btcTxHash, txHash.getBytes()));
+            Assert.assertArrayEquals(btcTxHash, txHash.getBytes());
 
             Sha256Hash blockHash = invocation.getArgument(1);
-            Assert.assertTrue(Arrays.equals(btcBlockHash, blockHash.getBytes()));
+            Assert.assertArrayEquals(btcBlockHash, blockHash.getBytes());
 
             MerkleBranch merkleBranchArg = invocation.getArgument(2);
             Assert.assertEquals(merkleBranch, merkleBranchArg);
@@ -2733,9 +2733,9 @@ public class BridgeTestPowerMock {
             // Check constructor parameters are correct
 
             List<Sha256Hash> hashes = invocation.getArgument(0);
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[0], hashes.get(0).getBytes()));
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[1], hashes.get(1).getBytes()));
-            Assert.assertTrue(Arrays.equals(merkleBranchHashes[2], hashes.get(2).getBytes()));
+            Assert.assertArrayEquals(merkleBranchHashes[0], hashes.get(0).getBytes());
+            Assert.assertArrayEquals(merkleBranchHashes[1], hashes.get(1).getBytes());
+            Assert.assertArrayEquals(merkleBranchHashes[2], hashes.get(2).getBytes());
 
             Integer bits = invocation.getArgument(1);
             Assert.assertEquals(123, bits.intValue());

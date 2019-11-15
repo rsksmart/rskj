@@ -41,6 +41,7 @@ import org.ethereum.vm.PrecompiledContracts;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -188,18 +189,28 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
-    public void logLockBtc(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin Amount) {
+    public void logLockBtc(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount) {
         CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(receiver.toString());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
-        byte[] encodedData = event.encodeEventData(btcTx.getHashAsString(), senderBtcAddress.toString(), Amount.getValue());
+        byte[] encodedData = event.encodeEventData(btcTx.getHash().getBytes(), senderBtcAddress.toString(), amount.getValue());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
-    private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
+    public void logReleaseBtcRequested(byte[] rskTransactionHash, BtcTransaction btcTx, Coin amount) {
+        CallTransaction.Function event = BridgeEvents.RELEASE_REQUESTED.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(rskTransactionHash, btcTx.getHash().getBytes());
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(amount.getValue());
+
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+
+    }
+
+    private byte[] flatKeys(List<BtcECKey> keys, Function<BtcECKey, byte[]> parser) {
         List<byte[]> pubKeys = keys.stream()
-                .map(k -> RLP.encodeElement(k.getPubKey()))
+                .map(parser)
                 .collect(Collectors.toList());
         int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
 
@@ -213,19 +224,11 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         return flatPubKeys;
     }
 
+    private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
+        return flatKeys(keys, (k -> RLP.encodeElement(k.getPubKey())));
+    }
+
     private byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
-        List<byte[]> pubKeys = keys.stream()
-                .map(BtcECKey::getPubKey)
-                .collect(Collectors.toList());
-        int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
-
-        byte[] flatPubKeys = new byte[pubKeysLength];
-        int copyPos = 0;
-        for(byte[] key : pubKeys) {
-            System.arraycopy(key, 0, flatPubKeys, copyPos, key.length);
-            copyPos += key.length;
-        }
-
-        return flatPubKeys;
+        return flatKeys(keys, BtcECKey::getPubKey);
     }
 }

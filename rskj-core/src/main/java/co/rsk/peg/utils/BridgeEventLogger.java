@@ -18,14 +18,14 @@
 
 package co.rsk.peg.utils;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.ethereum.vm.LogInfo;
-
-import java.util.List;
 
 /**
  * Responsible for logging events triggered by BridgeContract.
@@ -42,5 +42,7 @@ public interface BridgeEventLogger {
 
     void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation);
 
-    void logLockBtc(RskAddress RskReceiver, BtcTransaction btcTx, Address senderBtcAddress, Coin Amount);
+    void logLockBtc(RskAddress rskReceiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount);
+
+    void logReleaseBtcRequested(byte[] rskTxHash, BtcTransaction btcTx, Coin amount);
 }

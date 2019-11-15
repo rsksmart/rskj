@@ -27,7 +27,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class ReleaseRequestQueueTest {
@@ -53,11 +55,18 @@ public class ReleaseRequestQueueTest {
         ReleaseRequestQueue.Entry e3 = new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(149));
         ReleaseRequestQueue.Entry e4 = new ReleaseRequestQueue.Entry(mockAddress(5), Coin.valueOf(150));
         ReleaseRequestQueue.Entry e5 = new ReleaseRequestQueue.Entry(mockAddress(5), Coin.valueOf(151));
+        ReleaseRequestQueue.Entry e6 = new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150), PegTestUtils.createHash3(0));
+        ReleaseRequestQueue.Entry e7 = new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150), PegTestUtils.createHash3(0));
+        ReleaseRequestQueue.Entry e8 = new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150), null);
+        ReleaseRequestQueue.Entry e9 = new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150), null);
 
         Assert.assertEquals(e1, e2);
         Assert.assertNotEquals(e1, e3);
         Assert.assertNotEquals(e1, e4);
         Assert.assertNotEquals(e1, e5);
+        Assert.assertEquals(e6, e7);
+        Assert.assertEquals(e8, e9);
+        Assert.assertNotEquals(e6, e8);
     }
 
     @Test
@@ -72,13 +81,54 @@ public class ReleaseRequestQueueTest {
     public void entriesCopy() {
         Assert.assertNotSame(queueEntries, queue.getEntries());
         Assert.assertEquals(queueEntries, queue.getEntries());
+
+        List<ReleaseRequestQueue.Entry> entry = Collections.singletonList(new ReleaseRequestQueue.Entry(mockAddress(2), Coin.valueOf(150)));
+        ReleaseRequestQueue queueWithoutHash = new ReleaseRequestQueue(entry);
+
+        List<ReleaseRequestQueue.Entry> resultCallWithoutHash = queueWithoutHash.getEntriesWithoutHash();
+        Assert.assertEquals(resultCallWithoutHash, entry);
+
+        List<ReleaseRequestQueue.Entry> resultCallWithHash = queueWithoutHash.getEntriesWithHash();
+        Assert.assertEquals(resultCallWithHash, new ArrayList<>());
+
+        ReleaseRequestQueue queueWithHashIndex0 = new ReleaseRequestQueue(entry, 0);
+        List<ReleaseRequestQueue.Entry> resultCallWithoutHash2 = queueWithHashIndex0.getEntriesWithoutHash();
+        Assert.assertEquals(0, resultCallWithoutHash2.size());
+
+        List<ReleaseRequestQueue.Entry> resultCallWithoutHash2b = queueWithHashIndex0.getEntriesWithHash();
+        Assert.assertEquals(resultCallWithoutHash2b, entry);
+
+        ReleaseRequestQueue queueWithHashIndex1 = new ReleaseRequestQueue(entry, 1);
+        List<ReleaseRequestQueue.Entry> resultCallWithoutHash3 = queueWithHashIndex1.getEntriesWithoutHash();
+        Assert.assertEquals(resultCallWithoutHash3, entry);
+
+        List<ReleaseRequestQueue.Entry> resultCallWithoutHash4 = queueWithHashIndex1.getEntriesWithHash();
+        Assert.assertEquals(0, resultCallWithoutHash4.size());
     }
 
     @Test
     public void add() {
         Assert.assertFalse(queue.getEntries().contains(new ReleaseRequestQueue.Entry(mockAddress(10), Coin.valueOf(10))));
-        queue.add(mockAddress(10), Coin.valueOf(10));
+        queue.add(mockAddress(10), Coin.valueOf(10), null);
         Assert.assertTrue(queue.getEntries().contains(new ReleaseRequestQueue.Entry(mockAddress(10), Coin.valueOf(10))));
+    }
+
+    @Test
+    public void adding_entry_without_hash() {
+        ReleaseRequestQueue queue = new ReleaseRequestQueue(new ArrayList<>());
+        queue.add(mockAddress(2), Coin.valueOf(150));
+
+        Assert.assertEquals(queue.getEntriesWithoutHash().size(), 1);
+        Assert.assertEquals(queue.getEntriesWithHash().size(), 0);
+    }
+
+    @Test
+    public void adding_entry_with_hash() {
+        ReleaseRequestQueue queue = new ReleaseRequestQueue(new ArrayList<>());
+        queue.add(mockAddress(2), Coin.valueOf(150), PegTestUtils.createHash3(0));
+
+        Assert.assertEquals(queue.getEntriesWithoutHash().size(), 0);
+        Assert.assertEquals(queue.getEntriesWithHash().size(), 1);
     }
 
     @Test

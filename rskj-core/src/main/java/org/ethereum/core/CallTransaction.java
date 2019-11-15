@@ -1,7 +1,7 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ * (derived from ethereumJ libr`ary, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -342,6 +342,13 @@ public class CallTransaction {
             checkArgumentsCount(dataInputs.length, args.length);
 
             return encodeData(dataInputs, args);
+        }
+
+        public Object[] decodeEventData(byte[] encodedData) {
+            checkFunctionType(FunctionType.event);
+            Param[] dataInputs = Arrays.stream(inputs).filter(i -> !i.indexed).toArray(Param[]::new);
+
+            return decode(encodedData, dataInputs);
         }
 
         private void checkFunctionType(FunctionType expected) {

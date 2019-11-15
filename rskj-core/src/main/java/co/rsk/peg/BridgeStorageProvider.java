@@ -58,6 +58,8 @@ public class BridgeStorageProvider {
     private static final DataWord FEE_PER_KB_KEY = DataWord.fromString("feePerKb");
     private static final DataWord FEE_PER_KB_ELECTION_KEY = DataWord.fromString("feePerKbElection");
     private static final DataWord LOCKING_CAP_KEY = DataWord.fromString("lockingCap");
+    private static final DataWord RELEASE_REQUEST_QUEUE_WITH_TXHASH = DataWord.fromString("releaseRequestQueueWithTxHash");
+    private static final DataWord RELEASE_TX_SET_WITH_TXHASH = DataWord.fromString("releaseTransactionSetWithTxHash");
 
     // Version keys and versions
     private static final DataWord NEW_FEDERATION_FORMAT_VERSION = DataWord.fromString("newFederationFormatVersion");
@@ -216,10 +218,28 @@ public class BridgeStorageProvider {
             return releaseRequestQueue;
         }
 
-        releaseRequestQueue = getFromRepository(
+        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+
+        entries.addAll(getFromRepository(
                 RELEASE_REQUEST_QUEUE,
                 data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters)
+                )
         );
+
+        if (!activations.isActive(RSKIP146)) {
+            releaseRequestQueue = new ReleaseRequestQueue(entries);
+            return releaseRequestQueue;
+        }
+
+        int entriesHashStartsAtIndex = entries.size();
+
+        entries.addAll(getFromRepository(
+                RELEASE_REQUEST_QUEUE_WITH_TXHASH,
+                data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters, true)
+                )
+        );
+
+        releaseRequestQueue = new ReleaseRequestQueue(entries, entriesHashStartsAtIndex);
 
         return releaseRequestQueue;
     }
@@ -230,6 +250,10 @@ public class BridgeStorageProvider {
         }
 
         safeSaveToRepository(RELEASE_REQUEST_QUEUE, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueue);
+
+        if(activations.isActive(RSKIP146)) {
+            safeSaveToRepository(RELEASE_REQUEST_QUEUE_WITH_TXHASH, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueueWithTxHash);
+        }
     }
 
     public ReleaseTransactionSet getReleaseTransactionSet() throws IOException {
@@ -237,10 +261,19 @@ public class BridgeStorageProvider {
             return releaseTransactionSet;
         }
 
-        releaseTransactionSet = getFromRepository(
-                RELEASE_TX_SET,
-                data -> BridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters)
-        );
+        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>(getFromRepository(RELEASE_TX_SET,
+                data -> BridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters).getEntries()));
+
+        if (!activations.isActive(RSKIP146)) {
+            releaseTransactionSet = new ReleaseTransactionSet(entries);
+            return releaseTransactionSet;
+        }
+
+        entries.addAll(getFromRepository(
+                RELEASE_TX_SET_WITH_TXHASH,
+                data -> BridgeSerializationUtils.deserializeReleaseTransactionSet(data, networkParameters, true).getEntries()));
+
+        releaseTransactionSet = new ReleaseTransactionSet(entries);
 
         return releaseTransactionSet;
     }
@@ -251,6 +284,10 @@ public class BridgeStorageProvider {
         }
 
         safeSaveToRepository(RELEASE_TX_SET, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSet);
+
+        if (activations.isActive(RSKIP146)) {
+            safeSaveToRepository(RELEASE_TX_SET_WITH_TXHASH, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSetWithTxHash);
+        }
     }
 
     public SortedMap<Keccak256, BtcTransaction> getRskTxsWaitingForSignatures() throws IOException {

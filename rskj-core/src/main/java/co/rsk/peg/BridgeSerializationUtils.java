@@ -201,7 +201,7 @@ public class BridgeSerializationUtils {
 
         for (int k = 0; k < numEntries; k++) {
             Sha256Hash hash = Sha256Hash.wrap(rlpList.get(k * 2).getRLPData());
-            Long number = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+            long number = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
             map.put(hash, number);
         }
 
@@ -516,7 +516,7 @@ public class BridgeSerializationUtils {
     // Order of entries in serialized output is order of the request queue entries
     // so that we enforce a FIFO policy on release requests.
     public static byte[] serializeReleaseRequestQueue(ReleaseRequestQueue queue) {
-        List<ReleaseRequestQueue.Entry> entries = queue.getEntries();
+        List<ReleaseRequestQueue.Entry> entries = queue.getEntriesWithoutHash();
 
         byte[][] bytes = new byte[entries.size() * 2][];
         int n = 0;
@@ -529,32 +529,72 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
-    public static ReleaseRequestQueue deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters) {
-        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+    public static byte[] serializeReleaseRequestQueueWithTxHash(ReleaseRequestQueue queue) {
+        List<ReleaseRequestQueue.Entry> entries = queue.getEntriesWithHash();
 
-        if (data == null || data.length == 0) {
-            return new ReleaseRequestQueue(entries);
+        byte[][] bytes = new byte[entries.size() * 3][];
+        int n = 0;
+
+        for (ReleaseRequestQueue.Entry entry : entries) {
+            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash160());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getAmount().getValue()));
+            bytes[n++] = RLP.encodeElement(entry.getRskTxHash().getBytes());
         }
 
+        return RLP.encodeList(bytes);
+    }
+
+    public static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters) {
+        return deserializeReleaseRequestQueue(data, networkParameters, false);
+    }
+
+    public static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
+        if (data == null || data.length == 0) {
+            return new ArrayList<>();
+        }
+
+        int elementsMultipleCount = hasTxHash ? 3 : 2;
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         // Must have an even number of items
-        if (rlpList.size() % 2 != 0) {
-            throw new RuntimeException(String.format("Invalid serialized ReleaseRequestQueue. Expected an even number of elements, but got %d", rlpList.size()));
+        if (rlpList.size() % elementsMultipleCount != 0) {
+            throw new RuntimeException(String.format("Invalid serialized ReleaseRequestQueue. Expected a multiple of %d number of elements, but got %d", elementsMultipleCount, rlpList.size()));
         }
 
-        int n = rlpList.size() / 2;
+        return hasTxHash ? deserializeReleaseRequestQueueWithTxHash(rlpList, networkParameters) : deserializeReleaseRequestQueueWithoutTxHash(rlpList, networkParameters);
+    }
 
+    // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
+    private static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueueWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+
+        int n = rlpList.size() / 2;
         for (int k = 0; k < n; k++) {
             byte[] addressBytes = rlpList.get(k * 2).getRLPData();
             Address address = new Address(networkParameters, addressBytes);
-            Long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+            long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
-            entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount)));
+            entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount), null));
         }
 
-        return new ReleaseRequestQueue(entries);
+        return entries;
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
+    private static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueueWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+
+        int n = rlpList.size() / 3;
+        for (int k = 0; k < n; k++) {
+            byte[] addressBytes = rlpList.get(k * 3).getRLPData();
+            Address address = new Address(networkParameters, addressBytes);
+            long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
+            Keccak256 txHash = new Keccak256(rlpList.get(k * 3 + 2).getRLPData());
+
+            entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount), txHash));
+        }
+
+        return entries;
     }
 
     // A ReleaseTransactionSet is serialized as follows:
@@ -566,7 +606,7 @@ public class BridgeSerializationUtils {
     // serialized btc transaction bytes
     // (see ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR)
     public static byte[] serializeReleaseTransactionSet(ReleaseTransactionSet set) {
-        List<ReleaseTransactionSet.Entry> entries = set.getEntries().stream().collect(Collectors.toList());
+        List<ReleaseTransactionSet.Entry> entries = set.getEntriesWithoutHash().stream().collect(Collectors.toList());
         entries.sort(ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR);
 
         byte[][] bytes = new byte[entries.size() * 2][];
@@ -580,30 +620,71 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeReleaseTransactionSet
-    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
-        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
+    public static byte[] serializeReleaseTransactionSetWithTxHash(ReleaseTransactionSet set) {
+        List<ReleaseTransactionSet.Entry> entries = new ArrayList<>(set.getEntriesWithHash());
+        entries.sort(ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR);
 
-        if (data == null || data.length == 0) {
-            return new ReleaseTransactionSet(entries);
+        byte[][] bytes = new byte[entries.size() * 3][];
+        int n = 0;
+
+        for (ReleaseTransactionSet.Entry entry : entries) {
+            bytes[n++] = RLP.encodeElement(entry.getTransaction().bitcoinSerialize());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getRskBlockNumber()));
+            bytes[n++] = RLP.encodeElement(entry.getRskTxHash().getBytes());
         }
 
+        return RLP.encodeList(bytes);
+    }
+
+    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
+        return deserializeReleaseTransactionSet(data, networkParameters, false);
+    }
+
+    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
+        if (data == null || data.length == 0) {
+            return new ReleaseTransactionSet(new HashSet<>());
+        }
+
+        int elementsMultipleCount = hasTxHash ? 3 : 2;
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         // Must have an even number of items
-        if (rlpList.size() % 2 != 0) {
-            throw new RuntimeException(String.format("Invalid serialized ReleaseTransactionSet. Expected an even number of elements, but got %d", rlpList.size()));
+        if (rlpList.size() % elementsMultipleCount != 0) {
+            throw new RuntimeException(String.format("Invalid serialized ReleaseTransactionSet. Expected a multiple of %d number of elements, but got %d", elementsMultipleCount, rlpList.size()));
         }
 
-        int n = rlpList.size() / 2;
+        return hasTxHash ? deserializeReleaseTransactionSetWithTxHash(rlpList, networkParameters) : deserializeReleaseTransactionSetWithoutTxHash(rlpList, networkParameters);
+    }
 
+    // For the serialization format, see BridgeSerializationUtils::serializeReleaseTransactionSet
+    private static ReleaseTransactionSet deserializeReleaseTransactionSetWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
+
+        int n = rlpList.size() / 2;
         for (int k = 0; k < n; k++) {
             byte[] txPayload = rlpList.get(k * 2).getRLPData();
             BtcTransaction tx =  new BtcTransaction(networkParameters, txPayload);
 
-            Long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+            long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
             entries.add(new ReleaseTransactionSet.Entry(tx, height));
+        }
+
+        return new ReleaseTransactionSet(entries);
+    }
+
+    private static ReleaseTransactionSet deserializeReleaseTransactionSetWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
+
+        int n = rlpList.size() / 3;
+        for (int k = 0; k < n; k++) {
+            byte[] txPayload = rlpList.get(k * 3).getRLPData();
+            BtcTransaction tx =  new BtcTransaction(networkParameters, txPayload);
+
+            long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
+            Keccak256 rskTxHash = new Keccak256(rlpList.get(k * 3 + 2).getRLPData());
+
+            entries.add(new ReleaseTransactionSet.Entry(tx, height, rskTxHash));
         }
 
         return new ReleaseTransactionSet(entries);

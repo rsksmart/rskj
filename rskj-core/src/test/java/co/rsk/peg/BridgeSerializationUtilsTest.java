@@ -832,8 +832,8 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeRequestQueue_emptyOrNull() throws Exception {
-        assertEquals(0, BridgeSerializationUtils.deserializeReleaseRequestQueue(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
-        assertEquals(0, BridgeSerializationUtils.deserializeReleaseRequestQueue(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializeReleaseRequestQueue(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).size());
+        assertEquals(0, BridgeSerializationUtils.deserializeReleaseRequestQueue(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).size());
     }
 
     @Test
@@ -861,7 +861,7 @@ public class BridgeSerializationUtilsTest {
         sampleBuilder.append(Hex.toHexString(a3.getHash160()));
         sampleBuilder.append("08");
         byte[] sample = Hex.decode(sampleBuilder.toString());
-        ReleaseRequestQueue result = BridgeSerializationUtils.deserializeReleaseRequestQueue(sample, params);
+        ReleaseRequestQueue result = new ReleaseRequestQueue(BridgeSerializationUtils.deserializeReleaseRequestQueue(sample, params));
         List<ReleaseRequestQueue.Entry> entries = result.getEntries();
         assertEquals(expectedEntries, entries);
     }
@@ -967,6 +967,49 @@ public class BridgeSerializationUtilsTest {
         ReleaseTransactionSet result = BridgeSerializationUtils.deserializeReleaseTransactionSet(sample, params);
         Set<ReleaseTransactionSet.Entry> entries = result.getEntries();
         assertEquals(expectedEntries, entries);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void deserializeTransactionSet_nonEmpty_withTxHash_fails() throws Exception {
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+
+        BtcTransaction input = new BtcTransaction(params);
+        input.addOutput(Coin.FIFTY_COINS, Address.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
+
+        BtcTransaction t1 = new BtcTransaction(params);
+        t1.addInput(input.getOutput(0));
+        t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+
+        Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
+                new ReleaseTransactionSet.Entry(t1, 32L, PegTestUtils.createHash3(0))
+        ));
+
+        ReleaseTransactionSet rtc = new ReleaseTransactionSet(expectedEntries);
+        byte[] serializedEntries = BridgeSerializationUtils.serializeReleaseTransactionSetWithTxHash(rtc);
+
+        BridgeSerializationUtils.deserializeReleaseTransactionSet(serializedEntries, params);
+
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void deserializeTransactionSet_nonEmpty_withoutTxHash_fails() throws Exception {
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+
+        BtcTransaction input = new BtcTransaction(params);
+        input.addOutput(Coin.FIFTY_COINS, Address.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
+
+        BtcTransaction t1 = new BtcTransaction(params);
+        t1.addInput(input.getOutput(0));
+        t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+
+        Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
+                new ReleaseTransactionSet.Entry(t1, 32L)
+        ));
+
+        ReleaseTransactionSet rtc = new ReleaseTransactionSet(expectedEntries);
+        byte[] serializedEntries = BridgeSerializationUtils.serializeReleaseTransactionSet(rtc);
+
+        BridgeSerializationUtils.deserializeReleaseTransactionSet(serializedEntries, params, true);
     }
 
     @Test

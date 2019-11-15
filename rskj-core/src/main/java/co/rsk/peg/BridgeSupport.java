@@ -476,7 +476,7 @@ public class BridgeSupport {
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
         Coin value = rskTx.getValue().toBitcoin();
-        boolean addResult = requestRelease(btcDestinationAddress, value);
+        boolean addResult = requestRelease(btcDestinationAddress, value, rskTx);
 
         if (addResult) {
             logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
@@ -496,12 +496,16 @@ public class BridgeSupport {
      * considered dust and therefore ignored.
      * @throws IOException
      */
-    private boolean requestRelease(Address destinationAddress, Coin value) throws IOException {
+    private boolean requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
         if (!value.isGreaterThan(bridgeConstants.getMinimumReleaseTxValue())) {
             return false;
         }
 
-        provider.getReleaseRequestQueue().add(destinationAddress, value);
+        if (activations.isActive(ConsensusRule.RSKIP146)) {
+            provider.getReleaseRequestQueue().add(destinationAddress, value, rskTx.getHash());
+        } else {
+            provider.getReleaseRequestQueue().add(destinationAddress, value);
+        }
 
         return true;
     }
@@ -533,7 +537,7 @@ public class BridgeSupport {
 
         eventLogger.logUpdateCollections(rskTx);
 
-        processFundsMigration();
+        processFundsMigration(rskTx);
 
         processReleaseRequests();
 
@@ -562,7 +566,7 @@ public class BridgeSupport {
                 && retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
     }
 
-    private void processFundsMigration() throws IOException {
+    private void processFundsMigration(Transaction rskTx) throws IOException {
         Wallet retiringFederationWallet = getRetiringFederationWallet();
         List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
         ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
@@ -579,7 +583,11 @@ public class BridgeSupport {
             List<UTXO> selectedUTXOs = createResult.getRight();
 
             // Add the TX to the release set
-            releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTx.getHash());
+            } else {
+                releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+            }
 
             // Mark UTXOs as spent
             availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
@@ -599,7 +607,11 @@ public class BridgeSupport {
                     List<UTXO> selectedUTXOs = createResult.getRight();
 
                     // Add the TX to the release set
-                    releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+                    if (activations.isActive(ConsensusRule.RSKIP146)) {
+                        releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTx.getHash());
+                    } else {
+                        releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+                    }
 
                     // Mark UTXOs as spent
                     availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
@@ -694,8 +706,12 @@ public class BridgeSupport {
                 return false;
             }
 
-            // Add the TX
-            releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                // Add the TX
+                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), releaseRequest.getRskTxHash());
+            } else {
+                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+            }
 
             // Mark UTXOs as spent
             availableUTXOs.removeAll(selectedUTXOs);
@@ -739,13 +755,21 @@ public class BridgeSupport {
         // TODO: (at least at this stage).
 
         // IMPORTANT: sliceWithEnoughConfirmations also modifies the transaction set in place
-        Set<BtcTransaction> txsWithEnoughConfirmations = releaseTransactionSet.sliceWithConfirmations(
+        Set<ReleaseTransactionSet.Entry> txsWithEnoughConfirmations = releaseTransactionSet.sliceWithConfirmations(
                 rskExecutionBlock.getNumber(),
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
                 Optional.of(1)
         );
         if (txsWithEnoughConfirmations.size() > 0) {
-            txsWaitingForSignatures.put(rskTx.getHash(), txsWithEnoughConfirmations.iterator().next());
+            ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                txsWaitingForSignatures.put(entry.getRskTxHash(), entry.getTransaction());
+                TransactionOutput output = entry.getTransaction().getOutput(0);
+                eventLogger.logReleaseBtcRequested(entry.getRskTxHash().getBytes(), entry.getTransaction(), output.getValue());
+            }
+            else {
+                txsWaitingForSignatures.put(rskTx.getHash(), entry.getTransaction());
+            }
         }
     }
 
@@ -2044,7 +2068,11 @@ public class BridgeSupport {
     private void generateRejectionRelease(BtcTransaction btcTx, Address senderBtcAddress, Transaction rskTx, Coin totalAmount) throws IOException {
         Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress);
         if (buildReturnResult.isPresent()) {
-            provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber(), rskTx.getHash());
+            } else {
+                provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
+            }
             logger.info("Rejecting lock: return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
         } else {
             logger.warn("Rejecting lock: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);

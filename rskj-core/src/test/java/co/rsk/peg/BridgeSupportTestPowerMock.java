@@ -38,7 +38,6 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.simples.SimpleBlockChain;
-import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.peg.simples.SimpleWallet;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
@@ -63,7 +62,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.RLP;
@@ -98,7 +96,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
@@ -1841,151 +1838,6 @@ public class BridgeSupportTestPowerMock {
 
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-        Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
-        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());
-        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx3.getHash()).isPresent());
-    }
-
-    @Test
-    public void registerBtcTransactionLockTxNotWhitelisted() throws BlockStoreException, AddressFormatException, IOException {
-        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
-                BtcECKey.fromPrivate(Hex.decode("fa01")),
-                BtcECKey.fromPrivate(Hex.decode("fa02")),
-        });
-        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        Federation federation1 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys), Instant.ofEpochMilli(1000L), 0L, btcParams);
-
-        List<BtcECKey> federation2Keys = Arrays.asList(new BtcECKey[]{
-                BtcECKey.fromPrivate(Hex.decode("fb01")),
-                BtcECKey.fromPrivate(Hex.decode("fb02")),
-                BtcECKey.fromPrivate(Hex.decode("fb03")),
-        });
-        federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        Federation federation2 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys), Instant.ofEpochMilli(2000L), 0L, btcParams);
-
-        Repository repository = createRepository();
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
-        Block executionBlock = Mockito.mock(Block.class);
-        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
-
-        Repository track = repository.startTracking();
-
-        // First transaction goes only to the first federation
-        BtcTransaction tx1 = new BtcTransaction(btcParams);
-        tx1.addOutput(Coin.COIN.multiply(5), federation1.getAddress());
-        BtcECKey srcKey1 = new BtcECKey();
-        tx1.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey1));
-
-        // Second transaction goes only to the second federation
-        BtcTransaction tx2 = new BtcTransaction(btcParams);
-        tx2.addOutput(Coin.COIN.multiply(10), federation2.getAddress());
-        BtcECKey srcKey2 = new BtcECKey();
-        tx2.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey2));
-
-        // Third transaction has one output to each federation
-        // Lock is expected to be done accordingly and utxos assigned accordingly as well
-        BtcTransaction tx3 = new BtcTransaction(btcParams);
-        tx3.addOutput(Coin.COIN.multiply(3), federation1.getAddress());
-        tx3.addOutput(Coin.COIN.multiply(4), federation2.getAddress());
-        BtcECKey srcKey3 = new BtcECKey();
-        tx3.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey3));
-
-        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, bridgeConstants, activationsBeforeForks);
-        provider.setNewFederation(federation1);
-        provider.setOldFederation(federation2);
-
-
-        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
-
-        BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null, executionBlock, mockFactory
-        );
-        byte[] bits = new byte[1];
-        bits[0] = 0x3f;
-
-        List<Sha256Hash> hashes = new ArrayList<>();
-        hashes.add(tx1.getHash());
-        hashes.add(tx2.getHash());
-        hashes.add(tx3.getHash());
-        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 3);
-        List<Sha256Hash> hashlist = new ArrayList<>();
-        Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
-
-        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
-
-        int height = 30;
-        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
-
-        Transaction rskTx1 = getMockedRskTxWithHash("aa");
-        Transaction rskTx2 = getMockedRskTxWithHash("bb");
-        Transaction rskTx3 = getMockedRskTxWithHash("cc");
-
-        bridgeSupport.registerBtcTransaction(rskTx1, tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
-        bridgeSupport.registerBtcTransaction(rskTx2, tx2.bitcoinSerialize(), height, pmt.bitcoinSerialize());
-        bridgeSupport.registerBtcTransaction(rskTx3, tx3.bitcoinSerialize(), height, pmt.bitcoinSerialize());
-        bridgeSupport.save();
-
-        track.commit();
-
-        RskAddress srcKey1RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey1.getPrivKey()).getAddress());
-        RskAddress srcKey2RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey2.getPrivKey()).getAddress());
-        RskAddress srcKey3RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey3.getPrivKey()).getAddress());
-
-        Assert.assertEquals(0, repository.getBalance(srcKey1RskAddress).asBigInteger().intValue());
-        Assert.assertEquals(0, repository.getBalance(srcKey2RskAddress).asBigInteger().intValue());
-        Assert.assertEquals(0, repository.getBalance(srcKey3RskAddress).asBigInteger().intValue());
-        Assert.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
-
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
-
-        Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
-        Assert.assertEquals(0, provider2.getOldFederationBtcUTXOs().size());
-
-        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(3, provider2.getReleaseTransactionSet().getEntries().size());
-
-        List<BtcTransaction> releaseTxs = provider2.getReleaseTransactionSet().getEntries()
-                .stream()
-                .map(e -> e.getTransaction())
-                .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
-                .collect(Collectors.toList());
-
-        // First release tx should correspond to the 5 BTC lock tx
-        BtcTransaction releaseTx = releaseTxs.get(0);
-        Assert.assertEquals(1, releaseTx.getOutputs().size());
-        Assert.assertThat(Coin.COIN.multiply(5).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assert.assertEquals(srcKey1.toAddress(btcParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcParams));
-        Assert.assertEquals(1, releaseTx.getInputs().size());
-        Assert.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assert.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
-
-        // Second release tx should correspond to the 7 (3+4) BTC lock tx
-        releaseTx = releaseTxs.get(1);
-        Assert.assertEquals(1, releaseTx.getOutputs().size());
-        Assert.assertThat(Coin.COIN.multiply(7).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assert.assertEquals(srcKey3.toAddress(btcParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcParams));
-        Assert.assertEquals(2, releaseTx.getInputs().size());
-        List<TransactionOutPoint> releaseOutpoints = releaseTx.getInputs().stream().map(i -> i.getOutpoint()).sorted(Comparator.comparing(TransactionOutPoint::getIndex)).collect(Collectors.toList());
-        Assert.assertEquals(tx3.getHash(), releaseOutpoints.get(0).getHash());
-        Assert.assertEquals(tx3.getHash(), releaseOutpoints.get(1).getHash());
-        Assert.assertEquals(0, releaseOutpoints.get(0).getIndex());
-        Assert.assertEquals(1, releaseOutpoints.get(1).getIndex());
-
-        // Third release tx should correspond to the 10 BTC lock tx
-        releaseTx = releaseTxs.get(2);
-        Assert.assertEquals(1, releaseTx.getOutputs().size());
-        Assert.assertThat(Coin.COIN.multiply(10).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-        Assert.assertEquals(srcKey2.toAddress(btcParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcParams));
-        Assert.assertEquals(1, releaseTx.getInputs().size());
-        Assert.assertEquals(tx2.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-        Assert.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
-
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
         Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());
@@ -4302,11 +4154,6 @@ public class BridgeSupportTestPowerMock {
         btcTx.addInput(new TransactionInput(btcParams, btcTx, new byte[0]));
         btcTx.addOutput(new TransactionOutput(btcParams, btcTx, Coin.COIN, new BtcECKey().toAddress(btcParams)));
         return btcTx;
-    }
-
-    private Transaction getMockedRskTxWithHash(String s) {
-        byte[] hash = Keccak256Helper.keccak256(s);
-        return new SimpleRskTransaction(hash);
     }
 
     private UTXO createUTXO(Coin value, Address address) {
