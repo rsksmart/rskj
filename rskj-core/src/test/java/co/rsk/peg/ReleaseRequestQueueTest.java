@@ -77,7 +77,7 @@ public class ReleaseRequestQueueTest {
     @Test
     public void add() {
         Assert.assertFalse(queue.getEntries().contains(new ReleaseRequestQueue.Entry(mockAddress(10), Coin.valueOf(10))));
-        queue.add(mockAddress(10), Coin.valueOf(10));
+        queue.add(mockAddress(10), Coin.valueOf(10), null);
         Assert.assertTrue(queue.getEntries().contains(new ReleaseRequestQueue.Entry(mockAddress(10), Coin.valueOf(10))));
     }
 

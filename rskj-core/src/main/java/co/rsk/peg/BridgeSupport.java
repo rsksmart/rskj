@@ -478,7 +478,7 @@ public class BridgeSupport {
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
         Coin value = rskTx.getValue().toBitcoin();
-        boolean addResult = requestRelease(btcDestinationAddress, value);
+        boolean addResult = requestRelease(btcDestinationAddress, value, rskTx);
 
         if (addResult) {
             logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
@@ -498,12 +498,12 @@ public class BridgeSupport {
      * considered dust and therefore ignored.
      * @throws IOException
      */
-    private boolean requestRelease(Address destinationAddress, Coin value) throws IOException {
+    private boolean requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
         if (!value.isGreaterThan(bridgeConstants.getMinimumReleaseTxValue())) {
             return false;
         }
 
-        provider.getReleaseRequestQueue().add(destinationAddress, value);
+        provider.getReleaseRequestQueue().add(destinationAddress, value, rskTx.getHash());
 
         return true;
     }
@@ -750,6 +750,9 @@ public class BridgeSupport {
         // Add the btc transaction to the 'awaiting signatures' list
         if (txsWithEnoughConfirmations.size() > 0) {
             txsWaitingForSignatures.put(rskTx.getHash(), txsWithEnoughConfirmations.iterator().next());
+//            if (activations.isActive(ConsensusRule.RSKIP146)) {
+//                eventLogger.logReleaseBtcRequested(releaseRequest.getDestination(), rskTx, result.get().getBtcTx(), releaseRequest.getAmount());
+//            }
         }
     }
 

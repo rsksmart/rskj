@@ -25,7 +25,9 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -529,12 +531,27 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
+    public static byte[] serializeReleaseRequestQueueWithTxHash(ReleaseRequestQueue queue) {
+        List<ReleaseRequestQueue.Entry> entries = queue.getEntries();
+
+        byte[][] bytes = new byte[entries.size() * 3][];
+        int n = 0;
+
+        for (ReleaseRequestQueue.Entry entry : entries) {
+            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash160());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getAmount().getValue()));
+            bytes[n++] = RLP.encodeElement(entry.getRskTxHash().getBytes());
+        }
+
+        return RLP.encodeList(bytes);
+    }
+
     // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
-    public static ReleaseRequestQueue deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters) {
+    public static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters) {
         List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
 
         if (data == null || data.length == 0) {
-            return new ReleaseRequestQueue(entries);
+            return entries;
         }
 
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
@@ -551,10 +568,41 @@ public class BridgeSerializationUtils {
             Address address = new Address(networkParameters, addressBytes);
             Long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
-            entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount)));
+            entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount), null));
         }
 
-        return new ReleaseRequestQueue(entries);
+        return entries;
+
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
+    public static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueueWithTxHash(byte[] data, NetworkParameters networkParameters) {
+        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+
+        if (data == null || data.length == 0) {
+            return entries;
+        }
+
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        // Must have an even number of items
+        if (rlpList.size() % 3 != 0) {
+            throw new RuntimeException(String.format("Invalid serialized ReleaseRequestQueue. Expected an even number of elements, but got %d", rlpList.size()));
+        }
+
+        int n = rlpList.size() / 3;
+
+        for (int k = 0; k < n; k++) {
+            byte[] addressBytes = rlpList.get(k * 2).getRLPData();
+            Address address = new Address(networkParameters, addressBytes);
+            Long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+            Keccak256 txHash = new Keccak256(rlpList.get(k * 2 + 2).getRLPData());
+
+            entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount), txHash));
+        }
+
+        return entries;
+
     }
 
     // A ReleaseTransactionSet is serialized as follows:

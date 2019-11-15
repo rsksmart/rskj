@@ -99,10 +99,20 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     public void logLockBtc(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin Amount) {
-        CallTransaction.Function event = BridgeEvents.LOG_BTC.getEvent();
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(receiver.toString());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
         byte[] encodedData = event.encodeEventData(btcTx.getHashAsString(), senderBtcAddress.toString(), Amount.getValue());
+
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+
+    }
+
+    public void logReleaseBtcRequested(Address sender, Transaction rskTransaction, BtcTransaction btcTx, Coin Amount) {
+        CallTransaction.Function event = BridgeEvents.LOG_RELEASE_REQUESTED.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(sender, rskTransaction, btcTx);
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(Amount.getValue());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
 

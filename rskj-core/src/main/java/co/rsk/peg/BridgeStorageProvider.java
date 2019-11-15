@@ -36,6 +36,7 @@ import java.util.*;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP123;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP87;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP146;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
@@ -58,6 +59,7 @@ public class BridgeStorageProvider {
     private static final DataWord LOCK_UNLIMITED_WHITELIST_KEY = DataWord.fromString("unlimitedLockWhitelist");
     private static final DataWord FEE_PER_KB_KEY = DataWord.fromString("feePerKb");
     private static final DataWord FEE_PER_KB_ELECTION_KEY = DataWord.fromString("feePerKbElection");
+    private static final DataWord RELEASE_REQUEST_QUEUE_WITH_TXHASH = DataWord.fromString("releaseRequestQueueWithTxHash");
 
     // Version keys and versions
     private static final DataWord NEW_FEDERATION_FORMAT_VERSION = DataWord.fromString("newFederationFormatVersion");
@@ -164,10 +166,23 @@ public class BridgeStorageProvider {
             return releaseRequestQueue;
         }
 
-        releaseRequestQueue = getFromRepository(
+        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+
+        entries.addAll(getFromRepository(
                 RELEASE_REQUEST_QUEUE,
                 data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters)
+                )
         );
+
+        if(activations.isActive(RSKIP146)){
+            entries.addAll(getFromRepository(
+                    RELEASE_REQUEST_QUEUE_WITH_TXHASH,
+                    data -> BridgeSerializationUtils.deserializeReleaseRequestQueueWithTxHash(data, networkParameters)
+                    )
+            );
+        }
+
+        releaseRequestQueue = new ReleaseRequestQueue(entries);
 
         return releaseRequestQueue;
     }
@@ -177,8 +192,14 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(RELEASE_REQUEST_QUEUE, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueue);
+        if(activations.isActive(RSKIP146)) {
+            safeSaveToRepository(RELEASE_REQUEST_QUEUE_WITH_TXHASH, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueueWithTxHash);
+            safeSaveToRepository(RELEASE_REQUEST_QUEUE, new ReleaseRequestQueue(new ArrayList<>()), BridgeSerializationUtils::serializeReleaseRequestQueue);
+        } else {
+            safeSaveToRepository(RELEASE_REQUEST_QUEUE, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueue);
+        }
     }
+
 
     public ReleaseTransactionSet getReleaseTransactionSet() throws IOException {
         if (releaseTransactionSet != null) {

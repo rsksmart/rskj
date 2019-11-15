@@ -167,7 +167,7 @@ public class BridgeEventLoggerImplTest {
 
         // Assert log topics
         Assert.assertEquals(2, result.getTopics().size());
-        CallTransaction.Function event = BridgeEvents.LOG_BTC.getEvent();
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
 
         byte[][] topics = event.encodeEventTopics(rskAddress.toString());
 
