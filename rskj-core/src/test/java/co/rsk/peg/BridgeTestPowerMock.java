@@ -109,6 +109,7 @@ public class BridgeTestPowerMock {
     private TestSystemProperties config = new TestSystemProperties();
     private Constants constants;
     private ActivationConfig activationConfig;
+    private ActivationConfig.ForBlock activationConfigAll;
     private BtcBlockStoreWithCache.Factory btcBlockFactory;
     private BlockFactory blockFactory;
 
@@ -129,6 +130,7 @@ public class BridgeTestPowerMock {
         when(config.getActivationConfig()).thenReturn(activationConfig);
         blockFactory = new BlockFactory(activationConfig);
         btcBlockFactory = new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams());
+        activationConfigAll = ActivationConfigsForTest.all().forBlock(0);
     }
 
     @Test
@@ -138,8 +140,7 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = new BridgeStorageConfiguration(true, true);
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
         provider0.getReleaseTransactionSet().add(tx1, 1L);
         provider0.save();
@@ -177,8 +178,7 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = new BridgeStorageConfiguration(true, true);
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
         provider0.getReleaseTransactionSet().add(tx1, 1L);
         provider0.getReleaseTransactionSet().add(tx2, 2L);
@@ -206,7 +206,7 @@ public class BridgeTestPowerMock {
         track.commit();
 
         // reusing same storage configuration as the height doesn't affect storage configurations for releases.
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
         Assert.assertEquals(3, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
@@ -221,8 +221,7 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = new BridgeStorageConfiguration(true, true);
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
         provider0.getReleaseTransactionSet().add(tx1, 1L);
         provider0.getReleaseTransactionSet().add(tx2, 2L);
@@ -256,7 +255,7 @@ public class BridgeTestPowerMock {
         track.commit();
 
         // reusing same storage configuration as the height doesn't affect storage configurations for releases.
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfigAll);
 
         Assert.assertEquals(2, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(1, provider.getRskTxsWaitingForSignatures().size());

@@ -58,7 +58,7 @@ public class BridgeSupportFactory {
             repository,
             contractAddress,
             bridgeConstants,
-            BridgeStorageConfiguration.fromBlockchainConfig(activations)
+            activations
         );
 
         FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock);
