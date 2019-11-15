@@ -263,6 +263,11 @@ public enum OpCode {
      */
     GASLIMIT(0x45, 0, 1, BASE_TIER),
 
+    /**
+     * (0x46) Get the chain id
+     */
+    CHAINID(0x46, 0, 1, BASE_TIER),
+
     /*  Memory, Storage and Flow Operations */
 
     /**

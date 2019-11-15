@@ -91,7 +91,8 @@ public class TransactionExecutorFactory {
                     true,
                     vmConfig.vmTraceInitStorageLimit(),
                     vmConfig.dumpBlock(),
-                    vmConfig.dumpStyle()
+                    vmConfig.dumpStyle(),
+                    vmConfig.getChainId()
             );
         }
 
