@@ -86,6 +86,7 @@ task copyNatives(type:Copy) {
 }
 
 task buildNatives(type:Exec) {
+    environment "PATH", file(rust.resolveRustcPath()).parent
     workingDir 'src/main/rust/rskj-bn128/'
     commandLine "${rust.resolveCargoPath()}", 'build', '--release'
 }
