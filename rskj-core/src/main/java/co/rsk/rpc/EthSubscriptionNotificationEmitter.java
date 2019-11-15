@@ -27,12 +27,15 @@ import io.netty.channel.Channel;
 public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVisitor {
     private final BlockHeaderNotificationEmitter blockHeader;
     private final LogsNotificationEmitter logs;
+    private final PendingTransactionNotificationEmitter pendingTransaction;
 
     public EthSubscriptionNotificationEmitter(
             BlockHeaderNotificationEmitter blockHeader,
-            LogsNotificationEmitter logs) {
+            LogsNotificationEmitter logs,
+            PendingTransactionNotificationEmitter pendingTransaction) {
         this.blockHeader = blockHeader;
         this.logs = logs;
+        this.pendingTransaction = pendingTransaction;
     }
 
     @Override
@@ -49,6 +52,13 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
         return subscriptionId;
     }
 
+    @Override
+    public SubscriptionId visit(EthSubscribeNewPendingTransactionsParams params, Channel channel) {
+        SubscriptionId subscriptionId = new SubscriptionId();
+        pendingTransaction.subscribe(subscriptionId, channel);
+        return subscriptionId;
+    }
+
     /**
      * @return whether the unsubscription succeeded.
      */
@@ -56,7 +66,8 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
         // temporal variables avoid short-circuiting behavior
         boolean unsubscribedBlockHeader = blockHeader.unsubscribe(subscriptionId);
         boolean unsubscribedLogs = logs.unsubscribe(subscriptionId);
-        return unsubscribedBlockHeader || unsubscribedLogs;
+        boolean unsubscribedPendingTransaction = pendingTransaction.unsubscribe(subscriptionId);
+        return unsubscribedBlockHeader || unsubscribedLogs || unsubscribedPendingTransaction;
     }
 
     /**
@@ -65,5 +76,6 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
     public void unsubscribe(Channel channel) {
         blockHeader.unsubscribe(channel);
         logs.unsubscribe(channel);
+        pendingTransaction.unsubscribe(channel);
     }
 }

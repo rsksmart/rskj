@@ -46,6 +46,16 @@ public class EthSubscribeRequestTest {
     }
 
     @Test
+    public void deserializeNewPendingTransactions() throws IOException {
+        String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"newPendingTransactions\"]}";
+        RskJsonRpcRequest request = serializer.deserializeRequest(
+                new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
+        );
+
+        validateParams(request, EthSubscribeNewPendingTransactionsParams.class);
+    }
+
+    @Test
     public void deserializeLogsWithEmptyConfig() throws IOException {
         String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"logs\", {}]}";
         RskJsonRpcRequest request = serializer.deserializeRequest(
