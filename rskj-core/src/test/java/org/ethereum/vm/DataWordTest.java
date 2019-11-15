@@ -19,11 +19,14 @@
 
 package org.ethereum.vm;
 
+import co.rsk.crypto.Keccak256;
+import org.ethereum.crypto.HashUtil;
 import org.junit.Test;
 
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -344,6 +347,15 @@ public class DataWordTest {
         DataWord parsed = DataWord.fromString("01234567890123456789012345678901");
 
         assertEquals(new String(parsed.getData()),"01234567890123456789012345678901");
+    }
+
+    @Test
+    public void testFromLongString() {
+        String value = "012345678901234567890123456789012345678901234567890123456789";
+        byte[] hashedValue = HashUtil.keccak256(value.getBytes(StandardCharsets.UTF_8));
+        DataWord parsed = DataWord.fromLongString(value);
+
+        assertArrayEquals(parsed.getData(),hashedValue);
     }
 
     @Test

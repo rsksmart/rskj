@@ -20,10 +20,12 @@
 
 package org.ethereum.vm;
 
+import co.rsk.crypto.Keccak256;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 
@@ -540,6 +542,13 @@ public final class DataWord implements Comparable<DataWord> {
     public static DataWord fromString(String value) {
         return valueOf(value.getBytes(StandardCharsets.UTF_8));
     }
+
+    /**
+     * Will create a Dataword from the keccack256 representation of the string value.
+     * @param value any streing with a byte representation of more than 32 bytes
+     * @return a DataWord with the hashed string as the data
+     */
+    public static DataWord fromLongString(String value) { return valueOf(HashUtil.keccak256(value.getBytes(StandardCharsets.UTF_8))); }
 
     @JsonCreator
     public static DataWord valueFromHex(String data) {
