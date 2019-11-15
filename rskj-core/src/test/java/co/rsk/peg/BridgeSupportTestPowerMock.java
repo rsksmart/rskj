@@ -178,7 +178,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void feePerKbFromStorageProvider() throws Exception {
+    public void feePerKbFromStorageProvider() {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -308,19 +308,17 @@ public class BridgeSupportTestPowerMock {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Test
-    public void callUpdateCollectionsGenerateEventLog() throws IOException, BlockStoreException {
+    public void callUpdateCollectionsGenerateEventLog() throws IOException {
         Repository track = createRepository().startTracking();
 
         BlockGenerator blockGenerator = new BlockGenerator();
         List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
 
-        List<LogInfo> eventLogs = new LinkedList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
+        BridgeEventLogger eventLogger = mock(BridgeEventLogger.class);
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 track,
                 PrecompiledContracts.BRIDGE_ADDR,
@@ -334,19 +332,7 @@ public class BridgeSupportTestPowerMock {
         tx.sign(key.getPrivKeyBytes());
 
         bridgeSupport.updateCollections(tx);
-
-        Assert.assertEquals(1, eventLogs.size());
-
-        // Assert address that made the log
-        LogInfo result = eventLogs.get(0);
-        Assert.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
-
-        // Assert log topics
-        Assert.assertEquals(1, result.getTopics().size());
-        Assert.assertEquals(Bridge.UPDATE_COLLECTIONS_TOPIC, result.getTopics().get(0));
-
-        // Assert log data
-        Assert.assertArrayEquals(key.getAddress(), RLP.decode2(result.getData()).get(0).getRLPData());
+        verify(eventLogger).logUpdateCollections(tx);
     }
 
     @Test
@@ -480,7 +466,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void callUpdateCollectionsThrowsExceededMaxTransactionSize() throws IOException, BlockStoreException {
+    public void callUpdateCollectionsThrowsExceededMaxTransactionSize() throws IOException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
@@ -549,7 +535,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void minimumProcessFundsMigrationValue() throws IOException, BlockStoreException {
+    public void minimumProcessFundsMigrationValue() throws IOException {
         Federation oldFederation = bridgeConstants.getGenesisFederation();
         BtcECKey key = new BtcECKey(new SecureRandom());
         FederationMember member = new FederationMember(key, new ECKey(), new ECKey());
@@ -625,7 +611,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void callUpdateCollectionsChangeGetsOutOfDust() throws IOException, BlockStoreException {
+    public void callUpdateCollectionsChangeGetsOutOfDust() throws IOException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
@@ -690,7 +676,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException, BlockStoreException {
+    public void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException {
         // Bridge constants and btc context
         Context context = new Context(btcParams);
 
@@ -909,8 +895,9 @@ public class BridgeSupportTestPowerMock {
         track.commit();
 
         // Setup BridgeSupport
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, eventLogs);
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, new BridgeStorageProvider(
                         track,
@@ -1007,8 +994,9 @@ public class BridgeSupportTestPowerMock {
         track.commit();
 
         track = repository.startTracking();
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, new BridgeStorageProvider(
                         track,
@@ -1120,8 +1108,9 @@ public class BridgeSupportTestPowerMock {
         track.commit();
 
         track = repository.startTracking();
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, new BridgeStorageProvider(
                         track,
@@ -1233,7 +1222,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void releaseBtc() throws BlockStoreException, AddressFormatException, IOException {
+    public void releaseBtc() throws AddressFormatException, IOException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -1258,7 +1247,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void releaseBtcFromContract() throws BlockStoreException, AddressFormatException, IOException {
+    public void releaseBtcFromContract() throws AddressFormatException, IOException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -4352,7 +4341,6 @@ public class BridgeSupportTestPowerMock {
     }
 
     private BtcBlockStore getBtcBlockStoreFromBridgeSupport(BridgeSupport bridgeSupport) {
-
         return (BtcBlockStore) Whitebox.getInternalState(bridgeSupport, "btcBlockStore");
     }
 
@@ -4368,7 +4356,6 @@ public class BridgeSupportTestPowerMock {
         when(currentStored.getHeader()).thenReturn(currentBlock);
         when(btcBlockStore.getChainHead()).thenReturn(currentStored);
         when(currentStored.getHeight()).thenReturn(headHeight);
-
     }
 
     public static Repository createRepository() {

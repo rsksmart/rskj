@@ -188,7 +188,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
     public static final int LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
 
-    // Log topics used by Bridge Contract
+    // Log topics used by Bridge Contract pre RSKIP146
     public static final DataWord RELEASE_BTC_TOPIC = DataWord.fromString("release_btc_topic");
     public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");

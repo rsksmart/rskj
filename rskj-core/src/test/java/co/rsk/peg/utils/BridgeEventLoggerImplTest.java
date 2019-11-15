@@ -23,13 +23,16 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
-import com.sun.org.apache.bcel.internal.generic.ANEWARRAY;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -38,6 +41,7 @@ import org.junit.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -57,9 +61,11 @@ public class BridgeEventLoggerImplTest {
     public void logCommitFederation() {
         // Setup event logger
         BridgeConstants constantsMock = mock(BridgeConstants.class);
-        when(constantsMock.getFederationActivationAge()).thenReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge());
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(constantsMock, eventLogs);
+
+        when(constantsMock.getFederationActivationAge()).thenReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge());
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(constantsMock, activations, eventLogs);
 
         // Setup parameters for test method call
         Block executionBlock = mock(Block.class);
@@ -139,8 +145,9 @@ public class BridgeEventLoggerImplTest {
     @Test
     public void logLockBtc() {
         // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         Address senderAddress = mock(Address.class);
         when(senderAddress.toString()).thenReturn("mixzLp4xx5bUsHuYUEyPpL42BzEDp8kSTv");
@@ -167,7 +174,7 @@ public class BridgeEventLoggerImplTest {
 
         // Assert log topics
         Assert.assertEquals(2, result.getTopics().size());
-        CallTransaction.Function event = BridgeEvents.LOG_BTC.getEvent();
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
 
         byte[][] topics = event.encodeEventTopics(rskAddress.toString());
 
@@ -177,5 +184,72 @@ public class BridgeEventLoggerImplTest {
 
         // Assert log data
         Assert.assertArrayEquals(event.encodeEventData(mockedTx.getHashAsString(), senderAddress.toString(), amount.getValue()), result.getData());
+    }
+
+    @Test
+    public void logUpdateCollectionsBeforeRskip146HardFork() {
+        // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> eventLogs = new LinkedList<>();
+
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        //Setup Rsk transaction
+        Transaction tx = mock(Transaction.class);
+        RskAddress sender = mock(RskAddress.class);
+        when(sender.toString()).thenReturn("0x0000000000000000000000000000000000000001");
+        when(tx.getSender()).thenReturn(sender);
+
+        eventLogger.logUpdateCollections(tx);
+
+        //Assert log size
+        Assert.assertEquals(1, eventLogs.size());
+
+        // Assert log topics
+        LogInfo logResult = eventLogs.get(0);
+        Assert.assertEquals(1, logResult.getTopics().size());
+
+        List<DataWord> topics = Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC);
+        for (int i=0; i<topics.size(); i++) {
+            Assert.assertEquals(topics.get(i), logResult.getTopics().get(i));
+        }
+
+        // Assert log data
+        Assert.assertArrayEquals(RLP.encodeElement(tx.getSender().getBytes()), logResult.getData());
+    }
+
+    @Test
+    public void logUpdateCollectionsAfterRskip146HardFork() {
+        // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> eventLogs = new LinkedList<>();
+
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        //Setup Rsk transaction
+        Transaction tx = mock(Transaction.class);
+        RskAddress sender = mock(RskAddress.class);
+        when(sender.toString()).thenReturn("0x0000000000000000000000000000000000000001");
+        when(tx.getSender()).thenReturn(sender);
+
+        eventLogger.logUpdateCollections(tx);
+
+        //Assert log size
+        Assert.assertEquals(1, eventLogs.size());
+
+        // Assert log topics
+        LogInfo logResult = eventLogs.get(0);
+        CallTransaction.Function event = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
+        Assert.assertEquals(1, logResult.getTopics().size());
+
+        byte[][] topics = event.encodeEventTopics();
+        for (int i=0; i<topics.length; i++) {
+            Assert.assertArrayEquals(topics[i], logResult.getTopics().get(i).getData());
+        }
+
+        // Assert log data
+        Assert.assertArrayEquals(event.encodeEventData(tx.getSender().toString()), logResult.getData());
     }
 }

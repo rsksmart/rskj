@@ -27,6 +27,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.Federation;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
@@ -49,19 +51,38 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     private static final byte[] BRIDGE_CONTRACT_ADDRESS = PrecompiledContracts.BRIDGE_ADDR.getBytes();
 
     private final BridgeConstants bridgeConstants;
+    private final ActivationConfig.ForBlock activations;
 
     private List<LogInfo> logs;
 
-    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, List<LogInfo> logs) {
+    public BridgeEventLoggerImpl(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations, List<LogInfo> logs) {
         this.bridgeConstants = bridgeConstants;
+        this.activations = activations;
         this.logs = logs;
     }
 
     public void logUpdateCollections(Transaction rskTx) {
+        if (activations.isActive(ConsensusRule.RSKIP146)) {
+            logUpdateCollectionsInSolidityFormat(rskTx);
+        } else {
+            logUpdateCollectionsInRLPFormat(rskTx);
+        }
+    }
+
+    private void logUpdateCollectionsInSolidityFormat(Transaction rskTx) {
+        CallTransaction.Function event = BridgeEvents.UPDATE_COLLECTIONS.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics();
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(rskTx.getSender().toString());
+
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
+
+    private void logUpdateCollectionsInRLPFormat(Transaction rskTx) {
         this.logs.add(
                 new LogInfo(BRIDGE_CONTRACT_ADDRESS,
-                            Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
-                            RLP.encodeElement(rskTx.getSender().getBytes())
+                        Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
+                        RLP.encodeElement(rskTx.getSender().getBytes())
                 )
         );
     }
@@ -69,8 +90,8 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
         List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
         byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
-                                    RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
-                                    RLP.encodeElement(rskTxHash));
+                RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
+                RLP.encodeElement(rskTxHash));
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, topics, data));
     }
@@ -99,24 +120,23 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     public void logLockBtc(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin Amount) {
-        CallTransaction.Function event = BridgeEvents.LOG_BTC.getEvent();
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(receiver.toString());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
         byte[] encodedData = event.encodeEventData(btcTx.getHashAsString(), senderBtcAddress.toString(), Amount.getValue());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
-
     }
 
     private byte[] flatKeysAsRlpCollection(List<BtcECKey> keys) {
         List<byte[]> pubKeys = keys.stream()
-                                    .map(k -> RLP.encodeElement(k.getPubKey()))
-                                    .collect(Collectors.toList());
+                .map(k -> RLP.encodeElement(k.getPubKey()))
+                .collect(Collectors.toList());
         int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
 
         byte[] flatPubKeys = new byte[pubKeysLength];
         int copyPos = 0;
-        for(byte[] key : pubKeys) {
+        for (byte[] key : pubKeys) {
             System.arraycopy(key, 0, flatPubKeys, copyPos, key.length);
             copyPos += key.length;
         }
