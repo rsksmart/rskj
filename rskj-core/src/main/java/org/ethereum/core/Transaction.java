@@ -331,7 +331,6 @@ public class Transaction {
         this(1, nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId);
     }
 
-
     public Transaction(
             int version,
             byte[] nonce,
@@ -351,6 +350,39 @@ public class Transaction {
         this.isLocalCall = false;
         this.version = version;
         this.ownerCount = 1;
+        this.signatures = Collections.emptyList();
+    }
+
+    public Transaction(
+            List<byte[]> nonce,
+            byte[] gasPriceRaw,
+            byte[] gasLimit,
+            byte[] receiveAddress,
+            byte[] value,
+            byte[] data,
+            int ownerCount) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, ownerCount, (byte) 0);
+    }
+
+    public Transaction(
+            List<byte[]> nonce,
+            byte[] gasPriceRaw,
+            byte[] gasLimit,
+            byte[] receiveAddress,
+            byte[] valueRaw,
+            byte[] data,
+            int ownerCount,
+            byte chainId) {
+        this.nonce = Collections.unmodifiableList(nonce);
+        this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
+        this.gasLimit = ByteUtil.cloneBytes(gasLimit);
+        this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
+        this.value = RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw));
+        this.data = ByteUtil.cloneBytes(data);
+        this.chainId = chainId;
+        this.isLocalCall = false;
+        this.version = 1;
+        this.ownerCount = ownerCount;
         this.signatures = Collections.emptyList();
     }
 
@@ -460,7 +492,7 @@ public class Transaction {
     }
 
     public Keccak256 getRawHash(int signerIndex) {
-        byte[] plainMsg = this.getEncodedRaw();
+        byte[] plainMsg = this.getEncodedRaw(signerIndex);
         return new Keccak256(HashUtil.keccak256(plainMsg));
     }
 
@@ -597,7 +629,7 @@ public class Transaction {
     }
 
     public synchronized List<RskAddress> getSenders() {
-        if(this.senders != null) {
+        if (this.senders != null) {
             return this.senders;
         }
 
@@ -606,7 +638,7 @@ public class Transaction {
         } else {
             ArrayList<RskAddress> senders = new ArrayList<>(ownerCount);
             try {
-                for (int i = 0; i < ownerCount; i++) {
+                for (int i = 0; i < signatures.size(); i++) {
                     byte[] hash = getRawHash(i).getBytes();
                     ECKey key = ECKey.signatureToKey(hash, signatures.get(i));
                     senders.add(new RskAddress(key.getAddress()));
@@ -665,7 +697,7 @@ public class Transaction {
     /* Gets sender charged (and reimbursed) gas fees */
     public RskAddress getChargedSender() {
         List<RskAddress> senders = this.getSenders();
-        if(this.nonce.size() == senders.size()) {
+        if (this.nonce.size() == ownerCount) {
             return this.getSender();
         } else {
             return senders.get(senders.size() - 1);
