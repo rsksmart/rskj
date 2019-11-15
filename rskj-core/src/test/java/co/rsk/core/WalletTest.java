@@ -271,21 +271,6 @@ public class WalletTest {
     }
 
     @Test
-    public void addAccountWithRandomPrivateKey() {
-        Wallet wallet = WalletFactory.createWallet();
-
-        byte[] address = wallet.addAccount().getBytes();
-
-        Assert.assertNotNull(address);
-
-        Account account = wallet.getAccount(new RskAddress(address));
-
-        Assert.assertNotNull(account);
-
-        Assert.assertArrayEquals(address, account.getAddress().getBytes());
-    }
-
-    @Test
     public void getUnknownAccount() {
         Wallet wallet = WalletFactory.createWallet();
 

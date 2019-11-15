@@ -80,12 +80,6 @@ public class Wallet {
                 .toArray(String[]::new);
     }
 
-    public RskAddress addAccount() {
-        Account account = new Account(new ECKey());
-        saveAccount(account);
-        return account.getAddress();
-    }
-
     public RskAddress addAccount(String passphrase) {
         Account account = new Account(new ECKey());
         saveAccount(account, passphrase);
