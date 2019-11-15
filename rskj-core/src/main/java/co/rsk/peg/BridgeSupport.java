@@ -76,6 +76,7 @@ public class BridgeSupport {
     public static final Integer LOCK_WHITELIST_SUCCESS_CODE = 1;
     public static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = -10;
     public static final Integer NEGATIVE_FEE_PER_KB_ERROR_CODE = -1;
+    public static final Integer EXCESSIVE_FEE_PER_KB_ERROR_CODE = -2;
 
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INEXISTENT_BLOCK_HASH_ERROR_CODE = -1;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_NOT_IN_BEST_CHAIN_ERROR_CODE = -2;
@@ -1850,6 +1851,10 @@ public class BridgeSupport {
 
         if(!feePerKb.isPositive()){
             return NEGATIVE_FEE_PER_KB_ERROR_CODE;
+        }
+
+        if(feePerKb.isGreaterThan(bridgeConstants.getMaxFeePerKb())) {
+            return EXCESSIVE_FEE_PER_KB_ERROR_CODE;
         }
 
         ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);

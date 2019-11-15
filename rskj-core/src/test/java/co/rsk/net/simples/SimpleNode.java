@@ -87,7 +87,7 @@ public class SimpleNode {
     public static SimpleNode createNode() {
         final World world = new World();
         BlockChainImpl blockChain = world.getBlockChain();
-        NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler(new DummyBlockValidationRule(), blockChain);
+        NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler(blockChain);
         return new SimpleNode(handler, blockChain);
     }
 }

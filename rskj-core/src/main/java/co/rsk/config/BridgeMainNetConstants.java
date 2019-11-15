@@ -7,8 +7,8 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
 import com.google.common.collect.Lists;
-import org.ethereum.crypto.ECKey;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -52,7 +52,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         // Currently set to:
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400l);
-        
+
         genesisFederation = new Federation(
                 federationMembers,
                 genesisFederationAddressCreatedAt,
@@ -110,6 +110,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         );
 
         genesisFeePerKb = Coin.MILLICOIN.multiply(5);
+
+        maxFeePerKb = Coin.valueOf(5_000_000L);
     }
 
     public static BridgeMainNetConstants getInstance() {

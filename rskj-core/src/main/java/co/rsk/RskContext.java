@@ -1509,7 +1509,6 @@ public class RskContext implements NodeBootstrapper {
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),
-                    getBlockValidationRule(),
                     getStatusResolver());
         }
 

@@ -161,8 +161,8 @@ public class MultikeyTransactionTest {
 
         List<byte[]> nonces = Arrays.asList(
                 initialNonce.toByteArray(),
-                initialNonce.add(BigInteger.valueOf(2)).toByteArray(),
-                initialNonce.add(BigInteger.valueOf(3)).toByteArray()
+                initialNonce.toByteArray(),
+                initialNonce.toByteArray()
         );
 
         ECKey ecKey = ECKey.fromPrivate(HashUtil.keccak256("cat".getBytes()));
@@ -171,7 +171,7 @@ public class MultikeyTransactionTest {
         byte[] gnomePrivkey = HashUtil.keccak256("gnome".getBytes());
 
         byte[] gasPrice = Hex.decode("09184e72a000");
-        byte[] gasLimit = Hex.decode("4255");
+        byte[] gasLimit = Hex.decode("8765");
         BigInteger value = new BigInteger("1000000000000000000000000");
 
         Transaction tx = new Transaction(
@@ -205,8 +205,8 @@ public class MultikeyTransactionTest {
 
         List<byte[]> nonces = Arrays.asList(
                 initialNonce.toByteArray(),
-                initialNonce.add(BigInteger.valueOf(2)).toByteArray(),
-                initialNonce.add(BigInteger.valueOf(3)).toByteArray()
+                initialNonce.toByteArray(),
+                initialNonce.toByteArray()
         );
 
         ECKey ecKey = ECKey.fromPrivate(HashUtil.keccak256("cat".getBytes()));
@@ -215,7 +215,7 @@ public class MultikeyTransactionTest {
         byte[] gnomePrivkey = HashUtil.keccak256("gnome".getBytes());
 
         byte[] gasPrice = Hex.decode("09184e72a000");
-        byte[] gasLimit = Hex.decode("4255");
+        byte[] gasLimit = Hex.decode("8765");
         BigInteger value = new BigInteger("1000000000000000000000000");
 
         Transaction tx = new Transaction(
@@ -244,8 +244,7 @@ public class MultikeyTransactionTest {
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig()
-        );
+                config.getActivationConfig());
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
@@ -253,15 +252,11 @@ public class MultikeyTransactionTest {
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory)
-        );
+                new PrecompiledContracts(config, bridgeSupportFactory));
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
 
-        executor.init();
-        executor.execute();
-        executor.go();
-        executor.finalization();
+        executor.executeTransaction();
 
         track.commit();
         return executor;

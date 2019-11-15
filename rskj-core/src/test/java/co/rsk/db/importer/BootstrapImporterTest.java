@@ -7,6 +7,7 @@ import org.ethereum.db.BlockStore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,7 +18,7 @@ import static org.mockito.Mockito.*;
 public class BootstrapImporterTest {
 
     @Test
-    public void importData() throws IOException {
+    public void importData() throws IOException, URISyntaxException {
         BlockStore blockStore = mock(BlockStore.class);
         when(blockStore.getMaxNumber()).thenReturn(0L);
         when(blockStore.isEmpty()).thenReturn(false);
@@ -26,7 +27,9 @@ public class BootstrapImporterTest {
         TrieStore trieStore = mock(TrieStore.class);
 
         BootstrapDataProvider bootstrapDataProvider = mock(BootstrapDataProvider.class);
-        Path path = Paths.get(getClass().getClassLoader().getResource("import/bootstrap-data.bin").getPath());
+        // using toURI() instead of getPath() prevent some errors on Windows
+        // (https://stackoverflow.com/questions/38887853/java-nio-file-invalidpathexception-with-getpath/38888561)
+        Path path = Paths.get(getClass().getClassLoader().getResource("import/bootstrap-data.bin").toURI());
         byte[] oneBlockAndState = Files.readAllBytes(path);
         when(bootstrapDataProvider.getBootstrapData()).thenReturn(oneBlockAndState);
         when(bootstrapDataProvider.getSelectedHeight()).thenReturn(1L);

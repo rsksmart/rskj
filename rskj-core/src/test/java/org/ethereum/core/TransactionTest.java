@@ -467,10 +467,7 @@ public class TransactionTest {
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
 
-                    executor.init();
-                    executor.execute();
-                    executor.go();
-                    executor.finalization();
+                    executor.executeTransaction();
 
                     track.rollback();
 
@@ -749,10 +746,7 @@ public class TransactionTest {
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
 
-        executor.init();
-        executor.execute();
-        executor.go();
-        executor.finalization();
+        executor.executeTransaction();
 
         track.commit();
         return executor;
