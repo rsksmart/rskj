@@ -106,7 +106,7 @@ public class LogsNotificationTest {
     public void getData() {
         byte[] logData = TestUtils.randomBytes(random.nextInt(1024));
         doReturn(logData).when(logInfo).getData();
-        assertThat(logsNotification.getData(), is(toJsonHex(logData)));
+        assertThat(logsNotification.getData(), is(toUnformattedJsonHex(logData)));
     }
 
     @Test

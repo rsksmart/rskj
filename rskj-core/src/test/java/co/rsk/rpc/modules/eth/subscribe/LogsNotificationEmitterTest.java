@@ -190,7 +190,7 @@ public class LogsNotificationEmitterTest {
     }
 
     private void verifyLogsData(byte[]... results) throws JsonProcessingException {
-        verifyLogs((ln, d) -> assertThat(ln.getData(), is(TypeConverter.toJsonHex(d))), results);
+        verifyLogs((ln, d) -> assertThat(ln.getData(), is(TypeConverter.toUnformattedJsonHex(d))), results);
     }
 
     private void verifyLogsRemovedStatus(Boolean... results) throws JsonProcessingException {

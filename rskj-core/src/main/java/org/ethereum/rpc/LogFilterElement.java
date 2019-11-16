@@ -25,6 +25,7 @@ import org.ethereum.vm.LogInfo;
 import java.util.Arrays;
 
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
+import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
 
 /**
  * Created by ajlopez on 5/4/2016.
@@ -46,10 +47,10 @@ public class LogFilterElement {
         transactionIndex = b == null ? null : TypeConverter.toQuantityJsonHex(txIndex);
         transactionHash = tx.getHash().toJsonString();
         address = toJsonHex(logInfo.getAddress());
-        data = toJsonHex(logInfo.getData());
+        data = toUnformattedJsonHex(logInfo.getData());
         topics = new String[logInfo.getTopics().size()];
         for (int i = 0; i < topics.length; i++) {
-            topics[i] = toJsonHex(logInfo.getTopics().get(i).getData());
+            topics[i] = toUnformattedJsonHex(logInfo.getTopics().get(i).getData());
         }
     }
 

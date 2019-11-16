@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
 import static org.ethereum.rpc.TypeConverter.toQuantityJsonHex;
+import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
 
 /**
  * The logs DTO for JSON serialization purposes.
@@ -105,7 +106,7 @@ public class LogsNotification implements EthSubscriptionNotificationDTO {
 
     public String getData() {
         if (lazyData == null) {
-            lazyData = toJsonHex(logInfo.getData());
+            lazyData = toUnformattedJsonHex(logInfo.getData());
         }
         return lazyData;
     }
@@ -113,7 +114,7 @@ public class LogsNotification implements EthSubscriptionNotificationDTO {
     public List<String> getTopics() {
         if (lazyTopics == null) {
             lazyTopics = logInfo.getTopics().stream()
-                    .map(t -> toJsonHex(t.getData()))
+                    .map(t -> toUnformattedJsonHex(t.getData()))
                     .collect(Collectors.toList());
         }
         return Collections.unmodifiableList(lazyTopics);
