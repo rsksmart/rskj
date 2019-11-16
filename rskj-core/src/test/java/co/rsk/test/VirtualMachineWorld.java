@@ -75,6 +75,10 @@ public class VirtualMachineWorld {
 
         VM vm = new VM(vmConfig, null);
         Program program = new Program(vmConfig, null, null, null, bytecodes, this.invoke, null, new HashSet<>());
+
+        if (this.memory != null)
+            program.initMem(this.memory);
+
         Stack programStack = program.getStack();
 
         if (this.stack != null) {
