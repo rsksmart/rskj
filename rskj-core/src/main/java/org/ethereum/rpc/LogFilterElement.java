@@ -50,7 +50,7 @@ public class LogFilterElement {
         data = toUnformattedJsonHex(logInfo.getData());
         topics = new String[logInfo.getTopics().size()];
         for (int i = 0; i < topics.length; i++) {
-            topics[i] = toJsonHex(logInfo.getTopics().get(i).getData());
+            topics[i] = toUnformattedJsonHex(logInfo.getTopics().get(i).getData());
         }
     }
 
