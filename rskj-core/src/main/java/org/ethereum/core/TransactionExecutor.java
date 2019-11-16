@@ -78,7 +78,6 @@ public class TransactionExecutor {
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
-    private boolean readyToExecute = false;
 
     private final ProgramInvokeFactory programInvokeFactory;
     private final RskAddress coinbase;
@@ -126,49 +125,44 @@ public class TransactionExecutor {
     }
 
     /**
+     * Validates and executes the transaction
+     *
+     * @return true if the transaction is valid and executed, false if the transaction is invalid
+     */
+    public boolean executeTransaction() {
+        if (!this.init()) {
+            return false;
+        }
+
+        this.execute();
+        this.go();
+        this.finalization();
+
+        return true;
+    }
+
+    /**
      * Do all the basic validation, if the executor
      * will be ready to run the transaction at the end
      * set readyToExecute = true
      */
-    public boolean init() {
+    private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations);
 
         if (localCall) {
-            readyToExecute = true;
-            return readyToExecute;
+            return true;
         }
 
         BigInteger txGasLimit = new BigInteger(1, tx.getGasLimit());
         BigInteger curBlockGasLimit = new BigInteger(1, executionBlock.getGasLimit());
 
-        boolean cumulativeGasReached = txGasLimit.add(BigInteger.valueOf(gasUsedInTheBlock)).compareTo(curBlockGasLimit) > 0;
-        if (cumulativeGasReached) {
-            execError(String.format("Too much gas used in this block: Require: %s Got: %s",
-                    curBlockGasLimit.longValue() - toBI(tx.getGasLimit()).longValue(),
-                    toBI(tx.getGasLimit()).longValue()));
-
+        if (!gasIsValid(txGasLimit, curBlockGasLimit)) {
             return false;
         }
 
-        if (txGasLimit.compareTo(BigInteger.valueOf(basicTxCost)) < 0) {
-            execError(String.format("Not enough gas for transaction execution: Require: %s Got: %s", basicTxCost, txGasLimit));
+        if (!nonceIsValid()) {
             return false;
         }
-
-        BigInteger reqNonce = track.getNonce(tx.getSender());
-        BigInteger txNonce = toBI(tx.getNonce());
-        if (isNotEqual(reqNonce, txNonce)) {
-
-            if (logger.isWarnEnabled()) {
-                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, tx.getHash());
-                logger.warn("Transaction Data: {}", tx);
-                logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
-            }
-
-            execError(String.format("Invalid nonce: required: %s , tx.nonce: %s", reqNonce, txNonce));
-            return false;
-        }
-
 
         Coin totalCost = Coin.ZERO;
         if (basicTxCost > 0 ) {
@@ -190,6 +184,14 @@ public class TransactionExecutor {
             return false;
         }
 
+        if (!transactionAddressesAreValid()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean transactionAddressesAreValid() {
         // Prevent transactions with excessive address size
         byte[] receiveAddress = tx.getReceiveAddress().getBytes();
         if (receiveAddress != null && !Arrays.equals(receiveAddress, EMPTY_BYTE_ARRAY) && receiveAddress.length > Constants.getMaxAddressByteLength()) {
@@ -213,16 +215,46 @@ public class TransactionExecutor {
             return false;
         }
 
-        readyToExecute = true;
         return true;
     }
 
-    public void execute() {
+    private boolean nonceIsValid() {
+        BigInteger reqNonce = track.getNonce(tx.getSender());
+        BigInteger txNonce = toBI(tx.getNonce());
 
-        if (!readyToExecute) {
-            return;
+        if (isNotEqual(reqNonce, txNonce)) {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, tx.getHash());
+                logger.warn("Transaction Data: {}", tx);
+                logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
+            }
+
+            execError(String.format("Invalid nonce: required: %s , tx.nonce: %s", reqNonce, txNonce));
+            return false;
         }
 
+        return true;
+    }
+
+    private boolean gasIsValid(BigInteger txGasLimit, BigInteger curBlockGasLimit) {
+        boolean cumulativeGasReached = txGasLimit.add(BigInteger.valueOf(gasUsedInTheBlock)).compareTo(curBlockGasLimit) > 0;
+        if (cumulativeGasReached) {
+            execError(String.format("Too much gas used in this block: Require: %s Got: %s",
+                    curBlockGasLimit.longValue() - toBI(tx.getGasLimit()).longValue(),
+                    toBI(tx.getGasLimit()).longValue()));
+
+            return false;
+        }
+
+        if (txGasLimit.compareTo(BigInteger.valueOf(basicTxCost)) < 0) {
+            execError(String.format("Not enough gas for transaction execution: Require: %s Got: %s", basicTxCost, txGasLimit));
+            return false;
+        }
+
+        return true;
+    }
+
+    private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
@@ -244,10 +276,6 @@ public class TransactionExecutor {
     }
 
     private void call() {
-        if (!readyToExecute) {
-            return;
-        }
-
         logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         RskAddress targetAddress = tx.getReceiveAddress();
@@ -362,11 +390,7 @@ public class TransactionExecutor {
         executionError = err;
     }
 
-    public void go() {
-        if (!readyToExecute) {
-            return;
-        }
-
+    private void go() {
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
             cacheTrack.commit();
@@ -384,45 +408,14 @@ public class TransactionExecutor {
             program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
 
             if (playVm) {
-                Future<?> vmExecution = vmExecutorService.submit(() -> vm.play(program));
-                try {
-                    vmExecution.get();
-                } catch (ExecutionException e) {
-                    if (e.getCause() instanceof StackOverflowError) {
-                        logger.error("\n !!! StackOverflowError: update your java run command with -Xss32M !!!\n", e);
-                        System.exit(-1);
-                    } else {
-                        throw e.getCause();
-                    }
-                }
+                playVirtualMachine();
             }
 
             result = program.getResult();
             mEndGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));
 
             if (tx.isContractCreation() && !result.isRevert()) {
-                int createdContractSize = getLength(program.getResult().getHReturn());
-                int returnDataGasValue = createdContractSize * GasCost.CREATE_DATA;
-                if (mEndGas.compareTo(BigInteger.valueOf(returnDataGasValue)) < 0) {
-                    program.setRuntimeFailure(
-                            Program.ExceptionHelper.notEnoughSpendingGas(
-                                    "No gas to return just created contract",
-                                    returnDataGasValue,
-                                    program));
-                    result = program.getResult();
-                    result.setHReturn(EMPTY_BYTE_ARRAY);
-                } else if (createdContractSize > Constants.getMaxContractSize()) {
-                    program.setRuntimeFailure(
-                            Program.ExceptionHelper.tooLargeContractSize(
-                                    Constants.getMaxContractSize(),
-                                    createdContractSize));
-                    result = program.getResult();
-                    result.setHReturn(EMPTY_BYTE_ARRAY);
-                } else {
-                    mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
-                    program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
-                    cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
-                }
+                createContract();
             }
 
             if (result.getException() != null || result.isRevert()) {
@@ -452,6 +445,45 @@ public class TransactionExecutor {
         }
     }
 
+    private void createContract() {
+        int createdContractSize = getLength(program.getResult().getHReturn());
+        int returnDataGasValue = createdContractSize * GasCost.CREATE_DATA;
+        if (mEndGas.compareTo(BigInteger.valueOf(returnDataGasValue)) < 0) {
+            program.setRuntimeFailure(
+                    Program.ExceptionHelper.notEnoughSpendingGas(
+                            "No gas to return just created contract",
+                            returnDataGasValue,
+                            program));
+            result = program.getResult();
+            result.setHReturn(EMPTY_BYTE_ARRAY);
+        } else if (createdContractSize > Constants.getMaxContractSize()) {
+            program.setRuntimeFailure(
+                    Program.ExceptionHelper.tooLargeContractSize(
+                            Constants.getMaxContractSize(),
+                            createdContractSize));
+            result = program.getResult();
+            result.setHReturn(EMPTY_BYTE_ARRAY);
+        } else {
+            mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
+            program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
+            cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
+        }
+    }
+
+    private void playVirtualMachine() throws Throwable {
+        Future<?> vmExecution = vmExecutorService.submit(() -> vm.play(program));
+        try {
+            vmExecution.get();
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof StackOverflowError) {
+                logger.error("\n !!! StackOverflowError: update your java run command with -Xss32M !!!\n", e);
+                System.exit(-1);
+            } else {
+                throw e.getCause();
+            }
+        }
+    }
+
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
@@ -466,11 +498,7 @@ public class TransactionExecutor {
     }
 
 
-    public void finalization() {
-        if (!readyToExecute) {
-            return;
-        }
-
+    private void finalization() {
         // RSK if local call gas balances must not be changed
         if (localCall) {
             return;

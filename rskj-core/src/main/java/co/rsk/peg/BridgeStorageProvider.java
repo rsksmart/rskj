@@ -27,15 +27,19 @@ import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
 import java.io.IOException;
 import java.util.*;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP123;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP87;
+
 /**
  * Provides an object oriented facade of the bridge contract memory.
- * @see co.rsk.remasc.RemascStorageProvider
+ * @see co.rsk.peg.BridgeStorageProvider
  * @author ajlopez
  * @author Oscar Guindzberg
  */
@@ -64,7 +68,7 @@ public class BridgeStorageProvider {
     private final Repository repository;
     private final RskAddress contractAddress;
     private final NetworkParameters networkParameters;
-    private final BridgeStorageConfiguration bridgeStorageConfiguration;
+    private final ActivationConfig.ForBlock activations;
 
     private Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed;
 
@@ -96,11 +100,11 @@ public class BridgeStorageProvider {
 
     private HashMap<DataWord, Optional<Integer>> storageVersion;
 
-    public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, BridgeStorageConfiguration bridgeStorageConfiguration) {
+    public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
-        this.bridgeStorageConfiguration = bridgeStorageConfiguration;
+        this.activations = activations;
         this.storageVersion = new HashMap<>();
     }
 
@@ -248,7 +252,7 @@ public class BridgeStorageProvider {
 
         RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
-        if (bridgeStorageConfiguration.isMultikeyFederation()) {
+        if (activations.isActive(RSKIP123)) {
             saveStorageVersion(NEW_FEDERATION_FORMAT_VERSION, FEDERATION_FORMAT_VERSION_MULTIKEY);
             serializer = BridgeSerializationUtils::serializeFederation;
         }
@@ -283,7 +287,7 @@ public class BridgeStorageProvider {
         if (shouldSaveOldFederation) {
             RepositorySerializer<Federation> serializer = BridgeSerializationUtils::serializeFederationOnlyBtcKeys;
 
-            if (bridgeStorageConfiguration.isMultikeyFederation()) {
+            if (activations.isActive(RSKIP123)) {
                 saveStorageVersion(OLD_FEDERATION_FORMAT_VERSION, FEDERATION_FORMAT_VERSION_MULTIKEY);
                 serializer = BridgeSerializationUtils::serializeFederation;
             }
@@ -319,7 +323,7 @@ public class BridgeStorageProvider {
         if (shouldSavePendingFederation) {
             RepositorySerializer<PendingFederation> serializer = BridgeSerializationUtils::serializePendingFederationOnlyBtcKeys;
 
-            if (bridgeStorageConfiguration.isMultikeyFederation()) {
+            if (activations.isActive(RSKIP123)) {
                 saveStorageVersion(PENDING_FEDERATION_FORMAT_VERSION, FEDERATION_FORMAT_VERSION_MULTIKEY);
                 serializer = BridgeSerializationUtils::serializePendingFederation;
             }
@@ -359,7 +363,7 @@ public class BridgeStorageProvider {
         List<OneOffWhiteListEntry> oneOffEntries = lockWhitelist.getAll(OneOffWhiteListEntry.class);
         safeSaveToRepository(LOCK_ONE_OFF_WHITELIST_KEY, Pair.of(oneOffEntries, lockWhitelist.getDisableBlockHeight()), BridgeSerializationUtils::serializeOneOffLockWhitelist);
 
-        if (this.bridgeStorageConfiguration.isUnlimitedWhitelistEnabled()) {
+        if (activations.isActive(RSKIP87)) {
             List<UnlimitedWhiteListEntry> unlimitedEntries = lockWhitelist.getAll(UnlimitedWhiteListEntry.class);
             safeSaveToRepository(LOCK_UNLIMITED_WHITELIST_KEY, unlimitedEntries, BridgeSerializationUtils::serializeUnlimitedLockWhitelist);
         }
@@ -382,7 +386,7 @@ public class BridgeStorageProvider {
 
         whitelistedAddresses.putAll(oneOffWhitelistAndDisableBlockHeightData.getLeft());
 
-        if (this.bridgeStorageConfiguration.isUnlimitedWhitelistEnabled()) {
+        if (activations.isActive(RSKIP87)) {
             whitelistedAddresses.putAll(safeGetFromRepository(LOCK_UNLIMITED_WHITELIST_KEY,
                     data -> BridgeSerializationUtils.deserializeUnlimitedLockWhitelistEntries(data, networkParameters)));
         }

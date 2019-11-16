@@ -88,10 +88,7 @@ public class CallContractTest {
                     .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
                     .setLocalCall(true);
 
-            executor.init();
-            executor.execute();
-            executor.go();
-            executor.finalization();
+            executor.executeTransaction();
 
             return executor.getResult();
         } finally {

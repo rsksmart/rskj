@@ -103,10 +103,7 @@ public class MinerHelper {
             TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 
-            executor.init();
-            executor.execute();
-            executor.go();
-            executor.finalization();
+            executor.executeTransaction();
 
             long gasUsed = executor.getGasUsed();
             Coin paidFees = executor.getPaidFees();
