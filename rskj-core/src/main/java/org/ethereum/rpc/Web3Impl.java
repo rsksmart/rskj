@@ -593,7 +593,7 @@ public class Web3Impl implements Web3 {
             TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore);
 
             if (txInfo == null) {
-                List<Transaction> txs = web3InformationRetriever.getTransactions("pending");
+                List<Transaction> txs =     web3InformationRetriever.getTransactions("pending");
 
                 for (Transaction tx : txs) {
                     if (tx.getHash().equals(txHash)) {
