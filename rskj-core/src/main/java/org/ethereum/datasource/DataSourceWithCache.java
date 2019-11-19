@@ -53,17 +53,17 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             if (committedCache.containsKey(wrappedKey)) {
                 return committedCache.get(wrappedKey);
+            } else {
+                byte[] value = base.get(key);
+
+                //null value, as expected, is allowed here to be stored in committedCache
+                committedCache.put(wrappedKey, value);
+
+                return value;
             }
         } finally {
             lock.readLock().unlock();
         }
-
-        byte[] value = base.get(key);
-
-        //null value, as expected, is allowed here to be stored in committedCache
-        committedCache.put(wrappedKey, value);
-        
-        return value;
     }
 
     @Override
@@ -124,9 +124,6 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
         try {
             Stream<ByteArrayWrapper> baseKeys = base.keys().stream().map(ByteArrayWrapper::new);
-            Stream<ByteArrayWrapper> committedKeys = committedCache.entrySet().stream()
-                    .filter(e -> e.getValue() != null)
-                    .map(Map.Entry::getKey);
             Stream<ByteArrayWrapper> uncommittedKeys = uncommittedCache.entrySet().stream()
                     .filter(e -> e.getValue() != null)
                     .map(Map.Entry::getKey);
@@ -134,7 +131,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
                     .filter(e -> e.getValue() == null)
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toSet());
-            Set<ByteArrayWrapper> knownKeys = Stream.concat(Stream.concat(baseKeys, committedKeys), uncommittedKeys)
+            Set<ByteArrayWrapper> knownKeys = Stream.concat(baseKeys, uncommittedKeys)
                     .collect(Collectors.toSet());
             knownKeys.removeAll(uncommittedKeysToRemove);
 
@@ -167,8 +164,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public synchronized void flush() {
+        lock.writeLock().lock();
         try {
-            lock.writeLock().lock();
             Map<ByteArrayWrapper, byte[]> uncommittedBatch = uncommittedCache.entrySet().stream().filter(e -> e.getValue() != null).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
             base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
