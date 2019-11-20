@@ -1,130 +1,22 @@
 package co.rsk.core;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Transaction;
 
 import java.util.*;
 
 public class TransactionsPartition {
-//    private static final int NB_MAX_PARTITIONS = 16;
-//    private static Map<String, TransactionsPartition> partitionPerThreadGroup = new HashMap<>();
-//    private static int[] partitionEnds = new int[0];
     private static int instanceCounter = 0;
-//
-//    /**
-//     * Creates a new instance of TransactionPartition only if there exists less than NB_MAX_PARTITIONS partitions,
-//     * otherwise, returns the smallest partition (the one with contains the less transactions)
-//     *
-//     * @return
-//     */
-//    public static synchronized TransactionsPartition newTransactionsPartition() {
-//        if (partitionPerThreadGroup.size() >= NB_MAX_PARTITIONS) {
-//            // we reach the limit of partition so lets choose the partition with less Tx inside.
-//            return findSmallestPartition();
-//        } else {
-//            TransactionsPartition partition = new TransactionsPartition();
-//            if (partitionPerThreadGroup.putIfAbsent(partition.threadGroup.getName(), partition) != null) {
-//                throw new IllegalStateException(
-//                        "Unable to register the new TransactionPartition with ThreadGroup '" +
-//                                partition.threadGroup.getName() + "' because there is already another registered partition"
-//                );
-//            }
-//            return partition;
-//        }
-//    }
-//
-//
-//    private static TransactionsPartition findSmallestPartition() {
-//        List<TransactionsPartition> partitions = new ArrayList<>(partitionPerThreadGroup.values());
-//        if (partitions.isEmpty()) {
-//            return null;
-//        }
-//        Collections.sort(partitions, new ByIdSorter());
-//        Collections.sort(partitions, new BySizeSorter());
-//        return partitions.get(0);
-//    }
-//
-//    @VisibleForTesting
-//    public static List<TransactionsPartition> getPartitions() {
-//        List<TransactionsPartition> partitions = new ArrayList<>(partitionPerThreadGroup.values());
-//        if (partitions.isEmpty()) {
-//            return new ArrayList<>();
-//        }
-//        Collections.sort(partitions, new ByIdSorter());
-//        return partitions;
-//    }
-//
-//    public static void clearAllPartitions() {
-//        partitionPerThreadGroup.clear();
-//    }
-//
-//    public static TransactionsPartition fromThreadGroup(String threadGroupName) {
-//        return partitionPerThreadGroup.get(threadGroupName);
-//    }
-//
-//    @VisibleForTesting
-//    public static int getNbPartitions() {
-//        return partitionPerThreadGroup.size();
-//    }
-//
-//    public static void deletePartition(TransactionsPartition partition) {
-//        partitionPerThreadGroup.remove(partition.getThreadGroup().getName());
-//    }
-//
-//    public static List<Transaction> getAllTransactionsSortedPerPartition() {
-//        List<Transaction> listTransactions = new ArrayList<>();
-//        int indexTx = 0;
-//        List<TransactionsPartition> partitions = getPartitions();
-//        partitionEnds = new int[partitions.size()];
-//        for (int partId = 0; partId < partitions.size(); partId++) {
-//            TransactionsPartition partition = partitions.get(partId);
-//            Collection<Transaction> txs = partition.getTransactions();
-//            listTransactions.addAll(txs);
-//            indexTx += txs.size();
-//            partitionEnds[partId] = indexTx - 1;
-//        }
-//        return listTransactions;
-//    }
-//
-//    private static void clearPartitionEnds() {
-//        partitionEnds = new int[0];
-//    }
-//
-//    public static int[] getPartitionEnds() {
-//        if (partitionEnds.length == 0) {
-//            // this will recompute partitionEnds
-//            getAllTransactionsSortedPerPartition();
-//        }
-//        return Arrays.copyOf(partitionEnds, partitionEnds.length);
-//    }
-//
-//    public static TransactionsPartition mergePartitions(Set<TransactionsPartition> conflictingPartitions) {
-//        List<TransactionsPartition> listPartitions = new ArrayList<>(conflictingPartitions);
-//        // Collections.sort(listPartitions, new ByIdSorter());
-//        TransactionsPartition resultingPartition = listPartitions.remove(0);
-//        for(TransactionsPartition toMerge: listPartitions) {
-//            for (Transaction tx: toMerge.getTransactions()) {
-//                resultingPartition.addTransaction(tx);
-//            }
-//            toMerge.clear();
-//            partitionPerThreadGroup.remove(toMerge.getThreadGroup().getName());
-//        }
-//        return resultingPartition;
-//    }
-
     private ThreadGroup threadGroup;
     private int id;
     private List<Transaction> transactions;
+    private TransactionsPartitioner partitioner;
 
-    public TransactionsPartition() {
+    public TransactionsPartition(TransactionsPartitioner partitioner) {
         this.id = instanceCounter++;
+        this.partitioner = partitioner;
         this.threadGroup = new ThreadGroup("Tx-part-grp-" + id);
         this.transactions = new ArrayList<>();
     }
-
-//    public int getId() {
-//        return id;
-//    }
 
     @Override
     public int hashCode() {
@@ -140,7 +32,7 @@ public class TransactionsPartition {
     }
 
     public void addTransaction(Transaction tx, boolean atBeginning) {
-        // clearPartitionEnds(); // force to recompute it because the partitions map has changed
+        partitioner.resetPartitionEnds();
         if (atBeginning) {
             transactions.add(0, tx);
         } else {
@@ -149,7 +41,7 @@ public class TransactionsPartition {
     }
 
     public void removeTransaction(Transaction tx) {
-        // clearPartitionEnds(); // force to recompute it because the partitions map has changed
+        partitioner.resetPartitionEnds();
         transactions.remove(tx);
     }
 
@@ -162,6 +54,7 @@ public class TransactionsPartition {
     }
 
     public void clear() {
+        partitioner.resetPartitionEnds();
         transactions.clear();
     }
 

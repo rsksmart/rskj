@@ -216,8 +216,7 @@ public class BlockExecutor {
     private boolean validateReceiptsRoot(BlockHeader header, BlockResult result) {
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, header.getNumber());
         byte[] receiptsTrieRoot = BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), isRskip126Enabled);
-        boolean ret = Arrays.equals(receiptsTrieRoot, header.getReceiptsRoot());
-        return ret;
+        return Arrays.equals(receiptsTrieRoot, header.getReceiptsRoot());
     }
 
     private boolean validateLogsBloom(BlockHeader header, BlockResult result) {
@@ -354,13 +353,9 @@ public class BlockExecutor {
 
         if (!block.isSealed()) {
             // filling block
-//            logger.info("block: [{}] is not sealed -> pre execution to assess concurrent Txs executions",
-//                    block.getNumber());
-
-            TransactionsPartitioner partitioner = new TransactionsPartitioner();
-
             // Pre-run each transaction to check for conflict between them
             // Work with a cached repository that will be rolled back in the end of transaction execution
+            TransactionsPartitioner partitioner = new TransactionsPartitioner();
             Repository dummyRepo = track.startTracking();
             BlockSharedData dummySharedData = new BlockSharedData(dummyRepo, programTraceProcessor);
             TransactionConflictDetector transactionConflictDetector = new TransactionConflictDetector(partitioner);
@@ -381,7 +376,6 @@ public class BlockExecutor {
                         discardInvalidTxs);
 
                 TransactionsPartition partition = partitioner.newPartition();
-                //TransactionsPartitionExecutor partExecutor = TransactionsPartitionExecutor.newTransactionsPartitionExecutor(partition);
                 TransactionsPartitionExecutor partExecutor = partitioner.newPartitionExecutor(partition);
                 partExecutor.addTransactionTask(txExecutorTask);
 
@@ -422,9 +416,6 @@ public class BlockExecutor {
                     partition.addTransaction(tx);
                 }
 
-//                logger.info("block: [{}] pre-run : tx [{}] has been executed",
-//                        block.getNumber(), tx.getHash());
-
             }
 
             // rollback the repo. Anyway, it wont be used anymore
@@ -438,26 +429,25 @@ public class BlockExecutor {
         }
 
         int[] partitionEnds = block.getPartitionEnds();
-        // Iterator<Integer> itPartitionEnds = Arrays.ite.asList(partitionEnds).ite
         final Iterator<Integer> itPartitionEnds = IntStream.of(partitionEnds).boxed().iterator();
-        int nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : -1;
+        int nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : 0;
 
         TransactionsPartitioner partitioner2 = new TransactionsPartitioner();
-        //TransactionsPartitionExecutor partExecutor = TransactionsPartitionExecutor.newTransactionsPartitionExecutor(partitioner2.newPartition());
         TransactionsPartitionExecutor partExecutor = partitioner2.newPartitionExecutor(partitioner2.newPartition());
 
         TransactionConflictDetector transactionConflictDetector = new TransactionConflictDetector(partitioner2);
         if (track.isCached()) {
+            // track the repository to detect conflicts
             track.getCacheTracking().subscribe(transactionConflictDetector);
         }
 
-//        logger.info("block: [{}] execution",
-//                block.getNumber());
-
         for ( Transaction tx : block.getTransactionsList() ) {
 
-//            logger.info("block: [{}] submitting transaction [{}]",
-//                    block.getNumber(), tx.getHash());
+            if (txindex == nextIndexPartition + 1 ) {
+                // start a new partition from this transaction
+                nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : 0;
+                partExecutor = partitioner2.newPartitionExecutor(partitioner2.newPartition());
+            }
 
             TransactionExecutorTask txExecutorTask = new TransactionExecutorTask(
                     transactionExecutorFactory,
@@ -470,12 +460,6 @@ public class BlockExecutor {
                     discardInvalidTxs);
 
             partExecutor.addTransactionTask(txExecutorTask);
-
-            if (nextIndexPartition == txindex) {
-                nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : -1;
-                partExecutor = partitioner2.newPartitionExecutor(partitioner2.newPartition());
-                //partExecutor = TransactionsPartitionExecutor.newTransactionsPartitionExecutor(partitioner2.newPartition());
-            }
 
             txindex++;
         }
@@ -500,7 +484,7 @@ public class BlockExecutor {
         // RSKIP144
         // Transfer fees to coinbase or Remasc contract creates a conflicts between all transactions,
         // that prevents us to execute them in parallel.
-        // Then in this case we transfer fees after all transactions are processed.
+        // Then, in this case we transfer fees after all transactions are processed.
         Coin summaryFee = blockSharedData.getTotalPaidFees();
 
         if (!summaryFee.equals(Coin.valueOf(0))) {
@@ -526,12 +510,6 @@ public class BlockExecutor {
         List<Transaction> transactionsList = block.getTransactionsList();
         reorderTransactionList(blockSharedData.getExecutedTransactions(), transactionsList);
         reorderTransactionReceiptList(blockSharedData.getReceipts(), transactionsList);
-
-        for (TransactionReceipt receipt: blockSharedData.getReceipts()) {
-            logger.info("block: [{}] execution, receipt for tx [{}] : [{}]",
-                    block.getNumber(), receipt.getTransaction().getHash(),
-                    Base64.getEncoder().encodeToString(receipt.getEncoded()));
-        }
 
         BlockResult result = new BlockResult(
                 block,

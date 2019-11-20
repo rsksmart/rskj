@@ -15,24 +15,6 @@ public class TransactionsPartitioner {
     private Map<String, TransactionsPartition> partitionPerThreadGroup = new HashMap<>();
     private int[] partitionEnds = new int[0];
 
-//    public int addToNewPartition(Transaction tx) {
-//        int partId;
-//        if (partitions.size() >= NB_MAX_PARTITIONS) {
-//            // we reach the limit of partition so lets choose the partition with less Tx inside.
-//            partId = findSmallestPartition();
-//        } else {
-//            partId = partitions.size();
-//        }
-//        this.addToPartition(tx, partId);
-//        return partId;
-//    }
-//
-//    public void addToPartition(Transaction tx, int partitionId) {
-//        partitions.computeIfAbsent(partitionId, k -> new ArrayList());
-//        partitions.get(partitionId).add(tx);
-//        clearPartitionEnds(); // force to recompute it because the partitions map has changed
-//    }
-
     public List<Transaction> getAllTransactionsSortedPerPartition() {
         List<Transaction> listTransactions = new ArrayList<>();
         int indexTx = 0;
@@ -47,11 +29,12 @@ public class TransactionsPartitioner {
         }
         return listTransactions;
     }
+
     public int[] getPartitionEnds() {
-//        if (partitionEnds.length == 0) {
+        if (partitionEnds.length == 0) {
             // this will recompute partitionEnds
             getAllTransactionsSortedPerPartition();
- //       }
+        }
         return Arrays.copyOf(partitionEnds, partitionEnds.length);
     }
 
@@ -60,13 +43,14 @@ public class TransactionsPartitioner {
             // we reach the limit of partition so lets choose the partition with less Tx inside.
             return findSmallestPartition();
         } else {
-            TransactionsPartition partition = new TransactionsPartition();
+            TransactionsPartition partition = new TransactionsPartition(this);
             if (partitionPerThreadGroup.putIfAbsent(partition.getThreadGroup().getName(), partition) != null) {
                 throw new IllegalStateException(
                         "Unable to register the new TransactionPartition with ThreadGroup '" +
                                 partition.getThreadGroup().getName() + "' because there is already another registered partition"
                 );
             }
+            resetPartitionEnds();
             return partition;
         }
     }
@@ -90,10 +74,10 @@ public class TransactionsPartitioner {
                     try {
                         Optional<TransactionReceipt> receipt = partExecutor.waitForNextResult(timeoutMSec);
                     } catch (TimeoutException e) {
-                        clearAll();
+                        clearExecutors();
                         throw new TimeoutException();
                     } catch (ExecutionException | InterruptedException e) {
-                        clearAll();
+                        clearExecutors();
                         throw new ExecutionException(e);
                     }
                     if (periodicCheck != null) {
@@ -112,7 +96,7 @@ public class TransactionsPartitioner {
         }
     }
 
-    private synchronized void clearAll() {
+    private synchronized void clearExecutors() {
         for (TransactionsPartitionExecutor partExecutor : partExecutors) {
             partExecutor.shutdownNow();
         }
@@ -130,6 +114,7 @@ public class TransactionsPartitioner {
             toMerge.clear();
             partitionPerThreadGroup.remove(toMerge.getThreadGroup().getName());
         }
+        resetPartitionEnds();
         return resultingPartition;
     }
 
@@ -161,6 +146,7 @@ public class TransactionsPartitioner {
 
     public void clearAllPartitions() {
         partitionPerThreadGroup.clear();
+        resetPartitionEnds();
     }
 
     public TransactionsPartition fromThreadGroup(String threadGroupName) {
@@ -169,6 +155,11 @@ public class TransactionsPartitioner {
 
     public void deletePartition(TransactionsPartition partition) {
         partitionPerThreadGroup.remove(partition.getThreadGroup().getName());
+        resetPartitionEnds();
+    }
+
+    public void resetPartitionEnds() {
+        partitionEnds = new int[0];
     }
 
     private TransactionsPartition findSmallestPartition() {
@@ -181,34 +172,4 @@ public class TransactionsPartitioner {
         return partitions.get(0);
     }
 
-//    private void clearPartitionEnds() {
-//        partitionEnds = new int[0];
-//    }
-
-    /**
-     * This class allows to sort partitions Map according to the size of the mapped collections
-     */
-    private static class MappedCollectionComparator<T> implements Comparator<Integer> {
-
-        private final Map<Integer, Collection<T>> map;
-
-        public MappedCollectionComparator(Map<Integer, Collection<T>> map) {
-            this.map = map;
-        }
-
-        @Override
-        public int compare(Integer key1, Integer key2) {
-            Collection c1 = map.get(key1);
-            Collection c2 = map.get(key2);
-            if (c1 == c2) {
-                return 0;
-            } else if (c1 == null) {
-                return 1;
-            } else if (c2 == null) {
-                return -1;
-            } else {
-                return c1.size() - c2.size();
-            }
-        }
-    }
 }

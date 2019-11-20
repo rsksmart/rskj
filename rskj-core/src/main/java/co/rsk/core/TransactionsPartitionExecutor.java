@@ -5,7 +5,6 @@ import org.ethereum.core.TransactionReceipt;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.*;
 
 public class TransactionsPartitionExecutor {
@@ -30,71 +29,6 @@ public class TransactionsPartitionExecutor {
             return innerException;
         }
     }
-    /**
-     * List of the created instances
-     */
-    //private static List<TransactionsPartitionExecutor> partExecutors = new ArrayList<>();
-
-    /**
-     * creates a new instance and register it in partExecutors list
-     * @return
-     */
-//    public static synchronized TransactionsPartitionExecutor newTransactionsPartitionExecutor(TransactionsPartition partition) {
-//        TransactionsPartitionExecutor partExecutor = new TransactionsPartitionExecutor(partition);
-//        partExecutors.add(partExecutor);
-//        return partExecutor;
-//    }
-
-//    /**
-//     * Wait until all the tasks are completed across all the treads,
-//     * or the timeout is expired, or an exception occurred with one of the tasks.
-//     * When timeout is expired or an exception occurred, all the remaining tasks of all the treads are
-//     * immediately interrupted, as it means the block is invalid so we don't need to continue.
-//     * @param timeoutMSec
-//     * @throws InterruptedException
-//     * @throws TimeoutException
-//     */
-//    public static void waitForAllThreadTermination(int timeoutMSec, PeriodicCheck periodicCheck)
-//            throws TimeoutException, ExecutionException, PeriodicCheckException {
-//        while (!partExecutors.isEmpty()) {
-//            // As soon as there are futures to wait for, wait for the first of each thread
-//            List<TransactionsPartitionExecutor> toRemove = new ArrayList<>();
-//            for (TransactionsPartitionExecutor partExecutor : partExecutors) {
-//                if (partExecutor.hasNextResult()) {
-//                    try {
-//                        Optional<TransactionReceipt> receipt = partExecutor.waitForNextResult(timeoutMSec);
-//                    } catch (TimeoutException e) {
-//                        TransactionsPartitionExecutor.clearAll();
-//                        throw new TimeoutException();
-//                    } catch (ExecutionException | InterruptedException e) {
-//                        TransactionsPartitionExecutor.clearAll();
-//                        throw new ExecutionException(e);
-//                    }
-//                    if (periodicCheck != null) {
-//                        try {
-//                            periodicCheck.check();
-//                            // raises an exception when check fails
-//                        } catch (Exception e) {
-//                            throw new PeriodicCheckException(e);
-//                        }
-//                    }
-//                } else {
-//                    toRemove.add(partExecutor);
-//                }
-//            }
-//            partExecutors.removeAll(toRemove);
-//        }
-//    }
-
-    /**
-     * Terminates all thread and clear internal instances list
-     */
-//    private static synchronized void clearAll() {
-//        for (TransactionsPartitionExecutor partExecutor : partExecutors) {
-//            partExecutor.executor.shutdownNow();
-//        }
-//        partExecutors.clear();
-//    }
 
     private static int instanceCounter = 0;
     /**
