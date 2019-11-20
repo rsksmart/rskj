@@ -356,6 +356,7 @@ public class CallTransaction {
             }
         }
 
+        //args of type byte32 should be passed as Hex string for encoding to work
         private byte[] encodeData(Param[] params, Object... args) {
             if (args.length > params.length) {
                 throw new CallTransactionException("Too many arguments: " + args.length + " > " + params.length);

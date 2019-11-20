@@ -21,7 +21,7 @@ public enum BridgeEvents {
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, "releaseRskTxHash", SolidityType.getType("bytes32")),
                     new CallTransaction.Param(true, "federatorRskAddress", SolidityType.getType("address")),
-                    new CallTransaction.Param(false, "federatorBtcPublicKey", SolidityType.getType("bytes32"))
+                    new CallTransaction.Param(false, "federatorBtcPublicKey", SolidityType.getType("bytes"))
             }
     );
 

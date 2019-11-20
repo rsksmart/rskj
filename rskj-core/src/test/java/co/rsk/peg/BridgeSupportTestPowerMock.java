@@ -67,7 +67,6 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -889,22 +888,19 @@ public class BridgeSupportTestPowerMock {
         btcTx.addOutput(output);
 
         // Save btc tx to be signed
-        final Keccak256 rskTxHash = PegTestUtils.createHash3();
+        final Keccak256 rskTxHash = PegTestUtils.createHash3(1);
         provider.getRskTxsWaitingForSignatures().put(rskTxHash, btcTx);
         provider.save();
         track.commit();
 
         // Setup BridgeSupport
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        List<LogInfo> eventLogs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, eventLogs);
+        BridgeEventLogger eventLogger = mock(BridgeEventLogger.class);
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, new BridgeStorageProvider(
-                        track,
-                        contractAddress,
-                        bridgeConstants,
-                        activationsAfterForks
-                ), track, eventLogger, mock(Block.class),
+                bridgeConstants,
+                provider,
+                track,
+                eventLogger,
+                mock(Block.class),
                 null
         );
 
@@ -922,25 +918,8 @@ public class BridgeSupportTestPowerMock {
         BtcECKey federatorPubKey = findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeyToSignWith);
         bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash.getBytes());
 
-        Assert.assertEquals(1, eventLogs.size());
-
-        // Assert address that made the log
-        LogInfo result = eventLogs.get(0);
-        Assert.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
-
-        // Assert log topics
-        Assert.assertEquals(1, result.getTopics().size());
-        Assert.assertEquals(Bridge.ADD_SIGNATURE_TOPIC, result.getTopics().get(0));
-
-        // Assert log data
-        Assert.assertNotNull(result.getData());
-        List<RLPElement> rlpData = RLP.decode2(result.getData());
-        Assert.assertEquals(1, rlpData.size());
-        RLPList dataList = (RLPList) rlpData.get(0);
-        Assert.assertEquals(3, dataList.size());
-        Assert.assertArrayEquals(btcTx.getHashAsString().getBytes(), dataList.get(0).getRLPData());
-        Assert.assertArrayEquals(federatorPubKey.getPubKeyHash(), dataList.get(1).getRLPData());
-        Assert.assertArrayEquals(rskTxHash.getBytes(), dataList.get(2).getRLPData());
+        // Assert
+        verify(eventLogger).logAddSignature(federatorPubKey, btcTx, rskTxHash.getBytes());
     }
 
     @Test

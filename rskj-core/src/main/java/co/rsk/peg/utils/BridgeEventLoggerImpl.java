@@ -27,11 +27,13 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.Federation;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -88,6 +90,25 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
+        if (activations.isActive(ConsensusRule.RSKIP146)) {
+            ECKey key = ECKey.fromPublicOnly(federatorPublicKey.getPubKey());
+            String federatorRskAddress = Hex.toHexString(key.getAddress());
+            logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddress, federatorPublicKey);
+        } else {
+            logAddSignatureInRLPFormat(federatorPublicKey, btcTx, rskTxHash);
+        }
+    }
+
+    private void logAddSignatureInSolidityFormat(byte[] rskTxHash, String federatorRskAddress, BtcECKey federatorPublicKey) {
+        CallTransaction.Function event = BridgeEvents.ADD_SIGNATURE.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(rskTxHash, federatorRskAddress);
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+        byte[] encodedData = event.encodeEventData(federatorPublicKey.getPubKey());
+
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
+
+    private void logAddSignatureInRLPFormat(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
         List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
         byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
                 RLP.encodeElement(federatorPublicKey.getPubKeyHash()),

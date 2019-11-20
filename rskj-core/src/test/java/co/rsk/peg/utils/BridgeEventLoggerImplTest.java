@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -29,6 +30,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -38,6 +40,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
@@ -234,6 +237,7 @@ public class BridgeEventLoggerImplTest {
         when(sender.toString()).thenReturn("0x0000000000000000000000000000000000000001");
         when(tx.getSender()).thenReturn(sender);
 
+        // Act
         eventLogger.logUpdateCollections(tx);
 
         //Assert log size
@@ -251,5 +255,82 @@ public class BridgeEventLoggerImplTest {
 
         // Assert log data
         Assert.assertArrayEquals(event.encodeEventData(tx.getSender().toString()), logResult.getData());
+    }
+
+    @Test
+    public void logAddSignatureBeforeRskip146HardFork() {
+        // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> eventLogs = new LinkedList<>();
+
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        // Setup logAddSignature params
+        BtcECKey federatorPubKey = BtcECKey.fromPrivate(BigInteger.valueOf(2L));
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(1);
+        when(btcTx.getHashAsString()).thenReturn("3e72fdbae7bbd103f08e876c765e3d5ba35db30ea46cb45ab52803f987ead9fb");
+
+        // Act
+        eventLogger.logAddSignature(federatorPubKey, btcTx, rskTxHash.getBytes());
+
+        // Assert log size
+        Assert.assertEquals(1, eventLogs.size());
+
+        // Assert address that made the log
+        LogInfo result = eventLogs.get(0);
+        Assert.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
+
+        // Assert log topics
+        Assert.assertEquals(1, result.getTopics().size());
+        Assert.assertEquals(Bridge.ADD_SIGNATURE_TOPIC, result.getTopics().get(0));
+
+        // Assert log data
+        Assert.assertNotNull(result.getData());
+        List<RLPElement> rlpData = RLP.decode2(result.getData());
+        Assert.assertEquals(1, rlpData.size());
+        RLPList dataList = (RLPList) rlpData.get(0);
+        Assert.assertEquals(3, dataList.size());
+        Assert.assertArrayEquals(btcTx.getHashAsString().getBytes(), dataList.get(0).getRLPData());
+        Assert.assertArrayEquals(federatorPubKey.getPubKeyHash(), dataList.get(1).getRLPData());
+        Assert.assertArrayEquals(rskTxHash.getBytes(), dataList.get(2).getRLPData());
+    }
+
+    @Test
+    public void logAddSignatureAfterRskip146HardFork() {
+        // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> eventLogs = new LinkedList<>();
+
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        // Setup logAddSignature params
+        BtcECKey federatorPubKey = BtcECKey.fromPrivate(BigInteger.valueOf(2L));
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        Keccak256 rskTxHash = PegTestUtils.createHash3(1);
+        when(btcTx.getHashAsString()).thenReturn("3e72fdbae7bbd103f08e876c765e3d5ba35db30ea46cb45ab52803f987ead9fb");
+
+        // Act
+        eventLogger.logAddSignature(federatorPubKey, btcTx, rskTxHash.getBytes());
+
+        // Assert log size
+        Assert.assertEquals(1, eventLogs.size());
+
+        // Assert log topics
+        LogInfo logResult = eventLogs.get(0);
+        CallTransaction.Function event = BridgeEvents.ADD_SIGNATURE.getEvent();
+        Assert.assertEquals(3, logResult.getTopics().size());
+
+        ECKey key = ECKey.fromPublicOnly(federatorPubKey.getPubKey());
+        String federatorRskAddress = Hex.toHexString(key.getAddress());
+        byte[][] topics = event.encodeEventTopics(rskTxHash.getBytes(), federatorRskAddress);
+        for (int i=0; i<topics.length; i++) {
+            Assert.assertArrayEquals(topics[i], logResult.getTopics().get(i).getData());
+        }
+
+        // Assert log data
+        Assert.assertArrayEquals(event.encodeEventData(federatorPubKey.getPubKey()), logResult.getData());
     }
 }
