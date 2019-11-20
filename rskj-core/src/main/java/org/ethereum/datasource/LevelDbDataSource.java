@@ -53,6 +53,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private final String name;
     private DB db;
     private boolean alive;
+    private boolean useSnappy;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -65,6 +66,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public LevelDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;
         this.name = name;
+        this.useSnappy = false;
         logger.debug("New LevelDbDataSource: {}", name);
     }
 
@@ -261,7 +263,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
         if (ret != null) {
             try {
-                ret = uncompress(ret);
+                if (useSnappy){
+                    ret = uncompress(ret);
+                }
             } catch (IOException e) {
                 logger.error("Snappy problem. ", e);
                 panicProcessor.panic("leveldb", String.format("Exception. Snappy problem. Not retrying. %s", e.getMessage()));
@@ -273,7 +277,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     private void putValue(byte[] key, byte[] value) {
         try {
-            db.put(key, compress(value));
+            if (useSnappy) {
+                db.put(key, compress(value));
+            } else {
+                db.put(key, value);
+            }
         } catch (IOException e) {
             logger.error("Snappy problem. ", e);
             panicProcessor.panic("Snappy", String.format("Unexpected %s", e.getMessage()));
@@ -290,7 +298,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
         // Note that this is not atomic.
         try (WriteBatch batch = db.createWriteBatch()) {
             for (Map.Entry<ByteArrayWrapper, byte[]> entry : rows.entrySet()) {
-                batch.put(entry.getKey().getData(), compress(entry.getValue()));
+                if (useSnappy) {
+                    batch.put(entry.getKey().getData(), compress(entry.getValue()));
+                } else {
+                    batch.put(entry.getKey().getData(), entry.getValue());
+                }
             }
             for (ByteArrayWrapper deleteKey : deleteKeys) {
                 batch.delete(deleteKey.getData());

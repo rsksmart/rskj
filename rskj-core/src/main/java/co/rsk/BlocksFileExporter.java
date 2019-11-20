@@ -58,13 +58,13 @@ public class BlocksFileExporter {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length == 0) {
+       /* if (args.length == 0) {
             System.out.println("usage: FileBlockExporter [<node cli args>] <target file>");
             System.exit(0);
             return;
-        }
+        }*/
 
-        args = new String[]{"-base-path","/Users/julian/workspace/rskj-projects/dbs/database","/Users/julian/workspace/rskj-projects/dbs/fileExporter"}; // db src + fileExporter
+        args = new String[]{"-base-path", "/Users/julian/workspace/rskj-projects/dbs/database/testnet","/Users/julian/workspace/rskj-projects/dbs/fileExporter"}; // db src + fileExporter
         String[] nodeCliArgs = Arrays.copyOf(args, args.length - 1);
         RskContext objects = new RskContext(nodeCliArgs);
         BlocksFileExporter bplayer = new BlocksFileExporter(args[args.length - 1], objects);
