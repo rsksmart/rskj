@@ -1,10 +1,11 @@
 package co.rsk.core.bc;
 
+import co.rsk.core.TransactionsPartition;
+import co.rsk.core.TransactionsPartitioner;
 import co.rsk.db.ICacheTracking;
 import org.ethereum.db.ByteArrayWrapper;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This class tracks accesses in repository (read/write or delete keys), per threadGroup
@@ -13,12 +14,25 @@ import java.util.Map;
  */
 class TransactionConflictDetector implements ICacheTracking.Listener {
 
-    private static int instancesCounter = 0;
-    private int instanceId;
-    boolean hasConflict = false;
-    String conflict = "";
-    public TransactionConflictDetector( ) {
-        instanceId = instancesCounter++;
+    public Set<TransactionsPartition> getConflictingPartitions() {
+        return conflictsPerPartition.keySet();
+    }
+
+    public static class Conflict {
+        private ByteArrayWrapper key;
+        private eConflictType conflictType;
+        private TransactionsPartition conflictWith;
+        public Conflict(ByteArrayWrapper key, TransactionsPartition conflictWith) {
+            this.key = key;
+            this.conflictWith = conflictWith;
+        }
+    }
+
+    private Map<TransactionsPartition, List<Conflict>> conflictsPerPartition = new HashMap<>();
+    private TransactionsPartitioner partitioner;
+
+    public TransactionConflictDetector(TransactionsPartitioner partitioner) {
+        this.partitioner = partitioner;
     }
 
     Map<ByteArrayWrapper, String> lastThreadReadOrWrite = new HashMap<>();
@@ -44,18 +58,56 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         if (otherThreadGroup == null) {
             lastThreadReadOrWrite.put(key, threadGroupName);
         } else if (!otherThreadGroup.equals(threadGroupName)) {
-            conflict = "ThreadGroup " + threadGroupName + " attempts to access at key " +
-                    key.toString() + " but it has already been accessed by another ThreadGroup (" +
-                    otherThreadGroup + ")";
-            hasConflict = true;
+            TransactionsPartition conflictPartition = partitioner.fromThreadGroup(otherThreadGroup);
+            Conflict conflict = new Conflict(key, conflictPartition);
+            Collection<Conflict> conflicts = conflictsPerPartition.computeIfAbsent(conflictPartition, k -> new ArrayList<>());
+            conflicts.add(conflict);
         }
     }
 
     public synchronized boolean hasConflict() {
-        return hasConflict;
+        for(Collection<Conflict> conflicts: conflictsPerPartition.values()) {
+            if (!conflicts.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public synchronized String getConflictMessage() {
-        return conflict;
+    public enum eConflictType {
+        READ_READ,
+        READ_WRITE,
+        WRITE_READ,
+        WRITE_WRITE,
+        READ_DELETE,
+        WRITE_DELETE,
+        DELETE_READ,
+        DELETE_WRITE,
+        DELETE_DELETE
+    }
+    
+    public static class TransactionConflictException extends Exception {
+
+        Conflict conflict;
+
+        public TransactionConflictException(Conflict conflict) {
+            this.conflict = conflict;
+        }
+
+        public TransactionsPartition getConflictWithPartition() {
+            return conflict.conflictWith;
+        }
+
+        public eConflictType getConflictType() {
+            return conflict.conflictType;
+        }
+    }
+    
+    public synchronized void check() throws TransactionConflictException {
+        for(List<Conflict> conflicts: conflictsPerPartition.values()) {
+            if (!conflicts.isEmpty()) {
+                throw new TransactionConflictException(conflicts.get(0));
+            }
+        }
     }
 }

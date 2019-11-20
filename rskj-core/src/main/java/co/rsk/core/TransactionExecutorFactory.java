@@ -25,14 +25,35 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.VM;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 public class TransactionExecutorFactory {
+
+    private static class VMThreadFactory implements ThreadFactory {
+        private final RskSystemProperties config;
+
+        VMThreadFactory(RskSystemProperties config) {
+            this.config = config;
+        }
+
+        @Override
+        public Thread newThread(Runnable r) {
+            String threadGroupName = Thread.currentThread().getThreadGroup().getName();
+            return new Thread(
+                    Thread.currentThread().getThreadGroup(),
+                    r,
+                    "vmExecution",
+                    config.getVmExecutionStackSize()
+            );
+        }
+    }
 
     private final RskSystemProperties config;
     private final BlockStore blockStore;
@@ -55,12 +76,7 @@ public class TransactionExecutorFactory {
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.precompiledContracts = precompiledContracts;
-        this.vmExecutorService = Executors.newCachedThreadPool(threadFactory -> new Thread(
-            Thread.currentThread().getThreadGroup(),
-            threadFactory,
-            "vmExecution",
-            config.getVmExecutionStackSize()
-        ));
+        this.vmExecutorService = Executors.newCachedThreadPool(new VMThreadFactory(config));
     }
 
     public TransactionExecutor newInstance(
@@ -155,7 +171,9 @@ public class TransactionExecutorFactory {
                 config.isRemascEnabled(),
                 precompiledContracts,
                 deletedAccounts,
-                vmExecutorService
+                // RSKIP144 : Create a new ExecutorService for VMExecution otherwise some thread could be reused across
+                // different transactions from different partitions
+                Executors.newCachedThreadPool(new VMThreadFactory(config))
         );
     }
 }

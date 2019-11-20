@@ -1,5 +1,7 @@
 package co.rsk.core.bc;
 
+import co.rsk.core.TransactionsPartition;
+import co.rsk.core.TransactionsPartitioner;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
@@ -56,7 +58,8 @@ public class TransactionConflictDetectorTest {
 
     @Test
     public void test_1_no_conflict() {
-        TransactionConflictDetector conflictDetector = new TransactionConflictDetector();
+        TransactionsPartitioner partitioner = new TransactionsPartitioner();
+        TransactionConflictDetector conflictDetector = new TransactionConflictDetector(partitioner);
         MutableTrieCache mtCache = prepareCache();
         mtCache.subscribe(conflictDetector);
 
@@ -91,12 +94,13 @@ public class TransactionConflictDetectorTest {
             Assert.assertTrue(false);
         }
 
-        Assert.assertFalse(conflictDetector.hasConflict);
+        Assert.assertFalse(conflictDetector.hasConflict());
     }
 
     @Test
     public void test_2_read_conflict() {
-        TransactionConflictDetector conflictDetector = new TransactionConflictDetector();
+        TransactionsPartitioner partitioner = new TransactionsPartitioner();
+        TransactionConflictDetector conflictDetector = new TransactionConflictDetector(partitioner);
         MutableTrieCache mtCache = prepareCache();
         mtCache.subscribe(conflictDetector);
 
@@ -132,12 +136,13 @@ public class TransactionConflictDetectorTest {
         }
 
         // TODO - it shall not be a conflict if concurrent tasks only read the same key
-        Assert.assertTrue(conflictDetector.hasConflict);
+        Assert.assertTrue(conflictDetector.hasConflict());
     }
 
     @Test
     public void test_3_write_conflict() {
-        TransactionConflictDetector conflictDetector = new TransactionConflictDetector();
+        TransactionsPartitioner partitioner = new TransactionsPartitioner();
+        TransactionConflictDetector conflictDetector = new TransactionConflictDetector(partitioner);
         MutableTrieCache mtCache = prepareCache();
         mtCache.subscribe(conflictDetector);
 
@@ -173,12 +178,13 @@ public class TransactionConflictDetectorTest {
             Assert.assertTrue(false);
         }
 
-        Assert.assertTrue(conflictDetector.hasConflict);
+        Assert.assertTrue(conflictDetector.hasConflict());
     }
 
     @Test
     public void test_4_read_write_conflict() {
-        TransactionConflictDetector conflictDetector = new TransactionConflictDetector();
+        TransactionsPartitioner partitioner = new TransactionsPartitioner();
+        TransactionConflictDetector conflictDetector = new TransactionConflictDetector(partitioner);
         MutableTrieCache mtCache = prepareCache();
         mtCache.subscribe(conflictDetector);
 
@@ -213,12 +219,13 @@ public class TransactionConflictDetectorTest {
             Assert.assertTrue(false);
         }
 
-        Assert.assertTrue(conflictDetector.hasConflict);
+        Assert.assertTrue(conflictDetector.hasConflict());
     }
 
     @Test
     public void test_5_read_delete_conflict() {
-        TransactionConflictDetector conflictDetector = new TransactionConflictDetector();
+        TransactionsPartitioner partitioner = new TransactionsPartitioner();
+        TransactionConflictDetector conflictDetector = new TransactionConflictDetector(partitioner);
         MutableTrieCache mtCache = prepareCache();
         mtCache.subscribe(conflictDetector);
 
@@ -253,7 +260,7 @@ public class TransactionConflictDetectorTest {
             Assert.assertTrue(false);
         }
 
-        Assert.assertTrue(conflictDetector.hasConflict);
+        Assert.assertTrue(conflictDetector.hasConflict());
     }
 
 }

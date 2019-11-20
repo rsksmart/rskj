@@ -100,8 +100,9 @@ public class TransactionExecutorTask implements Callable<Optional<TransactionRec
 
         TransactionReceipt receipt = new TransactionReceipt();
         receipt.setGasUsed(gasUsed);
-        receipt.setCumulativeGas(blockSharedData.getTotalGasUsed());
-
+        // RSKIP144:  We don't set cumulativeGas here because it cannot be deterministic when transaction are
+        // concurrently executed
+        // receipt.setCumulativeGas(blockSharedData.getTotalGasUsed());
         receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
         receipt.setTransaction(tx);
         receipt.setLogInfoList(txExecutor.getVMLogs());

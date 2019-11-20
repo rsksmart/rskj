@@ -293,6 +293,8 @@ public class BlockExecutorTest {
         Block parent = blockchain.getBestBlock();
         // split the 2 transactions is 2 different partitions (ie 2 concurrent threads)
         block.setPartitionEnds(new int[]{0});
+        // seal the block otherwise the prerun will detect conflict and serialize the transactions
+        block.seal();
 
         Transaction tx1 = block.getTransactionsList().get(0);
         Transaction tx2 = block.getTransactionsList().get(1);
