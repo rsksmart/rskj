@@ -331,7 +331,7 @@ public class BridgeSupportTestPowerMock {
         tx.sign(key.getPrivKeyBytes());
 
         bridgeSupport.updateCollections(tx);
-        verify(eventLogger).logUpdateCollections(tx);
+        verify(eventLogger, times(1)).logUpdateCollections(tx);
     }
 
     @Test
@@ -919,7 +919,7 @@ public class BridgeSupportTestPowerMock {
         bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash.getBytes());
 
         // Assert
-        verify(eventLogger).logAddSignature(federatorPubKey, btcTx, rskTxHash.getBytes());
+        verify(eventLogger, times(1)).logAddSignature(federatorPubKey, btcTx, rskTxHash.getBytes());
     }
 
     @Test
@@ -947,7 +947,7 @@ public class BridgeSupportTestPowerMock {
         Federation federation = bridgeConstants.getGenesisFederation();
         Repository repository = createRepository();
 
-        final Keccak256 keccak256 = PegTestUtils.createHash3();
+        final Keccak256 keccak256 = PegTestUtils.createHash3(1);
 
         Repository track = repository.startTracking();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);

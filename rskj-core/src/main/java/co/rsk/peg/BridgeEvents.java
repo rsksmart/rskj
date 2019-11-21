@@ -23,6 +23,21 @@ public enum BridgeEvents {
                     new CallTransaction.Param(true, "federatorRskAddress", SolidityType.getType("address")),
                     new CallTransaction.Param(false, "federatorBtcPublicKey", SolidityType.getType("bytes"))
             }
+    ),
+    RELEASE_BTC("release_btc",
+            new CallTransaction.Param[]{
+                    new CallTransaction.Param(true, "releaseRskTxHash", SolidityType.getType("bytes32")),
+                    new CallTransaction.Param(false, "btcRawTransaction", SolidityType.getType("bytes"))
+            }
+    ),
+    COMMIT_FEDERATION("commit_federation",
+            new CallTransaction.Param[]{
+                    new CallTransaction.Param(false, "oldFederationBtcPublicKeys", SolidityType.getType("bytes")),
+                    new CallTransaction.Param(false, "oldFederationBtcAddress", SolidityType.getType("string")),
+                    new CallTransaction.Param(false, "newFederationBtcPublicKeys", SolidityType.getType("bytes")),
+                    new CallTransaction.Param(false, "newFederationBtcAddress", SolidityType.getType("string")),
+                    new CallTransaction.Param(false, "activationHeight", SolidityType.getType("int256"))
+            }
     );
 
     private String eventName;

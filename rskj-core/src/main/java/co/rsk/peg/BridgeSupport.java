@@ -882,7 +882,7 @@ public class BridgeSupport {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
             provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
 
-            eventLogger.logReleaseBtc(btcTx);
+            eventLogger.logReleaseBtc(btcTx, rskTxHash);
         } else {
             logger.debug("Tx not yet fully signed {}.", new Keccak256(rskTxHash));
         }

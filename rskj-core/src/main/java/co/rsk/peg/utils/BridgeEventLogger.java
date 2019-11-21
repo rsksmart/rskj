@@ -38,7 +38,7 @@ public interface BridgeEventLogger {
 
     void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash);
 
-    void logReleaseBtc(BtcTransaction btcTx);
+    void logReleaseBtc(BtcTransaction btcTx, byte[] rskTxHash);
 
     void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation);
 

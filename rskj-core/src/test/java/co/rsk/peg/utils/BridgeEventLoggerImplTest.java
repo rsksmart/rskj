@@ -198,15 +198,16 @@ public class BridgeEventLoggerImplTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
-        //Setup Rsk transaction
+        // Setup Rsk transaction
         Transaction tx = mock(Transaction.class);
         RskAddress sender = mock(RskAddress.class);
         when(sender.toString()).thenReturn("0x0000000000000000000000000000000000000001");
         when(tx.getSender()).thenReturn(sender);
 
+        // Act
         eventLogger.logUpdateCollections(tx);
 
-        //Assert log size
+        // Assert log size
         Assert.assertEquals(1, eventLogs.size());
 
         // Assert log topics
@@ -332,5 +333,70 @@ public class BridgeEventLoggerImplTest {
 
         // Assert log data
         Assert.assertArrayEquals(event.encodeEventData(federatorPubKey.getPubKey()), logResult.getData());
+    }
+
+    @Test
+    public void logReleaseBtcBeforeRskip146() {
+        // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> eventLogs = new LinkedList<>();
+
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        // Setup Btc transaction
+        BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
+        Keccak256 rskTxHash = PegTestUtils.createHash3(1);
+
+        // Act
+        eventLogger.logReleaseBtc(btcTx, rskTxHash.getBytes());
+
+        //Assert log size
+        Assert.assertEquals(1, eventLogs.size());
+
+        // Assert log topics
+        LogInfo logResult = eventLogs.get(0);
+        Assert.assertEquals(1, logResult.getTopics().size());
+
+        List<DataWord> topics = Collections.singletonList(Bridge.RELEASE_BTC_TOPIC);
+        for (int i=0; i<topics.size(); i++) {
+            Assert.assertEquals(topics.get(i), logResult.getTopics().get(i));
+        }
+
+        // Assert log data
+        Assert.assertArrayEquals(RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()), RLP.encodeElement(btcTx.bitcoinSerialize())), logResult.getData());
+    }
+
+    @Test
+    public void logReleaseBtcAfterRskip146() {
+        // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> eventLogs = new LinkedList<>();
+
+        when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        // Setup Btc transaction
+        BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
+        Keccak256 rskTxHash = PegTestUtils.createHash3(1);
+
+        // Act
+        eventLogger.logReleaseBtc(btcTx, rskTxHash.getBytes());
+
+        // Assert log size
+        Assert.assertEquals(1, eventLogs.size());
+
+        // Assert log topics
+        LogInfo logResult = eventLogs.get(0);
+        CallTransaction.Function event = BridgeEvents.RELEASE_BTC.getEvent();
+        Assert.assertEquals(2, logResult.getTopics().size());
+
+        byte[][] topics = event.encodeEventTopics(rskTxHash.getBytes());
+        for (int i=0; i<topics.length; i++) {
+            Assert.assertArrayEquals(topics[i], logResult.getTopics().get(i).getData());
+        }
+
+        // Assert log data
+        Assert.assertArrayEquals(event.encodeEventData(btcTx.bitcoinSerialize()), logResult.getData());
     }
 }
