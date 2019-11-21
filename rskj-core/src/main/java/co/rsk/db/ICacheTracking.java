@@ -11,10 +11,12 @@ import java.util.Collection;
 public interface ICacheTracking {
 
     public interface Listener {
-        void onReadKey(ByteArrayWrapper key, String threadGroupName);
-        void onWriteKey(ByteArrayWrapper key, String threadGroupName);
-        void onDeleteKey(ByteArrayWrapper key, String threadGroupName);
+        void onReadKey(ICacheTracking cacheTracking, ByteArrayWrapper key, String threadGroupName);
+        void onWriteKey(ICacheTracking cacheTracking, ByteArrayWrapper key, String threadGroupName);
+        void onDeleteAccount(ICacheTracking cacheTracking, ByteArrayWrapper account, String threadGroupName);
     }
+
+    ByteArrayWrapper getAccountFromKey(ByteArrayWrapper key);
 
     void subscribe(ICacheTracking.Listener listener);
 

@@ -172,7 +172,7 @@ public class MutableTrieCache implements MutableTrie, ICacheTracking {
         // See TransactionExecutor.finalization(), when it iterates the list with getDeleteAccounts().forEach()
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
         deleteRecursiveLog.add(wrap);
-        trackOnDeleteKey(wrap);
+        trackOnDeleteAccount(wrap);
         cache.remove(wrap);
     }
 
@@ -245,6 +245,11 @@ public class MutableTrieCache implements MutableTrie, ICacheTracking {
     private List<ICacheTracking.Listener> cacheTrackingListeners = new ArrayList<>();
 
     @Override
+    public ByteArrayWrapper getAccountFromKey(ByteArrayWrapper key) {
+        return getAccountWrapper(key);
+    }
+
+    @Override
     public void subscribe(ICacheTracking.Listener listener) {
         cacheTrackingListeners.add(listener);
     }
@@ -262,20 +267,20 @@ public class MutableTrieCache implements MutableTrie, ICacheTracking {
         notifyCacheTrackingListeners(false, true, false, key);
     }
 
-    private void trackOnDeleteKey(ByteArrayWrapper key) {
-        notifyCacheTrackingListeners(false, false, true, key);
+    private void trackOnDeleteAccount(ByteArrayWrapper account) {
+        notifyCacheTrackingListeners(false, false, true, account);
     }
 
     protected void notifyCacheTrackingListeners(boolean read, boolean write, boolean delete, ByteArrayWrapper key) {
         ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
         if (read) {
-            cacheTrackingListeners.forEach(listener -> listener.onReadKey(key, threadGroup.getName()));
+            cacheTrackingListeners.forEach(listener -> listener.onReadKey(this, key, threadGroup.getName()));
         }
         if (write) {
-            cacheTrackingListeners.forEach(listener -> listener.onWriteKey(key, threadGroup.getName()));
+            cacheTrackingListeners.forEach(listener -> listener.onWriteKey(this, key, threadGroup.getName()));
         }
         if (delete) {
-            cacheTrackingListeners.forEach(listener -> listener.onDeleteKey(key, threadGroup.getName()));
+            cacheTrackingListeners.forEach(listener -> listener.onDeleteAccount(this, key, threadGroup.getName()));
         }
     }
 
