@@ -390,7 +390,7 @@ public class BlockExecutor {
                     profiler.stop(metric);
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 } catch (TransactionsPartitionExecutor.PeriodicCheckException e) {
-                    // This case can not happen in realuty because we did not set any periodicCheck
+                    // This case can not happen in reality because we did not set any periodicCheck
                     profiler.stop(metric);
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
@@ -398,23 +398,30 @@ public class BlockExecutor {
                 if (!dummySharedData.getExecutedTransactions().contains(tx)) {
                     logger.warn("block: [{}] pre-run : tx [{}] has been discarded",
                             block.getNumber(), tx.getHash());
+                    // we need to remove access tracked by the conflictDetector for this transaction because it
+                    // has been discarded, so no conflict with it will be relevant
+                    transactionConflictDetector.discardPartition(partition);
                     continue;
                 }
 
+                TransactionsPartition resultingPartition;
                 if (transactionConflictDetector.hasConflict()) {
                     Set<TransactionsPartition> conflictingPartitions = transactionConflictDetector.getConflictingPartitions();
                     if (conflictingPartitions.size() == 1) {
                         // assign the transaction to that partition
-                        partition = conflictingPartitions.iterator().next();
+                        resultingPartition = conflictingPartitions.iterator().next();
                     } else {
                         // first, merge the conflicting partition all together, then add the tx on the resulting partition
-                        partition = partitioner.mergePartitions(conflictingPartitions);
+                        resultingPartition = partitioner.mergePartitions(conflictingPartitions);
                     }
-                    partition.addTransaction(tx);
+                    // update the conflictDetector to assign tracked key accesses to the conflictingPartition
+                    conflictingPartitions.remove(resultingPartition);
+                    transactionConflictDetector.resolveConflicts(conflictingPartitions, resultingPartition);
                 } else {
                     // In case there is no conflict, assign the transaction with a new partition
-                    partition.addTransaction(tx);
+                    resultingPartition = partition;
                 }
+                resultingPartition.addTransaction(tx);
 
             }
 

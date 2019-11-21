@@ -7,6 +7,7 @@ import java.util.*;
 public class TransactionsPartition {
     private static int instanceCounter = 0;
     private ThreadGroup threadGroup;
+
     private int id;
     private List<Transaction> transactions;
     private TransactionsPartitioner partitioner;
@@ -16,6 +17,10 @@ public class TransactionsPartition {
         this.partitioner = partitioner;
         this.threadGroup = new ThreadGroup("Tx-part-grp-" + id);
         this.transactions = new ArrayList<>();
+    }
+
+    public int getId() {
+        return id;
     }
 
     @Override

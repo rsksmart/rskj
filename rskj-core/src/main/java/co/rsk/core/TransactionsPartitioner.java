@@ -105,6 +105,21 @@ public class TransactionsPartitioner {
 
     public TransactionsPartition mergePartitions(Set<TransactionsPartition> conflictingPartitions) {
         List<TransactionsPartition> listPartitions = new ArrayList<>(conflictingPartitions);
+        Collections.sort(listPartitions, new Comparator<TransactionsPartition>() {
+            @Override
+            public int compare(TransactionsPartition p1, TransactionsPartition p2) {
+                if (p1 == p2) {
+                    return 0;
+                }
+                if (p1 == null) {
+                    return -1;
+                }
+                if (p2 == null) {
+                    return 1;
+                }
+                return p1.getId() - p2.getId();
+            }
+        });
         // Collections.sort(listPartitions, new ByIdSorter());
         TransactionsPartition resultingPartition = listPartitions.remove(0);
         for(TransactionsPartition toMerge: listPartitions) {

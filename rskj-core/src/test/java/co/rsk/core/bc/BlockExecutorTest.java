@@ -894,6 +894,131 @@ public class BlockExecutorTest {
         Assert.assertArrayEquals(expectedReceipts, lstReceipts.toArray());
     }
 
+    @Test
+    public void moreThan16TransationsInParallel() {
+        // first we modify the best block to have two accounts with balance
+        Repository track = repository.startTracking();
+
+        // We define 20 transactions, all independent from each other
+        // We expect the partitioning results in 4 partitions of 2 Txs each + 12 partitions of 1 Txs each
+        // Hence expected partitionEnds = [1,3,5,7,8,9,10,11,12,13,14,15,16,17,18,19]
+        List<Transaction> txs = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            Account sender = createAccount(UUID.randomUUID().toString(), track, Coin.valueOf(60000 + i*20L));
+            Account receiver = createAccount(UUID.randomUUID().toString(), track, Coin.valueOf(0L));
+            Transaction tx = createTransaction(sender, receiver, BigInteger.TEN, repository.getNonce(sender.getAddress()));
+            txs.add(tx);
+        }
+
+        track.commit();
+
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        genesis.setStateRoot(repository.getRoot());
+
+        List<BlockHeader> uncles = new ArrayList<>();
+        Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
+
+        executor.executeAndFill(block, genesis.getHeader());
+
+        int[] partitionEnds = block.getPartitionEnds();
+        Assert.assertEquals(16, partitionEnds.length);
+        Assert.assertArrayEquals(
+                new int[] {1,3,5,7,8,9,10,11,12,13,14,15,16,17,18,19},
+                partitionEnds
+        );
+
+    }
+
+    @Test
+    public void conflictingTransactions() {
+        // first we modify the best block to have two accounts with balance
+        Repository track = repository.startTracking();
+
+        // We define 16 transactions, all inter-dependent (same keys)
+        // We expect the partitioning results in only 1 partition containing the 16 txs
+        // Hence expected partitionEnds = [15]
+        List<Transaction> txs_block1 = new ArrayList<>();
+        List<Transaction> txs_block2 = new ArrayList<>();
+
+        // First we create 2 groups of interdependent transactions but keeping the groups independent to each other
+        // We expect the partitioning results in 2 partition, one with 8 txs, the other with 7 txs
+        Account tx0sender = createAccount(UUID.randomUUID().toString(), track, Coin.valueOf(600000));
+        Account tx1receiver = createAccount(UUID.randomUUID().toString(), track, Coin.valueOf(0L));
+        Account tx13sender = null;
+        Account tx14receiver = null;
+        for (int i = 0; i < 15; i++) {
+            Account sender, receiver;
+            BigInteger nonce_block1 = BigInteger.valueOf(0);
+            BigInteger nonce_block2 = BigInteger.valueOf(1);
+            if ( i % 2 == 0 ) {
+                // tx0, tx2, tx4 ..., until tx14 have the same sender
+                sender = tx0sender;
+                // increment nonce
+                nonce_block1 = BigInteger.valueOf(i/2);
+                nonce_block2 = BigInteger.valueOf(8 + i/2);
+                receiver = createAccount(UUID.randomUUID().toString(), track, Coin.valueOf(0L));
+                if (i == 14) {
+                    tx14receiver = receiver;
+                }
+            } else {
+                // tx1, tx3, tx5 ..., until tx13 have the same receiver
+                sender = createAccount(UUID.randomUUID().toString(), track, Coin.valueOf(120000 + i*20L));
+                receiver = tx1receiver;
+                if (i == 13) {
+                    tx13sender = sender;
+                }
+            }
+            Transaction tx_block1 = createTransaction(sender, receiver, BigInteger.TEN, nonce_block1);
+            txs_block1.add(tx_block1);
+            Transaction tx_block2 = createTransaction(sender, receiver, BigInteger.TEN, nonce_block2);
+            txs_block2.add(tx_block2);
+        }
+
+        track.commit();
+
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        genesis.setStateRoot(repository.getRoot());
+
+        List<BlockHeader> uncles = new ArrayList<>();
+        Block firstBlock = blockGenerator.createChildBlock(genesis, txs_block1, uncles, 1, null);
+
+        BlockResult result = executor.executeAndFill(firstBlock, genesis.getHeader());
+
+        List<Transaction> executedTxs = result.getExecutedTransactions();
+        // Check that all transactions execution have succeed
+        Assert.assertEquals(txs_block1.size(), executedTxs.size());
+
+        int[] partitionEnds = firstBlock.getPartitionEnds();
+        Assert.assertEquals(2, partitionEnds.length);
+        Assert.assertArrayEquals(
+                new int[] {7,14},
+                partitionEnds
+        );
+
+        // Now, we add tx15 that create conflict with both tx13 (same sender) and tx14 (same receiver)
+        // Hence, all transactions become inter-dependent
+        txs_block2.add(createTransaction(tx13sender, tx14receiver, BigInteger.TEN, BigInteger.valueOf(2)));
+
+        Block secondBlock = blockGenerator.createChildBlock(firstBlock, txs_block2, uncles, 1, null);
+
+        result = executor.executeAndFill(secondBlock, firstBlock.getHeader());
+
+        executedTxs = result.getExecutedTransactions();
+        // Check that all transactions executions have succeed
+        Assert.assertEquals(txs_block2.size(), executedTxs.size());
+
+        partitionEnds = secondBlock.getPartitionEnds();
+        Assert.assertEquals(1, partitionEnds.length);
+        Assert.assertArrayEquals(
+                new int[] {15},
+                partitionEnds
+        );
+
+    }
+
+
     private static TransactionReceipt createReceipt(Transaction tx) {
         TransactionReceipt receipt = new TransactionReceipt();
         receipt.setTransaction(tx);

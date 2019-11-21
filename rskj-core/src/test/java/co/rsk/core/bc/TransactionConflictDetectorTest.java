@@ -5,6 +5,7 @@ import co.rsk.core.TransactionsPartitioner;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
+import org.ethereum.core.Transaction;
 import org.ethereum.db.TrieKeyMapper;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,7 +29,7 @@ public class TransactionConflictDetectorTest {
         return new String(data, StandardCharsets.UTF_8);
     }
 
-    private static Callable<Boolean> createTask(MutableTrieCache mtCache, String[] readKeys, Map<String, String> writtenKeys, String[] deletedKeys) {
+    private static Callable<Boolean> createTask(MutableTrieCache mtCache, String[] readKeys, String[] writtenKeys, String[] writtenValues, String[] deletedKeys) {
         return new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
@@ -36,8 +37,11 @@ public class TransactionConflictDetectorTest {
                     byte[] value = mtCache.get(toBytes(key));
                     String valStr = bytesToString(value);
                 }
-                for(String key: writtenKeys.keySet()) {
-                    mtCache.put(toBytes(key), toBytes(writtenKeys.get(key)));
+                if (writtenKeys.length != writtenKeys.length) {
+                    throw new Exception("writtenKeys and writtenValues must have the same number of elements");
+                }
+                for(int i = 0; i < writtenKeys.length; i++) {
+                    mtCache.put(writtenKeys[i], toBytes(writtenValues[i]));
                 }
                 for(String key: deletedKeys) {
                     mtCache.deleteRecursive(toBytes(key));
@@ -67,17 +71,12 @@ public class TransactionConflictDetectorTest {
         MutableTrieCache mtCache = prepareCache();
         mtCache.subscribe(conflictDetector);
 
-        Map<String, String> writtenKeysTask3 = new HashMap<>();
-        writtenKeysTask3.put("CAROL", "lorac");
-        Map<String, String> writtenKeysTask4 = new HashMap<>();
-        writtenKeysTask4.put("ROBERT", "trebor");
-
         Callable[] tasks = {
-                createTask(mtCache, new String[] {"ALICE"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {"BOB"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask3, new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask4, new String[] {}),
-                createTask(mtCache, new String[] {}, new HashMap<>(), new String[] {"DENISE"})
+                createTask(mtCache, new String[] {"ALICE"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {"BOB"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"CAROL"}, new String[] {"lorac"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"ROBERT"}, new String[] {"trebor"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {}, new String[] {}, new String[] {"DENISE"})
         };
 
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
@@ -111,17 +110,13 @@ public class TransactionConflictDetectorTest {
         MutableTrieCache mtCache = prepareCache();
         mtCache.subscribe(conflictDetector);
 
-        Map<String, String> writtenKeysTask3 = new HashMap<>();
-        writtenKeysTask3.put("CAROL", "lorac");
-        Map<String, String> writtenKeysTask4 = new HashMap<>();
-        writtenKeysTask4.put("ROBERT", "trebor");
-
         Callable[] tasks = {
-                createTask(mtCache, new String[] {"ALICE", "BOB"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {"BOB"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask3, new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask4, new String[] {}),
-                createTask(mtCache, new String[] {}, new HashMap<>(), new String[] {"DENISE"})
+                // task1 and task2 both read key "BOB"
+                createTask(mtCache, new String[] {"ALICE", "BOB"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {"BOB"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"CAROL"}, new String[] {"lorac"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"ROBERT"}, new String[] {"trebor"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {}, new String[] {}, new String[] {"DENISE"})
         };
 
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
@@ -155,18 +150,13 @@ public class TransactionConflictDetectorTest {
         MutableTrieCache mtCache = prepareCache();
         mtCache.subscribe(conflictDetector);
 
-        Map<String, String> writtenKeysTask3 = new HashMap<>();
-        writtenKeysTask3.put("CAROL", "lorac");
-        writtenKeysTask3.put("ROBERT", "trebor2");
-        Map<String, String> writtenKeysTask4 = new HashMap<>();
-        writtenKeysTask4.put("ROBERT", "trebor");
-
         Callable[] tasks = {
-                createTask(mtCache, new String[] {"ALICE"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {"BOB"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask3, new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask4, new String[] {}),
-                createTask(mtCache, new String[] {}, new HashMap<>(), new String[] {"DENISE"})
+                createTask(mtCache, new String[] {"ALICE"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {"BOB"}, new String[] {}, new String[] {}, new String[] {}),
+                // task3 and task4 both write key "ROBERT"
+                createTask(mtCache, new String[] {}, new String[] {"CAROL", "ROBERT"}, new String[] {"lorac", "trebor2"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"ROBERT"}, new String[] {"trebor"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {}, new String[] {}, new String[] {"DENISE"})
         };
 
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
@@ -200,17 +190,13 @@ public class TransactionConflictDetectorTest {
         MutableTrieCache mtCache = prepareCache();
         mtCache.subscribe(conflictDetector);
 
-        Map<String, String> writtenKeysTask3 = new HashMap<>();
-        writtenKeysTask3.put("CAROL", "lorac");
-        Map<String, String> writtenKeysTask4 = new HashMap<>();
-        writtenKeysTask4.put("ROBERT", "trebor");
-
         Callable[] tasks = {
-                createTask(mtCache, new String[] {"ALICE", "ROBERT"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {"BOB"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask3, new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask4, new String[] {}),
-                createTask(mtCache, new String[] {}, new HashMap<>(), new String[] {"DENISE"})
+                // task1 read key "ROBERT" and task4 write key "ROBERT"
+                createTask(mtCache, new String[] {"ALICE", "ROBERT"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {"BOB"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"CAROL"}, new String[] {"lorac"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"ROBERT"}, new String[] {"trebor"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {}, new String[] {}, new String[] {"DENISE"})
         };
 
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
@@ -244,19 +230,13 @@ public class TransactionConflictDetectorTest {
         MutableTrieCache mtCache = prepareCache();
         mtCache.subscribe(conflictDetector);
 
-        Map<String, String> writtenKeysTask1 = new HashMap<>();
-        writtenKeysTask1.put("DENISE", "esined");
-        Map<String, String> writtenKeysTask3 = new HashMap<>();
-        writtenKeysTask3.put("CAROL", "lorac");
-        Map<String, String> writtenKeysTask4 = new HashMap<>();
-        writtenKeysTask4.put("ROBERT", "trebor");
-
         Callable[] tasks = {
-                createTask(mtCache, new String[] {"ALICE"}, writtenKeysTask1, new String[] {}),
-                createTask(mtCache, new String[] {"BOB"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask3, new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask4, new String[] {}),
-                createTask(mtCache, new String[] {"DENISE"}, new HashMap<>(), new String[] {})
+                // task1 write key "DENISE" and task5 read key "DENISE"
+                createTask(mtCache, new String[] {"ALICE"}, new String[] {"DENISE"}, new String[] {"esined"}, new String[] {}),
+                createTask(mtCache, new String[] {"BOB"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"CAROL"}, new String[] {"lorac"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"ROBERT"}, new String[] {"trebor"}, new String[] {}),
+                createTask(mtCache, new String[] {"DENISE"}, new String[] {}, new String[] {}, new String[] {})
         };
 
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
@@ -294,17 +274,13 @@ public class TransactionConflictDetectorTest {
         int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.domainPrefix().length + TrieKeyMapper.SECURE_KEY_SIZE;
         for (; accountLikeKeyDenise.length() < keySize;) accountLikeKeyDenise.append("0");
 
-        Map<String, String> writtenKeysTask3 = new HashMap<>();
-        writtenKeysTask3.put("CAROL", "lorac");
-        Map<String, String> writtenKeysTask4 = new HashMap<>();
-        writtenKeysTask4.put("ROBERT", "trebor");
-
         Callable[] tasks = {
-                createTask(mtCache, new String[] {"ALICE"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {"BOB", accountLikeKeyDenise.toString()}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask3, new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask4, new String[] {}),
-                createTask(mtCache, new String[] {}, new HashMap<>(), new String[] {accountLikeKeyDenise.toString()})
+                // task2 read key "DENISE" and task5 delete account "DENISE"
+                createTask(mtCache, new String[] {"ALICE"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {"BOB", accountLikeKeyDenise.toString()}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"CAROL"}, new String[] {"lorac"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"ROBERT"}, new String[] {"trebor"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {}, new String[] {}, new String[] {accountLikeKeyDenise.toString()})
         };
 
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
@@ -332,7 +308,7 @@ public class TransactionConflictDetectorTest {
     }
 
     @Test
-    public void test_7_multiple_conflict() {
+    public void test_7_multiple_conflics() {
         TransactionsPartitioner partitioner = new TransactionsPartitioner();
         TransactionConflictDetector conflictDetector = new TransactionConflictDetector(partitioner);
         MutableTrieCache mtCache = prepareCache();
@@ -342,36 +318,27 @@ public class TransactionConflictDetectorTest {
         int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.domainPrefix().length + TrieKeyMapper.SECURE_KEY_SIZE;
         for (; accountLikeKeyDenise.length() < keySize;) accountLikeKeyDenise.append("0");
 
-        Map<String, String> writtenKeysTask3 = new HashMap<>();
-        writtenKeysTask3.put("CAROL", "lorac");
-        // task3 and task4 both are written ROBERT
-        writtenKeysTask3.put("ROBERT", "trebor2");
-        writtenKeysTask3.put("DENISE", "esined");
-        Map<String, String> writtenKeysTask4 = new HashMap<>();
-        writtenKeysTask4.put("ROBERT", "trebor");
-        Map<String, String> writtenKeysTask5 = new HashMap<>();
-        // task5 is written ALICE, while the 4 other tasks are reading it
-        // --> resulting in 4 conflicts assuming that task5 is run after the others
-        // task5 is also deleting DENISE, read by task2 and written by task3
-        // --> resulting in 2 conflicts assuming that task5 is run after the others
-        writtenKeysTask5.put("ALICE", "ecila");
-
         Callable[] tasks1 = {
-                createTask(mtCache, new String[] {"ALICE"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {"ALICE", "BOB", accountLikeKeyDenise.toString()}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {"ALICE"}, writtenKeysTask3, new String[] {}),
-                createTask(mtCache, new String[] {"ALICE"}, writtenKeysTask4, new String[] {}),
+                createTask(mtCache, new String[] {"ALICE"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {"ALICE", "BOB", accountLikeKeyDenise.toString()}, new String[] {}, new String[] {}, new String[] {}),
+                // task3 and task4 both are written ROBERT
+                createTask(mtCache, new String[] {"ALICE"}, new String[] {"CAROL", "ROBERT", accountLikeKeyDenise.toString() + "123"}, new String[] {"lorac", "trebor2", "esined123"}, new String[] {}),
+                createTask(mtCache, new String[] {"ALICE"}, new String[] {"ROBERT"}, new String[] {"trebor"}, new String[] {}),
         };
 
         Callable[] tasks2 = {
-                createTask(mtCache, new String[] {}, writtenKeysTask5, new String[] {accountLikeKeyDenise.toString()})
+                // task5 is written ALICE, while the 4 other tasks are reading it
+                // --> resulting in 4 conflicts assuming that task5 is run after the others
+                // task5 is also deleting DENISE, read by task2 and written by task3
+                // --> resulting in 2 conflicts assuming that task5 is run after the others
+                createTask(mtCache, new String[] {}, new String[] {"ALICE"}, new String[] {"ecila"}, new String[] {accountLikeKeyDenise.toString()})
         };
 
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
                 tasks1.length,
                 threadFactory -> new Thread(
-                        new ThreadGroup("grp-" + UUID.randomUUID()),
+                        partitioner.newPartition().getThreadGroup(),
                         threadFactory)
         );
 
@@ -386,11 +353,16 @@ public class TransactionConflictDetectorTest {
             Assert.assertTrue(false);
         }
 
+        Assert.assertTrue(conflictDetector.hasConflict());
+
+        Collection<TransactionConflictDetector.Conflict> conflicts = conflictDetector.getConflicts();
+        Assert.assertEquals(1, conflicts.size());
+
         // Now run task5 alone
         executor = Executors.newFixedThreadPool(
                 tasks2.length,
                 threadFactory -> new Thread(
-                        new ThreadGroup("grp-" + UUID.randomUUID()),
+                        partitioner.newPartition().getThreadGroup(),
                         threadFactory)
         );
         try {
@@ -405,8 +377,95 @@ public class TransactionConflictDetectorTest {
 
         Assert.assertTrue(conflictDetector.hasConflict());
 
+        conflicts = conflictDetector.getConflicts();
+        Assert.assertEquals(7, conflicts.size());
+    }
+
+
+    @Test
+    public void test_9_resolve_conflicts() {
+        TransactionsPartitioner partitioner = new TransactionsPartitioner();
+        TransactionConflictDetector conflictDetector = new TransactionConflictDetector(partitioner);
+        MutableTrieCache mtCache = prepareCache();
+        mtCache.subscribe(conflictDetector);
+
+        StringBuilder accountLikeKeyDenise = new StringBuilder("DENISE");
+        int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.domainPrefix().length + TrieKeyMapper.SECURE_KEY_SIZE;
+        for (; accountLikeKeyDenise.length() < keySize;) accountLikeKeyDenise.append("0");
+
+        Callable[] tasks1 = {
+                // task1 write key "BOB" and task2 read key "BOB"
+                createTask(mtCache, new String[] {"ALICE"}, new String[] {"BOB"}, new String[] {"bob"}, new String[] {}),
+                // task2 read key "CAROL" and task3 write key "CAROL"
+                createTask(mtCache, new String[] {"ALICE", "BOB", "CAROL", accountLikeKeyDenise.toString()}, new String[] {}, new String[] {}, new String[] {}),
+                // task3 and task4 both are writing ROBERT
+                createTask(mtCache, new String[] {"ALICE"}, new String[] {"CAROL", "ROBERT", accountLikeKeyDenise.toString() + "123"}, new String[] {"lorac", "trebor2", "esined123"}, new String[] {}),
+                createTask(mtCache, new String[] {"ALICE"}, new String[] {"ROBERT"}, new String[] {"trebor"}, new String[] {}),
+        };
+
+        Callable[] tasks2 = {
+                // task5 is written ALICE, while the 4 other tasks are reading it
+                // task5 is also deleting DENISE, read by task2 and written by task3
+                createTask(mtCache, new String[] {}, new String[] {"ALICE"}, new String[] {"ecila"}, new String[] {accountLikeKeyDenise.toString()})
+        };
+
+
+        // Use an executor service, assuming that each thread will run in a different ThreadGroup
+        ExecutorService executor = Executors.newFixedThreadPool(
+                tasks1.length,
+                threadFactory -> new Thread(
+                        partitioner.newPartition().getThreadGroup(),
+                        threadFactory)
+        );
+
+        // Run task1 to task4 in parallel
+        try {
+            executor.invokeAll(new ArrayList(Arrays.asList(tasks1)));
+            executor.shutdown();
+            boolean timeoutExpired = !executor.awaitTermination(10, TimeUnit.SECONDS);
+            Assert.assertFalse(timeoutExpired);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Assert.assertTrue(false);
+        }
+
+        Assert.assertTrue(conflictDetector.hasConflict());
+
         Collection<TransactionConflictDetector.Conflict> conflicts = conflictDetector.getConflicts();
-        Assert.assertEquals(6, conflicts.size());
+        Assert.assertEquals(3, conflicts.size());
+
+        Set<TransactionsPartition> conflictingPartitions = conflictDetector.getConflictingPartitions();
+        TransactionsPartition mergedPartition = partitioner.mergePartitions(conflictingPartitions);
+        conflictingPartitions.remove(mergedPartition);
+
+        conflictDetector.resolveConflicts(conflictingPartitions, mergedPartition);
+
+        Assert.assertFalse(conflictDetector.hasConflict());
+
+        conflicts = conflictDetector.getConflicts();
+        Assert.assertEquals(0, conflicts.size());
+
+        // Now run task5 alone
+        executor = Executors.newFixedThreadPool(
+                tasks2.length,
+                threadFactory -> new Thread(
+                        partitioner.newPartition().getThreadGroup(),
+                        threadFactory)
+        );
+        try {
+            executor.invokeAll(new ArrayList(Arrays.asList(tasks2)));
+            executor.shutdown();
+            boolean timeoutExpired = !executor.awaitTermination(10, TimeUnit.SECONDS);
+            Assert.assertFalse(timeoutExpired);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Assert.assertTrue(false);
+        }
+
+        Assert.assertTrue(conflictDetector.hasConflict());
+
+        conflicts = conflictDetector.getConflicts();
+        Assert.assertEquals(2, conflicts.size());
     }
 
 
@@ -432,27 +491,19 @@ public class TransactionConflictDetectorTest {
 
         mtCache.subscribe(conflictDetector);
 
-        Map<String, String> writtenKeysTask3 = new HashMap<>();
-        writtenKeysTask3.put("CAROL", "lorac");
-        Map<String, String> writtenKeysTask4 = new HashMap<>();
-        writtenKeysTask4.put("ROBERT", "trebor");
-        Map<String, String> writtenKeysTask5 = new HashMap<>();
-        writtenKeysTask5.put(accountLikeKeyBob.toString() + "456", "654bob");
-
         Callable[] tasks1 = {
-                createTask(mtCache, new String[] {accountLikeKeyAlice.toString() + "123"}, new HashMap<>(), new String[] {accountLikeKeyBob.toString()}),
-                createTask(mtCache, new String[] {accountLikeKeyAlice.toString() + "456"}, new HashMap<>(), new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask3, new String[] {}),
-                createTask(mtCache, new String[] {}, writtenKeysTask4, new String[] {}),
+                // task1 is reading key "ALICE123" and is deleting "BOB" account
+                createTask(mtCache, new String[] {accountLikeKeyAlice.toString() + "123"}, new String[] {}, new String[] {}, new String[] {accountLikeKeyBob.toString()}),
+                // task2 is reading key "ALICE456"
+                createTask(mtCache, new String[] {accountLikeKeyAlice.toString() + "456"}, new String[] {}, new String[] {}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"CAROL"}, new String[] {"lorac"}, new String[] {}),
+                createTask(mtCache, new String[] {}, new String[] {"ROBERT"}, new String[] {"trebor"}, new String[] {}),
         };
 
         Callable[] tasks2 = {
-                createTask(mtCache, new String[] {accountLikeKeyBob.toString() + "123"}, writtenKeysTask5, new String[] {accountLikeKeyAlice.toString()})
+                // task5 reads key "BOB123", writes key "BOB456" and deletes account "ALICE"
+                createTask(mtCache, new String[] {accountLikeKeyBob.toString() + "123"}, new String[] {accountLikeKeyBob.toString() + "456"}, new String[] {"654bob"}, new String[] {accountLikeKeyAlice.toString()})
         };
-
-        // Expected conflicts :
-        // - BOB account is deleted by task1 before task5 reads BOB123 and write BOB456 --> +2 conflicts
-        // - ALICE account is deleted by task5 after task1 reads ALICE123 and task2 reads ALICE456 --> +2 conflicts
 
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
