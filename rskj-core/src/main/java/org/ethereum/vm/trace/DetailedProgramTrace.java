@@ -250,7 +250,7 @@ public class DetailedProgramTrace implements ProgramTrace {
 
     @Override
     public List<ProgramSubtrace> getSubtraces() {
-        return this.subtraces == null ? null : Collections.unmodifiableList(this.subtraces);
+        return Collections.unmodifiableList(this.subtraces);
     }
 
     /**
