@@ -29,8 +29,8 @@ public class RskContextTest {
 
     @Test
     public void getCliArgsSmokeTest() {
-        RskTestContext rskContext = new RskTestContext(new String[] { "--devnet" });
-        assertThat(rskContext.getCliArgs(), notNullValue());
-        assertThat(rskContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
+        RskTestContext devnetContext = new RskTestContext(new String[] { "--devnet" });
+        assertThat(devnetContext.getCliArgs(), notNullValue());
+        assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
     }
 }
