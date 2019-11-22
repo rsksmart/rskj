@@ -57,7 +57,7 @@ public class ProgramSubtrace {
         this.creationData = null;
         this.invokeData = invokeData;
         this.programResult = programResult;
-        this.subtraces = subtraces;
+        this.subtraces = subtraces == null ? null : Collections.unmodifiableList(subtraces);
     }
 
     public TraceType getTraceType() { return this.traceType; }

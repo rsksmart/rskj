@@ -86,7 +86,7 @@ public class SummarizedProgramTrace implements ProgramTrace {
 
     @Override
     public List<ProgramSubtrace> getSubtraces() {
-        return subtraces == null ? null : Collections.unmodifiableList(this.subtraces);
+        return Collections.unmodifiableList(this.subtraces);
     }
 
     @Override
