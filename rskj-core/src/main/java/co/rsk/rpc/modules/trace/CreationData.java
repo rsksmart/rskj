@@ -21,20 +21,22 @@ package co.rsk.rpc.modules.trace;
 
 import co.rsk.core.RskAddress;
 
+import java.util.Arrays;
+
 public class CreationData {
     private final byte[] creationInput;
     private final byte[] createdCode;
     private final RskAddress createdAddress;
 
     public CreationData(byte[] creationInput, byte[] createdCode, RskAddress createdAddress) {
-        this.creationInput = creationInput;
-        this.createdCode = createdCode;
+        this.creationInput = creationInput == null ? null : Arrays.copyOf(creationInput, creationInput.length);
+        this.createdCode = createdCode == null ? null : Arrays.copyOf(createdCode, createdCode.length);
         this.createdAddress = createdAddress;
     }
 
-    public byte[] getCreationInput() { return this.creationInput; }
+    public byte[] getCreationInput() { return this.creationInput == null ? null : Arrays.copyOf(this.creationInput, this.creationInput.length); }
 
-    public byte[] getCreatedCode() { return this.createdCode; }
+    public byte[] getCreatedCode() { return this.createdCode == null ? null : Arrays.copyOf(this.createdCode, this.createdCode.length); }
 
     public RskAddress getCreatedAddress() { return this.createdAddress; }
 }

@@ -48,7 +48,7 @@ public class ProgramSubtrace {
         this.creationData = creationData;
         this.invokeData = invokeData;
         this.programResult = programResult;
-        this.subtraces = subtraces;
+        this.subtraces = subtraces == null ? null : Collections.unmodifiableList(subtraces);
     }
 
     public ProgramSubtrace(CallType callType, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
@@ -74,5 +74,5 @@ public class ProgramSubtrace {
         return this.programResult;
     }
 
-    public List<ProgramSubtrace> getSubtraces() { return this.subtraces; }
+    public List<ProgramSubtrace> getSubtraces() { return this.subtraces == null ? null : Collections.unmodifiableList(this.subtraces); }
 }
