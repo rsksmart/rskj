@@ -74,6 +74,12 @@ public class Wallet {
         return addresses;
     }
 
+    public boolean handles(RskAddress address) {
+        return initialAccounts.contains(address)
+                || accounts.containsKey(address)
+                || keyDS.keys().stream().anyMatch(key -> Arrays.equals(key, address.getBytes()));
+    }
+
     public String[] getAccountAddressesAsHex() {
         return getAccountAddresses().stream()
                 .map(TypeConverter::toJsonHex)

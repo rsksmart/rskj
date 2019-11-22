@@ -1,5 +1,6 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.core.Wallet;
 import co.rsk.crypto.Keccak256;
 import co.rsk.rpc.JsonRpcSerializer;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -12,6 +13,7 @@ import org.ethereum.listener.EthereumListener;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +35,7 @@ public class PendingTransactionNotificationEmitterTest {
     public void setUp() {
         Ethereum ethereum = mock(Ethereum.class);
         serializer = mock(JsonRpcSerializer.class);
-        emitter = new PendingTransactionNotificationEmitter(ethereum, serializer);
+        emitter = new PendingTransactionNotificationEmitter(ethereum, serializer, Mockito.mock(Wallet.class));
 
         ArgumentCaptor<EthereumListener> listenerCaptor = ArgumentCaptor.forClass(EthereumListener.class);
         verify(ethereum).addListener(listenerCaptor.capture());

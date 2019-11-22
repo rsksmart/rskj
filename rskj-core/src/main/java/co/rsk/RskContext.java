@@ -1463,7 +1463,7 @@ public class RskContext implements NodeBootstrapper {
                             getReceiptStore(),
                             new BlockchainBranchComparator(getBlockStore())
                     ),
-                    new PendingTransactionNotificationEmitter(rsk, jsonRpcSerializer)
+                    new PendingTransactionNotificationEmitter(rsk, jsonRpcSerializer, getWallet())
             );
             RskJsonRpcHandler jsonRpcHandler = new RskJsonRpcHandler(emitter, jsonRpcSerializer);
             web3WebSocketServer = new Web3WebSocketServer(

@@ -1,5 +1,6 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.core.Wallet;
 import co.rsk.rpc.JsonRpcSerializer;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
@@ -20,9 +21,11 @@ public class PendingTransactionNotificationEmitter {
 
     private final Map<SubscriptionId, Channel> subscriptions = new ConcurrentHashMap<>();
     private final JsonRpcSerializer jsonRpcSerializer;
+    private final Wallet wallet;
 
-    public PendingTransactionNotificationEmitter(Ethereum ethereum, JsonRpcSerializer jsonRpcSerializer) {
+    public PendingTransactionNotificationEmitter(Ethereum ethereum, JsonRpcSerializer jsonRpcSerializer, Wallet wallet) {
         this.jsonRpcSerializer = jsonRpcSerializer;
+        this.wallet = wallet;
         ethereum.addListener(new EthereumListenerAdapter() {
             @Override
             public void onPendingTransactionsReceived(List<Transaction> transactions) {
@@ -49,17 +52,19 @@ public class PendingTransactionNotificationEmitter {
         }
 
         subscriptions.forEach(((id, channel) -> {
-            transactions.forEach(transaction -> {
-                EthSubscriptionNotification request = new EthSubscriptionNotification(
-                        new EthSubscriptionParams(id, new PendingTransactionNotification(transaction.getHash()))
-                );
-                try {
-                    String msg = jsonRpcSerializer.serializeMessage(request);
-                    channel.write(new TextWebSocketFrame(msg));
-                } catch (IOException e) {
-                    logger.error("Couldn't serialize block header result for notification", e);
-                }
-            });
+            transactions.stream()
+                .filter(transaction -> wallet.handles(transaction.getSender()))
+                .forEach(transaction -> {
+                    EthSubscriptionNotification request = new EthSubscriptionNotification(
+                            new EthSubscriptionParams(id, new PendingTransactionNotification(transaction.getHash()))
+                    );
+                    try {
+                        String msg = jsonRpcSerializer.serializeMessage(request);
+                        channel.write(new TextWebSocketFrame(msg));
+                    } catch (IOException e) {
+                        logger.error("Couldn't serialize block header result for notification", e);
+                    }
+                });
             channel.flush();
         }));
     }
