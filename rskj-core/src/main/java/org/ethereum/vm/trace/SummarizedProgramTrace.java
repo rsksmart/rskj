@@ -36,8 +36,6 @@ import static java.lang.String.format;
 import static org.ethereum.util.ByteUtil.toHexString;
 
 public class SummarizedProgramTrace implements ProgramTrace {
-    private static final Logger LOGGER = LoggerFactory.getLogger("vm");
-
     private final ProgramInvoke programInvoke;
     private final TransferInvoke transferInvoke;
     private final List<ProgramSubtrace> subtraces = new ArrayList<>();

@@ -806,7 +806,7 @@ public class Program {
             TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), transferValue);
             ProgramResult result     = new ProgramResult();
 
-            ProgramSubtrace subtrace = new ProgramSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, Collections.EMPTY_LIST);
+            ProgramSubtrace subtrace = new ProgramSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, Collections.emptyList());
 
             getTrace().addSubTrace(subtrace);
         }

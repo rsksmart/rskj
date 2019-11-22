@@ -26,7 +26,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 
@@ -68,7 +67,7 @@ class RemascFeesPayer {
 
             TransferInvoke invoke = new TransferInvoke(from, to, gas, amount);
             ProgramResult result     = new ProgramResult();
-            ProgramSubtrace subtrace = new ProgramSubtrace(CallType.CALL, invoke, result, Collections.EMPTY_LIST);
+            ProgramSubtrace subtrace = new ProgramSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
 
             this.subtraces.add(subtrace);
         }

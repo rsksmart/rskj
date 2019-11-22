@@ -39,7 +39,7 @@ public class ProgramSubtrace {
         this.creationData = null;
         this.invokeData = invokeData;
         this.programResult = null;
-        this.subtraces = Collections.EMPTY_LIST;
+        this.subtraces = Collections.emptyList();
     }
 
     public ProgramSubtrace(CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {

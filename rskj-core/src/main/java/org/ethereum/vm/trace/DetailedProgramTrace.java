@@ -42,7 +42,7 @@ import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
 
 public class DetailedProgramTrace implements ProgramTrace {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("vm");
+    private static final Logger logger = LoggerFactory.getLogger("vm");
 
     private String contractAddress;
     private Map<String, String> initStorage = new HashMap<>();
@@ -91,7 +91,7 @@ public class DetailedProgramTrace implements ProgramTrace {
                         DataWord key = keysIterator.next();
                         byte[] value = informationProvider.getStorageBytes(ownerAddress, key);
                         if (key == null || value == null) {
-                            LOGGER.info("Null storage key/value: address[{}]", address);
+                            logger.info("Null storage key/value: address[{}]", address);
                             continue;
                         }
 
@@ -99,7 +99,7 @@ public class DetailedProgramTrace implements ProgramTrace {
                     }
 
                     if (!initStorage.isEmpty()) {
-                        LOGGER.info("{} entries loaded to transaction's initStorage", initStorage.size());
+                        logger.info("{} entries loaded to transaction's initStorage", initStorage.size());
                     }
                 }
             }

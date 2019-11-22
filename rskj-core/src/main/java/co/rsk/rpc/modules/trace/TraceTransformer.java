@@ -72,8 +72,9 @@ public class TraceTransformer {
 
         traces.add(toTrace(traceType, trace.getInvokeData(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, trace.getError(), nsubtraces));
 
-        for (int k = 0; k < nsubtraces; k++)
+        for (int k = 0; k < nsubtraces; k++) {
             addTrace(traces, trace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
+        }
     }
 
     private static void addTrace(List<TransactionTrace> traces, ProgramSubtrace subtrace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
@@ -81,8 +82,9 @@ public class TraceTransformer {
 
         int nsubtraces = subtrace.getSubtraces().size();
 
-        for (int k = 0; k < nsubtraces; k++)
+        for (int k = 0; k < nsubtraces; k++) {
             addTrace(traces, subtrace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
+        }
     }
 
     public static TransactionTrace toTrace(TraceType traceType, InvokeData invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String err, int nsubtraces) {
