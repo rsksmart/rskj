@@ -358,7 +358,7 @@ public class BlockExecutor {
             TransactionsPartitioner partitioner = new TransactionsPartitioner();
             Repository dummyRepo = track.startTracking();
             BlockSharedData dummySharedData = new BlockSharedData(dummyRepo, programTraceProcessor);
-            TransactionConflictDetector transactionConflictDetector = new TransactionConflictDetector(partitioner);
+            TransactionConflictDetectorWithCache transactionConflictDetector = new TransactionConflictDetectorWithCache(partitioner);
             if (dummyRepo.isCached()) {
                 dummyRepo.getCacheTracking().subscribe(transactionConflictDetector);
             }
@@ -398,11 +398,11 @@ public class BlockExecutor {
                 if (!dummySharedData.getExecutedTransactions().contains(tx)) {
                     logger.warn("block: [{}] pre-run : tx [{}] has been discarded",
                             block.getNumber(), tx.getHash());
-                    // we need to remove access tracked by the conflictDetector for this transaction because it
-                    // has been discarded, so no conflict with it will be relevant
-                    transactionConflictDetector.discardPartition(partition);
                     continue;
                 }
+
+                // The transaction has been successfully executed, then commit the accesses tracked during its execution
+                transactionConflictDetector.commitPartition(partition);
 
                 TransactionsPartition resultingPartition;
                 if (transactionConflictDetector.hasConflict()) {

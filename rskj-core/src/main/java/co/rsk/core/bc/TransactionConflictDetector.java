@@ -22,12 +22,18 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     public static class Conflict {
         private ByteArrayWrapper key;
         private eConflictType conflictType;
-        private Set<TransactionsPartition> conflictingPartitions = new HashSet<>();
+        private TransactionsPartition [] conflictingPartitions = new TransactionsPartition [2];
         public Conflict(ByteArrayWrapper key, TransactionsPartition conflictFrom, TransactionsPartition conflictWith, eConflictType conflictType) {
             this.key = key;
             this.conflictType = conflictType;
-            this.conflictingPartitions.add(conflictFrom);
-            this.conflictingPartitions.add(conflictWith);
+            this.conflictingPartitions[0]  = conflictFrom;
+            this.conflictingPartitions[1] = conflictWith;
+        }
+        protected TransactionsPartition getConflictFrom() {
+            return conflictingPartitions[0];
+        }
+        protected TransactionsPartition getConflictWith() {
+            return conflictingPartitions[1];
         }
     }
 
@@ -109,7 +115,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         }
     }
 
-    private void recordConflict(ByteArrayWrapper key, String conflictThreadGroup, String originThreadGroup, eConflictType conflictType) {
+    private Conflict createConflict(ByteArrayWrapper key, String conflictThreadGroup, String originThreadGroup, eConflictType conflictType) {
         logger.info("Record conflict between groups '[{}]' and '[{}}]'", conflictThreadGroup, originThreadGroup);
         TransactionsPartition conflictPartition = partitioner.fromThreadGroup(conflictThreadGroup);
         TransactionsPartition originPartition = partitioner.fromThreadGroup(originThreadGroup);
@@ -119,10 +125,14 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         if (originPartition == null) {
             logger.error("Unable to get the partition for threadGroup " + conflictThreadGroup);
         }
-        Conflict conflict = new Conflict(key, conflictPartition, originPartition, conflictType);
-        Collection<Conflict> conflicts = conflictsPerPartition.computeIfAbsent(conflictPartition, k -> new HashSet<>());
+        return new Conflict(key, conflictPartition, originPartition, conflictType);
+    }
+
+    protected void recordConflict(Conflict conflict) {
+        Collection<Conflict> conflicts;
+        conflicts = conflictsPerPartition.computeIfAbsent(conflict.getConflictFrom(), k -> new HashSet<>());
         conflicts.add(conflict);
-        conflicts = conflictsPerPartition.computeIfAbsent(originPartition, k -> new HashSet<>());
+        conflicts = conflictsPerPartition.computeIfAbsent(conflict.getConflictWith(), k -> new HashSet<>());
         conflicts.add(conflict);
     }
 
@@ -133,7 +143,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         } else {
             logger.info("key [{}] has already been written by group [{}] --> conflict from group [{}]",
                     key.toString(), otherThreadGroup, threadGroupName);
-            recordConflict(key, otherThreadGroup, threadGroupName, eConflictType.WRITTEN_BEFORE_ACCESSED);
+            recordConflict(createConflict(key, otherThreadGroup, threadGroupName, eConflictType.WRITTEN_BEFORE_ACCESSED));
         }
         return true;
     }
@@ -150,7 +160,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         }
         // Record a conflict for each reading group
         otherThreadGroups.forEach(conflictThreadGroup -> {
-            recordConflict(key, conflictThreadGroup, threadGroupName, eConflictType.ACCESSED_BEFORE_WRITTEN);
+            recordConflict(createConflict(key, conflictThreadGroup, threadGroupName, eConflictType.ACCESSED_BEFORE_WRITTEN));
             logger.info("key [{}] has already been read by group [{}] --> conflict from group [{}]",
                     key.toString(), conflictThreadGroup, threadGroupName);
         });
@@ -168,7 +178,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
             return false;
         }
         // Record a conflict for each reading group
-        otherThreadGroups.forEach(conflictThreadGroup -> recordConflict(account, conflictThreadGroup, threadGroupName, eConflictType.ACCESSED_BEFORE_DELETE));
+        otherThreadGroups.forEach(conflictThreadGroup -> recordConflict(createConflict(account, conflictThreadGroup, threadGroupName, eConflictType.ACCESSED_BEFORE_DELETE)));
         return true;
     }
 
@@ -177,30 +187,30 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         if ((otherThreadGroup == null) || otherThreadGroup.equals(threadGroupName)) {
             return false;
         } else {
-            recordConflict(account, otherThreadGroup, threadGroupName, eConflictType.DELETED_BEFORE_ACCESSED);
+            recordConflict(createConflict(account, otherThreadGroup, threadGroupName, eConflictType.DELETED_BEFORE_ACCESSED));
         }
         return true;
     }
 
-    private void trackReadAccess(ByteArrayWrapper key, String threadGroupName) {
+    protected void trackReadAccess(ByteArrayWrapper key, String threadGroupName) {
         // Imprtant ! use a HashSet and not an ArrayList because we don't want to add several times the same reader
         Collection<String> readers = threadGroupReadersPerKey.computeIfAbsent(key, k -> new HashSet<>());
         // Add the reader if not already in the collection
         readers.add(threadGroupName);
     }
 
-    private void trackWriteAccess(ByteArrayWrapper key, String threadGroupName) {
+    protected void trackWriteAccess(ByteArrayWrapper key, String threadGroupName) {
         threadGroupWriterPerKey.put(key, threadGroupName);
     }
 
-    private void trackAccessToAccount(ByteArrayWrapper account, String threadGroupName) {
+    protected void trackAccessToAccount(ByteArrayWrapper account, String threadGroupName) {
         // Important ! use a HashSet and not an ArrayList because we don't want to add several times the same accessor
         Collection<String> accessors = accessedAccounts.computeIfAbsent(account, k -> new HashSet<>());
         // Add the accessor if not already in the collection
         accessors.add(threadGroupName);
     }
 
-    private void trackAccountDeleted(ByteArrayWrapper account, String threadGroupName) {
+    protected void trackAccountDeleted(ByteArrayWrapper account, String threadGroupName) {
         deletedAccounts.put(account, threadGroupName);
     }
 
@@ -217,69 +227,40 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         return new HashSet<>(conflictsPerPartition.keySet());
     }
 
-    public synchronized void discardPartition(TransactionsPartition partition) {
-        discardPartition(partition, null);
-    }
-
     private void discardPartition(TransactionsPartition partitionToDiscard, TransactionsPartition replacingPartition) {
         String oldThreadGroupName = partitionToDiscard.getThreadGroup().getName();
-        String newThreadGroupName = null;
-        if (replacingPartition != null) {
-            newThreadGroupName = replacingPartition.getThreadGroup().getName();
-            logger.info("Discard partition [{}] into group [{}]", oldThreadGroupName, newThreadGroupName);
-        } else {
-            logger.info("Discard partition [{}] ", oldThreadGroupName);
-        }
+        String newThreadGroupName = replacingPartition.getThreadGroup().getName();
+        logger.info("Discard partition [{}] into group [{}]", oldThreadGroupName, newThreadGroupName);
 
         for (Collection<String> readers: threadGroupReadersPerKey.values()) {
             if (readers.remove(oldThreadGroupName)) {
                 // remove() returns true if the element was present and has been removed
-                if (replacingPartition != null) {
-                    readers.add(newThreadGroupName);
-                }
+                readers.add(newThreadGroupName);
             }
         }
-        if (replacingPartition != null) {
-            String finalNewThreadGroupName = newThreadGroupName;
-            threadGroupWriterPerKey.replaceAll((k, v) -> (oldThreadGroupName.equals(v)) ? finalNewThreadGroupName : v);
-        } else {
-            Set<Map.Entry<ByteArrayWrapper, String>> entries = new HashSet<>(threadGroupWriterPerKey.entrySet());
-            entries.forEach(entry -> {
-                if (oldThreadGroupName.equals(entry.getValue())) {
-                    threadGroupWriterPerKey.remove(entry.getKey());
-                }
-            });
-        }
+        String finalNewThreadGroupName = newThreadGroupName;
+        threadGroupWriterPerKey.replaceAll((k, v) -> (oldThreadGroupName.equals(v)) ? finalNewThreadGroupName : v);
         for (Collection<String> accessors: accessedAccounts.values()) {
             if (accessors.remove(oldThreadGroupName)) {
                 // remove() returns true if the element was present and has been removed
-                if (replacingPartition != null) {
-                    accessors.add(newThreadGroupName);
-                }
+                accessors.add(newThreadGroupName);
             }
         }
-        if (replacingPartition != null) {
-            String finalNewThreadGroupName1 = newThreadGroupName;
-            deletedAccounts.replaceAll((k, v) -> (oldThreadGroupName.equals(v)) ? finalNewThreadGroupName1 : v);
-        } else {
-            Set<Map.Entry<ByteArrayWrapper, String>> entries = new HashSet<>(deletedAccounts.entrySet());
-            entries.forEach(entry -> {
-                if (oldThreadGroupName.equals(entry.getValue())) {
-                    deletedAccounts.remove(entry.getKey());
-                }
-            });
-        }
+        String finalNewThreadGroupName1 = newThreadGroupName;
+        deletedAccounts.replaceAll((k, v) -> (oldThreadGroupName.equals(v)) ? finalNewThreadGroupName1 : v);
+
         Set<Conflict> conflicts = conflictsPerPartition.remove(partitionToDiscard);
         if (conflicts != null) {
             Set<Conflict> conflictsToAdd = new HashSet<>();
             Set<TransactionsPartition> entriesToRemove = new HashSet<>();
             for (Conflict conflict : conflicts) {
-                Iterator<TransactionsPartition> it = conflict.conflictingPartitions.iterator();
-                TransactionsPartition conflictingPartition = it.next();
+                int conflictingPartitionIndex = 0;
+                TransactionsPartition conflictingPartition = conflict.conflictingPartitions[conflictingPartitionIndex];
                 if (conflictingPartition == partitionToDiscard) {
-                    conflictingPartition = it.next();
+                    conflictingPartitionIndex = 1;
+                    conflictingPartition = conflict.conflictingPartitions[conflictingPartitionIndex];
                 }
-                if ((replacingPartition == null) || (replacingPartition == conflictingPartition)) {
+                if (replacingPartition == conflictingPartition) {
                     // remove the conflict from the list
                     Set<Conflict> otherConflicts = conflictsPerPartition.get(conflictingPartition);
                     otherConflicts.remove(conflict);
@@ -288,15 +269,14 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
                     }
                 } else {
                     // replace conflicting partition in Conflict object
-                    conflict.conflictingPartitions.remove(partitionToDiscard);
-                    conflict.conflictingPartitions.add(replacingPartition);
+                    conflict.conflictingPartitions[(conflictingPartitionIndex + 1) % 2] = replacingPartition;
                     conflictsToAdd.add(conflict);
                 }
             }
             for (TransactionsPartition partition : entriesToRemove) {
                 conflictsPerPartition.remove(partition);
             }
-            if ((replacingPartition != null) && !conflictsToAdd.isEmpty()) {
+            if (!conflictsToAdd.isEmpty()) {
                 // remap the conflicts onto the replacingPartition
                 Collection<Conflict> otherConflicts = conflictsPerPartition.computeIfAbsent(replacingPartition, k -> new HashSet<>());
                 otherConflicts.addAll(conflictsToAdd);

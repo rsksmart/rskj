@@ -287,6 +287,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(BigInteger.valueOf(20L), account4State.getBalance().asBigInteger());
     }
 
+
     @Test
     public void executeBlockWithTwoConflictingTransactionsInParallel() {
         Block block = getBlockWithTwoTransactions(); // this changes the best block
@@ -315,7 +316,6 @@ public class BlockExecutorTest {
         Assert.assertEquals(BigInteger.valueOf(10L), account2State.getBalance().asBigInteger());
 
     }
-
 
     @Test
     public void executeAndFillBlockWithOneTransaction() {
@@ -925,6 +925,92 @@ public class BlockExecutorTest {
         Assert.assertEquals(16, partitionEnds.length);
         Assert.assertArrayEquals(
                 new int[] {1,3,5,7,8,9,10,11,12,13,14,15,16,17,18,19},
+                partitionEnds
+        );
+
+    }
+
+    @Test
+    public void partitioningWithInvalidTransaction() {
+        /**
+         * Block 1 : we have 3 Txs :
+         * - tx1 transfers from key ALICE to key BOB
+         * - tx2 transfers from key CAROL to key DENISE
+         * - tx3 transfers from key DENISE to key ALICE (creating a conflict with tx1 and tx2)
+         * We expect the block to define only one partition with the 3 txs
+         *
+         * Block 2 : we have the same 3 Txs, but tx3 is going to fail because sender is OOG
+         * Hence, we expect the conflict does not happen this time,
+         * then the block to define 2 separate partitions for tx1 and tx2.
+         */
+        // first we modify the best block to have two accounts with balance
+        Repository track = repository.startTracking();
+
+        // We define 16 transactions, all inter-dependent (same keys)
+        // We expect the partitioning results in only 1 partition containing the 16 txs
+        // Hence expected partitionEnds = [15]
+        List<Transaction> txs_block1 = new ArrayList<>();
+        List<Transaction> txs_block2 = new ArrayList<>();
+
+        Account accountAlice = createAccount("ALICE", track, Coin.valueOf(2*GAS_PER_TRANSACTION + 10L));
+        Account accountBob = createAccount("BOB", track, Coin.valueOf(0L));
+        Account accountCarol = createAccount("CAROL", track, Coin.valueOf(2*GAS_PER_TRANSACTION + 20L));
+        Account accountDenise = createAccount("DENISE", track, Coin.valueOf(GAS_PER_TRANSACTION));
+
+        track.commit();
+
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block bestBlock = blockchain.getBestBlock();
+        bestBlock.setStateRoot(repository.getRoot());
+        List<BlockHeader> uncles = new ArrayList<>();
+
+        txs_block1.add(createTransaction(accountAlice, accountBob, BigInteger.TEN, BigInteger.valueOf(0)));
+        txs_block1.add(createTransaction(accountCarol, accountDenise, BigInteger.TEN, BigInteger.valueOf(0)));
+        txs_block1.add(createTransaction(accountDenise, accountAlice, BigInteger.TEN, BigInteger.valueOf(0)));
+
+        Block firstBlock = blockGenerator.createChildBlock(bestBlock, txs_block1, uncles, 1, null);
+
+        BlockResult result = executor.executeAndFill(firstBlock, bestBlock.getHeader());
+
+        List<Transaction> executedTxs = result.getExecutedTransactions();
+        // Check that all transactions execution have succeed
+        Assert.assertEquals(txs_block1.size(), executedTxs.size());
+
+        int[] partitionEnds = firstBlock.getPartitionEnds();
+        Assert.assertEquals(1, partitionEnds.length);
+        Assert.assertArrayEquals(
+                new int[] {2},
+                partitionEnds
+        );
+
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
+        int balanceAlice = finalRepository.getBalance(accountAlice.getAddress()).asBigInteger().intValue();
+        int balanceBob = finalRepository.getBalance(accountBob.getAddress()).asBigInteger().intValue();
+        int balanceCarol  =finalRepository.getBalance(accountCarol.getAddress()).asBigInteger().intValue();
+        int balanceDenise = finalRepository.getBalance(accountDenise.getAddress()).asBigInteger().intValue();
+
+        Assert.assertEquals(Coin.valueOf(GAS_PER_TRANSACTION + 10L), finalRepository.getBalance(accountAlice.getAddress()));
+        Assert.assertEquals(Coin.valueOf(10L), finalRepository.getBalance(accountBob.getAddress()));
+        Assert.assertEquals(Coin.valueOf(GAS_PER_TRANSACTION + 10L), finalRepository.getBalance(accountCarol.getAddress()));
+        Assert.assertEquals(Coin.valueOf(0L), finalRepository.getBalance(accountDenise.getAddress()));
+
+        txs_block2.add(createTransaction(accountAlice, accountBob, BigInteger.TEN, BigInteger.valueOf(1)));
+        txs_block2.add(createTransaction(accountCarol, accountDenise, BigInteger.TEN, BigInteger.valueOf(1)));
+        txs_block2.add(createTransaction(accountDenise, accountAlice, BigInteger.TEN, BigInteger.valueOf(1)));
+
+        Block secondBlock = blockGenerator.createChildBlock(firstBlock, txs_block2, uncles, 1, null);
+
+        result = executor.executeAndFill(secondBlock, firstBlock.getHeader());
+
+        executedTxs = result.getExecutedTransactions();
+        // Check that one transaction has been discraded
+        Assert.assertEquals(txs_block2.size() - 1, executedTxs.size());
+
+        partitionEnds = secondBlock.getPartitionEnds();
+        Assert.assertEquals(2, partitionEnds.length);
+        Assert.assertArrayEquals(
+                new int[] {0,1},
                 partitionEnds
         );
 
