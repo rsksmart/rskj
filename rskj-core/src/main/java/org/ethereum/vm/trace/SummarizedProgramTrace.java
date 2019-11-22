@@ -26,10 +26,9 @@ import org.ethereum.vm.program.Storage;
 import org.ethereum.vm.program.invoke.InvokeData;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.TransferInvoke;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -87,7 +86,7 @@ public class SummarizedProgramTrace implements ProgramTrace {
 
     @Override
     public List<ProgramSubtrace> getSubtraces() {
-        return this.subtraces;
+        return Collections.unmodifiableList(this.subtraces);
     }
 
     @Override

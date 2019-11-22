@@ -126,11 +126,11 @@ public class DetailedProgramTrace implements ProgramTrace {
     }
 
     public List<Op> getStructLogs() {
-        return structLogs;
+        return Collections.unmodifiableList(structLogs);
     }
 
     public void setStructLogs(List<Op> structLogs) {
-        this.structLogs = structLogs;
+        this.structLogs = Collections.unmodifiableList(structLogs);
     }
 
     public String getResult() {
