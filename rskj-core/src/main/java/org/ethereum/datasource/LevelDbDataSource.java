@@ -68,6 +68,12 @@ public class LevelDbDataSource implements KeyValueDataSource {
         logger.debug("New LevelDbDataSource: {}", name);
     }
 
+    public static KeyValueDataSource makeDataSource(String name, String databaseDir) {
+        KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir);
+        ds.init();
+        return ds;
+    }
+
     @Override
     public void init() {
         resetDbLock.writeLock().lock();

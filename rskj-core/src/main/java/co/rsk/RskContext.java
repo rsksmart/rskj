@@ -859,7 +859,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected ReceiptStore buildReceiptStore() {
-        KeyValueDataSource ds = makeDataSource("receipts", getRskSystemProperties().databaseDir());
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource("receipts", getRskSystemProperties().databaseDir());
         return new ReceiptStoreImpl(ds);
     }
 
@@ -890,7 +890,7 @@ public class RskContext implements NodeBootstrapper {
         RskSystemProperties rskSystemProperties = getRskSystemProperties();
         String databaseDir = rskSystemProperties.databaseDir();
         int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = makeDataSource(name, databaseDir);
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(name, databaseDir);
 
         if (statesCacheSize != 0) {
             ds = new DataSourceWithCache(ds, statesCacheSize);
@@ -960,7 +960,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected StateRootHandler buildStateRootHandler() {
-        KeyValueDataSource stateRootsDB = makeDataSource("stateRoots", getRskSystemProperties().databaseDir());
+        KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource("stateRoots", getRskSystemProperties().databaseDir());
         return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB, new HashMap<>());
     }
 
@@ -1006,7 +1006,7 @@ public class RskContext implements NodeBootstrapper {
             return null;
         }
 
-        KeyValueDataSource ds = makeDataSource("wallet", rskSystemProperties.databaseDir());
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource("wallet", rskSystemProperties.databaseDir());
         return new Wallet(ds);
     }
 
@@ -1621,14 +1621,8 @@ public class RskContext implements NodeBootstrapper {
                 .closeOnJvmShutdown()
                 .make();
 
-        KeyValueDataSource blocksDB = makeDataSource("blocks", databaseDir);
+        KeyValueDataSource blocksDB = LevelDbDataSource.makeDataSource("blocks", databaseDir);
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
-    }
-
-    public static KeyValueDataSource makeDataSource(String name, String databaseDir) {
-        KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir);
-        ds.init();
-        return ds;
     }
 }
