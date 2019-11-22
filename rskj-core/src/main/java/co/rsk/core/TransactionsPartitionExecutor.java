@@ -19,7 +19,7 @@ public class TransactionsPartitionExecutor {
     }
 
     public static class PeriodicCheckException extends Exception {
-        Exception innerException;
+        private Exception innerException;
         PeriodicCheckException(Exception innerException) {
             super(innerException);
             this.innerException = innerException;
@@ -36,7 +36,6 @@ public class TransactionsPartitionExecutor {
      * create a new instance and register it in partExecutors list
      */
     public TransactionsPartitionExecutor(TransactionsPartition partition) {
-        this.partition = partition;
         executor = Executors.newSingleThreadExecutor(
                 threadFactory -> new Thread(
                         /* a new group is created for each partition thread.
@@ -49,8 +48,7 @@ public class TransactionsPartitionExecutor {
     }
 
     private ExecutorService executor;
-    List<Future<Optional<TransactionReceipt>>> futures = new ArrayList<>();
-    private TransactionsPartition partition;
+    private List<Future<Optional<TransactionReceipt>>> futures = new ArrayList<>();
 
     /**
      * Add a task in the current executor (ie thread)
@@ -83,9 +81,17 @@ public class TransactionsPartitionExecutor {
      * @throws CancellationException
      * @throws ExecutionException
      */
-    public Optional<TransactionReceipt> waitForNextResult(int timeoutMSec) throws TimeoutException, InterruptedException, CancellationException, ExecutionException {
+    public Optional<TransactionReceipt> waitForNextResult(int timeoutMSec) throws TimeoutException, RuntimeException {
         Future<Optional<TransactionReceipt>> future = futures.remove(0);
-        return future.get(timeoutMSec, TimeUnit.MILLISECONDS);
+        Optional<TransactionReceipt> receipt = null;
+        try {
+            receipt = future.get(timeoutMSec, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+        return receipt;
     }
 
     public void shutdownNow() {

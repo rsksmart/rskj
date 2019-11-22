@@ -8,6 +8,8 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -23,17 +25,41 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         private ByteArrayWrapper key;
         private eConflictType conflictType;
         private TransactionsPartition [] conflictingPartitions = new TransactionsPartition [2];
+
         public Conflict(ByteArrayWrapper key, TransactionsPartition conflictFrom, TransactionsPartition conflictWith, eConflictType conflictType) {
             this.key = key;
             this.conflictType = conflictType;
             this.conflictingPartitions[0]  = conflictFrom;
             this.conflictingPartitions[1] = conflictWith;
         }
-        protected TransactionsPartition getConflictFrom() {
+
+        public ByteArrayWrapper getKey() {
+            return key;
+        }
+
+        public eConflictType getConflictType() {
+            return conflictType;
+        }
+
+        public TransactionsPartition getConflictFrom() {
             return conflictingPartitions[0];
         }
-        protected TransactionsPartition getConflictWith() {
+
+        public TransactionsPartition getConflictWith() {
             return conflictingPartitions[1];
+        }
+    }
+
+    public static class SerializableConflict implements Serializable {
+        private ByteArrayWrapper key;
+        private eConflictType conflictType;
+        private String[] conflictingThreadGroups = new String [2];
+
+        public SerializableConflict(Conflict conflict) {
+            this.key = conflict.getKey();
+            this.conflictType = conflict.getConflictType();
+            this.conflictingThreadGroups[0] = conflict.getConflictFrom().getThreadGroup().getName();
+            this.conflictingThreadGroups[1] = conflict.getConflictWith().getThreadGroup().getName();
         }
     }
 
@@ -47,19 +73,19 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     // We record all the threadGroup reading to a given key.
     // If another group attempts to write the same key, there will be a conflict recorded with every readers,
     // resulting in: either failure of block validation, or merging of the conflicting partitions
-    Map<ByteArrayWrapper, Collection<String>> threadGroupReadersPerKey = new HashMap<>();
+    private Map<ByteArrayWrapper, Collection<String>> threadGroupReadersPerKey = new HashMap<>();
     // We record only one threadGroup writing to a given key.
     // If another group attempts to write the same key, there will be a conflict recorded with the first writer,
     // resulting in: either failure of block validation, or merging of the conflicting partitions
-    Map<ByteArrayWrapper, String> threadGroupWriterPerKey = new HashMap<>();
+    private Map<ByteArrayWrapper, String> threadGroupWriterPerKey = new HashMap<>();
     // We record all the threadGroup accessing to the keys of a given account.
     // If another group attempts to delete this account, there will be a conflict recorded with every accessors,
     // resulting in: either failure of block validation, or merging of the conflicting partitions
-    Map<ByteArrayWrapper, Collection<String>> accessedAccounts = new HashMap<>();
+    private Map<ByteArrayWrapper, Collection<String>> accessedAccounts = new HashMap<>();
     // We record only one threadGroup deleting a given account.
     // If another group attempts to delete the same account, there will be a conflict recorded with the first deletor,
     // resulting in: either failure of block validation, or merging of the conflicting partitions
-    Map<ByteArrayWrapper, String> deletedAccounts = new HashMap<>();
+    private Map<ByteArrayWrapper, String> deletedAccounts = new HashMap<>();
 
     @Override
     public synchronized void onReadKey(ICacheTracking cacheTracking, ByteArrayWrapper key, String threadGroupName) {
@@ -309,13 +335,15 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     
     public static class TransactionConflictException extends Exception {
 
-        Collection<Conflict> conflicts;
+        private Collection<SerializableConflict> conflicts = new ArrayList<>();
 
         public TransactionConflictException(Collection<Conflict> conflicts) {
-            this.conflicts = conflicts;
+            for(Conflict conflict: conflicts) {
+                this.conflicts.add(new SerializableConflict(conflict));
+            }
         }
 
-        public Collection<Conflict> getConflicts() {
+        public Collection<SerializableConflict> getConflicts() {
             return conflicts;
         }
     }

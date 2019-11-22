@@ -28,6 +28,14 @@ public class TransactionsPartition {
         return this.threadGroup.getName().hashCode();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TransactionsPartition) {
+            return id == ((TransactionsPartition) obj).id;
+        }
+        return false;
+    }
+
     public ThreadGroup getThreadGroup() {
         return threadGroup;
     }
@@ -55,7 +63,7 @@ public class TransactionsPartition {
     }
 
     public Collection<Transaction> getTransactions() {
-        return transactions;
+        return new ArrayList<>(transactions);
     }
 
     public void clear() {

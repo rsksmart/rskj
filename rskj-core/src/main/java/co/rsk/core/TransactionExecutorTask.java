@@ -1,17 +1,11 @@
 package co.rsk.core;
 
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.BlockResult;
-import co.rsk.db.ICacheTracking;
-import co.rsk.metrics.profilers.Profiler;
-import co.rsk.metrics.profilers.ProfilerFactory;
 import org.ethereum.core.*;
-import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.swing.text.html.Option;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -22,15 +16,14 @@ import java.util.concurrent.Callable;
  */
 public class TransactionExecutorTask implements Callable<Optional<TransactionReceipt>> {
 
-    private static final Profiler profiler = ProfilerFactory.getInstance();
     private final TransactionExecutorFactory transactionExecutorFactory;
     private boolean acceptInvalidTransactions;
     private boolean discardInvalidTxs;
-    private Logger logger;
+    private static final Logger logger = LoggerFactory.getLogger("transactionexecutor");
     private Transaction tx;
     private int txindex;
     private Block block;
-    BlockExecutor.BlockSharedData blockSharedData;
+    private BlockExecutor.BlockSharedData blockSharedData;
 
     public TransactionExecutorTask(
             TransactionExecutorFactory transactionExecutorFactory,
@@ -38,7 +31,6 @@ public class TransactionExecutorTask implements Callable<Optional<TransactionRec
             int txindex,
             Block block,
             BlockExecutor.BlockSharedData blockSharedData,
-            Logger logger,
             boolean acceptInvalidTransactions,
             boolean discardInvalidTxs) {
         this.transactionExecutorFactory = transactionExecutorFactory;
@@ -46,7 +38,6 @@ public class TransactionExecutorTask implements Callable<Optional<TransactionRec
         this.txindex = txindex;
         this.block = block;
         this.blockSharedData = blockSharedData;
-        this.logger = logger;
         this.acceptInvalidTransactions = acceptInvalidTransactions;
         this.discardInvalidTxs = discardInvalidTxs;
     }

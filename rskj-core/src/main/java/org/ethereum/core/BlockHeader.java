@@ -547,12 +547,12 @@ public class BlockHeader {
 
     // RSKIP144
     public int[] getPartitionEnds() {
-        return this.partitionEnds;
+        return Arrays.copyOf(this.partitionEnds, this.partitionEnds.length);
     }
 
     // TODO : remove this method when the partitionEnds field is encoded/decoded in header, then set directly as
     //  a constructor arguments as for other fields
     public void setPartitionEnds(int[] partitionEnds) {
-        this.partitionEnds = partitionEnds;
+        this.partitionEnds = Arrays.copyOf(partitionEnds, partitionEnds.length);
     }
 }

@@ -76,7 +76,7 @@ public class TransactionsPartitioner {
                     } catch (TimeoutException e) {
                         clearExecutors();
                         throw new TimeoutException();
-                    } catch (ExecutionException | InterruptedException e) {
+                    } catch (RuntimeException e) {
                         clearExecutors();
                         throw new ExecutionException(e);
                     }

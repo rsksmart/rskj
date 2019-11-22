@@ -1,12 +1,6 @@
 package co.rsk.db;
 
-import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockExecutor;
-import org.ethereum.core.Transaction;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.vm.DataWord;
-
-import java.util.Collection;
 
 public interface ICacheTracking {
 

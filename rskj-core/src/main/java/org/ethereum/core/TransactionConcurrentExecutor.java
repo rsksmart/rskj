@@ -1,7 +1,6 @@
 package org.ethereum.core;
 
 import co.rsk.config.VmConfig;
-import co.rsk.core.RskAddress;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.db.BlockStore;

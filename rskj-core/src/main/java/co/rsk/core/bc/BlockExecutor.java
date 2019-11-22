@@ -250,13 +250,13 @@ public class BlockExecutor {
      * Stores (and identifies) the data concurrently shared between transaction executions
      */
     public static class BlockSharedData {
-        long totalGasUsed = 0;
-        Coin totalPaidFees = Coin.ZERO;
-        Repository track;
-        List<TransactionReceipt> receipts = new ArrayList<>();
-        List<Transaction> executedTransactions = new ArrayList<>();
-        Set<DataWord> deletedAccounts = new HashSet<>();
-        ProgramTraceProcessor programTraceProcessor;
+        private long totalGasUsed = 0;
+        private Coin totalPaidFees = Coin.ZERO;
+        private Repository track;
+        private List<TransactionReceipt> receipts = new ArrayList<>();
+        private List<Transaction> executedTransactions = new ArrayList<>();
+        private Set<DataWord> deletedAccounts = new HashSet<>();
+        private ProgramTraceProcessor programTraceProcessor;
         BlockSharedData(Repository track, ProgramTraceProcessor programTraceProcessor) {
             this.track = track;
             this.programTraceProcessor = programTraceProcessor;
@@ -371,7 +371,6 @@ public class BlockExecutor {
                         txindex,
                         block,
                         dummySharedData,
-                        logger,
                         acceptInvalidTransactions,
                         discardInvalidTxs);
 
@@ -462,7 +461,6 @@ public class BlockExecutor {
                     txindex,
                     block,
                     blockSharedData,
-                    logger,
                     acceptInvalidTransactions,
                     discardInvalidTxs);
 

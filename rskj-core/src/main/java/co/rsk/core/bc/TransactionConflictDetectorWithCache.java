@@ -12,11 +12,11 @@ import java.util.function.BiConsumer;
 
 public class TransactionConflictDetectorWithCache extends TransactionConflictDetector {
 
-    Map<String, Collection<ByteArrayWrapper>> cachedReadKeysPerThreadGroup = new HashMap<>();
-    Map<String, Collection<ByteArrayWrapper>> cachedWrittenKeysPerThreadGroup = new HashMap<>();
-    Map<String, Collection<ByteArrayWrapper>> cachedAccessedAccounts = new HashMap<>();
-    Map<String, Collection<ByteArrayWrapper>> cachedDeletedAccounts = new HashMap<>();
-    Map<String, Collection<Conflict>> cachedConflictsPerThreadGroup = new HashMap<>();
+    private Map<String, Collection<ByteArrayWrapper>> cachedReadKeysPerThreadGroup = new HashMap<>();
+    private Map<String, Collection<ByteArrayWrapper>> cachedWrittenKeysPerThreadGroup = new HashMap<>();
+    private Map<String, Collection<ByteArrayWrapper>> cachedAccessedAccounts = new HashMap<>();
+    private Map<String, Collection<ByteArrayWrapper>> cachedDeletedAccounts = new HashMap<>();
+    private Map<String, Collection<Conflict>> cachedConflictsPerThreadGroup = new HashMap<>();
 
     public TransactionConflictDetectorWithCache(TransactionsPartitioner partitioner) {
         super(partitioner);
