@@ -19,13 +19,13 @@
 
 package org.ethereum.datasource;
 
-import co.rsk.config.TestSystemProperties;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,19 +34,14 @@ import static org.ethereum.TestUtils.randomBytes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@Ignore
 public class LevelDbDataSourceTest {
 
-    private TestSystemProperties config;
-
-    @Before
-    public void setup(){
-        config = new TestSystemProperties();
-    }
+    @Rule
+    public TemporaryFolder databaseDir = new TemporaryFolder();
 
     @Test
-    public void testBatchUpdating() {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test", config.databaseDir());
+    public void testBatchUpdating() throws IOException {
+        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         final int batchSize = 100;
@@ -60,8 +55,8 @@ public class LevelDbDataSourceTest {
     }
 
     @Test
-    public void testPutting() {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test", config.databaseDir());
+    public void testPutting() throws IOException {
+        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath());
         dataSource.init();
 
         byte[] key = randomBytes(32);
