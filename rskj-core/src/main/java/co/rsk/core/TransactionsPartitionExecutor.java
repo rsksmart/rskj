@@ -1,6 +1,5 @@
 package co.rsk.core;
 
-import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +14,7 @@ public class TransactionsPartitionExecutor {
     public interface PeriodicCheck {
         /**
          * raise PeriodicCheckException in case of check fails. The exception includes conflict
+         *
          * @return
          */
         void check() throws Exception;
@@ -23,6 +23,7 @@ public class TransactionsPartitionExecutor {
 
     public static class PeriodicCheckException extends Exception {
         private Exception innerException;
+
         PeriodicCheckException(Exception innerException) {
             super(innerException);
             this.innerException = innerException;
@@ -35,6 +36,7 @@ public class TransactionsPartitionExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger("execute");
     private static int instanceCounter = 0;
+
     /**
      * Private constructor, as we expect the static method newTransactionsPartitionExecutor is used to
      * create a new instance and register it in partExecutors list
@@ -53,7 +55,8 @@ public class TransactionsPartitionExecutor {
      * The task is immediately launched if the thread is idle.
      * Otherwise, it is queued and will be executed when all previous tasks added to the thread are completed.
      * Each task returns a Future that is stored in a list, so that it will later allow us
-     *  to wait for its completion, check if it's completed, or get its result
+     * to wait for its completion, check if it's completed, or get its result
+     *
      * @param txTask
      */
     public void addTransactionTask(TransactionExecutorTask txTask) {
@@ -62,6 +65,7 @@ public class TransactionsPartitionExecutor {
 
     /**
      * To check whether there are some tasks to wait for, or to get result if already completed.
+     *
      * @return
      */
     public boolean hasNextResult() {
@@ -71,7 +75,8 @@ public class TransactionsPartitionExecutor {
     /**
      * Waits until the next task is completed, or the timeout is expired, or an exception occurred during the task.
      * Actually, if this next task is completed already but we didn't get its result yet,
-     *  we don't wait and return the result immediately
+     * we don't wait and return the result immediately
+     *
      * @param timeoutMSec
      * @return
      * @throws TimeoutException

@@ -165,7 +165,7 @@ public class TransactionExecutor {
         }
 
         Coin totalCost = Coin.ZERO;
-        if (basicTxCost > 0 ) {
+        if (basicTxCost > 0) {
             // Estimate transaction cost only if is not a free trx
             Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
             totalCost = tx.getValue().add(txGasCost);
@@ -208,8 +208,8 @@ public class TransactionExecutor {
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             panicProcessor.panic("invalidsignature",
-                                 String.format("Transaction %s signature not accepted: %s",
-                                               tx.getHash(), tx.getSignature()));
+                    String.format("Transaction %s signature not accepted: %s",
+                            tx.getHash(), tx.getSignature()));
             execError(String.format("Transaction signature not accepted: %s", tx.getSignature()));
 
             return false;
@@ -439,8 +439,7 @@ public class TransactionExecutor {
             mEndGas = BigInteger.ZERO;
             execError(e);
 
-        }
-        finally {
+        } finally {
             profiler.stop(metric);
         }
     }
@@ -492,7 +491,7 @@ public class TransactionExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
             receipt.setGasUsed(getGasUsed());
-            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
+            receipt.setStatus(executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS);
         }
         return receipt;
     }
@@ -522,7 +521,7 @@ public class TransactionExecutor {
                 .result(result.getHReturn());
 
         // Accumulate refunds for suicides
-        result.addFutureRefund((long)result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
+        result.addFutureRefund((long) result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
         mEndGas = mEndGas.add(BigInteger.valueOf(gasRefund));
 
@@ -602,6 +601,8 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(mEndGas).longValue();
     }
 
-    public Coin getPaidFees() { return paidFees; }
+    public Coin getPaidFees() {
+        return paidFees;
+    }
 
 }

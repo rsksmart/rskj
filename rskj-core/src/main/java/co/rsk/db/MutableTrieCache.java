@@ -210,15 +210,15 @@ public class MutableTrieCache implements MutableTrie, ICacheTracking {
 
         // all cached items to be transferred to parent
         cache.forEach((accountKey, account) ->
-              account.forEach((realKey, value) -> {
-                  if (size == Integer.MAX_VALUE || realKey.getData().length == size) {
-                      if (this.get(realKey.getData()) == null) {
-                          parentSet.remove(realKey);
-                      } else {
-                          parentSet.add(realKey);
-                      }
-                  }
-              })
+                account.forEach((realKey, value) -> {
+                    if (size == Integer.MAX_VALUE || realKey.getData().length == size) {
+                        if (this.get(realKey.getData()) == null) {
+                            parentSet.remove(realKey);
+                        } else {
+                            parentSet.add(realKey);
+                        }
+                    }
+                })
         );
         return parentSet;
     }
@@ -293,9 +293,9 @@ public class MutableTrieCache implements MutableTrie, ICacheTracking {
         private final RskAddress address;
         private final int storageKeyOffset = (
                 TrieKeyMapper.domainPrefix().length +
-                TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE +
-                TrieKeyMapper.storagePrefix().length +
-                TrieKeyMapper.SECURE_KEY_SIZE)
+                        TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE +
+                        TrieKeyMapper.storagePrefix().length +
+                        TrieKeyMapper.SECURE_KEY_SIZE)
                 * Byte.SIZE;
         private final TrieKeyMapper trieKeyMapper;
         private DataWord currentStorageKey;
@@ -323,7 +323,7 @@ public class MutableTrieCache implements MutableTrie, ICacheTracking {
                 ByteArrayWrapper fullKey = getCompleteKey(item);
                 if (accountItems.containsKey(fullKey)) {
                     byte[] value = accountItems.remove(fullKey);
-                    if (value == null){
+                    if (value == null) {
                         continue;
                     }
                 }

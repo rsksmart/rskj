@@ -122,8 +122,8 @@ public class TransactionsPartitioner {
         });
         // Collections.sort(listPartitions, new ByIdSorter());
         TransactionsPartition resultingPartition = listPartitions.remove(0);
-        for(TransactionsPartition toMerge: listPartitions) {
-            for (Transaction tx: toMerge.getTransactions()) {
+        for (TransactionsPartition toMerge : listPartitions) {
+            for (Transaction tx : toMerge.getTransactions()) {
                 resultingPartition.addTransaction(tx);
             }
             toMerge.clear();

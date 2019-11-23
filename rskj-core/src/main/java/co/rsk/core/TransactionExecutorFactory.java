@@ -25,14 +25,12 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.VM;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 public class TransactionExecutorFactory {
 
@@ -159,7 +157,7 @@ public class TransactionExecutorFactory {
                 deletedAccounts,
                 Executors.newCachedThreadPool(
                         // RSKIP144 - Use factory from TransactionExecutorThread to provide tx partition id at thread level
-                        TransactionExecutorThread.getFactory("vmExecution",config.getVmExecutionStackSize())
+                        TransactionExecutorThread.getFactory("vmExecution", config.getVmExecutionStackSize())
                 )
         );
     }

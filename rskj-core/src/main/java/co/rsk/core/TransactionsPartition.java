@@ -66,6 +66,7 @@ public class TransactionsPartition {
             }
         }
     }
+
     public static class ByIdSorter implements Comparator<TransactionsPartition> {
         @Override
         public int compare(TransactionsPartition p1, TransactionsPartition p2) {

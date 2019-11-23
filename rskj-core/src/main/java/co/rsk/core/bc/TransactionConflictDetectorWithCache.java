@@ -24,6 +24,7 @@ public class TransactionConflictDetectorWithCache extends TransactionConflictDet
 
     /**
      * This will merge cached accesses into global maps of the parent class
+     *
      * @param partition
      */
 
@@ -101,7 +102,7 @@ public class TransactionConflictDetectorWithCache extends TransactionConflictDet
     private static <T> void commitCachedMap(Map<Integer, Collection<T>> cachedMap, int partitionId, BiConsumer<T, Integer> trackFunction) {
         Collection<T> cachedValues = cachedMap.remove(partitionId);
         if (cachedValues != null) {
-            for (T key: cachedValues) {
+            for (T key : cachedValues) {
                 trackFunction.accept(key, partitionId);
             }
         }
