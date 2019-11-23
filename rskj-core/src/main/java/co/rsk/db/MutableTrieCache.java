@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorThread;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
@@ -272,15 +273,17 @@ public class MutableTrieCache implements MutableTrie, ICacheTracking {
     }
 
     protected void notifyCacheTrackingListeners(boolean read, boolean write, boolean delete, ByteArrayWrapper key) {
-        ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
-        if (read) {
-            cacheTrackingListeners.forEach(listener -> listener.onReadKey(this, key, threadGroup.getName()));
-        }
-        if (write) {
-            cacheTrackingListeners.forEach(listener -> listener.onWriteKey(this, key, threadGroup.getName()));
-        }
-        if (delete) {
-            cacheTrackingListeners.forEach(listener -> listener.onDeleteAccount(this, key, threadGroup.getName()));
+        if (!cacheTrackingListeners.isEmpty()) {
+            int partitionId = TransactionExecutorThread.getPartitionIdFromCurrentThread();
+            if (read) {
+                cacheTrackingListeners.forEach(listener -> listener.onReadKey(this, key, partitionId));
+            }
+            if (write) {
+                cacheTrackingListeners.forEach(listener -> listener.onWriteKey(this, key, partitionId));
+            }
+            if (delete) {
+                cacheTrackingListeners.forEach(listener -> listener.onDeleteAccount(this, key, partitionId));
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package co.rsk.core.bc;
 
+import co.rsk.core.TransactionExecutorThread;
 import co.rsk.core.TransactionsPartition;
 import co.rsk.core.TransactionsPartitioner;
 import co.rsk.db.MutableTrieCache;
@@ -89,9 +90,7 @@ public class TransactionConflictDetectorTest {
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
                 tasks.length,
-                threadFactory -> new Thread(
-                        new ThreadGroup("grp-" + UUID.randomUUID()),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
 
         try {
@@ -131,9 +130,7 @@ public class TransactionConflictDetectorTest {
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
                 tasks.length,
-                threadFactory -> new Thread(
-                        new ThreadGroup("grp-" + UUID.randomUUID()),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
 
         try {
@@ -173,9 +170,7 @@ public class TransactionConflictDetectorTest {
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
                 tasks.length,
-                threadFactory -> new Thread(
-                        partitioner.newPartition().getThreadGroup(),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
 
         try {
@@ -215,9 +210,7 @@ public class TransactionConflictDetectorTest {
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
                 tasks.length,
-                threadFactory -> new Thread(
-                        new ThreadGroup("grp-" + UUID.randomUUID()),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
 
         try {
@@ -257,9 +250,7 @@ public class TransactionConflictDetectorTest {
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
                 tasks.length,
-                threadFactory -> new Thread(
-                        new ThreadGroup("grp-" + UUID.randomUUID()),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
 
         try {
@@ -303,9 +294,7 @@ public class TransactionConflictDetectorTest {
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
                 tasks.length,
-                threadFactory -> new Thread(
-                        new ThreadGroup("grp-" + UUID.randomUUID()),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
 
         try {
@@ -356,9 +345,7 @@ public class TransactionConflictDetectorTest {
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
                 tasks1.length,
-                threadFactory -> new Thread(
-                        partitioner.newPartition().getThreadGroup(),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
 
         // Run task1 to task4 in parallel
@@ -382,9 +369,7 @@ public class TransactionConflictDetectorTest {
         // Now run task5 alone
         executor = Executors.newFixedThreadPool(
                 tasks2.length,
-                threadFactory -> new Thread(
-                        partitioner.newPartition().getThreadGroup(),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
         try {
             executor.invokeAll(new ArrayList(Arrays.asList(tasks2)));
@@ -436,9 +421,7 @@ public class TransactionConflictDetectorTest {
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
                 tasks1.length,
-                threadFactory -> new Thread(
-                        partitioner.newPartition().getThreadGroup(),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
 
         // Run task1 to task4 in parallel
@@ -473,9 +456,7 @@ public class TransactionConflictDetectorTest {
         // Now run task5 alone
         executor = Executors.newFixedThreadPool(
                 tasks2.length,
-                threadFactory -> new Thread(
-                        partitioner.newPartition().getThreadGroup(),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
         try {
             executor.invokeAll(new ArrayList(Arrays.asList(tasks2)));
@@ -535,9 +516,7 @@ public class TransactionConflictDetectorTest {
         // Use an executor service, assuming that each thread will run in a different ThreadGroup
         ExecutorService executor = Executors.newFixedThreadPool(
                 tasks1.length,
-                threadFactory -> new Thread(
-                        new ThreadGroup("grp-" + UUID.randomUUID()),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
 
         // Run task1 to task4 in parallel
@@ -559,9 +538,7 @@ public class TransactionConflictDetectorTest {
         // Now run task5 alone
         executor = Executors.newFixedThreadPool(
                 tasks2.length,
-                threadFactory -> new Thread(
-                        new ThreadGroup("grp-" + UUID.randomUUID()),
-                        threadFactory)
+                TransactionExecutorThread.getFactoryForNewPartition(partitioner)
         );
         try {
             executor.invokeAll(new ArrayList(Arrays.asList(tasks2)));

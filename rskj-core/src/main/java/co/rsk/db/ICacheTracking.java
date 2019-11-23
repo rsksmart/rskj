@@ -5,9 +5,9 @@ import org.ethereum.db.ByteArrayWrapper;
 public interface ICacheTracking {
 
     public interface Listener {
-        void onReadKey(ICacheTracking cacheTracking, ByteArrayWrapper key, String threadGroupName);
-        void onWriteKey(ICacheTracking cacheTracking, ByteArrayWrapper key, String threadGroupName);
-        void onDeleteAccount(ICacheTracking cacheTracking, ByteArrayWrapper account, String threadGroupName);
+        void onReadKey(ICacheTracking cacheTracking, ByteArrayWrapper key, int partitionId);
+        void onWriteKey(ICacheTracking cacheTracking, ByteArrayWrapper key, int partitionId);
+        void onDeleteAccount(ICacheTracking cacheTracking, ByteArrayWrapper account, int partitionId);
     }
 
     ByteArrayWrapper getAccountFromKey(ByteArrayWrapper key);

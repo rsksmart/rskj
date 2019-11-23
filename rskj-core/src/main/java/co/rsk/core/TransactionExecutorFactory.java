@@ -36,25 +36,6 @@ import java.util.concurrent.ThreadFactory;
 
 public class TransactionExecutorFactory {
 
-    private static class VMThreadFactory implements ThreadFactory {
-        private final RskSystemProperties config;
-
-        VMThreadFactory(RskSystemProperties config) {
-            this.config = config;
-        }
-
-        @Override
-        public Thread newThread(Runnable r) {
-            String threadGroupName = Thread.currentThread().getThreadGroup().getName();
-            return new Thread(
-                    Thread.currentThread().getThreadGroup(),
-                    r,
-                    "vmExecution",
-                    config.getVmExecutionStackSize()
-            );
-        }
-    }
-
     private final RskSystemProperties config;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
@@ -76,7 +57,12 @@ public class TransactionExecutorFactory {
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.precompiledContracts = precompiledContracts;
-        this.vmExecutorService = Executors.newCachedThreadPool(new VMThreadFactory(config));
+        this.vmExecutorService = Executors.newCachedThreadPool(threadFactory -> new Thread(
+                Thread.currentThread().getThreadGroup(),
+                threadFactory,
+                "vmExecution",
+                config.getVmExecutionStackSize()
+        ));
     }
 
     public TransactionExecutor newInstance(
@@ -171,9 +157,10 @@ public class TransactionExecutorFactory {
                 config.isRemascEnabled(),
                 precompiledContracts,
                 deletedAccounts,
-                // RSKIP144 : Create a new ExecutorService for VMExecution otherwise some thread could be reused across
-                // different transactions from different partitions
-                Executors.newCachedThreadPool(new VMThreadFactory(config))
+                Executors.newCachedThreadPool(
+                        // RSKIP144 - Use factory from TransactionExecutorThread to provide tx partition id at thread level
+                        TransactionExecutorThread.getFactory("vmExecution",config.getVmExecutionStackSize())
+                )
         );
     }
 }

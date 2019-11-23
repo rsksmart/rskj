@@ -1,5 +1,6 @@
 package co.rsk.core;
 
+import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,13 +41,7 @@ public class TransactionsPartitionExecutor {
      */
     public TransactionsPartitionExecutor(TransactionsPartition partition) {
         executor = Executors.newSingleThreadExecutor(
-                threadFactory -> new Thread(
-                        /* a new group is created for each partition thread.
-                         All cache accesses will be tracked according to that group, in order to track the
-                          accesses from some children threads of the partition thread (typically vmExecutor threads) */
-                        partition.getThreadGroup(),
-                        threadFactory,
-                        "Tx-part-thread-" + instanceCounter++)
+                TransactionExecutorThread.getFactory(partition.getId())
         );
     }
 

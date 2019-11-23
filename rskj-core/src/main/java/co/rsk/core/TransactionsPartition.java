@@ -6,7 +6,6 @@ import java.util.*;
 
 public class TransactionsPartition {
     private static int instanceCounter = 0;
-    private ThreadGroup threadGroup;
 
     private int id;
     private List<Transaction> transactions;
@@ -15,29 +14,11 @@ public class TransactionsPartition {
     public TransactionsPartition(TransactionsPartitioner partitioner) {
         this.id = instanceCounter++;
         this.partitioner = partitioner;
-        this.threadGroup = new ThreadGroup("Tx-part-grp-" + id);
         this.transactions = new ArrayList<>();
     }
 
     public int getId() {
         return id;
-    }
-
-    @Override
-    public int hashCode() {
-        return this.threadGroup.getName().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof TransactionsPartition) {
-            return id == ((TransactionsPartition) obj).id;
-        }
-        return false;
-    }
-
-    public ThreadGroup getThreadGroup() {
-        return threadGroup;
     }
 
     public void addTransaction(Transaction tx) {

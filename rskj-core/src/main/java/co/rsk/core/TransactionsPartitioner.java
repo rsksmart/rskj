@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 public class TransactionsPartitioner {
 
     private static final int NB_MAX_PARTITIONS = 16;
-    private Map<String, TransactionsPartition> partitionPerThreadGroup = new HashMap<>();
+    private Map<Integer, TransactionsPartition> partitionPerPartId = new HashMap<>();
     private int[] partitionEnds = new int[0];
 
     public List<Transaction> getAllTransactionsSortedPerPartition() {
@@ -39,15 +39,15 @@ public class TransactionsPartitioner {
     }
 
     public TransactionsPartition newPartition() {
-        if (partitionPerThreadGroup.size() >= NB_MAX_PARTITIONS) {
+        if (partitionPerPartId.size() >= NB_MAX_PARTITIONS) {
             // we reach the limit of partition so lets choose the partition with less Tx inside.
             return findSmallestPartition();
         } else {
             TransactionsPartition partition = new TransactionsPartition(this);
-            if (partitionPerThreadGroup.putIfAbsent(partition.getThreadGroup().getName(), partition) != null) {
+            if (partitionPerPartId.putIfAbsent(partition.getId(), partition) != null) {
                 throw new IllegalStateException(
-                        "Unable to register the new TransactionPartition with ThreadGroup '" +
-                                partition.getThreadGroup().getName() + "' because there is already another registered partition"
+                        "Unable to register the new TransactionPartition with Id '" +
+                                partition.getId() + "' because there is already another registered partition"
                 );
             }
             resetPartitionEnds();
@@ -127,7 +127,7 @@ public class TransactionsPartitioner {
                 resultingPartition.addTransaction(tx);
             }
             toMerge.clear();
-            partitionPerThreadGroup.remove(toMerge.getThreadGroup().getName());
+            partitionPerPartId.remove(toMerge.getId());
         }
         resetPartitionEnds();
         return resultingPartition;
@@ -135,7 +135,7 @@ public class TransactionsPartitioner {
 
     @VisibleForTesting
     public List<TransactionsPartition> getPartitions() {
-        List<TransactionsPartition> partitions = new ArrayList<>(partitionPerThreadGroup.values());
+        List<TransactionsPartition> partitions = new ArrayList<>(partitionPerPartId.values());
         if (partitions.isEmpty()) {
             return new ArrayList<>();
         }
@@ -145,7 +145,7 @@ public class TransactionsPartitioner {
 
     @VisibleForTesting
     public List<TransactionsPartition> getNotEmptyPartitions() {
-        List<TransactionsPartition> partitions = new ArrayList<>(partitionPerThreadGroup.values());
+        List<TransactionsPartition> partitions = new ArrayList<>(partitionPerPartId.values());
         partitions = partitions.stream().filter(partition -> partition.size() > 0).collect(Collectors.toList());
         if (partitions.isEmpty()) {
             return new ArrayList<>();
@@ -156,20 +156,20 @@ public class TransactionsPartitioner {
 
     @VisibleForTesting
     public int getNbPartitions() {
-        return partitionPerThreadGroup.size();
+        return partitionPerPartId.size();
     }
 
     public void clearAllPartitions() {
-        partitionPerThreadGroup.clear();
+        partitionPerPartId.clear();
         resetPartitionEnds();
     }
 
-    public TransactionsPartition fromThreadGroup(String threadGroupName) {
-        return partitionPerThreadGroup.get(threadGroupName);
+    public TransactionsPartition fromId(int partId) {
+        return partitionPerPartId.get(partId);
     }
 
     public void deletePartition(TransactionsPartition partition) {
-        partitionPerThreadGroup.remove(partition.getThreadGroup().getName());
+        partitionPerPartId.remove(partition.getId());
         resetPartitionEnds();
     }
 
@@ -178,7 +178,7 @@ public class TransactionsPartitioner {
     }
 
     private TransactionsPartition findSmallestPartition() {
-        List<TransactionsPartition> partitions = new ArrayList<>(partitionPerThreadGroup.values());
+        List<TransactionsPartition> partitions = new ArrayList<>(partitionPerPartId.values());
         if (partitions.isEmpty()) {
             return null;
         }

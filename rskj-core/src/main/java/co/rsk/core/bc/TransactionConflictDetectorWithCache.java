@@ -12,11 +12,11 @@ import java.util.function.BiConsumer;
 
 public class TransactionConflictDetectorWithCache extends TransactionConflictDetector {
 
-    private Map<String, Collection<ByteArrayWrapper>> cachedReadKeysPerThreadGroup = new HashMap<>();
-    private Map<String, Collection<ByteArrayWrapper>> cachedWrittenKeysPerThreadGroup = new HashMap<>();
-    private Map<String, Collection<ByteArrayWrapper>> cachedAccessedAccounts = new HashMap<>();
-    private Map<String, Collection<ByteArrayWrapper>> cachedDeletedAccounts = new HashMap<>();
-    private Map<String, Collection<Conflict>> cachedConflictsPerThreadGroup = new HashMap<>();
+    private Map<Integer, Collection<ByteArrayWrapper>> cachedReadKeysPerPartId = new HashMap<>();
+    private Map<Integer, Collection<ByteArrayWrapper>> cachedWrittenKeysPerPartId = new HashMap<>();
+    private Map<Integer, Collection<ByteArrayWrapper>> cachedAccessedAccounts = new HashMap<>();
+    private Map<Integer, Collection<ByteArrayWrapper>> cachedDeletedAccounts = new HashMap<>();
+    private Map<Integer, Collection<Conflict>> cachedConflictsPerPartId = new HashMap<>();
 
     public TransactionConflictDetectorWithCache(TransactionsPartitioner partitioner) {
         super(partitioner);
@@ -28,81 +28,81 @@ public class TransactionConflictDetectorWithCache extends TransactionConflictDet
      */
 
     public synchronized void commitPartition(TransactionsPartition partition) {
-        String threadGroupName = partition.getThreadGroup().getName();
-        commitCachedMap(cachedReadKeysPerThreadGroup, threadGroupName, new BiConsumer<ByteArrayWrapper, String>() {
+        int partitionId = partition.getId();
+        commitCachedMap(cachedReadKeysPerPartId, partitionId, new BiConsumer<ByteArrayWrapper, Integer>() {
             @Override
-            public void accept(ByteArrayWrapper byteArrayWrapper, String s) {
-                TransactionConflictDetectorWithCache.super.trackReadAccess(byteArrayWrapper, s);
+            public void accept(ByteArrayWrapper byteArrayWrapper, Integer i) {
+                TransactionConflictDetectorWithCache.super.trackReadAccess(byteArrayWrapper, i);
             }
         });
-        commitCachedMap(cachedWrittenKeysPerThreadGroup, threadGroupName, new BiConsumer<ByteArrayWrapper, String>() {
+        commitCachedMap(cachedWrittenKeysPerPartId, partitionId, new BiConsumer<ByteArrayWrapper, Integer>() {
             @Override
-            public void accept(ByteArrayWrapper byteArrayWrapper, String s) {
-                TransactionConflictDetectorWithCache.super.trackWriteAccess(byteArrayWrapper, s);
+            public void accept(ByteArrayWrapper byteArrayWrapper, Integer i) {
+                TransactionConflictDetectorWithCache.super.trackWriteAccess(byteArrayWrapper, i);
             }
         });
-        commitCachedMap(cachedAccessedAccounts, threadGroupName, new BiConsumer<ByteArrayWrapper, String>() {
+        commitCachedMap(cachedAccessedAccounts, partitionId, new BiConsumer<ByteArrayWrapper, Integer>() {
             @Override
-            public void accept(ByteArrayWrapper byteArrayWrapper, String s) {
-                TransactionConflictDetectorWithCache.super.trackAccessToAccount(byteArrayWrapper, s);
+            public void accept(ByteArrayWrapper byteArrayWrapper, Integer i) {
+                TransactionConflictDetectorWithCache.super.trackAccessToAccount(byteArrayWrapper, i);
             }
         });
-        commitCachedMap(cachedDeletedAccounts, threadGroupName, new BiConsumer<ByteArrayWrapper, String>() {
+        commitCachedMap(cachedDeletedAccounts, partitionId, new BiConsumer<ByteArrayWrapper, Integer>() {
             @Override
-            public void accept(ByteArrayWrapper byteArrayWrapper, String s) {
-                TransactionConflictDetectorWithCache.super.trackAccountDeleted(byteArrayWrapper, s);
+            public void accept(ByteArrayWrapper byteArrayWrapper, Integer i) {
+                TransactionConflictDetectorWithCache.super.trackAccountDeleted(byteArrayWrapper, i);
             }
         });
-        commitCachedMap(cachedConflictsPerThreadGroup, threadGroupName, new BiConsumer<Conflict, String>() {
+        commitCachedMap(cachedConflictsPerPartId, partitionId, new BiConsumer<Conflict, Integer>() {
             @Override
-            public void accept(Conflict conflict, String s) {
+            public void accept(Conflict conflict, Integer i) {
                 TransactionConflictDetectorWithCache.super.recordConflict(conflict);
             }
         });
     }
 
     // All 'tracking' methods are overridden so that the key accesses are not recorded in global maps yet,
-    // but in cached maps instead (note that these cached map are mapped per threadGroupName)
+    // but in cached maps instead (note that these cached map are mapped per partitionId)
 
     @Override
-    protected void trackReadAccess(ByteArrayWrapper key, String threadGroupName) {
-        recordInMap(cachedReadKeysPerThreadGroup, threadGroupName, key);
+    protected void trackReadAccess(ByteArrayWrapper key, int partitionId) {
+        recordInMap(cachedReadKeysPerPartId, partitionId, key);
     }
 
     @Override
-    protected void trackWriteAccess(ByteArrayWrapper key, String threadGroupName) {
-        recordInMap(cachedWrittenKeysPerThreadGroup, threadGroupName, key);
+    protected void trackWriteAccess(ByteArrayWrapper key, int partitionId) {
+        recordInMap(cachedWrittenKeysPerPartId, partitionId, key);
     }
 
     @Override
-    protected void trackAccessToAccount(ByteArrayWrapper account, String threadGroupName) {
-        recordInMap(cachedAccessedAccounts, threadGroupName, account);
+    protected void trackAccessToAccount(ByteArrayWrapper account, int partitionId) {
+        recordInMap(cachedAccessedAccounts, partitionId, account);
     }
 
     @Override
-    protected void trackAccountDeleted(ByteArrayWrapper account, String threadGroupName) {
-        recordInMap(cachedDeletedAccounts, threadGroupName, account);
+    protected void trackAccountDeleted(ByteArrayWrapper account, int partitionId) {
+        recordInMap(cachedDeletedAccounts, partitionId, account);
     }
 
     // same mechanism applies to recordConflict
 
     @Override
     protected void recordConflict(Conflict conflict) {
-        recordInMap(cachedConflictsPerThreadGroup, conflict.getConflictFrom().getThreadGroup().getName(), conflict);
-        recordInMap(cachedConflictsPerThreadGroup, conflict.getConflictWith().getThreadGroup().getName(), conflict);
+        recordInMap(cachedConflictsPerPartId, conflict.getConflictFrom().getId(), conflict);
+        recordInMap(cachedConflictsPerPartId, conflict.getConflictWith().getId(), conflict);
     }
 
-    private static <T> void recordInMap(Map<String, Collection<T>> map, String entryKey, T valueToAdd) {
+    private static <T> void recordInMap(Map<Integer, Collection<T>> map, Integer entryKey, T valueToAdd) {
         Collection<T> values = map.computeIfAbsent(entryKey, k -> new HashSet<>());
         // Add the value if not already in the collection
         values.add(valueToAdd);
     }
 
-    private static <T> void commitCachedMap(Map<String, Collection<T>> cachedMap, String threadGroupName, BiConsumer<T, String> trackFunction) {
-        Collection<T> cachedValues = cachedMap.remove(threadGroupName);
+    private static <T> void commitCachedMap(Map<Integer, Collection<T>> cachedMap, int partitionId, BiConsumer<T, Integer> trackFunction) {
+        Collection<T> cachedValues = cachedMap.remove(partitionId);
         if (cachedValues != null) {
             for (T key: cachedValues) {
-                trackFunction.accept(key, threadGroupName);
+                trackFunction.accept(key, partitionId);
             }
         }
     }

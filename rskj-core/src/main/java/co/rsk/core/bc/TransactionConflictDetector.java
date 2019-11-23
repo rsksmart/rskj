@@ -8,13 +8,12 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 
 /**
- * This class tracks accesses in repository (read/write or delete keys), per threadGroup
- * and detect if there are confilcts between threadGroups, that means 2 different threadGroups
+ * This class tracks accesses in repository (read/write or delete keys), per partitionId
+ * and detect if there are confilcts between partitions, that means 2 different partitionId
  * have accessed to the same key, whatever the access type (read/write or delete)
  */
 class TransactionConflictDetector implements ICacheTracking.Listener {
@@ -53,13 +52,13 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     public static class SerializableConflict implements Serializable {
         private ByteArrayWrapper key;
         private eConflictType conflictType;
-        private String[] conflictingThreadGroups = new String [2];
+        private int[] conflictingPartIds = new int [2];
 
         public SerializableConflict(Conflict conflict) {
             this.key = conflict.getKey();
             this.conflictType = conflict.getConflictType();
-            this.conflictingThreadGroups[0] = conflict.getConflictFrom().getThreadGroup().getName();
-            this.conflictingThreadGroups[1] = conflict.getConflictWith().getThreadGroup().getName();
+            this.conflictingPartIds[0] = conflict.getConflictFrom().getId();
+            this.conflictingPartIds[1] = conflict.getConflictWith().getId();
         }
     }
 
@@ -70,86 +69,86 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         this.partitioner = partitioner;
     }
 
-    // We record all the threadGroup reading to a given key.
+    // We record all the partitions reading to a given key.
     // If another group attempts to write the same key, there will be a conflict recorded with every readers,
     // resulting in: either failure of block validation, or merging of the conflicting partitions
-    private Map<ByteArrayWrapper, Collection<String>> threadGroupReadersPerKey = new HashMap<>();
-    // We record only one threadGroup writing to a given key.
+    private Map<ByteArrayWrapper, Collection<Integer>> partitionReadersPerKey = new HashMap<>();
+    // We record only one partition writing to a given key.
     // If another group attempts to write the same key, there will be a conflict recorded with the first writer,
     // resulting in: either failure of block validation, or merging of the conflicting partitions
-    private Map<ByteArrayWrapper, String> threadGroupWriterPerKey = new HashMap<>();
-    // We record all the threadGroup accessing to the keys of a given account.
+    private Map<ByteArrayWrapper, Integer> partitionWriterPerKey = new HashMap<>();
+    // We record all the partitions accessing to the keys of a given account.
     // If another group attempts to delete this account, there will be a conflict recorded with every accessors,
     // resulting in: either failure of block validation, or merging of the conflicting partitions
-    private Map<ByteArrayWrapper, Collection<String>> accessedAccounts = new HashMap<>();
-    // We record only one threadGroup deleting a given account.
+    private Map<ByteArrayWrapper, Collection<Integer>> accessedAccounts = new HashMap<>();
+    // We record only one partition deleting a given account.
     // If another group attempts to delete the same account, there will be a conflict recorded with the first deletor,
     // resulting in: either failure of block validation, or merging of the conflicting partitions
-    private Map<ByteArrayWrapper, String> deletedAccounts = new HashMap<>();
+    private Map<ByteArrayWrapper, Integer> deletedAccounts = new HashMap<>();
 
     @Override
-    public synchronized void onReadKey(ICacheTracking cacheTracking, ByteArrayWrapper key, String threadGroupName) {
+    public synchronized void onReadKey(ICacheTracking cacheTracking, ByteArrayWrapper key, int partitionId) {
         // There is a conflict if :
-        // - the key has already been written by another threadGroup
+        // - the key has already been written by another partition
         // or
-        // - the account from that key has been deleted by another threadGroup
+        // - the account from that key has been deleted by another partition
         logger.info("key [{}] is read by group [{}]",
-                key.toString(), threadGroupName);
+                key.toString(), partitionId);
 
-        if (!checkKeyAlreadyWritten(key, threadGroupName)) {
+        if (!checkKeyAlreadyWritten(key, partitionId)) {
             // No conflict detected -> track the read access to the key
-            trackReadAccess(key, threadGroupName);
+            trackReadAccess(key, partitionId);
         }
-        checkAccountDeleted(cacheTracking.getAccountFromKey(key), threadGroupName);
+        checkAccountDeleted(cacheTracking.getAccountFromKey(key), partitionId);
         // Whatever if there is a conflict or not, track access to the account of this key
-        trackAccessToAccount(cacheTracking.getAccountFromKey(key), threadGroupName);
+        trackAccessToAccount(cacheTracking.getAccountFromKey(key), partitionId);
     }
 
     @Override
-    public synchronized void onWriteKey(ICacheTracking cacheTracking, ByteArrayWrapper key, String threadGroupName) {
+    public synchronized void onWriteKey(ICacheTracking cacheTracking, ByteArrayWrapper key, int partitionId) {
         // There is a conflict if :
-        // - the key has already been written by another threadGroup
+        // - the key has already been written by another partition
         // or
-        // - the key has already been read by one or more other threadGroups
+        // - the key has already been read by one or more other partitions
         // or
-        // - the account from that key has been deleted by another threadGroup
+        // - the account from that key has been deleted by another partition
         logger.info("key [{}] is written by group [{}]",
-                key.toString(), threadGroupName);
+                key.toString(), partitionId);
 
-        if (!checkKeyAlreadyWritten(key, threadGroupName)) {
+        if (!checkKeyAlreadyWritten(key, partitionId)) {
             // No conflict detected -> track the write access to the key
-            trackWriteAccess(key, threadGroupName);
-            // Only check if already read by one or more other threadGroups is there is no conflict with another writer,
+            trackWriteAccess(key, partitionId);
+            // Only check if already read by one or more other partitions is there is no conflict with another writer,
             // because in such a case, the readers are already in conflict with it.
-            checkKeyAlreadyRead(key, threadGroupName);
+            checkKeyAlreadyRead(key, partitionId);
         }
-        checkAccountDeleted(cacheTracking.getAccountFromKey(key), threadGroupName);
+        checkAccountDeleted(cacheTracking.getAccountFromKey(key), partitionId);
         // Whatever if there is a conflict or not, track access to the account of this key
-        trackAccessToAccount(cacheTracking.getAccountFromKey(key), threadGroupName);
+        trackAccessToAccount(cacheTracking.getAccountFromKey(key), partitionId);
     }
 
     @Override
-    public synchronized void onDeleteAccount(ICacheTracking cacheTracking, ByteArrayWrapper account, String threadGroupName) {
+    public synchronized void onDeleteAccount(ICacheTracking cacheTracking, ByteArrayWrapper account, int partitionId) {
         // There is a conflict if :
-        // - some keys of this account have been accessed (read or written) by another threadGroup
+        // - some keys of this account have been accessed (read or written) by another partition
         // or
-        // - the account have already been deleted by another threadGroup
+        // - the account have already been deleted by another partition
 
-        checkAccountAccessed(account, threadGroupName);
-        if (!checkAccountDeleted(account, threadGroupName)) {
-            trackAccountDeleted(account, threadGroupName);
+        checkAccountAccessed(account, partitionId);
+        if (!checkAccountDeleted(account, partitionId)) {
+            trackAccountDeleted(account, partitionId);
         }
     }
 
-    private Conflict createConflict(ByteArrayWrapper key, String conflictThreadGroup, String originThreadGroup, eConflictType conflictType) {
-        logger.info("Record conflict between groups '[{}]' and '[{}}]'", conflictThreadGroup, originThreadGroup);
-        TransactionsPartition conflictPartition = partitioner.fromThreadGroup(conflictThreadGroup);
-        TransactionsPartition originPartition = partitioner.fromThreadGroup(originThreadGroup);
+    private Conflict createConflict(ByteArrayWrapper key, int conflictPartId, int originPartId, eConflictType conflictType) {
+        logger.info("Record conflict between groups '[{}]' and '[{}}]'", conflictPartId, originPartId);
+        TransactionsPartition conflictPartition = partitioner.fromId(conflictPartId);
+        TransactionsPartition originPartition = partitioner.fromId(originPartId);
         if (conflictPartition == null) {
-            logger.error("Unable to get the partition for threadGroup " + conflictThreadGroup);
+            logger.error("Unable to get the partition for id " + conflictPartId);
         }
         if (originPartition == null) {
-            logger.error("Unable to get the partition for threadGroup " + conflictThreadGroup);
+            logger.error("Unable to get the partition for id " + conflictPartId);
         }
         return new Conflict(key, conflictPartition, originPartition, conflictType);
     }
@@ -162,82 +161,82 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         conflicts.add(conflict);
     }
 
-    private boolean checkKeyAlreadyWritten(ByteArrayWrapper key, String threadGroupName) {
-        String otherThreadGroup = threadGroupWriterPerKey.get(key);
-        if ((otherThreadGroup == null) || otherThreadGroup.equals(threadGroupName)) {
+    private boolean checkKeyAlreadyWritten(ByteArrayWrapper key, int partId) {
+        Integer otherPartId = partitionWriterPerKey.get(key);
+        if ((otherPartId == null) || otherPartId.equals(partId)) {
             return false;
         } else {
             logger.info("key [{}] has already been written by group [{}] --> conflict from group [{}]",
-                    key.toString(), otherThreadGroup, threadGroupName);
-            recordConflict(createConflict(key, otherThreadGroup, threadGroupName, eConflictType.WRITTEN_BEFORE_ACCESSED));
+                    key.toString(), otherPartId, partId);
+            recordConflict(createConflict(key, otherPartId, partId, eConflictType.WRITTEN_BEFORE_ACCESSED));
         }
         return true;
     }
 
-    private boolean checkKeyAlreadyRead(ByteArrayWrapper key, String threadGroupName) {
-        Collection<String> otherThreadGroups = threadGroupReadersPerKey.get(key);
-        if (otherThreadGroups == null) {
+    private boolean checkKeyAlreadyRead(ByteArrayWrapper key, int partitionId) {
+        Collection<Integer> otherPartIds = partitionReadersPerKey.get(key);
+        if (otherPartIds == null) {
             return false;
         }
         // there can not be a conflict with itself
-        otherThreadGroups.remove(threadGroupName);
-        if (otherThreadGroups.isEmpty()) {
+        otherPartIds.remove(partitionId);
+        if (otherPartIds.isEmpty()) {
             return false;
         }
         // Record a conflict for each reading group
-        otherThreadGroups.forEach(conflictThreadGroup -> {
-            recordConflict(createConflict(key, conflictThreadGroup, threadGroupName, eConflictType.ACCESSED_BEFORE_WRITTEN));
+        otherPartIds.forEach(conflictPartId -> {
+            recordConflict(createConflict(key, conflictPartId, partitionId, eConflictType.ACCESSED_BEFORE_WRITTEN));
             logger.info("key [{}] has already been read by group [{}] --> conflict from group [{}]",
-                    key.toString(), conflictThreadGroup, threadGroupName);
+                    key.toString(), conflictPartId, partitionId);
         });
         return true;
     }
 
-    private boolean checkAccountAccessed(ByteArrayWrapper account, String threadGroupName) {
-        Collection<String> otherThreadGroups = accessedAccounts.get(account);
-        if (otherThreadGroups == null) {
+    private boolean checkAccountAccessed(ByteArrayWrapper account, int partitionId) {
+        Collection<Integer> otherPartIds = accessedAccounts.get(account);
+        if (otherPartIds == null) {
             return false;
         }
         // there can not be a conflict with itself
-        otherThreadGroups.remove(threadGroupName);
-        if (otherThreadGroups.isEmpty()) {
+        otherPartIds.remove(partitionId);
+        if (otherPartIds.isEmpty()) {
             return false;
         }
         // Record a conflict for each reading group
-        otherThreadGroups.forEach(conflictThreadGroup -> recordConflict(createConflict(account, conflictThreadGroup, threadGroupName, eConflictType.ACCESSED_BEFORE_DELETE)));
+        otherPartIds.forEach(conflictPartId -> recordConflict(createConflict(account, conflictPartId, partitionId, eConflictType.ACCESSED_BEFORE_DELETE)));
         return true;
     }
 
-    private boolean checkAccountDeleted(ByteArrayWrapper account, String threadGroupName) {
-        String otherThreadGroup = deletedAccounts.get(account);
-        if ((otherThreadGroup == null) || otherThreadGroup.equals(threadGroupName)) {
+    private boolean checkAccountDeleted(ByteArrayWrapper account, int partitionId) {
+        Integer otherPartId = deletedAccounts.get(account);
+        if ((otherPartId == null) || otherPartId.equals(partitionId)) {
             return false;
         } else {
-            recordConflict(createConflict(account, otherThreadGroup, threadGroupName, eConflictType.DELETED_BEFORE_ACCESSED));
+            recordConflict(createConflict(account, otherPartId, partitionId, eConflictType.DELETED_BEFORE_ACCESSED));
         }
         return true;
     }
 
-    protected void trackReadAccess(ByteArrayWrapper key, String threadGroupName) {
+    protected void trackReadAccess(ByteArrayWrapper key, int partitionId) {
         // Imprtant ! use a HashSet and not an ArrayList because we don't want to add several times the same reader
-        Collection<String> readers = threadGroupReadersPerKey.computeIfAbsent(key, k -> new HashSet<>());
+        Collection<Integer> readers = partitionReadersPerKey.computeIfAbsent(key, k -> new HashSet<>());
         // Add the reader if not already in the collection
-        readers.add(threadGroupName);
+        readers.add(partitionId);
     }
 
-    protected void trackWriteAccess(ByteArrayWrapper key, String threadGroupName) {
-        threadGroupWriterPerKey.put(key, threadGroupName);
+    protected void trackWriteAccess(ByteArrayWrapper key, int partitionId) {
+        partitionWriterPerKey.put(key, partitionId);
     }
 
-    protected void trackAccessToAccount(ByteArrayWrapper account, String threadGroupName) {
+    protected void trackAccessToAccount(ByteArrayWrapper account, int partitionId) {
         // Important ! use a HashSet and not an ArrayList because we don't want to add several times the same accessor
-        Collection<String> accessors = accessedAccounts.computeIfAbsent(account, k -> new HashSet<>());
+        Collection<Integer> accessors = accessedAccounts.computeIfAbsent(account, k -> new HashSet<>());
         // Add the accessor if not already in the collection
-        accessors.add(threadGroupName);
+        accessors.add(partitionId);
     }
 
-    protected void trackAccountDeleted(ByteArrayWrapper account, String threadGroupName) {
-        deletedAccounts.put(account, threadGroupName);
+    protected void trackAccountDeleted(ByteArrayWrapper account, int partitionId) {
+        deletedAccounts.put(account, partitionId);
     }
 
     public synchronized boolean hasConflict() {
@@ -254,26 +253,26 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     }
 
     private void discardPartition(TransactionsPartition partitionToDiscard, TransactionsPartition replacingPartition) {
-        String oldThreadGroupName = partitionToDiscard.getThreadGroup().getName();
-        String newThreadGroupName = replacingPartition.getThreadGroup().getName();
-        logger.info("Discard partition [{}] into group [{}]", oldThreadGroupName, newThreadGroupName);
+        Integer oldPartId = partitionToDiscard.getId();
+        Integer newPartId = replacingPartition.getId();
+        logger.info("Discard partition [{}] into group [{}]", oldPartId, newPartId);
 
-        for (Collection<String> readers: threadGroupReadersPerKey.values()) {
-            if (readers.remove(oldThreadGroupName)) {
+        for (Collection<Integer> readers: partitionReadersPerKey.values()) {
+            if (readers.remove(oldPartId)) {
                 // remove() returns true if the element was present and has been removed
-                readers.add(newThreadGroupName);
+                readers.add(newPartId);
             }
         }
-        String finalNewThreadGroupName = newThreadGroupName;
-        threadGroupWriterPerKey.replaceAll((k, v) -> (oldThreadGroupName.equals(v)) ? finalNewThreadGroupName : v);
-        for (Collection<String> accessors: accessedAccounts.values()) {
-            if (accessors.remove(oldThreadGroupName)) {
+        int finalNewPartId = newPartId;
+        partitionWriterPerKey.replaceAll((k, v) -> (oldPartId.equals(v)) ? finalNewPartId : v);
+        for (Collection<Integer> accessors: accessedAccounts.values()) {
+            if (accessors.remove(oldPartId)) {
                 // remove() returns true if the element was present and has been removed
-                accessors.add(newThreadGroupName);
+                accessors.add(newPartId);
             }
         }
-        String finalNewThreadGroupName1 = newThreadGroupName;
-        deletedAccounts.replaceAll((k, v) -> (oldThreadGroupName.equals(v)) ? finalNewThreadGroupName1 : v);
+        int finalNewPartId2 = newPartId;
+        deletedAccounts.replaceAll((k, v) -> (oldPartId.equals(v)) ? finalNewPartId2 : v);
 
         Set<Conflict> conflicts = conflictsPerPartition.remove(partitionToDiscard);
         if (conflicts != null) {
@@ -344,7 +343,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         }
 
         public Collection<SerializableConflict> getConflicts() {
-            return conflicts;
+            return new ArrayList<>(conflicts);
         }
     }
     

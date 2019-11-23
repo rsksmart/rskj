@@ -1,5 +1,6 @@
 package co.rsk.core.bc;
 
+import co.rsk.core.TransactionExecutorThread;
 import co.rsk.core.TransactionsPartition;
 import co.rsk.core.TransactionsPartitioner;
 import co.rsk.db.MutableTrieCache;
@@ -109,9 +110,7 @@ protected static byte[] toBytes(String x) {
 
             Callable task = tasks[i];
             TransactionsPartition partition = partitioner.newPartition();
-            ExecutorService executor = Executors.newSingleThreadExecutor(threadFactory -> new Thread(
-                    partition.getThreadGroup(),
-                    threadFactory));
+            ExecutorService executor = Executors.newSingleThreadExecutor(TransactionExecutorThread.getFactory(partition.getId()));
 
             try {
                 executor.submit(task);
