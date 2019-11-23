@@ -43,7 +43,7 @@ public class TransactionExecutorTask implements Callable<Optional<TransactionRec
     }
 
     @Override
-    public Optional<TransactionReceipt> call() throws Exception {
+    public Optional<TransactionReceipt> call() throws InvalidTxExecutionException {
         boolean vmTrace = blockSharedData.getProgramTraceProcessor() != null;
         logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), blockSharedData.getReceipts().size());
 
@@ -64,7 +64,7 @@ public class TransactionExecutorTask implements Callable<Optional<TransactionRec
             } else {
                 logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
                         block.getNumber(), tx.getHash());
-                throw new InterruptedException("Invalid tx " + tx.getHash().toString());
+                throw new InvalidTxExecutionException("Invalid tx " + tx.getHash().toString());
             }
         }
 

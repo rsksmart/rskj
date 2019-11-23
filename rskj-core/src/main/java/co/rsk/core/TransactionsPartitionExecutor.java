@@ -1,6 +1,8 @@
 package co.rsk.core;
 
 import org.ethereum.core.TransactionReceipt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,7 @@ public class TransactionsPartitionExecutor {
         }
     }
 
+    private static final Logger logger = LoggerFactory.getLogger("execute");
     private static int instanceCounter = 0;
     /**
      * Private constructor, as we expect the static method newTransactionsPartitionExecutor is used to
@@ -87,7 +90,9 @@ public class TransactionsPartitionExecutor {
         try {
             receipt = future.get(timeoutMSec, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            // this must never happen
+            Thread.currentThread().interrupt();
+            logger.warn("TransactionPartitionExecutor is interrupted", e.toString());
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
