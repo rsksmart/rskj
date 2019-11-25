@@ -140,7 +140,7 @@ public class VMTest {
     }
 
     @Test
-    public void TestReturnDataCopyChargesCorrectGas() {
+    public void testReturnDataCopyChargesCorrectGas() {
         invoke = new ProgramInvokeMockImpl(compile("" +
                 " PUSH1 0x01 PUSH1 0x02 SUB PUSH1 0x00 MSTORE" +
                 " PUSH1 0x20 PUSH1 0x00 RETURN"
@@ -192,7 +192,7 @@ public class VMTest {
 
 
     @Test(expected = Program.OutOfGasException.class)
-    public void TestCanGetMemoryUsingIdentityContract() {
+    public void testCanGetMemoryUsingIdentityContract() {
         String fTimes64 = StringUtils.repeat('F', 64);
         invoke.setGas(6800000);
         Program niceProgram = getProgram(compile(
