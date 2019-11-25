@@ -171,7 +171,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBalanceWithAccount() {
+    public void getBalanceWithAccount() throws Exception {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
@@ -181,7 +181,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBalanceWithAccountAndLatestBlock() {
+    public void getBalanceWithAccountAndLatestBlock() throws Exception {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
@@ -191,7 +191,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBalanceWithAccountAndGenesisBlock() {
+    public void getBalanceWithAccountAndGenesisBlock() throws Exception {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
@@ -204,7 +204,7 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void getBalanceWithAccountAndBlock() {
+    public void getBalanceWithAccountAndBlock() throws Exception {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
         Block genesis = world.getBlockByName("g00");
@@ -908,7 +908,7 @@ public class Web3ImplTest {
 
         String scode = web3.eth_getCode(accountAddress, "0x1");
 
-        assertNotNull(scode);
+        org.junit.Assert.assertNotNull(scode);
         org.junit.Assert.assertEquals("0x", scode);
     }
 
@@ -1541,7 +1541,6 @@ public class Web3ImplTest {
         ProgramResult res = new ProgramResult();
         res.setHReturn(new byte[0]);
         when(executor.executeTransaction(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(res);
-        Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
                 new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator,
@@ -1551,12 +1550,13 @@ public class Web3ImplTest {
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()));
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
-        RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore, retriever);
+        RskModule rskModule = new RskModuleImpl(blockchain, blockStore, receiptStore);
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(
                 eth,
                 blockchain,
+                transactionPool,
                 config,
                 minerClient,
                 Web3Mocks.getMockMinerServer(),
@@ -1568,6 +1568,7 @@ public class Web3ImplTest {
                 debugModule,
                 rskModule,
                 channelManager,
+                repositoryLocator,
                 null,
                 null,
                 blockStore,
@@ -1577,8 +1578,8 @@ public class Web3ImplTest {
                 null,
                 configCapabilities,
                 new BuildInfo("test", "test"),
-                null,
-                retriever);
+                null
+        );
     }
 
     @Test
