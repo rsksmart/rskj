@@ -130,6 +130,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.HashMap;
 import java.util.List;
@@ -384,16 +385,7 @@ public class RskContext implements NodeBootstrapper {
 
     public TrieStore getTrieStore() {
         if (trieStore == null) {
-            GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
-            if (gcConfig.enabled()) {
-                try {
-                    trieStore = buildMultiTrieStore(gcConfig.numberOfEpochs());
-                } catch (IOException e) {
-                    throw new IllegalStateException("Unable to build multi trie store", e);
-                }
-            } else {
-                trieStore = buildTrieStore("unitrie");
-            }
+            trieStore = buildAbstractTrieStore(Paths.get(getRskSystemProperties().databaseDir()));
         }
 
         return trieStore;
@@ -820,6 +812,39 @@ public class RskContext implements NodeBootstrapper {
         return new SolidityCompiler(getRskSystemProperties());
     }
 
+    private TrieStore buildAbstractTrieStore(Path databasePath) {
+        TrieStore newTrieStore;
+        GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
+        final String multiTrieStoreNamePrefix = "unitrie_";
+        if (gcConfig.enabled()) {
+            try {
+                newTrieStore = buildMultiTrieStore(databasePath, multiTrieStoreNamePrefix, gcConfig.numberOfEpochs());
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to build multi trie store", e);
+            }
+        } else {
+            Path trieStorePath = databasePath.resolve("unitrie");
+            try (Stream<Path> databasePathFilesStream = Files.list(databasePath)) {
+                List<Path> multiTrieStorePaths = databasePathFilesStream
+                        .filter(p -> p.getFileName().toString().startsWith(multiTrieStoreNamePrefix))
+                        .collect(Collectors.toList());
+
+                boolean gcWasEnabled = !multiTrieStorePaths.isEmpty();
+                if (gcWasEnabled) {
+                    LevelDbDataSource.mergeDataSources(trieStorePath, multiTrieStorePaths);
+                    // cleanup MultiTrieStore data sources
+                    multiTrieStorePaths.stream()
+                            .map(Path::toString)
+                            .forEach(FileUtil::recursiveDelete);
+                }
+            } catch (IOException e) {
+                logger.error("Unable to check if GC was ever enabled", e);
+            }
+            newTrieStore = buildTrieStore(trieStorePath);
+        }
+        return newTrieStore;
+    }
+
     protected Web3 buildWeb3() {
         return new Web3RskImpl(
                 getRsk(),
@@ -859,7 +884,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected ReceiptStore buildReceiptStore() {
-        KeyValueDataSource ds = makeDataSource("receipts", getRskSystemProperties().databaseDir());
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "receipts"));
         return new ReceiptStoreImpl(ds);
     }
 
@@ -886,11 +911,9 @@ public class RskContext implements NodeBootstrapper {
         );
     }
 
-    protected TrieStore buildTrieStore(String name) {
-        RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        String databaseDir = rskSystemProperties.databaseDir();
-        int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = makeDataSource(name, databaseDir);
+    protected TrieStore buildTrieStore(Path trieStorePath) {
+        int statesCacheSize = getRskSystemProperties().getStatesCacheSize();
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(trieStorePath);
 
         if (statesCacheSize != 0) {
             ds = new DataSourceWithCache(ds, statesCacheSize);
@@ -899,17 +922,15 @@ public class RskContext implements NodeBootstrapper {
         return new TrieStoreImpl(ds);
     }
 
-    private TrieStore buildMultiTrieStore(int numberOfEpochs) throws IOException {
-        String multiTrieStoreNamePrefix = "unitrie_";
-        Path databasePath = Paths.get(getRskSystemProperties().databaseDir());
+    private TrieStore buildMultiTrieStore(Path databasePath, String namePrefix, int numberOfEpochs) throws IOException {
         int currentEpoch = numberOfEpochs;
         if (!getRskSystemProperties().databaseReset()) {
             try (Stream<Path> databasePaths = Files.list(databasePath)) {
                 currentEpoch = databasePaths
                         .map(Path::getFileName)
                         .map(Path::toString)
-                        .filter(fileName -> fileName.startsWith(multiTrieStoreNamePrefix))
-                        .map(multiTrieStoreName -> multiTrieStoreName.replaceFirst(multiTrieStoreNamePrefix, ""))
+                        .filter(fileName -> fileName.startsWith(namePrefix))
+                        .map(multiTrieStoreName -> multiTrieStoreName.replaceFirst(namePrefix, ""))
                         .map(Integer::valueOf)
                         .max(Comparator.naturalOrder())
                         .orElse(numberOfEpochs);
@@ -920,7 +941,7 @@ public class RskContext implements NodeBootstrapper {
                 // to assign currentEpoch - 1 as the name
                 Files.move(
                         unitriePath,
-                        databasePath.resolve(multiTrieStoreNamePrefix + (currentEpoch - 1))
+                        databasePath.resolve(namePrefix + (currentEpoch - 1))
                 );
             }
         }
@@ -928,11 +949,10 @@ public class RskContext implements NodeBootstrapper {
         return new MultiTrieStore(
                 currentEpoch + 1,
                 numberOfEpochs,
-                name -> buildTrieStore(multiTrieStoreNamePrefix + name),
-                disposedEpoch -> FileUtil.recursiveDelete(databasePath.resolve(multiTrieStoreNamePrefix + disposedEpoch).toString())
+                name -> buildTrieStore(databasePath.resolve(namePrefix + name)),
+                disposedEpoch -> FileUtil.recursiveDelete(databasePath.resolve(namePrefix + disposedEpoch).toString())
         );
     }
-
 
     protected RepositoryLocator buildRepositoryLocator() {
         return new RepositoryLocator(getTrieStore(), getStateRootHandler());
@@ -960,7 +980,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected StateRootHandler buildStateRootHandler() {
-        KeyValueDataSource stateRootsDB = makeDataSource("stateRoots", getRskSystemProperties().databaseDir());
+        KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
         return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB, new HashMap<>());
     }
 
@@ -1006,7 +1026,7 @@ public class RskContext implements NodeBootstrapper {
             return null;
         }
 
-        KeyValueDataSource ds = makeDataSource("wallet", rskSystemProperties.databaseDir());
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"));
         return new Wallet(ds);
     }
 
@@ -1621,14 +1641,8 @@ public class RskContext implements NodeBootstrapper {
                 .closeOnJvmShutdown()
                 .make();
 
-        KeyValueDataSource blocksDB = makeDataSource("blocks", databaseDir);
+        KeyValueDataSource blocksDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "blocks"));
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
-    }
-
-    public static KeyValueDataSource makeDataSource(String name, String databaseDir) {
-        KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir);
-        ds.init();
-        return ds;
     }
 }
