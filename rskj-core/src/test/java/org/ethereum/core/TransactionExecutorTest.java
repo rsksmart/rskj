@@ -3,9 +3,9 @@ package org.ethereum.core;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.bouncycastle.util.Arrays;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
@@ -13,53 +13,51 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.stubbing.OngoingStubbing;
 
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.any;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
 public class TransactionExecutorTest {
-    @Mock Constants constants;
-    @Mock ActivationConfig activationConfig;
-    @Mock Transaction transaction;
-    @Mock RskAddress rskAddress;
-    @Mock Repository repository;
-    @Mock BlockStore blockStore;
-    @Mock ReceiptStore receiptStore;
-    @Mock BlockFactory blockFactory;
-    @Mock ProgramInvokeFactory programInvokeFactory;
-    @Mock Block executionBlock;
-    @Mock VmConfig vmConfig;
-    @Mock PrecompiledContracts precompiledContracts;
-    @Mock Set<DataWord> deletedAccounts;
-    @Mock ExecutorService vmExecution;
-
-    private TransactionExecutor createMockedTransactionExecutor() {
+    @Test
+    public void testInitHandlesFreeTransactionsOK() {
+        // paperwork: mock a whole nice transaction executor
         int txIndex = 1;
         long gasUsedInTheBlock = 0;
-        Iterator iteratorMock = Mockito.mock(Iterator.class);
+
+        ActivationConfig activationConfig = ActivationConfigsForTest.all();
+        Constants constants = mock(Constants.class);
+        Transaction transaction = mock(Transaction.class);
+        RskAddress rskAddress = mock(RskAddress.class);
+        Repository repository = mock(Repository.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        BlockFactory blockFactory = mock(BlockFactory.class);
+        ProgramInvokeFactory programInvokeFactory = mock(ProgramInvokeFactory.class);
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(10L);
+        VmConfig vmConfig = mock(VmConfig.class);
+        PrecompiledContracts precompiledContracts = mock(PrecompiledContracts.class);
+        Set<DataWord> deletedAccounts = mock(Set.class);
+        ExecutorService vmExecution = mock(ExecutorService.class);
+        Iterator iteratorMock = mock(Iterator.class);
         when(iteratorMock.hasNext()).thenReturn(false);
-        OngoingStubbing ongoingStubbing = when(deletedAccounts.iterator()).thenReturn(iteratorMock);
-        return new TransactionExecutor(
+        when(deletedAccounts.iterator()).thenReturn(iteratorMock);
+        TransactionExecutor txExecutor = new TransactionExecutor(
                 constants, activationConfig, transaction, txIndex, rskAddress,
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
                 true, true, precompiledContracts, deletedAccounts, vmExecution
         );
-    }
 
-    @Test
-    public void testInitHandlesFreeTransactionsOK() {
-        TransactionExecutor txExecutor = createMockedTransactionExecutor();
+
         // paperwork: transaction has high gas limit, execution block has normal gas limit
         // and the nonces are okey
         when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(4000000).toByteArray());
