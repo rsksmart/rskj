@@ -22,7 +22,7 @@ public class TransactionsPartitionExecutor {
     }
 
     public static class PeriodicCheckException extends Exception {
-        private Exception innerException;
+        private final Exception innerException;
 
         PeriodicCheckException(Exception innerException) {
             super(innerException);
@@ -35,7 +35,8 @@ public class TransactionsPartitionExecutor {
     }
 
     private static final Logger logger = LoggerFactory.getLogger("execute");
-    private static int instanceCounter = 0;
+    private ExecutorService executor;
+    private List<Future<Optional<TransactionReceipt>>> futures = new ArrayList<>();
 
     /**
      * Private constructor, as we expect the static method newTransactionsPartitionExecutor is used to
@@ -46,9 +47,6 @@ public class TransactionsPartitionExecutor {
                 TransactionExecutorThread.getFactory(partition.getId())
         );
     }
-
-    private ExecutorService executor;
-    private List<Future<Optional<TransactionReceipt>>> futures = new ArrayList<>();
 
     /**
      * Add a task in the current executor (ie thread)
@@ -84,7 +82,7 @@ public class TransactionsPartitionExecutor {
      * @throws CancellationException
      * @throws ExecutionException
      */
-    public Optional<TransactionReceipt> waitForNextResult(int timeoutMSec) throws TimeoutException, RuntimeException {
+    public Optional<TransactionReceipt> waitForNextResult(int timeoutMSec) throws TimeoutException, ExecutionException {
         Future<Optional<TransactionReceipt>> future = futures.remove(0);
         Optional<TransactionReceipt> receipt = null;
         try {
@@ -92,9 +90,7 @@ public class TransactionsPartitionExecutor {
         } catch (InterruptedException e) {
             // this must never happen
             Thread.currentThread().interrupt();
-            logger.warn("TransactionPartitionExecutor is interrupted", e.toString());
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
+            logger.warn("TransactionPartitionExecutor is interrupted. Raised exception=[{}]", e.toString());
         }
         return receipt;
     }

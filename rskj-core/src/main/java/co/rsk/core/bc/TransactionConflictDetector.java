@@ -23,12 +23,12 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     public static class Conflict {
         private ByteArrayWrapper key;
         private eConflictType conflictType;
-        private TransactionsPartition [] conflictingPartitions = new TransactionsPartition [2];
+        private TransactionsPartition[] conflictingPartitions = new TransactionsPartition[2];
 
         public Conflict(ByteArrayWrapper key, TransactionsPartition conflictFrom, TransactionsPartition conflictWith, eConflictType conflictType) {
             this.key = key;
             this.conflictType = conflictType;
-            this.conflictingPartitions[0]  = conflictFrom;
+            this.conflictingPartitions[0] = conflictFrom;
             this.conflictingPartitions[1] = conflictWith;
         }
 
@@ -50,9 +50,11 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     }
 
     public static class SerializableConflict implements Serializable {
+        private static final long serialVersionUID = 1;
+
         private ByteArrayWrapper key;
         private eConflictType conflictType;
-        private int[] conflictingPartIds = new int [2];
+        private int[] conflictingPartIds = new int[2];
 
         public SerializableConflict(Conflict conflict) {
             this.key = conflict.getKey();
@@ -60,15 +62,22 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
             this.conflictingPartIds[0] = conflict.getConflictFrom().getId();
             this.conflictingPartIds[1] = conflict.getConflictWith().getId();
         }
+
+        public ByteArrayWrapper getKey() {
+            return key;
+        }
+
+        public eConflictType getConflictType() {
+            return conflictType;
+        }
+
+        public int[] getConflictingPartIds() {
+            return Arrays.copyOf(conflictingPartIds, 2);
+        }
     }
 
     private Map<TransactionsPartition, Set<Conflict>> conflictsPerPartition = new HashMap<>();
     private TransactionsPartitioner partitioner;
-
-    public TransactionConflictDetector(TransactionsPartitioner partitioner) {
-        this.partitioner = partitioner;
-    }
-
     // We record all the partitions reading to a given key.
     // If another group attempts to write the same key, there will be a conflict recorded with every readers,
     // resulting in: either failure of block validation, or merging of the conflicting partitions
@@ -86,14 +95,16 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     // resulting in: either failure of block validation, or merging of the conflicting partitions
     private Map<ByteArrayWrapper, Integer> deletedAccounts = new HashMap<>();
 
+    public TransactionConflictDetector(TransactionsPartitioner partitioner) {
+        this.partitioner = partitioner;
+    }
+
     @Override
     public synchronized void onReadKey(ICacheTracking cacheTracking, ByteArrayWrapper key, int partitionId) {
         // There is a conflict if :
         // - the key has already been written by another partition
         // or
         // - the account from that key has been deleted by another partition
-        logger.info("key [{}] is read by group [{}]",
-                key.toString(), partitionId);
 
         if (!checkKeyAlreadyWritten(key, partitionId)) {
             // No conflict detected -> track the read access to the key
@@ -112,8 +123,6 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         // - the key has already been read by one or more other partitions
         // or
         // - the account from that key has been deleted by another partition
-        logger.info("key [{}] is written by group [{}]",
-                key.toString(), partitionId);
 
         if (!checkKeyAlreadyWritten(key, partitionId)) {
             // No conflict detected -> track the write access to the key
@@ -141,14 +150,13 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     }
 
     private Conflict createConflict(ByteArrayWrapper key, int conflictPartId, int originPartId, eConflictType conflictType) {
-        logger.info("Record conflict between groups '[{}]' and '[{}}]'", conflictPartId, originPartId);
         TransactionsPartition conflictPartition = partitioner.fromId(conflictPartId);
         TransactionsPartition originPartition = partitioner.fromId(originPartId);
         if (conflictPartition == null) {
-            logger.error("Unable to get the partition for id " + conflictPartId);
+            logger.error("Unable to get the partition for id [{}]", conflictPartId);
         }
         if (originPartition == null) {
-            logger.error("Unable to get the partition for id " + conflictPartId);
+            logger.error("Unable to get the partition for id [{}]", originPartId);
         }
         return new Conflict(key, conflictPartition, originPartition, conflictType);
     }
@@ -166,7 +174,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         if ((otherPartId == null) || otherPartId.equals(partId)) {
             return false;
         } else {
-            logger.info("key [{}] has already been written by group [{}] --> conflict from group [{}]",
+            logger.info("key [{}] has already been written by partition [{}] --> conflict from partition [{}]",
                     key.toString(), otherPartId, partId);
             recordConflict(createConflict(key, otherPartId, partId, eConflictType.WRITTEN_BEFORE_ACCESSED));
         }
@@ -186,7 +194,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         // Record a conflict for each reading group
         otherPartIds.forEach(conflictPartId -> {
             recordConflict(createConflict(key, conflictPartId, partitionId, eConflictType.ACCESSED_BEFORE_WRITTEN));
-            logger.info("key [{}] has already been read by group [{}] --> conflict from group [{}]",
+            logger.info("key [{}] has already been read by partition [{}] --> conflict from partition [{}]",
                     key.toString(), conflictPartId, partitionId);
         });
         return true;
@@ -240,7 +248,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     }
 
     public synchronized boolean hasConflict() {
-        for(Collection<Conflict> conflicts: conflictsPerPartition.values()) {
+        for (Collection<Conflict> conflicts : conflictsPerPartition.values()) {
             if (!conflicts.isEmpty()) {
                 return true;
             }
@@ -253,26 +261,26 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     }
 
     private void discardPartition(TransactionsPartition partitionToDiscard, TransactionsPartition replacingPartition) {
-        Integer oldPartId = partitionToDiscard.getId();
-        Integer newPartId = replacingPartition.getId();
-        logger.info("Discard partition [{}] into group [{}]", oldPartId, newPartId);
+        int oldPartId = partitionToDiscard.getId();
+        int newPartId = replacingPartition.getId();
+        logger.info("Merge partition [{}] into partition [{}]", oldPartId, newPartId);
 
-        for (Collection<Integer> readers: partitionReadersPerKey.values()) {
+        for (Collection<Integer> readers : partitionReadersPerKey.values()) {
             if (readers.remove(oldPartId)) {
                 // remove() returns true if the element was present and has been removed
                 readers.add(newPartId);
             }
         }
         int finalNewPartId = newPartId;
-        partitionWriterPerKey.replaceAll((k, v) -> (oldPartId.equals(v)) ? finalNewPartId : v);
-        for (Collection<Integer> accessors: accessedAccounts.values()) {
+        partitionWriterPerKey.replaceAll((k, v) -> (v == oldPartId) ? finalNewPartId : v);
+        for (Collection<Integer> accessors : accessedAccounts.values()) {
             if (accessors.remove(oldPartId)) {
                 // remove() returns true if the element was present and has been removed
                 accessors.add(newPartId);
             }
         }
         int finalNewPartId2 = newPartId;
-        deletedAccounts.replaceAll((k, v) -> (oldPartId.equals(v)) ? finalNewPartId2 : v);
+        deletedAccounts.replaceAll((k, v) -> (v == oldPartId) ? finalNewPartId2 : v);
 
         Set<Conflict> conflicts = conflictsPerPartition.remove(partitionToDiscard);
         if (conflicts != null) {
@@ -310,7 +318,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     }
 
     public synchronized void resolveConflicts(Set<TransactionsPartition> mergedPartitions, TransactionsPartition resultingPartition) {
-        for (TransactionsPartition partition: mergedPartitions) {
+        for (TransactionsPartition partition : mergedPartitions) {
             // each access tracked for this partition shall be assigned to mergedPartition instead
             discardPartition(partition, resultingPartition);
         }
@@ -319,7 +327,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
     @VisibleForTesting
     public synchronized Collection<Conflict> getConflicts() {
         Collection<Conflict> allConflicts = new HashSet<>();
-        for(Collection<Conflict> conflicts: conflictsPerPartition.values()) {
+        for (Collection<Conflict> conflicts : conflictsPerPartition.values()) {
             allConflicts.addAll(conflicts);
         }
         return allConflicts;
@@ -331,13 +339,13 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         ACCESSED_BEFORE_DELETE,
         DELETED_BEFORE_ACCESSED
     }
-    
+
     public static class TransactionConflictException extends Exception {
 
-        private Collection<SerializableConflict> conflicts = new ArrayList<>();
+        private final Collection<SerializableConflict> conflicts = new ArrayList<>();
 
         public TransactionConflictException(Collection<Conflict> conflicts) {
-            for(Conflict conflict: conflicts) {
+            for (Conflict conflict : conflicts) {
                 this.conflicts.add(new SerializableConflict(conflict));
             }
         }
@@ -346,11 +354,11 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
             return new ArrayList<>(conflicts);
         }
     }
-    
+
     public synchronized void check() throws TransactionConflictException {
         Collection<Conflict> alllConflicts = new HashSet<>();
         if (hasConflict()) {
-            for(Collection<Conflict> conflicts: conflictsPerPartition.values()) {
+            for (Collection<Conflict> conflicts : conflictsPerPartition.values()) {
                 alllConflicts.addAll(conflicts);
             }
             throw new TransactionConflictException(alllConflicts);

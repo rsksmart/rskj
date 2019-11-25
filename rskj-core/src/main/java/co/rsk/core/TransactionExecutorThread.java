@@ -30,8 +30,8 @@ public class TransactionExecutorThread extends Thread {
         this.partitionId = partitionId;
     }
 
-    private TransactionExecutorThread(TransactionExecutorThread parentThread, ThreadGroup group, Runnable target, String name, long stackSize) {
-        super(group, target, name, stackSize);
+    private TransactionExecutorThread(TransactionExecutorThread parentThread, Runnable target, String name, long stackSize) {
+        super(Thread.currentThread().getThreadGroup(), target, name, stackSize);
         this.partitionId = parentThread.getPartitionId();
     }
 
@@ -48,48 +48,38 @@ public class TransactionExecutorThread extends Thread {
     }
 
     public static ThreadFactory getFactory(String name, long stackSize) {
-        return new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                // We presume that this factory can only be used by an instance of TransactionExecutorThread
-                if (!(Thread.currentThread() instanceof TransactionExecutorThread)) {
-                    throw new IllegalStateException("This ThreadFactory can only be used by an instance of TransactionExecutorThread");
-                }
-                return new TransactionExecutorThread(
-                        (TransactionExecutorThread) Thread.currentThread(),
-                        Thread.currentThread().getThreadGroup(),
-                        r,
-                        name,
-                        stackSize
-                );
+        return runnable -> {
+            // We presume that this factory can only be used by an instance of TransactionExecutorThread
+            if (!(Thread.currentThread() instanceof TransactionExecutorThread)) {
+                throw new IllegalStateException("This ThreadFactory can only be used by an instance of TransactionExecutorThread");
             }
+            return new TransactionExecutorThread(
+                    (TransactionExecutorThread) Thread.currentThread(),
+                    runnable,
+                    name,
+                    stackSize
+            );
         };
     }
 
     public static ThreadFactory getFactory(int partitionId) {
-        return new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                // We presume that this factory cannot be used by an instance of TransactionExecutorThread
-                if (Thread.currentThread() instanceof TransactionExecutorThread) {
-                    throw new IllegalStateException("This ThreadFactory cannot be used by an instance of TransactionExecutorThread");
-                }
-                return new TransactionExecutorThread(partitionId, r);
+        return runnable -> {
+            // We presume that this factory cannot be used by an instance of TransactionExecutorThread
+            if (Thread.currentThread() instanceof TransactionExecutorThread) {
+                throw new IllegalStateException("This ThreadFactory cannot be used by an instance of TransactionExecutorThread");
             }
+            return new TransactionExecutorThread(partitionId, runnable);
         };
     }
 
     @VisibleForTesting
     public static ThreadFactory getFactoryForNewPartition(TransactionsPartitioner partitioner) {
-        return new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                // We presume that this factory cannot be used by an instance of TransactionExecutorThread
-                if (Thread.currentThread() instanceof TransactionExecutorThread) {
-                    throw new IllegalStateException("This ThreadFactory cannot be used by an instance of TransactionExecutorThread");
-                }
-                return new TransactionExecutorThread(partitioner.newPartition().getId(), r);
+        return runnable -> {
+            // We presume that this factory cannot be used by an instance of TransactionExecutorThread
+            if (Thread.currentThread() instanceof TransactionExecutorThread) {
+                throw new IllegalStateException("This ThreadFactory cannot be used by an instance of TransactionExecutorThread");
             }
+            return new TransactionExecutorThread(partitioner.newPartition().getId(), runnable);
         };
     }
 

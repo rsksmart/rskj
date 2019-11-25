@@ -887,11 +887,11 @@ public class BlockExecutorTest {
 
         List<Transaction> referenceList = Arrays.asList(refTransactions);
 
-        BlockExecutor.reorderTransactionList(lstTransactions, referenceList);
-        Assert.assertArrayEquals(refTransactions, lstTransactions.toArray());
+        List<Transaction> reorderedTransactions = BlockExecutor.reorderTransactionList(lstTransactions, referenceList);
+        Assert.assertArrayEquals(refTransactions, reorderedTransactions.toArray());
 
-        BlockExecutor.reorderTransactionReceiptList(lstReceipts, referenceList);
-        Assert.assertArrayEquals(expectedReceipts, lstReceipts.toArray());
+        List<TransactionReceipt> reorderedReceipts = BlockExecutor.reorderTransactionReceiptList(lstReceipts, referenceList);
+        Assert.assertArrayEquals(expectedReceipts, reorderedReceipts.toArray());
     }
 
     @Test

@@ -14,7 +14,7 @@ public class TransactionsPartition {
     public TransactionsPartition(TransactionsPartitioner partitioner) {
         this.id = instanceCounter++;
         this.partitioner = partitioner;
-        this.transactions = new ArrayList<>();
+        this.transactions = new LinkedList<>();
     }
 
     public int getId() {
@@ -44,7 +44,7 @@ public class TransactionsPartition {
     }
 
     public Collection<Transaction> getTransactions() {
-        return new ArrayList<>(transactions);
+        return new LinkedList<>(transactions);
     }
 
     public void clear() {
@@ -55,9 +55,7 @@ public class TransactionsPartition {
     public static class BySizeSorter implements Comparator<TransactionsPartition> {
         @Override
         public int compare(TransactionsPartition p1, TransactionsPartition p2) {
-            if (p1 == p2) {
-                return 0;
-            } else if (p1 == null) {
+            if (p1 == null) {
                 return 1;
             } else if (p2 == null) {
                 return -1;
@@ -70,9 +68,7 @@ public class TransactionsPartition {
     public static class ByIdSorter implements Comparator<TransactionsPartition> {
         @Override
         public int compare(TransactionsPartition p1, TransactionsPartition p2) {
-            if (p1 == p2) {
-                return 0;
-            } else if (p1 == null) {
+            if (p1 == null) {
                 return 1;
             } else if (p2 == null) {
                 return -1;

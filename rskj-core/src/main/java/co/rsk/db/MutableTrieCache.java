@@ -46,6 +46,8 @@ public class MutableTrieCache implements MutableTrie, ICacheTracking {
     // this logs recursive delete operations to be performed at commit time
     private final Set<ByteArrayWrapper> deleteRecursiveLog;
 
+    private Collection<Listener> cacheTrackingListeners = new HashSet<>();
+
     public MutableTrieCache(MutableTrie parentTrie) {
         trie = parentTrie;
         cache = new HashMap<>();
@@ -242,8 +244,6 @@ public class MutableTrieCache implements MutableTrie, ICacheTracking {
     public Keccak256 getValueHash(byte[] key) {
         return internalGet(key, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
     }
-
-    private List<ICacheTracking.Listener> cacheTrackingListeners = new ArrayList<>();
 
     @Override
     public ByteArrayWrapper getAccountFromKey(ByteArrayWrapper key) {

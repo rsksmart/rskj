@@ -2,7 +2,6 @@ package co.rsk.core;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -14,6 +13,7 @@ public class TransactionsPartitioner {
     private static final int NB_MAX_PARTITIONS = 16;
     private Map<Integer, TransactionsPartition> partitionPerPartId = new HashMap<>();
     private int[] partitionEnds = new int[0];
+    private List<TransactionsPartitionExecutor> partExecutors = new ArrayList<>();
 
     public List<Transaction> getAllTransactionsSortedPerPartition() {
         List<Transaction> listTransactions = new ArrayList<>();
@@ -55,9 +55,6 @@ public class TransactionsPartitioner {
         }
     }
 
-    private List<TransactionsPartitionExecutor> partExecutors = new ArrayList<>();
-
-
     public TransactionsPartitionExecutor newPartitionExecutor(TransactionsPartition partition) {
         TransactionsPartitionExecutor partExecutor = new TransactionsPartitionExecutor(partition);
         partExecutors.add(partExecutor);
@@ -72,13 +69,10 @@ public class TransactionsPartitioner {
             for (TransactionsPartitionExecutor partExecutor : partExecutors) {
                 if (partExecutor.hasNextResult()) {
                     try {
-                        Optional<TransactionReceipt> receipt = partExecutor.waitForNextResult(timeoutMSec);
-                    } catch (TimeoutException e) {
+                        partExecutor.waitForNextResult(timeoutMSec);
+                    } catch (TimeoutException | ExecutionException e) {
                         clearExecutors();
-                        throw new TimeoutException();
-                    } catch (RuntimeException e) {
-                        clearExecutors();
-                        throw new ExecutionException(e);
+                        throw e;
                     }
                     if (periodicCheck != null) {
                         try {
@@ -105,22 +99,15 @@ public class TransactionsPartitioner {
 
     public TransactionsPartition mergePartitions(Set<TransactionsPartition> conflictingPartitions) {
         List<TransactionsPartition> listPartitions = new ArrayList<>(conflictingPartitions);
-        Collections.sort(listPartitions, new Comparator<TransactionsPartition>() {
-            @Override
-            public int compare(TransactionsPartition p1, TransactionsPartition p2) {
-                if (p1 == p2) {
-                    return 0;
-                }
-                if (p1 == null) {
-                    return -1;
-                }
-                if (p2 == null) {
-                    return 1;
-                }
-                return p1.getId() - p2.getId();
+        Collections.sort(listPartitions, (p1, p2) -> {
+            if (p1 == null) {
+                return -1;
             }
+            if (p2 == null) {
+                return 1;
+            }
+            return p1.getId() - p2.getId();
         });
-        // Collections.sort(listPartitions, new ByIdSorter());
         TransactionsPartition resultingPartition = listPartitions.remove(0);
         for (TransactionsPartition toMerge : listPartitions) {
             for (Transaction tx : toMerge.getTransactions()) {

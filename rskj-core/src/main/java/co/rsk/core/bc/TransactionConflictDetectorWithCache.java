@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.ObjIntConsumer;
 
 public class TransactionConflictDetectorWithCache extends TransactionConflictDetector {
 
@@ -30,35 +30,20 @@ public class TransactionConflictDetectorWithCache extends TransactionConflictDet
 
     public synchronized void commitPartition(TransactionsPartition partition) {
         int partitionId = partition.getId();
-        commitCachedMap(cachedReadKeysPerPartId, partitionId, new BiConsumer<ByteArrayWrapper, Integer>() {
-            @Override
-            public void accept(ByteArrayWrapper byteArrayWrapper, Integer i) {
-                TransactionConflictDetectorWithCache.super.trackReadAccess(byteArrayWrapper, i);
-            }
+        commitCachedMap(cachedReadKeysPerPartId, partitionId, (byteArrayWrapper, i) -> {
+            TransactionConflictDetectorWithCache.super.trackReadAccess(byteArrayWrapper, i);
         });
-        commitCachedMap(cachedWrittenKeysPerPartId, partitionId, new BiConsumer<ByteArrayWrapper, Integer>() {
-            @Override
-            public void accept(ByteArrayWrapper byteArrayWrapper, Integer i) {
-                TransactionConflictDetectorWithCache.super.trackWriteAccess(byteArrayWrapper, i);
-            }
+        commitCachedMap(cachedWrittenKeysPerPartId, partitionId, (byteArrayWrapper, i) -> {
+            TransactionConflictDetectorWithCache.super.trackWriteAccess(byteArrayWrapper, i);
         });
-        commitCachedMap(cachedAccessedAccounts, partitionId, new BiConsumer<ByteArrayWrapper, Integer>() {
-            @Override
-            public void accept(ByteArrayWrapper byteArrayWrapper, Integer i) {
-                TransactionConflictDetectorWithCache.super.trackAccessToAccount(byteArrayWrapper, i);
-            }
+        commitCachedMap(cachedAccessedAccounts, partitionId, (byteArrayWrapper, i) -> {
+            TransactionConflictDetectorWithCache.super.trackAccessToAccount(byteArrayWrapper, i);
         });
-        commitCachedMap(cachedDeletedAccounts, partitionId, new BiConsumer<ByteArrayWrapper, Integer>() {
-            @Override
-            public void accept(ByteArrayWrapper byteArrayWrapper, Integer i) {
-                TransactionConflictDetectorWithCache.super.trackAccountDeleted(byteArrayWrapper, i);
-            }
+        commitCachedMap(cachedDeletedAccounts, partitionId, (byteArrayWrapper, i) -> {
+            TransactionConflictDetectorWithCache.super.trackAccountDeleted(byteArrayWrapper, i);
         });
-        commitCachedMap(cachedConflictsPerPartId, partitionId, new BiConsumer<Conflict, Integer>() {
-            @Override
-            public void accept(Conflict conflict, Integer i) {
-                TransactionConflictDetectorWithCache.super.recordConflict(conflict);
-            }
+        commitCachedMap(cachedConflictsPerPartId, partitionId, (conflict, i) -> {
+            TransactionConflictDetectorWithCache.super.recordConflict(conflict);
         });
     }
 
@@ -99,7 +84,7 @@ public class TransactionConflictDetectorWithCache extends TransactionConflictDet
         values.add(valueToAdd);
     }
 
-    private static <T> void commitCachedMap(Map<Integer, Collection<T>> cachedMap, int partitionId, BiConsumer<T, Integer> trackFunction) {
+    private static <T> void commitCachedMap(Map<Integer, Collection<T>> cachedMap, int partitionId, ObjIntConsumer<T> trackFunction) {
         Collection<T> cachedValues = cachedMap.remove(partitionId);
         if (cachedValues != null) {
             for (T key : cachedValues) {
