@@ -16,7 +16,9 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+import javax.xml.crypto.Data;
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -45,11 +47,8 @@ public class TransactionExecutorTest {
         when(executionBlock.getNumber()).thenReturn(10L);
         VmConfig vmConfig = mock(VmConfig.class);
         PrecompiledContracts precompiledContracts = mock(PrecompiledContracts.class);
-        Set<DataWord> deletedAccounts = mock(Set.class);
+        Set<DataWord> deletedAccounts = new HashSet<>();
         ExecutorService vmExecution = mock(ExecutorService.class);
-        Iterator iteratorMock = mock(Iterator.class);
-        when(iteratorMock.hasNext()).thenReturn(false);
-        when(deletedAccounts.iterator()).thenReturn(iteratorMock);
         TransactionExecutor txExecutor = new TransactionExecutor(
                 constants, activationConfig, transaction, txIndex, rskAddress,
                 repository, blockStore, receiptStore, blockFactory,
