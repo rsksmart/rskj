@@ -18,50 +18,148 @@
 
 package co.rsk;
 
+import co.rsk.config.GarbageCollectorConfig;
 import co.rsk.config.NodeCliFlags;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.trie.MultiTrieStore;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.util.RskTestContext;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import static org.powermock.api.mockito.PowerMockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(RskContext.class)
 public class RskContextTest {
+
+    private RskSystemProperties testProperties;
+    private RskContext rskContext;
+    @Rule
+    public TemporaryFolder databaseDir = new TemporaryFolder();
+
+    @Before
+    public void setUp() {
+        testProperties = mock(RskSystemProperties.class);
+        doReturn(0).when(testProperties).getStatesCacheSize();
+
+        rskContext = new RskContext(new String[0]) {
+            @Override
+            public RskSystemProperties getRskSystemProperties() {
+                return testProperties;
+            }
+        };
+    }
+
     @Test
     public void getCliArgsSmokeTest() {
-        RskTestContext rskContext = new RskTestContext(new String[] { "--devnet" });
-        assertThat(rskContext.getCliArgs(), notNullValue());
-        assertThat(rskContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
+        RskTestContext devnetContext = new RskTestContext(new String[] { "--devnet" });
+        assertThat(devnetContext.getCliArgs(), notNullValue());
+        assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
     }
 
     @Test
-    public void getBuildInfoSmokeTest() {
-        RskTestContext rskContext = new RskTestContext(new String[0]);
-        mockBuildInfoResource(new ByteArrayInputStream("build.hash=c0ffee\nbuild.branch=HEAD".getBytes()));
-        assertThat(rskContext.getBuildInfo(), notNullValue());
-        assertThat(rskContext.getBuildInfo().getBuildHash(), is("c0ffee"));
+    public void shouldBuildSimpleTrieStore() throws IOException {
+        Path testDatabasesDirectory = databaseDir.getRoot().toPath();
+        doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
+        doReturn(testDatabasesDirectory.toString()).when(testProperties).databaseDir();
+
+        TrieStore trieStore = rskContext.getTrieStore();
+        Assert.assertThat(trieStore, is(instanceOf(TrieStoreImpl.class)));
+        Assert.assertThat(Files.list(testDatabasesDirectory).count(), is(1L));
     }
 
     @Test
-    public void getBuildInfoMissingPropertiesSmokeTest() {
-        RskTestContext rskContext = new RskTestContext(new String[0]);
-        mockBuildInfoResource(null);
-        assertThat(rskContext.getBuildInfo(), notNullValue());
-        assertThat(rskContext.getBuildInfo().getBuildHash(), is("dev"));
+    public void shouldBuildSimpleTrieStoreCleaningUpMultiTrieStore() throws IOException, InterruptedException {
+        Path testDatabasesDirectory = databaseDir.getRoot().toPath();
+        doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
+        doReturn(testDatabasesDirectory.toString()).when(testProperties).databaseDir();
+
+        long preExistingEpochs = 4;
+        for (int i = 0; i < preExistingEpochs; i++) {
+            Files.createDirectory(testDatabasesDirectory.resolve(String.format("unitrie_%d", i)));
+        }
+
+        Assert.assertThat(Files.list(testDatabasesDirectory).count(), is(preExistingEpochs));
+        TrieStore trieStore = rskContext.getTrieStore();
+        Assert.assertThat(trieStore, is(instanceOf(TrieStoreImpl.class)));
+        Assert.assertThat(Files.list(testDatabasesDirectory).count(), is(1L));
     }
 
-    private void mockBuildInfoResource(InputStream buildInfoStream) {
-        mockStatic(RskContext.class);
-        ClassLoader classLoader = mock(ClassLoader.class);
-        when(classLoader.getResourceAsStream("build-info.properties")).thenReturn(buildInfoStream);
-        when(RskContext.class.getClassLoader()).thenReturn(classLoader);
+    @Test
+    public void shouldBuildMultiTrieStore() throws IOException {
+        long numberOfEpochs = 3;
+        Path testDatabasesDirectory = databaseDir.getRoot().toPath();
+        doReturn(new GarbageCollectorConfig(true, 1000, (int) numberOfEpochs)).when(testProperties).garbageCollectorConfig();
+        doReturn(testDatabasesDirectory.toString()).when(testProperties).databaseDir();
+
+        TrieStore trieStore = rskContext.getTrieStore();
+        Assert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
+        Assert.assertThat(Files.list(testDatabasesDirectory).count(), is(numberOfEpochs));
+    }
+
+    @Test
+    public void shouldBuildMultiTrieStoreMigratingSingleTrieStore() throws IOException {
+        long numberOfEpochs = 3;
+        Path testDatabasesDirectory = databaseDir.getRoot().toPath();
+        doReturn(new GarbageCollectorConfig(true, 1000, (int) numberOfEpochs)).when(testProperties).garbageCollectorConfig();
+        doReturn(testDatabasesDirectory.toString()).when(testProperties).databaseDir();
+
+        Files.createDirectory(testDatabasesDirectory.resolve("unitrie"));
+
+        TrieStore trieStore = rskContext.getTrieStore();
+        Assert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
+        Assert.assertThat(Files.list(testDatabasesDirectory).count(), is(numberOfEpochs));
+        Assert.assertThat(Files.list(testDatabasesDirectory).noneMatch(p -> p.getFileName().toString().equals("unitrie")), is(true));
+    }
+
+    @Test
+    public void shouldBuildMultiTrieStoreFromExistingDirectories() throws IOException {
+        int numberOfEpochs = 3;
+        Path testDatabasesDirectory = databaseDir.getRoot().toPath();
+        doReturn(new GarbageCollectorConfig(true, 1000, numberOfEpochs)).when(testProperties).garbageCollectorConfig();
+        doReturn(testDatabasesDirectory.toString()).when(testProperties).databaseDir();
+
+        int initialEpoch = 3;
+        for (int i = initialEpoch; i < initialEpoch + numberOfEpochs; i++) {
+            Files.createDirectory(testDatabasesDirectory.resolve(String.format("unitrie_%d", i)));
+        }
+
+        TrieStore trieStore = rskContext.getTrieStore();
+        Assert.assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
+        Assert.assertThat(Files.list(testDatabasesDirectory).count(), is((long) numberOfEpochs));
+        int[] directorySufixes = Files.list(testDatabasesDirectory)
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .map(fileName -> fileName.replaceAll("unitrie_", ""))
+                .mapToInt(Integer::valueOf)
+                .sorted()
+                .toArray();
+        Assert.assertThat(directorySufixes, is(IntStream.range(initialEpoch, initialEpoch + numberOfEpochs).toArray()));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    @Ignore("Permissions set fails under CircleCI")
+    public void shouldFailIfCannotBuildMultiTrieStore() throws IOException {
+        Path testDatabasesDirectory = Files.createTempDirectory("test", PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("---------")));
+        doReturn(new GarbageCollectorConfig(true, 1000, 3)).when(testProperties).garbageCollectorConfig();
+        doReturn(testDatabasesDirectory.toString()).when(testProperties).databaseDir();
+
+        RskContext rskContext = new RskContext(new String[0]) {
+            @Override
+            public RskSystemProperties getRskSystemProperties() {
+                return testProperties;
+            }
+        };
+
+        rskContext.getTrieStore();
     }
 }
