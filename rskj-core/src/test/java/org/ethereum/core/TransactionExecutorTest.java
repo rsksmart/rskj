@@ -11,20 +11,16 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 
-import javax.xml.crypto.Data;
 import java.math.BigInteger;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.any;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 public class TransactionExecutorTest {
@@ -72,8 +68,7 @@ public class TransactionExecutorTest {
         // but is sending some nice value over the wire
         when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(68000)));
         // note that the transaction is free of cost
-        assert(transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())) == 0);
-        Assert.assertFalse(txExecutor.init());
+        assertEquals(0, transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())));
+        assertFalse(txExecutor.init());
     }
-
 }
