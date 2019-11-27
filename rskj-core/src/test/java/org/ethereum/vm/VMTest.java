@@ -193,91 +193,50 @@ public class VMTest {
     }
 
 
-    @Test(expected = Program.OutOfGasException.class)
-    public void testCanGetMemoryUsingIdentityContract() {
-        String fTimes64 = StringUtils.repeat('F', 64);
-        invoke.setGas(6800000);
-        Program niceProgram = getProgram(compile(
-                " PUSH32 0x" + fTimes64 + // store the biggest 32 bytes number
-                        " PUSH1 0x00" + // on the 0x00 position on memory
-                        " MSTORE" + // do it
-                        " PUSH1 0x00" + // set a counter for us to use :)
-                        " PUSH1 0x10" + // set input size
-                        " JUMPDEST" +
-                        " POP" + // pop old size...
-                        " PUSH1 0x10" + // set input size
-                        " JUMPDEST" + // we will come back here
-                        " SWAP1" +  // put counter on top...
-                        " PUSH1 0x01 ADD" + // add one to the loop counter stack
-                        " SWAP1 " + // send the counter to the bottom of the stack
-                        " PUSH1 0x02 MUL"  + // stack now has input size... 32... 64... 128...
-                        " DUP1 " + // set the return size to whatever is in the stack, honest!
-                        " PUSH1 0x01 MSIZE SUB" + // set the return offset to the last word on memory
-                        " DUP3" + // set the input size to the input size
-                        " PUSH1 0x00" + // the input is located at 0x00
-                        " PUSH1 0x04" + // for the identity contract
-                        " PUSH8 0xFFFFFFFFFFFFFFFF" + // use all the gas u want
-                        " STATICCALL" + // call it
-                        " POP " + // discard result...
-                        " DUP2 PUSH1 0x15 GT PUSH1 0x2c JUMPI" + // first loop...
-                        " DUP2 PUSH1 0x15 EQ PUSH1 0x28 JUMPI " + // reset size
-                        " DUP2 PUSH1 0x25 GT PUSH1 0x2c JUMPI" + // second loop...
-                        " DUP2 PUSH1 0x25 EQ PUSH1 0x28 JUMPI " + // reset size
-                        " DUP2 PUSH1 0x2B GT PUSH1 0x2c JUMPI" // third loop...
-        ), createTransaction(Integer.MAX_VALUE));
-
-        vm.steps(niceProgram, Long.MAX_VALUE);
-        // It may be useful to uncomment this if you need more details
-        // about the behavior of the program.
-        // int niceMemorySize = niceProgram.getMemSize();
-        // long niceGasUsage = niceProgram.getResult().getGasUsed();
-        // System.out.println("NICE PROGRAM");
-        // System.out.println("MEM SIZE: " + niceMemorySize);
-        // System.out.println("GAS USAGE: " + niceGasUsage);
-
-        byte[] badBytecode = compile(
-                " PUSH32 0x" + fTimes64 + // store the biggest 32 bytes number
-                " PUSH1 0x00" + // on the 0x00 position on memory
-                " MSTORE" + // do it
-                " PUSH1 0x00" + // set a counter for us to use :)
-                " PUSH1 0x10" + // set input size
-                " JUMPDEST" +
-                " POP" + // pop old size...
-                " PUSH1 0x10" + // set input size
-                " JUMPDEST" + // we will come back here
-                " SWAP1" +  // put counter on top...
-                " PUSH1 0x01 ADD" + // add one to the loop counter stack
-                " SWAP1 " + // send the counter to the bottom of the stack
-                " PUSH1 0x02 MUL"  + // stack now has input size... 32... 64... 128...
-                " PUSH1 0x00 " + // set the return size to zero, bad, bad, lying, bytecode...
-                " PUSH1 0x01 MSIZE SUB" + // set the return offset to the last word on memory
-                " DUP3" + // set the input size to the input size
-                " PUSH1 0x00" + // the input is located at 0x00
-                " PUSH1 0x04" + // for the identity contract
-                " PUSH8 0xFFFFFFFFFFFFFFFF" + // use all the gas u want
-                " STATICCALL" + // call it
-                " POP " + // discard result...
-                " DUP2 PUSH1 0x15 GT PUSH1 0x2c JUMPI" + // first loop...
-                " DUP2 PUSH1 0x15 EQ PUSH1 0x28 JUMPI " + // reset size
-                " DUP2 PUSH1 0x26 GT PUSH1 0x2c JUMPI" + // second loop...
-                " DUP2 PUSH1 0x26 EQ PUSH1 0x28 JUMPI " + // reset size
-                " DUP2 PUSH1 0x34 GT PUSH1 0x2c JUMPI" + // third loop...
-                " DUP2 PUSH1 0x34 EQ PUSH1 0x28 JUMPI" + // reset size
-                " DUP2 PUSH1 0x40 GT PUSH1 0x2c JUMPI" + // fourth loop...
-                " PUSH4 0x0449ff0a"  + // ignore, this should be the position
-                " PUSH1 0x00" + // of the data in memory
-                " RETURN"
-        );
-        Program badProgram = getProgram(badBytecode);
-        vm.steps(badProgram, Long.MAX_VALUE);
-        // It may be useful to uncomment this if you need more details
-        // about the behavior of the program.
-        // int badMemorySize = badProgram.getMemSize();
-        // long badGasUsage = badProgram.getResult().getGasUsed();
-        // System.out.println("BAD PROGRAM");
-        // System.out.println("MEM SIZE: " + badMemorySize);
-        // System.out.println("GAS USAGE: " + badGasUsage);
-        invoke.setGas(100000);
+    @Test
+    public void getFreeMemoryUsingPrecompiledContractLyingAboutReturnSize() {
+        // just a first run to initialize the precompiled contract
+        // and then compare the bad and good programs
+        Program initContract = getProgram(compile(
+                " PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x01" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                        " PUSH1 0xFF" +
+                        " CALL"
+        ));
+        Program bad = getProgram(compile("" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" + // out size, note this is a lie, the precompiled WILL return some data
+                " PUSH1 0x20" + // out off
+                " PUSH1 0x01" + // in size
+                " PUSH1 0x00" + // in off
+                " PUSH1 0x00" +
+                " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                " PUSH4 0x005B8D80" +
+                " CALL"
+        ));
+        Program good = getProgram(compile("PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x20" + //out size, this is correct
+                " PUSH1 0x20" + //out off
+                " PUSH1 0x20" + //in size
+                " PUSH1 0x00" + //in off
+                " PUSH1 0x00" +
+                " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                " PUSH4 0x005B8D80" +
+                " CALL"
+        ));
+        vm.steps(initContract, Long.MAX_VALUE);
+        vm.steps(bad, Long.MAX_VALUE);
+        vm.steps(good, Long.MAX_VALUE);
+        Assert.assertEquals("good program will asign a new word of memory, so will charge 3 more",
+                good.getResult().getGasUsed(), bad.getResult().getGasUsed() + GasCost.MEMORY);
+        Assert.assertEquals("good program will have more memory, as it paid for it", good.getMemSize(),
+                bad.getMemSize() - 32);
     }
 
     @Test
@@ -323,11 +282,24 @@ public class VMTest {
     }
 
     @Test
-    public void excesiveMemoryTest() {
-        Program bad = getProgram(compile("PUSH1 0x00" +
+    public void getFreeMemoryUsingPrecompiledContractAndSettingFarOffOffset() {
+        // just a first run to initialize the precompiled contract
+        // and then compare the bad and good programs
+        Program initContract = getProgram(compile(
                 " PUSH1 0x00" +
-                " PUSH1 0x00" + //out size
-                " PUSH4 0x01000000" + //out off
+                " PUSH1 0x00" +
+                " PUSH1 0x01" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                " PUSH1 0xFF" +
+                " CALL"
+        ));
+        Program bad = getProgram(compile("" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" + //out size, note this is a lie, the precompiled WILL return some data
+                " PUSH4 0x01000000" + //out off, see how far off it is
                 " PUSH1 0x01" + //in size
                 " PUSH1 0x00" + //in off
                 " PUSH1 0x00" +
@@ -337,7 +309,7 @@ public class VMTest {
         ));
         Program good = getProgram(compile("PUSH1 0x00" +
                 " PUSH1 0x00" +
-                " PUSH1 0x00" + //out size
+                " PUSH1 0x01" + //out size
                 " PUSH1 0x00" + //out off
                 " PUSH1 0x01" + //in size
                 " PUSH1 0x00" + //in off
@@ -346,9 +318,10 @@ public class VMTest {
                 " PUSH4 0x005B8D80" +
                 " CALL"
         ));
+        vm.steps(initContract, Long.MAX_VALUE);
         vm.steps(bad, Long.MAX_VALUE);
         vm.steps(good, Long.MAX_VALUE);
-        Assert.assertTrue(good.getResult().getGasUsed() <= bad.getResult().getGasUsed());
+        Assert.assertEquals(good.getResult().getGasUsed(), bad.getResult().getGasUsed());
         Assert.assertEquals(good.getMemSize(), bad.getMemSize());
     }
 
