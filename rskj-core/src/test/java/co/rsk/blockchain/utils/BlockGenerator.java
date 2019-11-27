@@ -56,7 +56,9 @@ public class BlockGenerator {
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    private static final Block[] blockCache = new Block[5];
+    // don't keep blockCache as static because it create conflicts between concurrent tests if launched with different
+    // activationConfig
+    private Block[] blockCache = new Block[5];
 
     private final DifficultyCalculator difficultyCalculator;
     private final BlockFactory blockFactory;
