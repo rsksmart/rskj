@@ -36,6 +36,8 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -61,6 +63,10 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.mockito.AdditionalMatchers.geq;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -68,13 +74,14 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class BlockExecutorTest {
     public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     private static final TestSystemProperties config = new TestSystemProperties();
-    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private static final long GAS_PER_TRANSACTION = 21000;
 
     private Blockchain blockchain;
     private BlockExecutor executor;
     private TrieStore trieStore;
     private RepositorySnapshot repository;
+    private ActivationConfig activationConfig;
+    private BlockFactory blockFactory;
 
     @Before
     public void setUp() {
@@ -83,12 +90,14 @@ public class BlockExecutorTest {
         executor = objects.getBlockExecutor();
         trieStore = objects.getTrieStore();
         repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
+        activationConfig = mock(ActivationConfig.class);
+        blockFactory = new BlockFactory(activationConfig);
     }
 
     @Test
     public void executeBlockWithoutTransaction() {
         Block parent = blockchain.getBestBlock();
-        Block block = new BlockGenerator().createChildBlock(parent);
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(parent);
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
 
@@ -97,6 +106,12 @@ public class BlockExecutorTest {
         Assert.assertTrue(result.getTransactionReceipts().isEmpty());
         Assert.assertArrayEquals(repository.getRoot(), parent.getStateRoot());
         Assert.assertArrayEquals(repository.getRoot(), result.getFinalState().getHash().getBytes());
+    }
+
+    @Test
+    public void executeBlockWithoutTransactionRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        executeBlockWithoutTransaction();
     }
 
     @Test
@@ -141,6 +156,12 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000 - GAS_PER_TRANSACTION - 10), accountState.getBalance().asBigInteger());
+    }
+
+    @Test
+    public void executeBlockWithOneTransactionRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        executeBlockWithOneTransaction();
     }
 
     @Test
@@ -202,7 +223,14 @@ public class BlockExecutorTest {
     }
 
     @Test
+    public void executeBlockWithTwoTransactionsRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        executeBlockWithTwoTransactions();
+    }
+
+    @Test
     public void executeBlockWithTwoTransactionsInParallel() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
         Block block = getBlockWithTwoTransactionsDifferentsAccounts(); // this changes the best block
         Block parent = blockchain.getBestBlock();
         // split the 2 transactions is 2 different partitions (ie 2 concurrent threads)
@@ -290,6 +318,7 @@ public class BlockExecutorTest {
 
     @Test
     public void executeBlockWithTwoConflictingTransactionsInParallel() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
         Block block = getBlockWithTwoTransactions(); // this changes the best block
         Block parent = blockchain.getBestBlock();
         // split the 2 transactions is 2 different partitions (ie 2 concurrent threads)
@@ -319,10 +348,10 @@ public class BlockExecutorTest {
 
     @Test
     public void executeAndFillBlockWithOneTransaction() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(blockFactory, activationConfig);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), blockFactory);
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
         executor.executeAndFill(block, parent.getHeader());
@@ -335,6 +364,12 @@ public class BlockExecutorTest {
         Assert.assertArrayEquals(BlockExecutor.calculateLogsBloom(result.getTransactionReceipts()), block.getLogBloom());
 
         Assert.assertEquals(3000000, new BigInteger(1, block.getGasLimit()).longValue());
+    }
+
+    @Test
+    public void executeAndFillBlockWithOneTransactionRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        executeAndFillBlockWithOneTransaction();
     }
 
     @Test
@@ -352,7 +387,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, blockFactory);
 
         Transaction tx = createTransaction(
                 account,
@@ -372,7 +407,7 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        BlockGenerator blockGenerator = new BlockGenerator();
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
         Block genesis = blockGenerator.getGenesisBlock();
         genesis.setStateRoot(repository.getRoot());
         Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
@@ -391,6 +426,12 @@ public class BlockExecutorTest {
     }
 
     @Test
+    public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalanceRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance();
+    }
+
+    @Test
     public void executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalance() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
@@ -405,7 +446,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, blockFactory);
 
         Transaction tx = createTransaction(
                 account,
@@ -425,7 +466,7 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        BlockGenerator blockGenerator = new BlockGenerator();
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
         Block genesis = blockGenerator.getGenesisBlock();
         genesis.setStateRoot(repository.getRoot());
         Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
@@ -436,21 +477,33 @@ public class BlockExecutorTest {
     }
 
     @Test
+    public void executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalanceRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalance();
+    }
+
+    @Test
     public void validateBlock() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(blockFactory, activationConfig);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), blockFactory);
 
         Assert.assertTrue(executor.executeAndValidate(block, parent.getHeader()));
     }
 
     @Test
+    public void validateBlockRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        validateBlock();
+    }
+
+    @Test
     public void invalidBlockBadStateRoot() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(blockFactory, activationConfig);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), blockFactory);
 
         byte[] stateRoot = block.getStateRoot();
         stateRoot[0] = (byte) ((stateRoot[0] + 1) % 256);
@@ -459,11 +512,17 @@ public class BlockExecutorTest {
     }
 
     @Test
+    public void invalidBlockBadStateRootRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        invalidBlockBadStateRoot();
+    }
+
+    @Test
     public void invalidBlockBadReceiptsRoot() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(blockFactory, activationConfig);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), blockFactory);
 
         byte[] receiptsRoot = block.getReceiptsRoot();
         receiptsRoot[0] = (byte) ((receiptsRoot[0] + 1) % 256);
@@ -472,11 +531,17 @@ public class BlockExecutorTest {
     }
 
     @Test
+    public void invalidBlockBadReceiptsRootRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        invalidBlockBadReceiptsRoot();
+    }
+
+    @Test
     public void invalidBlockBadGasUsed() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(blockFactory, activationConfig);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), blockFactory);
 
         block.getHeader().setGasUsed(0);
 
@@ -484,11 +549,17 @@ public class BlockExecutorTest {
     }
 
     @Test
+    public void invalidBlockBadGasUsedRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        invalidBlockBadGasUsed();
+    }
+
+    @Test
     public void invalidBlockBadPaidFees() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(blockFactory, activationConfig);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), blockFactory);
 
         block.getHeader().setPaidFees(Coin.ZERO);
 
@@ -496,11 +567,17 @@ public class BlockExecutorTest {
     }
 
     @Test
+    public void invalidBlockBadPaidFeesRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        invalidBlockBadPaidFees();
+    }
+
+    @Test
     public void invalidBlockBadLogsBloom() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(blockFactory, activationConfig);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), blockFactory);
 
         byte[] logBloom = block.getLogBloom();
         logBloom[0] = (byte) ((logBloom[0] + 1) % 256);
@@ -508,7 +585,13 @@ public class BlockExecutorTest {
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
-    private static TestObjects generateBlockWithOneTransaction() {
+    @Test
+    public void invalidBlockBadLogsBloomRskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        invalidBlockBadLogsBloom();
+    }
+
+    private static TestObjects generateBlockWithOneTransaction(BlockFactory blockFactory, ActivationConfig activationConfig) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
 
@@ -521,7 +604,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, blockFactory);
 
         Transaction tx = createTransaction(
                 account,
@@ -544,7 +627,7 @@ public class BlockExecutorTest {
         // in genesis.
         byte[] rootPriorExecution = repository.getRoot();
 
-        Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFill(block, genesis.getHeader());
         repository.save();
@@ -570,7 +653,7 @@ public class BlockExecutorTest {
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
-        return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
+        return new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
     private Block getBlockWithTwoTransactions() {
@@ -594,7 +677,7 @@ public class BlockExecutorTest {
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
-        return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
+        return new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
     private Block getBlockWithTwoTransactionsDifferentsAccounts() {
@@ -620,7 +703,7 @@ public class BlockExecutorTest {
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
-        return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
+        return new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
     private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
@@ -655,15 +738,33 @@ public class BlockExecutorTest {
     }
 
     @Test(expected = RuntimeException.class)
+    public void executeBlocksWithOneStrangeTransactions1Rskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        executeBlocksWithOneStrangeTransactions1();
+    }
+
+    @Test(expected = RuntimeException.class)
     public void executeBlocksWithOneStrangeTransactions2() {
         // will fail to create an address that is not 20 bytes long
         executeBlockWithOneStrangeTransaction(true, true, generateBlockWithOneStrangeTransaction(1));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void executeBlocksWithOneStrangeTransactions2Rskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        executeBlocksWithOneStrangeTransactions2();
     }
 
     @Test
     public void executeBlocksWithOneStrangeTransactions3() {
         // the wrongly-encoded value parameter will be re-encoded with the correct serialization and won't fail
         executeBlockWithOneStrangeTransaction(false, false, generateBlockWithOneStrangeTransaction(2));
+    }
+
+    @Test
+    public void executeBlocksWithOneStrangeTransactions3Rskip144On() {
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+        executeBlocksWithOneStrangeTransactions3();
     }
 
     private void executeBlockWithOneStrangeTransaction(
@@ -673,7 +774,7 @@ public class BlockExecutorTest {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         TrieStore trieStore = objects.getTrieStore();
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, blockFactory);
         Repository repository = new MutableRepository(trieStore,
                 trieStore.retrieve(objects.getParent().getStateRoot()).get());
         Transaction tx = objects.getTransaction();
@@ -743,7 +844,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, blockFactory);
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = createStrangeTransaction(
@@ -759,7 +860,7 @@ public class BlockExecutorTest {
 
         Block genesis = BlockChainImplTest.getGenesisBlock(trieStore);
         genesis.setStateRoot(repository.getRoot());
-        Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFillReal(block, genesis.getHeader()); // Forces all transactions included
         repository.save();
@@ -813,7 +914,7 @@ public class BlockExecutorTest {
         return digest.digest();
     }
 
-    private static BlockExecutor buildBlockExecutor(TrieStore store) {
+    private static BlockExecutor buildBlockExecutor(TrieStore store, BlockFactory blockFactory) {
         StateRootHandler stateRootHandler = new StateRootHandler(
                 config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
 
@@ -896,6 +997,9 @@ public class BlockExecutorTest {
 
     @Test
     public void moreThan16TransationsInParallel() {
+        // Activate RSKIP144
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+
         // first we modify the best block to have two accounts with balance
         Repository track = repository.startTracking();
 
@@ -912,7 +1016,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        BlockGenerator blockGenerator = new BlockGenerator();
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
         Block genesis = blockGenerator.getGenesisBlock();
         genesis.setStateRoot(repository.getRoot());
 
@@ -932,6 +1036,9 @@ public class BlockExecutorTest {
 
     @Test
     public void partitioningWithInvalidTransaction() {
+        // Activate RSKIP144
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+
         /**
          * Block 1 : we have 3 Txs :
          * - tx1 transfers from key ALICE to key BOB
@@ -959,7 +1066,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        BlockGenerator blockGenerator = new BlockGenerator();
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
         Block bestBlock = blockchain.getBestBlock();
         bestBlock.setStateRoot(repository.getRoot());
         List<BlockHeader> uncles = new ArrayList<>();
@@ -1018,6 +1125,10 @@ public class BlockExecutorTest {
 
     @Test
     public void conflictingTransactions() {
+
+        // Activate RSKIP144
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+
         // first we modify the best block to have two accounts with balance
         Repository track = repository.startTracking();
 
@@ -1063,7 +1174,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        BlockGenerator blockGenerator = new BlockGenerator();
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
         Block genesis = blockGenerator.getGenesisBlock();
         genesis.setStateRoot(repository.getRoot());
 

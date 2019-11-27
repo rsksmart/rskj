@@ -449,7 +449,7 @@ public class BlockExecutor {
 
         BlockSharedData blockSharedData = new BlockSharedData(track, programTraceProcessor);
 
-        if (!block.isSealed()) {
+        if (!block.isSealed() && block.useParallelTxExecution()) {
             // filling block
             if (!computeTxPartitioning(block, track, programTraceProcessor, acceptInvalidTransactions, discardInvalidTxs)) {
                 profiler.stop(metric);
@@ -459,7 +459,7 @@ public class BlockExecutor {
 
         int[] partitionEnds = block.getPartitionEnds();
         final Iterator<Integer> itPartitionEnds = IntStream.of(partitionEnds).boxed().iterator();
-        int nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : 0;
+        int nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : -2;
 
         TransactionsPartitioner partitioner2 = new TransactionsPartitioner();
         TransactionsPartitionExecutor partExecutor = partitioner2.newPartitionExecutor(partitioner2.newPartition());
@@ -476,7 +476,7 @@ public class BlockExecutor {
 
             if (txindex == nextIndexPartition + 1) {
                 // start a new partition from this transaction
-                nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : 0;
+                nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : -2;
                 partExecutor = partitioner2.newPartitionExecutor(partitioner2.newPartition());
             }
 

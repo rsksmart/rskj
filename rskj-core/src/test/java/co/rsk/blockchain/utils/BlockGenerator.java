@@ -154,7 +154,7 @@ public class BlockGenerator {
                         ByteUtils.clone(parent.getStateRoot()), EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         ByteUtils.clone(new Bloom().getData()), difficulty, parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count, EMPTY_BYTE_ARRAY,
-                        Coin.valueOf(fees), null, null, null, new byte[12], null, uncles.size()
+                        Coin.valueOf(fees), null, null, null, new byte[12], null, uncles.size(), new int[]{}
                 ),
                 Collections.emptyList(),
                 uncles
@@ -176,7 +176,7 @@ public class BlockGenerator {
                         stateRoot, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled),
                         EMPTY_TRIE_HASH, logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], null, 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], null, 0, new int[]{}
                 ),
                 txs,
                 Collections.emptyList(),
@@ -282,7 +282,7 @@ public class BlockGenerator {
                         EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled), EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), number,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], minimumGasPrice.getBytes(), 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], minimumGasPrice.getBytes(), 0, new int[]{}
                 ),
                 txs,
                 Collections.emptyList()
@@ -304,7 +304,7 @@ public class BlockGenerator {
                         EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0, new int[]{}
                 ),
                 txs,
                 Collections.emptyList()

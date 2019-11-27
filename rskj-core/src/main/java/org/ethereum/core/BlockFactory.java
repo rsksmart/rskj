@@ -23,10 +23,12 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
+import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -41,7 +43,9 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
     private static final int RLP_HEADER_SIZE = 16;
+    private static final int RLP_HEADER_SIZE_WITH_PARALLELTXS = 17;
     private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 19;
+    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING_AND_PARALLELTXS = 20;
 
     private final ActivationConfig activationConfig;
 
@@ -96,7 +100,8 @@ public class BlockFactory {
                 ByteUtils.clone(EMPTY_TRIE_HASH), null, ByteUtils.clone(EMPTY_TRIE_HASH),
                 logsBloom, difficulty, number, gasLimit, gasUsed, timestamp, extraData, Coin.ZERO,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, miningForkDetectionData, minimumGasPrice, uncleCount
+                bitcoinMergedMiningCoinbaseTransaction, miningForkDetectionData, minimumGasPrice, uncleCount,
+                new int[]{}
         );
     }
 
@@ -106,10 +111,11 @@ public class BlockFactory {
             byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
             Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
             byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
-            byte[] minimumGasPrice, int uncleCount) {
+            byte[] minimumGasPrice, int uncleCount, int[] partitionEnds) {
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, number);
         boolean includeForkDetectionData = activationConfig.isActive(ConsensusRule.RSKIP110, number) &&
                 mergedMiningForkDetectionData.length > 0;
+        boolean useParallelTxExecution = activationConfig.isActive(ConsensusRule.RSKIP144, number);
         return new BlockHeader(
                 parentHash, unclesHash, new RskAddress(coinbase),
                 stateRoot, txTrieRoot, receiptTrieRoot,
@@ -117,7 +123,7 @@ public class BlockFactory {
                 gasLimit, gasUsed, timestamp, extraData, paidFees,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 mergedMiningForkDetectionData, RLP.parseSignedCoinNonNullZero(minimumGasPrice), uncleCount,
-                false, useRskip92Encoding, includeForkDetectionData
+                partitionEnds, false, useRskip92Encoding, includeForkDetectionData, useParallelTxExecution
         );
     }
 
@@ -138,12 +144,37 @@ public class BlockFactory {
         return decodeHeader(RLP.decodeList(encoded), true);
     }
 
+    @VisibleForTesting
+    public static int[] decodePartitionEnds(RLPElement partitionEndsRLPEncoded) {
+        List<RLPElement> headerDecoded4 = RLP.decodeList(partitionEndsRLPEncoded.getRLPData());
+        int[] decodedPartitionEnds = new int[headerDecoded4.size()];
+        for (int i = 0; i < headerDecoded4.size(); i++) {
+            byte[] encodedInt = headerDecoded4.get(i).getRLPRawData();
+            if (ByteUtil.EMPTY_BYTE_ARRAY.equals(encodedInt)) {
+                // Caution : encoding byte[]{0} gives byte[]{OFFSET_SHORT_ITEM}
+                // whereas decoding byte[]{OFFSET_SHORT_ITEM} gives EMPTY_BYTE_ARRAY
+                // Then, in this case we need to override the decoding result to get the exact data
+                // as before the encoding
+                encodedInt = new byte[]{0};
+            }
+            decodedPartitionEnds[i] = BigIntegers.fromUnsignedByteArray(encodedInt).intValue();
+        }
+        return decodedPartitionEnds;
+    }
+
     private BlockHeader decodeHeader(RLPList rlpHeader, boolean sealed) {
         // TODO fix old tests that have other sizes
-        if (rlpHeader.size() != RLP_HEADER_SIZE && rlpHeader.size() != RLP_HEADER_SIZE_WITH_MERGED_MINING) {
+        if (rlpHeader.size() != RLP_HEADER_SIZE
+                && rlpHeader.size() != RLP_HEADER_SIZE_WITH_MERGED_MINING
+                && rlpHeader.size() != RLP_HEADER_SIZE_WITH_PARALLELTXS
+                && rlpHeader.size() != RLP_HEADER_SIZE_WITH_MERGED_MINING_AND_PARALLELTXS) {
             throw new IllegalArgumentException(String.format(
-                    "A block header must have 16 elements or 19 including merged-mining fields but it had %d",
-                    rlpHeader.size()
+                    "The block header have a wrong number of elements ([{}]). Only allowed header with {}, {}, {}, or {} elements",
+                    rlpHeader.size(),
+                    RLP_HEADER_SIZE,
+                    RLP_HEADER_SIZE_WITH_MERGED_MINING,
+                    RLP_HEADER_SIZE_WITH_PARALLELTXS,
+                    RLP_HEADER_SIZE_WITH_MERGED_MINING_AND_PARALLELTXS
             ));
         }
 
@@ -189,23 +220,30 @@ public class BlockFactory {
         int r = 15;
 
         int uncleCount = 0;
-        if (rlpHeader.size() == RLP_HEADER_SIZE || rlpHeader.size() == RLP_HEADER_SIZE_WITH_MERGED_MINING) {
-            byte[] ucBytes = rlpHeader.get(r++).getRLPData();
-            uncleCount = parseBigInteger(ucBytes).intValueExact();
-        }
+        byte[] ucBytes = rlpHeader.get(r++).getRLPData();
+        uncleCount = parseBigInteger(ucBytes).intValueExact();
 
         byte[] bitcoinMergedMiningHeader = null;
         byte[] bitcoinMergedMiningMerkleProof = null;
         byte[] bitcoinMergedMiningCoinbaseTransaction = null;
-        if (rlpHeader.size() > r) {
+        if (rlpHeader.size() > r + 2) {
             bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
             bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPRawData();
             bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
         }
 
+        // RSKIP144
+        int[] partitionEnds = new int[]{};
+        if (rlpHeader.size() > r) {
+            RLPElement encodedPartitionEnds = rlpHeader.get(r++);
+            partitionEnds = decodePartitionEnds(encodedPartitionEnds);
+        }
+
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, number);
         boolean includeForkDetectionData = activationConfig.isActive(ConsensusRule.RSKIP110, number) &&
                 number >= MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION;
+
+        boolean useParallelTxExecutions = activationConfig.isActive(ConsensusRule.RSKIP144, number);
 
         if (number == Genesis.NUMBER) {
             return new GenesisHeader(
@@ -233,8 +271,8 @@ public class BlockFactory {
                 number, glBytes, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
-                minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData
-        );
+                minimumGasPrice, uncleCount, partitionEnds, sealed, useRskip92Encoding, includeForkDetectionData,
+                useParallelTxExecutions);
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {

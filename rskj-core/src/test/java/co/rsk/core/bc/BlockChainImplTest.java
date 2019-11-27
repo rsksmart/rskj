@@ -30,6 +30,9 @@ import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockValidator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
@@ -45,6 +48,11 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.mockito.AdditionalMatchers.geq;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BlockChainImplTest {
     private ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
@@ -548,6 +556,45 @@ public class BlockChainImplTest {
     }
 
     @Test
+    public void validateMinedBlockOneRskip144On() {
+        ActivationConfig activationConfig = mock(ActivationConfig.class);
+
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+
+        Block genesis = blockChain.getBestBlock();
+        Block block = new BlockGenerator(Constants.regtest(), activationConfig).createChildBlock(genesis);
+
+        Assert.assertTrue(blockExecutor.executeAndValidate(block, genesis.getHeader()));
+    }
+
+
+    @Test
+    public void validateMinedBlockSevenRskip144On() {
+        ActivationConfig activationConfig = mock(ActivationConfig.class);
+
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+
+        Block genesis = blockChain.getBestBlock();
+
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
+        Block block4 = blockGenerator.createChildBlock(block3);
+        Block block5 = blockGenerator.createChildBlock(block4);
+        Block block6 = blockGenerator.createChildBlock(block5);
+        Block block7 = blockGenerator.createChildBlock(block6);
+
+        Assert.assertTrue(blockExecutor.executeAndValidate(block1, genesis.getHeader()));
+        Assert.assertTrue(blockExecutor.executeAndValidate(block2, block1.getHeader()));
+        Assert.assertTrue(blockExecutor.executeAndValidate(block3, block2.getHeader()));
+        Assert.assertTrue(blockExecutor.executeAndValidate(block4, block3.getHeader()));
+        Assert.assertTrue(blockExecutor.executeAndValidate(block5, block4.getHeader()));
+        Assert.assertTrue(blockExecutor.executeAndValidate(block6, block5.getHeader()));
+        Assert.assertTrue(blockExecutor.executeAndValidate(block7, block6.getHeader()));
+    }
+
+    @Test
     public void validateMinedBlockSeven() {
         Block genesis = blockChain.getBestBlock();
 
@@ -574,6 +621,32 @@ public class BlockChainImplTest {
         Block genesis = blockChain.getBestBlock();
 
         BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
+        Block block4 = blockGenerator.createChildBlock(block3);
+        Block block5 = blockGenerator.createChildBlock(block4);
+        Block block6 = blockGenerator.createChildBlock(block5);
+        Block block7 = blockGenerator.createChildBlock(block6);
+
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block4));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block5));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block6));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block7));
+    }
+
+    @Test
+    public void addSevenMinedBlocksRskip144On() {
+        ActivationConfig activationConfig = mock(ActivationConfig.class);
+
+        when(activationConfig.isActive(eq(ConsensusRule.RSKIP144), geq(0L))).thenReturn(true);
+
+        Block genesis = blockChain.getBestBlock();
+
+        BlockGenerator blockGenerator = new BlockGenerator(Constants.regtest(), activationConfig);
         Block block1 = blockGenerator.createChildBlock(genesis);
         Block block2 = blockGenerator.createChildBlock(block1);
         Block block3 = blockGenerator.createChildBlock(block2);
