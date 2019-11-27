@@ -175,7 +175,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
             return false;
         } else {
             logger.info("key [{}] has already been written by partition [{}] --> conflict from partition [{}]",
-                    key.toString(), otherPartId, partId);
+                    key, otherPartId, partId);
             recordConflict(createConflict(key, otherPartId, partId, eConflictType.WRITTEN_BEFORE_ACCESSED));
         }
         return true;
@@ -195,7 +195,7 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         otherPartIds.forEach(conflictPartId -> {
             recordConflict(createConflict(key, conflictPartId, partitionId, eConflictType.ACCESSED_BEFORE_WRITTEN));
             logger.info("key [{}] has already been read by partition [{}] --> conflict from partition [{}]",
-                    key.toString(), conflictPartId, partitionId);
+                    key, conflictPartId, partitionId);
         });
         return true;
     }

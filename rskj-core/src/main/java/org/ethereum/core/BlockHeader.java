@@ -152,7 +152,7 @@ public class BlockHeader {
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
         this.miningForkDetectionData =
                 Arrays.copyOf(mergedMiningForkDetectionData, mergedMiningForkDetectionData.length);
-        this.partitionEnds = partitionEnds;
+        this.partitionEnds = Arrays.copyOf(partitionEnds, partitionEnds.length);
         this.sealed = sealed;
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;

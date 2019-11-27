@@ -30,21 +30,21 @@ public class TransactionConflictDetectorWithCache extends TransactionConflictDet
 
     public synchronized void commitPartition(TransactionsPartition partition) {
         int partitionId = partition.getId();
-        commitCachedMap(cachedReadKeysPerPartId, partitionId, (byteArrayWrapper, i) -> {
-            TransactionConflictDetectorWithCache.super.trackReadAccess(byteArrayWrapper, i);
-        });
-        commitCachedMap(cachedWrittenKeysPerPartId, partitionId, (byteArrayWrapper, i) -> {
-            TransactionConflictDetectorWithCache.super.trackWriteAccess(byteArrayWrapper, i);
-        });
-        commitCachedMap(cachedAccessedAccounts, partitionId, (byteArrayWrapper, i) -> {
-            TransactionConflictDetectorWithCache.super.trackAccessToAccount(byteArrayWrapper, i);
-        });
-        commitCachedMap(cachedDeletedAccounts, partitionId, (byteArrayWrapper, i) -> {
-            TransactionConflictDetectorWithCache.super.trackAccountDeleted(byteArrayWrapper, i);
-        });
-        commitCachedMap(cachedConflictsPerPartId, partitionId, (conflict, i) -> {
-            TransactionConflictDetectorWithCache.super.recordConflict(conflict);
-        });
+        commitCachedMap(cachedReadKeysPerPartId, partitionId, (byteArrayWrapper, i) ->
+            TransactionConflictDetectorWithCache.super.trackReadAccess(byteArrayWrapper, i)
+        );
+        commitCachedMap(cachedWrittenKeysPerPartId, partitionId, (byteArrayWrapper, i) ->
+            TransactionConflictDetectorWithCache.super.trackWriteAccess(byteArrayWrapper, i)
+        );
+        commitCachedMap(cachedAccessedAccounts, partitionId, (byteArrayWrapper, i) ->
+            TransactionConflictDetectorWithCache.super.trackAccessToAccount(byteArrayWrapper, i)
+        );
+        commitCachedMap(cachedDeletedAccounts, partitionId, (byteArrayWrapper, i) ->
+            TransactionConflictDetectorWithCache.super.trackAccountDeleted(byteArrayWrapper, i)
+        );
+        commitCachedMap(cachedConflictsPerPartId, partitionId, (conflict, i) ->
+            TransactionConflictDetectorWithCache.super.recordConflict(conflict)
+        );
     }
 
     // All 'tracking' methods are overridden so that the key accesses are not recorded in global maps yet,

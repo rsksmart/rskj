@@ -35,6 +35,7 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -150,7 +151,7 @@ public class BlockFactory {
         int[] decodedPartitionEnds = new int[headerDecoded4.size()];
         for (int i = 0; i < headerDecoded4.size(); i++) {
             byte[] encodedInt = headerDecoded4.get(i).getRLPRawData();
-            if (ByteUtil.EMPTY_BYTE_ARRAY.equals(encodedInt)) {
+            if (Arrays.equals(encodedInt, ByteUtil.EMPTY_BYTE_ARRAY)) {
                 // Caution : encoding byte[]{0} gives byte[]{OFFSET_SHORT_ITEM}
                 // whereas decoding byte[]{OFFSET_SHORT_ITEM} gives EMPTY_BYTE_ARRAY
                 // Then, in this case we need to override the decoding result to get the exact data
@@ -169,7 +170,7 @@ public class BlockFactory {
                 && rlpHeader.size() != RLP_HEADER_SIZE_WITH_PARALLELTXS
                 && rlpHeader.size() != RLP_HEADER_SIZE_WITH_MERGED_MINING_AND_PARALLELTXS) {
             throw new IllegalArgumentException(String.format(
-                    "The block header have a wrong number of elements ([{}]). Only allowed header with {}, {}, {}, or {} elements",
+                    "The block header have a wrong number of elements (%d). Only allowed header with %d, %d, %d, or %d elements",
                     rlpHeader.size(),
                     RLP_HEADER_SIZE,
                     RLP_HEADER_SIZE_WITH_MERGED_MINING,

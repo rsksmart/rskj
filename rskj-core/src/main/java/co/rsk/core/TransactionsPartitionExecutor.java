@@ -90,7 +90,7 @@ public class TransactionsPartitionExecutor {
         } catch (InterruptedException e) {
             // this must never happen
             Thread.currentThread().interrupt();
-            logger.warn("TransactionPartitionExecutor is interrupted. Raised exception=[{}]", e.toString());
+            logger.warn("TransactionPartitionExecutor is interrupted. Raised exception=[{}]", e);
         }
         return receipt;
     }

@@ -449,12 +449,11 @@ public class BlockExecutor {
 
         BlockSharedData blockSharedData = new BlockSharedData(track, programTraceProcessor);
 
-        if (!block.isSealed() && block.useParallelTxExecution()) {
-            // filling block
-            if (!computeTxPartitioning(block, track, programTraceProcessor, acceptInvalidTransactions, discardInvalidTxs)) {
-                profiler.stop(metric);
-                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
-            }
+        if (!block.isSealed()
+                && block.useParallelTxExecution()
+                && !computeTxPartitioning(block, track, programTraceProcessor, acceptInvalidTransactions, discardInvalidTxs)) {
+            profiler.stop(metric);
+            return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
 
         int[] partitionEnds = block.getPartitionEnds();

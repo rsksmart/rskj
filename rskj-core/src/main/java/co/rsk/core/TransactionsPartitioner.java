@@ -67,26 +67,34 @@ public class TransactionsPartitioner {
             // As soon as there are futures to wait for, wait for the first of each thread
             List<TransactionsPartitionExecutor> toRemove = new ArrayList<>();
             for (TransactionsPartitionExecutor partExecutor : partExecutors) {
-                if (partExecutor.hasNextResult()) {
-                    try {
-                        partExecutor.waitForNextResult(timeoutMSec);
-                    } catch (TimeoutException | ExecutionException e) {
-                        clearExecutors();
-                        throw e;
-                    }
-                    if (periodicCheck != null) {
-                        try {
-                            periodicCheck.check();
-                            // raises an exception when check fails
-                        } catch (Exception e) {
-                            throw new TransactionsPartitionExecutor.PeriodicCheckException(e);
-                        }
-                    }
-                } else {
-                    toRemove.add(partExecutor);
-                }
+                checkPartitionTermination(partExecutor, timeoutMSec, periodicCheck, toRemove);
             }
             partExecutors.removeAll(toRemove);
+        }
+    }
+
+    private void checkPartitionTermination(TransactionsPartitionExecutor partExecutor,
+                                           int timeoutMSec,
+                                           TransactionsPartitionExecutor.PeriodicCheck periodicCheck,
+                                           List<TransactionsPartitionExecutor> terminatedPartitions)
+            throws TransactionsPartitionExecutor.PeriodicCheckException, TimeoutException, ExecutionException {
+        if (partExecutor.hasNextResult()) {
+            try {
+                partExecutor.waitForNextResult(timeoutMSec);
+            } catch (TimeoutException | ExecutionException e) {
+                clearExecutors();
+                throw e;
+            }
+            if (periodicCheck != null) {
+                try {
+                    periodicCheck.check();
+                    // raises an exception when check fails
+                } catch (Exception e) {
+                    throw new TransactionsPartitionExecutor.PeriodicCheckException(e);
+                }
+            }
+        } else {
+            terminatedPartitions.add(partExecutor);
         }
     }
 
