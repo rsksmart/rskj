@@ -324,8 +324,10 @@ public class BlockExecutor {
     }
 
     /**
-     * Pre-runs each transaction to create the partitioning in different thread, assuming that there shall be
-     * no conflicts between transactions assigned to different partitions (= will be run in different threads)
+     * Pre-runs each transaction to create the partitioning in different threads, assuming that there shall be
+     * no conflicts between transactions assigned to different partitions (= will be run in different threads).
+     * Here we are executing each transaction in a separate thread, BUT SEQUENTIALLY because
+     * we don't know yet if they are conflicting to each other, that would prevent concurrent execution
      *
      * @param block
      * @param track
@@ -361,6 +363,7 @@ public class BlockExecutor {
 
             TransactionsPartition partition = partitioner.newPartition();
             TransactionsPartitionExecutor partExecutor = partitioner.newPartitionExecutor(partition);
+            // partExecutor is using a separate thread/partition to execute the transaction
             partExecutor.addTransactionTask(txExecutorTask);
 
             try {
@@ -449,9 +452,14 @@ public class BlockExecutor {
 
         BlockSharedData blockSharedData = new BlockSharedData(track, programTraceProcessor);
 
+        // If the block is not sealed, that means we are mining it
+        // and if the transaction parallel execution is enabled
+        // then we determine which transactions can be executed concurrently and which can not
+        // leading to define the partitioning
         if (!block.isSealed()
                 && block.useParallelTxExecution()
                 && !computeTxPartitioning(block, track, programTraceProcessor, acceptInvalidTransactions, discardInvalidTxs)) {
+            // If computeTxPartitioning fails (returns false), we declare the block invalid
             profiler.stop(metric);
             return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
         }
