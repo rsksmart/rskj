@@ -10,6 +10,17 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.function.ObjIntConsumer;
 
+/**
+ * Like TransactionConflictDetector, this class is used to track accesses in repository (read/write or delete keys),
+ * per partitionId, and detect if there are confilcts between partitions, that means 2 different partitionId
+ * have accessed to the same key, whatever the access type (read/write or delete)
+ * Unlike the parent class, all accesses are cached and not directly recorded in underlying maps, until
+ * the method mergePartition() is called.
+ * This is useful when mining a block and executing some transactions that may be invalid in the end.
+ * In such a case we must purge all accesses done by the transaction from the records.
+ * Using a cache mechanism allows use to simply ignore these entries, while they have not been merged into
+ * underlying maps
+ */
 public class TransactionConflictDetectorWithCache extends TransactionConflictDetector {
 
     private Map<Integer, Collection<ByteArrayWrapper>> cachedReadKeysPerPartId = new HashMap<>();

@@ -343,6 +343,8 @@ public class BlockExecutor {
         TransactionsPartitioner partitioner = new TransactionsPartitioner();
         Repository dummyRepo = track.startTracking();
         BlockSharedData dummySharedData = new BlockSharedData(dummyRepo, programTraceProcessor);
+        // Use a TransactionConflictDetectorWithCache so that we can simply ignore the accesses from the executed transaction
+        // if it is finally declared invalid.
         TransactionConflictDetectorWithCache transactionConflictDetector = new TransactionConflictDetectorWithCache(partitioner);
         if (dummyRepo.isCached()) {
             dummyRepo.getCacheTracking().subscribe(transactionConflictDetector);
@@ -386,7 +388,7 @@ public class BlockExecutor {
                 continue;
             }
 
-            // The transaction has been successfully executed, then commit the accesses tracked during its execution
+            // The transaction has been successfully executed, then commit the cached accesses tracked during its execution
             transactionConflictDetector.commitPartition(partition);
 
             TransactionsPartition resultingPartition;
