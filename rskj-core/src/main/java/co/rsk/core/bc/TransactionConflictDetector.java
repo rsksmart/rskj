@@ -181,38 +181,35 @@ class TransactionConflictDetector implements ICacheTracking.Listener {
         return true;
     }
 
-    private boolean checkKeyAlreadyRead(ByteArrayWrapper key, int partitionId) {
-        Collection<Integer> otherPartIds = partitionReadersPerKey.get(key);
+    private boolean checkInMapAndCreateConflict(Map<ByteArrayWrapper, Collection<Integer>> map, ByteArrayWrapper key, int partitionId, eConflictType conflictType) {
+        Collection<Integer> otherPartIds = map.get(key);
         if (otherPartIds == null) {
             return false;
         }
-        // there can not be a conflict with itself
-        otherPartIds.remove(partitionId);
-        if (otherPartIds.isEmpty()) {
+
+        if (otherPartIds.isEmpty()
+                || ((otherPartIds.size() == 1) && otherPartIds.contains(partitionId))
+        ) {
+            // no previous readers or only one and this is the current partition --> no conflict
             return false;
         }
+
         // Record a conflict for each reading group
         otherPartIds.forEach(conflictPartId -> {
-            recordConflict(createConflict(key, conflictPartId, partitionId, eConflictType.ACCESSED_BEFORE_WRITTEN));
-            logger.info("key [{}] has already been read by partition [{}] --> conflict from partition [{}]",
-                    key, conflictPartId, partitionId);
+            if (conflictPartId != partitionId) {
+                // there can not be a conflict with itself
+                recordConflict(createConflict(key, conflictPartId, partitionId, conflictType));
+            }
         });
         return true;
     }
 
+    private boolean checkKeyAlreadyRead(ByteArrayWrapper key, int partitionId) {
+        return checkInMapAndCreateConflict(partitionReadersPerKey, key, partitionId, eConflictType.ACCESSED_BEFORE_WRITTEN);
+    }
+
     private boolean checkAccountAccessed(ByteArrayWrapper account, int partitionId) {
-        Collection<Integer> otherPartIds = accessedAccounts.get(account);
-        if (otherPartIds == null) {
-            return false;
-        }
-        // there can not be a conflict with itself
-        otherPartIds.remove(partitionId);
-        if (otherPartIds.isEmpty()) {
-            return false;
-        }
-        // Record a conflict for each reading group
-        otherPartIds.forEach(conflictPartId -> recordConflict(createConflict(account, conflictPartId, partitionId, eConflictType.ACCESSED_BEFORE_DELETE)));
-        return true;
+        return checkInMapAndCreateConflict(accessedAccounts, account, partitionId, eConflictType.ACCESSED_BEFORE_DELETE);
     }
 
     private boolean checkAccountDeleted(ByteArrayWrapper account, int partitionId) {
