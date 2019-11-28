@@ -21,11 +21,10 @@ package co.rsk.vm;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.VM;
+import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
@@ -37,19 +36,18 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.HashSet;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP120;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 25/01/2017.
  */
 public class VMExecutionTest {
     private final TestSystemProperties config = new TestSystemProperties();
-    private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private VmConfig vmConfig = config.getVmConfig();
     private ProgramInvokeMockImpl invoke;
     private BytecodeCompiler compiler;
 
@@ -670,6 +668,54 @@ public class VMExecutionTest {
         Assert.assertNotNull(program.getResult());
         Assert.assertNull(program.getResult().getException());
         Assert.assertEquals(12, program.getResult().getGasUsed());
+    }
+
+    @Test
+    public void chainIDMainnet(){
+        executeCHAINID(Constants.MAINNET_CHAIN_ID);
+    }
+
+    @Test
+    public void chainIDTestnet(){
+        executeCHAINID(Constants.TESTNET_CHAIN_ID);
+    }
+
+    @Test
+    public void chainIDRegtest(){
+        executeCHAINID(Constants.REGTEST_CHAIN_ID);
+    }
+
+    @Test
+    public void chainIDIsCorrectOpcodeNumber(){
+        Assert.assertEquals(0x46, OpCodes.OP_CHAINID);
+        Assert.assertEquals(OpCode.CHAINID, OpCode.code((byte) 0x46));
+    }
+
+    @Test(expected = Program.IllegalOperationException.class)
+    public void testChainIDNotActivated(){
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP152)).thenReturn(false);
+
+        executeCHAINIDWithActivations(Constants.REGTEST_CHAIN_ID, activations);
+    }
+
+    private void executeCHAINID(byte chainIDExpected) {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP152)).thenReturn(true);
+
+        executeCHAINIDWithActivations(chainIDExpected, activations);
+    }
+
+    private void executeCHAINIDWithActivations(byte chainIDExpected, ActivationConfig.ForBlock activations) {
+        vmConfig = mock(VmConfig.class);
+        when(vmConfig.getChainId()).thenReturn(chainIDExpected);
+
+        Program program = executeCodeWithActivationConfig("CHAINID",1 , activations);
+
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueOf(chainIDExpected), stack.peek());
     }
 
     private Program executeCode(String code, int nsteps) {
