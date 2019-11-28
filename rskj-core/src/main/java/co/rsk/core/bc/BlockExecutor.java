@@ -369,7 +369,7 @@ public class BlockExecutor {
             partExecutor.addTransactionTask(txExecutorTask);
 
             try {
-                partitioner.waitForAllThreadTermination(10000, null);
+                partitioner.waitForAllThreadTermination(config.getAsyncTxExecutionTimeoutMs(), null);
             } catch (TimeoutException e) {
                 logger.error("block: [{}] transaction [{}] execution did not finished before timeout expired",
                         block.getNumber(), tx.getHash());
@@ -506,7 +506,7 @@ public class BlockExecutor {
         // Wait for all thread terminate
         try {
             partitioner2.waitForAllThreadTermination(
-                    10000,
+                    config.getAsyncTxExecutionTimeoutMs(),
                     new TransactionsPartitionExecutor.PeriodicCheck() {
                         @Override
                         public void check() throws Exception {

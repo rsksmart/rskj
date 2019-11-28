@@ -52,6 +52,8 @@ public class RskSystemProperties extends SystemProperties {
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
     private static final int CHUNK_SIZE = 192;
 
+    private static final int ASYNC_TX_EXECUTION_TIMEOUT_MS = 10000; //milliseconds
+
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
 
@@ -328,4 +330,10 @@ public class RskSystemProperties extends SystemProperties {
     public long getVmExecutionStackSize() {
         return configFromFiles.getBytes("vm.executionStackSize");
     }
+
+    public int getAsyncTxExecutionTimeoutMs() {
+        return ASYNC_TX_EXECUTION_TIMEOUT_MS;
+    }
+
+
 }
