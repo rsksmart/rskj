@@ -1054,6 +1054,19 @@ public class VM {
         program.step();
     }
 
+    protected void doCHAINID() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord chainId = DataWord.valueOf(vmConfig.getChainId());
+
+        if (isLogEnabled) {
+            hint = "chainId: " + chainId;
+        }
+
+        program.stackPush(chainId);
+        program.step();
+    }
+
     protected void doPOP(){
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1766,6 +1779,12 @@ public class VM {
             case OpCodes.OP_DIFFICULTY: doDIFFICULTY();
             break;
             case OpCodes.OP_GASLIMIT: doGASLIMIT();
+            break;
+            case OpCodes.OP_CHAINID:
+                if (!activations.isActive(RSKIP152)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doCHAINID();
             break;
             case OpCodes.OP_TXINDEX: doTXINDEX();
             break;
