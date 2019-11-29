@@ -1089,9 +1089,6 @@ public class VM {
             newMemSize = memNeeded(stack.peek(), sizeLong);
 
             long dataCost = GasCost.multiply(sizeLong, GasCost.LOG_DATA_GAS);
-            if (dataCost > Program.MAX_GAS) {
-                throw Program.ExceptionHelper.notEnoughOpGas(op, dataCost, program.getRemainingGas());
-            }
 
             gasCost = GasCost.calculateTotal(GasCost.add(GasCost.LOG_GAS, dataCost), GasCost.LOG_TOPIC_GAS, nTopics);
             gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));

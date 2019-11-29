@@ -77,11 +77,6 @@ public class Program {
      * the stack size. For example: -Xss10m
      */
     private static final int MAX_DEPTH = 1024;
-
-    // MAX_GAS is 2^62-1. It is less than Long.MAX_VALUE (half) to
-    // give som gap for small additions and skip checking for overflows
-    // after each addition (instead, just check at the end).
-    public static final long MAX_GAS = 0x3fffffffffffffffL;
     public static final long MAX_MEMORY = (1<<30);
 
     //Max size for stack checks
