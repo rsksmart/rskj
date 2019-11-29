@@ -139,7 +139,7 @@ public class JournalTrieCache implements MutableTrie {
 
     @Override
     public void rollback() {
-        cache.clear();
+        cache.rollback();
     }
 
     @Override
@@ -242,28 +242,56 @@ public class JournalTrieCache implements MutableTrie {
      */
     private static class MultiLevelCache {
 
+        // The minimum cache level
         public static final int FIRST_CACHE_LEVEL = 1;
+        // The current depth level of cache
         private int depth = FIRST_CACHE_LEVEL;
+        // Map used to store cached value of key if changed at a given level
         private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, Map<Integer, byte[]>>> valuesPerLevelPerKeyPerAccount
                 = new HashMap<>();
+        // Map used to store deletedAccount at each level
         private final Map<Integer, Set<ByteArrayWrapper>> deletedAccountsPerLevel = new HashMap<>();
+        // Map used for more efficient way to check if a key has been cached at a given level
         private final Map<Integer, Set<ByteArrayWrapper>> updatedKeysPerLevel = new HashMap<>();
+        // Map used for more efficient access to the latest cached value of a key
+        private final Map<ByteArrayWrapper, Map<ByteArrayWrapper,byte[]>> latestValuesPerKeyPerAccount = new HashMap<>();
+        // Set used for more efficient way to check if an account is deleted at the highest cache level
+        private final Set<ByteArrayWrapper> latestDeletedAccounts = new HashSet<>();
 
         MultiLevelCache() {
             initLevel(depth);
         }
 
+        /**
+         * the current depth of the cache level
+         * @return
+         */
         int getDepth() {
             return depth;
         }
 
+        /**
+         * add a depth level to the current cache
+         * @return
+         */
         int getNextLevel() {
             depth++;
             initLevel(depth);
             return depth;
         }
 
+        /**
+         * set the new value for the given key in cache at the given level
+         * @param key
+         * @param value
+         * @param cacheLevel
+         */
         void put(ByteArrayWrapper key, byte[] value, int cacheLevel) {
+            if (cacheLevel > depth) {
+                // the current depth of the cache need to be increased
+                this.depth = cacheLevel;
+                initLevel(cacheLevel);
+            }
             ByteArrayWrapper accountWrapper = getAccountWrapper(key);
             // if this account is in the deletedAccounts list, dont remove it, because this means that the lower
             // level is deleted
@@ -272,8 +300,15 @@ public class JournalTrieCache implements MutableTrie {
             Map<Integer, byte[]> valuesPerLevel = valuesPerLevelPerKey.computeIfAbsent(key, k -> new HashMap<>());
             valuesPerLevel.put(cacheLevel, value);
             updatedKeysPerLevel.get(cacheLevel).add(key);
+            recordLatestValue(key, value, cacheLevel);
         }
 
+        /**
+         * get the cached value of a key at a given cache level, if it has been cached at this level
+         * @param key
+         * @param cacheLevel
+         * @return
+         */
         byte[] get(ByteArrayWrapper key, int cacheLevel) {
             ByteArrayWrapper accountWrapper = getAccountWrapper(key);
             Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(accountWrapper);
@@ -287,7 +322,18 @@ public class JournalTrieCache implements MutableTrie {
             return null;
         }
 
+        /**
+         * get the cached value of a key at a given maximum level, if it has been cached at this level, or at the
+         * highest level below maxLevel, if any
+         * @param key
+         * @param maxLevel
+         * @return
+         */
         byte[] getNewestValue(ByteArrayWrapper key, int maxLevel) {
+            if (maxLevel >= getDepth()) {
+                // if the key has never been changed or not been changed since the account is deleted, the returned value is null
+                return getLatestValue(key);
+            }
             ByteArrayWrapper accountWrapper = getAccountWrapper(key);
             Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(accountWrapper);
             for (int level = maxLevel; level >= FIRST_CACHE_LEVEL; level--) {
@@ -320,15 +366,34 @@ public class JournalTrieCache implements MutableTrie {
             }
         }
 
+        /**
+         * get all the keys that have been cached at a given cache level
+         * @param cacheLevel
+         * @return
+         */
         Set<ByteArrayWrapper> getUpdatedKeys(int cacheLevel) {
             return updatedKeysPerLevel.get(cacheLevel);
         }
 
+        /**
+         * get all the accounts that have been deleted at a given cache level
+         * @param cacheLevel
+         * @return
+         */
         Set<ByteArrayWrapper> getDeletedAccounts(int cacheLevel) {
             return deletedAccountsPerLevel.get(cacheLevel);
         }
 
+        /**
+         * delete the given account at the given cache level
+         * @param account
+         * @param cacheLevel
+         */
         void deleteAccount(ByteArrayWrapper account, int cacheLevel) {
+            if (cacheLevel > depth) {
+                this.depth = cacheLevel;
+                initLevel(cacheLevel);
+            }
             deletedAccountsPerLevel.get(cacheLevel).add(account);
             // clean cache for all updated key/value of this account for the same cache level
             Map<ByteArrayWrapper, Map<Integer, byte[]>> valuesPerLevelPerKey = valuesPerLevelPerKeyPerAccount.get(account);
@@ -344,6 +409,8 @@ public class JournalTrieCache implements MutableTrie {
                 });
                 emptyKeys.forEach(key -> valuesPerLevelPerKey.remove(key));
             }
+            // we need to clean the latest values map from every change on the account keys, except those from cacheLevel to maxLevel
+            recomputeLatestValues(account, cacheLevel);
         }
 
         /**
@@ -371,16 +438,72 @@ public class JournalTrieCache implements MutableTrie {
                     clear(level);
                 }
             }
+            if (levelFrom >= getDepth()) {
+                this.depth = levelTo;
+            }
         }
 
         /**
-         * Clear the cache data for the current cache level
+         * clean the latest values map from every change on the given account keys, except those after the givan levelFrom
+         * @param account
+         * @param levelFrom
+         */
+        void recomputeLatestValues(ByteArrayWrapper account, int levelFrom) {
+            // clear the map for the given account
+            latestValuesPerKeyPerAccount.remove(account);
+            // parse all levels in ascendant order, to refill the latest values map
+            for (int level = levelFrom; level <= getDepth(); level++) {
+                Set<ByteArrayWrapper> deletedAccounts = deletedAccountsPerLevel.get(level);
+                Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(level);
+                if (deletedAccounts.contains(account)) {
+                    // clear again because account has been deleted at this level
+                    latestValuesPerKeyPerAccount.remove(account);
+                    latestDeletedAccounts.add(account);
+                }
+                // for each key updated at that level belonging to this account, record the value as latest
+                for (ByteArrayWrapper updatedKey: updatedKeys) {
+                    if (getAccountWrapper(updatedKey).equals(account)) {
+                        recordLatestValue(updatedKey, get(updatedKey, level));
+                    }
+                }
+            }
+        }
+
+        /**
+         * recompute/update the latestValuesPerKeyPerAccount map and latestDeletedAccounts based on the
+         * recorded value cached in other maps
+         */
+        void recomputeLatestValues() {
+            latestValuesPerKeyPerAccount.clear();
+            latestDeletedAccounts.clear();
+            // parse all level in ascendant order, to refill the latest values map
+            for (int level = FIRST_CACHE_LEVEL; level <= getDepth(); level++) {
+                Set<ByteArrayWrapper> deletedAccounts = deletedAccountsPerLevel.get(level);
+                Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(level);
+                // for each account deleted at that level, clear all latest values recorded for this account
+                for (ByteArrayWrapper deletedAccount: deletedAccounts) {
+                    latestValuesPerKeyPerAccount.remove(deletedAccount);
+                    latestDeletedAccounts.add(deletedAccount);
+                }
+                // for each key updated at that level, record the value as latest
+                for (ByteArrayWrapper updatedKey: updatedKeys) {
+                    recordLatestValue(updatedKey, get(updatedKey, level));
+                }
+            }
+        }
+
+        /**
+         * Clear the cache data for the given cache level
+         * @param cacheLevel
          */
         void clear(int cacheLevel) {
             if (cacheLevel == FIRST_CACHE_LEVEL) {
+                // Clear all data
                 valuesPerLevelPerKeyPerAccount.clear();
                 deletedAccountsPerLevel.clear();
                 updatedKeysPerLevel.clear();
+                latestValuesPerKeyPerAccount.clear();
+                latestDeletedAccounts.clear();
                 initLevel(cacheLevel);
             }
 		    else {
@@ -400,6 +523,19 @@ public class JournalTrieCache implements MutableTrie {
                 // clear the deletedKeys and updatedKeys for this cache level
                 initLevel(cacheLevel);
 		    }
+        }
+
+        /**
+         * Discard every changes at the given cache level
+         * @param cacheLevel
+         */
+        void rollback(int cacheLevel) {
+            clear(cacheLevel);
+            if (cacheLevel == getDepth()) {
+                // only if the rollbacked level is the highest one
+                this.depth--;
+            }
+            recomputeLatestValues();
         }
 
         Map<ByteArrayWrapper, byte[]> getAccountItems(ByteArrayWrapper key, int cacheLevel) {
@@ -424,12 +560,111 @@ public class JournalTrieCache implements MutableTrie {
             return accountItems;
         }
 
+        /**
+         * check if the given account has been deleted at the given cache level
+         * @param key
+         * @param cacheLevel
+         * @return
+         */
         boolean isAccountDeleted(ByteArrayWrapper key, int cacheLevel) {
             ByteArrayWrapper accountWrapper = getAccountWrapper(key);
             return getDeletedAccounts(cacheLevel).contains(accountWrapper);
         }
 
+        /**
+         * check if the given account has been deleted at the highest cache level and no key from this account
+         * have been cached since
+         * @param key
+         * @return
+         */
+        boolean isAccountLatestDeleted(ByteArrayWrapper key) {
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            return latestDeletedAccounts.contains(accountWrapper);
+        }
+
+        /**
+         * cache the given value for the given key, only if the given cache level is the highest one,
+         * or if there is no latest value already cached for this key or this is a value but cached at
+         * a lower or equal level from the given one
+         * @param key
+         * @param value
+         * @param cacheLevel
+         */
+        void recordLatestValue(ByteArrayWrapper key, byte[] value, int cacheLevel) {
+            // If we are at the highest level, we must record in every case and we override the existing velu if any
+            // Else :
+            if (cacheLevel < getDepth()) {
+                ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+                Map<ByteArrayWrapper, byte[]> latestValuesPerKey = latestValuesPerKeyPerAccount.get(accountWrapper);
+                if ((latestValuesPerKey != null) && latestValuesPerKey.containsKey(key)) {
+                    // If there is already a cached value for this key :
+                    // we must override this existing value if and only if it comes from a cache at a lower or equal level
+                    // In other words, we must override except when this is a higher level where this key has been cached or
+                    // its account deleted
+                    for (int level = cacheLevel + 1; level <= getDepth(); level++) {
+                        Set<ByteArrayWrapper> updatedKeys = updatedKeysPerLevel.get(level);
+                        if (updatedKeys.contains(key)) {
+                            // do not override the latest value because a value has be cached at a higher level
+                            return;
+                        }
+                        Set<ByteArrayWrapper> deletedAccounts = deletedAccountsPerLevel.get(level);
+                        if (deletedAccounts.contains(accountWrapper)) {
+                            // do not override the latest value because the account has been deleted at a higher level
+                            return;
+                        }
+                    }
+                }
+            }
+            recordLatestValue(key, value);
+        }
+
+        /**
+         * cache the latest value for the given key
+         * @param key
+         * @param value
+         * @param cacheLevel
+         * @param updatedKeysPerLevel
+         */
+        void recordLatestValue(ByteArrayWrapper key, byte[] value) {
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            Map<ByteArrayWrapper, byte[]> latestValuesPerKey = latestValuesPerKeyPerAccount.computeIfAbsent(
+                    accountWrapper,
+                    k -> new HashMap<>()
+            );
+            latestValuesPerKey.put(key, value);
+            // remove account if present in latestDeletedAccounts, because we only keep in this set the accout that have
+            // been deleted in cache and whose no key has been updated since
+            latestDeletedAccounts.remove(accountWrapper);
+        }
+
+        /**
+         * get the latest cached value for the given key
+         * @param key
+         * @return
+         */
+        byte[] getLatestValue(ByteArrayWrapper key) {
+            ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+            Map<ByteArrayWrapper, byte[]> latestValuesPerKey = latestValuesPerKeyPerAccount.get(accountWrapper);
+            if (latestValuesPerKey != null) {
+                return latestValuesPerKey.get(key);
+            }
+            return null;
+        }
+
+        /**
+         * Check if the given key has been changed in cache at the given level or a level below
+         * @param key
+         * @param cacheLevel
+         * @return
+         */
         boolean isInCache(ByteArrayWrapper key, int cacheLevel) {
+            if (cacheLevel == getDepth()) {
+                ByteArrayWrapper accountWrapper = getAccountWrapper(key);
+                return isAccountLatestDeleted(key) || (
+                        latestValuesPerKeyPerAccount.containsKey(accountWrapper) &&
+                                latestValuesPerKeyPerAccount.get(accountWrapper).containsKey(key)
+                );
+            }
             for (int level = cacheLevel; level >= FIRST_CACHE_LEVEL; level --) {
                 if (getUpdatedKeys(level).contains(key) || isAccountDeleted(key, level)) {
                     return true;
@@ -438,6 +673,10 @@ public class JournalTrieCache implements MutableTrie {
             return false;
         }
 
+        /**
+         * Check if there is no changed in cache anymore
+         * @return
+         */
         boolean isEmpty() {
             for (int level = FIRST_CACHE_LEVEL; level <= getDepth(); level++) {
                 if (!getUpdatedKeys(level).isEmpty()) {
@@ -475,6 +714,10 @@ public class JournalTrieCache implements MutableTrie {
             });
         }
 
+        /**
+         * Initialize / clear internal maps at a given cache level
+         * @param cacheLevel
+         */
         private void initLevel(int cacheLevel) {
             this.deletedAccountsPerLevel.put(cacheLevel, new HashSet<>());
             this.updatedKeysPerLevel.put(cacheLevel, new HashSet<>());
@@ -565,6 +808,8 @@ public class JournalTrieCache implements MutableTrie {
         boolean isInCache(ByteArrayWrapper key);
 
         boolean isEmpty();
+
+        void rollback();
     }
 
     /**
@@ -750,6 +995,11 @@ public class JournalTrieCache implements MutableTrie {
          */
         public boolean isEmpty() {
             return this.cache.isEmpty();
+        }
+
+        @Override
+        public void rollback() {
+            this.cache.rollback(currentLevel);
         }
 
         /**
