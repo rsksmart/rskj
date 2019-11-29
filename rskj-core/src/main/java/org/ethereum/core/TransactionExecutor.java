@@ -149,14 +149,14 @@ public class TransactionExecutor {
         // less than the theoretical max gas on blocks.
         boolean cumulativeGasReached = cumulativeGas > curBlockGasLimit || cumulativeGas == GasCost.MAX_GAS;
         if (cumulativeGasReached) {
-            execError(String.format("Too much gas used in this block: Require: %s Got: %s",
+            execError(String.format("Too much gas used in this block: available in block: %s tx sent: %s",
                     curBlockGasLimit - txGasLimit,
                     txGasLimit));
             return false;
         }
 
         if (txGasLimit < basicTxCost) {
-            execError(String.format("Not enough gas for transaction execution: Require: %s Got: %s", basicTxCost, txGasLimit));
+            execError(String.format("Not enough gas for transaction execution: tx needs: %s tx sent: %s", basicTxCost, txGasLimit));
             return false;
         }
 
