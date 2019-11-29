@@ -260,6 +260,10 @@ public class OpCodes {
      * (0x45) Get the block’s gas limit
      */
     static final byte OP_GASLIMIT =0x45 ;
+    /**
+     * (0x46) Get the chain id
+     */
+    public static final byte OP_CHAINID =0x46 ;
 
     /*  Memory Storage and F Operations */
 
