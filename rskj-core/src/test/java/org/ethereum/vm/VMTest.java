@@ -153,7 +153,7 @@ public class VMTest {
         // 2**62-1 (the prev gas max size) and 2**63-1 (the current gas max)
         // to check if something is wrong with the change.
         // doLOG() is the only place where this constant was used.
-        invoke.setGasLimit(680000);
+        invoke.setGasLimit(6_800_000);
         long previousGasMaxSize = 0x3fffffffffffffffL;
         long sizeRequired = Math.floorDiv(previousGasMaxSize, GasCost.LOG_DATA_GAS) + 1;
         String sizeInHex = String.format("%016X", sizeRequired);
