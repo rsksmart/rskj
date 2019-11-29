@@ -133,16 +133,16 @@ public class GasCostTest {
     }
 
     @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateAddGasCostWithSecondNegativeInput() throws GasCost.InvalidGasException {
-        GasCost.add(-1, 0);
+    public void calculateAddGasCostWithSecondNegativeInputAndResult() throws GasCost.InvalidGasException {
+        GasCost.add(0, -1);
     }
 
     @Test(expected = GasCost.InvalidGasException.class)
-    public void calculateAddGasCostWithFirstNegativeInput() throws GasCost.InvalidGasException {
-        GasCost.add(0, -1);
+    public void calculateAddGasCostWithFirstNegativeInputAndResult() throws GasCost.InvalidGasException {
+        GasCost.add(-1, 1);
     }
-    @Test
 
+    @Test
     public void calculateSubtractGasCost() {
         Assert.assertEquals(1, GasCost.subtract(1, 0));
         Assert.assertEquals(0, GasCost.subtract(1, 1));
