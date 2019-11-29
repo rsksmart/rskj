@@ -146,7 +146,7 @@ public class TransactionExecutor {
         // cumulativeGas being equal to GasCost.MAX_GAS is a border condition
         // which is used on some stress tests, but its far from being practical
         // as the current gas limit on blocks is 6.8M... several orders of magnitude
-        // less than the max gas cost.
+        // less than the theoretical max gas on blocks.
         boolean cumulativeGasReached = cumulativeGas > curBlockGasLimit || cumulativeGas == GasCost.MAX_GAS;
         if (cumulativeGasReached) {
             execError(String.format("Too much gas used in this block: Require: %s Got: %s",
