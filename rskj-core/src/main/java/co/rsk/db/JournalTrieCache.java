@@ -622,8 +622,6 @@ public class JournalTrieCache implements MutableTrie {
          * cache the latest value for the given key
          * @param key
          * @param value
-         * @param cacheLevel
-         * @param updatedKeysPerLevel
          */
         void recordLatestValue(ByteArrayWrapper key, byte[] value) {
             ByteArrayWrapper accountWrapper = getAccountWrapper(key);
