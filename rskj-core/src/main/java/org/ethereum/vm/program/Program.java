@@ -613,7 +613,7 @@ public class Program {
             byte[] code = programResult.getHReturn();
             int codeLength = getLength(code);
 
-            long storageCost = GasCost.calculateTotal(0, GasCost.CREATE_DATA, codeLength);
+            long storageCost = GasCost.multiply(GasCost.CREATE_DATA, codeLength);
             long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
 
             if (afterSpend < 0) {
