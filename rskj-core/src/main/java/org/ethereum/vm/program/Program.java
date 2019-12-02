@@ -70,13 +70,6 @@ public class Program {
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
 
-    /**
-     * This attribute defines the number of recursive calls allowed in the EVM
-     * Note: For the JVM to reach this level without a StackOverflow exception,
-     * ethereumj may need to be started with a JVM argument to increase
-     * the stack size. For example: -Xss10m
-     */
-    private static final int MAX_DEPTH = 1024;
     public static final long MAX_MEMORY = (1<<30);
 
     //Max size for stack checks
@@ -160,6 +153,19 @@ public class Program {
         precompile();
         traceListener = new ProgramTraceListener(config);
     }
+
+    /**
+     * Defines the depth of the call stack inside the EVM.
+     * Changed to a value more similar to Ethereum's with EIP150
+     * since RSKIP150.
+     */
+    public int getMaxDepth() {
+        if (activations.isActive(ConsensusRule.RSKIP150)) {
+            return 400;
+        }
+        return 1024;
+    }
+
 
     public int getCallDeep() {
         return invoke.getCallDeep();
@@ -430,7 +436,8 @@ public class Program {
     }
 
     private void createContract( RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress) {
-        if (getCallDeep() == MAX_DEPTH) {
+        if (getCallDeep() == getMaxDepth()) {
+            logger.debug("max depth reached creating a new contract inside contract run: [{}]", senderAddress);
             stackPushZero();
             return;
         }
@@ -682,7 +689,7 @@ public class Program {
      */
     public void callToAddress(MessageCall msg) {
 
-        if (getCallDeep() == MAX_DEPTH) {
+        if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             refundGas(msg.getGas().longValue(), " call deep limit reach");
             return;
@@ -1275,7 +1282,7 @@ public class Program {
 
     public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
 
-        if (getCallDeep() == MAX_DEPTH) {
+        if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), " call deep limit reach");
             return;
