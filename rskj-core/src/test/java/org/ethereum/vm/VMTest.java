@@ -234,7 +234,7 @@ public class VMTest {
         Assert.assertEquals("good program will asign a new word of memory, so will charge 3 more",
                 good.getResult().getGasUsed(), bad.getResult().getGasUsed() + GasCost.MEMORY);
         Assert.assertEquals("good program will have more memory, as it paid for it", good.getMemSize(),
-                bad.getMemSize() - 32);
+                bad.getMemSize() + 32);
     }
 
     @Test
