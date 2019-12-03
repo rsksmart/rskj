@@ -1459,11 +1459,15 @@ public class VM {
             }
         }
 
+        long userSpecifiedGas = Program.limitToMaxLong(gas);
+        long specifiedGasPlusMin = activations.isActive(RSKIP150) ?
+                GasCost.add(userSpecifiedGas, minimumTransferGas) :
+                userSpecifiedGas + minimumTransferGas;
+
         // If specified gas is higher than available gas then move all remaining gas to callee.
         // This will have one possibly undesired behavior: if the specified gas is higher than the remaining gas,
         // the callee will receive less gas than the parent expected.
-        long userSpecifiedGas = Program.limitToMaxLong(gas);
-        long calleeGas = Math.min(remainingGas, GasCost.add(userSpecifiedGas, minimumTransferGas));
+        long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
 
         if (computeGas) {
             gasCost = GasCost.add(gasCost, calleeGas);

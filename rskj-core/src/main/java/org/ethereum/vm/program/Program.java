@@ -166,7 +166,6 @@ public class Program {
         return 1024;
     }
 
-
     public int getCallDeep() {
         return invoke.getCallDeep();
     }
