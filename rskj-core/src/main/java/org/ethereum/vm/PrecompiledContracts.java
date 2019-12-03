@@ -343,7 +343,7 @@ public class PrecompiledContracts {
             BigInteger gas = BigInteger.valueOf(multComplexity).multiply(
                     BigInteger.valueOf(Math.max(adjExpLen, 1))).divide(GQUAD_DIVISOR);
 
-            return GasCost.toGas(gas.min(BigInteger.valueOf(Long.MAX_VALUE)));
+            return GasCost.toGas(gas);
         }
 
         @Override

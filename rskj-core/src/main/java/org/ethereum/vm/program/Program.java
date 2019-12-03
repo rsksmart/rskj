@@ -747,7 +747,7 @@ public class Program {
         else {
             track.commit();
             callResult = true;
-            refundGas(msg.getGas().longValue(), "remaining gas from the internal call");
+            refundGas(GasCost.toGas(msg.getGas().longValue()), "remaining gas from the internal call");
         }
 
         // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK

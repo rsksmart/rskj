@@ -406,7 +406,7 @@ public class TransactionExecutor {
 
             if (tx.isContractCreation() && !result.isRevert()) {
                 int createdContractSize = getLength(program.getResult().getHReturn());
-                long returnDataGasValue = GasCost.calculateTotal(0, GasCost.CREATE_DATA, createdContractSize);
+                long returnDataGasValue = GasCost.multiply(GasCost.CREATE_DATA, createdContractSize);
 
                 if (mEndGas < returnDataGasValue) {
                     program.setRuntimeFailure(
