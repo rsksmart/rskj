@@ -1357,14 +1357,15 @@ public class Program {
             this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
 
             byte[] out = contract.execute(data);
-
             if (getActivations().isActive(ConsensusRule.RSKIP90)) {
                 this.returnDataBuffer = out;
             }
 
-            if (getActivations().isActive(ConsensusRule.RSKIP150)) {
+            // Avoid saving null returns to memory and limit the memory it can use.
+            // If we're behind RSK150 activation, don't care about the null return, just save.
+            if (getActivations().isActive(ConsensusRule.RSKIP150) && out != null) {
                 this.memorySaveLimited(msg.getOutDataOffs().intValue(), out, msg.getOutDataSize().intValue());
-            } else {
+            } else if (!getActivations().isActive(ConsensusRule.RSKIP150)) {
                 this.memorySave(msg.getOutDataOffs().intValue(), out);
             }
             this.stackPushOne();
