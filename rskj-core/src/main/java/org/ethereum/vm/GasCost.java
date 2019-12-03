@@ -179,7 +179,7 @@ public class GasCost {
             throw new InvalidGasException(String.format("%d + %d", x, y));
         }
         long result = x + y;
-        if (additionOverflowed(x, y, result)) {
+        if (result < 0) {
             return Long.MAX_VALUE;
         }
         return result;
@@ -233,37 +233,25 @@ public class GasCost {
             return Long.MAX_VALUE;
         }
         long result = baseCost + mult;
-        if (additionOverflowed(baseCost, mult, result)) {
+        if (result < 0) {
             return Long.MAX_VALUE;
         }
         return result;
     }
 
     /**
-     * Returns whether r is overflowed in `x + y = r`.
-     */
-    private static boolean additionOverflowed(long x, long y, long result) {
-        // This is taken exactly from the implementation of
-        // java.Math.addExact.
-        // https://github.com/frohoff/jdk8u-jdk/blob/master/src/share/classes/java/lang/Math.java#L805
-        // Copied here to avoid exceptions, which are slow.
-        return ((x ^ result) & (y ^ result)) < 0;
-    }
-
-    /**
      * Returns whether r is overflowed in `x * y = r`
+     * Both x and y must be positive.
      */
     private static boolean multiplicationOverflowed(long x, long y, long result) {
-        // Again, taken exactly from java.Math.multiplyExact to avoid
-        // using exceptions.
+        // Heavily inspired on Math.multiplyExact
         // https://github.com/frohoff/jdk8u-jdk/blob/master/src/share/classes/java/lang/Math.java#L882/
-        long ax = Math.abs(x);
-        long ay = Math.abs(y);
-        if (((ax | ay) >>> 31 != 0)) {
+        // changed because a precondition states that both x and y must be positive.
+        if (((x | y) >>> 31 != 0)) {
             // Some bits greater than 2^31 that might cause overflow
             // Check the result using the divide operator
             // and check for the special case of Long.MIN_VALUE * -1
-            return (((y != 0) && (result/ y != x)) || (x == Long.MIN_VALUE && y == -1));
+            return (y != 0) && (result/ y != x);
         }
         return false;
     }
