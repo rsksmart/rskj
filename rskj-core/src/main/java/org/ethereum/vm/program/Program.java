@@ -402,7 +402,7 @@ public class Program {
         getResult().addDeleteAccount(this.getOwnerAddress());
 
         SuicideInvoke invoke = new SuicideInvoke(DataWord.valueOf(owner.getBytes()), obtainerAddress, DataWord.valueOf(balance.getBytes()));
-        ProgramSubtrace subtrace = new ProgramSubtrace(invoke);
+        ProgramSubtrace subtrace = ProgramSubtrace.newSuicideSubtrace(invoke);
 
         getTrace().addSubTrace(subtrace);
     }
@@ -610,7 +610,7 @@ public class Program {
             programResult = program.getResult();
 
             if (programResult.getException() == null && !programResult.isRevert()) {
-                getTrace().addSubTrace(new ProgramSubtrace(new CreationData(programCode, programResult.getHReturn(), contractAddress), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
+                getTrace().addSubTrace(ProgramSubtrace.newCreateSubtrace(new CreationData(programCode, programResult.getHReturn(), contractAddress), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
             }
         }
 
@@ -806,7 +806,7 @@ public class Program {
             TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), transferValue);
             ProgramResult result     = new ProgramResult();
 
-            ProgramSubtrace subtrace = new ProgramSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, Collections.emptyList());
+            ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, Collections.emptyList());
 
             getTrace().addSubTrace(subtrace);
         }
@@ -850,7 +850,7 @@ public class Program {
         vm.play(program);
         childResult  = program.getResult();
 
-        getTrace().addSubTrace(new ProgramSubtrace(CallType.fromMsgType(msg.getType()), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
+        getTrace().addSubTrace(ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
 
         getTrace().merge(program.getTrace());
         getResult().merge(childResult);

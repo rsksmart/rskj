@@ -20,6 +20,8 @@ package co.rsk.rpc.modules.trace;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
+
 public class TraceAddress {
     private static final int[] EMPTY_ADDRESS = new int[0];
 
@@ -44,9 +46,7 @@ public class TraceAddress {
 
         int[] parentAddress = this.parent.toAddress();
 
-        int[] address = new int[parentAddress.length + 1];
-
-        System.arraycopy(parentAddress, 0, address, 0, parentAddress.length);
+        int[] address = Arrays.copyOf(parentAddress, parentAddress.length + 1);
 
         address[address.length - 1] = this.index;
 

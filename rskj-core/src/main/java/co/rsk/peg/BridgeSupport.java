@@ -455,8 +455,8 @@ public class BridgeSupport {
             DataWord value = DataWord.valueOf(amount.getBytes());
 
             TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
-            ProgramResult result     = new ProgramResult();
-            ProgramSubtrace subtrace = new ProgramSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
+            ProgramResult result     = ProgramResult.empty();
+            ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
 
             this.subtraces.add(subtrace);
         }

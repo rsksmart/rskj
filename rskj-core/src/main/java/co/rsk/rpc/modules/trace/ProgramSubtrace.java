@@ -19,8 +19,10 @@
 
 package co.rsk.rpc.modules.trace;
 
+import com.sun.deploy.trace.Trace;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.InvokeData;
+import sun.font.CreatedFontTracker;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,28 +35,22 @@ public class ProgramSubtrace {
     private final ProgramResult programResult;
     private final List<ProgramSubtrace> subtraces;
 
-    public ProgramSubtrace(InvokeData invokeData) {
-        this.traceType = TraceType.SUICIDE;
-        this.callType = CallType.NONE;
-        this.creationData = null;
-        this.invokeData = invokeData;
-        this.programResult = null;
-        this.subtraces = Collections.emptyList();
+    public static ProgramSubtrace newSuicideSubtrace(InvokeData invokeData) {
+        return new ProgramSubtrace(TraceType.SUICIDE, CallType.NONE, null, invokeData, null, Collections.emptyList());
     }
 
-    public ProgramSubtrace(CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
-        this.traceType = TraceType.CREATE;
-        this.callType = CallType.NONE;
-        this.creationData = creationData;
-        this.invokeData = invokeData;
-        this.programResult = programResult;
-        this.subtraces = subtraces == null ? null : Collections.unmodifiableList(subtraces);
+    public static ProgramSubtrace newCreateSubtrace(CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+        return new ProgramSubtrace(TraceType.CREATE, CallType.NONE, creationData, invokeData, programResult, subtraces);
     }
 
-    public ProgramSubtrace(CallType callType, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
-        this.traceType = TraceType.CALL;
+    public static ProgramSubtrace newCallSubtrace(CallType callType, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+        return new ProgramSubtrace(TraceType.CALL, callType, null, invokeData, programResult, subtraces);
+    }
+
+    private ProgramSubtrace(TraceType traceType, CallType callType, CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+        this.traceType = traceType;
         this.callType = callType;
-        this.creationData = null;
+        this.creationData = creationData;
         this.invokeData = invokeData;
         this.programResult = programResult;
         this.subtraces = subtraces == null ? null : Collections.unmodifiableList(subtraces);
