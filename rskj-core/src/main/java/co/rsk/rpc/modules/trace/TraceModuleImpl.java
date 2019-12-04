@@ -28,8 +28,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
-import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.ethereum.vm.trace.Serializers;
 import org.ethereum.vm.trace.SummarizedProgramTrace;
@@ -37,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
@@ -155,13 +153,13 @@ public class TraceModuleImpl implements TraceModule {
         } else if ("latest".equalsIgnoreCase(id)) {
             return this.blockchain.getBestBlock();
         } else if ("pending".equalsIgnoreCase(id)) {
-            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
+            throw RskJsonRpcRequestException.unimplemented("The method don't support 'pending' as a parameter yet");
         } else {
             try {
                 long blockNumber = stringHexToBigInteger(id).longValue();
                 return this.blockchain.getBlockByNumber(blockNumber);
             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                throw new JsonRpcInvalidParamException("invalid blocknumber " + id);
+                throw RskJsonRpcRequestException.invalidParamError("invalid blocknumber " + id);
             }
         }
     }
