@@ -19,14 +19,15 @@
 
 package co.rsk.db;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
-import org.ethereum.core.Repository;
+import org.ethereum.db.TrieKeyMapper;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 
+import java.math.BigInteger;
 import java.util.Random;
 
 public class TopRepositoryTest {
@@ -44,6 +45,8 @@ public class TopRepositoryTest {
 
     @Test
     public void createAccount() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
         byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
         this.random.nextBytes(bytes);
 
@@ -64,5 +67,111 @@ public class TopRepositoryTest {
 
         Assert.assertNotNull(result);
         Assert.assertSame(accountState, result);
+
+        Assert.assertNull(trie.get(trieKeyMapper.getAccountKey(address)));
+    }
+
+    @Test
+    public void getUnknownAccount() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        Trie trie = new Trie();
+
+        TopRepository repository = new TopRepository(trie);
+
+        AccountState accountState = repository.getAccountState(address);
+
+        Assert.assertNull(accountState);
+
+        Assert.assertNotNull(repository.getTrie());
+        Assert.assertSame(trie, repository.getTrie());
+
+        Assert.assertNull(trie.get(trieKeyMapper.getAccountKey(address)));
+    }
+
+    @Test
+    public void getAccountFromTrie() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(1000000));
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        Trie trie = new Trie();
+
+        trie = trie.put(trieKeyMapper.getAccountKey(address), accountState.getEncoded());
+
+        TopRepository repository = new TopRepository(trie);
+
+        AccountState result = repository.getAccountState(address);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(accountState.getEncoded(), result.getEncoded());
+    }
+
+    @Test
+    public void getAccountFromTrieAndCommit() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(1000000));
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        Trie trie = new Trie();
+
+        trie = trie.put(trieKeyMapper.getAccountKey(address), accountState.getEncoded());
+
+        TopRepository repository = new TopRepository(trie);
+
+        AccountState result = repository.getAccountState(address);
+
+        repository.commit();
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(accountState.getEncoded(), result.getEncoded());
+
+        Assert.assertSame(trie, repository.getTrie());
+    }
+
+    @Test
+    public void createAndCommitAccount() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        Trie trie = new Trie();
+
+        TopRepository repository = new TopRepository(trie);
+
+        AccountState accountState = repository.createAccount(address);
+
+        repository.commit();
+
+        Assert.assertNotNull(accountState);
+
+        Assert.assertNotNull(repository.getTrie());
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        AccountState result = repository.getAccountState(address);
+
+        Assert.assertNotNull(result);
+        Assert.assertSame(accountState, result);
+
+        Assert.assertNotNull(repository.getTrie().get(trieKeyMapper.getAccountKey(address)));
+        Assert.assertArrayEquals(result.getEncoded(), repository.getTrie().get(trieKeyMapper.getAccountKey(address)));
     }
 }

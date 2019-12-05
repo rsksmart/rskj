@@ -25,18 +25,20 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class TopRepository implements Repository {
     private Trie trie;
+
+    private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
     private final Map<RskAddress, AccountState> accountStates = new HashMap<>();
+    private final Set<RskAddress> modifiedAccounts = new HashSet<>();
 
     public TopRepository(Trie trie) {
         this.trie = trie;
@@ -53,6 +55,7 @@ public class TopRepository implements Repository {
         AccountState accountState = new AccountState();
 
         this.accountStates.put(address, accountState);
+        this.modifiedAccounts.add(address);
 
         return accountState;
     }
@@ -104,7 +107,12 @@ public class TopRepository implements Repository {
 
     @Override
     public void commit() {
+        for (RskAddress address : this.modifiedAccounts) {
+            AccountState accountState = this.accountStates.get(address);
+            this.trie = this.trie.put(this.trieKeyMapper.getAccountKey(address), accountState.getEncoded());
+        }
 
+        modifiedAccounts.clear();
     }
 
     @Override
@@ -149,7 +157,23 @@ public class TopRepository implements Repository {
 
     @Override
     public AccountState getAccountState(RskAddress address) {
-        return this.accountStates.get(address);
+        AccountState accountState = this.accountStates.get(address);
+
+        if (accountState != null) {
+            return accountState;
+        }
+
+        byte[] data = this.trie.get(this.trieKeyMapper.getAccountKey(address));
+
+        if (data == null || data.length == 0) {
+            return null;
+        }
+
+        accountState = new AccountState(data);
+
+        this.accountStates.put(address, accountState);
+
+        return accountState;
     }
 
     @Override
