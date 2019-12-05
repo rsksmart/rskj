@@ -42,6 +42,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleEthereum;
+import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -235,6 +236,7 @@ public class Web3ImplSnapshotTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 miningConfig
         );
     }
