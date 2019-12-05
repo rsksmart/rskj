@@ -63,15 +63,15 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDbDataSource(String name, String databaseDir) {
+    public LevelDbDataSource(String name, String databaseDir, boolean useSnappy) {
         this.databaseDir = databaseDir;
         this.name = name;
-        this.useSnappy = false;
+        this.useSnappy = useSnappy;
         logger.debug("New LevelDbDataSource: {}", name);
     }
 
-    public static KeyValueDataSource makeDataSource(Path datasourcePath) {
-        KeyValueDataSource ds = new LevelDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
+    public static KeyValueDataSource makeDataSource(Path datasourcePath, boolean useSnappy) {
+        KeyValueDataSource ds = new LevelDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString(), useSnappy);
         ds.init();
         return ds;
     }
@@ -381,16 +381,16 @@ public class LevelDbDataSource implements KeyValueDataSource {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
 
-    public static void mergeDataSources(Path destinationPath, List<Path> originPaths) {
+    public static void mergeDataSources(Path destinationPath, List<Path> originPaths, boolean useSnappy) {
         Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
         for (Path originPath : originPaths) {
-            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath);
+            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath, useSnappy);
             for (byte[] key : singleOriginDataSource.keys()) {
                 mergedStores.put(ByteUtil.wrap(key), singleOriginDataSource.get(key));
             }
             singleOriginDataSource.close();
         }
-        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath);
+        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath, useSnappy);
         destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
         destinationDataSource.close();
     }

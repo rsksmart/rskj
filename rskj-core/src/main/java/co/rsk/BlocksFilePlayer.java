@@ -24,6 +24,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
+import org.ethereum.db.BlockStore;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,18 +36,20 @@ public class BlocksFilePlayer {
     private final Blockchain targetBlockchain;
     private final BlockFactory blockFactory;
     private final String filename;
+    private final BlockStore blockstore;
 
     private BlocksFilePlayer(String filename, RskContext objects) {
         this.targetBlockchain = objects.getBlockchain();
         this.blockFactory = objects.getBlockFactory();
         this.filename = filename;
+        this.blockstore = objects.getBlockStore();
     }
 
     private void connectBlocks() throws IOException {
         try (Stream<String> lines = Files.lines(Paths.get(filename))) {
             long blocksToSkip = targetBlockchain.getBestBlock().getNumber();
-            lines.skip(blocksToSkip).map(this::readBlock).forEach(this::connectBlock);
-
+            lines.skip(blocksToSkip).map(this::readBlock).limit(150000).forEach(this::connectBlock);
+            blockstore.flush();
             System.out.printf("Best block is now %7d%n", targetBlockchain.getBestBlock().getNumber());
         }
     }

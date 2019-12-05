@@ -72,7 +72,7 @@ public class BlockstoreBlockPlayer {
 
         String[] nodeCliArgs = Arrays.copyOf(args, args.length - 1);
         RskContext objects = new RskContext(nodeCliArgs);
-        BlockStore blockStore = objects.buildBlockStore(args[args.length - 1]);
+        BlockStore blockStore = objects.buildBlockStore(args[args.length - 1], false);
         Blockchain blockchain = objects.getBlockchain();
         BlockstoreBlockPlayer blockPlayer = new BlockstoreBlockPlayer(blockStore, blockchain);
         blockPlayer.connectBlocks();

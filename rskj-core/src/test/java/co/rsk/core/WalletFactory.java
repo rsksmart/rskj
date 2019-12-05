@@ -27,7 +27,7 @@ public class WalletFactory {
 
     public static Wallet createPersistentWallet(String storeName) {
         final TestSystemProperties config = new TestSystemProperties();
-        KeyValueDataSource ds = new LevelDbDataSource(storeName, config.databaseDir());
+        KeyValueDataSource ds = new LevelDbDataSource(storeName, config.databaseDir(), false);
         ds.init();
         return new Wallet(ds);
     }

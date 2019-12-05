@@ -43,7 +43,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testBatchUpdating() throws IOException {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath());
+        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath(), false);
         dataSource.init();
 
         final int batchSize = 100;
@@ -58,7 +58,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testPutting() throws IOException {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath());
+        LevelDbDataSource dataSource = new LevelDbDataSource("test", databaseDir.newFolder().getPath(), false);
         dataSource.init();
 
         byte[] key = randomBytes(32);
@@ -80,7 +80,7 @@ public class LevelDbDataSourceTest {
         for (int i = 0; i < sourcesCount; i++) {
             Path sourcePath = testDatabasesDirectory.resolve(String.format("src-%d", i));
             sourcePaths.add(sourcePath);
-            KeyValueDataSource originDataSource = LevelDbDataSource.makeDataSource(sourcePath);
+            KeyValueDataSource originDataSource = LevelDbDataSource.makeDataSource(sourcePath, false);
             byte[] currentElement = {(byte) i};
             sourceKeys.add(currentElement);
             originDataSource.put(currentElement, currentElement);
@@ -88,8 +88,8 @@ public class LevelDbDataSourceTest {
         }
 
         Path destination = testDatabasesDirectory.resolve("destination");
-        LevelDbDataSource.mergeDataSources(destination, sourcePaths);
-        KeyValueDataSource destinationDataSource = LevelDbDataSource.makeDataSource(destination);
+        LevelDbDataSource.mergeDataSources(destination, sourcePaths, false);
+        KeyValueDataSource destinationDataSource = LevelDbDataSource.makeDataSource(destination, false);
         try {
             Set<byte[]> destinationKeys = destinationDataSource.keys();
             Assert.assertThat(destinationKeys, hasSize(sourcesCount));

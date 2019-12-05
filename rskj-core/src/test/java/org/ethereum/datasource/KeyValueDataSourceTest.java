@@ -34,13 +34,13 @@ public class KeyValueDataSourceTest {
         Path tmpDir = Files.createTempDirectory("rskj");
         return Arrays.asList(new Object[][] {
             { new HashMapDB(), HashMapDB.class.getSimpleName(), true},
-            { new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), true },
+            { new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString(), false), LevelDbDataSource.class.getSimpleName(), true },
             { new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), true },
-            { new DataSourceWithCache(new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", LevelDbDataSource.class.getSimpleName()), true },
+            { new DataSourceWithCache(new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString(), false), CACHE_SIZE), String.format("Cache with %s", LevelDbDataSource.class.getSimpleName()), true },
             { new HashMapDB(), HashMapDB.class.getSimpleName(), false },
-            { new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), LevelDbDataSource.class.getSimpleName(), false },
+            { new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString(), false), LevelDbDataSource.class.getSimpleName(), false },
             { new DataSourceWithCache(new HashMapDB(), CACHE_SIZE), String.format("Cache with %s", HashMapDB.class.getSimpleName()), false },
-            { new DataSourceWithCache(new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString()), CACHE_SIZE), String.format("Cache with %s", LevelDbDataSource.class.getSimpleName()), false }
+            { new DataSourceWithCache(new LevelDbDataSource("test", Files.createTempDirectory(tmpDir, "default").toString(), false), CACHE_SIZE), String.format("Cache with %s", LevelDbDataSource.class.getSimpleName()), false }
         });
     }
 
