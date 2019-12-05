@@ -19,10 +19,8 @@
 
 package co.rsk.rpc.modules.trace;
 
-import com.sun.deploy.trace.Trace;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.InvokeData;
-import sun.font.CreatedFontTracker;
 
 import java.util.Collections;
 import java.util.List;
