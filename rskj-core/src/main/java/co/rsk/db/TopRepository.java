@@ -76,13 +76,22 @@ public class TopRepository implements Repository {
     }
 
     @Override
-    public BigInteger increaseNonce(RskAddress addr) {
-        return null;
+    public BigInteger increaseNonce(RskAddress address) {
+        AccountState accountState = this.getOrCreateAccountState(address);
+
+        accountState.incrementNonce();
+        this.modifiedAccounts.add(address);
+
+        return accountState.getNonce();
     }
 
     @Override
-    public void setNonce(RskAddress addr, BigInteger nonce) {
+    public void setNonce(RskAddress address, BigInteger nonce) {
+        AccountState accountState = this.getOrCreateAccountState(address);
 
+        accountState.setNonce(nonce);
+
+        this.modifiedAccounts.add(address);
     }
 
     @Override
@@ -101,8 +110,24 @@ public class TopRepository implements Repository {
     }
 
     @Override
-    public Coin addBalance(RskAddress addr, Coin value) {
-        return null;
+    public Coin addBalance(RskAddress address, Coin value) {
+        AccountState accountState = this.getOrCreateAccountState(address);
+
+        Coin newBalance = accountState.addToBalance(value);
+
+        this.modifiedAccounts.add(address);
+
+        return newBalance;
+    }
+
+    private AccountState getOrCreateAccountState(RskAddress address) {
+        AccountState accountState = this.getAccountState(address);
+
+        if (accountState != null) {
+            return accountState;
+        }
+
+        return this.createAccount(address);
     }
 
     @Override
@@ -182,8 +207,14 @@ public class TopRepository implements Repository {
     }
 
     @Override
-    public Coin getBalance(RskAddress addr) {
-        return null;
+    public Coin getBalance(RskAddress address) {
+        AccountState accountState = this.getAccountState(address);
+
+        if (accountState == null) {
+            return Coin.ZERO;
+        }
+
+        return accountState.getBalance();
     }
 
     @Nullable
@@ -220,7 +251,13 @@ public class TopRepository implements Repository {
     }
 
     @Override
-    public BigInteger getNonce(RskAddress addr) {
-        return null;
+    public BigInteger getNonce(RskAddress address) {
+        AccountState accountState = this.getAccountState(address);
+
+        if (accountState == null) {
+            return BigInteger.ZERO;
+        }
+
+        return accountState.getNonce();
     }
 }

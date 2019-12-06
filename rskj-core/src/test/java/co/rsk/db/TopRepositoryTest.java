@@ -174,4 +174,246 @@ public class TopRepositoryTest {
         Assert.assertNotNull(repository.getTrie().get(trieKeyMapper.getAccountKey(address)));
         Assert.assertArrayEquals(result.getEncoded(), repository.getTrie().get(trieKeyMapper.getAccountKey(address)));
     }
+
+    @Test
+    public void getBalanceAndNonceFromUnknownAccount() {
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        Trie trie = new Trie();
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertEquals(Coin.ZERO, repository.getBalance(address));
+        Assert.assertEquals(BigInteger.ZERO, repository.getNonce(address));
+
+        repository.commit();
+
+        Assert.assertSame(trie, repository.getTrie());
+    }
+
+    @Test
+    public void getBalanceAndNonceFromKnownAccount() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(42));
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        Trie trie = new Trie();
+
+        trie = trie.put(trieKeyMapper.getAccountKey(address), accountState.getEncoded());
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertEquals(Coin.valueOf(42), repository.getBalance(address));
+        Assert.assertEquals(BigInteger.TEN, repository.getNonce(address));
+
+        repository.commit();
+
+        Assert.assertSame(trie, repository.getTrie());
+    }
+
+    @Test
+    public void addBalanceToUnknownAccount() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        byte[] accountKey = trieKeyMapper.getAccountKey(address);
+
+        Trie trie = new Trie();
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertEquals(Coin.valueOf(42), repository.addBalance(address, Coin.valueOf(42)));
+
+        Assert.assertEquals(Coin.valueOf(42), repository.getBalance(address));
+        Assert.assertEquals(BigInteger.ZERO, repository.getNonce(address));
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        AccountState accountState = new AccountState(repository.getTrie().get(accountKey));
+
+        Assert.assertNotNull(accountState);
+        Assert.assertEquals(Coin.valueOf(42), accountState.getBalance());
+        Assert.assertEquals(BigInteger.ZERO, accountState.getNonce());
+    }
+
+    @Test
+    public void addBalanceToKnownAccount() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(42));
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        byte[] accountKey = trieKeyMapper.getAccountKey(address);
+
+        Trie trie = new Trie();
+
+        trie = trie.put(accountKey, accountState.getEncoded());
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertEquals(Coin.valueOf(50), repository.addBalance(address, Coin.valueOf(8)));
+
+        Assert.assertEquals(Coin.valueOf(50), repository.getBalance(address));
+        Assert.assertEquals(BigInteger.TEN, repository.getNonce(address));
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        AccountState newAccountState = new AccountState(repository.getTrie().get(accountKey));
+
+        Assert.assertNotNull(newAccountState);
+        Assert.assertEquals(Coin.valueOf(50), newAccountState.getBalance());
+        Assert.assertEquals(BigInteger.TEN, newAccountState.getNonce());
+    }
+
+    @Test
+    public void increaseNonceToUnknownAccount() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        byte[] accountKey = trieKeyMapper.getAccountKey(address);
+
+        Trie trie = new Trie();
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertEquals(BigInteger.ONE, repository.increaseNonce(address));
+
+        Assert.assertEquals(Coin.ZERO, repository.getBalance(address));
+        Assert.assertEquals(BigInteger.ONE, repository.getNonce(address));
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        AccountState accountState = new AccountState(repository.getTrie().get(accountKey));
+
+        Assert.assertNotNull(accountState);
+        Assert.assertEquals(Coin.ZERO, accountState.getBalance());
+        Assert.assertEquals(BigInteger.ONE, accountState.getNonce());
+    }
+
+    @Test
+    public void increaseNonceToKnownAccount() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(42));
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        byte[] accountKey = trieKeyMapper.getAccountKey(address);
+
+        Trie trie = new Trie();
+
+        trie = trie.put(accountKey, accountState.getEncoded());
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertEquals(BigInteger.valueOf(11), repository.increaseNonce((address)));
+
+        Assert.assertEquals(Coin.valueOf(42), repository.getBalance(address));
+        Assert.assertEquals(BigInteger.valueOf(11), repository.getNonce(address));
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        AccountState newAccountState = new AccountState(repository.getTrie().get(accountKey));
+
+        Assert.assertNotNull(newAccountState);
+        Assert.assertEquals(Coin.valueOf(42), newAccountState.getBalance());
+        Assert.assertEquals(BigInteger.valueOf(11), newAccountState.getNonce());
+    }
+
+    @Test
+    public void setNonceToUnknownAccount() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        byte[] accountKey = trieKeyMapper.getAccountKey(address);
+
+        Trie trie = new Trie();
+
+        TopRepository repository = new TopRepository(trie);
+
+        repository.setNonce(address, BigInteger.TEN);
+
+        Assert.assertEquals(Coin.ZERO, repository.getBalance(address));
+        Assert.assertEquals(BigInteger.TEN, repository.getNonce(address));
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        AccountState accountState = new AccountState(repository.getTrie().get(accountKey));
+
+        Assert.assertNotNull(accountState);
+        Assert.assertEquals(Coin.ZERO, accountState.getBalance());
+        Assert.assertEquals(BigInteger.TEN, accountState.getNonce());
+    }
+
+    @Test
+    public void setNonceToKnownAccount() {
+        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
+
+        AccountState accountState = new AccountState(BigInteger.ONE, Coin.valueOf(42));
+
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        this.random.nextBytes(bytes);
+
+        RskAddress address = new RskAddress(bytes);
+
+        byte[] accountKey = trieKeyMapper.getAccountKey(address);
+
+        Trie trie = new Trie();
+
+        trie = trie.put(accountKey, accountState.getEncoded());
+
+        TopRepository repository = new TopRepository(trie);
+
+        repository.setNonce(address, BigInteger.TEN);
+
+        Assert.assertEquals(Coin.valueOf(42), repository.getBalance(address));
+        Assert.assertEquals(BigInteger.TEN, repository.getNonce(address));
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        AccountState newAccountState = new AccountState(repository.getTrie().get(accountKey));
+
+        Assert.assertNotNull(newAccountState);
+        Assert.assertEquals(Coin.valueOf(42), newAccountState.getBalance());
+        Assert.assertEquals(BigInteger.TEN, newAccountState.getNonce());
+    }
 }
