@@ -13,12 +13,14 @@ import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@PowerMockIgnore("org.ethereum.crypto.cryptohash.KeccakNative")
 public class BridgeSupportTest {
 
     @Test

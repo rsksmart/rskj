@@ -20,7 +20,7 @@
 package org.ethereum.crypto;
 
 import co.rsk.core.RskAddress;
-import org.ethereum.crypto.cryptohash.Keccak256;
+import org.ethereum.crypto.cryptohash.KeccakNative;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
 import org.bouncycastle.crypto.Digest;
@@ -58,9 +58,7 @@ public class HashUtil {
     }
 
     public static byte[] keccak256(byte[] input) {
-        Keccak256 digest =  new Keccak256();
-        digest.update(input);
-        return digest.digest();
+        return new KeccakNative().digest(input);
     }
 
     /**
@@ -71,7 +69,7 @@ public class HashUtil {
      * @return - sha3 hash of the chunk
      */
     public static byte[] keccak256(byte[] input, int start, int length) {
-        return Keccak256Helper.keccak256(input, start, length);
+        return new KeccakNative().digest(input, start, length);
     }
 
 

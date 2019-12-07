@@ -19,7 +19,7 @@ jobs:
       - checkout
       - run:
           name: Setup
-          command: apt update -y && apt install -y gnupg2
+          command: apt update -y && apt install -y gnupg2 gcc g++
       - run:
           name: Verify files
           command: |
