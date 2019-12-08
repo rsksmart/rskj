@@ -33,6 +33,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 public class TopRepository implements Repository {
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
     private Trie trie;
@@ -292,8 +293,14 @@ public class TopRepository implements Repository {
 
     @Nullable
     @Override
-    public byte[] getCode(RskAddress addr) {
-        return new byte[0];
+    public byte[] getCode(RskAddress address) {
+        if (!this.isExist(address)) {
+            return EMPTY_BYTE_ARRAY;
+        }
+
+        // TODO check account is hibernated
+
+        return this.trie.get(this.trieKeyMapper.getCodeKey(address));
     }
 
     @Override

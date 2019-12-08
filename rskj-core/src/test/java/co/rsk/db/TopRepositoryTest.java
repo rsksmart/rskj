@@ -596,6 +596,50 @@ public class TopRepositoryTest {
         Assert.assertArrayEquals(value2.getByteArrayForStorage(), repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE)));
     }
 
+    @Test
+    public void getCodeFromUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        byte[] result = repository.getCode(this.address);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(0, result.length);
+    }
+
+    @Test
+    public void getCodeFromCreatedAccountWithoutCode() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        repository.createAccount(this.address);
+
+        Assert.assertNull(repository.getCode(this.address));
+    }
+
+    @Test
+    public void getCodeFromTrie() {
+        byte[] code = new byte[32];
+        random.nextBytes(code);
+
+        Trie trie = new Trie();
+        trie = trie.put(this.trieKeyMapper.getCodeKey(this.address), code);
+
+        TopRepository repository = new TopRepository(trie);
+
+        repository.createAccount(this.address);
+
+        byte[] result = repository.getCode(this.address);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(code, result);
+
+        byte[] result2 = repository.getCode(this.address);
+
+        Assert.assertNotNull(result2);
+        Assert.assertArrayEquals(code, result2);
+    }
+
     private static RskAddress createRandomAddress() {
         byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
         random.nextBytes(bytes);
