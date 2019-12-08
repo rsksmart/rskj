@@ -432,6 +432,29 @@ public class TopRepositoryTest {
     }
 
     @Test
+    public void getStorageBytesFromTrie() {
+        Trie trie = new Trie();
+        byte[] value = new byte[42];
+        random.nextBytes(value);
+
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE), value);
+
+        TopRepository repository = new TopRepository(trie);
+
+        byte[] result = repository.getStorageBytes(this.address, DataWord.ONE);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(value, result);
+
+        repository.commit();
+
+        Assert.assertSame(trie, repository.getTrie());
+
+        Assert.assertArrayEquals(value, repository.getStorageBytes(address, DataWord.ONE));
+        Assert.assertArrayEquals(value, repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE)));
+    }
+
+    @Test
     public void getStorageBytesFromCreatedAccount() {
         Trie trie = new Trie();
         TopRepository repository = new TopRepository(trie);
