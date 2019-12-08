@@ -24,14 +24,24 @@ import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.db.TrieKeyMapper;
+import org.ethereum.vm.DataWord;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.Random;
 
 public class TopRepositoryTest {
-    private Random random = new Random();
+    private static Random random = new Random();
+    private TrieKeyMapper trieKeyMapper;
+    private RskAddress address;
+
+    @Before
+    public void setup() {
+        this.trieKeyMapper = new TrieKeyMapper();
+        this.address = createRandomAddress();
+    }
 
     @Test
     public void createWithTrie() {
@@ -45,13 +55,6 @@ public class TopRepositoryTest {
 
     @Test
     public void createAccount() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         Trie trie = new Trie();
 
         TopRepository repository = new TopRepository(trie);
@@ -77,13 +80,6 @@ public class TopRepositoryTest {
 
     @Test
     public void getUnknownAccount() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         Trie trie = new Trie();
 
         TopRepository repository = new TopRepository(trie);
@@ -102,14 +98,7 @@ public class TopRepositoryTest {
 
     @Test
     public void getAccountFromTrie() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
         AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(1000000));
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
 
         Trie trie = new Trie();
 
@@ -127,14 +116,7 @@ public class TopRepositoryTest {
 
     @Test
     public void getAccountFromTrieAndCommit() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
         AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(1000000));
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
 
         Trie trie = new Trie();
 
@@ -158,13 +140,6 @@ public class TopRepositoryTest {
 
     @Test
     public void createAndCommitAccount() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         Trie trie = new Trie();
 
         TopRepository repository = new TopRepository(trie);
@@ -195,11 +170,6 @@ public class TopRepositoryTest {
 
     @Test
     public void getBalanceAndNonceFromUnknownAccount() {
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         Trie trie = new Trie();
 
         TopRepository repository = new TopRepository(trie);
@@ -218,15 +188,7 @@ public class TopRepositoryTest {
 
     @Test
     public void getBalanceAndNonceFromKnownAccount() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
         AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(42));
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         Trie trie = new Trie();
 
         trie = trie.put(trieKeyMapper.getAccountKey(address), accountState.getEncoded());
@@ -247,13 +209,6 @@ public class TopRepositoryTest {
 
     @Test
     public void addBalanceToUnknownAccount() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         byte[] accountKey = trieKeyMapper.getAccountKey(address);
 
         Trie trie = new Trie();
@@ -284,15 +239,7 @@ public class TopRepositoryTest {
 
     @Test
     public void addBalanceToKnownAccount() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
         AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(42));
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         byte[] accountKey = trieKeyMapper.getAccountKey(address);
 
         Trie trie = new Trie();
@@ -323,13 +270,6 @@ public class TopRepositoryTest {
 
     @Test
     public void increaseNonceToUnknownAccount() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         byte[] accountKey = trieKeyMapper.getAccountKey(address);
 
         Trie trie = new Trie();
@@ -360,15 +300,7 @@ public class TopRepositoryTest {
 
     @Test
     public void increaseNonceToKnownAccount() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
         AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(42));
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         byte[] accountKey = trieKeyMapper.getAccountKey(address);
 
         Trie trie = new Trie();
@@ -401,13 +333,6 @@ public class TopRepositoryTest {
 
     @Test
     public void setNonceToUnknownAccount() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         byte[] accountKey = trieKeyMapper.getAccountKey(address);
 
         Trie trie = new Trie();
@@ -438,15 +363,7 @@ public class TopRepositoryTest {
 
     @Test
     public void setNonceToKnownAccount() {
-        TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
         AccountState accountState = new AccountState(BigInteger.ONE, Coin.valueOf(42));
-
-        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
-        this.random.nextBytes(bytes);
-
-        RskAddress address = new RskAddress(bytes);
-
         byte[] accountKey = trieKeyMapper.getAccountKey(address);
 
         Trie trie = new Trie();
@@ -475,5 +392,56 @@ public class TopRepositoryTest {
         Assert.assertNotNull(newAccountState);
         Assert.assertEquals(Coin.valueOf(42), newAccountState.getBalance());
         Assert.assertEquals(BigInteger.TEN, newAccountState.getNonce());
+    }
+
+    @Test
+    public void getStorageBytesFromUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertNull(repository.getStorageBytes(this.address, DataWord.ONE));
+
+        Assert.assertFalse(repository.isExist(this.address));
+    }
+
+    @Test
+    public void getStorageBytesFromCreatedAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        repository.createAccount(this.address);
+
+        Assert.assertNull(repository.getStorageBytes(this.address, DataWord.ONE));
+
+        Assert.assertTrue(repository.isExist(this.address));
+    }
+
+    @Test
+    public void getStorageValueFromUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+
+        Assert.assertFalse(repository.isExist(this.address));
+    }
+
+    @Test
+    public void getStorageValueFromCreatedAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        repository.createAccount(this.address);
+
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+
+        Assert.assertTrue(repository.isExist(this.address));
+    }
+
+    private static RskAddress createRandomAddress() {
+        byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
+        random.nextBytes(bytes);
+
+        return new RskAddress(bytes);
     }
 }

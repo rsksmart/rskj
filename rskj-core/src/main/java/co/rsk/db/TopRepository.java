@@ -230,7 +230,7 @@ public class TopRepository implements Repository {
     @Nullable
     @Override
     public byte[] getStorageBytes(RskAddress addr, DataWord key) {
-        return new byte[0];
+        return null;
     }
 
     @Override
