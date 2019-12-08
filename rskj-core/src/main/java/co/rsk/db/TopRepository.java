@@ -33,12 +33,16 @@ import java.math.BigInteger;
 import java.util.*;
 
 public class TopRepository implements Repository {
+    private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
+
     private Trie trie;
 
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
 
     private final Map<RskAddress, AccountState> accountStates = new HashMap<>();
     private final Set<RskAddress> modifiedAccounts = new HashSet<>();
+
+    private final Map<RskAddress, Map<DataWord, byte[]>> storage = new HashMap<>();
 
     public TopRepository(Trie trie) {
         this.trie = trie;
@@ -100,13 +104,21 @@ public class TopRepository implements Repository {
     }
 
     @Override
-    public void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
+    public void addStorageRow(RskAddress address, DataWord key, DataWord value) {
 
     }
 
     @Override
-    public void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
+    public void addStorageBytes(RskAddress address, DataWord key, byte[] value) {
+        if (!this.isExist(address)) {
+            this.createAccount(address);
+        }
 
+        if (!this.storage.containsKey(address)) {
+            this.storage.put(address, new HashMap<>());
+        }
+
+        this.storage.get(address).put(key, value);
     }
 
     @Override
@@ -137,7 +149,18 @@ public class TopRepository implements Repository {
             this.trie = this.trie.put(this.trieKeyMapper.getAccountKey(address), accountState.getEncoded());
         }
 
-        modifiedAccounts.clear();
+        for (Map.Entry<RskAddress, Map<DataWord, byte[]>> entry : this.storage.entrySet()) {
+            if (this.trie.get(this.trieKeyMapper.getAccountStoragePrefixKey(entry.getKey())) == null) {
+                this.trie = this.trie.put(this.trieKeyMapper.getAccountStoragePrefixKey(entry.getKey()), ONE_BYTE_ARRAY);
+            }
+
+            for (Map.Entry<DataWord, byte[]> entry2 : this.storage.get(entry.getKey()).entrySet()) {
+                this.trie = this.trie.put(this.trieKeyMapper.getAccountStorageKey(entry.getKey(), entry2.getKey()), entry2.getValue());
+            }
+        }
+
+        this.storage.clear();
+        this.modifiedAccounts.clear();
     }
 
     @Override
@@ -229,8 +252,12 @@ public class TopRepository implements Repository {
 
     @Nullable
     @Override
-    public byte[] getStorageBytes(RskAddress addr, DataWord key) {
-        return null;
+    public byte[] getStorageBytes(RskAddress address, DataWord key) {
+        if (this.storage.containsKey(address) && this.storage.get(address).containsKey(key)) {
+            return this.storage.get(address).get(key);
+        }
+
+        return this.trie.get(this.trieKeyMapper.getAccountStorageKey(address, key));
     }
 
     @Override

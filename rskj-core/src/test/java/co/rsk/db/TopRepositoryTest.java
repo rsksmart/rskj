@@ -33,7 +33,9 @@ import java.math.BigInteger;
 import java.util.Random;
 
 public class TopRepositoryTest {
+    private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
     private static Random random = new Random();
+
     private TrieKeyMapper trieKeyMapper;
     private RskAddress address;
 
@@ -402,6 +404,31 @@ public class TopRepositoryTest {
         Assert.assertNull(repository.getStorageBytes(this.address, DataWord.ONE));
 
         Assert.assertFalse(repository.isExist(this.address));
+    }
+
+    @Test
+    public void setAndGetStorageBytesFromUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+        byte[] value = new byte[42];
+        random.nextBytes(value);
+
+        repository.addStorageBytes(this.address, DataWord.ONE, value);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        byte[] result = repository.getStorageBytes(this.address, DataWord.ONE);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(value, result);
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        Assert.assertArrayEquals(value, repository.getStorageBytes(address, DataWord.ONE));
+        Assert.assertArrayEquals(value, repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE)));
+        Assert.assertArrayEquals(ONE_BYTE_ARRAY, repository.getTrie().get(this.trieKeyMapper.getAccountStoragePrefixKey(address)));
     }
 
     @Test
