@@ -176,8 +176,12 @@ public class TopRepository implements Repository {
     }
 
     @Override
-    public boolean isExist(RskAddress addr) {
-        return false;
+    public boolean isExist(RskAddress address) {
+        if (this.accountStates.containsKey(address)) {
+            return true;
+        }
+
+        return this.getAccountState(address) != null;
     }
 
     @Override

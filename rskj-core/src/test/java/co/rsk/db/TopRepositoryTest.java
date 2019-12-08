@@ -56,9 +56,13 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertFalse(repository.isExist(address));
+
         AccountState accountState = repository.createAccount(address);
 
         Assert.assertNotNull(accountState);
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertNotNull(repository.getTrie());
         Assert.assertSame(trie, repository.getTrie());
@@ -83,6 +87,8 @@ public class TopRepositoryTest {
         Trie trie = new Trie();
 
         TopRepository repository = new TopRepository(trie);
+
+        Assert.assertFalse(repository.isExist(address));
 
         AccountState accountState = repository.getAccountState(address);
 
@@ -111,6 +117,8 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertTrue(repository.isExist(address));
+
         AccountState result = repository.getAccountState(address);
 
         Assert.assertNotNull(result);
@@ -134,9 +142,13 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertTrue(repository.isExist(address));
+
         AccountState result = repository.getAccountState(address);
 
         repository.commit();
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(accountState.getEncoded(), result.getEncoded());
@@ -157,9 +169,15 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertFalse(repository.isExist(address));
+
         AccountState accountState = repository.createAccount(address);
 
+        Assert.assertTrue(repository.isExist(address));
+
         repository.commit();
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertNotNull(accountState);
 
@@ -189,7 +207,11 @@ public class TopRepositoryTest {
         Assert.assertEquals(Coin.ZERO, repository.getBalance(address));
         Assert.assertEquals(BigInteger.ZERO, repository.getNonce(address));
 
+        Assert.assertFalse(repository.isExist(address));
+
         repository.commit();
+
+        Assert.assertFalse(repository.isExist(address));
 
         Assert.assertSame(trie, repository.getTrie());
     }
@@ -211,10 +233,14 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertTrue(repository.isExist(address));
+
         Assert.assertEquals(Coin.valueOf(42), repository.getBalance(address));
         Assert.assertEquals(BigInteger.TEN, repository.getNonce(address));
 
         repository.commit();
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertSame(trie, repository.getTrie());
     }
@@ -234,12 +260,18 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertFalse(repository.isExist(address));
+
         Assert.assertEquals(Coin.valueOf(42), repository.addBalance(address, Coin.valueOf(42)));
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertEquals(Coin.valueOf(42), repository.getBalance(address));
         Assert.assertEquals(BigInteger.ZERO, repository.getNonce(address));
 
         repository.commit();
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertNotSame(trie, repository.getTrie());
 
@@ -269,12 +301,16 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertTrue(repository.isExist(address));
+
         Assert.assertEquals(Coin.valueOf(50), repository.addBalance(address, Coin.valueOf(8)));
 
         Assert.assertEquals(Coin.valueOf(50), repository.getBalance(address));
         Assert.assertEquals(BigInteger.TEN, repository.getNonce(address));
 
         repository.commit();
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertNotSame(trie, repository.getTrie());
 
@@ -300,12 +336,18 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertFalse(repository.isExist(address));
+
         Assert.assertEquals(BigInteger.ONE, repository.increaseNonce(address));
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertEquals(Coin.ZERO, repository.getBalance(address));
         Assert.assertEquals(BigInteger.ONE, repository.getNonce(address));
 
         repository.commit();
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertNotSame(trie, repository.getTrie());
 
@@ -335,12 +377,18 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertTrue(repository.isExist(address));
+
         Assert.assertEquals(BigInteger.valueOf(11), repository.increaseNonce((address)));
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertEquals(Coin.valueOf(42), repository.getBalance(address));
         Assert.assertEquals(BigInteger.valueOf(11), repository.getNonce(address));
 
         repository.commit();
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertNotSame(trie, repository.getTrie());
 
@@ -366,12 +414,18 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertFalse(repository.isExist(address));
+
         repository.setNonce(address, BigInteger.TEN);
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertEquals(Coin.ZERO, repository.getBalance(address));
         Assert.assertEquals(BigInteger.TEN, repository.getNonce(address));
 
         repository.commit();
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertNotSame(trie, repository.getTrie());
 
@@ -401,12 +455,18 @@ public class TopRepositoryTest {
 
         TopRepository repository = new TopRepository(trie);
 
+        Assert.assertTrue(repository.isExist(address));
+
         repository.setNonce(address, BigInteger.TEN);
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertEquals(Coin.valueOf(42), repository.getBalance(address));
         Assert.assertEquals(BigInteger.TEN, repository.getNonce(address));
 
         repository.commit();
+
+        Assert.assertTrue(repository.isExist(address));
 
         Assert.assertNotSame(trie, repository.getTrie());
 
