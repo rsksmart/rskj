@@ -106,7 +106,7 @@ public class TopRepository implements Repository {
 
     @Override
     public void addStorageRow(RskAddress address, DataWord key, DataWord value) {
-
+        this.addStorageBytes(address, key, value.getByteArrayForStorage());
     }
 
     @Override
@@ -252,8 +252,14 @@ public class TopRepository implements Repository {
 
     @Nullable
     @Override
-    public DataWord getStorageValue(RskAddress addr, DataWord key) {
-        return null;
+    public DataWord getStorageValue(RskAddress address, DataWord key) {
+        byte[] bytes = this.getStorageBytes(address, key);
+
+        if (bytes == null) {
+            return null;
+        }
+
+        return DataWord.valueOf(bytes);
     }
 
     @Nullable

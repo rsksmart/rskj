@@ -395,7 +395,6 @@ public class TopRepositoryTest {
         Assert.assertEquals(Coin.valueOf(42), newAccountState.getBalance());
         Assert.assertEquals(BigInteger.TEN, newAccountState.getNonce());
     }
-
     @Test
     public void getStorageBytesFromUnknownAccount() {
         Trie trie = new Trie();
@@ -455,6 +454,38 @@ public class TopRepositoryTest {
     }
 
     @Test
+    public void changeStorageBytesFromTrie() {
+        Trie trie = new Trie();
+        byte[] value = new byte[42];
+        random.nextBytes(value);
+        byte[] value2 = new byte[100];
+        random.nextBytes(value2);
+
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE), value);
+
+        TopRepository repository = new TopRepository(trie);
+
+        byte[] result = repository.getStorageBytes(this.address, DataWord.ONE);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(value, result);
+
+        repository.addStorageBytes(address, DataWord.ONE, value2);
+
+        byte[] result2 = repository.getStorageBytes(this.address, DataWord.ONE);
+
+        Assert.assertNotNull(result2);
+        Assert.assertArrayEquals(value2, result2);
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        Assert.assertArrayEquals(value2, repository.getStorageBytes(address, DataWord.ONE));
+        Assert.assertArrayEquals(value2, repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE)));
+    }
+
+    @Test
     public void getStorageBytesFromCreatedAccount() {
         Trie trie = new Trie();
         TopRepository repository = new TopRepository(trie);
@@ -486,6 +517,83 @@ public class TopRepositoryTest {
         Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
 
         Assert.assertTrue(repository.isExist(this.address));
+    }
+
+    @Test
+    public void setAndGetStorageValueFromUnknownAccount() {
+        Trie trie = new Trie();
+        DataWord value = DataWord.valueOf(42);
+
+        TopRepository repository = new TopRepository(trie);
+
+        repository.addStorageRow(this.address, DataWord.ONE, value);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        DataWord result = repository.getStorageValue(this.address, DataWord.ONE);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(value, result);
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        Assert.assertEquals(value, repository.getStorageValue(address, DataWord.ONE));
+        Assert.assertArrayEquals(value.getByteArrayForStorage(), repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE)));
+        Assert.assertArrayEquals(ONE_BYTE_ARRAY, repository.getTrie().get(this.trieKeyMapper.getAccountStoragePrefixKey(address)));
+    }
+
+    @Test
+    public void getStorageValueFromTrie() {
+        Trie trie = new Trie();
+        DataWord value = DataWord.valueOf(42);
+
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE), value.getByteArrayForStorage());
+
+        TopRepository repository = new TopRepository(trie);
+
+        DataWord result = repository.getStorageValue(this.address, DataWord.ONE);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(value, result);
+
+        repository.commit();
+
+        Assert.assertSame(trie, repository.getTrie());
+
+        Assert.assertEquals(value, repository.getStorageValue(address, DataWord.ONE));
+        Assert.assertArrayEquals(value.getByteArrayForStorage(), repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE)));
+    }
+
+    @Test
+    public void changeStorageValueFromTrie() {
+        Trie trie = new Trie();
+        DataWord value = DataWord.valueOf(42);
+        DataWord value2 = DataWord.valueOf(100);
+
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE), value.getByteArrayForStorage());
+
+        TopRepository repository = new TopRepository(trie);
+
+        DataWord result = repository.getStorageValue(this.address, DataWord.ONE);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(value, result);
+
+        repository.addStorageRow(address, DataWord.ONE, value2);
+
+        DataWord result2 = repository.getStorageValue(this.address, DataWord.ONE);
+
+        Assert.assertNotNull(result2);
+        Assert.assertEquals(value2, result2);
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        Assert.assertEquals(value2, repository.getStorageValue(address, DataWord.ONE));
+        Assert.assertArrayEquals(value2.getByteArrayForStorage(), repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE)));
     }
 
     private static RskAddress createRandomAddress() {
