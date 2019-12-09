@@ -672,6 +672,70 @@ public class TopRepositoryTest {
         Assert.assertArrayEquals(TrieHashTest.makeEmptyHash().getBytes(), repository.getRoot());
     }
 
+    @Test
+    public void createAccountAndRollback() {
+        Trie trie = new Trie();
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertFalse(repository.isExist(this.address));
+
+        repository.createAccount(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.rollback();
+
+        Assert.assertSame(trie, repository.getTrie());
+        Assert.assertFalse(repository.isExist(this.address));
+    }
+
+    @Test
+    public void setupContractAndRollback() {
+        Trie trie = new Trie();
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertFalse(repository.isExist(this.address));
+
+        repository.createAccount(this.address);
+        repository.setupContract(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertTrue(repository.isContract(this.address));
+
+        repository.rollback();
+
+        Assert.assertSame(trie, repository.getTrie());
+        Assert.assertFalse(repository.isContract(this.address));
+        Assert.assertFalse(repository.isExist(this.address));
+    }
+
+    @Test
+    public void addStorageAndRollback() {
+        Trie trie = new Trie();
+        byte[] data = new byte[42];
+        random.nextBytes(data);
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertFalse(repository.isExist(this.address));
+
+        repository.createAccount(this.address);
+        repository.addStorageBytes(this.address, DataWord.ONE, data);
+        repository.addStorageRow(this.address, DataWord.ZERO, DataWord.ONE);
+
+        Assert.assertArrayEquals(data, repository.getStorageBytes(this.address, DataWord.ONE));
+        Assert.assertEquals(DataWord.ONE, repository.getStorageValue(this.address, DataWord.ZERO));
+
+        repository.rollback();
+        repository.commit();
+
+        Assert.assertSame(trie, repository.getTrie());
+        Assert.assertNull(repository.getStorageBytes(this.address, DataWord.ONE));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ZERO));
+    }
+
     private static RskAddress createRandomAddress() {
         byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
         random.nextBytes(bytes);

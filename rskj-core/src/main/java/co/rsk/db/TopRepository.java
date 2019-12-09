@@ -176,7 +176,12 @@ public class TopRepository implements Repository {
 
     @Override
     public void rollback() {
+        this.accountStates.clear();
+        this.storage.clear();
 
+        this.modifiedAccounts.clear();
+        this.modifiedStorage.clear();
+        this.contracts.clear();
     }
 
     @Override
