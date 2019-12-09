@@ -53,10 +53,10 @@ public class TransactionResultDTO {
     public TransactionResultDTO(Block b, Integer index, Transaction tx) {
         hash = tx.getHash().toJsonString();
 
-        if (Arrays.equals(tx.getNonce(), ByteUtil.EMPTY_BYTE_ARRAY)) {
+        if (Arrays.equals(tx.getSingleNonce(), ByteUtil.EMPTY_BYTE_ARRAY)) {
             nonce = "0";
         } else {
-            nonce = TypeConverter.toJsonHex(tx.getNonce());
+            nonce = TypeConverter.toJsonHex(tx.getSingleNonce());
         }
 
         blockHash = b != null ? b.getHashJsonString() : null;
@@ -66,7 +66,7 @@ public class TransactionResultDTO {
         from = tx.getSender().toJsonString();
         to = tx.getReceiveAddress().toJsonString();
         gas = TypeConverter.toQuantityJsonHex(tx.getGasLimit());
-        
+
         gasPrice = TypeConverter.toQuantityJsonHex(tx.getGasPrice().getBytes());
 
         if (Coin.ZERO.equals(tx.getValue())) {
@@ -78,7 +78,7 @@ public class TransactionResultDTO {
         input = TypeConverter.toUnformattedJsonHex(tx.getData());
 
         if (!(tx instanceof RemascTransaction)) {
-            ECKey.ECDSASignature signature = tx.getSignature();
+            ECKey.ECDSASignature signature = tx.getSingleSignature();
             v = String.format("0x%02x", signature.v);
             r = TypeConverter.toQuantityJsonHex(signature.r);
             s = TypeConverter.toQuantityJsonHex(signature.s);

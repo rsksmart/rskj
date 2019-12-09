@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -138,7 +139,9 @@ public class BlockTxsValidationRuleTest {
     private Transaction transaction(RskAddress sender, int nonce) {
         Transaction transaction = mock(Transaction.class);
         when(transaction.getSender()).thenReturn(sender);
-        when(transaction.getNonce()).thenReturn(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(nonce)));
+        when(transaction.getSenders()).thenReturn(Collections.singletonList(sender));
+        when(transaction.getSingleNonce()).thenReturn(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(nonce)));
+        when(transaction.getNonces()).thenReturn(Collections.singletonList(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(nonce))));
         return transaction;
     }
 }

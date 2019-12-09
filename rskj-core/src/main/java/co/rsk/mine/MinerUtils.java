@@ -165,7 +165,7 @@ public class MinerUtils {
             try {
                 Keccak256 hash = tx.getHash();
                 Coin txValue = tx.getValue();
-                BigInteger txNonce = new BigInteger(1, tx.getNonce());
+                BigInteger txNonce = new BigInteger(1, tx.getSingleNonce());
                 RskAddress txSender = tx.getSender();
                 logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
 

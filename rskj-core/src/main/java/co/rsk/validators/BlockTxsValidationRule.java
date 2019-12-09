@@ -77,23 +77,33 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
                 return false;
             }
 
-            RskAddress sender = tx.getSender();
-            BigInteger expectedNonce = curNonce.get(sender);
-            if (expectedNonce == null) {
-                expectedNonce = parentRepo.getNonce(sender);
-            }
-            curNonce.put(sender, expectedNonce.add(ONE));
-            BigInteger txNonce = new BigInteger(1, tx.getNonce());
+            List<RskAddress> senders = tx.getSenders();
+            List<byte[]> nonces = tx.getNonces();
 
-            if (!expectedNonce.equals(txNonce)) {
-                logger.warn("Invalid transaction: Tx nonce {} != expected nonce {} (parent nonce: {}): {}",
-                        txNonce, expectedNonce, parentRepo.getNonce(sender), tx);
+            for(int i = 0; i < senders.size(); i++) {
 
-                panicProcessor.panic("invalidtransaction",
-                                     String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
-                                                   txNonce, expectedNonce, parentRepo.getNonce(sender), tx.getHash()));
+                RskAddress sender = senders.get(i);
+                BigInteger expectedNonce = curNonce.get(sender);
+                if (expectedNonce == null) {
+                    expectedNonce = parentRepo.getNonce(sender);
+                }
+                curNonce.put(sender, expectedNonce.add(ONE));
+                BigInteger txNonce = new BigInteger(1, nonces.get(i));
 
-                return false;
+                if (!expectedNonce.equals(txNonce)) {
+                    logger.warn("Invalid transaction: Tx nonce {} != expected nonce {} (parent nonce: {}): {}",
+                                txNonce, expectedNonce, parentRepo.getNonce(sender), tx
+                    );
+
+                    panicProcessor.panic(
+                            "invalidtransaction",
+                            String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
+                                          txNonce, expectedNonce, parentRepo.getNonce(sender), tx.getHash()
+                            )
+                    );
+
+                    return false;
+                }
             }
         }
 

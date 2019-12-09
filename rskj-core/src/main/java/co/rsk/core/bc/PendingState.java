@@ -124,7 +124,7 @@ public class PendingState implements AccountInformationProvider {
         //finally we order by price in cases where nonce are equal, and then by hash to disambiguate
         for (List<Transaction> transactionList : senderTxs.values()) {
             transactionList.sort(
-                    Comparator.<Transaction>comparingLong(tx -> ByteUtil.byteArrayToLong(tx.getNonce()))
+                    Comparator.<Transaction>comparingLong(tx -> ByteUtil.byteArrayToLong(tx.getSingleNonce()))
                             .thenComparing(gasPriceComparator)
                             .thenComparing(Transaction::getHash)
             );
@@ -173,7 +173,7 @@ public class PendingState implements AccountInformationProvider {
     }
 
     private void executeTransaction(Repository currentRepository, Transaction tx) {
-        LOGGER.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
+        LOGGER.trace("Apply pending state tx: {} {}", toBI(tx.getSingleNonce()), tx.getHash());
 
         TransactionExecutor executor = transactionExecutorFactory.newInstance(currentRepository, tx);
 

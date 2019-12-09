@@ -217,7 +217,7 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         Keccak256 hash = tx.getHash();
-        logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+        logger.trace("add transaction {} {}", toBI(tx.getSingleNonce()), tx.getHash());
 
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
