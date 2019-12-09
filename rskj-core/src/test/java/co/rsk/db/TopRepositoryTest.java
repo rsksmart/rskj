@@ -336,6 +336,35 @@ public class TopRepositoryTest {
     }
 
     @Test
+    public void increaseNonceUsingUpdateAccountState() {
+        Trie trie = new Trie();
+
+        TopRepository repository = new TopRepository(trie);
+
+        AccountState accountState = repository.createAccount(this.address);
+        Assert.assertTrue(repository.isExist(address));
+        accountState.incrementNonce();
+        repository.updateAccountState(address, accountState);
+
+        Assert.assertTrue(repository.isExist(address));
+
+        Assert.assertEquals(Coin.ZERO, repository.getBalance(address));
+        Assert.assertEquals(BigInteger.ONE, repository.getNonce(address));
+
+        repository.commit();
+
+        Assert.assertTrue(repository.isExist(address));
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        AccountState newAccountState = new AccountState(repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
+
+        Assert.assertNotNull(newAccountState);
+        Assert.assertEquals(Coin.ZERO, newAccountState.getBalance());
+        Assert.assertEquals(BigInteger.ONE, newAccountState.getNonce());
+    }
+
+    @Test
     public void setNonceToUnknownAccount() {
         byte[] accountKey = trieKeyMapper.getAccountKey(address);
 
@@ -602,6 +631,8 @@ public class TopRepositoryTest {
     public void getCodeFromUnknownAccount() {
         Trie trie = new Trie();
         TopRepository repository = new TopRepository(trie);
+
+        Assert.assertFalse(repository.isExist(this.address));
 
         byte[] result = repository.getCode(this.address);
 
