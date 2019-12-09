@@ -20,7 +20,6 @@ package co.rsk.pcc;
 
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;

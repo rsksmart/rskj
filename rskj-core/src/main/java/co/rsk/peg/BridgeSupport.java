@@ -142,7 +142,7 @@ public class BridgeSupport {
     }
 
     public List<ProgramSubtrace> getSubtraces() {
-        return this.subtraces;
+        return Collections.unmodifiableList(this.subtraces);
     }
 
     @VisibleForTesting

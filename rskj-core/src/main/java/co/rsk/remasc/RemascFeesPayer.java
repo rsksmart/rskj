@@ -50,7 +50,7 @@ class RemascFeesPayer {
         this.contractAddress = contractAddress;
     }
 
-    public List<ProgramSubtrace> getSubtraces() { return this.subtraces; }
+    public List<ProgramSubtrace> getSubtraces() { return Collections.unmodifiableList(this.subtraces); }
 
     public void payMiningFees(byte[] blockHash, Coin value, RskAddress toAddress, List<LogInfo> logs) {
         this.transferPayment(value, toAddress);
