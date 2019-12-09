@@ -450,18 +450,16 @@ public class BridgeSupport {
                 amount
         );
 
-        if (this.subtraces != null) {
-            DataWord from = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
-            DataWord to = DataWord.valueOf(receiver.getBytes());
-            long gas = 0L;
-            DataWord value = DataWord.valueOf(amount.getBytes());
+        DataWord from = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
+        DataWord to = DataWord.valueOf(receiver.getBytes());
+        long gas = 0L;
+        DataWord value = DataWord.valueOf(amount.getBytes());
 
-            TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
-            ProgramResult result     = ProgramResult.empty();
-            ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
+        TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
+        ProgramResult result     = ProgramResult.empty();
+        ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
 
-            this.subtraces.add(subtrace);
-        }
+        this.subtraces.add(subtrace);
     }
 
     /*

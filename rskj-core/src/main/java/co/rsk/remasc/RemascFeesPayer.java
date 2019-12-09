@@ -61,18 +61,16 @@ class RemascFeesPayer {
         this.repository.addBalance(contractAddress, value.negate());
         this.repository.addBalance(toAddress, value);
 
-        if (this.subtraces != null) {
-            DataWord from = DataWord.valueOf(contractAddress.getBytes());
-            DataWord to = DataWord.valueOf(toAddress.getBytes());
-            long gas = 0L;
-            DataWord amount = DataWord.valueOf(value.getBytes());
+        DataWord from = DataWord.valueOf(contractAddress.getBytes());
+        DataWord to = DataWord.valueOf(toAddress.getBytes());
+        long gas = 0L;
+        DataWord amount = DataWord.valueOf(value.getBytes());
 
-            TransferInvoke invoke = new TransferInvoke(from, to, gas, amount);
-            ProgramResult result     = new ProgramResult();
-            ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
+        TransferInvoke invoke = new TransferInvoke(from, to, gas, amount);
+        ProgramResult result     = new ProgramResult();
+        ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
 
-            this.subtraces.add(subtrace);
-        }
+        this.subtraces.add(subtrace);
     }
 
     private void logPayment(byte[] blockHash, Coin value, RskAddress toAddress, List<LogInfo> logs) {
