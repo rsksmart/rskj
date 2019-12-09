@@ -43,6 +43,8 @@ public class TopRepository implements Repository {
     private final Map<RskAddress, AccountState> accountStates = new HashMap<>();
     private final Set<RskAddress> modifiedAccounts = new HashSet<>();
 
+    private final Set<RskAddress> contracts = new HashSet<>();
+
     private final Map<RskAddress, Map<DataWord, byte[]>> storage = new HashMap<>();
     private final Map<RskAddress, Map<DataWord, Boolean>> modifiedStorage = new HashMap<>();
 
@@ -67,8 +69,8 @@ public class TopRepository implements Repository {
     }
 
     @Override
-    public void setupContract(RskAddress addr) {
-
+    public void setupContract(RskAddress address) {
+        this.contracts.add(address);
     }
 
     @Override
@@ -114,6 +116,7 @@ public class TopRepository implements Repository {
     public void addStorageBytes(RskAddress address, DataWord key, byte[] value) {
         if (!this.isExist(address)) {
             this.createAccount(address);
+            this.setupContract(address);
         }
 
         if (!this.storage.containsKey(address)) {
@@ -156,11 +159,11 @@ public class TopRepository implements Repository {
             this.trie = this.trie.put(this.trieKeyMapper.getAccountKey(address), accountState.getEncoded());
         }
 
-        for (Map.Entry<RskAddress, Map<DataWord, Boolean>> entry : this.modifiedStorage.entrySet()) {
-            if (this.trie.get(this.trieKeyMapper.getAccountStoragePrefixKey(entry.getKey())) == null) {
-                this.trie = this.trie.put(this.trieKeyMapper.getAccountStoragePrefixKey(entry.getKey()), ONE_BYTE_ARRAY);
-            }
+        for (RskAddress address : this.contracts) {
+            this.trie = this.trie.put(this.trieKeyMapper.getAccountStoragePrefixKey(address), ONE_BYTE_ARRAY);
+        }
 
+        for (Map.Entry<RskAddress, Map<DataWord, Boolean>> entry : this.modifiedStorage.entrySet()) {
             for (Map.Entry<DataWord, Boolean> entry2 : this.modifiedStorage.get(entry.getKey()).entrySet()) {
                 this.trie = this.trie.put(this.trieKeyMapper.getAccountStorageKey(entry.getKey(), entry2.getKey()), this.storage.get(entry.getKey()).get(entry2.getKey()));
             }
@@ -168,6 +171,7 @@ public class TopRepository implements Repository {
 
         this.modifiedStorage.clear();
         this.modifiedAccounts.clear();
+        this.contracts.clear();
     }
 
     @Override
@@ -304,8 +308,12 @@ public class TopRepository implements Repository {
     }
 
     @Override
-    public boolean isContract(RskAddress addr) {
-        return false;
+    public boolean isContract(RskAddress address) {
+        if (this.contracts.contains(address)) {
+            return true;
+        };
+
+        return this.trie.get(this.trieKeyMapper.getAccountStoragePrefixKey(address)) != null;
     }
 
     @Override

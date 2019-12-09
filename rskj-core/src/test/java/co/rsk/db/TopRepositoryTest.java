@@ -426,8 +426,8 @@ public class TopRepositoryTest {
         Assert.assertNotSame(trie, repository.getTrie());
 
         Assert.assertArrayEquals(value, repository.getStorageBytes(address, DataWord.ONE));
-        Assert.assertArrayEquals(value, repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE)));
-        Assert.assertArrayEquals(ONE_BYTE_ARRAY, repository.getTrie().get(this.trieKeyMapper.getAccountStoragePrefixKey(address)));
+        Assert.assertArrayEquals(value, repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE)));
+        Assert.assertArrayEquals(ONE_BYTE_ARRAY, repository.getTrie().get(this.trieKeyMapper.getAccountStoragePrefixKey(this.address)));
     }
 
     @Test
@@ -638,6 +638,29 @@ public class TopRepositoryTest {
 
         Assert.assertNotNull(result2);
         Assert.assertArrayEquals(code, result2);
+    }
+
+    @Test
+    public void setupContractOnCreatedAccount() {
+        Trie trie = new Trie();
+
+        TopRepository repository = new TopRepository(trie);
+
+        repository.createAccount(this.address);
+
+        Assert.assertFalse(repository.isContract(this.address));
+
+        repository.setupContract(this.address);
+
+        Assert.assertTrue(repository.isContract(this.address));
+        Assert.assertSame(trie, repository.getTrie());
+
+        repository.commit();
+
+        Assert.assertTrue(repository.isContract(this.address));
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        Assert.assertArrayEquals(new byte[] { 0x01 }, repository.getTrie().get(this.trieKeyMapper.getAccountStoragePrefixKey(this.address)));
     }
 
     private static RskAddress createRandomAddress() {
