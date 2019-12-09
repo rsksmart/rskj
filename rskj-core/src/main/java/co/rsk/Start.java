@@ -27,7 +27,7 @@ public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
     public static void main(String[] args) {
-        RskContext ctx = new RskContext(args);
+        RskContext ctx = new RskContext(args, false);
         NodeRunner runner = ctx.getNodeRunner();
         try {
             runner.run();

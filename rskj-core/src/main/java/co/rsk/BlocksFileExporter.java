@@ -66,7 +66,8 @@ public class BlocksFileExporter {
 
         args = new String[]{"-base-path", "/Users/julian/workspace/rskj-projects/dbs/database/testnet","/Users/julian/workspace/rskj-projects/dbs/fileExporter"}; // db src + fileExporter
         String[] nodeCliArgs = Arrays.copyOf(args, args.length - 1);
-        RskContext objects = new RskContext(nodeCliArgs);
+        final boolean useSnappy = false;
+        RskContext objects = new RskContext(nodeCliArgs, useSnappy);
         BlocksFileExporter bplayer = new BlocksFileExporter(args[args.length - 1], objects);
         bplayer.exportBlocks();
         System.exit(0);

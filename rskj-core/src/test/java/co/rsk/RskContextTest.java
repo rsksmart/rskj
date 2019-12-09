@@ -51,7 +51,7 @@ public class RskContextTest {
         testProperties = mock(RskSystemProperties.class);
         doReturn(0).when(testProperties).getStatesCacheSize();
 
-        rskContext = new RskContext(new String[0]) {
+        rskContext = new RskContext(new String[0], false) {
             @Override
             public RskSystemProperties getRskSystemProperties() {
                 return testProperties;
@@ -153,7 +153,7 @@ public class RskContextTest {
         doReturn(new GarbageCollectorConfig(true, 1000, 3)).when(testProperties).garbageCollectorConfig();
         doReturn(testDatabasesDirectory.toString()).when(testProperties).databaseDir();
 
-        RskContext rskContext = new RskContext(new String[0]) {
+        RskContext rskContext = new RskContext(new String[0], false) {
             @Override
             public RskSystemProperties getRskSystemProperties() {
                 return testProperties;
