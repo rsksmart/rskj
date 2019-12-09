@@ -47,6 +47,7 @@ public abstract class AbstractRepository implements Repository {
     private final Map<RskAddress, Map<DataWord, Boolean>> modifiedStorage = new HashMap<>();
     private final Map<RskAddress, byte[]> codes = new HashMap<>();
 
+    // TODO invalid operation
     @Override
     public Trie getTrie() {
         return null;
@@ -199,8 +200,9 @@ public abstract class AbstractRepository implements Repository {
         this.modifiedAccounts.add(address);
     }
 
+    // TODO invalid operation
     @Override
-    public abstract byte[] getRoot();
+    public byte[] getRoot() { return null; };
 
     @Override
     public Set<RskAddress> getAccountsKeys() {
@@ -247,7 +249,7 @@ public abstract class AbstractRepository implements Repository {
 
     @Override
     public Repository startTracking() {
-        return null;
+        return new RepositoryTrack(this);
     }
 
     @Override
