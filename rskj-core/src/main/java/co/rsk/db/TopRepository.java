@@ -105,4 +105,9 @@ public class TopRepository extends AbstractRepository {
     public void commitStorage(RskAddress address, DataWord key, byte[] value) {
         this.trie = this.trie.put(this.trieKeyMapper.getAccountStorageKey(address, key), value);
     }
+
+    @Override
+    public void commitCode(RskAddress address, byte[] code) {
+        this.trie = this.trie.put(this.trieKeyMapper.getCodeKey(address), code);
+    }
 }

@@ -767,6 +767,88 @@ public class TopRepositoryTest {
         Assert.assertNull(repository.getStorageValue(this.address, DataWord.ZERO));
     }
 
+    @Test
+    public void saveCode() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        byte[] code = new byte[42];
+        random.nextBytes(code);
+
+        repository.saveCode(this.address, code);
+
+        Assert.assertArrayEquals(code, repository.getCode(address));
+        Assert.assertTrue(repository.isExist(address));
+    }
+
+    @Test
+    public void saveCodeAndCommit() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        byte[] code = new byte[42];
+        random.nextBytes(code);
+
+        repository.saveCode(this.address, code);
+
+        Assert.assertSame(trie, repository.getTrie());
+        Assert.assertArrayEquals(code, repository.getCode(address));
+        Assert.assertTrue(repository.isExist(address));
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+        Assert.assertArrayEquals(code, repository.getCode(address));
+        Assert.assertTrue(repository.isExist(address));
+
+        Assert.assertArrayEquals(code, repository.getTrie().get(this.trieKeyMapper.getCodeKey(this.address)));
+    }
+
+    @Test
+    public void saveCodeAndRollback() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        byte[] code = new byte[42];
+        random.nextBytes(code);
+
+        repository.saveCode(this.address, code);
+
+        Assert.assertSame(trie, repository.getTrie());
+        Assert.assertArrayEquals(code, repository.getCode(address));
+        Assert.assertTrue(repository.isExist(address));
+
+        repository.rollback();
+
+        Assert.assertSame(trie, repository.getTrie());
+        Assert.assertArrayEquals(new byte[0], repository.getCode(address));
+        Assert.assertFalse(repository.isExist(address));
+
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getCodeKey(this.address)));
+    }
+
+    @Test
+    public void saveNullCode() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        repository.saveCode(this.address, null);
+
+        Assert.assertArrayEquals(new byte[0], repository.getCode(address));
+        Assert.assertFalse(repository.isExist(address));
+    }
+
+    @Test
+    public void saveEmptyCode() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        repository.saveCode(this.address, new byte[0]);
+
+        Assert.assertArrayEquals(new byte[0], repository.getCode(address));
+        Assert.assertFalse(repository.isExist(address));
+    }
+
     private static RskAddress createRandomAddress() {
         byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
         random.nextBytes(bytes);

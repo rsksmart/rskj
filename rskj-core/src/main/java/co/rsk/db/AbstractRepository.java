@@ -45,6 +45,7 @@ public abstract class AbstractRepository implements Repository {
 
     private final Map<RskAddress, Map<DataWord, byte[]>> storage = new HashMap<>();
     private final Map<RskAddress, Map<DataWord, Boolean>> modifiedStorage = new HashMap<>();
+    private final Map<RskAddress, byte[]> codes = new HashMap<>();
 
     @Override
     public Trie getTrie() {
@@ -97,8 +98,12 @@ public abstract class AbstractRepository implements Repository {
     }
 
     @Override
-    public void saveCode(RskAddress addr, byte[] code) {
+    public void saveCode(RskAddress address, byte[] code) {
+        this.codes.put(address, code);
 
+        if (code != null && code.length != 0 && !this.isExist(address)) {
+            this.createAccount(address);
+        }
     }
 
     @Override
@@ -148,6 +153,10 @@ public abstract class AbstractRepository implements Repository {
 
     @Override
     public void commit() {
+        for (Map.Entry<RskAddress, byte[]> entry : this.codes.entrySet()) {
+            this.commitCode(entry.getKey(), entry.getValue());
+        }
+
         for (RskAddress address : this.modifiedAccounts) {
             AccountState accountState = this.accountStates.get(address);
             this.commitAccountState(address, accountState);
@@ -172,6 +181,7 @@ public abstract class AbstractRepository implements Repository {
     public void rollback() {
         this.accountStates.clear();
         this.storage.clear();
+        this.codes.clear();
 
         this.modifiedAccounts.clear();
         this.modifiedStorage.clear();
@@ -298,9 +308,19 @@ public abstract class AbstractRepository implements Repository {
             return EMPTY_BYTE_ARRAY;
         }
 
+        if (this.codes.containsKey(address)) {
+            return this.codes.get(address);
+        }
+
         // TODO check account is hibernated
 
-        return this.retrieveCode(address);
+        byte[] code = this.retrieveCode(address);
+
+        if (code != null) {
+            this.codes.put(address, code);
+        }
+
+        return code;
     }
 
     @Override
@@ -336,4 +356,6 @@ public abstract class AbstractRepository implements Repository {
     public abstract void commitContract(RskAddress address);
 
     public abstract void commitStorage(RskAddress address, DataWord key, byte[] value);
+
+    public abstract void commitCode(RskAddress address, byte[] code);
 }
