@@ -1,7 +1,9 @@
 package co.rsk.peg.btcLockSender;
 
-import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.TransactionInput;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
