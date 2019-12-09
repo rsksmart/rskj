@@ -191,7 +191,9 @@ public class TopRepository implements Repository {
 
     @Override
     public byte[] getRoot() {
-        return new byte[0];
+        // TODO trie save?
+        
+        return this.trie.getHash().getBytes();
     }
 
     @Override

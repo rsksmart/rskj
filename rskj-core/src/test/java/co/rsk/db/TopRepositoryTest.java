@@ -22,7 +22,9 @@ package co.rsk.db;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieHashTest;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.Repository;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
@@ -661,6 +663,13 @@ public class TopRepositoryTest {
         Assert.assertNotSame(trie, repository.getTrie());
 
         Assert.assertArrayEquals(new byte[] { 0x01 }, repository.getTrie().get(this.trieKeyMapper.getAccountStoragePrefixKey(this.address)));
+    }
+
+    @Test
+    public void hasEmptyHashAsRootWhenCreated() {
+        TopRepository repository = new TopRepository(new Trie());
+
+        Assert.assertArrayEquals(TrieHashTest.makeEmptyHash().getBytes(), repository.getRoot());
     }
 
     private static RskAddress createRandomAddress() {
