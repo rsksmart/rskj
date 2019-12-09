@@ -93,7 +93,7 @@ public class TxPoolModuleImpl implements TxPoolModule {
         txNode.put("gas", TypeConverter.toQuantityJsonHex(tx.getGasLimitAsInteger()));
         txNode.put("gasPrice", TypeConverter.toJsonHex(tx.getGasPrice().getBytes()));
         txNode.put("hash", TypeConverter.toJsonHex(tx.getHash().toHexString()));
-        txNode.put("input", TypeConverter.toJsonHex(tx.getData()));
+        txNode.put("input", TypeConverter.toUnformattedJsonHex(tx.getData()));
         txNode.put("nonce", TypeConverter.toQuantityJsonHex(tx.getNonceAsInteger()));
         txNode.put("to", TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes()));
         txNode.put("value", TypeConverter.toJsonHex(tx.getValue().getBytes()));

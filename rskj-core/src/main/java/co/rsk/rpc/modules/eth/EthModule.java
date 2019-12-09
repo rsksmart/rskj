@@ -51,7 +51,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
+import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
 
 // TODO add all RPC methods
 public class EthModule
@@ -130,7 +130,7 @@ public class EthModule
                 throw RskJsonRpcRequestException.transactionRevertedExecutionError();
             }
 
-            return s = toJsonHex(res.getHReturn());
+            return s = toUnformattedJsonHex(res.getHReturn());
         } finally {
             LOGGER.debug("eth_call(): {}", s);
         }
@@ -189,7 +189,7 @@ public class EthModule
                     code = new byte[0];
                 }
 
-                s = TypeConverter.toJsonHex(code);
+                s = toUnformattedJsonHex(code);
             }
 
             return s;
