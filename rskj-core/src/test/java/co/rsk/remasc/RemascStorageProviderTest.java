@@ -449,7 +449,7 @@ public class RemascStorageProviderTest {
                 config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
 
         BlockExecutor blockExecutor = new BlockExecutor(
-                config.getActivationConfig(),
+                config,
                 repositoryLocator,
                 stateRootHandler,
                 new TransactionExecutorFactory(

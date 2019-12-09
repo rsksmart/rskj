@@ -117,13 +117,20 @@ public class BlockHeader {
     /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
     private boolean includeForkDetectionData;
 
+    /* Indicates if the block was mined according to RSKIP-144 rules, ie there is a field 'partitionEnds' in the header
+    * giving the partitioning for concurrent Txs execution */
+    private boolean useParallelTxExecution;
+
+    /* RSKIP144 */
+    private int[] partitionEnds = new int[0];
+
     public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
-                       Coin minimumGasPrice, int uncleCount, boolean sealed,
-                       boolean useRskip92Encoding, boolean includeForkDetectionData) {
+                       Coin minimumGasPrice, int uncleCount, int[] partitionEnds, boolean sealed,
+                       boolean useRskip92Encoding, boolean includeForkDetectionData, boolean useParallelTxExecution) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -145,9 +152,11 @@ public class BlockHeader {
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
         this.miningForkDetectionData =
                 Arrays.copyOf(mergedMiningForkDetectionData, mergedMiningForkDetectionData.length);
+        this.partitionEnds = Arrays.copyOf(partitionEnds, partitionEnds.length);
         this.sealed = sealed;
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
+        this.useParallelTxExecution = useParallelTxExecution;
     }
 
     @VisibleForTesting
@@ -360,7 +369,23 @@ public class BlockHeader {
             }
         }
 
+        // RSKIP144
+        if (isUseParallelTxExecution()) {
+            fieldToEncodeList.add(encodePartitionEnds(this.partitionEnds));
+        }
+
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
+    }
+
+    protected byte[] encodePartitionEnds(int[] partitionEnds) {
+        if (partitionEnds.length == 0) {
+            return RLP.encodedEmptyList();
+        }
+        byte[][] encodedPartitionEnds = new byte[partitionEnds.length][];
+        for (int i = 0; i < partitionEnds.length; i++) {
+            encodedPartitionEnds[i] = RLP.encodeInt(partitionEnds[i]);
+        }
+        return RLP.encodeList(encodedPartitionEnds);
     }
 
     /**
@@ -540,5 +565,28 @@ public class BlockHeader {
 
     public boolean isParentOf(BlockHeader header) {
         return this.getHash().equals(header.getParentHash());
+    }
+
+    // RSKIP144
+    public int[] getPartitionEnds() {
+        if (!isUseParallelTxExecution()) {
+            return new int[]{};
+        }
+        return Arrays.copyOf(this.partitionEnds, this.partitionEnds.length);
+    }
+
+    public boolean isUseParallelTxExecution() {
+        return useParallelTxExecution;
+    }
+
+    public void setPartitionEnds(int[] partitionEnds) {
+        /* A sealed block header is immutable, cannot be changed */
+        if (this.sealed) {
+            throw new SealedBlockHeaderException("trying to alter partitionEnds");
+        }
+        if (!isUseParallelTxExecution()) {
+            throw new IllegalStateException("trying to set partitionEnds in the header of a block that does not support parallelTxExecution");
+        }
+        this.partitionEnds = Arrays.copyOf(partitionEnds, partitionEnds.length);
     }
 }

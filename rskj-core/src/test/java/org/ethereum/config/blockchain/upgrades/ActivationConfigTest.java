@@ -61,6 +61,7 @@ public class ActivationConfigTest {
             "    rskip132: wasabi100",
             "    rskip136: bahamas",
             "    rskip140: wasabiPlusOne",
+            "    rskip144: wasabiPlusOne",
             "    rskip152: wasabiPlusOne",
             "}"
     ));
@@ -84,8 +85,10 @@ public class ActivationConfigTest {
         for (ConsensusRule value : ConsensusRule.values()) {
             if (value == ConsensusRule.RSKIP98 || value == ConsensusRule.RSKIP103) {
                 assertThat(config.isActive(value, 100), is(false));
+                assertThat(config.isActive(value, 300), is(true));
             } else {
                 assertThat(config.isActive(value, 100), is(true));
+                assertThat(config.isActive(value, 300), is(true));
             }
         }
     }
@@ -99,8 +102,10 @@ public class ActivationConfigTest {
         for (ConsensusRule value : ConsensusRule.values()) {
             if (value == ConsensusRule.RSKIP85) {
                 assertThat(config.isActive(value, 100), is(false));
+                assertThat(config.isActive(value, 300), is(true));
             } else {
                 assertThat(config.isActive(value, 100), is(true));
+                assertThat(config.isActive(value, 300), is(true));
             }
         }
     }

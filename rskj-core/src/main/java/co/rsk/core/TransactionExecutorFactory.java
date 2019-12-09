@@ -56,10 +56,10 @@ public class TransactionExecutorFactory {
         this.programInvokeFactory = programInvokeFactory;
         this.precompiledContracts = precompiledContracts;
         this.vmExecutorService = Executors.newCachedThreadPool(threadFactory -> new Thread(
-            Thread.currentThread().getThreadGroup(),
-            threadFactory,
-            "vmExecution",
-            config.getVmExecutionStackSize()
+                Thread.currentThread().getThreadGroup(),
+                threadFactory,
+                "vmExecution",
+                config.getVmExecutionStackSize()
         ));
     }
 
@@ -115,6 +115,52 @@ public class TransactionExecutorFactory {
                 precompiledContracts,
                 deletedAccounts,
                 vmExecutorService
+        );
+    }
+
+    public TransactionConcurrentExecutor newConcurrentInstance(
+            Transaction tx,
+            int txindex,
+            Repository track,
+            Block block,
+            long totalGasUsed,
+            boolean vmTrace,
+            Set<DataWord> deletedAccounts) {
+        // Tracing configuration is scattered across different files (VM, ProgramTrace, etc.) and
+        // TransactionExecutor#extractTrace doesn't work when called independently.
+        // It would be great to decouple from VmConfig#vmTrace, but sadly that's a major refactor we can't do now.
+        VmConfig vmConfig = config.getVmConfig();
+        if (vmTrace) {
+            vmConfig = new VmConfig(
+                    true,
+                    vmConfig.vmTraceInitStorageLimit(),
+                    vmConfig.dumpBlock(),
+                    vmConfig.dumpStyle(),
+                    vmConfig.getChainId()
+            );
+        }
+
+        return new TransactionConcurrentExecutor(
+                config.getNetworkConstants(),
+                config.getActivationConfig(),
+                tx,
+                txindex,
+                track,
+                blockStore,
+                receiptStore,
+                blockFactory,
+                programInvokeFactory,
+                block,
+                totalGasUsed,
+                vmConfig,
+                config.playVM(),
+                config.isRemascEnabled(),
+                precompiledContracts,
+                deletedAccounts,
+                Executors.newCachedThreadPool(
+                        // RSKIP144 - Use factory from TransactionExecutorThread to provide tx partition id at thread level
+                        TransactionExecutorThread.getFactory("vmExecution", config.getVmExecutionStackSize())
+                )
         );
     }
 }

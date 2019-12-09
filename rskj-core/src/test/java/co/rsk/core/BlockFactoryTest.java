@@ -25,21 +25,20 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.AdditionalMatchers.geq;
@@ -189,6 +188,40 @@ public class BlockFactoryTest {
         assertThat(header.getHash(), is(decodedHeader.getHash()));
     }
 
+    @Test
+    public void decodeBlockRskip144On() {
+        long number = 20L;
+        enableRulesAt(number, RSKIP144);
+        int[] ref_partitionEnds1 = new int[] {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+
+        BlockHeader header1 = createBlockHeaderWithMergedMiningFields(number, new byte[0], ref_partitionEnds1);
+
+        byte[] encodedHeader1 = header1.getFullEncoded();
+        RLPList headerRLP1 = RLP.decodeList(encodedHeader1);
+        assertThat(headerRLP1.size(), is(20));
+
+        BlockHeader decodedHeader1 = factory.decodeHeader(encodedHeader1);
+        assertThat(header1.getHash(), is(decodedHeader1.getHash()));
+        assertThat(header1.getMiningForkDetectionData(), is(decodedHeader1.getMiningForkDetectionData()));
+
+        int[] partitionEnds1 = decodedHeader1.getPartitionEnds();
+        Assert.assertArrayEquals(ref_partitionEnds1, partitionEnds1);
+
+        int[] ref_partitionEnds2 = new int[] {0,255,256,65535,65536};
+
+        BlockHeader header2 = createBlockHeader(number, new byte[0], ref_partitionEnds2);
+
+        byte[] encodedHeader2 = header2.getFullEncoded();
+        RLPList headerRLP2 = RLP.decodeList(encodedHeader2);
+        assertThat(headerRLP2.size(), is(17));
+
+        BlockHeader decodedHeader2 = factory.decodeHeader(encodedHeader2);
+        assertThat(header2.getHash(), is(decodedHeader2.getHash()));
+
+        int[] partitionEnds2 = decodedHeader2.getPartitionEnds();
+        Assert.assertArrayEquals(ref_partitionEnds2, partitionEnds2);
+    }
+
     private void enableRulesAt(long number, ConsensusRule... consensusRules) {
         for (ConsensusRule consensusRule : consensusRules) {
             when(activationConfig.isActive(eq(consensusRule), geq(number))).thenReturn(true);
@@ -198,6 +231,12 @@ public class BlockFactoryTest {
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             long number,
             byte[] forkDetectionData) {
+        return createBlockHeaderWithMergedMiningFields(number, forkDetectionData, new int[]{});
+    }
+    private BlockHeader createBlockHeaderWithMergedMiningFields(
+            long number,
+            byte[] forkDetectionData,
+            int[] partitionEnds) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
@@ -222,12 +261,20 @@ public class BlockFactoryTest {
                 new byte[128],
                 forkDetectionData,
                 Coin.valueOf(10L).getBytes(),
-                0);
+                0,
+                partitionEnds);
     }
 
     private BlockHeader createBlockHeader(
             long number,
             byte[] forkDetectionData) {
+        return createBlockHeader(number, forkDetectionData, new int[]{});
+    }
+
+    private BlockHeader createBlockHeader(
+            long number,
+            byte[] forkDetectionData,
+            int[] partitionEnds) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
@@ -252,7 +299,8 @@ public class BlockFactoryTest {
                 null,
                 forkDetectionData,
                 Coin.valueOf(10L).getBytes(),
-                0);
+                0,
+                partitionEnds);
     }
 
 

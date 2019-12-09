@@ -337,7 +337,7 @@ public class TransactionModuleTest {
                         minerClock,
                         blockFactory,
                         new BlockExecutor(
-                                config.getActivationConfig(),
+                                config,
                                 repositoryLocator,
                                 stateRootHandler,
                                 transactionExecutorFactory

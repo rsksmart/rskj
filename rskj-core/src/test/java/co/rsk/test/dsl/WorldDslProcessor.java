@@ -253,7 +253,7 @@ public class WorldDslProcessor {
             final TestSystemProperties config = new TestSystemProperties();
             StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
             BlockExecutor executor = new BlockExecutor(
-                    config.getActivationConfig(),
+                    config,
                     new RepositoryLocator(world.getTrieStore(), stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(

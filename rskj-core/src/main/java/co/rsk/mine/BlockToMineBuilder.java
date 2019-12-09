@@ -218,7 +218,8 @@ public class BlockToMineBuilder {
                 new byte[]{},
                 forkDetectionData,
                 minimumGasPrice.getBytes(),
-                uncles.size()
+                uncles.size(),
+                new int[]{}
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));
         return newHeader;

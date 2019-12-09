@@ -1008,7 +1008,7 @@ public class RemascProcessMinerFeesTest {
                 config.getActivationConfig());
 
         return new BlockExecutor(
-                config.getActivationConfig(),
+                config,
                 repositoryLocator,
                 stateRootHandler,
                 new TransactionExecutorFactory(

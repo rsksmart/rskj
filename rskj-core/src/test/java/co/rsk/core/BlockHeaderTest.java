@@ -23,11 +23,14 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import com.google.common.primitives.Bytes;
 import org.ethereum.TestUtils;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -110,6 +113,61 @@ public class BlockHeaderTest {
     }
 
     @Test
+    public void getEncodedPartitionEnds() {
+        BlockHeader header1 = createBlockHeader(new byte[0], false, false);
+
+        byte[] headerEncoded1 = header1.getFullEncoded();
+        RLPList headerRLP1 = RLP.decodeList(headerEncoded1);
+
+        assertThat(headerRLP1.size(), is(16));
+
+        BlockHeader header2 = createBlockHeader(new byte[0], false, true);
+
+        byte[] headerEncoded2 = header2.getFullEncoded();
+        RLPList headerRLP2 = RLP.decodeList(headerEncoded2);
+
+        assertThat(headerRLP2.size(), is(17));
+
+        BlockHeader header3 = createBlockHeaderWithMergedMiningFields(new byte[0], false);
+
+        byte[] headerEncoded3 = header3.getFullEncoded();
+        RLPList headerRLP3 = RLP.decodeList(headerEncoded3);
+
+        assertThat(headerRLP3.size(), is(19));
+
+        int[] ref_partitionEnds4 = new int[] {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+        BlockHeader header4 = createBlockHeaderWithMergedMiningFields(new byte[0], false, true);
+        header4.setPartitionEnds(ref_partitionEnds4);
+
+        byte[] headerEncoded4 = header4.getFullEncoded();
+        RLPList headerRLP4 = RLP.decodeList(headerEncoded4);
+
+        assertThat(headerRLP4.size(), is(20));
+
+        RLPElement lastItem4 = headerRLP4.get(headerRLP4.size() - 1);
+        Assert.assertTrue(lastItem4 instanceof RLPList);
+
+        int[] decodedPartitionEnds4 = BlockFactory.decodePartitionEnds(lastItem4);
+
+        Assert.assertArrayEquals(ref_partitionEnds4, decodedPartitionEnds4);
+
+        int[] ref_partitionEnds5 = new int[] {0,255, 256, 65535, 65536};
+        BlockHeader header5 = createBlockHeaderWithPartitionEnds(new byte[0], false, ref_partitionEnds5);
+
+        byte[] headerEncoded5 = header5.getFullEncoded();
+        RLPList headerRLP5 = RLP.decodeList(headerEncoded5);
+
+        assertThat(headerRLP5.size(), is(17));
+
+        RLPElement lastItem5 = headerRLP5.get(headerRLP5.size() - 1);
+        Assert.assertTrue(lastItem5 instanceof RLPList);
+
+        int[] decodedPartitionEnds5 = BlockFactory.decodePartitionEnds(lastItem5);
+
+        Assert.assertArrayEquals(ref_partitionEnds5, decodedPartitionEnds5);
+    }
+
+    @Test
     public void getMiningForkDetectionData() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true);
 
@@ -148,7 +206,14 @@ public class BlockHeaderTest {
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             byte[] forkDetectionData,
-            boolean includeForkDetectionData){
+            boolean includeForkDetectionData) {
+        return createBlockHeaderWithMergedMiningFields(forkDetectionData, includeForkDetectionData, false);
+    }
+
+    private BlockHeader createBlockHeaderWithMergedMiningFields(
+            byte[] forkDetectionData,
+            boolean includeForkDetectionData,
+            boolean useParallelTxExecution){
         BlockDifficulty difficulty = new BlockDifficulty(BigInteger.ONE);
         long number = 1;
         BigInteger gasLimit = BigInteger.valueOf(6800000);
@@ -175,14 +240,23 @@ public class BlockHeaderTest {
                 forkDetectionData,
                 Coin.valueOf(10L),
                 0,
+                new int[]{},
                 false,
                 true,
-                includeForkDetectionData);
+                includeForkDetectionData,
+                useParallelTxExecution);
     }
 
     private BlockHeader createBlockHeader(
             byte[] forkDetectionData,
-            boolean includeForkDetectionData){
+            boolean includeForkDetectionData) {
+     return createBlockHeader(forkDetectionData, includeForkDetectionData, false);
+    }
+
+    private BlockHeader createBlockHeader(
+            byte[] forkDetectionData,
+            boolean includeForkDetectionData,
+            boolean useParallelTxExecution){
             BlockDifficulty difficulty = new BlockDifficulty(BigInteger.ONE);
             long number = 1;
             BigInteger gasLimit = BigInteger.valueOf(6800000);
@@ -209,8 +283,47 @@ public class BlockHeaderTest {
                     forkDetectionData,
                     Coin.valueOf(10L),
                     0,
+                    new int[]{},
                     true,
                     true,
-                    includeForkDetectionData);
+                    includeForkDetectionData,
+                    useParallelTxExecution);
+    }
+
+    private BlockHeader createBlockHeaderWithPartitionEnds(
+            byte[] forkDetectionData,
+            boolean includeForkDetectionData,
+            int[] partitionEnds){
+        BlockDifficulty difficulty = new BlockDifficulty(BigInteger.ONE);
+        long number = 1;
+        BigInteger gasLimit = BigInteger.valueOf(6800000);
+        long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
+
+        return new BlockHeader(
+                PegTestUtils.createHash3().getBytes(),
+                HashUtil.keccak256(RLP.encodeList()),
+                new RskAddress(TestUtils.randomAddress().getBytes()),
+                HashUtil.EMPTY_TRIE_HASH,
+                "tx_trie_root".getBytes(),
+                HashUtil.EMPTY_TRIE_HASH,
+                new Bloom().getData(),
+                difficulty,
+                number,
+                gasLimit.toByteArray(),
+                3000000,
+                timestamp,
+                new byte[0],
+                Coin.ZERO,
+                null,
+                null,
+                null,
+                forkDetectionData,
+                Coin.valueOf(10L),
+                0,
+                partitionEnds,
+                true,
+                true,
+                includeForkDetectionData,
+                true);
     }
 }

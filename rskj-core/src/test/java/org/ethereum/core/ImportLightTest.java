@@ -80,7 +80,7 @@ public class ImportLightTest {
                 listener,
                 new DummyBlockValidator(),
                 new BlockExecutor(
-                        config.getActivationConfig(),
+                        config,
                         repositoryLocator,
                         stateRootHandler,
                         transactionExecutorFactory

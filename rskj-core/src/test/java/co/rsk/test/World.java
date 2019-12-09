@@ -124,7 +124,7 @@ public class World {
 
         if (this.blockExecutor == null) {
             this.blockExecutor = new BlockExecutor(
-                    config.getActivationConfig(),
+                    config,
                     new RepositoryLocator(getTrieStore(), stateRootHandler),
                     stateRootHandler,
                     new TransactionExecutorFactory(

@@ -81,3 +81,5 @@ classes/
 
 #Infer
 infer-out/
+
+rskj-core/networkStateExporterTest.json

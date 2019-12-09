@@ -18,15 +18,17 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
-import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.*;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -38,6 +40,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
@@ -47,7 +53,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
  * There are two main use cases:
  * - execute and validate the block final state
  * - execute and complete the block final state
- *
+ * <p>
  * Note that this class IS NOT guaranteed to be thread safe because its dependencies might hold state.
  */
 public class BlockExecutor {
@@ -58,23 +64,25 @@ public class BlockExecutor {
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final StateRootHandler stateRootHandler;
     private final ActivationConfig activationConfig;
+    private final RskSystemProperties config;
 
     public BlockExecutor(
-            ActivationConfig activationConfig,
+            RskSystemProperties config,
             RepositoryLocator repositoryLocator,
             StateRootHandler stateRootHandler,
             TransactionExecutorFactory transactionExecutorFactory) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
         this.stateRootHandler = stateRootHandler;
-        this.activationConfig = activationConfig;
+        this.config = config;
+        this.activationConfig = config.getActivationConfig();
     }
 
     /**
      * Execute and complete a block.
      *
-     * @param block        A block to execute and complete
-     * @param parent       The parent of the block.
+     * @param block  A block to execute and complete
+     * @param parent The parent of the block.
      */
     public BlockResult executeAndFill(Block block, BlockHeader parent) {
         BlockResult result = execute(block, parent, true, false);
@@ -115,8 +123,8 @@ public class BlockExecutor {
     /**
      * Execute and validate the final state of a block.
      *
-     * @param block        A block to execute and complete
-     * @param parent       The parent of the block.
+     * @param block  A block to execute and complete
+     * @param parent The parent of the block.
      * @return true if the block final state is equalBytes to the calculated final state.
      */
     @VisibleForTesting
@@ -129,8 +137,8 @@ public class BlockExecutor {
     /**
      * Validate the final state of a block.
      *
-     * @param block        A block to validate
-     * @param result       A block result (state root, receipts root, etc...)
+     * @param block  A block to validate
+     * @param result A block result (state root, receipts root, etc...)
      * @return true if the block final state is equalBytes to the calculated final state.
      */
     public boolean validate(Block block, BlockResult result) {
@@ -171,7 +179,7 @@ public class BlockExecutor {
         Coin paidFees = result.getPaidFees();
         Coin feesPaidToMiner = block.getFeesPaidToMiner();
 
-        if (!paidFees.equals(feesPaidToMiner))  {
+        if (!paidFees.equals(feesPaidToMiner)) {
             logger.error("Block {} [{}] given paidFees doesn't match: {} != {}", block.getNumber(), block.getShortHash(), feesPaidToMiner, paidFees);
             profiler.stop(metric);
             return false;
@@ -180,7 +188,7 @@ public class BlockExecutor {
         List<Transaction> executedTransactions = result.getExecutedTransactions();
         List<Transaction> transactionsList = block.getTransactionsList();
 
-        if (!executedTransactions.equals(transactionsList))  {
+        if (!executedTransactions.equals(transactionsList)) {
             logger.error("Block {} [{}] given txs doesn't match: {} != {}", block.getNumber(), block.getShortHash(), transactionsList, executedTransactions);
             profiler.stop(metric);
             return false;
@@ -239,13 +247,192 @@ public class BlockExecutor {
         );
     }
 
+    /**
+     * Stores (and identifies) the data concurrently shared between transaction executions
+     */
+    public static class BlockSharedData {
+        private long totalGasUsed = 0;
+        private Coin totalPaidFees = Coin.ZERO;
+        private Repository track;
+        private List<TransactionReceipt> receipts = new ArrayList<>();
+        private List<Transaction> executedTransactions = new ArrayList<>();
+        private Set<DataWord> deletedAccounts = new HashSet<>();
+        private ProgramTraceProcessor programTraceProcessor;
+
+        BlockSharedData(Repository track, ProgramTraceProcessor programTraceProcessor) {
+            this.track = track;
+            this.programTraceProcessor = programTraceProcessor;
+        }
+
+        public synchronized void addPaidFees(Coin paidFees) {
+            totalPaidFees = totalPaidFees.add(paidFees);
+        }
+
+        public synchronized void addGasUsed(long gasUsed) {
+            this.totalGasUsed += gasUsed;
+        }
+
+        public synchronized int addReceipt(TransactionReceipt receipt) {
+            if (receipts.add(receipt)) {
+                return receipts.size() - 1;
+            }
+            return -1;
+        }
+
+        public synchronized void addExecutedTransaction(Transaction tx) {
+            executedTransactions.add(tx);
+        }
+
+        public synchronized void addDeletedAccounts(Collection<DataWord> deletedAccountsToAdd) {
+            deletedAccounts.addAll(deletedAccountsToAdd);
+        }
+
+        public Coin getTotalPaidFees() {
+            return totalPaidFees;
+        }
+
+        public long getTotalGasUsed() {
+            return totalGasUsed;
+        }
+
+        public List<TransactionReceipt> getReceipts() {
+            return new ArrayList<>(receipts);
+        }
+
+        public List<Transaction> getExecutedTransactions() {
+            return new ArrayList<>(executedTransactions);
+        }
+
+        public Set<DataWord> getDeletedAccounts() {
+            return new HashSet<>(deletedAccounts);
+        }
+
+        public Repository getRepository() {
+            return track;
+        }
+
+        public ProgramTraceProcessor getProgramTraceProcessor() {
+            return programTraceProcessor;
+        }
+
+    }
+
+    public static class TransactionConflictException extends Exception {
+        public TransactionConflictException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Pre-runs each transaction to create the partitioning in different threads, assuming that there shall be
+     * no conflicts between transactions assigned to different partitions (= will be run in different threads).
+     * Here we are executing each transaction in a separate thread, BUT SEQUENTIALLY because
+     * we don't know yet if they are conflicting to each other, that would prevent concurrent execution
+     *
+     * @param block
+     * @param track
+     * @param programTraceProcessor
+     * @param acceptInvalidTransactions
+     * @param discardInvalidTxs
+     * @return true if partitioning has succeed. Returning false means the block can't be validated
+     */
+    private boolean computeTxPartitioning(Block block, RepositorySnapshot track, ProgramTraceProcessor programTraceProcessor,
+                                          boolean acceptInvalidTransactions, boolean discardInvalidTxs) {
+        //
+        // Work with a cached repository that will be rolled back in the end of transaction execution
+        TransactionsPartitioner partitioner = new TransactionsPartitioner();
+        Repository dummyRepo = track.startTracking();
+        BlockSharedData dummySharedData = new BlockSharedData(dummyRepo, programTraceProcessor);
+        // Use a TransactionConflictDetectorWithCache so that we can simply ignore the accesses from the executed transaction
+        // if it is finally declared invalid.
+        TransactionConflictDetectorWithCache transactionConflictDetector = new TransactionConflictDetectorWithCache(partitioner);
+        if (dummyRepo.isCached()) {
+            dummyRepo.getCacheTracking().subscribe(transactionConflictDetector);
+        }
+
+        int txindex = 0;
+
+        for (Transaction tx : block.getTransactionsList()) {
+
+            TransactionExecutorTask txExecutorTask = new TransactionExecutorTask(
+                    transactionExecutorFactory,
+                    tx,
+                    txindex++,
+                    block,
+                    dummySharedData,
+                    acceptInvalidTransactions,
+                    discardInvalidTxs);
+
+            TransactionsPartition partition = partitioner.newPartition();
+            TransactionsPartitionExecutor partExecutor = partitioner.newPartitionExecutor(partition);
+            // partExecutor is using a separate thread/partition to execute the transaction
+            partExecutor.addTransactionTask(txExecutorTask);
+
+            try {
+                partitioner.waitForAllThreadTermination(config.getAsyncTxExecutionTimeoutMs(), null);
+            } catch (TimeoutException e) {
+                logger.error("block: [{}] transaction [{}] execution did not finished before timeout expired",
+                        block.getNumber(), tx.getHash());
+                logger.error("Exception: [{}]", e);
+                return false;
+            } catch (ExecutionException | TransactionsPartitionExecutor.PeriodicCheckException e) {
+                // PeriodicCheckException can not happen in reality because we did not set any periodicCheck
+                logger.error("block: [{}] transaction [{}] execution failed with exception [{}]",
+                        block.getNumber(), tx.getHash(), e);
+                return false;
+            }
+
+            if (!dummySharedData.getExecutedTransactions().contains(tx)) {
+                logger.warn("block: [{}] pre-run : tx [{}] has been discarded",
+                        block.getNumber(), tx.getHash());
+                continue;
+            }
+
+            // The transaction has been successfully executed, then commit the cached accesses tracked during its execution
+            transactionConflictDetector.commitPartition(partition);
+
+            TransactionsPartition resultingPartition;
+            if (transactionConflictDetector.hasConflict()) {
+                Set<TransactionsPartition> conflictingPartitions = transactionConflictDetector.getConflictingPartitions();
+                if (conflictingPartitions.size() == 1) {
+                    // assign the transaction to that partition
+                    resultingPartition = conflictingPartitions.iterator().next();
+                } else {
+                    // first, merge the conflicting partition all together, then add the tx on the resulting partition
+                    resultingPartition = partitioner.mergePartitions(conflictingPartitions);
+                }
+                // update the conflictDetector to assign tracked key accesses to the conflictingPartition
+                conflictingPartitions.remove(resultingPartition);
+                transactionConflictDetector.resolveConflicts(conflictingPartitions, resultingPartition);
+            } else {
+                // In case there is no conflict, assign the transaction with a new partition
+                resultingPartition = partition;
+            }
+            resultingPartition.addTransaction(tx);
+
+        }
+
+        // rollback the repo. Anyway, it wont be used anymore
+        dummyRepo.rollback();
+        if (dummyRepo.isCached()) {
+            dummyRepo.getCacheTracking().unsubscribe(transactionConflictDetector);
+        }
+
+
+        block.setTransactionsList(partitioner.getAllTransactionsSortedPerPartition());
+        int[] partitionEnds = partitioner.getPartitionEnds();
+        logger.info("computeTxPartitioning(block [{}]) -> partitionEnds=[{}]", block.getNumber(), partitionEnds);
+        block.setPartitionEnds(partitionEnds);
+
+        return true;
+    }
+
     private BlockResult executeInternal(
             @Nullable ProgramTraceProcessor programTraceProcessor,
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions) {
-        boolean vmTrace = programTraceProcessor != null;
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         // Forks the repo, does not change "repository". It will have a completely different
@@ -265,95 +452,150 @@ public class BlockExecutor {
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
-        int i = 1;
-        long totalGasUsed = 0;
-        Coin totalPaidFees = Coin.ZERO;
-        List<TransactionReceipt> receipts = new ArrayList<>();
-        List<Transaction> executedTransactions = new ArrayList<>();
-        Set<DataWord> deletedAccounts = new HashSet<>();
+        BlockSharedData blockSharedData = new BlockSharedData(track, programTraceProcessor);
+
+        // If the block is not sealed, that means we are mining it
+        // and if the transaction parallel execution is enabled
+        // then we determine which transactions can be executed concurrently and which can not
+        // leading to define the partitioning
+        if (!block.isSealed()
+                && block.useParallelTxExecution()
+                && !computeTxPartitioning(block, track, programTraceProcessor, acceptInvalidTransactions, discardInvalidTxs)) {
+            // If computeTxPartitioning fails (returns false), we declare the block invalid
+            profiler.stop(metric);
+            return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+        }
+
+        int[] partitionEnds = block.getPartitionEnds();
+        final Iterator<Integer> itPartitionEnds = IntStream.of(partitionEnds).boxed().iterator();
+        int nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : -2;
+
+        TransactionsPartitioner partitioner2 = new TransactionsPartitioner();
+        TransactionsPartitionExecutor partExecutor = partitioner2.newPartitionExecutor(partitioner2.newPartition());
+
+        TransactionConflictDetector transactionConflictDetector = new TransactionConflictDetector(partitioner2);
+        if (track.isCached()) {
+            // track the repository to detect conflicts
+            track.getCacheTracking().subscribe(transactionConflictDetector);
+        }
 
         int txindex = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
-            logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
-            TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
+            if (txindex == nextIndexPartition + 1) {
+                // start a new partition from this transaction
+                nextIndexPartition = itPartitionEnds.hasNext() ? itPartitionEnds.next() : -2;
+                partExecutor = partitioner2.newPartitionExecutor(partitioner2.newPartition());
+            }
+
+            TransactionExecutorTask txExecutorTask = new TransactionExecutorTask(
+                    transactionExecutorFactory,
                     tx,
-                    txindex++,
-                    block.getCoinbase(),
-                    track,
+                    txindex,
                     block,
-                    totalGasUsed,
-                    vmTrace,
-                    deletedAccounts);
-            boolean transactionExecuted = txExecutor.executeTransaction();
+                    blockSharedData,
+                    acceptInvalidTransactions,
+                    discardInvalidTxs);
 
+            partExecutor.addTransactionTask(txExecutorTask);
 
-            if (!acceptInvalidTransactions && !transactionExecuted) {
-                if (discardInvalidTxs) {
-                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
-                    continue;
-                } else {
-                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                                block.getNumber(), tx.getHash());
-                    profiler.stop(metric);
-                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
-                }
+            txindex++;
+        }
+
+        // Wait for all thread terminate
+        try {
+            partitioner2.waitForAllThreadTermination(
+                    config.getAsyncTxExecutionTimeoutMs(),
+                    new TransactionsPartitionExecutor.PeriodicCheck() {
+                        @Override
+                        public void check() throws Exception {
+                            transactionConflictDetector.check();
+                        }
+                    });
+        } catch (TimeoutException | TransactionsPartitionExecutor.PeriodicCheckException | ExecutionException e) {
+            logger.error("block: [{}] transaction parallel execution failed with exception [{}]",
+                    block.getNumber(), e);
+            profiler.stop(metric);
+            return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+        } finally {
+            if (track.isCached()) {
+                track.getCacheTracking().unsubscribe(transactionConflictDetector);
             }
+        }
 
-            executedTransactions.add(tx);
+        // RSKIP144
+        // Transfer fees to coinbase or Remasc contract creates a conflicts between all transactions,
+        // that prevents us to execute them in parallel.
+        // Then, in this case we transfer fees after all transactions are processed.
+        Coin summaryFee = blockSharedData.getTotalPaidFees();
 
-            if (vmTrace) {
-                txExecutor.extractTrace(programTraceProcessor);
+        if (!summaryFee.equals(Coin.valueOf(0))) {
+            //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
+            if (config.isRemascEnabled()) {
+                logger.trace("Adding fee to remasc contract account");
+                track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
+            } else {
+                track.addBalance(block.getCoinbase(), summaryFee);
             }
-
-            logger.trace("tx executed");
-
-            // No need to commit the changes here. track.commit();
-
-            logger.trace("track commit");
-
-            long gasUsed = txExecutor.getGasUsed();
-            totalGasUsed += gasUsed;
-            Coin paidFees = txExecutor.getPaidFees();
-            if (paidFees != null) {
-                totalPaidFees = totalPaidFees.add(paidFees);
-            }
-
-            deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
-
-            TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setGasUsed(gasUsed);
-            receipt.setCumulativeGas(totalGasUsed);
-
-            receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
-            receipt.setTransaction(tx);
-            receipt.setLogInfoList(txExecutor.getVMLogs());
-            receipt.setStatus(txExecutor.getReceipt().getStatus());
-
-            logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
-
-            logger.trace("tx[{}].receipt", i);
-
-            i++;
-
-            receipts.add(receipt);
-
-            logger.trace("tx done");
         }
 
         track.save();
+
+        // RSKIP144 - now the transactions can be executed by several threads in parallel, meaning that the real order
+        // of executions (blockSharedData.getExecutedTransactions()) and the receipts list (blockSharedData.getReceipts())
+        // are not ordered according to the submission order specified (validating block) or to be specified (filling block)
+        // in the block.
+        // Here we need to reorder the 2 lists in the submission order before saving them in the BlockResult instance
+        // When filling the block, the submission order is determined taking into account the transaction partitioning
+        // across threads.
+        // When validating the block, the submission order is the one specified in the block to be validated
+        List<Transaction> transactionsList = block.getTransactionsList();
+        List<Transaction> executedTransactions = reorderTransactionList(blockSharedData.getExecutedTransactions(), transactionsList);
+        List<TransactionReceipt> receipts = reorderTransactionReceiptList(blockSharedData.getReceipts(), transactionsList);
 
         BlockResult result = new BlockResult(
                 block,
                 executedTransactions,
                 receipts,
-                totalGasUsed,
-                totalPaidFees,
+                blockSharedData.getTotalGasUsed(),
+                blockSharedData.getTotalPaidFees(),
                 track.getTrie()
         );
         profiler.stop(metric);
         return result;
+    }
+
+    @VisibleForTesting
+    public static List<Transaction> reorderTransactionList(List<Transaction> txs, List<Transaction> refList) {
+        List<Transaction> reorderedList = new ArrayList<>();
+        for (Transaction tx : refList) {
+            if (txs.contains(tx)) {
+                reorderedList.add(tx);
+            }
+        }
+        return reorderedList;
+    }
+
+    @VisibleForTesting
+    public static List<TransactionReceipt> reorderTransactionReceiptList(List<TransactionReceipt> receipts, List<Transaction> refList) {
+        List<Transaction> lstTxs = receipts.stream().map(receipt -> receipt.getTransaction()).collect(
+                Collectors.toList());
+        Map<Keccak256, TransactionReceipt> mapReceipts = receipts.stream().collect(
+                Collectors.toMap(x -> x.getTransaction().getHash(), x -> x));
+        List<TransactionReceipt> reorderedList = new ArrayList<>();
+        long cumulativeGas = 0;
+        for (Transaction tx : refList) {
+            if (lstTxs.contains(tx)) {
+                TransactionReceipt receipt = mapReceipts.get(tx.getHash());
+                // We also need to recompute cumulativeGas otherwise it cannot be deterministic when transactions are executed concurrently
+                byte[] gasUsed = receipt.getGasUsed();
+                cumulativeGas += BigIntegers.fromUnsignedByteArray(gasUsed).longValue();
+                receipt.setCumulativeGas(cumulativeGas);
+                reorderedList.add(receipt);
+            }
+        }
+        return reorderedList;
     }
 
     /**
@@ -391,4 +633,6 @@ public class BlockExecutor {
 
         return logBloom.getData();
     }
+
 }
+

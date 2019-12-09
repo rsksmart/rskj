@@ -49,8 +49,10 @@ public class GenesisHeader extends BlockHeader {
                 new byte[0],
                 RLP.parseSignedCoinNonNullZero(minimumGasPrice),
                 0,
+                new int[]{},
                 false,
                 useRskip92Encoding,
+                false,
                 false);
         this.difficulty = ByteUtils.clone(difficulty);
     }
@@ -91,8 +93,10 @@ public class GenesisHeader extends BlockHeader {
                 new byte[0],
                 RLP.parseSignedCoinNonNullZero(minimumGasPrice),
                 0,
+                new int[]{},
                 false,
                 useRskip92Encoding,
+                false,
                 false);
         this.difficulty = ByteUtils.clone(difficulty);
     }

@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorThread;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
@@ -33,7 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 
-public class MutableTrieCache implements MutableTrie {
+public class MutableTrieCache implements MutableTrie, ICacheTracking {
 
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
 
@@ -44,6 +45,8 @@ public class MutableTrieCache implements MutableTrie {
 
     // this logs recursive delete operations to be performed at commit time
     private final Set<ByteArrayWrapper> deleteRecursiveLog;
+
+    private Collection<Listener> cacheTrackingListeners = new HashSet<>();
 
     public MutableTrieCache(MutableTrie parentTrie) {
         trie = parentTrie;
@@ -74,6 +77,8 @@ public class MutableTrieCache implements MutableTrie {
             Function<byte[], T> cacheTransformer) {
         ByteArrayWrapper wrapper = new ByteArrayWrapper(key);
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
+
+        trackOnReadKey(wrapper);
 
         Map<ByteArrayWrapper, byte[]> accountItems = cache.get(accountWrapper);
         boolean isDeletedAccount = deleteRecursiveLog.contains(accountWrapper);
@@ -139,6 +144,7 @@ public class MutableTrieCache implements MutableTrie {
         // in cache with null or in deleteCache. Here we have the choice to
         // to add it to cache with null value or to deleteCache.
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
+        trackOnWriteKey(wrapper);
         Map<ByteArrayWrapper, byte[]> accountMap = cache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
         accountMap.put(wrapper, value);
     }
@@ -169,6 +175,7 @@ public class MutableTrieCache implements MutableTrie {
         // See TransactionExecutor.finalization(), when it iterates the list with getDeleteAccounts().forEach()
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
         deleteRecursiveLog.add(wrap);
+        trackOnDeleteAccount(wrap);
         cache.remove(wrap);
     }
 
@@ -205,15 +212,15 @@ public class MutableTrieCache implements MutableTrie {
 
         // all cached items to be transferred to parent
         cache.forEach((accountKey, account) ->
-              account.forEach((realKey, value) -> {
-                  if (size == Integer.MAX_VALUE || realKey.getData().length == size) {
-                      if (this.get(realKey.getData()) == null) {
-                          parentSet.remove(realKey);
-                      } else {
-                          parentSet.add(realKey);
-                      }
-                  }
-              })
+                account.forEach((realKey, value) -> {
+                    if (size == Integer.MAX_VALUE || realKey.getData().length == size) {
+                        if (this.get(realKey.getData()) == null) {
+                            parentSet.remove(realKey);
+                        } else {
+                            parentSet.add(realKey);
+                        }
+                    }
+                })
         );
         return parentSet;
     }
@@ -238,15 +245,57 @@ public class MutableTrieCache implements MutableTrie {
         return internalGet(key, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
     }
 
+    @Override
+    public ByteArrayWrapper getAccountFromKey(ByteArrayWrapper key) {
+        return getAccountWrapper(key);
+    }
+
+    @Override
+    public void subscribe(ICacheTracking.Listener listener) {
+        cacheTrackingListeners.add(listener);
+    }
+
+    @Override
+    public void unsubscribe(ICacheTracking.Listener listener) {
+        cacheTrackingListeners.remove(listener);
+    }
+
+    private void trackOnReadKey(ByteArrayWrapper key) {
+        notifyCacheTrackingListeners(true, false, false, key);
+    }
+
+    private void trackOnWriteKey(ByteArrayWrapper key) {
+        notifyCacheTrackingListeners(false, true, false, key);
+    }
+
+    private void trackOnDeleteAccount(ByteArrayWrapper account) {
+        notifyCacheTrackingListeners(false, false, true, account);
+    }
+
+    protected void notifyCacheTrackingListeners(boolean read, boolean write, boolean delete, ByteArrayWrapper key) {
+        if (!cacheTrackingListeners.isEmpty()) {
+            int partitionId = TransactionExecutorThread.getPartitionIdFromCurrentThread();
+            if (read) {
+                cacheTrackingListeners.forEach(listener -> listener.onReadKey(this, key, partitionId));
+            }
+            if (write) {
+                cacheTrackingListeners.forEach(listener -> listener.onWriteKey(this, key, partitionId));
+            }
+            if (delete) {
+                cacheTrackingListeners.forEach(listener -> listener.onDeleteAccount(this, key, partitionId));
+            }
+        }
+    }
+
     private static class StorageKeysIterator implements Iterator<DataWord> {
         private final Iterator<DataWord> keysIterator;
         private final Map<ByteArrayWrapper, byte[]> accountItems;
         private final RskAddress address;
         private final int storageKeyOffset = (
                 TrieKeyMapper.domainPrefix().length +
-                TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE +
-                TrieKeyMapper.storagePrefix().length +
-                TrieKeyMapper.SECURE_KEY_SIZE)
+                        TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE +
+                        TrieKeyMapper.storagePrefix().length +
+                        TrieKeyMapper.SECURE_KEY_SIZE)
                 * Byte.SIZE;
         private final TrieKeyMapper trieKeyMapper;
         private DataWord currentStorageKey;
@@ -274,7 +323,7 @@ public class MutableTrieCache implements MutableTrie {
                 ByteArrayWrapper fullKey = getCompleteKey(item);
                 if (accountItems.containsKey(fullKey)) {
                     byte[] value = accountItems.remove(fullKey);
-                    if (value == null){
+                    if (value == null) {
                         continue;
                     }
                 }

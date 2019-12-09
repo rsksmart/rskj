@@ -118,6 +118,22 @@ public class Block {
         return this.header.getCoinbase();
     }
 
+    // RSKIP144
+    public int[] getPartitionEnds() { return this.header.getPartitionEnds(); }
+    public void setPartitionEnds(int[] partitionEnds) {
+        /* A sealed block is immutable, cannot be changed */
+        if (this.sealed) {
+            throw new SealedBlockException("trying to alter header's partitionEnds");
+        }
+
+        this.header.setPartitionEnds(partitionEnds);
+    }
+
+    public boolean useParallelTxExecution() {
+        return header.isUseParallelTxExecution();
+    }
+
+
     public byte[] getStateRoot() {
         return this.header.getStateRoot();
     }

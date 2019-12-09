@@ -63,7 +63,7 @@ public class TransactionExecutor {
 
     private final Constants constants;
     private final ActivationConfig.ForBlock activations;
-    private final Transaction tx;
+    protected final Transaction tx;
     private final int txindex;
     private final Repository track;
     private final Repository cacheTrack;
@@ -96,7 +96,7 @@ public class TransactionExecutor {
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
 
-    private boolean localCall = false;
+    protected boolean localCall = false;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -165,7 +165,7 @@ public class TransactionExecutor {
         }
 
         Coin totalCost = Coin.ZERO;
-        if (basicTxCost > 0 ) {
+        if (basicTxCost > 0) {
             // Estimate transaction cost only if is not a free trx
             Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
             totalCost = tx.getValue().add(txGasCost);
@@ -208,8 +208,8 @@ public class TransactionExecutor {
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             panicProcessor.panic("invalidsignature",
-                                 String.format("Transaction %s signature not accepted: %s",
-                                               tx.getHash(), tx.getSignature()));
+                    String.format("Transaction %s signature not accepted: %s",
+                            tx.getHash(), tx.getSignature()));
             execError(String.format("Transaction signature not accepted: %s", tx.getSignature()));
 
             return false;
@@ -439,8 +439,7 @@ public class TransactionExecutor {
             mEndGas = BigInteger.ZERO;
             execError(e);
 
-        }
-        finally {
+        } finally {
             profiler.stop(metric);
         }
     }
@@ -492,13 +491,16 @@ public class TransactionExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
             receipt.setGasUsed(getGasUsed());
-            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
+            receipt.setStatus(executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS);
         }
         return receipt;
     }
 
+    protected void finalization() {
+        finalization(true);
+    }
 
-    private void finalization() {
+    protected void finalization(boolean transferFees) {
         // RSK if local call gas balances must not be changed
         if (localCall) {
             return;
@@ -519,7 +521,7 @@ public class TransactionExecutor {
                 .result(result.getHReturn());
 
         // Accumulate refunds for suicides
-        result.addFutureRefund((long)result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
+        result.addFutureRefund((long) result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
         mEndGas = mEndGas.add(BigInteger.valueOf(gasRefund));
 
@@ -541,17 +543,21 @@ public class TransactionExecutor {
         track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
         logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
-        // Transfer fees to miner
         Coin summaryFee = summary.getFee();
-
-        //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if(enableRemasc) {
-            logger.trace("Adding fee to remasc contract account");
-            track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
-        } else {
-            track.addBalance(coinbase, summaryFee);
+        if (transferFees) {
+            // RSKIP144
+            // Transfer fees to coinbase or Remasc contract creates a conflicts between all transactions,
+            // that prevents us to execute them in parallel.
+            // Then in case we execute transactions in parallel, we don't transfer fees here but later
+            // after all transactions are processed.
+            //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
+            if (enableRemasc) {
+                logger.trace("Adding fee to remasc contract account");
+                track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
+            } else {
+                track.addBalance(coinbase, summaryFee);
+            }
         }
-
         this.paidFees = summaryFee;
 
         logger.trace("Processing result");
@@ -595,5 +601,8 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(mEndGas).longValue();
     }
 
-    public Coin getPaidFees() { return paidFees; }
+    public Coin getPaidFees() {
+        return paidFees;
+    }
+
 }
