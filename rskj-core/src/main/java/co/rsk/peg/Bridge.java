@@ -279,7 +279,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     @Override
-    public void init(Transaction rskTx, Block rskExecutionBlock, Repository repository, BlockStore rskBlockStore, ReceiptStore rskReceiptStore, List<LogInfo> logs, List<ProgramSubtrace> subtraces) {
+    public void init(Transaction rskTx, Block rskExecutionBlock, Repository repository, BlockStore rskBlockStore, ReceiptStore rskReceiptStore, List<LogInfo> logs) {
         this.activations = activationConfig.forBlock(rskExecutionBlock.getNumber());
         this.rskTx = rskTx;
 
@@ -287,8 +287,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 repository,
                 rskExecutionBlock,
                 contractAddress,
-                logs,
-                subtraces);
+                logs);
+    }
+
+    @Override
+    public List<ProgramSubtrace> getSubtraces() {
+        return this.bridgeSupport.getSubtraces();
     }
 
     @Override

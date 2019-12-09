@@ -29,6 +29,7 @@ import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -42,13 +43,14 @@ class RemascFeesPayer {
 
     private final Repository repository;
     private final RskAddress contractAddress;
-    private final List<ProgramSubtrace> subtraces;
+    private final List<ProgramSubtrace> subtraces = new ArrayList<>();
 
-    public RemascFeesPayer(Repository repository, RskAddress contractAddress, List<ProgramSubtrace> subtraces) {
+    public RemascFeesPayer(Repository repository, RskAddress contractAddress) {
         this.repository = repository;
         this.contractAddress = contractAddress;
-        this.subtraces = subtraces;
     }
+
+    public List<ProgramSubtrace> getSubtraces() { return this.subtraces; }
 
     public void payMiningFees(byte[] blockHash, Coin value, RskAddress toAddress, List<LogInfo> logs) {
         this.transferPayment(value, toAddress);

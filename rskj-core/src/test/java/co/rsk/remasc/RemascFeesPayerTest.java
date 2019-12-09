@@ -48,8 +48,7 @@ public class RemascFeesPayerTest {
 
         // Setup objects
         Repository repositoryMock = Mockito.mock(Repository.class);
-        List<ProgramSubtrace> subtraces = new ArrayList<>();
-        RemascFeesPayer feesPayer = new RemascFeesPayer(repositoryMock, PrecompiledContracts.REMASC_ADDR, subtraces);
+        RemascFeesPayer feesPayer = new RemascFeesPayer(repositoryMock, PrecompiledContracts.REMASC_ADDR);
 
         byte[] blockHash = { 0x1, 0x2 };
         Coin value = Coin.valueOf(7L);
@@ -59,9 +58,9 @@ public class RemascFeesPayerTest {
         // Do call
         feesPayer.payMiningFees(blockHash, value, toAddress, logs);
 
-        Assert.assertEquals(1, subtraces.size());
+        Assert.assertEquals(1, feesPayer.getSubtraces().size());
 
-        ProgramSubtrace subtrace = subtraces.get(0);
+        ProgramSubtrace subtrace = feesPayer.getSubtraces().get(0);
 
         Assert.assertEquals(DataWord.valueOf(PrecompiledContracts.REMASC_ADDR.getBytes()), subtrace.getInvokeData().getCallerAddress());
         Assert.assertEquals(DataWord.valueOf(toAddress.getBytes()), subtrace.getInvokeData().getOwnerAddress());

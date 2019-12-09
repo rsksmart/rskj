@@ -109,7 +109,7 @@ public class BridgeSupport {
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
     private final BridgeEventLogger eventLogger;
-    private final List<ProgramSubtrace> subtraces;
+    private final List<ProgramSubtrace> subtraces = new ArrayList<>();
 
     private final FederationSupport federationSupport;
 
@@ -129,8 +129,7 @@ public class BridgeSupport {
             Context btcContext,
             FederationSupport federationSupport,
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory,
-            ActivationConfig.ForBlock activations,
-            List<ProgramSubtrace> subtraces) {
+            ActivationConfig.ForBlock activations) {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = executionBlock;
@@ -140,7 +139,10 @@ public class BridgeSupport {
         this.federationSupport = federationSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         this.activations = activations;
-        this.subtraces = subtraces;
+    }
+
+    public List<ProgramSubtrace> getSubtraces() {
+        return this.subtraces;
     }
 
     @VisibleForTesting

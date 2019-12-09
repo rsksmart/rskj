@@ -236,7 +236,7 @@ public class BridgeSupportTestPowerMock {
                 bridgeConstants, provider, mock(BridgeEventLogger.class), track, null,
                 new Context(bridgeConstants.getBtcParams()),
                 new FederationSupport(bridgeConstants, provider, null),
-                btcBlockStoreFactory, mock(ActivationConfig.ForBlock.class), null
+                btcBlockStoreFactory, mock(ActivationConfig.ForBlock.class)
         ) {
             @Override
             InputStream getCheckPoints() {
@@ -1733,8 +1733,7 @@ public class BridgeSupportTestPowerMock {
                 btcContext,
                 mockFederationSupport,
                 mockFactory,
-                mock(ActivationConfig.ForBlock.class),
-                null
+                mock(ActivationConfig.ForBlock.class)
         );
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
@@ -4196,7 +4195,7 @@ public class BridgeSupportTestPowerMock {
                 constants, provider, eventLogger, track, executionBlock,
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, executionBlock),
-                blockStoreFactory, activations, null
+                blockStoreFactory, activations
         );
     }
 

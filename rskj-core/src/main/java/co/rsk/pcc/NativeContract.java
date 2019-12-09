@@ -72,8 +72,8 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
     }
 
     @Override
-    public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs, List<ProgramSubtrace> subtraces) {
-        super.init(tx, executionBlock, repository, blockStore, receiptStore, logs, subtraces);
+    public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
+        super.init(tx, executionBlock, repository, blockStore, receiptStore, logs);
 
         executionEnvironment = new ExecutionEnvironment(
                 activationConfig,

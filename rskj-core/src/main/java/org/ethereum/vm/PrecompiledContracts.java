@@ -164,7 +164,9 @@ public class PrecompiledContracts {
 
         public abstract long getGasForData(byte[] data);
 
-        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs, List<ProgramSubtrace> subtraces) {}
+        public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {}
+
+        public List<ProgramSubtrace> getSubtraces() { return Collections.emptyList(); }
 
         public abstract byte[] execute(byte[] data);
     }

@@ -294,7 +294,7 @@ public class TransactionExecutor {
 
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList(), subtraces);
+            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
             profiler.stop(metric);
 
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
@@ -322,6 +322,7 @@ public class TransactionExecutor {
                 // FIXME: save return for vm trace
                 try {
                     byte[] out = precompiledContract.execute(tx.getData());
+                    this.subtraces = precompiledContract.getSubtraces();
                     result.setHReturn(out);
                     if (!track.isExist(targetAddress)) {
                         track.createAccount(targetAddress);

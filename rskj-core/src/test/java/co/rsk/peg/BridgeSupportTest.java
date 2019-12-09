@@ -39,8 +39,7 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                activations,
-                null
+                activations
         );
 
         Assert.assertTrue(bridgeSupport.getActivations().isActive(ConsensusRule.RSKIP124));
@@ -72,8 +71,7 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class),
-                null
+                mock(ActivationConfig.ForBlock.class)
         );
 
         bridgeSupport.voteFeePerKbChange(tx, null);
@@ -107,8 +105,7 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class),
-                null
+                mock(ActivationConfig.ForBlock.class)
         );
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(-10));
@@ -146,8 +143,7 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class),
-                null
+                mock(ActivationConfig.ForBlock.class)
         );
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.NEGATIVE_SATOSHI), is(-1));
@@ -189,8 +185,7 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class),
-                null
+                mock(ActivationConfig.ForBlock.class)
         );
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.valueOf(MAX_FEE_PER_KB)), is(1));
@@ -232,8 +227,7 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class),
-                null
+                mock(ActivationConfig.ForBlock.class)
         );
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
@@ -274,8 +268,7 @@ public class BridgeSupportTest {
                 new Context(constants.getBtcParams()),
                 new FederationSupport(constants, provider, block),
                 mock(BtcBlockStoreWithCache.Factory.class),
-                mock(ActivationConfig.ForBlock.class),
-                null
+                mock(ActivationConfig.ForBlock.class)
         );
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
