@@ -67,6 +67,7 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
@@ -92,6 +93,7 @@ import static org.mockito.Mockito.*;
 /**
  * Created by ajlopez on 6/8/2016.
  */
+@PowerMockIgnore("org.ethereum.crypto.cryptohash.KeccakNative")
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Bridge.class, BridgeUtils.class})
 public class BridgeTestPowerMock {
