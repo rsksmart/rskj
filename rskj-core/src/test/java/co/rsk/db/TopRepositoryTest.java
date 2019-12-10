@@ -940,6 +940,165 @@ public class TopRepositoryTest {
         Assert.assertArrayEquals(accountState.getEncoded(), repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
     }
 
+    @Test
+    public void createAndDeleteAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        repository.createAccount(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+
+        repository.commit();
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
+    }
+
+    @Test
+    public void createAndDeleteAccountAddingStorageAndCode() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        repository.createAccount(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.addStorageRow(this.address, DataWord.ONE, DataWord.valueOf(42));
+        repository.saveCode(this.address, new byte[1]);
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+
+        repository.commit();
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE)));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getCodeKey(this.address)));
+    }
+
+    @Test
+    public void deleteKnownAccountWithStorageAndCode() {
+        AccountState accountState = new AccountState();
+
+        Trie trie = new Trie();
+
+        trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), accountState.getEncoded());
+        trie = trie.put(this.trieKeyMapper.getCodeKey(this.address), new byte[1]);
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE), DataWord.valueOf(42).getByteArrayForStorage());
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertEquals(DataWord.valueOf(42), repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[1], repository.getCode(this.address));
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+
+        repository.commit();
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE)));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getCodeKey(this.address)));
+    }
+
+    @Test
+    public void createAndDeleteAccountAddingStorageWithRollback() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        repository.createAccount(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.addStorageRow(this.address, DataWord.ONE, DataWord.valueOf(42));
+        repository.saveCode(this.address, new byte[1]);
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+
+        repository.rollback();
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE)));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getCodeKey(this.address)));
+    }
+
+    @Test
+    public void deleteKnownAccount() {
+        AccountState accountState = new AccountState();
+
+        Trie trie = new Trie();
+
+        trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), accountState.getEncoded());
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+
+        repository.commit();
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE)));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getCodeKey(this.address)));
+    }
+
+    @Test
+    public void deleteKnownAccountAndRollback() {
+        AccountState accountState = new AccountState();
+
+        Trie trie = new Trie();
+
+        trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), accountState.getEncoded());
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+
+        repository.rollback();
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertNotNull(repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE)));
+        Assert.assertNull(repository.getCode(this.address));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getCodeKey(this.address)));
+    }
+
     private static RskAddress createRandomAddress() {
         byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
         random.nextBytes(bytes);

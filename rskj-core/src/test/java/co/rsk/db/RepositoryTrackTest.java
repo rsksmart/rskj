@@ -913,6 +913,174 @@ public class RepositoryTrackTest {
         Assert.assertFalse(parent.getAccountState(this.address).isHibernated());
     }
 
+    @Test
+    public void createAndDeleteAccount() {
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        repository.createAccount(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+
+        repository.commit();
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertFalse(parent.isExist(this.address));
+        Assert.assertSame(trie, parent.getTrie());
+    }
+
+    @Test
+    public void createAndDeleteAccountAddingStorageAndCode() {
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        repository.createAccount(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.addStorageRow(this.address, DataWord.ONE, DataWord.valueOf(42));
+        repository.saveCode(this.address, new byte[1]);
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+
+        repository.commit();
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+
+        Assert.assertFalse(parent.isExist(this.address));
+        Assert.assertNull(parent.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], parent.getCode(this.address));
+    }
+
+    @Test
+    public void deleteKnownAccountWithStorageAndCode() {
+        AccountState accountState = new AccountState();
+
+        Trie trie = new Trie();
+
+        TopRepository parent = new TopRepository(trie);
+        parent.updateAccountState(this.address, accountState);
+        parent.saveCode(this.address, new byte[1]);
+        parent.addStorageRow(this.address, DataWord.ONE, DataWord.valueOf(42));
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertEquals(DataWord.valueOf(42), repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[1], repository.getCode(this.address));
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+
+        repository.commit();
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+
+        Assert.assertFalse(parent.isExist(this.address));
+        Assert.assertNull(parent.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], parent.getCode(this.address));
+    }
+
+    @Test
+    public void createAndDeleteAccountAddingStorageWithRollback() {
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        repository.createAccount(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.addStorageRow(this.address, DataWord.ONE, DataWord.valueOf(42));
+        repository.saveCode(this.address, new byte[1]);
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+
+        repository.rollback();
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+
+        Assert.assertFalse(parent.isExist(this.address));
+        Assert.assertNull(parent.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], parent.getCode(this.address));
+    }
+
+    @Test
+    public void deleteKnownAccount() {
+        AccountState accountState = new AccountState();
+
+        Trie trie = new Trie();
+
+        TopRepository parent = new TopRepository(trie);
+        parent.updateAccountState(this.address, accountState);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+
+        repository.commit();
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
+
+        Assert.assertFalse(parent.isExist(this.address));
+        Assert.assertNull(parent.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertArrayEquals(new byte[0], parent.getCode(this.address));
+    }
+
+    @Test
+    public void deleteKnownAccountAndRollback() {
+        AccountState accountState = new AccountState();
+
+        Trie trie = new Trie();
+
+        TopRepository parent = new TopRepository(trie);
+        parent.updateAccountState(this.address, accountState);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.delete(this.address);
+
+        Assert.assertFalse(repository.isExist(this.address));
+
+        repository.rollback();
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertNull(repository.getCode(this.address));
+
+        Assert.assertTrue(parent.isExist(this.address));
+        Assert.assertNull(parent.getStorageValue(this.address, DataWord.ONE));
+        Assert.assertNull(parent.getCode(this.address));
+    }
+
     private static RskAddress createRandomAddress() {
         byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
         random.nextBytes(bytes);

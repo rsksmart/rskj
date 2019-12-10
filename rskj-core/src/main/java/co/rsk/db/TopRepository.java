@@ -85,7 +85,12 @@ public class TopRepository extends AbstractRepository {
 
     @Override
     public void commitAccountState(RskAddress address, AccountState accountState) {
-        this.trie = this.trie.put(this.trieKeyMapper.getAccountKey(address), accountState.getEncoded());
+        if (accountState == null) {
+            this.trie = this.trie.deleteRecursive(this.trieKeyMapper.getAccountKey(address));
+        }
+        else {
+            this.trie = this.trie.put(this.trieKeyMapper.getAccountKey(address), accountState.getEncoded());
+        }
     }
 
     @Override

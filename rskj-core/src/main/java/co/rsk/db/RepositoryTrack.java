@@ -65,7 +65,12 @@ public class RepositoryTrack extends AbstractRepository {
 
     @Override
     public void commitAccountState(RskAddress address, AccountState accountState) {
-        this.parent.updateAccountState(address, accountState);
+        if (accountState == null) {
+            this.parent.delete(address);
+        }
+        else {
+            this.parent.updateAccountState(address, accountState);
+        }
     }
 
     @Override

@@ -70,8 +70,12 @@ public abstract class AbstractRepository implements Repository {
     }
 
     @Override
-    public void delete(RskAddress addr) {
-
+    public void delete(RskAddress address) {
+        this.accountStates.put(address, null);
+        this.modifiedAccounts.add(address);
+        this.storage.remove(address);
+        this.modifiedStorage.remove(address);
+        this.codes.remove(address);
     }
 
     @Override
@@ -201,6 +205,7 @@ public abstract class AbstractRepository implements Repository {
     @Override
     public void updateAccountState(RskAddress address, AccountState accountState) {
         this.accountStates.put(address, accountState.clone());
+
         this.modifiedAccounts.add(address);
     }
 
@@ -228,6 +233,10 @@ public abstract class AbstractRepository implements Repository {
     @Override
     public boolean isExist(RskAddress address) {
         if (this.accountStates.containsKey(address)) {
+            if (this.accountStates.get(address) == null) {
+                return false;
+            }
+
             return true;
         }
 
@@ -284,6 +293,10 @@ public abstract class AbstractRepository implements Repository {
     @Nullable
     @Override
     public byte[] getStorageBytes(RskAddress address, DataWord key) {
+        if (this.accountStates.containsKey(address) && this.accountStates.get(address) == null) {
+            return null;
+        }
+
         if (this.storage.containsKey(address) && this.storage.get(address).containsKey(key)) {
             return this.storage.get(address).get(key);
         }
