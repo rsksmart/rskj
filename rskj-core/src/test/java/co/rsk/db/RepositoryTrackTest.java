@@ -826,6 +826,93 @@ public class RepositoryTrackTest {
         Assert.assertFalse(repository.isExist(address));
     }
 
+
+    @Test
+    public void hibernateUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        repository.hibernate(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertNotNull(repository.getAccountState(this.address).isHibernated());
+
+        repository.commit();
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertNotNull(repository.getAccountState(this.address).isHibernated());
+        Assert.assertTrue(parent.isExist(this.address));
+        Assert.assertNotNull(parent.getAccountState(this.address).isHibernated());
+    }
+
+    @Test
+    public void hibernateUnknownAccountAndRollback() {
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        repository.hibernate(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertNotNull(repository.getAccountState(this.address).isHibernated());
+
+        repository.rollback();
+
+        Assert.assertSame(trie, parent.getTrie());
+
+        Assert.assertFalse(repository.isExist(this.address));
+        Assert.assertFalse(parent.isExist(this.address));
+    }
+
+    @Test
+    public void hibernateKnownAccount() {
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie);
+        parent.createAccount(this.address);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.hibernate(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertTrue(repository.getAccountState(this.address).isHibernated());
+
+        repository.commit();
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertTrue(repository.getAccountState(this.address).isHibernated());
+        Assert.assertTrue(parent.isExist(this.address));
+        Assert.assertTrue(parent.getAccountState(this.address).isHibernated());
+    }
+
+    @Test
+    public void hibernateKnownAccountAndRollback() {
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie);
+        parent.createAccount(this.address);
+        Assert.assertFalse(parent.getAccountState(this.address).isHibernated());
+        RepositoryTrack repository = new RepositoryTrack(parent);
+        Assert.assertFalse(repository.getAccountState(this.address).isHibernated());
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.hibernate(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertTrue(repository.getAccountState(this.address).isHibernated());
+        Assert.assertTrue(parent.isExist(this.address));
+        Assert.assertFalse(parent.getAccountState(this.address).isHibernated());
+
+        repository.rollback();
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertFalse(repository.getAccountState(this.address).isHibernated());
+        Assert.assertTrue(parent.isExist(this.address));
+        Assert.assertFalse(parent.getAccountState(this.address).isHibernated());
+    }
+
     private static RskAddress createRandomAddress() {
         byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
         random.nextBytes(bytes);

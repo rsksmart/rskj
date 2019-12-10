@@ -35,7 +35,13 @@ public class RepositoryTrack extends AbstractRepository {
 
     @Override
     public AccountState retrieveAccountState(RskAddress address) {
-        return this.parent.getAccountState(address);
+        AccountState accountState = this.parent.getAccountState(address);
+
+        if (accountState != null) {
+            return accountState.clone();
+        }
+
+        return null;
     }
 
     @Override

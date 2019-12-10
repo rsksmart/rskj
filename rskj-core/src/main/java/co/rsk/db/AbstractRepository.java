@@ -200,7 +200,7 @@ public abstract class AbstractRepository implements Repository {
 
     @Override
     public void updateAccountState(RskAddress address, AccountState accountState) {
-        this.accountStates.put(address, accountState);
+        this.accountStates.put(address, accountState.clone());
         this.modifiedAccounts.add(address);
     }
 
