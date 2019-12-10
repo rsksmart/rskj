@@ -571,7 +571,10 @@ public class TransactionExecutor {
     }
 
     public long getGasUsed() {
-        return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas);
+        if (activations.isActive(ConsensusRule.RSKIP136)) {
+            return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas);
+        }
+        return toBI(tx.getGasLimit()).subtract(toBI(mEndGas)).longValue();
     }
 
     public Coin getPaidFees() { return paidFees; }
