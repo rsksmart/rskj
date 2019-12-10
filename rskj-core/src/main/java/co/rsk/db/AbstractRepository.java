@@ -107,6 +107,7 @@ public abstract class AbstractRepository implements Repository {
 
     @Override
     public void saveCode(RskAddress address, byte[] code) {
+        this.setupContract(address);
         this.codes.put(address, code);
 
         if (code != null && code.length != 0 && !this.isExist(address)) {

@@ -779,8 +779,9 @@ public class TopRepositoryTest {
 
         repository.saveCode(this.address, code);
 
-        Assert.assertArrayEquals(code, repository.getCode(address));
-        Assert.assertTrue(repository.isExist(address));
+        Assert.assertArrayEquals(code, repository.getCode(this.address));
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertTrue(repository.isContract(this.address));
     }
 
     @Test

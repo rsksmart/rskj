@@ -747,8 +747,9 @@ public class RepositoryTrackTest {
 
         repository.saveCode(this.address, code);
 
-        Assert.assertArrayEquals(code, repository.getCode(address));
-        Assert.assertTrue(repository.isExist(address));
+        Assert.assertArrayEquals(code, repository.getCode(this.address));
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertTrue(repository.isContract(this.address));
     }
 
     @Test
@@ -771,7 +772,11 @@ public class RepositoryTrackTest {
         Assert.assertArrayEquals(code, repository.getCode(address));
         Assert.assertArrayEquals(code, parent.getCode(address));
         Assert.assertTrue(repository.isExist(address));
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertTrue(repository.isContract(this.address));
+
         Assert.assertTrue(parent.isExist(address));
+        Assert.assertTrue(parent.isContract(this.address));
     }
 
     @Test
@@ -795,7 +800,9 @@ public class RepositoryTrackTest {
         Assert.assertFalse(repository.isExist(address));
 
         Assert.assertArrayEquals(new byte[0], parent.getCode(address));
+
         Assert.assertFalse(parent.isExist(address));
+        Assert.assertFalse(parent.isContract(this.address));
     }
 
     @Test
