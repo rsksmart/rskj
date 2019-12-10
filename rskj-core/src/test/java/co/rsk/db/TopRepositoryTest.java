@@ -23,8 +23,10 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieHashTest;
+import co.rsk.trie.TrieStore;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
-import org.ethereum.core.Repository;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
@@ -51,7 +53,7 @@ public class TopRepositoryTest {
     public void createWithTrie() {
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertNotNull(repository.getTrie());
         Assert.assertSame(trie, repository.getTrie());
@@ -61,7 +63,7 @@ public class TopRepositoryTest {
     public void createAccount() {
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertFalse(repository.isExist(address));
 
@@ -86,7 +88,7 @@ public class TopRepositoryTest {
     public void getUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertFalse(repository.isExist(address));
 
@@ -108,7 +110,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(trieKeyMapper.getAccountKey(address), accountState.getEncoded());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(address));
 
@@ -126,7 +128,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(trieKeyMapper.getAccountKey(address), accountState.getEncoded());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(address));
 
@@ -146,7 +148,7 @@ public class TopRepositoryTest {
     public void createAndCommitAccount() {
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertFalse(repository.isExist(address));
 
@@ -176,7 +178,7 @@ public class TopRepositoryTest {
     public void getBalanceAndNonceFromUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertEquals(Coin.ZERO, repository.getBalance(address));
         Assert.assertEquals(BigInteger.ZERO, repository.getNonce(address));
@@ -197,7 +199,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(trieKeyMapper.getAccountKey(address), accountState.getEncoded());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(address));
 
@@ -217,7 +219,7 @@ public class TopRepositoryTest {
 
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertFalse(repository.isExist(address));
 
@@ -250,7 +252,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(accountKey, accountState.getEncoded());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(address));
 
@@ -278,7 +280,7 @@ public class TopRepositoryTest {
 
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertFalse(repository.isExist(address));
 
@@ -311,7 +313,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(accountKey, accountState.getEncoded());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(address));
 
@@ -339,7 +341,7 @@ public class TopRepositoryTest {
     public void increaseNonceUsingUpdateAccountState() {
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         AccountState accountState = repository.createAccount(this.address);
         Assert.assertTrue(repository.isExist(address));
@@ -370,7 +372,7 @@ public class TopRepositoryTest {
 
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertFalse(repository.isExist(address));
 
@@ -403,7 +405,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(accountKey, accountState.getEncoded());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(address));
 
@@ -429,7 +431,7 @@ public class TopRepositoryTest {
     @Test
     public void getStorageBytesFromUnknownAccount() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertNull(repository.getStorageBytes(this.address, DataWord.ONE));
 
@@ -439,7 +441,7 @@ public class TopRepositoryTest {
     @Test
     public void setAndGetStorageBytesFromUnknownAccount() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
         byte[] value = new byte[42];
         random.nextBytes(value);
 
@@ -469,7 +471,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE), value);
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         byte[] result = repository.getStorageBytes(this.address, DataWord.ONE);
 
@@ -494,7 +496,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE), value);
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         byte[] result = repository.getStorageBytes(this.address, DataWord.ONE);
 
@@ -519,7 +521,7 @@ public class TopRepositoryTest {
     @Test
     public void getStorageBytesFromCreatedAccount() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.createAccount(this.address);
 
@@ -531,7 +533,7 @@ public class TopRepositoryTest {
     @Test
     public void getStorageValueFromUnknownAccount() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
 
@@ -541,7 +543,7 @@ public class TopRepositoryTest {
     @Test
     public void getStorageValueFromCreatedAccount() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.createAccount(this.address);
 
@@ -555,7 +557,7 @@ public class TopRepositoryTest {
         Trie trie = new Trie();
         DataWord value = DataWord.valueOf(42);
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.addStorageRow(this.address, DataWord.ONE, value);
 
@@ -582,7 +584,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE), value.getByteArrayForStorage());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         DataWord result = repository.getStorageValue(this.address, DataWord.ONE);
 
@@ -605,7 +607,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(this.trieKeyMapper.getAccountStorageKey(address, DataWord.ONE), value.getByteArrayForStorage());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         DataWord result = repository.getStorageValue(this.address, DataWord.ONE);
 
@@ -630,7 +632,7 @@ public class TopRepositoryTest {
     @Test
     public void getCodeFromUnknownAccount() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertFalse(repository.isExist(this.address));
 
@@ -643,7 +645,7 @@ public class TopRepositoryTest {
     @Test
     public void getCodeFromCreatedAccountWithoutCode() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.createAccount(this.address);
 
@@ -658,7 +660,7 @@ public class TopRepositoryTest {
         Trie trie = new Trie();
         trie = trie.put(this.trieKeyMapper.getCodeKey(this.address), code);
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.createAccount(this.address);
 
@@ -677,7 +679,7 @@ public class TopRepositoryTest {
     public void setupContractOnCreatedAccount() {
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.createAccount(this.address);
 
@@ -698,7 +700,7 @@ public class TopRepositoryTest {
 
     @Test
     public void hasEmptyHashAsRootWhenCreated() {
-        TopRepository repository = new TopRepository(new Trie());
+        TopRepository repository = new TopRepository(new Trie(), null);
 
         Assert.assertArrayEquals(TrieHashTest.makeEmptyHash().getBytes(), repository.getRoot());
     }
@@ -707,7 +709,7 @@ public class TopRepositoryTest {
     public void createAccountAndRollback() {
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertFalse(repository.isExist(this.address));
 
@@ -725,7 +727,7 @@ public class TopRepositoryTest {
     public void setupContractAndRollback() {
         Trie trie = new Trie();
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertFalse(repository.isExist(this.address));
 
@@ -748,7 +750,7 @@ public class TopRepositoryTest {
         byte[] data = new byte[42];
         random.nextBytes(data);
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertFalse(repository.isExist(this.address));
 
@@ -770,7 +772,7 @@ public class TopRepositoryTest {
     @Test
     public void saveCode() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         byte[] code = new byte[42];
         random.nextBytes(code);
@@ -784,7 +786,7 @@ public class TopRepositoryTest {
     @Test
     public void saveCodeAndCommit() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         byte[] code = new byte[42];
         random.nextBytes(code);
@@ -807,7 +809,7 @@ public class TopRepositoryTest {
     @Test
     public void saveCodeAndRollback() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         byte[] code = new byte[42];
         random.nextBytes(code);
@@ -830,7 +832,7 @@ public class TopRepositoryTest {
     @Test
     public void saveNullCode() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.saveCode(this.address, null);
 
@@ -841,7 +843,7 @@ public class TopRepositoryTest {
     @Test
     public void saveEmptyCode() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.saveCode(this.address, new byte[0]);
 
@@ -852,7 +854,7 @@ public class TopRepositoryTest {
     @Test
     public void hibernateUnknownAccount() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.hibernate(this.address);
 
@@ -872,7 +874,7 @@ public class TopRepositoryTest {
     @Test
     public void hibernateUnknownAccountAndRollback() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.hibernate(this.address);
 
@@ -894,7 +896,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), accountState.getEncoded());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(this.address));
 
@@ -921,7 +923,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), accountState.getEncoded());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(this.address));
 
@@ -943,7 +945,7 @@ public class TopRepositoryTest {
     @Test
     public void createAndDeleteAccount() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.createAccount(this.address);
 
@@ -962,7 +964,7 @@ public class TopRepositoryTest {
     @Test
     public void createAndDeleteAccountAddingStorageAndCode() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.createAccount(this.address);
 
@@ -997,7 +999,7 @@ public class TopRepositoryTest {
         trie = trie.put(this.trieKeyMapper.getCodeKey(this.address), new byte[1]);
         trie = trie.put(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE), DataWord.valueOf(42).getByteArrayForStorage());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(this.address));
         Assert.assertEquals(DataWord.valueOf(42), repository.getStorageValue(this.address, DataWord.ONE));
@@ -1022,7 +1024,7 @@ public class TopRepositoryTest {
     @Test
     public void createAndDeleteAccountAddingStorageWithRollback() {
         Trie trie = new Trie();
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         repository.createAccount(this.address);
 
@@ -1055,7 +1057,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), accountState.getEncoded());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(this.address));
 
@@ -1081,7 +1083,7 @@ public class TopRepositoryTest {
 
         trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), accountState.getEncoded());
 
-        TopRepository repository = new TopRepository(trie);
+        TopRepository repository = new TopRepository(trie, null);
 
         Assert.assertTrue(repository.isExist(this.address));
 
@@ -1097,6 +1099,20 @@ public class TopRepositoryTest {
         Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE)));
         Assert.assertNull(repository.getCode(this.address));
         Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getCodeKey(this.address)));
+    }
+
+    @Test
+    public void createAccountCommitAndSave() {
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie, trieStore);
+
+        repository.createAccount(this.address);
+        repository.commit();
+        repository.save();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+        Assert.assertNotNull(trieStore.retrieve(repository.getRoot()));
     }
 
     private static RskAddress createRandomAddress() {

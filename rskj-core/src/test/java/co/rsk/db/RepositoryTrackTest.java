@@ -22,9 +22,7 @@ package co.rsk.db;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieHashTest;
 import org.ethereum.core.AccountState;
-import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,7 +45,7 @@ public class RepositoryTrackTest {
     public void createAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertFalse(repository.isExist(address));
@@ -68,7 +66,7 @@ public class RepositoryTrackTest {
     public void getUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertFalse(repository.isExist(address));
@@ -84,7 +82,7 @@ public class RepositoryTrackTest {
 
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.updateAccountState(this.address, accountState);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -102,7 +100,7 @@ public class RepositoryTrackTest {
 
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.updateAccountState(this.address, accountState);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -124,7 +122,7 @@ public class RepositoryTrackTest {
     public void createAndCommitAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertFalse(repository.isExist(address));
@@ -155,7 +153,7 @@ public class RepositoryTrackTest {
     public void getBalanceAndNonceFromUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertEquals(Coin.ZERO, repository.getBalance(address));
@@ -174,7 +172,7 @@ public class RepositoryTrackTest {
         AccountState accountState = new AccountState(BigInteger.TEN, Coin.valueOf(42));
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.updateAccountState(this.address, accountState);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -193,7 +191,7 @@ public class RepositoryTrackTest {
     public void addBalanceToUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertFalse(repository.isExist(address));
@@ -223,7 +221,7 @@ public class RepositoryTrackTest {
 
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.updateAccountState(this.address, accountState);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -250,7 +248,7 @@ public class RepositoryTrackTest {
     public void increaseNonceToUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertFalse(repository.isExist(address));
@@ -280,7 +278,7 @@ public class RepositoryTrackTest {
 
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.updateAccountState(this.address, accountState);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -309,7 +307,7 @@ public class RepositoryTrackTest {
     public void increaseNonceUsingUpdateAccountState() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         AccountState accountState = repository.createAccount(this.address);
@@ -338,7 +336,7 @@ public class RepositoryTrackTest {
     public void setNonceToUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertFalse(repository.isExist(address));
@@ -368,7 +366,7 @@ public class RepositoryTrackTest {
 
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.updateAccountState(this.address, accountState);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -397,7 +395,7 @@ public class RepositoryTrackTest {
     public void getStorageBytesFromUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertNull(repository.getStorageBytes(this.address, DataWord.ONE));
@@ -409,7 +407,7 @@ public class RepositoryTrackTest {
     public void setAndGetStorageBytesFromUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         byte[] value = new byte[42];
@@ -438,7 +436,7 @@ public class RepositoryTrackTest {
         byte[] value = new byte[42];
         random.nextBytes(value);
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.addStorageBytes(this.address, DataWord.ONE, value);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -461,7 +459,7 @@ public class RepositoryTrackTest {
         byte[] value2 = new byte[100];
         random.nextBytes(value2);
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.addStorageBytes(this.address, DataWord.ONE, value);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -487,7 +485,7 @@ public class RepositoryTrackTest {
     public void getStorageBytesFromCreatedAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.createAccount(this.address);
@@ -501,7 +499,7 @@ public class RepositoryTrackTest {
     public void getStorageValueFromUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
@@ -513,7 +511,7 @@ public class RepositoryTrackTest {
     public void getStorageValueFromCreatedAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.createAccount(this.address);
@@ -528,7 +526,7 @@ public class RepositoryTrackTest {
         Trie trie = new Trie();
         DataWord value = DataWord.valueOf(42);
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.addStorageRow(this.address, DataWord.ONE, value);
@@ -553,7 +551,7 @@ public class RepositoryTrackTest {
         Trie trie = new Trie();
         DataWord value = DataWord.valueOf(42);
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.addStorageRow(this.address, DataWord.ONE, value);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -574,7 +572,7 @@ public class RepositoryTrackTest {
         DataWord value = DataWord.valueOf(42);
         DataWord value2 = DataWord.valueOf(100);
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.addStorageRow(this.address, DataWord.ONE, value);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -600,7 +598,7 @@ public class RepositoryTrackTest {
     public void getCodeFromUnknownAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertFalse(repository.isExist(this.address));
@@ -615,7 +613,7 @@ public class RepositoryTrackTest {
     public void getCodeFromCreatedAccountWithoutCode() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.createAccount(this.address);
@@ -630,7 +628,7 @@ public class RepositoryTrackTest {
 
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.saveCode(this.address, code);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -651,7 +649,7 @@ public class RepositoryTrackTest {
     public void setupContractOnCreatedAccount() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.createAccount(this.address);
@@ -672,7 +670,7 @@ public class RepositoryTrackTest {
     public void createAccountAndRollback() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertFalse(repository.isExist(this.address));
@@ -691,7 +689,7 @@ public class RepositoryTrackTest {
     public void setupContractAndRollback() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertFalse(repository.isExist(this.address));
@@ -716,7 +714,7 @@ public class RepositoryTrackTest {
         byte[] data = new byte[42];
         random.nextBytes(data);
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         Assert.assertFalse(repository.isExist(this.address));
@@ -741,7 +739,7 @@ public class RepositoryTrackTest {
     public void saveCode() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         byte[] code = new byte[42];
@@ -757,7 +755,7 @@ public class RepositoryTrackTest {
     public void saveCodeAndCommit() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         byte[] code = new byte[42];
@@ -780,7 +778,7 @@ public class RepositoryTrackTest {
     public void saveCodeAndRollback() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         byte[] code = new byte[42];
@@ -804,7 +802,7 @@ public class RepositoryTrackTest {
     public void saveNullCode() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.saveCode(this.address, null);
@@ -817,7 +815,7 @@ public class RepositoryTrackTest {
     public void saveEmptyCode() {
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.saveCode(this.address, new byte[0]);
@@ -830,7 +828,7 @@ public class RepositoryTrackTest {
     @Test
     public void hibernateUnknownAccount() {
         Trie trie = new Trie();
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.hibernate(this.address);
@@ -849,7 +847,7 @@ public class RepositoryTrackTest {
     @Test
     public void hibernateUnknownAccountAndRollback() {
         Trie trie = new Trie();
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.hibernate(this.address);
@@ -868,7 +866,7 @@ public class RepositoryTrackTest {
     @Test
     public void hibernateKnownAccount() {
         Trie trie = new Trie();
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.createAccount(this.address);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -890,7 +888,7 @@ public class RepositoryTrackTest {
     @Test
     public void hibernateKnownAccountAndRollback() {
         Trie trie = new Trie();
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.createAccount(this.address);
         Assert.assertFalse(parent.getAccountState(this.address).isHibernated());
         RepositoryTrack repository = new RepositoryTrack(parent);
@@ -916,7 +914,7 @@ public class RepositoryTrackTest {
     @Test
     public void createAndDeleteAccount() {
         Trie trie = new Trie();
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.createAccount(this.address);
@@ -937,7 +935,7 @@ public class RepositoryTrackTest {
     @Test
     public void createAndDeleteAccountAddingStorageAndCode() {
         Trie trie = new Trie();
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.createAccount(this.address);
@@ -970,7 +968,7 @@ public class RepositoryTrackTest {
 
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.updateAccountState(this.address, accountState);
         parent.saveCode(this.address, new byte[1]);
         parent.addStorageRow(this.address, DataWord.ONE, DataWord.valueOf(42));
@@ -1000,7 +998,7 @@ public class RepositoryTrackTest {
     @Test
     public void createAndDeleteAccountAddingStorageWithRollback() {
         Trie trie = new Trie();
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
         repository.createAccount(this.address);
@@ -1033,7 +1031,7 @@ public class RepositoryTrackTest {
 
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.updateAccountState(this.address, accountState);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
@@ -1060,7 +1058,7 @@ public class RepositoryTrackTest {
 
         Trie trie = new Trie();
 
-        TopRepository parent = new TopRepository(trie);
+        TopRepository parent = new TopRepository(trie, null);
         parent.updateAccountState(this.address, accountState);
         RepositoryTrack repository = new RepositoryTrack(parent);
 

@@ -21,6 +21,7 @@ package co.rsk.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieStore;
 import org.ethereum.core.AccountState;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
@@ -32,11 +33,13 @@ public class TopRepository extends AbstractRepository {
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
     private Trie trie;
+    private final TrieStore trieStore;
 
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
 
-    public TopRepository(Trie trie) {
+    public TopRepository(Trie trie, TrieStore trieStore) {
         this.trie = trie;
+        this.trieStore = trieStore;
     }
 
     @Override
@@ -47,6 +50,16 @@ public class TopRepository extends AbstractRepository {
     @Override
     public void addStorageRow(RskAddress address, DataWord key, DataWord value) {
         this.addStorageBytes(address, key, value.getByteArrayForStorage());
+    }
+
+    @Override
+    public void save() {
+        // TODO commit is needed?
+        this.commit();
+
+        if (this.trieStore != null) {
+            this.trieStore.save(this.trie);
+        }
     }
 
     @Override

@@ -433,10 +433,10 @@ public class NewRepositoryImplTest {
     }
 
     private static Repository createRepositoryWithCache() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        return new RepositoryTrack(new TopRepository(new Trie(), null));
     }
 
     private static Repository createRepository() {
-        return new TopRepository(new Trie());
+        return new TopRepository(new Trie(), null);
     }
 }
