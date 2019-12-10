@@ -849,6 +849,97 @@ public class TopRepositoryTest {
         Assert.assertFalse(repository.isExist(address));
     }
 
+    @Test
+    public void hibernateUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        repository.hibernate(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertNotNull(repository.getAccountState(this.address).isHibernated());
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertNotNull(repository.getAccountState(this.address).isHibernated());
+
+        Assert.assertArrayEquals(repository.getAccountState(this.address).getEncoded(), repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
+    }
+
+    @Test
+    public void hibernateUnknownAccountAndRollback() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie);
+
+        repository.hibernate(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertNotNull(repository.getAccountState(this.address).isHibernated());
+
+        repository.rollback();
+
+        Assert.assertSame(trie, repository.getTrie());
+
+        Assert.assertFalse(repository.isExist(this.address));
+    }
+
+    @Test
+    public void hibernateKnownAccount() {
+        Trie trie = new Trie();
+
+        AccountState accountState = new AccountState();
+
+        trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), accountState.getEncoded());
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.hibernate(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertTrue(repository.getAccountState(this.address).isHibernated());
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertTrue(repository.getAccountState(this.address).isHibernated());
+
+        Assert.assertArrayEquals(repository.getAccountState(this.address).getEncoded(), repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
+    }
+
+    @Test
+    public void hibernateKnownAccountAndRollback() {
+        Trie trie = new Trie();
+
+        AccountState accountState = new AccountState();
+
+        trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), accountState.getEncoded());
+
+        TopRepository repository = new TopRepository(trie);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        repository.hibernate(this.address);
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertTrue(repository.getAccountState(this.address).isHibernated());
+
+        repository.rollback();
+
+        Assert.assertSame(trie, repository.getTrie());
+
+        Assert.assertTrue(repository.isExist(this.address));
+        Assert.assertFalse(repository.getAccountState(this.address).isHibernated());
+
+        Assert.assertArrayEquals(accountState.getEncoded(), repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
+    }
+    
     private static RskAddress createRandomAddress() {
         byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
         random.nextBytes(bytes);

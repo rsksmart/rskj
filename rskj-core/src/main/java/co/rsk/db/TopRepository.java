@@ -19,19 +19,11 @@
 
 package co.rsk.db;
 
-import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import org.ethereum.core.Account;
 import org.ethereum.core.AccountState;
-import org.ethereum.core.Repository;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
-
-import javax.annotation.Nullable;
-import java.math.BigInteger;
-import java.util.*;
 
 /**
  * Created by ajlopez on 06/12/2019.
@@ -59,9 +51,9 @@ public class TopRepository extends AbstractRepository {
 
     @Override
     public byte[] getRoot() {
-        // TODO trie save?
-        // TODO commit?
-        
+        // TODO alternative: throw exception if pending commit
+        this.commit();
+
         return this.trie.getHash().getBytes();
     }
 

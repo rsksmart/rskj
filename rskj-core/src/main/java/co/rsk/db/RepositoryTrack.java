@@ -20,9 +20,7 @@
 package co.rsk.db;
 
 import co.rsk.core.RskAddress;
-import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
-import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
 /**
