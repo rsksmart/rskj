@@ -316,11 +316,15 @@ public abstract class AbstractRepository implements Repository {
             return EMPTY_BYTE_ARRAY;
         }
 
+        AccountState accountState = this.getAccountState(address);
+
+        if (accountState.isHibernated()) {
+            return EMPTY_BYTE_ARRAY;
+        }
+
         if (this.codes.containsKey(address)) {
             return this.codes.get(address);
         }
-
-        // TODO check account is hibernated
 
         byte[] code = this.retrieveCode(address);
 

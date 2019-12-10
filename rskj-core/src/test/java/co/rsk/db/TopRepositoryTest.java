@@ -939,7 +939,7 @@ public class TopRepositoryTest {
 
         Assert.assertArrayEquals(accountState.getEncoded(), repository.getTrie().get(this.trieKeyMapper.getAccountKey(this.address)));
     }
-    
+
     private static RskAddress createRandomAddress() {
         byte[] bytes = new byte[RskAddress.LENGTH_IN_BYTES];
         random.nextBytes(bytes);
