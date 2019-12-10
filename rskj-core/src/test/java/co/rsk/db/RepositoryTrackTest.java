@@ -34,7 +34,6 @@ import java.math.BigInteger;
 import java.util.Random;
 
 public class RepositoryTrackTest {
-    private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
     private static Random random = new Random();
 
     private RskAddress address;
@@ -77,8 +76,6 @@ public class RepositoryTrackTest {
         AccountState accountState = repository.getAccountState(address);
 
         Assert.assertNull(accountState);
-
-        Assert.assertNotNull(repository.getTrie());
     }
 
     @Test
@@ -120,8 +117,7 @@ public class RepositoryTrackTest {
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(accountState.getEncoded(), result.getEncoded());
-
-        Assert.assertSame(trie, repository.getTrie());
+        Assert.assertArrayEquals(accountState.getEncoded(), parent.getAccountState(this.address).getEncoded());
     }
 
     @Test
@@ -665,7 +661,6 @@ public class RepositoryTrackTest {
         repository.setupContract(this.address);
 
         Assert.assertTrue(repository.isContract(this.address));
-        Assert.assertSame(trie, repository.getTrie());
 
         repository.commit();
 
@@ -770,7 +765,6 @@ public class RepositoryTrackTest {
 
         repository.saveCode(this.address, code);
 
-        Assert.assertSame(trie, repository.getTrie());
         Assert.assertArrayEquals(code, repository.getCode(address));
         Assert.assertTrue(repository.isExist(address));
 

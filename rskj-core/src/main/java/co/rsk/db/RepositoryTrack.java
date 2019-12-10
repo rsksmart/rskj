@@ -47,6 +47,10 @@ public class RepositoryTrack extends AbstractRepository {
 
     @Override
     public byte[] retrieveCode(RskAddress address) {
+        if (!this.parent.isExist(address)) {
+            return null;
+        }
+
         return this.parent.getCode(address);
     }
 
