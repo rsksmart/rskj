@@ -21,11 +21,13 @@ package co.rsk.db;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieHashTest;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
@@ -1114,6 +1116,28 @@ public class TopRepositoryTest {
 
         Assert.assertNotSame(trie, repository.getTrie());
         Assert.assertNotNull(trieStore.retrieve(repository.getRoot()));
+    }
+
+    @Test
+    public void getCodeLengthAndHashFromUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie, null);
+
+        Assert.assertEquals(0, repository.getCodeLength(this.address));
+        Assert.assertEquals(Keccak256.ZERO_HASH, repository.getCodeHash(this.address));
+    }
+
+
+    @Test
+    public void saveCodeAndGetCodeLengthAndHashFromUnknownAccount() {
+        byte[] code = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie, null);
+        repository.saveCode(this.address, code);
+
+        Assert.assertEquals(4, repository.getCodeLength(this.address));
+        Assert.assertEquals(new Keccak256(Keccak256Helper.keccak256(code)), repository.getCodeHash(this.address));
     }
 
     private static RskAddress createRandomAddress() {

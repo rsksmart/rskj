@@ -21,8 +21,10 @@ package co.rsk.db;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1084,6 +1086,31 @@ public class RepositoryTrackTest {
         Assert.assertTrue(parent.isExist(this.address));
         Assert.assertNull(parent.getStorageValue(this.address, DataWord.ONE));
         Assert.assertNull(parent.getCode(this.address));
+    }
+
+
+    @Test
+    public void getCodeLengthAndHashFromUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie, null);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        Assert.assertEquals(0, repository.getCodeLength(this.address));
+        Assert.assertEquals(Keccak256.ZERO_HASH, repository.getCodeHash(this.address));
+    }
+
+    @Test
+    public void saveCodeAndGetCodeLengthAndHashFromUnknownAccount() {
+        byte[] code = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie, null);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        repository.saveCode(this.address, code);
+
+        Assert.assertEquals(4, repository.getCodeLength(this.address));
+        Assert.assertEquals(new Keccak256(Keccak256Helper.keccak256(code)), repository.getCodeHash(this.address));
     }
 
     private static RskAddress createRandomAddress() {

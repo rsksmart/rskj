@@ -25,6 +25,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
@@ -222,13 +223,35 @@ public abstract class AbstractRepository implements Repository {
     }
 
     @Override
-    public int getCodeLength(RskAddress addr) {
-        return 0;
+    public int getCodeLength(RskAddress address) {
+        byte[] code = this.getCode(address);
+
+        if (code == null) {
+            return 0;
+        }
+
+        return code.length;
     }
 
     @Override
-    public Keccak256 getCodeHash(RskAddress addr) {
-        return null;
+    public Keccak256 getCodeHash(RskAddress address) {
+        if (!isExist(address)) {
+            return Keccak256.ZERO_HASH;
+        }
+
+        if (!isContract(address)) {
+            return new Keccak256(
+                    Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
+        }
+
+        byte[] code = this.getCode(address);
+
+        // TODO review these conditions
+        if (code == null || code.length == 0) {
+            return null;
+        }
+
+        return new Keccak256(Keccak256Helper.keccak256(code));
     }
 
     @Override
