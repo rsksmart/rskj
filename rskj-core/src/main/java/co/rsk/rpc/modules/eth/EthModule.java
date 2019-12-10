@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.TopRepository;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
@@ -240,7 +241,7 @@ public class EthModule
     private ProgramResult callConstant_workaround(Web3.CallArguments args, BlockResult executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction_workaround(
-                new MutableRepository(new TrieStoreImpl(new HashMapDB()), executionBlock.getFinalState()),
+                new TopRepository(executionBlock.getFinalState(),  new TrieStoreImpl(new HashMapDB())),
                 executionBlock.getBlock(),
                 executionBlock.getBlock().getCoinbase(),
                 hexArgs.getGasPrice(),

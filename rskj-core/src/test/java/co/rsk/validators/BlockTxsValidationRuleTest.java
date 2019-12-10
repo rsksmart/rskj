@@ -24,6 +24,7 @@ import org.bouncycastle.util.BigIntegers;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,7 +38,7 @@ import static org.mockito.Mockito.when;
 
 public class BlockTxsValidationRuleTest {
     private BlockTxsValidationRule rule;
-    private RepositorySnapshot repositorySnapshot;
+    private Repository repositorySnapshot;
     private Block parent;
 
     @Before
@@ -47,7 +48,7 @@ public class BlockTxsValidationRuleTest {
         when(parent.getHeader()).thenReturn(parentHeader);
 
         RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
-        repositorySnapshot = mock(RepositorySnapshot.class);
+        repositorySnapshot = mock(Repository.class);
         when(repositoryLocator.snapshotAt(parentHeader)).thenReturn(repositorySnapshot);
 
         rule = new BlockTxsValidationRule(repositoryLocator);

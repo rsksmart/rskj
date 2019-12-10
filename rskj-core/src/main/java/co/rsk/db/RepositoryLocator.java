@@ -25,7 +25,6 @@ import co.rsk.trie.TrieStore;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.util.RLP;
 
 import java.util.Optional;
@@ -49,7 +48,15 @@ public class RepositoryLocator {
      * @return an optional {@link RepositorySnapshot}
      */
     public Optional<RepositorySnapshot> findSnapshotAt(BlockHeader header) {
-        return mutableTrieSnapshotAt(header).map(MutableRepository::new);
+        Keccak256 stateRoot = stateRootHandler.translate(header);
+
+        if (EMPTY_HASH.equals(stateRoot)) {
+            return Optional.of(new TopRepository(new Trie(this.trieStore), this.trieStore));
+        }
+
+        Optional<Trie> trie = trieStore.retrieve(stateRoot.getBytes());
+
+        return trie.map(t -> new TopRepository(t, this.trieStore));
     }
 
     /**
@@ -58,10 +65,9 @@ public class RepositoryLocator {
      * @return a read-only {@link RepositorySnapshot}
      * @throws IllegalArgumentException if the state is not found.
      */
-    public RepositorySnapshot snapshotAt(BlockHeader header) {
-        return mutableTrieSnapshotAt(header)
-                .map(MutableRepository::new)
-                .orElseThrow(() -> trieNotFoundException(header));
+    public Repository snapshotAt(BlockHeader header) {
+        // TODO review the difference with this method
+        return this.startTrackingAt(header);
     }
 
     /**
@@ -71,9 +77,15 @@ public class RepositoryLocator {
      * @throws IllegalArgumentException if the state is not found.
      */
     public Repository startTrackingAt(BlockHeader header) {
-        return mutableTrieSnapshotAt(header)
-                .map(MutableTrieCache::new)
-                .map(MutableRepository::new)
+        Keccak256 stateRoot = stateRootHandler.translate(header);
+
+        if (EMPTY_HASH.equals(stateRoot)) {
+            return new TopRepository(new Trie(this.trieStore), this.trieStore);
+        }
+
+        Optional<Trie> trie = trieStore.retrieve(stateRoot.getBytes());
+
+        return trie.map(t -> new TopRepository(t, this.trieStore))
                 .orElseThrow(() -> trieNotFoundException(header));
     }
 

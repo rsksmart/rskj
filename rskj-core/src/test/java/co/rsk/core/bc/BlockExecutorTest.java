@@ -73,7 +73,7 @@ public class BlockExecutorTest {
     private Blockchain blockchain;
     private BlockExecutor executor;
     private TrieStore trieStore;
-    private RepositorySnapshot repository;
+    private Repository repository;
 
     @Before
     public void setUp() {
@@ -443,6 +443,7 @@ public class BlockExecutorTest {
         Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
         track.commit();
+        repository.save();
 
         Block bestBlock = blockchain.getBestBlock();
         bestBlock.setStateRoot(repository.getRoot());
@@ -464,6 +465,7 @@ public class BlockExecutorTest {
         Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
         track.commit();
+        repository.save();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
