@@ -24,7 +24,9 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Before;
@@ -945,7 +947,7 @@ public class RepositoryTrackTest {
     public void createAndDeleteAccountAddingStorageAndCode() {
         Trie trie = new Trie();
         TopRepository parent = new TopRepository(trie, null);
-        RepositoryTrack repository = new RepositoryTrack(parent);
+        Repository repository = new RepositoryTrack(parent);
 
         repository.createAccount(this.address);
 
@@ -960,6 +962,8 @@ public class RepositoryTrackTest {
         Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
         Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
 
+        Assert.assertEquals(0, repository.getCodeLength(this.address));
+
         repository.commit();
 
         Assert.assertFalse(repository.isExist(this.address));
@@ -969,6 +973,10 @@ public class RepositoryTrackTest {
         Assert.assertFalse(parent.isExist(this.address));
         Assert.assertNull(parent.getStorageValue(this.address, DataWord.ONE));
         Assert.assertArrayEquals(new byte[0], parent.getCode(this.address));
+
+        repository = parent.startTracking();
+
+        Assert.assertEquals(0, repository.getCodeLength(this.address));
     }
 
     @Test
@@ -977,11 +985,14 @@ public class RepositoryTrackTest {
 
         Trie trie = new Trie();
 
+        trie = trie.put((new TrieKeyMapper()).getAccountKey(address), accountState.getEncoded());
+
         TopRepository parent = new TopRepository(trie, null);
-        parent.updateAccountState(this.address, accountState);
+        Assert.assertTrue(parent.isExist(this.address));
+
         parent.saveCode(this.address, new byte[1]);
         parent.addStorageRow(this.address, DataWord.ONE, DataWord.valueOf(42));
-        RepositoryTrack repository = new RepositoryTrack(parent);
+        Repository repository = new RepositoryTrack(parent);
 
         Assert.assertTrue(repository.isExist(this.address));
         Assert.assertEquals(DataWord.valueOf(42), repository.getStorageValue(this.address, DataWord.ONE));
@@ -1002,6 +1013,11 @@ public class RepositoryTrackTest {
         Assert.assertFalse(parent.isExist(this.address));
         Assert.assertNull(parent.getStorageValue(this.address, DataWord.ONE));
         Assert.assertArrayEquals(new byte[0], parent.getCode(this.address));
+
+        repository = parent.startTracking();
+
+        Assert.assertEquals(0, repository.getCodeLength(this.address));
+        Assert.assertEquals(0, parent.getCodeLength(this.address));
     }
 
     @Test

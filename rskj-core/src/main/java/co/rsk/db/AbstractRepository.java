@@ -267,8 +267,16 @@ public abstract class AbstractRepository implements Repository {
         return this.getAccountState(address) != null;
     }
 
+    private boolean isDeleted(RskAddress address) {
+        return this.accountStates.containsKey(address) && this.accountStates.get(address) == null;
+    }
+
     @Override
     public AccountState getAccountState(RskAddress address) {
+        if (this.isDeleted(address)) {
+            return null;
+        }
+
         AccountState accountState = this.accountStates.get(address);
 
         if (accountState != null) {
