@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -34,6 +35,7 @@ public class BridgeSupportTest {
                 mock(BridgeConstants.class),
                 provider,
                 mock(BridgeEventLogger.class),
+                mock(BtcLockSenderProvider.class),
                 mock(Repository.class),
                 block,
                 new Context(constants.getBtcParams()),
@@ -66,6 +68,7 @@ public class BridgeSupportTest {
                 constants,
                 provider,
                 mock(BridgeEventLogger.class),
+                mock(BtcLockSenderProvider.class),
                 mock(Repository.class),
                 block,
                 new Context(constants.getBtcParams()),
@@ -100,6 +103,7 @@ public class BridgeSupportTest {
                 constants,
                 provider,
                 mock(BridgeEventLogger.class),
+                mock(BtcLockSenderProvider.class),
                 mock(Repository.class),
                 block,
                 new Context(constants.getBtcParams()),
@@ -138,6 +142,7 @@ public class BridgeSupportTest {
                 constants,
                 provider,
                 mock(BridgeEventLogger.class),
+                mock(BtcLockSenderProvider.class),
                 mock(Repository.class),
                 block,
                 new Context(constants.getBtcParams()),
@@ -180,6 +185,7 @@ public class BridgeSupportTest {
                 constants,
                 provider,
                 mock(BridgeEventLogger.class),
+                mock(BtcLockSenderProvider.class),
                 mock(Repository.class),
                 block,
                 new Context(constants.getBtcParams()),
@@ -222,6 +228,7 @@ public class BridgeSupportTest {
                 constants,
                 provider,
                 mock(BridgeEventLogger.class),
+                mock(BtcLockSenderProvider.class),
                 mock(Repository.class),
                 block,
                 new Context(constants.getBtcParams()),
@@ -263,6 +270,7 @@ public class BridgeSupportTest {
                 constants,
                 provider,
                 mock(BridgeEventLogger.class),
+                mock(BtcLockSenderProvider.class),
                 mock(Repository.class),
                 block,
                 new Context(constants.getBtcParams()),
