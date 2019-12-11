@@ -31,6 +31,8 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
@@ -111,6 +113,7 @@ public class BridgeSupport {
     private final Repository rskRepository;
     private final BridgeEventLogger eventLogger;
     private final List<ProgramSubtrace> subtraces = new ArrayList<>();
+    private final BtcLockSenderProvider btcLockSenderProvider;
 
     private final FederationSupport federationSupport;
 
@@ -125,6 +128,7 @@ public class BridgeSupport {
             BridgeConstants bridgeConstants,
             BridgeStorageProvider provider,
             BridgeEventLogger eventLogger,
+            BtcLockSenderProvider btcLockSenderProvider,
             Repository repository,
             Block executionBlock,
             Context btcContext,
@@ -136,6 +140,7 @@ public class BridgeSupport {
         this.rskExecutionBlock = executionBlock;
         this.bridgeConstants = bridgeConstants;
         this.eventLogger = eventLogger;
+        this.btcLockSenderProvider = btcLockSenderProvider;
         this.btcContext = btcContext;
         this.federationSupport = federationSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
@@ -252,7 +257,6 @@ public class BridgeSupport {
      * @throws BlockStoreException
      * @throws IOException
      */
-
     public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized) throws IOException, BlockStoreException {
         Context.propagate(btcContext);
 
@@ -330,13 +334,9 @@ public class BridgeSupport {
         // Specific code for lock/release/none txs
         if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
-            Optional<Script> scriptSig = BridgeUtils.getFirstInputScriptSig(btcTx);
-            if (!scriptSig.isPresent()) {
-                logger.warn(
-                        "[btctx:{}] First input does not spend a Pay-to-PubkeyHash {}",
-                        btcTx.getHash(),
-                        btcTx.getInput(0)
-                );
+            Optional<BtcLockSender> btcLockSenderOptional = btcLockSenderProvider.tryGetBtcLockSender(btcTx);
+            if(!btcLockSenderOptional.isPresent()) {
+                logger.warn("[btcTx:{}] Could not get BtcLockSender from Btc tx", btcTx.getHash());
                 return;
             }
 
@@ -351,27 +351,25 @@ public class BridgeSupport {
             }
             Coin totalAmount = amountToActive.add(amountToRetiring);
 
-            // Get the sender public key
-            byte[] data = scriptSig.get().getChunks().get(1).data;
-
-            // Tx is a lock tx, check whether the sender is whitelisted
-            BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
-            Address senderBtcAddress = new Address(btcContext.getParams(), senderBtcKey.getPubKeyHash());
+            BtcLockSender btcLockSender = btcLockSenderOptional.get();
+            Address senderBtcAddress = btcLockSender.getBTCAddress();
+            if(!txIsProcessable(btcLockSender.getType())) {
+                logger.warn("[btcTx:{}] Btc tx type not supported: {}", btcTx.getHash(), btcLockSender.getType());
+                return;
+            }
 
             // Confirm we should process this lock
             if (verifyLockSenderIsWhitelisted(rskTx, btcTx, senderBtcAddress, totalAmount, height) &&
                 verifyLockDoesNotSurpassLockingCap(rskTx, btcTx, senderBtcAddress, totalAmount)) {
 
-                org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
-                RskAddress sender = new RskAddress(key.getAddress());
                 co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(totalAmount);
 
-                this.transferTo(sender, amount);
+                this.transferTo(btcLockSender.getRskAddress(), amount);
 
-                logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, sender);
+                logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, btcLockSender.getRskAddress());
 
                 if (activations.isActive(ConsensusRule.RSKIP146)) {
-                    eventLogger.logLockBtc(sender, btcTx, senderBtcAddress, totalAmount);
+                    eventLogger.logLockBtc(btcLockSender.getRskAddress(), btcTx, senderBtcAddress, totalAmount);
                 }
             } else {
                 locked = false;
@@ -432,6 +430,11 @@ public class BridgeSupport {
         ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
 
         this.subtraces.add(subtrace);
+    }
+
+    private boolean txIsProcessable(BtcLockSender.TxType txType) {
+        return txType.equals(BtcLockSender.TxType.P2PKH) ||
+                (txType.equals(BtcLockSender.TxType.P2SHP2WPKH) && activations.isActive(ConsensusRule.RSKIP143));
     }
 
     /*
