@@ -36,7 +36,6 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;

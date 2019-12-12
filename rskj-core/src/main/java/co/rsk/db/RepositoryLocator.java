@@ -76,6 +76,7 @@ public class RepositoryLocator {
      * @return a modifiable {@link Repository}
      * @throws IllegalArgumentException if the state is not found.
      */
+    // TODO review if needed in production code (no save for top repository)
     public Repository startTrackingAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
 

@@ -173,6 +173,7 @@ public class BlockChainBuilder {
 
         GenesisLoaderImpl.loadGenesisInitalState(repository, genesis);
         repository.commit();
+        repository.save();
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();
 

@@ -39,7 +39,6 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -118,9 +117,9 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setSaveRetrieveAndGetRewardBalance() throws IOException {
+    public void setSaveRetrieveAndGetRewardBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
+        Repository repository = new TopRepository(new Trie(), null);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -156,9 +155,9 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setSaveRetrieveAndGetBurnedBalance() throws IOException {
+    public void setSaveRetrieveAndGetBurnedBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
+        Repository repository = new TopRepository(new Trie(), null);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -194,9 +193,9 @@ public class RemascStorageProviderTest {
     }
 
     @Test
-    public void setSaveRetrieveAndGetBrokenSelectionRule() throws IOException {
+    public void setSaveRetrieveAndGetBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
+        Repository repository = new TopRepository(new Trie(), null);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -479,6 +478,6 @@ public class RemascStorageProviderTest {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        return new TopRepository(new Trie(), null);
     }
 }

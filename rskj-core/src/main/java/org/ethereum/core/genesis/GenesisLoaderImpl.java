@@ -22,6 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.TopRepository;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +34,6 @@ import org.ethereum.core.Genesis;
 import org.ethereum.core.GenesisHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.json.Utils;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -211,13 +211,14 @@ public class GenesisLoaderImpl implements GenesisLoader {
     }
 
     private Trie loadGenesisTrie(Genesis genesis) {
-        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
         loadGenesisInitalState(repository, genesis);
 
         setupPrecompiledContractsStorage(repository);
 
         repository.commit();
         repository.save();
+
         return repository.getTrie();
     }
 

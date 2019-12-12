@@ -21,14 +21,13 @@ package org.ethereum.jsontestsuite.builder;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.TopRepository;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.jsontestsuite.model.AccountTck;
 import org.ethereum.vm.DataWord;
 
@@ -44,8 +43,9 @@ public class RepositoryBuilder {
     }
 
     public static Repository build(TrieStore trieStore, Map<String, AccountTck> accounts) {
-        Repository repositoryDummy = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        Repository repositoryDummy = new TopRepository(new Trie(trieStore), trieStore);
         Repository track = repositoryDummy.startTracking();
+
         for (String address : accounts.keySet()) {
             RskAddress addr = new RskAddress(address);
             AccountTck accountTCK = accounts.get(address);
@@ -64,6 +64,7 @@ public class RepositoryBuilder {
         }
 
         track.commit();
+        repositoryDummy.save();
 
         return repositoryDummy;
     }

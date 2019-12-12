@@ -327,7 +327,7 @@ public class RepositoryImplTest {
     public void setAndGetStorageValueUsingNewRepositoryForTest() {
         RskAddress accAddress = randomAccountAddress();
 
-        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
+        Repository repository = new TopRepository(new Trie(), null);
 
         repository.addStorageRow(accAddress, DataWord.ONE, DataWord.ONE);
 
@@ -433,10 +433,10 @@ public class RepositoryImplTest {
     }
 
     private static Repository createRepositoryWithCache() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        return new TopRepository(new Trie(), null).startTracking();
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieImpl(null, new Trie()));
+        return new TopRepository(new Trie(), null);
     }
 }
