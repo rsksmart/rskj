@@ -36,6 +36,7 @@ import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.server.Channel;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +53,7 @@ public class HandshakeHandlerTest {
     private Channel channel;
     private EmbeddedChannel ch;
     private ChannelHandlerContext ctx;
+    private MessageCodec messageCodecMock = mock(MessageCodec.class);
 
     @Before
     public void setup() {
@@ -61,7 +63,7 @@ public class HandshakeHandlerTest {
                 config,
                 mock(PeerScoringManager.class),
                 mock(P2pHandler.class),
-                mock(MessageCodec.class),
+                messageCodecMock,
                 // this needs to be the real object so we can test changing the HELLO message
                 new ConfigCapabilitiesImpl(config)
         );
@@ -78,6 +80,14 @@ public class HandshakeHandlerTest {
     public void shouldActivateEthIfHandshakeIsSuccessful() throws Exception {
         simulateHandshakeStartedByPeer(Collections.singletonList(new Capability(RSK, (byte) 62)));
         verify(channel, times(1)).activateEth(ctx, EthVersion.V62);
+        assertTrue(ch.isOpen());
+    }
+
+    @Test
+    public void shouldActivateSnappyCompression() throws Exception {
+        simulateHandshakeStartedByPeer(Collections.singletonList(new Capability(RSK, (byte) 62)));
+        verify(channel, times(1)).activateEth(ctx, EthVersion.V62);
+        verify(messageCodecMock, times(1)).setApplySnappyCompression(true);
         assertTrue(ch.isOpen());
     }
 

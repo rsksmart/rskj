@@ -397,6 +397,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
         if (helloRemote.getP2PVersion() < 5) {
             messageCodec.setSupportChunkedFrames(false);
         }
+        if (helloRemote.getP2PVersion() >= 5) {
+            messageCodec.setApplySnappyCompression(true);
+        }
 
         FrameCodecHandler frameCodecHandler = new FrameCodecHandler(frameCodec, channel);
         ctx.pipeline().addLast("medianFrameCodec", frameCodecHandler);
