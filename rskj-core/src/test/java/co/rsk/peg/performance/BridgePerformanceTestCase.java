@@ -24,6 +24,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
+import co.rsk.db.TopRepository;
 import co.rsk.peg.*;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -36,7 +37,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.BeforeClass;
@@ -192,7 +192,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             public Environment build(int executionIndex, TxBuilder txBuilder, int height) {
                 TrieStore trieStore = createTrieStore();
                 Trie trie = new Trie(trieStore);
-                Repository repository = new MutableRepository(trieStore, trie);
+                Repository repository = new TopRepository(trie, trieStore);
 
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, trie);
                 BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock((long) executionIndex));

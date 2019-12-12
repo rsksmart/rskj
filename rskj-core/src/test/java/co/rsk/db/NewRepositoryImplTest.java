@@ -26,7 +26,6 @@ import co.rsk.trie.TrieHashTest;
 import org.ethereum.TestUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
@@ -327,7 +326,7 @@ public class NewRepositoryImplTest {
     public void setAndGetStorageValueUsingNewRepositoryForTest() {
         RskAddress accAddress = randomAccountAddress();
 
-        Repository repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
+        Repository repository = new TopRepository(new Trie(), null);
 
         repository.addStorageRow(accAddress, DataWord.ONE, DataWord.ONE);
 

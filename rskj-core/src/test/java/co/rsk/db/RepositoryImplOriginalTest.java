@@ -718,12 +718,6 @@ public class RepositoryImplOriginalTest {
         DataWord horseValAfter = repository.getStorageValue(HORSE,horseKey1);
         assertEquals(horseVal0, horseValAfter);
 
-        // The repository is modified at this time.
-        // To actually make it change
-        // we don't have to re-sync root
-        assertArrayEquals(repository.getRoot(),track.getRoot());
-        //repository.setSnapshotTo(track.getRoot());
-
         // No we create another track, that will be later discarded
         Repository track2 = repository.startTracking(); //track
 
@@ -747,8 +741,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
-        final Repository repository = new MutableRepository(mutableTrie);
+        final Repository repository = new TopRepository(new Trie(trieStore), trieStore);
 
         final DataWord cowKey1 = DataWord.valueFromHex("c1");
         final DataWord cowKey2 = DataWord.valueFromHex("c2");
@@ -757,6 +750,7 @@ public class RepositoryImplOriginalTest {
         Repository track2 = repository.startTracking();
         track2.addStorageRow(COW, cowKey2, cowVal0);
         track2.commit();
+        repository.save();
         // Changes commited to repository
 
         assertThat(repository.getStorageValue(COW, cowKey2), is(cowVal0));
@@ -767,7 +761,7 @@ public class RepositoryImplOriginalTest {
         Repository[] snaps = new Repository[10];
 
         for (int i = 0; i < 10; ++i) {
-            snaps[i] = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()).get());
+            snaps[i] = new TopRepository(trieStore.retrieve(repository.getRoot()).get(), trieStore);
         }
         for (int i = 0; i < 10; ++i) {
             int finalI = i;
@@ -823,6 +817,6 @@ public class RepositoryImplOriginalTest {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieImpl(null, new Trie()));
+        return new TopRepository(new Trie(), null);
     }
 }
