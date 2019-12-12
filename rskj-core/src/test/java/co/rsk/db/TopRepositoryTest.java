@@ -1014,6 +1014,8 @@ public class TopRepositoryTest {
         Assert.assertNull(repository.getStorageValue(this.address, DataWord.ONE));
         Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
 
+        Assert.assertNull(repository.getAccountState(this.address));
+
         repository.commit();
 
         Assert.assertFalse(repository.isExist(this.address));
@@ -1022,6 +1024,8 @@ public class TopRepositoryTest {
         Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE)));
         Assert.assertArrayEquals(new byte[0], repository.getCode(this.address));
         Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getCodeKey(this.address)));
+
+        Assert.assertNull(repository.getAccountState(this.address));
     }
 
     @Test
@@ -1126,7 +1130,6 @@ public class TopRepositoryTest {
         Assert.assertEquals(0, repository.getCodeLength(this.address));
         Assert.assertEquals(Keccak256.ZERO_HASH, repository.getCodeHash(this.address));
     }
-
 
     @Test
     public void saveCodeAndGetCodeLengthAndHashFromUnknownAccount() {
