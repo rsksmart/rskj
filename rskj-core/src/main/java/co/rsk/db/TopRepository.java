@@ -21,10 +21,15 @@ package co.rsk.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieKeySlice;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.AccountState;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
+
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Created by ajlopez on 06/12/2019.
@@ -119,5 +124,24 @@ public class TopRepository extends AbstractRepository {
     @Override
     public void commitCode(RskAddress address, byte[] code) {
         this.trie = this.trie.put(this.trieKeyMapper.getCodeKey(address), code);
+    }
+
+    @Override
+    public Set<RskAddress> retrieveAccountsKeys() {
+        Set<RskAddress> result = new HashSet<>();
+
+        Iterator<Trie.IterationElement> preOrderIterator = this.trie.getPreOrderIterator();
+
+        while (preOrderIterator.hasNext()) {
+            TrieKeySlice nodeKey = preOrderIterator.next().getNodeKey();
+            int nodeKeyLength = nodeKey.length();
+
+            if (nodeKeyLength == (1 + TrieKeyMapper.SECURE_KEY_SIZE + RskAddress.LENGTH_IN_BYTES) * Byte.SIZE) {
+                byte[] address = nodeKey.slice(nodeKeyLength - RskAddress.LENGTH_IN_BYTES * Byte.SIZE, nodeKeyLength).encode();
+                result.add(new RskAddress(address));
+            }
+        }
+
+        return result;
     }
 }

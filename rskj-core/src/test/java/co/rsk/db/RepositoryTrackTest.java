@@ -33,7 +33,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 public class RepositoryTrackTest {
     private static Random random = new Random();
@@ -1127,6 +1130,126 @@ public class RepositoryTrackTest {
 
         Assert.assertEquals(4, repository.getCodeLength(this.address));
         Assert.assertEquals(new Keccak256(Keccak256Helper.keccak256(code)), repository.getCodeHash(this.address));
+    }
+
+    @Test
+    public void createAccountsAndGetAccountKeys() {
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie, null);
+        Repository repository = new RepositoryTrack(parent);
+
+        Assert.assertNotNull(repository.getAccountsKeys());
+        Assert.assertTrue(repository.getAccountsKeys().isEmpty());
+
+        List<RskAddress> addresses = createRandomAddresses(10);
+
+        for (RskAddress address : addresses) {
+            repository.createAccount(address);
+        }
+
+        Set<RskAddress> result = repository.getAccountsKeys();
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(10, result.size());
+
+        for (RskAddress address : addresses) {
+            Assert.assertTrue(result.contains(address));
+        }
+    }
+
+    @Test
+    public void createAccountsInTrieAndGetAccountKeys() {
+        Trie trie = new Trie();
+
+        List<RskAddress> addresses = createRandomAddresses(10);
+
+        for (RskAddress address : addresses) {
+            trie = trie.put((new TrieKeyMapper()).getAccountKey(address), new AccountState().getEncoded());
+        }
+
+        TopRepository parent = new TopRepository(trie, null);
+        Repository repository = new RepositoryTrack(parent);
+
+        Set<RskAddress> result = repository.getAccountsKeys();
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(10, result.size());
+
+        for (RskAddress address : addresses) {
+            Assert.assertTrue(result.contains(address));
+        }
+    }
+
+    @Test
+    public void createAccountsInTrieAndInRepositoryAndGetAccountKeys() {
+        Trie trie = new Trie();
+
+        List<RskAddress> addresses = createRandomAddresses(10);
+        List<RskAddress> addresses2 = createRandomAddresses(10);
+
+        for (RskAddress address : addresses) {
+            trie = trie.put((new TrieKeyMapper()).getAccountKey(address), new AccountState().getEncoded());
+        }
+
+        TopRepository parent = new TopRepository(trie, null);
+        Repository repository = new RepositoryTrack(parent);
+
+        for (RskAddress address : addresses2) {
+            repository.createAccount(address);
+        }
+
+        Set<RskAddress> result = repository.getAccountsKeys();
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(20, result.size());
+
+        for (RskAddress address : addresses) {
+            Assert.assertTrue(result.contains(address));
+        }
+
+        for (RskAddress address : addresses2) {
+            Assert.assertTrue(result.contains(address));
+        }
+    }
+
+    @Test
+    public void createAccountsInTrieDeleteAccountInRepositoryAndGetAccountKeys() {
+        Trie trie = new Trie();
+
+        List<RskAddress> addresses = createRandomAddresses(10);
+
+        for (RskAddress address : addresses) {
+            trie = trie.put((new TrieKeyMapper()).getAccountKey(address), new AccountState().getEncoded());
+        }
+
+        TopRepository parent = new TopRepository(trie, null);
+        Repository repository = new RepositoryTrack(parent);
+
+        repository.delete(addresses.get(9));
+
+        Set<RskAddress> result = repository.getAccountsKeys();
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(9, result.size());
+
+        for (int k = 0; k < 9; k++) {
+            RskAddress address = addresses.get(k);
+            Assert.assertTrue(result.contains(address));
+        }
+    }
+
+    private static List<RskAddress> createRandomAddresses(int n) {
+        List<RskAddress> addresses = new ArrayList<>();
+
+        for (int k = 0; k < n; k++) {
+            addresses.add(createRandomAddress());
+        }
+
+        return addresses;
     }
 
     private static RskAddress createRandomAddress() {

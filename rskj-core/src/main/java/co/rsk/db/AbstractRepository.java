@@ -219,7 +219,19 @@ public abstract class AbstractRepository implements Repository {
 
     @Override
     public Set<RskAddress> getAccountsKeys() {
-        return null;
+        Set<RskAddress> addresses = this.accountStates.keySet();
+        Set<RskAddress> keys = this.retrieveAccountsKeys();
+
+        for (RskAddress address : addresses) {
+            if (this.isDeleted(address)) {
+                keys.remove(address);
+            }
+            else {
+                keys.add(address);
+            }
+        }
+
+        return keys;
     }
 
     @Override
@@ -415,4 +427,6 @@ public abstract class AbstractRepository implements Repository {
     public abstract void commitStorage(RskAddress address, DataWord key, byte[] value);
 
     public abstract void commitCode(RskAddress address, byte[] code);
+
+    public abstract Set<RskAddress> retrieveAccountsKeys();
 }
