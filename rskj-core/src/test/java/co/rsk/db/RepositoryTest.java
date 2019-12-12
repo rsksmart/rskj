@@ -28,7 +28,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
@@ -53,21 +52,20 @@ public class RepositoryTest {
     public static final RskAddress COW = new RskAddress("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
     public static final RskAddress HORSE = new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5F");
 
-    private MutableRepository repository;
-    private MutableTrieImpl mutableTrie;
+    private TopRepository repository;
     private TrieStore trieStore;
 
     @Before
     public void setUp() {
         trieStore = new TrieStoreImpl(new HashMapDB());
-        mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
-        repository = new MutableRepository(mutableTrie);
+        repository = new TopRepository(new Trie(trieStore), trieStore);
     }
 
     @Test
     public void testStorageRoot() {
         repository.createAccount(COW);
         repository.setupContract(COW);
+
         byte[] stateRoot1 = repository.getStorageStateRoot(COW);
 
         byte[] cow1Key = Hex.decode("A1A2A3");
@@ -78,7 +76,8 @@ public class RepositoryTest {
         repository.addStorageBytes(COW, DataWord.valueOf(cow1Key), cow1Value);
 
         byte[] stateRoot2 = repository.getStorageStateRoot(COW);
-        assertFalse(Arrays.equals(stateRoot1,stateRoot2));
+
+        assertFalse(Arrays.equals(stateRoot1, stateRoot2));
 
         repository.addStorageBytes(COW, DataWord.valueOf(cow2Key), cow2Value);
 
@@ -425,13 +424,16 @@ public class RepositoryTest {
         Repository track2 = repository.startTracking(); //track
         track2.addStorageBytes(COW, cowKey2, cowVal0);
         track2.commit();
+
+        repository.save();
+
         trieStore.flush();
 
         assertArrayEquals(cowVal0, repository.getStorageBytes(COW, cowKey2));
 
         final CountDownLatch failSema = new CountDownLatch(2);
 
-        Repository snap = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()).get());
+        Repository snap = new TopRepository(trieStore.retrieve(repository.getRoot()).get(), trieStore);
         new Thread(() -> {
             try {
                 int cnt = 1;
@@ -498,6 +500,7 @@ public class RepositoryTest {
         assertArrayEquals(codeLongerThan32bytes, returnedCode2);
 
         repository.save();
+
         byte[] prevRoot = repository.getRoot();
 
         // Use the same store
@@ -505,7 +508,7 @@ public class RepositoryTest {
         // this new repository to read all nodes from the store. The results must
         // be the same: lazy evaluation of the value must work.
 
-        Repository repository2 = new MutableRepository(trieStore, trieStore.retrieve(prevRoot).get());
+        Repository repository2 = new TopRepository(trieStore.retrieve(prevRoot).get(), trieStore);
         // Now try to get the size
         codeSize = repository2.getCodeLength(COW);
         assertEquals(codeLongerThan32bytes.length, codeSize);

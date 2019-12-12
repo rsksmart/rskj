@@ -23,7 +23,9 @@ import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
 import co.rsk.trie.TrieStore;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
@@ -143,5 +145,23 @@ public class TopRepository extends AbstractRepository {
         }
 
         return result;
+    }
+
+    @VisibleForTesting
+    public byte[] getStorageStateRoot(RskAddress addr) {
+        this.commit();
+
+        byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
+
+        // The value should be ONE_BYTE_ARRAY, but we don't need to check nothing else could be there.
+        Trie storageRootNode = this.trie.find(prefix);
+        if (storageRootNode == null) {
+            return HashUtil.EMPTY_TRIE_HASH;
+        }
+
+        // Now it's a bit tricky what to return: if I return the storageRootNode hash then it's counting the "0x01"
+        // value, so the try one gets will never match the trie one gets if creating the trie without any other data.
+        // Unless the PDV trie is used. The best we can do is to return storageRootNode hash
+        return storageRootNode.getHash().getBytes();
     }
 }

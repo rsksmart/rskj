@@ -3,7 +3,6 @@ package co.rsk.db;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import org.ethereum.core.Repository;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,7 +30,7 @@ public class RepositoryUpdateTest {
 
         details.put(DataWord.ONE, DataWord.valueOf(42));
 
-        Repository repo = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        Repository repo = new TopRepository(new Trie(), null);
         updateContractDetails(repo, address, details);
 
         byte[] value = repo.getStorageBytes(address,DataWord.ONE);
@@ -49,7 +48,7 @@ public class RepositoryUpdateTest {
         details.put(DataWord.ONE, DataWord.valueOf(42));
         details.put(DataWord.ONE, DataWord.ZERO);
 
-        Repository repo = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        Repository repo = new TopRepository(new Trie(), null);
         updateContractDetails(repo, address, details);
         repo.commit();
 
@@ -65,7 +64,7 @@ public class RepositoryUpdateTest {
         details.putBytes(DataWord.ONE, new byte[] { 0x01, 0x02, 0x03 });
         details.putBytes(DataWord.ONE, null);
 
-        Repository repo = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        Repository repo = new TopRepository(new Trie(), null);
         updateContractDetails(repo, address, details);
         repo.commit();
 
@@ -82,7 +81,7 @@ public class RepositoryUpdateTest {
         details.put(DataWord.ONE, DataWord.valueOf(42));
         details.put(DataWord.ZERO, DataWord.valueOf(1));
 
-        Repository repo = new MutableRepository(new MutableTrieImpl(null, new Trie()));
+        Repository repo = new TopRepository(new Trie(), null);
         updateContractDetails(repo, address, details);
 
         Assert.assertNotNull(repo.getTrie().getHash().getBytes());

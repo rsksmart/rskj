@@ -32,8 +32,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.TopRepository;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -50,7 +49,6 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.PrecompiledContracts;
@@ -3161,7 +3159,7 @@ public class BridgeTestPowerMock {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        return new TopRepository(new Trie(), null);
     }
 
     public static Genesis getGenesisInstance(RskSystemProperties config) {

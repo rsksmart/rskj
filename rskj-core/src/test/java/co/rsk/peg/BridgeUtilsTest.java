@@ -29,8 +29,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.TopRepository;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
@@ -42,7 +41,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
@@ -504,7 +502,7 @@ public class BridgeUtilsTest {
         rskTx.sign(privKeyBytes);
 
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(trieStore, new Trie())));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
         Block rskExecutionBlock = new BlockGenerator().createChildBlock(getGenesisInstance(trieStore));
         bridge.init(rskTx, rskExecutionBlock, repository.startTracking(), null, null, null);
         Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, constants, activationConfig.forBlock(rskExecutionBlock.getNumber())));

@@ -18,8 +18,8 @@
 
 package co.rsk.core;
 
-import co.rsk.db.MutableTrieImpl;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.TopRepository;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -28,12 +28,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.AccountState;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
@@ -56,7 +52,7 @@ import static org.mockito.Mockito.when;
  */
 public class NetworkStateExporterTest {
     static String jsonFileName = "networkStateExporterTest.json";
-    private MutableRepository repository;
+    private Repository repository;
     private NetworkStateExporter nse;
     private Blockchain blockchain;
     private Block block;
@@ -64,8 +60,8 @@ public class NetworkStateExporterTest {
     @Before
     public void setup() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        MutableTrieImpl mutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
-        repository = new MutableRepository(mutableTrie);
+        Trie trie = new Trie(trieStore);
+        repository = new TopRepository(trie, trieStore);
         blockchain = mock(Blockchain.class);
 
         block = mock(Block.class);
@@ -76,7 +72,7 @@ public class NetworkStateExporterTest {
         RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
 
         when(repositoryLocator.snapshotAt(block.getHeader()))
-                .thenReturn(new MutableRepository(mutableTrie));
+                .thenReturn(new TopRepository(trie, trieStore));
 
         this.nse = new NetworkStateExporter(repositoryLocator, blockchain);
     }

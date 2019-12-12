@@ -19,7 +19,7 @@
 package co.rsk.trie;
 
 import co.rsk.core.RskAddress;
-import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.TopRepository;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.AccountState;
@@ -27,7 +27,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
@@ -215,7 +214,7 @@ public class TrieConverterTest {
     @Test
     public void getOrchidAccountTrieRootWithCompressedStorageKeys() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
 
         Repository track = repository.startTracking();
 
@@ -247,6 +246,8 @@ public class TrieConverterTest {
         }
 
         track.commit();
+        repository.save();
+
         TrieConverter tc = new TrieConverter();
         byte[] oldRoot = tc.getOrchidAccountTrieRoot(repository.getTrie());
         Trie atrie = deserialize(SERIALIZED_ORCHID_TRIESTORE_WITH_LEADING_ZEROES_STORAGE_KEYS);
@@ -257,7 +258,7 @@ public class TrieConverterTest {
     @Test
     public void test1Simple() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
 
         Repository track = repository.startTracking();
 
@@ -285,6 +286,8 @@ public class TrieConverterTest {
         }
 
         track.commit();
+        repository.save();
+
         TrieConverter tc = new TrieConverter();
         byte[] oldRoot = tc.getOrchidAccountTrieRoot(repository.getTrie());
         Trie atrie = deserialize(SERIALIZED_ORCHID_TRIESTORE_SIMPLE);

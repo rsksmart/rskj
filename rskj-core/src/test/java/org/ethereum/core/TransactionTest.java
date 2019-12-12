@@ -25,7 +25,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.HashMapBlocksIndex;
-import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.TopRepository;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
@@ -40,7 +40,6 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.ethereum.util.ByteUtil;
@@ -593,7 +592,7 @@ public class TransactionTest {
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
@@ -671,7 +670,7 @@ public class TransactionTest {
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(

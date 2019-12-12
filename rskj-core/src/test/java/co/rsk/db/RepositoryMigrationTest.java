@@ -9,7 +9,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,7 +26,7 @@ public class RepositoryMigrationTest {
         final BigInteger accountNonce = BigInteger.valueOf(9);
 
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
         AccountState accountState = repository.createAccount(COW);
         accountState.setNonce(accountNonce);
         repository.updateAccountState(COW, accountState);
