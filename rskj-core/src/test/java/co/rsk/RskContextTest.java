@@ -33,7 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.stream.IntStream;
-
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doReturn;
