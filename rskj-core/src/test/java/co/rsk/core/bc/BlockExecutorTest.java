@@ -23,10 +23,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -42,7 +39,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
@@ -133,8 +129,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = new MutableRepository(trieStore,
-                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
+        Repository finalRepository = new TopRepository(trieStore.retrieve(result.getFinalState().getHash().getBytes()).get(), trieStore);
 
         accountState = finalRepository.getAccountState(account);
 
@@ -191,8 +186,7 @@ public class BlockExecutorTest {
 
         // here is the papa. my commit changes stateroot while previous commit did not.
 
-        Repository finalRepository = new MutableRepository(trieStore,
-                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
+        Repository finalRepository = new TopRepository(trieStore.retrieve(result.getFinalState().getHash().getBytes()).get(), trieStore);
 
         accountState = finalRepository.getAccountState(account);
 
@@ -223,7 +217,7 @@ public class BlockExecutorTest {
     @Test
     public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
 
         Repository track = repository.startTracking();
 
@@ -232,6 +226,7 @@ public class BlockExecutorTest {
         Account account3 = createAccount("acctest3", track, Coin.ZERO);
 
         track.commit();
+        repository.save();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
@@ -276,7 +271,7 @@ public class BlockExecutorTest {
     @Test
     public void executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalance() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
 
         Repository track = repository.startTracking();
 
@@ -285,6 +280,7 @@ public class BlockExecutorTest {
         Account account3 = createAccount("acctest3", track, Coin.ZERO);
 
         track.commit();
+        repository.save();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
@@ -393,7 +389,7 @@ public class BlockExecutorTest {
 
     private static TestObjects generateBlockWithOneTransaction() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
 
         Repository track = repository.startTracking();
 
@@ -401,6 +397,7 @@ public class BlockExecutorTest {
         Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
         track.commit();
+        repository.save();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
@@ -533,8 +530,7 @@ public class BlockExecutorTest {
         Block block = objects.getBlock();
         TrieStore trieStore = objects.getTrieStore();
         BlockExecutor executor = buildBlockExecutor(trieStore);
-        Repository repository = new MutableRepository(trieStore,
-                trieStore.retrieve(objects.getParent().getStateRoot()).get());
+        Repository repository = new TopRepository(trieStore.retrieve(objects.getParent().getStateRoot()).get(), trieStore);
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
 
@@ -581,8 +577,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = new MutableRepository(trieStore,
-                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
+        Repository finalRepository = new TopRepository(trieStore.retrieve(result.getFinalState().getHash().getBytes()).get(), trieStore);
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
@@ -592,13 +587,14 @@ public class BlockExecutorTest {
 
     public TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
+        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
         Repository track = repository.startTracking();
 
         Account account = createAccount("acctest1", track, Coin.valueOf(30000));
         Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
         track.commit();
+        repository.save();
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 

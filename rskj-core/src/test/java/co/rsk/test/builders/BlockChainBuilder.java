@@ -160,7 +160,7 @@ public class BlockChainBuilder {
         }
 
         if (repository == null) {
-            repository = new MutableRepository(trieStore, new Trie(trieStore));
+            repository = new TopRepository(new Trie(trieStore), trieStore);
         }
 
         if (stateRootHandler == null) {
