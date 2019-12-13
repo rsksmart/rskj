@@ -127,6 +127,8 @@ public class StateTestRunner {
         }
 
         track.commit();
+        repository.save();
+
         return executor.getResult();
     }
 
