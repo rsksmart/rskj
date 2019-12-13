@@ -83,6 +83,7 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
+    public static final String PROPERTY_PEER_DISCOVERY_UPNP_ENABLED = "peer.discovery.upnp_enabled";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
@@ -193,6 +194,10 @@ public abstract class SystemProperties {
 
     public List<String> peerDiscoveryIPList() {
         return configFromFiles.hasPath("peer.discovery.ip.list") ? configFromFiles.getStringList("peer.discovery.ip.list") : new ArrayList<>();
+    }
+
+    public boolean isPeerDiscoveryByUpnpEnabled() {
+        return configFromFiles.getBoolean(PROPERTY_PEER_DISCOVERY_UPNP_ENABLED);
     }
 
     public boolean databaseReset() {

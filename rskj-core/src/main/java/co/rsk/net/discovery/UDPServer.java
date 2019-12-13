@@ -19,6 +19,8 @@
 package co.rsk.net.discovery;
 
 import co.rsk.config.InternalService;
+import co.rsk.net.discovery.upnp.UpnpProtocol;
+import co.rsk.net.discovery.upnp.UpnpService;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -35,6 +37,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class UDPServer implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger(UDPServer.class);
+    private static final String PEER_DISCOVERY_PORT_MAPPING_DESCRIPTION = "RSK peer discovery";
 
     private int port;
     private String address;
@@ -43,11 +46,17 @@ public class UDPServer implements InternalService {
     private volatile boolean shutdown = false;
 
     private PeerExplorer peerExplorer;
+    private UpnpService upnpService;
 
     public UDPServer(String address, int port, PeerExplorer peerExplorer) {
+        this(address, port, peerExplorer, null);
+    }
+
+    public UDPServer(String address, int port, PeerExplorer peerExplorer, UpnpService upnpService) {
         this.address = address;
         this.port = port;
         this.peerExplorer = peerExplorer;
+        this.upnpService = upnpService;
     }
 
     @Override
@@ -59,6 +68,7 @@ public class UDPServer implements InternalService {
                 @Override
                 public void run() {
                     try {
+                        UDPServer.this.doPortMappingIfEnabled();
                         UDPServer.this.startUDPServer();
                     } catch (Exception e) {
                         logger.error("Discovery can't be started. ", e);
@@ -84,6 +94,18 @@ public class UDPServer implements InternalService {
         }
 
         group.shutdownGracefully().sync();
+    }
+
+    private void doPortMappingIfEnabled() {
+        if (upnpService != null) {
+            upnpService.findGateway(address)
+                    .ifPresent(gateway -> gateway.addPortMapping(
+                            port,
+                            port,
+                            UpnpProtocol.UDP,
+                            PEER_DISCOVERY_PORT_MAPPING_DESCRIPTION
+                    ));
+        }
     }
 
     @Override

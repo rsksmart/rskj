@@ -18,6 +18,7 @@
 
 package co.rsk.config;
 
+import com.typesafe.config.ConfigException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -48,5 +49,14 @@ public class RskSystemPropertiesTest {
         Assert.assertEquals(2, commands.size());
         Assert.assertTrue(commands.contains("TRANSACTIONS"));
         Assert.assertTrue(commands.contains("RSK_MESSAGE:BLOCK_MESSAGE"));
+    }
+
+    @Test
+    public void isOptionConfiguredInTestConfig() {
+        try {
+            config.isPeerDiscoveryByUpnpEnabled();
+        } catch (ConfigException.Missing e) {
+            Assert.fail(e.getMessage());
+        }
     }
 }
