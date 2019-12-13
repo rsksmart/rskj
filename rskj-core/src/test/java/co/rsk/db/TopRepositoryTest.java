@@ -36,10 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 public class TopRepositoryTest {
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
@@ -1250,6 +1247,122 @@ public class TopRepositoryTest {
             RskAddress address = addresses.get(k);
             Assert.assertTrue(result.contains(address));
         }
+    }
+
+    @Test
+    public void getStorageKeysFromUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie, null);
+
+        Iterator<DataWord> result = repository.getStorageKeys(this.address);
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.hasNext());
+    }
+
+    @Test
+    public void getStorageKeysFromCreatedAccountWithStorage() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie, null);
+
+        repository.createAccount(this.address);
+        repository.addStorageRow(this.address, DataWord.valueOf(10), DataWord.valueOf(11));
+        repository.addStorageRow(this.address, DataWord.valueOf(11), DataWord.valueOf(12));
+
+        Iterator<DataWord> result = repository.getStorageKeys(this.address);
+
+        Assert.assertNotNull(result);
+
+        List<DataWord> list = iteratorToList(result);
+
+        Assert.assertNotNull(list);
+        Assert.assertFalse(list.isEmpty());
+        Assert.assertEquals(2, list.size());
+        Assert.assertTrue(list.contains(DataWord.valueOf(10)));
+        Assert.assertTrue(list.contains(DataWord.valueOf(11)));
+    }
+
+    @Test
+    public void getStorageKeysFromAccountWithStorageInTrie() {
+        Trie trie = new Trie();
+
+        trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), new AccountState().getEncoded());
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.valueOf(10)), DataWord.valueOf(100).getByteArrayForStorage());
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.valueOf(11)), DataWord.valueOf(101).getByteArrayForStorage());
+
+        TopRepository repository = new TopRepository(trie, null);
+
+        Iterator<DataWord> result = repository.getStorageKeys(this.address);
+
+        Assert.assertNotNull(result);
+
+        List<DataWord> list = iteratorToList(result);
+
+        Assert.assertNotNull(list);
+        Assert.assertFalse(list.isEmpty());
+        Assert.assertEquals(2, list.size());
+        Assert.assertTrue(list.contains(DataWord.valueOf(10)));
+        Assert.assertTrue(list.contains(DataWord.valueOf(11)));
+    }
+
+    @Test
+    public void getStorageKeysFromAccountWithStorageInTrieAndDeleteOneRow() {
+        Trie trie = new Trie();
+
+        trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), new AccountState().getEncoded());
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.valueOf(10)), DataWord.valueOf(100).getByteArrayForStorage());
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.valueOf(11)), DataWord.valueOf(101).getByteArrayForStorage());
+
+        TopRepository repository = new TopRepository(trie, null);
+
+        repository.addStorageRow(this.address, DataWord.valueOf(10), DataWord.ZERO);
+
+        Iterator<DataWord> result = repository.getStorageKeys(this.address);
+
+        Assert.assertNotNull(result);
+
+        List<DataWord> list = iteratorToList(result);
+
+        Assert.assertNotNull(list);
+        Assert.assertFalse(list.isEmpty());
+        Assert.assertEquals(1, list.size());
+        Assert.assertTrue(list.contains(DataWord.valueOf(11)));
+    }
+
+    @Test
+    public void getStorageKeysFromAccountWithStorageInTrieAndAddRow() {
+        Trie trie = new Trie();
+
+        trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), new AccountState().getEncoded());
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.valueOf(10)), DataWord.valueOf(100).getByteArrayForStorage());
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.valueOf(11)), DataWord.valueOf(101).getByteArrayForStorage());
+
+        TopRepository repository = new TopRepository(trie, null);
+
+        repository.addStorageRow(this.address, DataWord.valueOf(12), DataWord.ONE);
+
+        Iterator<DataWord> result = repository.getStorageKeys(this.address);
+
+        Assert.assertNotNull(result);
+
+        List<DataWord> list = iteratorToList(result);
+
+        Assert.assertNotNull(list);
+        Assert.assertFalse(list.isEmpty());
+        Assert.assertEquals(3, list.size());
+        Assert.assertTrue(list.contains(DataWord.valueOf(10)));
+        Assert.assertTrue(list.contains(DataWord.valueOf(11)));
+        Assert.assertTrue(list.contains(DataWord.valueOf(12)));
+    }
+
+    private static <T> List<T> iteratorToList(Iterator<T> iterator) {
+        List<T> list = new ArrayList<>();
+
+        while (iterator.hasNext()) {
+            list.add(iterator.next());
+        }
+
+        return list;
     }
 
     private static List<RskAddress> createRandomAddresses(int n) {

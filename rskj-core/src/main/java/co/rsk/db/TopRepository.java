@@ -29,9 +29,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ajlopez on 06/12/2019.
@@ -163,5 +161,60 @@ public class TopRepository extends AbstractRepository {
         // value, so the try one gets will never match the trie one gets if creating the trie without any other data.
         // Unless the PDV trie is used. The best we can do is to return storageRootNode hash
         return storageRootNode.getHash().getBytes();
+    }
+
+    @Override
+    public Iterator<DataWord> retrieveStorageKeys(RskAddress address) {
+        byte[] accountStorageKey = trieKeyMapper.getAccountStoragePrefixKey(address);
+        final int storageKeyOffset = (TrieKeyMapper.storagePrefix().length + TrieKeyMapper.SECURE_KEY_SIZE) * Byte.SIZE - 1;
+
+        Trie storageTrie = trie.find(accountStorageKey);
+
+        if (storageTrie != null) {
+            Iterator<Trie.IterationElement> storageIterator = storageTrie.getPreOrderIterator();
+            storageIterator.next(); // skip storage root
+            return new TopRepository.StorageKeysIterator(storageIterator, storageKeyOffset);
+        }
+
+        return Collections.emptyIterator();
+    }
+
+    private static class StorageKeysIterator implements Iterator<DataWord> {
+        private final Iterator<Trie.IterationElement> storageIterator;
+        private final int storageKeyOffset;
+        private DataWord currentStorageKey;
+
+        StorageKeysIterator(Iterator<Trie.IterationElement> storageIterator, int storageKeyOffset) {
+            this.storageIterator = storageIterator;
+            this.storageKeyOffset = storageKeyOffset;
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (currentStorageKey != null) {
+                return true;
+            }
+            while (storageIterator.hasNext()) {
+                Trie.IterationElement iterationElement = storageIterator.next();
+                if (iterationElement.getNode().getValue() != null) {
+                    TrieKeySlice nodeKey = iterationElement.getNodeKey();
+                    byte[] storageExpandedKeySuffix = nodeKey.slice(storageKeyOffset, nodeKey.length()).encode();
+                    currentStorageKey = DataWord.valueOf(storageExpandedKeySuffix);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public DataWord next() {
+            if (currentStorageKey == null && !hasNext()) {
+                throw new NoSuchElementException();
+            }
+
+            DataWord next = currentStorageKey;
+            currentStorageKey = null;
+            return next;
+        }
     }
 }

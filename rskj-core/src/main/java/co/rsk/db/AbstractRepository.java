@@ -357,8 +357,34 @@ public abstract class AbstractRepository implements Repository {
     }
 
     @Override
-    public Iterator<DataWord> getStorageKeys(RskAddress addr) {
-        return null;
+    public Iterator<DataWord> getStorageKeys(RskAddress address) {
+        if (!this.isExist(address)) {
+            return Collections.emptyIterator();
+        }
+
+        Map<DataWord, byte[]> storage = this.storage.get(address);
+
+        if (storage == null) {
+            return this.retrieveStorageKeys(address);
+        }
+
+        List<DataWord> words = new ArrayList<>();
+
+        this.retrieveStorageKeys(address).forEachRemaining(d -> {
+            if (!storage.containsKey(d)) {
+                words.add(d);
+            }
+        });
+
+        for (Map.Entry<DataWord, byte[]> entry : storage.entrySet()) {
+            if (entry.getValue() == null) {
+                continue;
+            }
+
+            words.add(entry.getKey());
+        }
+
+        return words.iterator();
     }
 
     @Override
@@ -429,4 +455,6 @@ public abstract class AbstractRepository implements Repository {
     public abstract void commitCode(RskAddress address, byte[] code);
 
     public abstract Set<RskAddress> retrieveAccountsKeys();
+
+    public abstract Iterator<DataWord> retrieveStorageKeys(RskAddress address);
 }

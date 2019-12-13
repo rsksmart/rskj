@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.vm.DataWord;
 
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -94,4 +95,7 @@ public class RepositoryTrack extends AbstractRepository {
     public Set<RskAddress> retrieveAccountsKeys() {
         return this.parent.retrieveAccountsKeys();
     }
+
+    @Override
+    public Iterator<DataWord> retrieveStorageKeys(RskAddress address) { return this.parent.getStorageKeys(address); }
 }
