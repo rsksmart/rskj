@@ -19,7 +19,6 @@
 package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.BlockHeader;
@@ -94,17 +93,5 @@ public class RepositoryLocator {
         return new IllegalArgumentException(String.format(
                 "The trie with root %s is missing in this store", header.getHash()
         ));
-    }
-
-    private Optional<MutableTrie> mutableTrieSnapshotAt(BlockHeader header) {
-        Keccak256 stateRoot = stateRootHandler.translate(header);
-
-        if (EMPTY_HASH.equals(stateRoot)) {
-            return Optional.of(new MutableTrieImpl(trieStore, new Trie(trieStore)));
-        }
-
-        Optional<Trie> trie = trieStore.retrieve(stateRoot.getBytes());
-
-        return trie.map(t -> new MutableTrieImpl(trieStore, t));
     }
 }
