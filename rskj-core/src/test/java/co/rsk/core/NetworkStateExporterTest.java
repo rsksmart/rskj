@@ -72,7 +72,7 @@ public class NetworkStateExporterTest {
         RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
 
         when(repositoryLocator.snapshotAt(block.getHeader()))
-                .thenReturn(new TopRepository(trie, trieStore));
+                .thenReturn(repository);
 
         this.nse = new NetworkStateExporter(repositoryLocator, blockchain);
     }

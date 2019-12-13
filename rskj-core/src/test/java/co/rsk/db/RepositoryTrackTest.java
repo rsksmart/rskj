@@ -436,6 +436,25 @@ public class RepositoryTrackTest {
     }
 
     @Test
+    public void setAndGetEmptyStorageBytesFromUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository parent = new TopRepository(trie, null);
+        RepositoryTrack repository = new RepositoryTrack(parent);
+
+        byte[] value = new byte[0];
+
+        repository.addStorageBytes(this.address, DataWord.ONE, value);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        Assert.assertNull(repository.getStorageBytes(this.address, DataWord.ONE));
+
+        repository.commit();
+
+        Assert.assertNull(repository.getStorageBytes(address, DataWord.ONE));
+    }
+
+    @Test
     public void getStorageBytesFromParent() {
         Trie trie = new Trie();
 
@@ -825,18 +844,19 @@ public class RepositoryTrackTest {
     }
 
     @Test
-    public void saveEmptyCode() {
+    public void saveEmptyCodeOnExistingAccount() {
         Trie trie = new Trie();
 
         TopRepository parent = new TopRepository(trie, null);
         RepositoryTrack repository = new RepositoryTrack(parent);
 
+        repository.createAccount(this.address);
+
         repository.saveCode(this.address, new byte[0]);
 
-        Assert.assertArrayEquals(new byte[0], repository.getCode(address));
-        Assert.assertFalse(repository.isExist(address));
+        Assert.assertNull(repository.getCode(address));
+        Assert.assertTrue(repository.isExist(address));
     }
-
 
     @Test
     public void hibernateUnknownAccount() {

@@ -109,7 +109,11 @@ public abstract class AbstractRepository implements Repository {
     @Override
     public void saveCode(RskAddress address, byte[] code) {
         this.setupContract(address);
-        this.codes.put(address, code);
+
+        if (code != null && code.length == 0)
+            this.codes.put(address, null);
+        else
+            this.codes.put(address, code);
 
         if (code != null && code.length != 0 && !this.isExist(address)) {
             this.createAccount(address);
@@ -136,7 +140,7 @@ public abstract class AbstractRepository implements Repository {
             this.modifiedStorage.put(address, new HashMap<>());
         }
 
-        this.storage.get(address).put(key, value);
+        this.storage.get(address).put(key, value != null && value.length == 0 ? null : value);
         this.modifiedStorage.get(address).put(key, true);
     }
 

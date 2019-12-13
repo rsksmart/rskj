@@ -466,6 +466,27 @@ public class TopRepositoryTest {
     }
 
     @Test
+    public void setAndGetEmptyStorageBytesFromUnknownAccount() {
+        Trie trie = new Trie();
+        TopRepository repository = new TopRepository(trie, null);
+        byte[] value = new byte[0];
+
+        repository.addStorageBytes(this.address, DataWord.ONE, value);
+
+        Assert.assertTrue(repository.isExist(this.address));
+
+        Assert.assertNull(repository.getStorageBytes(this.address, DataWord.ONE));
+
+        repository.commit();
+
+        Assert.assertNotSame(trie, repository.getTrie());
+
+        Assert.assertNull(repository.getStorageBytes(address, DataWord.ONE));
+        Assert.assertNull(repository.getTrie().get(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.ONE)));
+        Assert.assertArrayEquals(ONE_BYTE_ARRAY, repository.getTrie().get(this.trieKeyMapper.getAccountStoragePrefixKey(this.address)));
+    }
+
+    @Test
     public void getStorageBytesFromTrie() {
         Trie trie = new Trie();
         byte[] value = new byte[42];
@@ -844,14 +865,16 @@ public class TopRepositoryTest {
     }
 
     @Test
-    public void saveEmptyCode() {
+    public void saveEmptyCodeOnExistingAccount() {
         Trie trie = new Trie();
         TopRepository repository = new TopRepository(trie, null);
 
+        repository.createAccount(this.address);
+
         repository.saveCode(this.address, new byte[0]);
 
-        Assert.assertArrayEquals(new byte[0], repository.getCode(address));
-        Assert.assertFalse(repository.isExist(address));
+        Assert.assertNull(repository.getCode(address));
+        Assert.assertTrue(repository.isExist(address));
     }
 
     @Test
