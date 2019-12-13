@@ -85,6 +85,8 @@ public class RskForksBridgeTest {
 
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
+        repository.save();
+
         Transaction whitelistAddressTx = buildWhitelistTx();
         Transaction receiveHeadersTx = buildReceiveHeadersTx();
         Transaction registerBtctransactionTx = buildRegisterBtcTransactionTx();

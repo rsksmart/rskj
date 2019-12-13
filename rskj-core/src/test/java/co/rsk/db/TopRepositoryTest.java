@@ -1258,6 +1258,8 @@ public class TopRepositoryTest {
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.hasNext());
+
+        Assert.assertEquals(0, repository.getStorageKeysCount(this.address));
     }
 
     @Test
@@ -1280,6 +1282,8 @@ public class TopRepositoryTest {
         Assert.assertEquals(2, list.size());
         Assert.assertTrue(list.contains(DataWord.valueOf(10)));
         Assert.assertTrue(list.contains(DataWord.valueOf(11)));
+
+        Assert.assertEquals(2, repository.getStorageKeysCount(this.address));
     }
 
     @Test
@@ -1303,6 +1307,32 @@ public class TopRepositoryTest {
         Assert.assertEquals(2, list.size());
         Assert.assertTrue(list.contains(DataWord.valueOf(10)));
         Assert.assertTrue(list.contains(DataWord.valueOf(11)));
+
+        Assert.assertEquals(2, repository.getStorageKeysCount(this.address));
+    }
+
+    @Test
+    public void getStorageKeysFromDeletedAccountWithStorageInTrie() {
+        Trie trie = new Trie();
+
+        trie = trie.put(this.trieKeyMapper.getAccountKey(this.address), new AccountState().getEncoded());
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.valueOf(10)), DataWord.valueOf(100).getByteArrayForStorage());
+        trie = trie.put(this.trieKeyMapper.getAccountStorageKey(this.address, DataWord.valueOf(11)), DataWord.valueOf(101).getByteArrayForStorage());
+
+        TopRepository repository = new TopRepository(trie, null);
+
+        repository.delete(this.address);
+
+        Iterator<DataWord> result = repository.getStorageKeys(this.address);
+
+        Assert.assertNotNull(result);
+
+        List<DataWord> list = iteratorToList(result);
+
+        Assert.assertNotNull(list);
+        Assert.assertTrue(list.isEmpty());
+
+        Assert.assertEquals(0, repository.getStorageKeysCount(this.address));
     }
 
     @Test
@@ -1353,6 +1383,8 @@ public class TopRepositoryTest {
         Assert.assertTrue(list.contains(DataWord.valueOf(10)));
         Assert.assertTrue(list.contains(DataWord.valueOf(11)));
         Assert.assertTrue(list.contains(DataWord.valueOf(12)));
+
+        Assert.assertEquals(3, repository.getStorageKeysCount(this.address));
     }
 
     private static <T> List<T> iteratorToList(Iterator<T> iterator) {

@@ -388,8 +388,16 @@ public abstract class AbstractRepository implements Repository {
     }
 
     @Override
-    public int getStorageKeysCount(RskAddress addr) {
-        return 0;
+    public int getStorageKeysCount(RskAddress address) {
+        int storageKeysCount = 0;
+
+        Iterator<DataWord> keysIterator = this.getStorageKeys(address);
+
+        for(;keysIterator.hasNext(); keysIterator.next()) {
+            storageKeysCount ++;
+        }
+
+        return storageKeysCount;
     }
 
     @Nullable
