@@ -22,11 +22,9 @@ package co.rsk.db;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
@@ -104,10 +102,12 @@ public abstract class AbstractRepository implements Repository {
     public void saveCode(RskAddress address, byte[] code) {
         this.setupContract(address);
 
-        if (code != null && code.length == 0)
+        if (code != null && code.length == 0) {
             this.codes.put(address, null);
-        else
+        }
+        else {
             this.codes.put(address, code);
+        }
 
         if (code != null && code.length != 0 && !this.isExist(address)) {
             this.createAccount(address);
@@ -255,11 +255,7 @@ public abstract class AbstractRepository implements Repository {
     @Override
     public boolean isExist(RskAddress address) {
         if (this.accountStates.containsKey(address)) {
-            if (this.accountStates.get(address) == null) {
-                return false;
-            }
-
-            return true;
+            return this.accountStates.get(address) != null;
         }
 
         return this.getAccountState(address) != null;
@@ -348,21 +344,21 @@ public abstract class AbstractRepository implements Repository {
             return Collections.emptyIterator();
         }
 
-        Map<DataWord, byte[]> storage = this.storage.get(address);
+        Map<DataWord, byte[]> accountStorage = this.storage.get(address);
 
-        if (storage == null) {
+        if (accountStorage == null) {
             return this.retrieveStorageKeys(address);
         }
 
         List<DataWord> words = new ArrayList<>();
 
         this.retrieveStorageKeys(address).forEachRemaining(d -> {
-            if (!storage.containsKey(d)) {
+            if (!accountStorage.containsKey(d)) {
                 words.add(d);
             }
         });
 
-        for (Map.Entry<DataWord, byte[]> entry : storage.entrySet()) {
+        for (Map.Entry<DataWord, byte[]> entry : accountStorage.entrySet()) {
             if (entry.getValue() == null) {
                 continue;
             }
