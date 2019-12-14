@@ -64,7 +64,7 @@ public class TransactionPoolImplTest {
         };
         blockChain = rskTestContext.getBlockchain();
         RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
-        repository = repositoryLocator.snapshotAt(blockChain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockChain.getBestBlock().getHeader());
         transactionPool = new TransactionPoolImpl(
                 rskTestContext.getRskSystemProperties(),
                 repositoryLocator,
@@ -80,7 +80,7 @@ public class TransactionPoolImplTest {
 
         // this is to workaround the current test structure, which abuses the Repository by
         // modifying it in place
-        doReturn(repository).when(repositoryLocator).snapshotAt(any());
+        doReturn(repository).when(repositoryLocator).getRepositoryAt(any());
     }
 
     @Test

@@ -55,7 +55,7 @@ public class RepositoryLocatorTest {
         when(underlyingTrie.getHash()).thenReturn(TestUtils.randomHash());
         when(trieStore.retrieve(stateRoot.getBytes())).thenReturn(Optional.of(underlyingTrie));
 
-        TopRepository actualRepository = target.snapshotAt(header);
+        TopRepository actualRepository = target.getRepositoryAt(header);
         assertEquals(underlyingTrie.getHash(), new Keccak256(actualRepository.getRoot()));
     }
 

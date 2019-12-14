@@ -149,7 +149,7 @@ public class WorldDslProcessor {
         }
 
         BlockHeader bestBlock = world.getBlockChain().getBestBlock().getHeader();
-        RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(bestBlock);
+        RepositorySnapshot repository = world.getRepositoryLocator().getRepositoryAt(bestBlock);
         Coin accountBalance = repository.getBalance(accountAddress);
         if (expected.equals(accountBalance))
             return;

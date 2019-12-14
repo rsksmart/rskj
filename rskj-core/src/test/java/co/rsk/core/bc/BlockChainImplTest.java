@@ -619,7 +619,7 @@ public class BlockChainImplTest {
 
     @Test
     public void addValidMGPBlock() {
-        Repository track = objects.getRepositoryLocator().snapshotAt(blockChain.getBestBlock().getHeader());
+        Repository track = objects.getRepositoryLocator().getRepositoryAt(blockChain.getBestBlock().getHeader());
 
         Account account = BlockExecutorTest.createAccount("acctest1", track, Coin.valueOf(100000));
         Assert.assertTrue(account.getEcKey().hasPrivKey());
@@ -647,7 +647,7 @@ public class BlockChainImplTest {
 
     private Block getBlockWithOneTransaction() {
         Block bestBlock = blockChain.getBestBlock();
-        RepositorySnapshot repository = objects.getRepositoryLocator().snapshotAt(bestBlock.getHeader());
+        RepositorySnapshot repository = objects.getRepositoryLocator().getRepositoryAt(bestBlock.getHeader());
 
         String toAddress = Hex.toHexString(catKey.getAddress());
         BigInteger nonce = repository.getNonce(new RskAddress(cowKey.getAddress()));

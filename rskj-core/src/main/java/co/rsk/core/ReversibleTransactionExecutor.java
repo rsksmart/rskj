@@ -52,7 +52,7 @@ public class ReversibleTransactionExecutor {
             byte[] data,
             RskAddress fromAddress) {
         return executeTransaction_workaround(
-                repositoryLocator.snapshotAt(executionBlock.getHeader()),
+                repositoryLocator.getRepositoryAt(executionBlock.getHeader()),
                 executionBlock,
                 coinbase,
                 gasPrice,

@@ -142,7 +142,7 @@ public class BlockToMineBuilder {
 
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
 
-        RepositorySnapshot originalRepo = repositoryLocator.snapshotAt(parentHeader);
+        RepositorySnapshot originalRepo = repositoryLocator.getRepositoryAt(parentHeader);
 
         return minerUtils.filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }

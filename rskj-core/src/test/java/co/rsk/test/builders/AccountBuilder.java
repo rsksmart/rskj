@@ -21,7 +21,6 @@ package co.rsk.test.builders;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.TopRepository;
 import co.rsk.test.World;
 import org.ethereum.core.Account;
@@ -79,7 +78,7 @@ public class AccountBuilder {
         if (blockChain != null) {
             Block best = blockChain.getStatus().getBestBlock();
             BlockDifficulty td = blockChain.getStatus().getTotalDifficulty();
-            TopRepository repository = repositoryLocator.snapshotAt(blockChain.getBestBlock().getHeader());
+            TopRepository repository = repositoryLocator.getRepositoryAt(blockChain.getBestBlock().getHeader());
 
             Repository track = repository.startTracking();
 

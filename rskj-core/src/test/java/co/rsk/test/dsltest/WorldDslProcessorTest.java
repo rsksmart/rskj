@@ -294,7 +294,7 @@ public class WorldDslProcessorTest {
         Account account = world.getAccountByName("acc1");
 
         Assert.assertNotNull(account);
-        RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        RepositorySnapshot repository = world.getRepositoryLocator().getRepositoryAt(world.getBlockChain().getBestBlock().getHeader());
         Assert.assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
     }
 

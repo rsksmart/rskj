@@ -199,7 +199,7 @@ class RemascTestRunner {
     }
 
     public Coin getAccountBalance(RskAddress addr) {
-        RepositorySnapshot repository = builder.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = builder.getRepositoryLocator().getRepositoryAt(blockchain.getBestBlock().getHeader());
         return getAccountBalance(repository, addr);
     }
 

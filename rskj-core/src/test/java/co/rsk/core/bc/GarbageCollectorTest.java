@@ -18,12 +18,10 @@
 package co.rsk.core.bc;
 
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.TopRepository;
 import co.rsk.trie.MultiTrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
@@ -102,7 +100,7 @@ public class GarbageCollectorTest {
         Block block = block(i);
         when(blockStore.getChainBlockByNumber(i)).thenReturn(block);
         TopRepository snapshot = mock(TopRepository.class);
-        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(snapshot);
+        when(repositoryLocator.getRepositoryAt(block.getHeader())).thenReturn(snapshot);
         when(snapshot.getRoot()).thenReturn(stateRoot);
     }
 

@@ -34,7 +34,7 @@ import java.util.*;
 /**
  * Created by ajlopez on 06/12/2019.
  */
-public class TopRepository extends AbstractRepository implements TopRepositorySnapshot {
+public class TopRepository extends AbstractRepository implements RepositorySnapshot {
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
     private Trie trie;
@@ -65,7 +65,6 @@ public class TopRepository extends AbstractRepository implements TopRepositorySn
         }
     }
 
-    @Override
     public byte[] getRoot() {
         this.commit();
 

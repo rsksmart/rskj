@@ -29,7 +29,6 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
-import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -86,7 +85,7 @@ public class TransactionModuleTest {
 
         TrieStore trieStore = world.getTrieStore();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         BlockStore blockStore = world.getBlockStore();
 
@@ -111,7 +110,7 @@ public class TransactionModuleTest {
 
         TrieStore trieStore = world.getTrieStore();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         BlockStore blockStore = world.getBlockStore();
 
@@ -152,7 +151,7 @@ public class TransactionModuleTest {
         Web3Impl web3 = createEnvironment(blockchain, mainchainView, receiptStore, transactionPool, blockStore, true, stateRootHandler, repositoryLocator);
 
         for (int i = 1; i < 100; i++) {
-            String tx = sendTransaction(web3, repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader()));
+            String tx = sendTransaction(web3, repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader()));
             // The goal of this test is transaction testing and not block mining testing
             // Hence, there is no setup for listeners and best blocks must be added manually
             // to mainchain view object that is used by miner server to build new blocks.

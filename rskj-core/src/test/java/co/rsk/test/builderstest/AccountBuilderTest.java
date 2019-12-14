@@ -52,7 +52,7 @@ public class AccountBuilderTest {
 
         Assert.assertNotNull(account);
         Assert.assertTrue(account.getEcKey().hasPrivKey());
-        RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        RepositorySnapshot repository = world.getRepositoryLocator().getRepositoryAt(world.getBlockChain().getBestBlock().getHeader());
         Assert.assertEquals(balance, repository.getBalance(account.getAddress()));
         Assert.assertArrayEquals(code, repository.getCode(account.getAddress()));
     }

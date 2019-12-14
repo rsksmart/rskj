@@ -117,7 +117,7 @@ public class RemascProcessMinerFeesTest {
         Blockchain blockchain = blockchainBuilder.setBlocks(blocks).build();
         RepositoryLocator repositoryLocator = blockchainBuilder.getRepositoryLocator();
 
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         assertNull(repository.getAccountState(coinbaseA));
     }
@@ -137,7 +137,7 @@ public class RemascProcessMinerFeesTest {
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
 
@@ -150,7 +150,7 @@ public class RemascProcessMinerFeesTest {
         blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(newblock);
 
-        repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
@@ -177,7 +177,7 @@ public class RemascProcessMinerFeesTest {
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
@@ -193,7 +193,7 @@ public class RemascProcessMinerFeesTest {
 
         blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(newblock);
-        repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
@@ -230,7 +230,7 @@ public class RemascProcessMinerFeesTest {
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
@@ -251,7 +251,7 @@ public class RemascProcessMinerFeesTest {
 
         blockchain.tryToConnect(newblock);
 
-        repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
 
@@ -325,7 +325,7 @@ public class RemascProcessMinerFeesTest {
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         // validate that the blockchain's and REMASC's initial states are correct
         Coin cowRemainingBalance = cowInitialBalance.subtract(Coin.valueOf(
@@ -341,7 +341,7 @@ public class RemascProcessMinerFeesTest {
 
         blockchain.tryToConnect(blockToPayFeesOnHeightFour);
 
-        repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         // -- After executing REMASC's contract for paying height 4 block
         // validate that account's balances are correct
@@ -379,7 +379,7 @@ public class RemascProcessMinerFeesTest {
         blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFive, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(blockToPayFeesOnHeightFive);
 
-        repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         // -- After executing REMASC's contract for paying height 5 block
         // validate that account's balances are correct
@@ -452,7 +452,7 @@ public class RemascProcessMinerFeesTest {
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         // validate that the blockchain's and REMASC's initial states are correct
         Coin cowRemainingBalance = cowInitialBalance.subtract(Coin.valueOf(minerFee * NUMBER_OF_TXS_WITH_FEES + txValue * NUMBER_OF_TXS_WITH_FEES));
@@ -465,7 +465,7 @@ public class RemascProcessMinerFeesTest {
         blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFour, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(blockToPayFeesOnHeightFour);
 
-        repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         // -- After executing REMASC's contract for paying height 4 block
         // validate that account's balances are correct
@@ -531,7 +531,7 @@ public class RemascProcessMinerFeesTest {
         boolean isSuccessful = executeBlocks(blockchain, blocks, blockExecutor);
         assertTrue(isSuccessful);
 
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         // validate that the blockchain's and REMASC's initial states are correct
         Coin cowRemainingBalance = cowInitialBalance.subtract(Coin.valueOf(minerFee * NUMBER_OF_TXS_WITH_FEES + txValue * NUMBER_OF_TXS_WITH_FEES));
@@ -544,7 +544,7 @@ public class RemascProcessMinerFeesTest {
         blockExecutor.executeAndFillAll(blockToPayFeesOnHeightFive, blockchain.getBestBlock().getHeader());
         ImportResult importResult = blockchain.tryToConnect(blockToPayFeesOnHeightFive);
         assertTrue(importResult.isSuccessful());
-        repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         // -- After executing REMASC's contract for paying height 5 blocks
         // validate that account's balances are correct
@@ -575,7 +575,7 @@ public class RemascProcessMinerFeesTest {
         blockExecutor.executeAndFillAll(blockToPayFeesOnHeightSix, blockchain.getBestBlock().getHeader());
         importResult = blockchain.tryToConnect(blockToPayFeesOnHeightSix);
         assertTrue(importResult.isSuccessful());
-        repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         // -- After executing REMASC's contract for paying height 6 blocks
         // validate that account's balances are correct
@@ -618,7 +618,7 @@ public class RemascProcessMinerFeesTest {
 
         executeBlocks(blockchain, blocks, blockExecutor);
 
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
@@ -644,7 +644,7 @@ public class RemascProcessMinerFeesTest {
         blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock().getHeader());
         blockchain.tryToConnect(newblock);
 
-        repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         // Check "hack" tx makes no changes to the remasc state, sender pays fees, and value is added to remasc account balance
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue+minerFee)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
@@ -683,7 +683,7 @@ public class RemascProcessMinerFeesTest {
             blockchain.tryToConnect(b);
         }
 
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
@@ -733,7 +733,7 @@ public class RemascProcessMinerFeesTest {
         newblock.seal();
         blockchain.tryToConnect(newblock);
 
-        repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         // Check "hack" tx makes no changes to the remasc state, sender pays fees, and value is added to remasc account balance
         assertEquals(cowInitialBalance.subtract(Coin.valueOf(txCreateContractGasLimit+txCallRemascGasLimit+txValue+minerFee)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
@@ -768,7 +768,7 @@ public class RemascProcessMinerFeesTest {
 
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         Block blockAtHeightSeven = blockchain.getBlockByNumber(8);
         assertEquals(Coin.valueOf(1680L - 17L), testRunner.getAccountBalance(blockAtHeightSeven.getCoinbase()));
@@ -798,7 +798,7 @@ public class RemascProcessMinerFeesTest {
 
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         Block blockAtHeightSix = blockchain.getBlockByNumber(7);
         assertEquals(Coin.valueOf(840L - 9L), testRunner.getAccountBalance(blockAtHeightSix.getCoinbase()));
@@ -834,7 +834,7 @@ public class RemascProcessMinerFeesTest {
 
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         Block blockAtHeightTwelve = blockchain.getBlockByNumber(13);
         assertEquals(Coin.valueOf(1680L - 17), testRunner.getAccountBalance(blockAtHeightTwelve.getCoinbase()));
@@ -873,7 +873,7 @@ public class RemascProcessMinerFeesTest {
 
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         Block blockAtHeightSix = blockchain.getBlockByNumber(7);
         // TODO Review value 18
@@ -917,7 +917,7 @@ public class RemascProcessMinerFeesTest {
 
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         Block blockAtHeightSix = blockchain.getBlockByNumber(7);
         // TODO review value -20

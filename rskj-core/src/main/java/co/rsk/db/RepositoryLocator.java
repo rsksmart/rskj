@@ -43,7 +43,7 @@ public class RepositoryLocator {
     }
 
     /**
-     * Similar to snapshotAt but retrieves an optional instead of throwing an exception
+     * Similar to getRepositoryAt but retrieves an optional instead of throwing an exception
      * @return an optional {@link RepositorySnapshot}
      */
     public Optional<RepositorySnapshot> findSnapshotAt(BlockHeader header) {
@@ -64,7 +64,7 @@ public class RepositoryLocator {
      * @return a read-only {@link RepositorySnapshot}
      * @throws IllegalArgumentException if the state is not found.
      */
-    public TopRepository snapshotAt(BlockHeader header) {
+    public TopRepository getRepositoryAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
 
         if (EMPTY_HASH.equals(stateRoot)) {

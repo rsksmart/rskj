@@ -103,7 +103,7 @@ public class EthModule
 
     public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
         Block bestBlock = blockchain.getBestBlock();
-        Repository repository = repositoryLocator.snapshotAt(bestBlock.getHeader());
+        Repository repository = repositoryLocator.getRepositoryAt(bestBlock.getHeader());
 
         BridgeSupport bridgeSupport = bridgeSupportFactory.newInstance(
                 repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR, null);
@@ -205,15 +205,15 @@ public class EthModule
             case "pending":
                 return transactionPool.getPendingState();
             case "earliest":
-                return repositoryLocator.snapshotAt(blockchain.getBlockByNumber(0).getHeader());
+                return repositoryLocator.getRepositoryAt(blockchain.getBlockByNumber(0).getHeader());
             case "latest":
-                return repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+                return repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
             default:
                 try {
                     long blockNumber = stringHexToBigInteger(id).longValue();
                     Block requestedBlock = blockchain.getBlockByNumber(blockNumber);
                     if (requestedBlock != null) {
-                        return repositoryLocator.snapshotAt(requestedBlock.getHeader());
+                        return repositoryLocator.getRepositoryAt(requestedBlock.getHeader());
                     }
                     return null;
                 } catch (NumberFormatException | StringIndexOutOfBoundsException e) {

@@ -106,7 +106,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(tx1.getHash()).thenReturn(new Keccak256(s1));
         when(tx1.getEncoded()).thenReturn(new byte[32]);
 
-        TopRepository repository = repositoryLocator.snapshotAt(blockStore.getBestBlock().getHeader());
+        TopRepository repository = repositoryLocator.getRepositoryAt(blockStore.getBestBlock().getHeader());
         TopRepository track = mock(TopRepository.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
         Mockito.doReturn(repository.getTrie()).when(track).getTrie();
@@ -114,7 +114,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
         when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
         when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
-        Mockito.doReturn(track).when(repositoryLocator).snapshotAt(any());
+        Mockito.doReturn(track).when(repositoryLocator).getRepositoryAt(any());
         Mockito.doReturn(track).when(track).startTracking();
 
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));

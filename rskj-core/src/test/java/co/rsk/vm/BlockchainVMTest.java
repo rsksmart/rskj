@@ -96,7 +96,7 @@ public class BlockchainVMTest {
         mh.completeBlock(block2, block1);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block2));
-        RepositorySnapshot repository = binfo.repositoryLocator.snapshotAt(block2.getHeader());
+        RepositorySnapshot repository = binfo.repositoryLocator.getRepositoryAt(block2.getHeader());
 
         Assert.assertEquals(blockchain.getBestBlock(), block2);
         Assert.assertEquals(2, block2.getNumber());

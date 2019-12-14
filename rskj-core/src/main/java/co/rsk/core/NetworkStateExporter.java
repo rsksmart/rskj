@@ -57,7 +57,7 @@ public class NetworkStateExporter {
     }
 
     public boolean exportStatus(String outputFile) {
-        RepositorySnapshot frozenRepository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot frozenRepository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         File dumpFile = new File(outputFile);
 

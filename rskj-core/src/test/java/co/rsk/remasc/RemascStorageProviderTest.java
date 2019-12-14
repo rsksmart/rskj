@@ -226,7 +226,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(0), Coin.valueOf(0L), 1L);
     }
 
@@ -273,7 +273,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(84000), Coin.valueOf(0L), 0L);
     }
 
@@ -295,7 +295,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
         RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
         assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(repository).getFederationBalance());
         long federatorBalance = (168 / federationProvider.getFederationSize()) * 2;
@@ -322,7 +322,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
         RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
         assertEquals(Coin.valueOf(336), this.getRemascStorageProvider(repository).getFederationBalance());
         assertEquals(null, RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
@@ -347,7 +347,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(126000), Coin.valueOf(0L), 0L);
     }
 
@@ -372,7 +372,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
         RemascFederationProvider federationProvider = new RemascFederationProvider(config.getActivationConfig(), config.getNetworkConstants().getBridgeConstants(), repository.startTracking(), testRunner.getBlockChain().getBestBlock());
         long federatorBalance = (1680 / federationProvider.getFederationSize()) * 2;
         assertEquals(Coin.valueOf(0), this.getRemascStorageProvider(repository).getFederationBalance());
@@ -400,7 +400,7 @@ public class RemascStorageProviderTest {
         testRunner.start();
         Blockchain blockchain = testRunner.getBlockChain();
         RepositoryLocator repositoryLocator = builder.getRepositoryLocator();
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(840000L), Coin.valueOf(0L), 0L);
     }
 
@@ -464,7 +464,7 @@ public class RemascStorageProviderTest {
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock().getHeader());
             Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
-            RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+            RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
 
             long blockNumber = blockchain.getBestBlock().getNumber();
             if (blockNumber == 24){ // before first special block

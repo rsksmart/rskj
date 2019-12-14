@@ -70,7 +70,7 @@ public class ContractRunner {
     }
 
     public ProgramResult createContract(byte[] bytecode) {
-        return createContract(bytecode, repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader()));
+        return createContract(bytecode, repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader()));
     }
 
     private ProgramResult createContract(byte[] bytecode, RepositorySnapshot repository) {
@@ -79,7 +79,7 @@ public class ContractRunner {
     }
 
     public ProgramResult createAndRunContract(byte[] bytecode, byte[] encodedCall, BigInteger value, boolean localCall) {
-        RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
         createContract(bytecode, repository);
         Transaction creationTx = contractCreateTx(bytecode, repository);
         executeTransaction(creationTx, repository);

@@ -264,7 +264,7 @@ public class BlockExecutor {
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
-        TopRepository repository = repositoryLocator.snapshotAt(parent);
+        TopRepository repository = repositoryLocator.getRepositoryAt(parent);
         Repository track = repository.startTracking();
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));

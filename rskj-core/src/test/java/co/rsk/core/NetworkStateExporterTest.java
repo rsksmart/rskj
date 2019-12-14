@@ -71,7 +71,7 @@ public class NetworkStateExporterTest {
 
         RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
 
-        when(repositoryLocator.snapshotAt(block.getHeader()))
+        when(repositoryLocator.getRepositoryAt(block.getHeader()))
                 .thenReturn(repository);
 
         this.nse = new NetworkStateExporter(repositoryLocator, blockchain);

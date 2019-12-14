@@ -73,7 +73,7 @@ public class MinerHelper {
         totalPaidFees = Coin.ZERO;
         txReceipts = new ArrayList<>();
 
-        TopRepository track = repositoryLocator.snapshotAt(parent.getHeader());
+        TopRepository track = repositoryLocator.getRepositoryAt(parent.getHeader());
 
         // this variable is set before iterating transactions in case list is empty
         latestStateRootHash = track.getRoot();

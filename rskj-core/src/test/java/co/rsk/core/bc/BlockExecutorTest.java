@@ -77,7 +77,7 @@ public class BlockExecutorTest {
         blockchain = objects.getBlockchain();
         executor = objects.getBlockExecutor();
         trieStore = objects.getTrieStore();
-        repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
+        repository = objects.getRepositoryLocator().getRepositoryAt(blockchain.getBestBlock().getHeader());
     }
 
     @Test
