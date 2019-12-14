@@ -48,7 +48,7 @@ public class RepositoryUpdateTest {
         details.put(DataWord.ONE, DataWord.valueOf(42));
         details.put(DataWord.ONE, DataWord.ZERO);
 
-        Repository repo = new TopRepository(new Trie(), null);
+        TopRepository repo = new TopRepository(new Trie(), null);
         updateContractDetails(repo, address, details);
         repo.commit();
 
@@ -57,6 +57,7 @@ public class RepositoryUpdateTest {
         Assert.assertNull(value);
         Assert.assertEquals(0, details.getStorageSize());
     }
+
     @Test
     public void putNullValueAsDeleteValue() {
         ContractDetailsImpl details = buildContractDetails();
@@ -64,7 +65,7 @@ public class RepositoryUpdateTest {
         details.putBytes(DataWord.ONE, new byte[] { 0x01, 0x02, 0x03 });
         details.putBytes(DataWord.ONE, null);
 
-        Repository repo = new TopRepository(new Trie(), null);
+        TopRepository repo = new TopRepository(new Trie(), null);
         updateContractDetails(repo, address, details);
         repo.commit();
 
@@ -81,7 +82,7 @@ public class RepositoryUpdateTest {
         details.put(DataWord.ONE, DataWord.valueOf(42));
         details.put(DataWord.ZERO, DataWord.valueOf(1));
 
-        Repository repo = new TopRepository(new Trie(), null);
+        TopRepository repo = new TopRepository(new Trie(), null);
         updateContractDetails(repo, address, details);
 
         Assert.assertNotNull(repo.getTrie().getHash().getBytes());

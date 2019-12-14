@@ -29,6 +29,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.TopRepository;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.TrieConverter;
@@ -86,7 +87,7 @@ public class StateTestRunner {
 
     protected StateTestCase stateTestCase;
     private TrieStoreImpl trieStore;
-    protected Repository repository;
+    protected TopRepository repository;
     protected Transaction transaction;
     protected BlockChainImpl blockchain;
     protected Env env;
@@ -185,7 +186,7 @@ public class StateTestRunner {
 
         List<String> logsResult = LogsValidator.valid(origLogs, postLogs,vStats);
 
-        Repository postRepository = RepositoryBuilder.build(stateTestCase.getPost());
+        TopRepository postRepository = RepositoryBuilder.build(stateTestCase.getPost());
 
         // Balances cannot be validated because has consumption for CALLs differ.
         List<String> repoResults = RepositoryValidator.valid(repository, postRepository,  false ,false,vStats);

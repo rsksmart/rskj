@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
  */
 public class NetworkStateExporterTest {
     static String jsonFileName = "networkStateExporterTest.json";
-    private Repository repository;
+    private TopRepository repository;
     private NetworkStateExporter nse;
     private Blockchain blockchain;
     private Block block;

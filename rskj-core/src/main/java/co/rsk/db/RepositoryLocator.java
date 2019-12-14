@@ -59,24 +59,12 @@ public class RepositoryLocator {
     }
 
     /**
-     * Retrieves a snapshot of the state at a particular header
+     * Retrieves a repository with the state at a particular header
      * @param header the header to retrieve the state from
      * @return a read-only {@link RepositorySnapshot}
      * @throws IllegalArgumentException if the state is not found.
      */
-    public Repository snapshotAt(BlockHeader header) {
-        // TODO review the difference with this method
-        return this.startTrackingAt(header);
-    }
-
-    /**
-     * Retrieves a repository of the state at a particular header
-     * @param header the header to retrieve the state from
-     * @return a modifiable {@link Repository}
-     * @throws IllegalArgumentException if the state is not found.
-     */
-    // TODO review if needed in production code (no save for top repository)
-    public Repository startTrackingAt(BlockHeader header) {
+    public TopRepository snapshotAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
 
         if (EMPTY_HASH.equals(stateRoot)) {

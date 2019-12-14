@@ -26,6 +26,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.TopRepository;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
@@ -60,7 +61,7 @@ public class World {
     private StateRootHandler stateRootHandler;
     private BlockStore blockStore;
     private TrieStore trieStore;
-    private Repository repository;
+    private TopRepository repository;
     private TransactionPool transactionPool;
     private BridgeSupportFactory bridgeSupportFactory;
 
@@ -80,7 +81,7 @@ public class World {
             BlockChainImpl blockChain,
             BlockStore blockStore,
             TrieStore trieStore,
-            Repository repository,
+            TopRepository repository,
             TransactionPool transactionPool,
             Genesis genesis) {
         this.blockChain = blockChain;
@@ -173,7 +174,7 @@ public class World {
 
     public void saveTransaction(String name, Transaction transaction) { transactions.put(name, transaction); }
 
-    public Repository getRepository() {
+    public TopRepository getRepository() {
         return repository;
     }
 

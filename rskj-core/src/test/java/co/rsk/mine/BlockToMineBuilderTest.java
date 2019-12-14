@@ -29,6 +29,7 @@ import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.TopRepository;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
@@ -91,7 +92,7 @@ public class BlockToMineBuilderTest {
         );
 
         BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
-        Repository snapshot = mock(Repository.class);
+        TopRepository snapshot = mock(TopRepository.class);
         GasLimitConfig gasLimitConfig = new GasLimitConfig(0,0,false);
 
         when(minerUtils.getAllTransactions(any())).thenReturn(new ArrayList<>());

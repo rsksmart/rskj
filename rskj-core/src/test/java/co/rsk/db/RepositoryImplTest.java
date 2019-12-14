@@ -45,7 +45,7 @@ public class RepositoryImplTest {
 
     @Test
     public void getNonceUnknownAccount() {
-        Repository repository = createRepository();
+        TopRepository repository = createRepository();
         BigInteger nonce = repository.getNonce(randomAccountAddress());
 
         Assert.assertEquals(BigInteger.ZERO, nonce);
@@ -53,14 +53,14 @@ public class RepositoryImplTest {
 
     @Test
     public void hasEmptyHashAsRootWhenCreated() {
-        Repository repository = createRepository();
+        TopRepository repository = createRepository();
 
         Assert.assertArrayEquals(emptyHash.getBytes(), repository.getRoot());
     }
 
     @Test
     public void createAccount() {
-        Repository repository = createRepository();
+        TopRepository repository = createRepository();
 
         AccountState accState = repository.createAccount(randomAccountAddress());
 
@@ -75,7 +75,7 @@ public class RepositoryImplTest {
     public void updateAccountState() {
         RskAddress accAddress = randomAccountAddress();
 
-        Repository repository = createRepository();
+        TopRepository repository = createRepository();
 
         AccountState accState = repository.createAccount(accAddress);
 
@@ -94,7 +94,7 @@ public class RepositoryImplTest {
     public void incrementAccountNonceForNewAccount() {
         RskAddress accAddress = randomAccountAddress();
 
-        Repository repository = createRepository();
+        TopRepository repository = createRepository();
 
         repository.increaseNonce(accAddress);
 
@@ -105,7 +105,7 @@ public class RepositoryImplTest {
     public void incrementAccountNonceForAlreadyCreatedAccount() {
         RskAddress accAddress = randomAccountAddress();
 
-        Repository repository = createRepository();
+        TopRepository repository = createRepository();
 
         repository.createAccount(accAddress);
         repository.increaseNonce(accAddress);
@@ -117,7 +117,7 @@ public class RepositoryImplTest {
     public void incrementAccountNonceTwiceForAlreadyCreatedAccount() {
         RskAddress accAddress = randomAccountAddress();
 
-        Repository repository = createRepository();
+        TopRepository repository = createRepository();
 
         repository.createAccount(accAddress);
         repository.increaseNonce(accAddress);
@@ -435,7 +435,7 @@ public class RepositoryImplTest {
         return new TopRepository(new Trie(), null).startTracking();
     }
 
-    private static Repository createRepository() {
+    private static TopRepository createRepository() {
         return new TopRepository(new Trie(), null);
     }
 }

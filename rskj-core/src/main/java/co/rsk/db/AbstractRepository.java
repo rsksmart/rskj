@@ -48,12 +48,6 @@ public abstract class AbstractRepository implements Repository {
     private final Map<RskAddress, Map<DataWord, Boolean>> modifiedStorage = new HashMap<>();
     private final Map<RskAddress, byte[]> codes = new HashMap<>();
 
-    @Override
-    public Trie getTrie() {
-        // only available for TopRepository
-        throw new UnsupportedOperationException();
-    }
-
     // TODO synchronized?
     @Override
     public AccountState createAccount(RskAddress address) {
@@ -203,22 +197,10 @@ public abstract class AbstractRepository implements Repository {
     }
 
     @Override
-    public void save() {
-        // only available for TopRepository
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void updateAccountState(RskAddress address, AccountState accountState) {
         this.accountStates.put(address, accountState.clone());
 
         this.modifiedAccounts.add(address);
-    }
-
-    @Override
-    public byte[] getRoot() {
-        // only available for TopRepository
-        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -38,12 +38,12 @@ import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
 
 public class RepositoryBuilder {
 
-    public static Repository build(Map<String, AccountTck> accounts) {
+    public static TopRepository build(Map<String, AccountTck> accounts) {
         return build(new TrieStoreImpl(new HashMapDB()), accounts);
     }
 
-    public static Repository build(TrieStore trieStore, Map<String, AccountTck> accounts) {
-        Repository repositoryDummy = new TopRepository(new Trie(trieStore), trieStore);
+    public static TopRepository build(TrieStore trieStore, Map<String, AccountTck> accounts) {
+        TopRepository repositoryDummy = new TopRepository(new Trie(trieStore), trieStore);
         Repository track = repositoryDummy.startTracking();
 
         for (String address : accounts.keySet()) {

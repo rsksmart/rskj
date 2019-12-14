@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.TopRepository;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeSupportFactory;
@@ -48,7 +49,7 @@ public class MinerHelper {
     private final TestSystemProperties config = new TestSystemProperties();
 
     private final Blockchain blockchain;
-    private final Repository repository;
+    private final TopRepository repository;
     private final RepositoryLocator repositoryLocator;
     private final GasLimitCalculator gasLimitCalculator;
     private final BlockFactory blockFactory;
@@ -58,7 +59,7 @@ public class MinerHelper {
     private Coin totalPaidFees = Coin.ZERO;
     private List<TransactionReceipt> txReceipts;
 
-    public MinerHelper(Repository repository, RepositoryLocator repositoryLocator, Blockchain blockchain) {
+    public MinerHelper(TopRepository repository, RepositoryLocator repositoryLocator, Blockchain blockchain) {
         this.repository = repository;
         this.repositoryLocator = repositoryLocator;
         this.blockchain = blockchain;
@@ -72,7 +73,7 @@ public class MinerHelper {
         totalPaidFees = Coin.ZERO;
         txReceipts = new ArrayList<>();
 
-        Repository track = repositoryLocator.startTrackingAt(parent.getHeader());
+        TopRepository track = repositoryLocator.snapshotAt(parent.getHeader());
 
         // this variable is set before iterating transactions in case list is empty
         latestStateRootHash = track.getRoot();

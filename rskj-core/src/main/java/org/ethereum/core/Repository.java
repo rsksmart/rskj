@@ -28,8 +28,6 @@ import org.ethereum.vm.DataWord;
 import java.math.BigInteger;
 
 public interface Repository extends RepositorySnapshot {
-    Trie getTrie();
-
     /**
      * Create a new account in the database
      *
@@ -112,8 +110,6 @@ public interface Repository extends RepositorySnapshot {
      * to a snapshot of the repository
      */
     void rollback();
-
-    void save();
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 

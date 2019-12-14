@@ -34,7 +34,7 @@ import java.util.*;
 /**
  * Created by ajlopez on 06/12/2019.
  */
-public class TopRepository extends AbstractRepository {
+public class TopRepository extends AbstractRepository implements TopRepositorySnapshot {
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
     private Trie trie;
@@ -47,7 +47,6 @@ public class TopRepository extends AbstractRepository {
         this.trieStore = trieStore;
     }
 
-    @Override
     public Trie getTrie() {
         return this.trie;
     }
@@ -57,7 +56,6 @@ public class TopRepository extends AbstractRepository {
         this.addStorageBytes(address, key, value.getByteArrayForStorage());
     }
 
-    @Override
     public void save() {
         // TODO commit is needed?
         this.commit();
@@ -69,7 +67,6 @@ public class TopRepository extends AbstractRepository {
 
     @Override
     public byte[] getRoot() {
-        // TODO alternative: throw exception if pending commit
         this.commit();
 
         return this.trie.getHash().getBytes();

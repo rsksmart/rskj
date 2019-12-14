@@ -592,7 +592,7 @@ public class TransactionTest {
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
+        TopRepository repository = new TopRepository(new Trie(trieStore), trieStore);
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
@@ -670,7 +670,7 @@ public class TransactionTest {
 
         BigInteger nonce = config.getNetworkConstants().getInitialNonce();
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
+        TopRepository repository = new TopRepository(new Trie(trieStore), trieStore);
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(

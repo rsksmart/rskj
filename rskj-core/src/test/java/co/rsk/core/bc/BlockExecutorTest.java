@@ -69,7 +69,7 @@ public class BlockExecutorTest {
     private Blockchain blockchain;
     private BlockExecutor executor;
     private TrieStore trieStore;
-    private Repository repository;
+    private TopRepository repository;
 
     @Before
     public void setUp() {
@@ -217,7 +217,7 @@ public class BlockExecutorTest {
     @Test
     public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
+        TopRepository repository = new TopRepository(new Trie(trieStore), trieStore);
 
         Repository track = repository.startTracking();
 
@@ -271,7 +271,7 @@ public class BlockExecutorTest {
     @Test
     public void executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalance() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
+        TopRepository repository = new TopRepository(new Trie(trieStore), trieStore);
 
         Repository track = repository.startTracking();
 
@@ -389,7 +389,7 @@ public class BlockExecutorTest {
 
     private static TestObjects generateBlockWithOneTransaction() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
+        TopRepository repository = new TopRepository(new Trie(trieStore), trieStore);
 
         Repository track = repository.startTracking();
 
@@ -530,7 +530,7 @@ public class BlockExecutorTest {
         Block block = objects.getBlock();
         TrieStore trieStore = objects.getTrieStore();
         BlockExecutor executor = buildBlockExecutor(trieStore);
-        Repository repository = new TopRepository(trieStore.retrieve(objects.getParent().getStateRoot()).get(), trieStore);
+        TopRepository repository = new TopRepository(trieStore.retrieve(objects.getParent().getStateRoot()).get(), trieStore);
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
 
@@ -577,7 +577,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = new TopRepository(trieStore.retrieve(result.getFinalState().getHash().getBytes()).get(), trieStore);
+        TopRepository finalRepository = new TopRepository(trieStore.retrieve(result.getFinalState().getHash().getBytes()).get(), trieStore);
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
@@ -587,7 +587,7 @@ public class BlockExecutorTest {
 
     public TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
+        TopRepository repository = new TopRepository(new Trie(trieStore), trieStore);
         Repository track = repository.startTracking();
 
         Account account = createAccount("acctest1", track, Coin.valueOf(30000));

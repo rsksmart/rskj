@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.TopRepository;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
@@ -263,7 +264,7 @@ public class BlockExecutor {
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
-        Repository repository = repositoryLocator.snapshotAt(parent);
+        TopRepository repository = repositoryLocator.snapshotAt(parent);
         Repository track = repository.startTracking();
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));

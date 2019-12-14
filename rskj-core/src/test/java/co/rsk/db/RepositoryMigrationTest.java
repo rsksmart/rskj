@@ -26,7 +26,7 @@ public class RepositoryMigrationTest {
         final BigInteger accountNonce = BigInteger.valueOf(9);
 
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new TopRepository(new Trie(trieStore), trieStore);
+        TopRepository repository = new TopRepository(new Trie(trieStore), trieStore);
         AccountState accountState = repository.createAccount(COW);
         accountState.setNonce(accountNonce);
         repository.updateAccountState(COW, accountState);

@@ -103,10 +103,10 @@ public class EthModule
 
     public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
         Block bestBlock = blockchain.getBestBlock();
-        Repository track = repositoryLocator.startTrackingAt(bestBlock.getHeader());
+        Repository repository = repositoryLocator.snapshotAt(bestBlock.getHeader());
 
         BridgeSupport bridgeSupport = bridgeSupportFactory.newInstance(
-                track, bestBlock, PrecompiledContracts.BRIDGE_ADDR, null);
+                repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR, null);
 
         byte[] result = bridgeSupport.getStateForDebugging();
 

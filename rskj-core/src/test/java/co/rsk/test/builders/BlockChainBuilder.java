@@ -58,7 +58,7 @@ public class BlockChainBuilder {
     private boolean testing;
     private List<Block> blocks;
 
-    private Repository repository;
+    private TopRepository repository;
     private BlockStore blockStore;
     private Genesis genesis;
     private ReceiptStore receiptStore;
@@ -132,7 +132,7 @@ public class BlockChainBuilder {
         return trieStore;
     }
 
-    public Repository getRepository() {
+    public TopRepository getRepository() {
         return repository;
     }
 

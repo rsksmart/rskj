@@ -619,7 +619,7 @@ public class BlockChainImplTest {
 
     @Test
     public void addValidMGPBlock() {
-        Repository track = objects.getRepositoryLocator().startTrackingAt(blockChain.getBestBlock().getHeader());
+        Repository track = objects.getRepositoryLocator().snapshotAt(blockChain.getBestBlock().getHeader());
 
         Account account = BlockExecutorTest.createAccount("acctest1", track, Coin.valueOf(100000));
         Assert.assertTrue(account.getEcKey().hasPrivKey());

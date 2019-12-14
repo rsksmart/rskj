@@ -64,7 +64,7 @@ public class TransactionPoolImplTest {
         };
         blockChain = rskTestContext.getBlockchain();
         RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
-        repository = repositoryLocator.startTrackingAt(blockChain.getBestBlock().getHeader());
+        repository = repositoryLocator.snapshotAt(blockChain.getBestBlock().getHeader());
         transactionPool = new TransactionPoolImpl(
                 rskTestContext.getRskSystemProperties(),
                 repositoryLocator,

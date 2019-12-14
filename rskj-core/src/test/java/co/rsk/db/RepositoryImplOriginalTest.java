@@ -650,7 +650,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test17() {
-        Repository repository = createRepository();
+        TopRepository repository = createRepository();
 
         byte[] cowKey1 = "key-c-1".getBytes();
         byte[] cowValue1 = "val-c-1".getBytes();
@@ -740,7 +740,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new TopRepository(new Trie(trieStore), trieStore);
+        final TopRepository repository = new TopRepository(new Trie(trieStore), trieStore);
 
         final DataWord cowKey1 = DataWord.valueFromHex("c1");
         final DataWord cowKey2 = DataWord.valueFromHex("c2");
@@ -815,7 +815,7 @@ public class RepositoryImplOriginalTest {
         }
     }
 
-    private static Repository createRepository() {
+    private static TopRepository createRepository() {
         return new TopRepository(new Trie(), null);
     }
 }
