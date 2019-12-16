@@ -114,7 +114,7 @@ public class Program {
     private byte exeVersion;    // currently limited to 0..127
     private byte scriptVersion; // currently limited to 0..127
     private int startAddr;
-
+    private boolean callWithValuePerformed;
     private BitSet jumpdestSet;
 
     private final VmConfig config;
@@ -166,6 +166,14 @@ public class Program {
 
         precompile();
         traceListener = new ProgramTraceListener(config);
+    }
+
+    public void markCallWithValuePerformed() {
+        callWithValuePerformed = true;
+    }
+
+    public boolean getCallWithValuePerformed() {
+        return callWithValuePerformed;
     }
 
     public int getCallDeep() {

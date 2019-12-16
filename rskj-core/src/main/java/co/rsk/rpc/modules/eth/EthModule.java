@@ -41,6 +41,7 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -145,7 +146,23 @@ public class EthModule
         String s = null;
         try {
             ProgramResult res = callConstant(args, blockchain.getBestBlock());
-            return s = TypeConverter.toQuantityJsonHex(res.getGasUsed());
+
+            // IMPORTANT: currently, due to localCall=true argument,
+            // res.getDeductedRefund() will always return zero. This is ok.
+            // However this method is prepared for the time where localCall sematic
+            // is changed so that it does process refunds, which is what one would expect.
+
+            // gasUsed cannot be greater than the gas passed, which should not
+            // be higher than the block gas limit, so we don't expect any overflow
+            // in these operations unless the user provides a malicius gasLimit value.
+            long gasUsed = res.getGasUsed();
+            long gasNeeded = gasUsed + res.getDeductedRefund();
+
+            if (res.getCallWithValuePerformed()) {
+                gasNeeded += GasCost.STIPEND_CALL;
+            }
+            s = TypeConverter.toQuantityJsonHex(gasNeeded);
+            return s;
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
         }
