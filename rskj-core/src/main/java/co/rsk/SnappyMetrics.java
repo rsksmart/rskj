@@ -53,32 +53,39 @@ public class SnappyMetrics {
         Random valueSource = new Random(seed);
         IntStream blockNumbers = valueSource.ints(values, MIN, MAX);
         long totalTime = 0;
-        System.out.println("-- Measuring Reads: " + values + " values --");
-        if (useSnappy) {
-            System.out.println("With Snappy Blockchain");
-        } else {
-            System.out.println("With Normal Blockchain");
-        }
         totalTime += timeForRead(store, blockNumbers);
+//        System.out.println("-- Measuring Reads: " + values + " values --");
+        if (useSnappy) {
+            System.out.println("s,r,"+totalTime+","+values);
+        } else {
+            System.out.println("n,r,"+totalTime+","+values);
+        }
+
         return totalTime;
     }
 
     public long measureWrites(long values) {
-        FileRecursiveDelete deleter = new FileRecursiveDelete();
-        final String dummyPath = "/Users/julian/workspace/rskj-projects/dbs/snappy-dummy-test";
+        final String dummyPath = "/Users/julian/workspace/rskj-projects/dbs/blockchain-dummy-test";
         String[] dummyCliArgs = new String[] {"--testnet","-base-path", dummyPath};
         RskContext rskContextDummy = new RskContext(dummyCliArgs, useSnappy);
         Blockchain dummyblockchain = rskContextDummy.getBlockchain();
+        BlockStore dummyStore = rskContextDummy.getBlockStore();
 
         long totalTime = 0;
-        System.out.println("-- Measuring Writes: " + values + " values --");
-        if (useSnappy) {
+//        System.out.println("-- Measuring Writes: " + values + " values --");
+/*        if (useSnappy) {
             System.out.println("With Snappy Blockchain");
         } else {
             System.out.println("With Normal Blockchain");
-        }
+        }*/
         totalTime += timeForWrite(store, dummyblockchain, values);
-        deleter.deleteFile(dummyPath);
+        if (useSnappy) {
+            System.out.println("s,w,"+totalTime +","+values);
+        } else {
+            System.out.println("n,w,"+totalTime+","+values);
+        }
+        dummyStore.flush();
+        FileRecursiveDelete.deleteFile(dummyPath);
         return totalTime;
 
     }
@@ -89,16 +96,18 @@ public class SnappyMetrics {
 
         for (int i = 0; i < values; i++) {
             Block block = store.getChainBlockByNumber(blockNumber++);
-            System.out.println("Writing block number: " + blockNumber);
+//            System.out.println("Writing block number: " + blockNumber);
             long saveTime = System.nanoTime();
             ImportResult result = dummyBlockchain.tryToConnect(block);
             time += System.nanoTime() - saveTime;
+
 
             if (!BlockProcessResult.importOk(result)) {
                 System.err.printf("Import failed at block %7d%n", blockNumber);
                 System.exit(1);
             }
         }
+
         return time;
     }
 
@@ -125,40 +134,11 @@ public class SnappyMetrics {
         if (rw == READ) {
             totalTime = measureReads(values, seed);
         } else {
-            totalTime = measureWrites(100);
+            totalTime = measureWrites(values);
         }
 
         return totalTime;
     }
-
-//    public static void main(String[] args) {
-//        if (args.length == 0) {
-//            System.out.println("usage: SnappyMetrics <Normal Blockchain path> <Snappy Blockchain path> " +
-//                    "<Use Snappy (true/false)> <Use read/write (true/false)>");
-//            System.exit(0);
-//            return;
-//        }
-//
-//        final String normalDbdir = "/Users/julian/workspace/rskj-projects/dbs/normal-database-150";
-//        final String snappyDBdir = "/Users/julian/workspace/rskj-projects/dbs/snappy-database-150";
-//        final String dummyBlockchain = "/Users/julian/workspace/rskj-projects/dbs/dummy-database";
-//
-//        if (compareBlockchains(normalBlockStore, snappyBlockStore)){
-//        } else {
-//            System.out.println("Blockchain compressed and uncompressed are NOT equals");
-//        }
-//
-//
-//        final long readTimeSnappy = smSnappy.measureReads(100, 100);
-//
-//        final long readTimeNormal = smNormal.measureReads(100, 100);
-//
-//
-//
-//
-//        System.exit(0);
-//
-//    }
 }
 
 class FileRecursiveDelete {
@@ -170,7 +150,7 @@ class FileRecursiveDelete {
             System.exit(0);
         }else{
             delete(directory);
-            System.out.println("Deleted ready");
+//            System.out.println("Deleted ready");
         }
     }
 

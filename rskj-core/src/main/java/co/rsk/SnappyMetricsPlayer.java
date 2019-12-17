@@ -2,6 +2,7 @@ package co.rsk;
 
 
 import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 import java.util.concurrent.Callable;
 
@@ -9,34 +10,43 @@ import java.util.concurrent.Callable;
         version = "play 1.0")
 class SnappyMetricsPlay implements Callable<Void> {
 
-    @CommandLine.Option(names = {"-srcNormal", "--sourceNormal"}, description = "Directory with the Blockchain instance.")
-    private String path = "/Users/julian/workspace/rskj-projects/dbs/normal-database-150"; //snappyBlockchainDir = "/Users/julian/workspace/rskj-projects/dbs/snappy-database-150";
+    @Option(names = {"-srcNormal"}, description = "Directory with the Blockchain instance.")
+    private String normalPath = "/Users/julian/workspace/rskj-projects/dbs/normal-database-150"; //snappyBlockchainDir = "/Users/julian/workspace/rskj-projects/dbs/snappy-database-150";
 
-    @CommandLine.Option(names = {"-v", "--values"}, description = "Quantity of blocks to r/w")
+    @Option(names = {"-srcSnappy"}, description = "Directory with the Blockchain instance.")
+    private String snappyPath = "/Users/julian/workspace/rskj-projects/dbs/snappy-database-150";
+
+    @Option(names = {"-v", "--values"}, description = "Quantity of blocks to r/w")
     private int values = 3000;
 
-    @CommandLine.Option(names = {"-sp", "--snappy"}, description = "Use snappy or not")
+    @Option(names = {"-sp", "--snappy"}, description = "Use snappy or not")
     private boolean useSnappy = false;
 
-    @CommandLine.Option(names = {"-rw", "--readwrite"}, description = "Read/Write (true/false)")
+    @Option(names = {"-rw", "--readwrite"}, description = "Read/Write (true/false)")
     private boolean rW = true;
 
-    @CommandLine.Option(names = {"-sd", "--seed"}, description = "Seed")
+    @Option(names = {"-sd", "--seed"}, description = "Seed")
     private int seed = 100;
 
     public static void main(String[] args){
-//        CommandLine.call(new SnappyMetricsPlay(), args);
-        SnappyMetrics sMetrics = new SnappyMetrics("/Users/julian/workspace/rskj-projects/dbs/normal-database-150", false, 50, 100, false);
-        final long totalTime = sMetrics.runExperiment();
-        System.out.println(totalTime);
+        CommandLine.call(new SnappyMetricsPlay(), args);
+//        SnappyMetrics sMetrics = new SnappyMetrics("/Users/julian/workspace/rskj-projects/dbs/snappy-database-150", false, 1000, 100, true);
+//        sMetrics.runExperiment();
         System.gc();
         System.exit(0);
     }
 
     @Override
     public Void call() {
+        String path;
+        if (useSnappy) {
+            path = snappyPath;
+        } else {
+            path = normalPath;
+        }
         SnappyMetrics sMetrics = new SnappyMetrics(path, rW, values, seed, useSnappy);
-        sMetrics.runExperiment();
+        final long time = sMetrics.runExperiment();
+//        System.out.println(time);
         System.gc();
         return null;
     }

@@ -75,14 +75,14 @@ public class BlockChainLoader {
         BlockDifficulty totalDifficulty;
         Block bestBlock = blockStore.getBestBlock();
         if (bestBlock == null) {
-            logger.info("DB is empty - adding Genesis");
+//            logger.info("DB is empty - adding Genesis");
 
             bestBlock = genesis;
             totalDifficulty = genesis.getCumulativeDifficulty();
 
             listener.onBlock(genesis, new ArrayList<>());
 
-            logger.info("Genesis block loaded");
+//            logger.info("Genesis block loaded");
         } else {
             totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash().getBytes());
 

@@ -82,21 +82,21 @@ public class ConfigLoader {
     private Config getUserCustomConfig() {
         String file = System.getProperty("rsk.conf.file");
         Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
-        logger.info(
-                "Config ( {} ): user properties from -Drsk.conf.file file '{}'",
-                cmdLineConfigFile.entrySet().isEmpty() ? NO : YES,
-                file
-        );
+//        logger.info(
+//                "Config ( {} ): user properties from -Drsk.conf.file file '{}'",
+//                cmdLineConfigFile.entrySet().isEmpty() ? NO : YES,
+//                file
+//        );
         return cmdLineConfigFile;
     }
 
     private Config getInstallerConfig() {
         File installerFile = new File("/etc/rsk/node.conf");
         Config installerConfig = installerFile.exists() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
-        logger.info(
-                "Config ( {} ): default properties from installer '/etc/rsk/node.conf'",
-                installerConfig.entrySet().isEmpty() ? NO : YES
-        );
+//        logger.info(
+//                "Config ( {} ): default properties from installer '/etc/rsk/node.conf'",
+//                installerConfig.entrySet().isEmpty() ? NO : YES
+//        );
         return installerConfig;
     }
 

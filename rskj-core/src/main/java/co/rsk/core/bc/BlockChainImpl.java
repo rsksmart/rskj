@@ -153,7 +153,7 @@ public class BlockChainImpl implements Blockchain {
                     long saveTime = System.nanoTime();
                     ImportResult result = internalTryToConnect(block);
                     long totalTime = System.nanoTime() - saveTime;
-                    logger.info("block: num: [{}] hash: [{}], processed after: [{}]nano, result {}", block.getNumber(), block.getShortHash(), totalTime, result);
+//                    logger.info("block: num: [{}] hash: [{}], processed after: [{}]nano, result {}", block.getNumber(), block.getShortHash(), totalTime, result);
                     return result;
                 }
             } catch (Throwable t) {
@@ -285,7 +285,7 @@ public class BlockChainImpl implements Blockchain {
 
             logger.debug("block added to the blockChain: index: [{}]", block.getNumber());
             if (block.getNumber() % 100 == 0) {
-                logger.info("*** Last block added [ #{} ]", block.getNumber());
+//                logger.info("*** Last block added [ #{} ]", block.getNumber());
             }
 
             profiler.stop(metric);
