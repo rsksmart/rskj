@@ -333,7 +333,7 @@ public class BridgeSupportTestPowerMock {
                 bridgeConstants,
                 activationsBeforeForks
         );
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, provider, track, eventLogger, rskCurrentBlock, null);
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, provider, track, eventLogger, null, rskCurrentBlock, null);
 
         Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
         ECKey key = new ECKey();
@@ -398,7 +398,7 @@ public class BridgeSupportTestPowerMock {
                 bridgeConstants,
                 activationsBeforeForks
         );
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), rskCurrentBlock, null);
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), null, rskCurrentBlock, null);
 
         bridgeSupport.updateCollections(tx);
 
@@ -466,7 +466,7 @@ public class BridgeSupportTestPowerMock {
                 activationsBeforeForks
         );
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), rskCurrentBlock, null
+                bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), null, rskCurrentBlock, null
         );
 
         bridgeSupport.updateCollections(tx);
@@ -535,7 +535,7 @@ public class BridgeSupportTestPowerMock {
                 activationsBeforeForks
         );
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), rskCurrentBlock, null
+                bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), null, rskCurrentBlock, null
         );
 
         bridgeSupport.updateCollections(tx);
@@ -586,7 +586,7 @@ public class BridgeSupportTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, mock(BridgeEventLogger.class), rskCurrentBlock, null
+                bridgeConstants, provider, track, mock(BridgeEventLogger.class), null, rskCurrentBlock, null
         );
 
         // One MICROCOIN is less than half the fee per kb, which is the minimum funds to migrate,
@@ -675,7 +675,7 @@ public class BridgeSupportTestPowerMock {
                 activationsBeforeForks
         );
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), rskCurrentBlock, null);
+                bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), null, rskCurrentBlock, null);
 
         bridgeSupport.updateCollections(tx);
 
@@ -749,7 +749,7 @@ public class BridgeSupportTestPowerMock {
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, mock(BridgeEventLogger.class), rskCurrentBlock, null
+                bridgeConstants, provider, track, mock(BridgeEventLogger.class), null, rskCurrentBlock, null
         );
 
         bridgeSupport.updateCollections(rskTx);
@@ -923,8 +923,7 @@ public class BridgeSupportTestPowerMock {
                         contractAddress,
                         bridgeConstants,
                         activationsAfterForks
-                ), track, eventLogger, mock(Block.class),
-                null
+                ), track, eventLogger, null, mock(Block.class), null
         );
 
         // Create signed hash of Btc tx
@@ -1021,8 +1020,7 @@ public class BridgeSupportTestPowerMock {
                         contractAddress,
                         bridgeConstants,
                         activationsAfterForks
-                ), track, eventLogger, mock(Block.class),
-                null
+                ), track, eventLogger, null, mock(Block.class), null
         );
 
         // Generate valid signatures for inputs
@@ -1134,8 +1132,7 @@ public class BridgeSupportTestPowerMock {
                         contractAddress,
                         bridgeConstants,
                         activationsAfterForks
-                ), track, eventLogger, mock(Block.class),
-                null
+                ), track, eventLogger, null, mock(Block.class), null
         );
 
         Script inputScript = t.getInputs().get(0).getScriptSig();
@@ -1441,7 +1438,7 @@ public class BridgeSupportTestPowerMock {
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants, mock(BridgeStorageProvider.class),
-                mock(Repository.class), mock(BridgeEventLogger.class), null,
+                mock(Repository.class), mock(BridgeEventLogger.class), null, null,
                 mockFactory
         );
 
@@ -1545,7 +1542,7 @@ public class BridgeSupportTestPowerMock {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, bridgeConstants, activationsBeforeForks);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null, executionBlock, mockFactory
+                bridgeConstants, provider, track, null, null, executionBlock, mockFactory
         );
 
         byte[] bits = new byte[1];
@@ -1641,7 +1638,7 @@ public class BridgeSupportTestPowerMock {
         provider.setNewFederation(activeFederation);
         provider.setOldFederation(retiringFederation);
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null, executionBlock, mockFactory
+                bridgeConstants, provider, track, null, null, executionBlock, mockFactory
         );
 
         byte[] bits = new byte[1];
@@ -1826,7 +1823,7 @@ public class BridgeSupportTestPowerMock {
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null, executionBlock, mockFactory
+                bridgeConstants, provider, track, null, null, executionBlock, mockFactory
         );
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -1942,7 +1939,7 @@ public class BridgeSupportTestPowerMock {
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null, executionBlock, mockFactory
+                bridgeConstants, provider, track, null, null, executionBlock, mockFactory
         );
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -4147,7 +4144,7 @@ public class BridgeSupportTestPowerMock {
         }).when(providerMock).setPendingFederation(any());
 
         return getBridgeSupport(
-                constantsMock, providerMock, null, eventLogger, executionBlock, null
+                constantsMock, providerMock, null, eventLogger, null, executionBlock, null
         );
     }
 
@@ -4173,18 +4170,18 @@ public class BridgeSupportTestPowerMock {
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider) {
-        return getBridgeSupport(constants, provider, null, null, null, null);
+        return getBridgeSupport(constants, provider, null, null, null, null, null);
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track, BtcBlockStoreWithCache.Factory blockStoreFactory) {
-        return getBridgeSupport(constants, provider, track, null, null, blockStoreFactory);
+        return getBridgeSupport(constants, provider, track, null, null, null, blockStoreFactory);
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-                                           BridgeEventLogger eventLogger, Block executionBlock,
-                                           BtcBlockStoreWithCache.Factory blockStoreFactory) {
+                                           BridgeEventLogger eventLogger, BtcLockSenderProvider btcLockSenderProvider,
+                                           Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory) {
         return getBridgeSupport(
-                constants, provider, track, eventLogger, null, executionBlock,
+                constants, provider, track, eventLogger, btcLockSenderProvider, executionBlock,
                 blockStoreFactory, mock(ActivationConfig.ForBlock.class)
         );
     }
@@ -4197,12 +4194,7 @@ public class BridgeSupportTestPowerMock {
             eventLogger = mock(BridgeEventLogger.class);
         }
         if(btcLockSenderProvider == null) {
-            BtcLockSender btcLockSender = mock(BtcLockSender.class);
-            when(btcLockSender.getType()).thenReturn(BtcLockSender.TxType.P2PKH);
-
-            btcLockSenderProvider = mock(BtcLockSenderProvider.class);
-            when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.of(btcLockSender));
-
+            btcLockSenderProvider = new BtcLockSenderProvider();
         }
         if (blockStoreFactory == null) {
             blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -4211,7 +4203,7 @@ public class BridgeSupportTestPowerMock {
                 constants,
                 provider,
                 eventLogger,
-                mock(BtcLockSenderProvider.class),
+                btcLockSenderProvider,
                 track,
                 executionBlock,
                 new Context(constants.getBtcParams()),
@@ -4219,6 +4211,23 @@ public class BridgeSupportTestPowerMock {
                 blockStoreFactory,
                 activations
         );
+    }
+
+    private BtcLockSenderProvider getBtcLockSenderProvider(BtcLockSender.TxType txType, Address btcAddress) {
+        RskAddress rskAddress = new RskAddress("0000000000000000000000000000000000001221");
+        return getBtcLockSenderProvider(txType, btcAddress, rskAddress);
+    }
+
+    private BtcLockSenderProvider getBtcLockSenderProvider(BtcLockSender.TxType txType, Address btcAddress, RskAddress rskAddress) {
+        BtcLockSender btcLockSender = mock(BtcLockSender.class);
+        when(btcLockSender.getType()).thenReturn(txType);
+        when(btcLockSender.getBTCAddress()).thenReturn(btcAddress);
+        when(btcLockSender.getRskAddress()).thenReturn(rskAddress);
+
+        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
+        when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.of(btcLockSender));
+
+        return btcLockSenderProvider;
     }
 
     private BtcTransaction createTransaction() {
