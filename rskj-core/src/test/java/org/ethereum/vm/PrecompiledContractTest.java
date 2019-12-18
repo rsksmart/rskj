@@ -20,6 +20,8 @@
 package org.ethereum.vm;
 
 import co.rsk.config.TestSystemProperties;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -30,6 +32,8 @@ import java.math.BigInteger;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Roman Mandeleil
@@ -230,9 +234,11 @@ public class PrecompiledContractTest {
 
     @Test
     public void blake2fTest1() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP153)).thenReturn(true);
 
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000009");
-        PrecompiledContract contract = precompiledContracts.getContractForAddress(null, addr);
+        PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
         assertNotNull(contract);
 
         byte[] data4 = Hex.decode("0000000048c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000001");
@@ -255,6 +261,16 @@ public class PrecompiledContractTest {
         // byte[] data8 = Hex.decode("ffffffff48c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000001");
         // String expected8 = "fc59093aafa9ab43daae0e914c57635c5402d8e3d2130eb9b3cc181de7f0ecf9b22bf99a7815ce16419e200e01846e6b5df8cc7703041bbceb571de6631d2615";
         // assertEquals(expected8, Hex.toHexString(contract.execute(data8)));
+    }
+
+    @Test
+    public void blake2fTestOnNotActivatedHardFork() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP153)).thenReturn(false);
+
+        DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000009");
+        PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
+        assertNull(contract);
     }
 
 }
