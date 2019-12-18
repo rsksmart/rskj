@@ -563,7 +563,7 @@ public class BridgeSupportTest {
 
         if (!shouldLock) {
             // Release tx should have been created directly to the signatures stack
-            BtcTransaction releaseTx = provider.getRskTxsWaitingForSignatures().get(hash);
+            BtcTransaction releaseTx = provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction();
             Assert.assertNotNull(releaseTx);
             // returns the funds to the sender
             Assert.assertEquals(1, releaseTx.getOutputs().size());

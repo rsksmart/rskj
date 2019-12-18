@@ -739,8 +739,6 @@ public class BridgeSupport {
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
                 Optional.of(1)
         );
-
-        // Add the btc transaction to the 'awaiting signatures' list
         if (txsWithEnoughConfirmations.size() > 0) {
             txsWaitingForSignatures.put(rskTx.getHash(), txsWithEnoughConfirmations.iterator().next());
         }
@@ -2044,6 +2042,17 @@ public class BridgeSupport {
         return Address.fromBase58(btcContext.getParams(), base58Address);
     }
 
+    private void generateRejectionRelease(BtcTransaction btcTx, Address senderBtcAddress, Transaction rskTx, Coin totalAmount) throws IOException {
+        Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress);
+        if (buildReturnResult.isPresent()) {
+            provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
+            logger.info("Rejecting lock: return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
+        } else {
+            logger.warn("Rejecting lock: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
+            panicProcessor.panic("lock-refund", String.format("whitelist money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
+        }
+    }
+
     private boolean verifyLockSenderIsWhitelisted(Transaction rskTx, BtcTransaction btcTx, Address senderBtcAddress, Coin totalAmount, int height) throws IOException {
         // If the address is not whitelisted, then return the funds
         // using the exact same utxos sent to us.
@@ -2052,14 +2061,7 @@ public class BridgeSupport {
         // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
         LockWhitelist lockWhitelist = provider.getLockWhitelist();
         if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
-            Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress);
-            if (buildReturnResult.isPresent()) {
-                provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
-                logger.info("whitelist money return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
-            } else {
-                logger.warn("whitelist money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
-                panicProcessor.panic("whitelist-return-funds", String.format("whitelist money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
-            }
+            generateRejectionRelease(btcTx, senderBtcAddress, rskTx, totalAmount);
             return false;
         }
 
@@ -2085,15 +2087,7 @@ public class BridgeSupport {
 
         logger.info("locking cap exceeded! btc Tx {}", btcTx);
         // Reject the lock
-        Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress);
-        if (buildReturnResult.isPresent()) {
-            // Send the release transaction to request signature immediately
-            provider.getRskTxsWaitingForSignatures().put(rskTx.getHash(), buildReturnResult.get().getBtcTx());
-            logger.info("money return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
-        } else {
-            logger.warn("money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
-            panicProcessor.panic("locking-cap-exceeded-return-funds", String.format("locking cap exceeded! money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
-        }
+        generateRejectionRelease(btcTx, senderBtcAddress, rskTx, totalAmount);
         return false;
     }
 
