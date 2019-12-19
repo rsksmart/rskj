@@ -378,6 +378,7 @@ public class BridgeSupport {
                     logger.warn("unprocessable tx type {}, money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcLockSender.getType(), btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
                     panicProcessor.panic("unprocessable-tx-type-return-funds", String.format("unprocessable tx type money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
                 }
+                return;
             }
 
             // If the address is not whitelisted, then return the funds
