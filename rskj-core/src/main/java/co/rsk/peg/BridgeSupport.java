@@ -2117,32 +2117,11 @@ public class BridgeSupport {
         return txBuilder.buildEmptyWalletTo(senderBtcAddress);
     }
 
-    private Coin getBtcLockedInFederation() throws IOException {
-        Coin lockedInFederation = getActiveFederationWallet().getBalance();
+    private Coin getBtcLockedInFederation() {
+        Coin maxRbtc = this.bridgeConstants.getMaxRbtc();
+        Coin currentBridgeBalance = rskRepository.getBalance(PrecompiledContracts.BRIDGE_ADDR).toBitcoin();
 
-        // Funds not in wallet but waiting to be released
-        Coin amounWaitingForConfirmations = provider.getReleaseTransactionSet().getEntries().stream()
-                .map(e -> e.getTransaction().getInputSum()).reduce(Coin.ZERO, (a,b) -> a.add(b));
-        if (amounWaitingForConfirmations != null) {
-            lockedInFederation = lockedInFederation.add(amounWaitingForConfirmations);
-        }
-
-        Coin amountWaitingForSignatures = provider.getRskTxsWaitingForSignatures().values().stream()
-                .map(BtcTransaction::getInputSum).reduce(Coin.ZERO, (a, b) -> a.add(b));
-        if (amountWaitingForSignatures != null) {
-            lockedInFederation = lockedInFederation.add(amountWaitingForSignatures);
-        }
-
-        Wallet retiringFedWallet = getRetiringFederationWallet();
-        if (retiringFedWallet == null) {
-            return lockedInFederation;
-        }
-        Coin amountToRetiring = retiringFedWallet.getBalance();
-        if (amountToRetiring == null) {
-            return lockedInFederation;
-        }
-
-        return lockedInFederation.add(amountToRetiring);
+        return maxRbtc.subtract(currentBridgeBalance);
     }
 }
 

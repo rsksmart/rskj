@@ -446,13 +446,12 @@ public class BridgeSupportTest {
         when(bridgeConstants.getBtcParams()).thenReturn(BridgeRegTestConstants.getInstance().getBtcParams());
         when(bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()).thenReturn(1);
         when(bridgeConstants.getGenesisFeePerKb()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFeePerKb());
+        when(bridgeConstants.getMaxRbtc()).thenReturn(BridgeRegTestConstants.getInstance().getMaxRbtc());
 
         // Configure locking cap
         when(bridgeConstants.getInitialLockingCap()).thenReturn(lockingCap);
 
         Repository repository = createRepository();
-        // Fund bridge
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
         Repository track = repository.startTracking();
 
         Federation federation = this.getFederation(bridgeConstants, null);
@@ -483,6 +482,9 @@ public class BridgeSupportTest {
             provider.getNewFederationBtcUTXOs().add(utxo);
             currentFunds = currentFunds.add(amountInNewFed);
         }
+        // Fund bridge in RBTC, substracting the funds that we are indicating were locked in the federations (which means a user locked)
+        co.rsk.core.Coin bridgeBalance = LIMIT_MONETARY_BASE.subtract(co.rsk.core.Coin.fromBitcoin(currentFunds));
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, bridgeBalance);
 
         // The locking cap shouldn't be surpassed by the initial configuration
         Assert.assertFalse(isLockingCapEnabled && currentFunds.isGreaterThan(lockingCap));
@@ -559,7 +561,7 @@ public class BridgeSupportTest {
 
         // Verify amount was locked
         Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(srcKeyRskAddress));
-        Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        Assert.assertEquals(bridgeBalance.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
         if (!shouldLock) {
             // Release tx should have been created directly to the signatures stack

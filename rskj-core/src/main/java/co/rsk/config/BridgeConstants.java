@@ -115,4 +115,6 @@ public class BridgeConstants {
     public Coin getGenesisFeePerKb() { return genesisFeePerKb; }
 
     public Coin getMaxFeePerKb() { return maxFeePerKb; }
+
+    public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 }
