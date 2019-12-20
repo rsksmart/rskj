@@ -274,14 +274,6 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("peer.channel.read.timeout");
     }
 
-    public String dumpStyle() {
-        return configFromFiles.getString("dump.style");
-    }
-
-    public int dumpBlock() {
-        return configFromFiles.getInt("dump.block");
-    }
-
     public String databaseDir() {
         return databaseDir == null ? configFromFiles.getString(PROPERTY_BASE_PATH) : databaseDir;
     }
