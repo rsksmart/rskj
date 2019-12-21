@@ -178,6 +178,15 @@ public class TransactionPoolImpl implements TransactionPool {
         return added;
     }
 
+    private void emitEvents(List<Transaction> addedPendingTransactions) {
+        if (listener != null && !addedPendingTransactions.isEmpty()) {
+            EventDispatchThread.invokeLater(() -> {
+                listener.onPendingTransactionsReceived(addedPendingTransactions);
+                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
+            });
+        }
+    }
+
     @Override
     public synchronized List<Transaction> addTransactions(final List<Transaction> txs) {
         List<Transaction> added = new ArrayList<>();
@@ -191,12 +200,7 @@ public class TransactionPoolImpl implements TransactionPool {
             }
         }
 
-        if (listener != null && !added.isEmpty()) {
-            EventDispatchThread.invokeLater(() -> {
-                listener.onPendingTransactionsReceived(added);
-                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
-            });
-        }
+        this.emitEvents(added);
 
         return added;
     }
@@ -276,12 +280,7 @@ public class TransactionPoolImpl implements TransactionPool {
         added.add(tx);
         added.addAll(this.addSuccesors(tx));
 
-        if (listener != null) {
-            EventDispatchThread.invokeLater(() -> {
-                listener.onPendingTransactionsReceived(added);
-                listener.onTransactionPoolChanged(TransactionPoolImpl.this);
-            });
-        }
+        this.emitEvents(added);
 
         signatureCache.storeSender(tx);
 
