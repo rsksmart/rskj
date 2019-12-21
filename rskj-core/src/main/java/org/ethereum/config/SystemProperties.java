@@ -284,10 +284,6 @@ public abstract class SystemProperties {
         this.databaseDir = dataBaseDir;
     }
 
-    public boolean playVM() {
-        return configFromFiles.getBoolean("play.vm");
-    }
-
     public int maxHashesAsk() {
         return configFromFiles.getInt("sync.max.hashes.ask");
     }

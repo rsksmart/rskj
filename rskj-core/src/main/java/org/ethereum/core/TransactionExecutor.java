@@ -19,7 +19,6 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.metrics.profilers.Metric;
@@ -30,12 +29,9 @@ import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
@@ -68,7 +64,6 @@ public class TransactionExecutor {
     private final Transaction tx;
     private final Repository track;
     private final Repository cacheTrack;
-    private final boolean playVm;
     private final boolean enableRemasc;
     private final ExecutorService vmExecutorService;
     private String executionError = "";
@@ -100,7 +95,7 @@ public class TransactionExecutor {
             Constants constants, ActivationConfig activationConfig, Transaction tx, RskAddress coinbase,
             Repository track,
             Block executionBlock, long gasUsedInTheBlock,
-            boolean playVm, boolean remascEnabled, ExecutorService vmExecution) {
+            boolean remascEnabled, ExecutorService vmExecution) {
         this.constants = constants;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
         this.tx = tx;
@@ -109,7 +104,6 @@ public class TransactionExecutor {
         this.cacheTrack = track.startTracking();
         this.executionBlock = executionBlock;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
-        this.playVm = playVm;
         this.enableRemasc = remascEnabled;
         this.vmExecutorService = vmExecution;
 
@@ -398,9 +392,7 @@ public class TransactionExecutor {
             // Charge basic cost of the transaction
             program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
 
-            if (playVm) {
-                playVirtualMachine();
-            }
+            playVirtualMachine();
 
             result = program.getResult();
             mEndGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));

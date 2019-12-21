@@ -121,7 +121,6 @@ public class TransactionExecutorFactory {
                 track,
                 block,
                 totalGasUsed,
-                config.playVM(),
                 config.isRemascEnabled(),
                 vmExecutorService
         );
