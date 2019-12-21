@@ -793,4 +793,38 @@ public class TransactionPoolImplTest {
 
         track.commit();
     }
+
+    @Test
+    public void addTwoTransactionsOutOfOrderInNonceUsingAddTransaction() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 0, 1000, 0, 1);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 0, 2000, 1, 2);
+
+        Assert.assertTrue(transactionPool.addTransaction(tx2).transactionWasAdded());
+        Assert.assertTrue(transactionPool.addTransaction(tx1).transactionWasAdded());
+
+        Assert.assertTrue(transactionPool.getPendingTransactions().stream().anyMatch(tx -> tx.getHash().equals(tx2.getHash())));
+        Assert.assertTrue(transactionPool.getPendingTransactions().stream().anyMatch(tx -> tx.getHash().equals(tx1.getHash())));
+    }
+
+    @Test
+    public void addTwoTransactionsOutOfOrderInNonceUsingAddTransactions() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction tx1 = createSampleTransactionWithGasPrice(1, 0, 1000, 0, 1);
+        Transaction tx2 = createSampleTransactionWithGasPrice(1, 0, 2000, 1, 2);
+
+        List<Transaction> txs = new ArrayList<>();
+
+        txs.add(tx2);
+        txs.add(tx1);
+
+        transactionPool.addTransactions(txs);
+
+        Assert.assertTrue(transactionPool.getPendingTransactions().stream().anyMatch(tx -> tx.getHash().equals(tx2.getHash())));
+        Assert.assertTrue(transactionPool.getPendingTransactions().stream().anyMatch(tx -> tx.getHash().equals(tx1.getHash())));
+    }
 }

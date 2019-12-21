@@ -158,28 +158,36 @@ public class TransactionPoolImpl implements TransactionPool {
         return repositoryLocator.snapshotAt(getBestBlock().getHeader());
     }
 
+    private List<Transaction> addSuccesors(Transaction tx) {
+        List<Transaction> added = new ArrayList<>();
+        Optional<Transaction> succesor = this.getQueuedSuccesor(tx);
+
+        while (succesor.isPresent()) {
+            Transaction found = succesor.get();
+            queuedTransactions.removeTransactionByHash(found.getHash());
+
+            if (!this.internalAddTransaction(found).transactionWasAdded()) {
+                break;
+            }
+
+            added.add(found);
+
+            succesor = this.getQueuedSuccesor(found);
+        }
+
+        return added;
+    }
+
     @Override
     public synchronized List<Transaction> addTransactions(final List<Transaction> txs) {
         List<Transaction> added = new ArrayList<>();
 
         for (Transaction tx : txs) {
-            if (this.addTransaction(tx).transactionWasAdded()) {
+            TransactionPoolAddResult result = this.internalAddTransaction(tx);
+
+            if (result.transactionWasAdded()) {
                 added.add(tx);
-
-                Optional<Transaction> succesor = this.getQueuedSuccesor(tx);
-
-                while (succesor.isPresent()) {
-                    Transaction found = succesor.get();
-                    queuedTransactions.removeTransactionByHash(found.getHash());
-
-                    if (!this.addTransaction(found).transactionWasAdded()) {
-                        break;
-                    }
-
-                    added.add(found);
-
-                    succesor = this.getQueuedSuccesor(found);
-                }
+                added.addAll(this.addSuccesors(tx));
             }
         }
 
@@ -208,18 +216,10 @@ public class TransactionPoolImpl implements TransactionPool {
                 .findFirst();
     }
 
-    @Override
-    public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
-        if (pendingTransactions.hasTransaction(tx)) {
-            return TransactionPoolAddResult.withError("pending transaction with same hash already exists");
-        }
-
-        if (queuedTransactions.hasTransaction(tx)) {
-            return TransactionPoolAddResult.withError("queued transaction with same hash already exists");
-        }
-
+    private TransactionPoolAddResult internalAddTransaction(final Transaction tx) {
         RepositorySnapshot currentRepository = getCurrentRepository();
         TransactionValidationResult validationResult = shouldAcceptTx(tx, currentRepository);
+
         if (!validationResult.transactionIsValid()) {
             return TransactionPoolAddResult.withError(validationResult.getErrorMessage());
         }
@@ -252,15 +252,40 @@ public class TransactionPoolImpl implements TransactionPool {
 
         pendingTransactions.addTransaction(tx);
 
+        return TransactionPoolAddResult.ok();
+    }
+
+    @Override
+    public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
+        if (pendingTransactions.hasTransaction(tx)) {
+            return TransactionPoolAddResult.withError("pending transaction with same hash already exists");
+        }
+
+        if (queuedTransactions.hasTransaction(tx)) {
+            return TransactionPoolAddResult.withError("queued transaction with same hash already exists");
+        }
+
+        TransactionPoolAddResult result = this.internalAddTransaction(tx);
+
+        if (!result.transactionWasAdded()) {
+            return result;
+        }
+
+        List<Transaction> added = new ArrayList<>();
+
+        added.add(tx);
+        added.addAll(this.addSuccesors(tx));
+
         if (listener != null) {
             EventDispatchThread.invokeLater(() -> {
-                listener.onPendingTransactionsReceived(Collections.singletonList(tx));
+                listener.onPendingTransactionsReceived(added);
                 listener.onTransactionPoolChanged(TransactionPoolImpl.this);
             });
         }
 
         signatureCache.storeSender(tx);
-        return TransactionPoolAddResult.ok();
+
+        return result;
     }
 
     private boolean isBumpingGasPriceForSameNonceTx(Transaction tx) {
