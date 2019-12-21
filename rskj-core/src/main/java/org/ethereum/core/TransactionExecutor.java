@@ -72,7 +72,6 @@ public class TransactionExecutor {
 
     private final RskAddress coinbase;
 
-    private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
     private final Block executionBlock;
 
@@ -465,19 +464,13 @@ public class TransactionExecutor {
         }
     }
 
-    public TransactionReceipt getReceipt() {
-        if (receipt == null) {
-            receipt = new TransactionReceipt();
-            long totalGasUsed = gasUsedInTheBlock + getGasUsed();
-            receipt.setCumulativeGas(totalGasUsed);
-            receipt.setTransaction(tx);
-            receipt.setLogInfoList(getVMLogs());
-            receipt.setGasUsed(getGasUsed());
-            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
-        }
-        return receipt;
+    public boolean isSuccessful() {
+        return TransactionReceipt.statusIsSuccessful(this.getStatus());
     }
 
+    public byte[] getStatus() {
+        return executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS;
+    }
 
     private void finalization() {
         // RSK if local call gas balances must not be changed

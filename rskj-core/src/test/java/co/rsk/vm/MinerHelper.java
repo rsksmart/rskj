@@ -117,8 +117,8 @@ public class MinerHelper {
             receipt.setCumulativeGas(totalGasUsed);
             latestStateRootHash = track.getRoot();
             receipt.setPostTxState(latestStateRootHash);
-            receipt.setTxStatus(executor.getReceipt().isSuccessful());
-            receipt.setStatus(executor.getReceipt().getStatus());
+            receipt.setTxStatus(executor.isSuccessful());
+            receipt.setStatus(executor.getStatus());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(executor.getVMLogs());
 
