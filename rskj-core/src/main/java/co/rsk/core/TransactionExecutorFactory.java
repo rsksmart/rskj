@@ -98,24 +98,31 @@ public class TransactionExecutorFactory {
             );
         }
 
+        TransactionExecutorHelper transactionExecutorHelper = new TransactionExecutorHelper(
+                vmConfig,
+                precompiledContracts,
+                block,
+                blockFactory,
+                blockStore,
+                receiptStore,
+                programInvokeFactory,
+                config.getActivationConfig().forBlock(block.getNumber()),
+                tx,
+                txindex,
+                deletedAccounts
+        );
+
         return new TransactionExecutor(
+                transactionExecutorHelper,
                 config.getNetworkConstants(),
                 config.getActivationConfig(),
                 tx,
-                txindex,
                 coinbase,
                 track,
-                blockStore,
-                receiptStore,
-                blockFactory,
-                programInvokeFactory,
                 block,
                 totalGasUsed,
-                vmConfig,
                 config.playVM(),
                 config.isRemascEnabled(),
-                precompiledContracts,
-                deletedAccounts,
                 vmExecutorService
         );
     }

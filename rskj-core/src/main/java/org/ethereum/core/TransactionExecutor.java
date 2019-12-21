@@ -96,10 +96,11 @@ public class TransactionExecutor {
     private boolean localCall = false;
 
     public TransactionExecutor(
-            Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
-            Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
-            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts, ExecutorService vmExecution) {
+            TransactionExecutorHelper transactionExecutorHelper,
+            Constants constants, ActivationConfig activationConfig, Transaction tx, RskAddress coinbase,
+            Repository track,
+            Block executionBlock, long gasUsedInTheBlock,
+            boolean playVm, boolean remascEnabled, ExecutorService vmExecution) {
         this.constants = constants;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
         this.tx = tx;
@@ -112,7 +113,7 @@ public class TransactionExecutor {
         this.enableRemasc = remascEnabled;
         this.vmExecutorService = vmExecution;
 
-        this.transactionExecutorHelper = new TransactionExecutorHelper(vmConfig, precompiledContracts, executionBlock, blockFactory, blockStore, receiptStore, programInvokeFactory, activations, tx, txindex, deletedAccounts);
+        this.transactionExecutorHelper = transactionExecutorHelper;
     }
 
     /**
