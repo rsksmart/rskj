@@ -35,7 +35,6 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.ethereum.vm.trace.ProgramTrace;
@@ -67,14 +66,8 @@ public class TransactionExecutor {
     private final Constants constants;
     private final ActivationConfig.ForBlock activations;
     private final Transaction tx;
-    private final int txindex;
     private final Repository track;
     private final Repository cacheTrack;
-    private final BlockStore blockStore;
-    private final ReceiptStore receiptStore;
-    private final BlockFactory blockFactory;
-    private final VmConfig vmConfig;
-    private final PrecompiledContracts precompiledContracts;
     private final boolean playVm;
     private final boolean enableRemasc;
     private final ExecutorService vmExecutorService;
@@ -82,12 +75,13 @@ public class TransactionExecutor {
     private final long gasUsedInTheBlock;
     private Coin paidFees;
 
-    private final ProgramInvokeFactory programInvokeFactory;
     private final RskAddress coinbase;
 
     private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
     private final Block executionBlock;
+
+    private final TransactionExecutorHelper transactionExecutorHelper;
 
     private VM vm;
     private Program program;
@@ -98,7 +92,6 @@ public class TransactionExecutor {
     private BigInteger mEndGas = BigInteger.ZERO;
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
-    private final Set<DataWord> deletedAccounts;
 
     private boolean localCall = false;
 
@@ -110,22 +103,16 @@ public class TransactionExecutor {
         this.constants = constants;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
         this.tx = tx;
-        this.txindex = txindex;
         this.coinbase = coinbase;
         this.track = track;
         this.cacheTrack = track.startTracking();
-        this.blockStore = blockStore;
-        this.receiptStore = receiptStore;
-        this.blockFactory = blockFactory;
-        this.programInvokeFactory = programInvokeFactory;
         this.executionBlock = executionBlock;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
-        this.vmConfig = vmConfig;
-        this.precompiledContracts = precompiledContracts;
         this.playVm = playVm;
         this.enableRemasc = remascEnabled;
-        this.deletedAccounts = new HashSet<>(deletedAccounts);
         this.vmExecutorService = vmExecution;
+
+        this.transactionExecutorHelper = new TransactionExecutorHelper(vmConfig, precompiledContracts, executionBlock, blockFactory, blockStore, receiptStore, programInvokeFactory, activations, tx, txindex, deletedAccounts);
     }
 
     /**
@@ -288,13 +275,13 @@ public class TransactionExecutor {
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        precompiledContract = precompiledContracts.getContractForAddress(activations, DataWord.valueOf(targetAddress.getBytes()));
+        precompiledContract = this.transactionExecutorHelper.getPrecompiledContract(targetAddress);
 
         this.subtraces = new ArrayList<>();
 
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
+            this.transactionExecutorHelper.initializedPrecompiledContract(precompiledContract, result.getLogInfoList(), track);
             profiler.stop(metric);
 
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
@@ -344,11 +331,8 @@ public class TransactionExecutor {
                 mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
                 result.spendGas(basicTxCost);
             } else {
-                ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
-
-                this.vm = new VM(vmConfig, precompiledContracts);
-                this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts);
+                this.vm = this.transactionExecutorHelper.createVM();
+                this.program = this.transactionExecutorHelper.createProgram(code, cacheTrack);
             }
         }
 
@@ -368,10 +352,9 @@ public class TransactionExecutor {
             // storage. It doesn't even call setupContract() to setup a storage root
         } else {
             cacheTrack.setupContract(newContractAddress);
-            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
-            this.vm = new VM(vmConfig, precompiledContracts);
-            this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts);
+            this.vm = this.transactionExecutorHelper.createVM();
+            this.program = this.transactionExecutorHelper.createProgram(tx.getData(), cacheTrack);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
