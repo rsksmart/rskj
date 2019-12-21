@@ -82,8 +82,6 @@ public class TransactionExecutor {
     private Program program;
     private List<ProgramSubtrace> subtraces;
 
-    private PrecompiledContracts.PrecompiledContract precompiledContract;
-
     private BigInteger mEndGas = BigInteger.ZERO;
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
@@ -270,7 +268,7 @@ public class TransactionExecutor {
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        precompiledContract = this.transactionExecutorHelper.getPrecompiledContract(targetAddress);
+        PrecompiledContracts.PrecompiledContract precompiledContract = this.transactionExecutorHelper.getPrecompiledContract(targetAddress);
 
         this.subtraces = new ArrayList<>();
 
