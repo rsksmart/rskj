@@ -85,8 +85,6 @@ public class TransactionExecutor {
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
 
-    private boolean localCall = false;
-
     public TransactionExecutor(
             TransactionExecutorHelper transactionExecutorHelper,
             Constants constants, ActivationConfig activationConfig, Transaction tx, RskAddress coinbase,
@@ -113,25 +111,35 @@ public class TransactionExecutor {
      * @return true if the transaction is valid and executed, false if the transaction is invalid
      */
     public boolean executeTransaction() {
-        basicTxCost = tx.transactionCost(constants, activations);
+        this.tx.setLocalCallTransaction(false);
 
-        // RSK local call should no validated, and no changes to nonce and balances
-        if (localCall) {
-            this.execute();
-            this.go();
-        }
-        else {
-            if (!this.transactionIsValid()) {
-                return false;
-            }
+        basicTxCost = this.tx.transactionCost(constants, activations);
 
-            this.adjustNonceAndBalance();
-            this.execute();
-            this.go();
-            this.finalization();
+        if (!this.transactionIsValid()) {
+            return false;
         }
+
+        this.adjustNonceAndBalance();
+
+        this.execute(false);
+        this.go();
+        this.finalization();
 
         return true;
+    }
+
+    /**
+     * Executes the transaction as local
+     * without changes to sender nonce and balances
+     *
+     */
+    public void executeLocalTransaction() {
+        this.tx.setLocalCallTransaction(true);
+
+        basicTxCost = this.tx.transactionCost(constants, activations);
+
+        this.execute(true);
+        this.go();
     }
 
     /**
@@ -250,17 +258,17 @@ public class TransactionExecutor {
         logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
     }
 
-    private void execute() {
+    private void execute(boolean isLocalCall) {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (tx.isContractCreation()) {
             create();
         } else {
-            call();
+            call(isLocalCall);
         }
     }
 
-    private void call() {
+    private void call(boolean isLocalCall) {
         logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         RskAddress targetAddress = tx.getReceiveAddress();
@@ -274,7 +282,7 @@ public class TransactionExecutor {
         this.subtraces = new ArrayList<>();
 
         if (precompiledContract != null) {
-            if (!executePrecompiledContract(targetAddress, precompiledContract)) {
+            if (!executePrecompiledContract(targetAddress, precompiledContract, isLocalCall)) {
                 return;
             }
         } else {
@@ -295,7 +303,7 @@ public class TransactionExecutor {
         }
     }
 
-    private boolean executePrecompiledContract(RskAddress targetAddress, PrecompiledContracts.PrecompiledContract precompiledContract) {
+    private boolean executePrecompiledContract(RskAddress targetAddress, PrecompiledContracts.PrecompiledContract precompiledContract, boolean isLocalCall) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
         this.transactionExecutorHelper.initializedPrecompiledContract(precompiledContract, result.getLogInfoList(), track);
         profiler.stop(metric);
@@ -305,7 +313,7 @@ public class TransactionExecutor {
         BigInteger txGasLimit = toBI(tx.getGasLimit());
         BigInteger gasUsed = requiredGas.add(BigInteger.valueOf(basicTxCost));
 
-        if (!localCall &&
+        if (!isLocalCall &&
                 ((!activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(requiredGas) < 0) ||
                         (activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(gasUsed) < 0))) {
             // no refund no endowment
@@ -568,12 +576,6 @@ public class TransactionExecutor {
 
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
-    }
-
-    public TransactionExecutor setLocalCall(boolean localCall) {
-        this.localCall = localCall;
-        this.tx.setLocalCallTransaction(localCall);
-        return this;
     }
 
     public List<LogInfo> getVMLogs() {

@@ -74,8 +74,11 @@ public class Transaction {
 
     private static final byte LOWER_REAL_V = 27;
     protected RskAddress sender;
+
+    // TODO remove the use of this variable
     /* whether this is a local call transaction */
     private boolean isLocalCall;
+
     /* a counter used to make sure each transaction can only be processed once */
     private final byte[] nonce;
     private final Coin value;
