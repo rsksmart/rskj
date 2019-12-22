@@ -2113,7 +2113,6 @@ public class VM {
     }
 
     public void initDebugData() {
-        gasBefore = 0;
         memWords = 0;
     }
 
