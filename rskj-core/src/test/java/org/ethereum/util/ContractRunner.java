@@ -75,14 +75,14 @@ public class ContractRunner {
 
     private ProgramResult createContract(byte[] bytecode, RepositorySnapshot repository) {
         Transaction creationTx = contractCreateTx(bytecode, repository);
-        return executeTransaction(creationTx, repository).getResult();
+        return executeTransaction(creationTx, repository, false).getResult();
     }
 
     public ProgramResult createAndRunContract(byte[] bytecode, byte[] encodedCall, BigInteger value, boolean localCall) {
         RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
         createContract(bytecode, repository);
         Transaction creationTx = contractCreateTx(bytecode, repository);
-        executeTransaction(creationTx, repository);
+        executeTransaction(creationTx, repository, false);
         return runContract(creationTx.getContractAddress().getBytes(), encodedCall, value, localCall, repository);
     }
 
@@ -107,16 +107,22 @@ public class ContractRunner {
                 .nonce(nonceExecute.longValue())
                 .value(value)
                 .build();
-        transaction.setLocalCallTransaction(localCall);
-        return executeTransaction(transaction, repository).getResult();
+
+        return executeTransaction(transaction, repository, localCall).getResult();
     }
 
-    private TransactionExecutor executeTransaction(Transaction transaction, RepositorySnapshot repository) {
+    private TransactionExecutor executeTransaction(Transaction transaction, RepositorySnapshot repository, boolean localCall) {
         Repository track = repository.startTracking();
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(transaction, 0, RskAddress.nullAddress(), track, blockchain.getBestBlock(), 0);
 
-        executor.executeTransaction();
+        if (localCall) {
+            executor.executeLocalTransaction();
+        }
+        else {
+            executor.executeTransaction();
+        }
+
         track.commit();
 
         return executor;
