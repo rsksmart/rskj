@@ -127,7 +127,6 @@ public class TransactionExecutor {
     /**
      * Do all the basic validation, if the executor
      * will be ready to run the transaction at the end
-     * set readyToExecute = true
      */
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations);
@@ -241,7 +240,6 @@ public class TransactionExecutor {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
-
             track.increaseNonce(tx.getSender());
 
             BigInteger txGasLimit = toBI(tx.getGasLimit());
@@ -272,49 +270,8 @@ public class TransactionExecutor {
         this.subtraces = new ArrayList<>();
 
         if (precompiledContract != null) {
-            Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            this.transactionExecutorHelper.initializedPrecompiledContract(precompiledContract, result.getLogInfoList(), track);
-            profiler.stop(metric);
-
-            metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
-            BigInteger requiredGas = BigInteger.valueOf(precompiledContract.getGasForData(tx.getData()));
-            BigInteger txGasLimit = toBI(tx.getGasLimit());
-            BigInteger gasUsed = requiredGas.add(BigInteger.valueOf(basicTxCost));
-
-            if (!localCall &&
-                    ((!activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(requiredGas) < 0) ||
-                            (activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(gasUsed) < 0))) {
-                // no refund no endowment
-                execError(String.format(
-                        "Out of Gas calling precompiled contract at block %d for address 0x%s. required: %s, used: %s, left: %s ",
-                        executionBlock.getNumber(),
-                        targetAddress.toString(),
-                        requiredGas,
-                        gasUsed,
-                        mEndGas));
-                mEndGas = BigInteger.ZERO;
-                profiler.stop(metric);
+            if (!executePrecompiledContract(targetAddress, precompiledContract)) {
                 return;
-            } else {
-                mEndGas = txGasLimit.subtract(gasUsed);
-
-                // FIXME: save return for vm trace
-                try {
-                    byte[] out = precompiledContract.execute(tx.getData());
-                    this.subtraces = precompiledContract.getSubtraces();
-                    result.setHReturn(out);
-                    if (!track.isExist(targetAddress)) {
-                        track.createAccount(targetAddress);
-                        track.setupContract(targetAddress);
-                    } else if (!track.isContract(targetAddress)) {
-                        track.setupContract(targetAddress);
-                    }
-                } catch (RuntimeException e) {
-                    result.setException(e);
-                }
-
-                result.spendGas(gasUsed.longValue());
-                profiler.stop(metric);
             }
         } else {
             byte[] code = track.getCode(targetAddress);
@@ -332,6 +289,55 @@ public class TransactionExecutor {
             Coin endowment = tx.getValue();
             cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
         }
+    }
+
+    private boolean executePrecompiledContract(RskAddress targetAddress, PrecompiledContracts.PrecompiledContract precompiledContract) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
+        this.transactionExecutorHelper.initializedPrecompiledContract(precompiledContract, result.getLogInfoList(), track);
+        profiler.stop(metric);
+
+        metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
+        BigInteger requiredGas = BigInteger.valueOf(precompiledContract.getGasForData(tx.getData()));
+        BigInteger txGasLimit = toBI(tx.getGasLimit());
+        BigInteger gasUsed = requiredGas.add(BigInteger.valueOf(basicTxCost));
+
+        if (!localCall &&
+                ((!activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(requiredGas) < 0) ||
+                        (activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(gasUsed) < 0))) {
+            // no refund no endowment
+            execError(String.format(
+                    "Out of Gas calling precompiled contract at block %d for address 0x%s. required: %s, used: %s, left: %s ",
+                    executionBlock.getNumber(),
+                    targetAddress.toString(),
+                    requiredGas,
+                    gasUsed,
+                    mEndGas));
+            mEndGas = BigInteger.ZERO;
+            profiler.stop(metric);
+
+            return false;
+        }
+
+        mEndGas = txGasLimit.subtract(gasUsed);
+
+        // FIXME: save return for vm trace
+        try {
+            byte[] out = precompiledContract.execute(tx.getData());
+            result.setHReturn(out);
+            if (!track.isExist(targetAddress)) {
+                track.createAccount(targetAddress);
+                track.setupContract(targetAddress);
+            } else if (!track.isContract(targetAddress)) {
+                track.setupContract(targetAddress);
+            }
+        } catch (RuntimeException e) {
+            result.setException(e);
+        }
+
+        result.spendGas(gasUsed.longValue());
+        profiler.stop(metric);
+
+        return true;
     }
 
     private void create() {
