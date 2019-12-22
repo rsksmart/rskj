@@ -32,6 +32,7 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -70,7 +71,7 @@ public class TransactionExecutorHelper {
         this.activations = activations;
         this.tx = tx;
         this.txindex = txindex;
-        this.deletedAccounts = deletedAccounts;
+        this.deletedAccounts = Collections.unmodifiableSet(deletedAccounts);
     }
 
     public PrecompiledContracts.PrecompiledContract getPrecompiledContract(RskAddress address) {
