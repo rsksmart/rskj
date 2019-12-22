@@ -64,6 +64,7 @@ public class TransactionExecutor {
     private final Transaction tx;
     private final Repository track;
     private final Repository cacheTrack;
+
     private final boolean enableRemasc;
     private final ExecutorService vmExecutorService;
     private String executionError = "";
@@ -72,18 +73,20 @@ public class TransactionExecutor {
 
     private final RskAddress coinbase;
 
-    private ProgramResult result = new ProgramResult();
     private final Block executionBlock;
 
     private final TransactionExecutorHelper transactionExecutorHelper;
 
+    // TODO reduce the scattered use of these variables: vm, program, result, mEndGas
     private VM vm;
     private Program program;
     private List<ProgramSubtrace> subtraces;
-
+    private ProgramResult result = new ProgramResult();
     private BigInteger mEndGas = BigInteger.ZERO;
-    private long basicTxCost = 0;
+
     private List<LogInfo> logs = null;
+
+    private long basicTxCost = 0;
 
     public TransactionExecutor(
             TransactionExecutorHelper transactionExecutorHelper,
