@@ -113,13 +113,23 @@ public class TransactionExecutor {
      * @return true if the transaction is valid and executed, false if the transaction is invalid
      */
     public boolean executeTransaction() {
-        if (!this.init()) {
-            return false;
-        }
+        basicTxCost = tx.transactionCost(constants, activations);
 
-        this.execute();
-        this.go();
-        this.finalization();
+        // RSK local call should no validated, and no changes to nonce and balances
+        if (localCall) {
+            this.execute();
+            this.go();
+        }
+        else {
+            if (!this.transactionIsValid()) {
+                return false;
+            }
+
+            this.adjustNonceAndBalance();
+            this.execute();
+            this.go();
+            this.finalization();
+        }
 
         return true;
     }
@@ -128,13 +138,7 @@ public class TransactionExecutor {
      * Do all the basic validation, if the executor
      * will be ready to run the transaction at the end
      */
-    private boolean init() {
-        basicTxCost = tx.transactionCost(constants, activations);
-
-        if (localCall) {
-            return true;
-        }
-
+    private boolean transactionIsValid() {
         BigInteger txGasLimit = new BigInteger(1, tx.getGasLimit());
         BigInteger curBlockGasLimit = new BigInteger(1, executionBlock.getGasLimit());
 
@@ -236,18 +240,18 @@ public class TransactionExecutor {
         return true;
     }
 
+    private void adjustNonceAndBalance() {
+        track.increaseNonce(tx.getSender());
+
+        BigInteger txGasLimit = toBI(tx.getGasLimit());
+        Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
+        track.addBalance(tx.getSender(), txGasCost.negate());
+
+        logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
+    }
+
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
-
-        if (!localCall) {
-            track.increaseNonce(tx.getSender());
-
-            BigInteger txGasLimit = toBI(tx.getGasLimit());
-            Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
-            track.addBalance(tx.getSender(), txGasCost.negate());
-
-            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
-        }
 
         if (tx.isContractCreation()) {
             create();
@@ -264,7 +268,7 @@ public class TransactionExecutor {
         // DataWord(targetAddress)) can fail with exception:
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
-        // But init() will detect this earlier
+        // But transactionIsValid() will detect this earlier
         PrecompiledContracts.PrecompiledContract precompiledContract = this.transactionExecutorHelper.getPrecompiledContract(targetAddress);
 
         this.subtraces = new ArrayList<>();
@@ -479,11 +483,6 @@ public class TransactionExecutor {
     }
 
     private void finalization() {
-        // RSK if local call gas balances must not be changed
-        if (localCall) {
-            return;
-        }
-
         logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         cacheTrack.commit();
