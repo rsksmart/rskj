@@ -48,7 +48,7 @@ public class SimpleAsyncNode extends SimpleNode {
     private static final TestSystemProperties config = new TestSystemProperties();
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(5000);
-    private SyncProcessor syncProcessor;
+    private SyncProcessorImpl syncProcessor;
     private SimpleChannelManager simpleChannelManager;
 
     public SimpleAsyncNode(MessageHandler handler, Blockchain blockchain) {
@@ -57,7 +57,7 @@ public class SimpleAsyncNode extends SimpleNode {
 
     public SimpleAsyncNode(MessageHandler handler,
                            Blockchain blockchain,
-                           SyncProcessor syncProcessor,
+                           SyncProcessorImpl syncProcessor,
                            SimpleChannelManager simpleChannelManager) {
         super(handler, blockchain);
         this.syncProcessor = syncProcessor;
@@ -107,7 +107,7 @@ public class SimpleAsyncNode extends SimpleNode {
         this.futures.clear();
     }
 
-    public SyncProcessor getSyncProcessor() {
+    public SyncProcessorImpl getSyncProcessor() {
         return this.syncProcessor;
     }
 
@@ -133,7 +133,7 @@ public class SimpleAsyncNode extends SimpleNode {
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
         SimpleChannelManager channelManager = new SimpleChannelManager();
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-        SyncProcessor syncProcessor = new SyncProcessor(
+        SyncProcessorImpl syncProcessor = new SyncProcessorImpl(
                 blockchain, indexedBlockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration, blockFactory,
                 blockValidationRule,
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
