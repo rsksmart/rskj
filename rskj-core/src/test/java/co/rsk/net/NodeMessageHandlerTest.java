@@ -46,7 +46,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -316,7 +315,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimplePeer sender = new SimplePeer();
-        final SyncProcessor syncProcessor = new SyncProcessor(
+        final SyncProcessorImpl syncProcessor = new SyncProcessorImpl(
                 blockchain,
                 mock(BlockStore.class), mock(ConsensusValidationMainchainView.class),
                 blockSyncService,
