@@ -102,6 +102,8 @@ public class BridgeStorageProvider {
 
     private HashMap<DataWord, Optional<Integer>> storageVersion;
 
+    private HashMap<Sha256Hash, Long> btcTxHashesToSave;
+
     public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
         this.repository = repository;
         this.contractAddress = contractAddress;
@@ -144,7 +146,55 @@ public class BridgeStorageProvider {
         saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY, oldFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
-    public Map<Sha256Hash, Long> getBtcTxHashesAlreadyProcessed() throws IOException {
+    public Optional<Long> getHeightIfBtcTxhashIsAlreadyProcessed(Sha256Hash btcTxHash) throws IOException {
+        Map<Sha256Hash, Long> processed = getBtcTxHashesAlreadyProcessed();
+        if (processed.containsKey(btcTxHash)) {
+            return Optional.of(processed.get(btcTxHash));
+        }
+
+        if (!activations.isActive(RSKIP134)) {
+            return Optional.empty();
+        }
+
+        if (btcTxHashesToSave == null) {
+            btcTxHashesToSave = new HashMap<>();
+        }
+
+        if (btcTxHashesToSave.containsKey(btcTxHash)) {
+            return Optional.of(btcTxHashesToSave.get(btcTxHash));
+        }
+
+        Optional<Long> height = getFromRepository(getStorageKeyForBtcTxHashAlreadyProcessed(btcTxHash), BridgeSerializationUtils::deserializeOptionalLong);
+        if (!height.isPresent()) {
+            return height;
+        }
+
+        btcTxHashesToSave.put(btcTxHash, height.get());
+        return height;
+    }
+
+    public void setHeightBtcTxhashAlreadyProcessed(Sha256Hash btcTxHash, long height) throws IOException {
+        if (activations.isActive(RSKIP134)) {
+            if (btcTxHashesToSave == null) {
+                btcTxHashesToSave = new HashMap<>();
+            }
+            btcTxHashesToSave.put(btcTxHash, height);
+        } else {
+            getBtcTxHashesAlreadyProcessed().put(btcTxHash, height);
+        }
+    }
+
+    public void saveHeightBtcTxHashAlreadyProcessed() {
+        if (btcTxHashesToSave == null) {
+            return;
+        }
+
+        btcTxHashesToSave.forEach((btcTxHash, height) ->
+            safeSaveToRepository(getStorageKeyForBtcTxHashAlreadyProcessed(btcTxHash), height, BridgeSerializationUtils::serializeLong)
+        );
+    }
+
+    private Map<Sha256Hash, Long> getBtcTxHashesAlreadyProcessed() throws IOException {
         if (btcTxHashesAlreadyProcessed != null) {
             return btcTxHashesAlreadyProcessed;
         }
@@ -483,6 +533,12 @@ public class BridgeStorageProvider {
         saveFeePerKbElection();
 
         saveLockingCap();
+
+        saveHeightBtcTxHashAlreadyProcessed();
+    }
+
+    private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
+        return DataWord.fromLongString("btcTxHashAP-" + btcTxHash.toString());
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {

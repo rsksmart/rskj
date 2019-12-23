@@ -257,7 +257,7 @@ public class BridgeSupport {
 
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
         // Check the tx was not already processed
-        if (provider.getBtcTxHashesAlreadyProcessed().keySet().contains(btcTxHash)) {
+        if (getBtcTxHashProcessedHeight(btcTxHash) > -1L) {
             logger.warn("Supplied Btc Tx {} was already processed", btcTxHash);
             return;
         }
@@ -393,7 +393,7 @@ public class BridgeSupport {
         }
 
         // Mark tx as processed on this block
-        provider.getBtcTxHashesAlreadyProcessed().put(btcTxHash, rskExecutionBlock.getNumber());
+        provider.setHeightBtcTxhashAlreadyProcessed(btcTxHash, rskExecutionBlock.getNumber());
 
         // Save UTXOs from the federation(s) only if we actually
         // locked the funds.
@@ -1135,7 +1135,7 @@ public class BridgeSupport {
      * @throws IOException
      */
     public Boolean isBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) throws IOException {
-        return provider.getBtcTxHashesAlreadyProcessed().containsKey(btcTxHash);
+        return provider.getHeightIfBtcTxhashIsAlreadyProcessed(btcTxHash).isPresent();
     }
 
     /**
@@ -1147,14 +1147,8 @@ public class BridgeSupport {
      * @throws IOException
      */
     public Long getBtcTxHashProcessedHeight(Sha256Hash btcTxHash) throws IOException {
-        Map<Sha256Hash, Long> btcTxHashes = provider.getBtcTxHashesAlreadyProcessed();
-
         // Return -1 if the transaction hasn't been processed
-        if (!btcTxHashes.containsKey(btcTxHash)) {
-            return -1L;
-        }
-
-        return btcTxHashes.get(btcTxHash);
+        return provider.getHeightIfBtcTxhashIsAlreadyProcessed(btcTxHash).orElse(-1L);
     }
 
     /**

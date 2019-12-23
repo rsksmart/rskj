@@ -1292,7 +1292,7 @@ public class BridgeSupportTestPowerMock {
         BtcTransaction tx = createTransaction();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
 
-        provider.getBtcTxHashesAlreadyProcessed().put(tx.getHash(), 1L);
+        provider.setHeightBtcTxhashAlreadyProcessed(tx.getHash(), 1L);
 
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, null);
 
@@ -1307,7 +1307,7 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertFalse(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
+        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test
@@ -1339,7 +1339,7 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
+        Assert.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test
@@ -1371,7 +1371,7 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
+        Assert.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test
@@ -1403,7 +1403,7 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
+        Assert.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test(expected = VerificationException.EmptyInputsOrOutputs.class)
@@ -1488,7 +1488,7 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
+        Assert.assertFalse(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test
@@ -1570,7 +1570,7 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertEquals(1, provider2.getBtcTxHashesAlreadyProcessed().size());
+        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx.getHash()).isPresent());
     }
 
     @Test
@@ -1689,7 +1689,7 @@ public class BridgeSupportTestPowerMock {
         );
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class, Mockito.RETURNS_DEEP_STUBS);
-        when(mockBridgeStorageProvider.getBtcTxHashesAlreadyProcessed().keySet().contains(any(Sha256Hash.class))).thenReturn(false);
+        when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
 
         List<UTXO> retiringFederationUtxos = new ArrayList<>();
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
@@ -1873,8 +1873,9 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertEquals(3, provider2.getBtcTxHashesAlreadyProcessed().size());
-
+        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
+        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());
+        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx3.getHash()).isPresent());
     }
 
     @Test
@@ -2017,7 +2018,9 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
 
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertEquals(3, provider2.getBtcTxHashesAlreadyProcessed().size());
+        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
+        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx2.getHash()).isPresent());
+        Assert.assertTrue(provider2.getHeightIfBtcTxhashIsAlreadyProcessed(tx3.getHash()).isPresent());
     }
 
     @Test
@@ -4020,10 +4023,10 @@ public class BridgeSupportTestPowerMock {
     private BridgeStorageProvider getBridgeStorageProviderMockWithProcessedHashes() throws IOException {
         Map<Sha256Hash, Long> mockedHashes = new HashMap<>();
         BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
-        when(providerMock.getBtcTxHashesAlreadyProcessed()).thenReturn(mockedHashes);
 
         for (int i = 0; i < 10; i++) {
-            mockedHashes.put(Sha256Hash.of(("hash_" + i).getBytes()), (long) i);
+            when(providerMock.getHeightIfBtcTxhashIsAlreadyProcessed(Sha256Hash.of(("hash_" + i).getBytes())))
+                    .thenReturn(Optional.of(Long.valueOf((long)i)));
         }
 
         return providerMock;

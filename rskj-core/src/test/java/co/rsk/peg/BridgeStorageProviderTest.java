@@ -39,6 +39,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.util.RLP;
 import org.ethereum.db.MutableRepository;
@@ -84,11 +85,6 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepository();
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
-        Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
-
-        Assert.assertNotNull(processed);
-        Assert.assertTrue(processed.isEmpty());
-
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
 
         Assert.assertNotNull(releaseRequestQueue);
@@ -116,7 +112,6 @@ public class BridgeStorageProviderTest {
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
-        provider0.getBtcTxHashesAlreadyProcessed();
         provider0.getReleaseRequestQueue();
         provider0.getReleaseTransactionSet();
         provider0.getRskTxsWaitingForSignatures();
@@ -130,7 +125,6 @@ public class BridgeStorageProviderTest {
         RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
         Assert.assertThat(repository.isContract(contractAddress), is(true));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("btcTxHashesAP".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("releaseRequestQueue".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("releaseTransactionSet".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("rskTxsWaitingFS".getBytes())));
@@ -138,11 +132,6 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("oldFederationBtcUTXOs".getBytes())));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
-
-        Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
-
-        Assert.assertNotNull(processed);
-        Assert.assertTrue(processed.isEmpty());
 
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
 
@@ -179,8 +168,8 @@ public class BridgeStorageProviderTest {
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
-        provider0.getBtcTxHashesAlreadyProcessed().put(hash1, 1L);
-        provider0.getBtcTxHashesAlreadyProcessed().put(hash2, 1L);
+        provider0.setHeightBtcTxhashAlreadyProcessed(hash1, 1L);
+        provider0.setHeightBtcTxhashAlreadyProcessed(hash2, 1L);
         provider0.save();
         track.commit();
 
@@ -188,11 +177,8 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
-        Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
-        Set<Sha256Hash> processedHashes = processed.keySet();
-
-        Assert.assertTrue(processedHashes.contains(hash1));
-        Assert.assertTrue(processedHashes.contains(hash2));
+        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1).isPresent());
+        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(hash2).isPresent());
     }
 
     @Test
@@ -1661,6 +1647,143 @@ public class BridgeStorageProviderTest {
 
         // And then we get it back
         assertThat(provider.getLockingCap(), is(expectedCoin));
+    }
+
+    @Test
+    public void getHeightIfBtcTxhashIsAlreadyProcessed_before_RSKIP134_does_not_use_new_storage() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        HashMap<Sha256Hash, Long> hashes = new HashMap<>();
+        hashes.put(hash, 1L);
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP")))
+                .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(1), result.get());
+
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash.toString()));
+    }
+
+    @Test
+    public void getHeightIfBtcTxhashIsAlreadyProcessed_after_RSKIP134_uses_new_storage() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash1 = Sha256Hash.ZERO_HASH;
+        Sha256Hash hash2 = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
+
+        HashMap<Sha256Hash, Long> hashes = new HashMap<>();
+        hashes.put(hash1, 1L);
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP")))
+                .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
+
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString())))
+                .thenReturn(BridgeSerializationUtils.serializeLong(2L));
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        // Get hash1 which is stored in old storage
+        Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash1);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(1), result.get());
+
+        // old storage was accessed and new storage not
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
+
+        // Get hash2 which is stored in new storage
+        result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash2);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(2), result.get());
+
+        // old storage wasn't accessed anymore (because it is cached) and new storage was accessed
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
+
+        // Get hash2 again
+        result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash2);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(2), result.get());
+
+        // No more accesses to repository, as both values are in cache
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
+    }
+
+    @Test
+    public void setHeightBtcTxhashAlreadyProcessed_before_RSKIP134_does_not_use_new_storage() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
+
+        // The repository is accessed once to set the value
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+
+        Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(1), result.get());
+    }
+
+    @Test
+    public void setHeightBtcTxhashAlreadyProcessed_before_RSKIP134_uses_new_storage() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
+
+        // The repository is never accessed as the new storage keeps the values in cache until save
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+
+        Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(1), result.get());
+    }
+
+    @Test
+    public void saveHeightBtcTxHashAlreadyProcessed() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
+
+        provider0.saveHeightBtcTxHashAlreadyProcessed();
+
+        // The repository is never accessed as the new storage keeps the values in cache until save
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+
+        Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(1), result.get());
     }
 
     private BtcTransaction createTransaction() {

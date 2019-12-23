@@ -16,6 +16,7 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -400,8 +401,48 @@ public class BridgeSupportTest {
         assertLockingCap(true, true, Coin.COIN.multiply(6), Coin.COIN, Coin.COIN, Coin.ZERO, Coin.COIN);
     }
 
+    @Test
+    public void isBtcTxHashAlreadyProcessed() throws IOException {
+        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0l);
+
+        Sha256Hash hash1 = Sha256Hash.ZERO_HASH;
+        Sha256Hash hash2 = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
+
+        BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1l));
+
+
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, bridgeStorageProvider, activations);
+
+        assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(hash1));
+        assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(hash2));
+    }
+
+    @Test
+    public void getBtcTxHashProcessedHeight() throws IOException {
+        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0l);
+
+        Sha256Hash hash1 = Sha256Hash.ZERO_HASH;
+        Sha256Hash hash2 = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
+
+        BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1l));
+
+
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, bridgeStorageProvider, activations);
+
+        assertEquals(Long.valueOf(1), bridgeSupport.getBtcTxHashProcessedHeight(hash1));
+        assertEquals(Long.valueOf(-1), bridgeSupport.getBtcTxHashProcessedHeight(hash2));
+    }
+
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider) {
         return getBridgeSupport(constants, provider, null, null, null, null);
+    }
+
+    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, ActivationConfig.ForBlock activations) {
+        return getBridgeSupport(constants, provider, null, null, null, null, activations);
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
@@ -555,6 +596,9 @@ public class BridgeSupportTest {
 
         // If the address is no longer whitelisted, it means it was consumed, whether the lock was rejected by lockingCap or not
         Assert.assertThat(whitelist.isWhitelisted(address), is(false));
+
+        // The Btc transaction should have been processed
+        assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(tx.getHash()));
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(shouldLock ? lockValue : Coin.ZERO);
         RskAddress srcKeyRskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey.getPrivKey()).getAddress());

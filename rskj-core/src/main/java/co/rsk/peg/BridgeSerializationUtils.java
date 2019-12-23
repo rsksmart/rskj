@@ -617,6 +617,15 @@ public class BridgeSerializationUtils {
         return RLP.decodeBigInteger(data, 0).intValue();
     }
 
+    public static byte[] serializeLong(long value) { return RLP.encodeBigInteger(BigInteger.valueOf(value)); }
+
+    public static Optional<Long> deserializeOptionalLong(byte[] data) {
+        if (data == null) {
+            return Optional.empty();
+        }
+        return Optional.of(RLP.decodeBigInteger(data, 0).longValue());
+    }
+
     // An ABI call spec is serialized as:
     // function name encoded in UTF-8
     // arg_1, ..., arg_n
