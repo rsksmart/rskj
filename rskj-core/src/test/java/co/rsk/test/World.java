@@ -18,6 +18,7 @@
 
 package co.rsk.test;
 
+import co.rsk.core.ExecutionScopeFactory;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -110,10 +111,22 @@ public class World {
                 config.getActivationConfig());
     }
 
+    public ExecutionScopeFactory getExecutionScopeFactory() {
+        TestSystemProperties config = new TestSystemProperties();
+        return new ExecutionScopeFactory(config, stateRootHandler, this::getTrieStore,
+                new TransactionExecutorFactory(
+                        config,
+                        blockStore,
+                        null,
+                        new BlockFactory(config.getActivationConfig()),
+                        new ProgramInvokeFactoryImpl(),
+                        new PrecompiledContracts(config, bridgeSupportFactory)
+        ));
+    }
+
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
 
     public BlockExecutor getBlockExecutor() {
-        final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
         final TestSystemProperties config = new TestSystemProperties();
 
         Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
@@ -132,7 +145,7 @@ public class World {
                             blockStore,
                             null,
                             new BlockFactory(config.getActivationConfig()),
-                            programInvokeFactory,
+                            new ProgramInvokeFactoryImpl(),
                             new PrecompiledContracts(config, bridgeSupportFactory)
                     )
             );
