@@ -390,7 +390,6 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         pendingMessages.put(message.getId(), message.getMessageType());
     }
 
-    @Override
     @VisibleForTesting
     public SyncState getSyncState() {
         return this.syncState;
