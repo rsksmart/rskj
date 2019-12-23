@@ -239,6 +239,7 @@ public class RskContext implements NodeBootstrapper {
     private Web3InformationRetriever web3InformationRetriever;
     private BootstrapImporter bootstrapImporter;
     private LevelDbDataSourceFactory levelDbDataSourceFactory;
+    private ExecutionScopeFactory executionScopeFactory;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -360,6 +361,18 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return transactionPool;
+    }
+
+    public ExecutionScopeFactory getExecutionScopeFactory() {
+        if (executionScopeFactory == null) {
+            executionScopeFactory = new ExecutionScopeFactory(
+                    getRskSystemProperties(),
+                    getStateRootHandler(),
+                    () -> buildTrieStore(Paths.get(rskSystemProperties.databaseDir(), "unitrie")),
+                    getTransactionExecutorFactory());
+        }
+        
+        return executionScopeFactory;
     }
 
     public RepositoryLocator getRepositoryLocator() {
