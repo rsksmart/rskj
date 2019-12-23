@@ -43,22 +43,9 @@ public interface SyncProcessor {
 
     void processBlockResponse(Peer peer, BlockResponseMessage message);
 
-    void sendSkeletonRequest(Peer peer, long height);
-
-    void sendBlockHashRequest(Peer peer, long height);
-
-    void sendBlockHeadersRequest(Peer peer, ChunkDescriptor chunk);
-
-    long sendBodyRequest(Peer peer, @Nonnull BlockHeader header);
-
     Set<NodeID> getKnownPeersNodeIDs();
 
     void onTimePassed(Duration timePassed);
 
-    void startSyncing(Peer peer);
-
     void stopSyncing();
-
-    @VisibleForTesting
-    SyncState getSyncState();
 }
