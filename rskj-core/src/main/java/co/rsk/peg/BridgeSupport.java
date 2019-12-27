@@ -347,37 +347,7 @@ public class BridgeSupport {
             BtcLockSender btcLockSender = btcLockSenderOptional.get();
             Address senderBtcAddress = btcLockSender.getBTCAddress();
             if(!txIsProcessable(btcLockSender.getType())) {
-                // Return funds to sender
-
-                // Build the list of UTXOs in the BTC transaction sent to either the active
-                // or retiring federation
-                List<UTXO> utxosToUse = btcTx.getWalletOutputs(getNoSpendWalletForLiveFederations()).stream()
-                        .map(output ->
-                                new UTXO(
-                                        btcTx.getHash(),
-                                        output.getIndex(),
-                                        output.getValue(),
-                                        0,
-                                        btcTx.isCoinBase(),
-                                        output.getScriptPubKey()
-                                )
-                        ).collect(Collectors.toList());
-                // Use the list of UTXOs to build a transaction builder
-                // for the return btc transaction generation
-                ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
-                        btcContext.getParams(),
-                        getUTXOBasedWalletForLiveFederations(utxosToUse),
-                        senderBtcAddress,
-                        getFeePerKb()
-                );
-                Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = txBuilder.buildEmptyWalletTo(senderBtcAddress);
-                if (buildReturnResult.isPresent()) {
-                    provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
-                    logger.info("unprocessable tx type {}, money return tx build successful to {}. Tx {}. Value {}.", btcLockSender.getType(), senderBtcAddress, rskTx, totalAmount);
-                } else {
-                    logger.warn("unprocessable tx type {}, money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcLockSender.getType(), btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
-                    panicProcessor.panic("unprocessable-tx-type-return-funds", String.format("unprocessable tx type money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
-                }
+                logger.warn("Transaction hash {btcTx.btcTx.getHash()} contains a type {btcLockSender.getType()} that it is not processable");
                 return;
             }
 

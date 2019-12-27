@@ -319,7 +319,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void lockSenderProvider_empty_afterFork () {
+    public void when_registerBtcTransaction_sender_not_recognized_no_lock_and_no_refund () throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -329,8 +329,7 @@ public class BridgeSupportTest {
         });
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
-        Federation federation1 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
-                Instant.ofEpochMilli(1000L), 0L, btcParams);
+        Federation federation1 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys), Instant.ofEpochMilli(1000L), 0L, btcParams);
 
         Repository repository = createRepository();
         repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
@@ -347,7 +346,7 @@ public class BridgeSupportTest {
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, bridgeConstants, activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, bridgeConstants, activations );
         provider.setNewFederation(federation1);
 
         // Whitelist the addresses
@@ -356,12 +355,14 @@ public class BridgeSupportTest {
 
         whitelist.put(address1, new OneOffWhiteListEntry(address1, Coin.COIN.multiply(5)));
 
-        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, address1);
+        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
         when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.empty());
 
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
+
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null,
+                bridgeConstants, provider, track,
                 btcLockSenderProvider,
                 executionBlock, mockFactory, activations);
         byte[] bits = new byte[1];
@@ -373,20 +374,14 @@ public class BridgeSupportTest {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1,
-                PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         int height = 30;
-        try {
-            mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
 
-            bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
-            bridgeSupport.save();
-
-        } catch (Exception e) {
-        }
-
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
         track.commit();
+
         Assert.assertThat(whitelist.isWhitelisted(address1), is(true));
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.ZERO;
@@ -396,23 +391,17 @@ public class BridgeSupportTest {
         Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(srcKey1RskAddress));
         Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
+        Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
 
-        try {
-            Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
-            Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertEquals(0, provider.getBtcTxHashesAlreadyProcessed().size());
 
-
-            Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-            Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-            Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-            Assert.assertEquals(0, provider2.getBtcTxHashesAlreadyProcessed().size());
-        } catch (Exception e) {
-        }
     }
 
     @Test
-    public void lockSenderProvider_LegacyType_afterFork () {
+    public void when_registerBtcTransaction_usesLegacyType_afterFork_lock_and_no_refund () throws Exception  {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
@@ -454,8 +443,7 @@ public class BridgeSupportTest {
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, address1),
+                bridgeConstants, provider, track, getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, address1),
                 executionBlock, mockFactory, activations);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -469,43 +457,32 @@ public class BridgeSupportTest {
         co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         int height = 30;
-        try {
-            mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
 
-            bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
-            bridgeSupport.save();
-
-        } catch (Exception e) {
-        }
-
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
         track.commit();
+
         Assert.assertThat(whitelist.isWhitelisted(address1), is(false));
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(5, 0));
 
         RskAddress srcKey1RskAddress = new RskAddress("0000000000000000000000000000000000001221");
 
-
         Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(srcKey1RskAddress));
         Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
-
-        try {
-            Assert.assertEquals(1, provider2.getNewFederationBtcUTXOs().size());
-            Assert.assertEquals(Coin.COIN.multiply(5), provider2.getNewFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN.multiply(5), provider.getNewFederationBtcUTXOs().get(0).getValue());
 
 
-            Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-            Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-            Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-            Assert.assertEquals(1, provider2.getBtcTxHashesAlreadyProcessed().size());
-        } catch (Exception e) {
-        }
+        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertEquals(1, provider.getBtcTxHashesAlreadyProcessed().size());
     }
 
     @Test
-    public void lockSenderProvider_SegCompatibilityType_beforeFork () {
+    public void when_registerBtcTransaction_usesSegCompatibilityType_beforeFork_no_lock_and_no_refund () throws Exception {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
@@ -547,8 +524,7 @@ public class BridgeSupportTest {
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, address1),
+                bridgeConstants, provider, track, getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, address1),
                 executionBlock, mockFactory, activations);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -562,16 +538,11 @@ public class BridgeSupportTest {
         co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         int height = 30;
-        try {
-            mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
 
-            bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
-            bridgeSupport.save();
-
-        } catch (Exception e) {
-        }
-
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
         track.commit();
+
         Assert.assertThat(whitelist.isWhitelisted(address1), is(true));
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.ZERO;
@@ -582,23 +553,17 @@ public class BridgeSupportTest {
         Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(srcKey1RskAddress));
         Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
+        Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
 
-        try {
-            Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
-            Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertEquals(0, provider.getBtcTxHashesAlreadyProcessed().size());
 
-
-            Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-            Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-            Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-            Assert.assertEquals(0, provider2.getBtcTxHashesAlreadyProcessed().size());
-        } catch (Exception e) {
-        }
     }
 
     @Test
-    public void lockSenderProvider_SegCompatibilityType_afterFork () {
+    public void when_registerBtcTransaction_usesSegCompatibilityType_afterFork_lock_and_no_refund () throws Exception {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
@@ -640,8 +605,7 @@ public class BridgeSupportTest {
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, address1),
+                bridgeConstants, provider, track, getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, address1),
                 executionBlock, mockFactory, activations);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -655,43 +619,31 @@ public class BridgeSupportTest {
         co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         int height = 30;
-        try {
-            mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
-        bridgeSupport.save();
-
-        } catch (Exception e) {
-        }
-
         track.commit();
+
         Assert.assertThat(whitelist.isWhitelisted(address1), is(false));
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(5, 0));
 
         RskAddress srcKey1RskAddress = new RskAddress("0000000000000000000000000000000000001221");
 
-
         Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(srcKey1RskAddress));
         Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
+        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN.multiply(5), provider.getNewFederationBtcUTXOs().get(0).getValue());
 
-        try {
-            Assert.assertEquals(1, provider2.getNewFederationBtcUTXOs().size());
-            Assert.assertEquals(Coin.COIN.multiply(5), provider2.getNewFederationBtcUTXOs().get(0).getValue());
-
-
-            Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-            Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-            Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-            Assert.assertEquals(1, provider2.getBtcTxHashesAlreadyProcessed().size());
-        } catch (Exception e) {
-        }
+        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertEquals(1, provider.getBtcTxHashesAlreadyProcessed().size());
     }
 
     @Test
-    public void lockSenderProvider_SegCompatibilityType_notWhitelisted_afterFork () {
+    public void when_registerBtcTransaction_usesSegCompatibilityType_afterFork_notWhitelisted_no_lock_and_refund () throws Exception {
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
@@ -730,8 +682,7 @@ public class BridgeSupportTest {
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, address1),
+                bridgeConstants, provider, track, getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, address1),
                 executionBlock, mockFactory, activations);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -745,59 +696,45 @@ public class BridgeSupportTest {
         co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         int height = 30;
-        try {
-            mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
 
-            bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
-            bridgeSupport.save();
-
-        } catch (Exception e) {
-        }
-
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
         track.commit();
+
         Assert.assertThat(whitelist.isWhitelisted(address1), is(false));
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.ZERO;
 
         RskAddress srcKey1RskAddress = new RskAddress("0000000000000000000000000000000000001221");
 
-
         Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(srcKey1RskAddress));
         Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
+        Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
 
-        try {
-            Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
 
-            Assert.assertEquals(1, provider2.getReleaseTransactionSet().getEntries().size());
-            Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+                .stream()
+                .map(e -> e.getTransaction())
+                .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
+                .collect(Collectors.toList());
 
-            List<BtcTransaction> releaseTxs = provider2.getReleaseTransactionSet().getEntries()
-                    .stream()
-                    .map(e -> e.getTransaction())
-                    .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
-                    .collect(Collectors.toList());
+        // First release tx should correspond to the 5 BTC lock tx
+        BtcTransaction releaseTx = releaseTxs.get(0);
+        Assert.assertEquals(1, releaseTx.getOutputs().size());
+        Assert.assertThat(Coin.COIN.multiply(5).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assert.assertEquals(srcKey1.toAddress(btcParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcParams));
+        Assert.assertEquals(1, releaseTx.getInputs().size());
+        Assert.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
+        Assert.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
 
-            // First release tx should correspond to the 5 BTC lock tx
-            BtcTransaction releaseTx = releaseTxs.get(0);
-            Assert.assertEquals(1, releaseTx.getOutputs().size());
-            Assert.assertThat(Coin.COIN.multiply(5).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
-            Assert.assertEquals(srcKey1.toAddress(btcParams), releaseTx.getOutput(0).getAddressFromP2PKHScript(btcParams));
-            Assert.assertEquals(1, releaseTx.getInputs().size());
-            Assert.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
-            Assert.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
-
-            Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-            Assert.assertEquals(1, provider2.getBtcTxHashesAlreadyProcessed().size());
-
-
-        } catch (Exception e) {
-        }
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertEquals(1, provider.getBtcTxHashesAlreadyProcessed().size());
     }
 
     @Test
-    public void lockSenderProvider_MultisigType_afterFork () {
+    public void when_registerBtcTransaction_usesMultisigType_afterFork_no_lock_and_no_refund () throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -834,13 +771,11 @@ public class BridgeSupportTest {
 
         whitelist.put(address1, new OneOffWhiteListEntry(address1, Coin.COIN.multiply(5)));
 
-
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, track, null,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHMULTISIG, address1),
+                bridgeConstants, provider, track, getBtcLockSenderProvider(BtcLockSender.TxType.P2SHMULTISIG, address1),
                 executionBlock, mockFactory, activations);
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -855,16 +790,11 @@ public class BridgeSupportTest {
                 PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
 
         int height = 30;
-        try {
-            mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
 
-            bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
-            bridgeSupport.save();
-
-        } catch (Exception e) {
-        }
-
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
         track.commit();
+
         Assert.assertThat(whitelist.isWhitelisted(address1), is(true));
 
         co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.ZERO;
@@ -875,21 +805,13 @@ public class BridgeSupportTest {
         Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(srcKey1RskAddress));
         Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
-        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
+        Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
 
-        try {
-            Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
-            Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().get(0).getValue());
-
-
-            Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
-            Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-            Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-            Assert.assertEquals(0, provider2.getBtcTxHashesAlreadyProcessed().size());
-        } catch (Exception e) {
-        }
+        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertEquals(0, provider.getBtcTxHashesAlreadyProcessed().size());
     }
-
 
     private static Repository createRepository() {
         return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
@@ -911,20 +833,18 @@ public class BridgeSupportTest {
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-                                           BridgeEventLogger eventLogger, BtcLockSenderProvider btcLockSenderProvider,
-                                           Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory) {
+                                           BtcLockSenderProvider btcLockSenderProvider, Block executionBlock,
+                                           BtcBlockStoreWithCache.Factory blockStoreFactory) {
         return getBridgeSupport(
-                constants, provider, track, eventLogger, btcLockSenderProvider, executionBlock,
+                constants, provider, track, btcLockSenderProvider, executionBlock,
                 blockStoreFactory, mock(ActivationConfig.ForBlock.class)
         );
     }
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-                                           BridgeEventLogger eventLogger, BtcLockSenderProvider btcLockSenderProvider,
+                                           BtcLockSenderProvider btcLockSenderProvider,
                                            Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory,
                                            ActivationConfig.ForBlock activations) {
-        if (eventLogger == null) {
-            eventLogger = mock(BridgeEventLogger.class);
-        }
+
         if(btcLockSenderProvider == null) {
             btcLockSenderProvider = mock(BtcLockSenderProvider.class);
         }
@@ -934,7 +854,7 @@ public class BridgeSupportTest {
         return new BridgeSupport(
                 constants,
                 provider,
-                eventLogger,
+                mock(BridgeEventLogger.class),
                 btcLockSenderProvider,
                 track,
                 executionBlock,
