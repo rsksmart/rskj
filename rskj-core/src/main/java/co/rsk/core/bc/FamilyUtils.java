@@ -63,7 +63,7 @@ public class FamilyUtils {
         Block it = blockStore.getBlockByHash(parentHash.getBytes());
 
         while(it != null && it.getNumber() >= limit) {
-            ret.add(ByteArrayWrapper.fromBytes(it.getEncoded()));
+            ret.add(ByteArrayWrapper.fromBytes(it.getHeader().getEncoded()));
             it = blockStore.getBlockByHash(it.getParentHash().getBytes());
         }
 
@@ -173,7 +173,7 @@ public class FamilyUtils {
                     continue;
                 }
 
-                family.add(ByteArrayWrapper.fromBytes(uncle.getEncoded()));
+                family.add(ByteArrayWrapper.fromBytes(uncle.getHeader().getEncoded()));
             }
         }
 
