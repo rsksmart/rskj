@@ -63,7 +63,7 @@ public class FamilyUtils {
         Block it = blockStore.getBlockByHash(parentHash.getBytes());
 
         while(it != null && it.getNumber() >= limit) {
-            ret.add(new ByteArrayWrapper(it.getEncoded()));
+            ret.add(ByteArrayWrapper.fromBytes(it.getEncoded()));
             it = blockStore.getBlockByHash(it.getParentHash().getBytes());
         }
 
@@ -95,7 +95,7 @@ public class FamilyUtils {
 
         while(it != null && it.getNumber() >= minNumber) {
             for (BlockHeader uncle : it.getUncleList()) {
-                ret.add(new ByteArrayWrapper(uncle.getEncoded()));
+                ret.add(ByteArrayWrapper.fromBytes(uncle.getEncoded()));
             }
 
             it = blockStore.getBlockByHash(it.getParentHash().getBytes());
@@ -151,7 +151,11 @@ public class FamilyUtils {
             parent = store.getBlockByHash(parent.getParentHash().getBytes());
         }
 
-        Set<ByteArrayWrapper> family = ancestors.stream().map(Block::getHeader).map(BlockHeader::getEncoded).map(ByteArrayWrapper::new).collect(Collectors.toSet());
+        Set<ByteArrayWrapper> family = new HashSet<>();
+
+        for (Block ancestor : ancestors) {
+            family.add(ByteArrayWrapper.fromBytes(ancestor.getHeader().getEncoded()));
+        }
 
         for (int k = 1; k < ancestors.size(); k++) {
             Block ancestorParent = ancestors.get(k - 1);
@@ -169,7 +173,7 @@ public class FamilyUtils {
                     continue;
                 }
 
-                family.add(new ByteArrayWrapper(uncle.getEncoded()));
+                family.add(ByteArrayWrapper.fromBytes(uncle.getEncoded()));
             }
         }
 
