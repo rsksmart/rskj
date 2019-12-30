@@ -240,7 +240,7 @@ public class FamilyUtilsTest {
         store.saveBlock(uncle31, TEST_DIFFICULTY, false);
         store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
-        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 3).stream().map(ByteArrayWrapper::getData).map(HashUtil::keccak256).map(Keccak256::new).collect(Collectors.toSet());
+        Set<Keccak256> family = FamilyUtils.getUncles(store, block3, 3).stream().map(ByteArrayWrapper::getData).map(HashUtil::keccak256).map(Keccak256::new).collect(Collectors.toSet());
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
