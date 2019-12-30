@@ -77,14 +77,8 @@ public class StateRootHandler {
             Keccak256 genesisStateRoot = convert(executedBlock, executionResult);
             stateRootTranslator.put(genesisStateRoot, executionResult.getHash());
         } else {
-            boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, executedBlock.getNumber());
-            if (isRskip85Enabled) {
-                Keccak256 orchidStateRoot = convert(executedBlock, executionResult);
-                stateRootTranslator.put(orchidStateRoot, executionResult.getHash());
-            } else {
-                Keccak256 blockStateRoot = new Keccak256(executedBlock.getStateRoot());
-                stateRootTranslator.put(blockStateRoot, executionResult.getHash());
-            }
+            Keccak256 blockStateRoot = new Keccak256(executedBlock.getStateRoot());
+            stateRootTranslator.put(blockStateRoot, executionResult.getHash());
         }
     }
 }
