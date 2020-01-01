@@ -25,6 +25,8 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TrieKeyMapper {
     public static final int SECURE_KEY_SIZE = 10;
@@ -35,21 +37,18 @@ public class TrieKeyMapper {
     private static final byte[] STORAGE_PREFIX = new byte[] {0x00}; // This makes the MSB 0 be branching
     private static final byte[] CODE_PREFIX = new byte[] {(byte) 0x80}; // This makes the MSB 1 be branching
 
-    // This is a performance enhancement. When multiple storage rows for the same
-    // contract are stored, the same RskAddress is hashed over and over.
-    // We don't need to re-hash it if was hashed last time.
-    // The reduction we get is about 50% (2x efficiency)
-    private RskAddress lastAddr;
-    private byte[] lastAccountKey;
+    private final Map<RskAddress, byte[]> accountKeys = new HashMap<>();
 
     public synchronized byte[] getAccountKey(RskAddress addr) {
-        if (!addr.equals(lastAddr)) {
-            byte[] secureKey = secureKeyPrefix(addr.getBytes());
-            lastAccountKey = ByteUtil.merge(DOMAIN_PREFIX, secureKey, addr.getBytes());
-            lastAddr = addr;
+        if (accountKeys.containsKey(addr)) {
+            byte[] key = accountKeys.get(addr);
+            return Arrays.copyOf(key, key.length);
         }
 
-        return Arrays.copyOf(lastAccountKey, lastAccountKey.length);
+        byte[] secureKey = secureKeyPrefix(addr.getBytes());
+        byte[] key = ByteUtil.merge(DOMAIN_PREFIX, secureKey, addr.getBytes());
+
+        return Arrays.copyOf(key, key.length);
     }
 
     public byte[] getCodeKey(RskAddress addr) {
