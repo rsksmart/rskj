@@ -19,12 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.net.messages.*;
-import co.rsk.net.sync.ChunkDescriptor;
-import co.rsk.net.sync.SyncState;
-import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.BlockHeader;
 
-import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.Set;
 
