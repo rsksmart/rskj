@@ -5,7 +5,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
-import io.netty.util.internal.ConcurrentSet;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
