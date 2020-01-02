@@ -584,7 +584,11 @@ public class BridgeSupport {
 
             // Add the TX to the release set
             if (activations.isActive(ConsensusRule.RSKIP146)) {
+                Coin amountMigrated = selectedUTXOs.stream().map(utxo -> utxo.getValue())
+                        .reduce(Coin.ZERO, (total, elem) -> total.add(elem));
                 releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTx.getHash());
+                // Log the Release request
+                eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), btcTx, amountMigrated);
             } else {
                 releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
             }
@@ -608,7 +612,11 @@ public class BridgeSupport {
 
                     // Add the TX to the release set
                     if (activations.isActive(ConsensusRule.RSKIP146)) {
+                        Coin amountMigrated = selectedUTXOs.stream().map(utxo -> utxo.getValue())
+                                .reduce(Coin.ZERO, (total, elem) -> total.add(elem));
                         releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTx.getHash());
+                        // Log the Release request
+                        eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), btcTx, amountMigrated);
                     } else {
                         releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
                     }
@@ -707,8 +715,16 @@ public class BridgeSupport {
             }
 
             if (activations.isActive(ConsensusRule.RSKIP146)) {
+                Keccak256 rskTxHash = releaseRequest.getRskTxHash();
                 // Add the TX
-                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), releaseRequest.getRskTxHash());
+                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), rskTxHash);
+                // For a short time period, there could be items in the release request queue that don't have the rskTxHash
+                // (these are releases created right before the consensus rule activation, that weren't processed before its activation)
+                // We shouldn't generate the event for those releases
+                if (rskTxHash != null) {
+                    // Log the Release request
+                    eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, releaseRequest.getAmount());
+                }
             } else {
                 releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
             }
@@ -763,9 +779,9 @@ public class BridgeSupport {
         if (txsWithEnoughConfirmations.size() > 0) {
             ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                txsWaitingForSignatures.put(entry.getRskTxHash(), entry.getTransaction());
-                TransactionOutput output = entry.getTransaction().getOutput(0);
-                eventLogger.logReleaseBtcRequested(entry.getRskTxHash().getBytes(), entry.getTransaction(), output.getValue());
+                // The release transaction may have been created prior to the Consensus Rule activation
+                // therefore it won't have a rskTxHash value, fallback to this transaction's hash
+                txsWaitingForSignatures.put(entry.getRskTxHash() == null ? rskTx.getHash() : entry.getRskTxHash(), entry.getTransaction());
             }
             else {
                 txsWaitingForSignatures.put(rskTx.getHash(), entry.getTransaction());
@@ -2070,6 +2086,7 @@ public class BridgeSupport {
         if (buildReturnResult.isPresent()) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
                 provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber(), rskTx.getHash());
+                eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), buildReturnResult.get().getBtcTx(), totalAmount);
             } else {
                 provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
             }

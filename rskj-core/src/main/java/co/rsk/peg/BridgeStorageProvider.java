@@ -231,15 +231,13 @@ public class BridgeStorageProvider {
             return releaseRequestQueue;
         }
 
-        int entriesHashStartsAtIndex = entries.size();
-
         entries.addAll(getFromRepository(
                 RELEASE_REQUEST_QUEUE_WITH_TXHASH,
                 data -> BridgeSerializationUtils.deserializeReleaseRequestQueue(data, networkParameters, true)
                 )
         );
 
-        releaseRequestQueue = new ReleaseRequestQueue(entries, entriesHashStartsAtIndex);
+        releaseRequestQueue = new ReleaseRequestQueue(entries);
 
         return releaseRequestQueue;
     }

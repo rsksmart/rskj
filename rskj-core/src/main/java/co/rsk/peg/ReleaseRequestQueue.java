@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Representation of a queue of btc release
@@ -87,30 +88,17 @@ public class ReleaseRequestQueue {
     }
 
     private List<Entry> entries;
-    private int entriesHashStartsAtIndex;
-    private static final int NO_HASH_ENTRIES = -1;
 
     public ReleaseRequestQueue(List<Entry> entries) {
-        this(entries, NO_HASH_ENTRIES);
-    }
-
-    public ReleaseRequestQueue(List<Entry> entries, int entriesHashStartsAtIndex) {
         this.entries = new ArrayList<>(entries);
-        this.entriesHashStartsAtIndex = entriesHashStartsAtIndex;
     }
 
     public List<Entry> getEntriesWithoutHash() {
-        if (entriesHashStartsAtIndex == NO_HASH_ENTRIES) {
-            return getEntries();
-        }
-        return new ArrayList<>(entries.subList(0, entriesHashStartsAtIndex));
+        return entries.stream().filter((entry) -> entry.getRskTxHash() == null).collect(Collectors.toList());
     }
 
     public List<Entry> getEntriesWithHash() {
-        if (entriesHashStartsAtIndex == NO_HASH_ENTRIES) {
-            return new ArrayList<>();
-        }
-        return new ArrayList<>(entries.subList(entriesHashStartsAtIndex, entries.size()));
+        return entries.stream().filter((entry) -> entry.getRskTxHash() != null).collect(Collectors.toList());
     }
 
     public List<Entry> getEntries() {
@@ -119,17 +107,9 @@ public class ReleaseRequestQueue {
 
     public void add(Address destination, Coin amount, Keccak256 rskTxHash) {
         entries.add(new Entry(destination, amount, rskTxHash));
-
-        if (entriesHashStartsAtIndex == NO_HASH_ENTRIES){
-            entriesHashStartsAtIndex = entries.size() - 1;
-        }
     }
 
     public void add(Address destination, Coin amount) {
-        if(entriesHashStartsAtIndex != NO_HASH_ENTRIES){
-            throw new IllegalArgumentException("No entries without hash are accepted once an entry with hash has already been added");
-        }
-
         entries.add(new Entry(destination, amount, null));
     }
 
