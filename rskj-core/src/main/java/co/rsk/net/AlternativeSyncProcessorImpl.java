@@ -10,7 +10,6 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,10 +24,7 @@ public class AlternativeSyncProcessorImpl implements SyncProcessor {
     private final PeersInformation peersInformation;
     private final SyncConfiguration syncConfiguration;
 
-    private Set<Keccak256> sent = new ConcurrentSet<>();
-
     private long messageId;
-    private boolean paused;
     private boolean stopped;
 
     public AlternativeSyncProcessorImpl(Blockchain blockchain,
@@ -50,7 +46,7 @@ public class AlternativeSyncProcessorImpl implements SyncProcessor {
             return;
         }
 
-        if (paused || stopped) {
+        if (stopped) {
             return;
         }
 
@@ -63,7 +59,7 @@ public class AlternativeSyncProcessorImpl implements SyncProcessor {
 
     @Override
     public void processSkeletonResponse(Peer peer, SkeletonResponseMessage skeletonResponse) {
-        if (paused || stopped) {
+        if (stopped) {
             return;
         }
 
