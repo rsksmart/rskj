@@ -49,6 +49,8 @@ public interface BlockStore extends RemascCache {
 
     Block getBlockByHash(byte[] hash);
 
+    boolean hasBlockByHash(byte[] hash);
+
     Block getBlockAtDepthStartingAt(long depth, byte[] hash);
 
     boolean isBlockExist(byte[] hash);
@@ -86,4 +88,6 @@ public interface BlockStore extends RemascCache {
     Bloom bloomByBlockNumber(long blockNumber);
 
     void rewind(long blockNumber);
+
+    long getBlockNumber(byte[] hash);
 }

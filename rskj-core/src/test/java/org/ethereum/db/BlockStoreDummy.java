@@ -55,6 +55,14 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
+    public boolean hasBlockByHash(byte[] hash) {
+        return false;
+    }
+
+    @Override
+    public long getBlockNumber(byte[] hash) { return -1; }
+
+    @Override
     public Block getBlockAtDepthStartingAt(long depth, byte[] hash) {
         return null;
     }
