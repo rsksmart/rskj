@@ -405,9 +405,11 @@ public class BlockChainImpl implements Blockchain {
     private boolean blockIsInIndex(@Nonnull final byte[] hash, long number) {
         final List<BlockInformation> blockInfos = this.getBlocksInformationByNumber(number);
 
-        for (BlockInformation blockInfo : blockInfos)
-            if (Arrays.equals(hash, blockInfo.getHash()))
+        for (BlockInformation blockInfo : blockInfos) {
+            if (Arrays.equals(hash, blockInfo.getHash())) {
                 return true;
+            }
+        }
 
         return false;
     }

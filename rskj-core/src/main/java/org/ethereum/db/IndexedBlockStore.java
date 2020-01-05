@@ -316,21 +316,6 @@ public class IndexedBlockStore implements BlockStore {
         return blockFactory.decodeBlock(blockRlp);
     }
 
-    private synchronized boolean hasBlock(byte[] hash) {
-        Block block = this.blockCache.getBlockByHash(hash);
-
-        if (block != null) {
-            return true;
-        }
-
-        byte[] blockRlp = blocks.get(hash);
-        if (blockRlp == null) {
-            return false;
-        }
-
-        return true;
-    }
-
     @Override
     public synchronized Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
         return this.remascCache.computeIfAbsent(hash, key -> getSiblingsFromBlock(getBlock(key.getBytes())));
