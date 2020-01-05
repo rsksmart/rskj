@@ -47,6 +47,8 @@ public class BlockSyncServiceTest {
                 blockSyncService.processBlock(block, null, false);
                 Assert.assertEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
                 Assert.assertEquals(block.getHash(), blockchain.getBestBlock().getHash());
+                Assert.assertTrue(blockSyncService.hasBlockInStoreOrBlockchain(block.getHash().getBytes()));
+                Assert.assertNotNull(blockSyncService.getBlockFromStoreOrBlockchain(block.getHash().getBytes()));
             }
         }
     }
