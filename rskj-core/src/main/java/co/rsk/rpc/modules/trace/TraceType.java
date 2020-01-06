@@ -17,47 +17,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.vm.program.invoke;
+package co.rsk.rpc.modules.trace;
 
-import org.ethereum.core.Repository;
-import org.ethereum.db.BlockStore;
-import org.ethereum.vm.DataWord;
-
-/**
- * @author Roman Mandeleil
- * @since 03.06.2014
- */
-public interface ProgramInvoke extends InvokeData {
-
-    DataWord getBalance();
-
-    DataWord getOriginAddress();
-
-    DataWord getMinGasPrice();
-
-    DataWord getPrevHash();
-
-    DataWord getCoinbase();
-
-    DataWord getTimestamp();
-
-    DataWord getNumber();
-
-    DataWord getTransactionIndex();
-
-    DataWord getDifficulty();
-
-    DataWord getGaslimit();
-
-    boolean byTransaction();
-
-    boolean byTestingSuite();
-
-    int getCallDeep();
-
-    Repository getRepository();
-
-    BlockStore getBlockStore();
-
-    boolean isStaticCall();
+public enum TraceType {
+    CALL,
+    CREATE,
+    SUICIDE,
+    REWARD
 }

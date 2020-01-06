@@ -1020,7 +1020,7 @@ public class Web3ImplLogsTest {
                 txPoolModule,
                 null,
                 debugModule,
-                null,
+                null, null,
                 Web3Mocks.getMockChannelManager(),
                 null,
                 null,

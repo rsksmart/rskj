@@ -304,6 +304,8 @@ public class BridgeTestPowerMock {
         track.commit();
 
         verify(bridgeSupport, times(1)).receiveHeaders(new BtcBlock[]{});
+        // TODO improve test
+        Assert.assertNotNull(track.getRoot());
     }
 
     @Test
@@ -339,6 +341,8 @@ public class BridgeTestPowerMock {
         track.commit();
 
         Assert.assertEquals(previousHeight, bridge.getBtcBlockchainBestChainHeight(new Object[] {}));
+        // TODO improve test
+        Assert.assertNotNull(track.getRoot());
     }
 
     @Test
@@ -2471,6 +2475,10 @@ public class BridgeTestPowerMock {
         byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
         String result = (String)BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().decodeResult(bridge.execute(data))[0];
         Assert.assertEquals(expectedResult.toBase58(), result);
+        bridge.execute(data);
+
+        // TODO improve test
+        Assert.assertNotNull(data);
     }
 
     @Test

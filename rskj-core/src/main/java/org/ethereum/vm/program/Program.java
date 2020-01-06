@@ -26,6 +26,8 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.pcc.NativeContract;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
+import co.rsk.rpc.modules.trace.CallType;
+import co.rsk.rpc.modules.trace.CreationData;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
@@ -43,13 +45,11 @@ import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.*;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.vm.program.invoke.*;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
-import org.ethereum.vm.trace.ProgramTrace;
-import org.ethereum.vm.trace.ProgramTraceListener;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import org.ethereum.vm.trace.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,7 +157,7 @@ public class Program {
 
         this.ops = nullToEmpty(ops);
 
-        this.trace = new ProgramTrace(config, programInvoke);
+        this.trace = createProgramTrace(config, programInvoke);
         this.memory = setupProgramListener(new Memory());
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
@@ -166,6 +166,18 @@ public class Program {
 
         precompile();
         traceListener = new ProgramTraceListener(config);
+    }
+
+    private static ProgramTrace createProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
+        if (!config.vmTrace()) {
+            return new EmptyProgramTrace();
+        }
+
+        if ((config.vmTraceOptions() & VmConfig.LIGHT_TRACE) != 0) {
+            return new SummarizedProgramTrace(programInvoke);
+        }
+
+        return new DetailedProgramTrace(config, programInvoke);
     }
 
     public int getCallDeep() {
@@ -372,10 +384,9 @@ public class Program {
 
         RskAddress owner = getOwnerRskAddress();
         Coin balance = getStorage().getBalance(owner);
+        RskAddress obtainer = new RskAddress(obtainerAddress);
 
         if (!balance.equals(Coin.ZERO)) {
-            RskAddress obtainer = new RskAddress(obtainerAddress);
-
             logger.info("Transfer to: [{}] heritage: [{}]", obtainer, balance);
 
             addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
@@ -390,6 +401,10 @@ public class Program {
         // In any case, remove the account
         getResult().addDeleteAccount(this.getOwnerAddress());
 
+        SuicideInvoke invoke = new SuicideInvoke(DataWord.valueOf(owner.getBytes()), obtainerAddress, DataWord.valueOf(balance.getBytes()));
+        ProgramSubtrace subtrace = ProgramSubtrace.newSuicideSubtrace(invoke);
+
+        getTrace().addSubTrace(subtrace);
     }
 
     public void send(DataWord destAddress, Coin amount) {
@@ -587,11 +602,16 @@ public class Program {
                 newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         returnDataBuffer = null; // reset return buffer right before the call
+
         if (!isEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
             Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
             vm.play(program);
             programResult = program.getResult();
+
+            if (programResult.getException() == null && !programResult.isRevert()) {
+                getTrace().addSubTrace(ProgramSubtrace.newCreateSubtrace(new CreationData(programCode, programResult.getHReturn(), contractAddress), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
+            }
         }
 
         if (programResult.getException() != null || programResult.isRevert()) {
@@ -648,6 +668,7 @@ public class Program {
             // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
             stackPush(DataWord.valueOf(contractAddress.getBytes()));
         }
+
         return programResult;
     }
 
@@ -777,6 +798,17 @@ public class Program {
             track.commit();
             callResult = true;
             refundGas(msg.getGas().longValue(), "remaining gas from the internal call");
+
+            DataWord callerAddress = DataWord.valueOf(senderAddress.getBytes());
+            DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
+            DataWord transferValue = DataWord.valueOf(endowment.getBytes());
+
+            TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), transferValue);
+            ProgramResult result     = new ProgramResult();
+
+            ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, Collections.emptyList());
+
+            getTrace().addSubTrace(subtrace);
         }
 
         // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
@@ -786,6 +818,10 @@ public class Program {
         else {
             stackPushZero();
         }
+    }
+
+    public ProgramInvoke getProgramInvoke() {
+        return this.invoke;
     }
 
     private boolean executeCode(
@@ -813,6 +849,8 @@ public class Program {
 
         vm.play(program);
         childResult  = program.getResult();
+
+        getTrace().addSubTrace(ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
 
         getTrace().merge(program.getTrace());
         getResult().merge(childResult);

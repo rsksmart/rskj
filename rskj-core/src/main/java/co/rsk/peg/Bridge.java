@@ -27,6 +27,7 @@ import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -287,6 +288,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 rskExecutionBlock,
                 contractAddress,
                 logs);
+    }
+
+    @Override
+    public List<ProgramSubtrace> getSubtraces() {
+        return this.bridgeSupport.getSubtraces();
     }
 
     @Override

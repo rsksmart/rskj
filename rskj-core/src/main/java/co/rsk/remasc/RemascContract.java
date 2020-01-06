@@ -21,6 +21,7 @@ package co.rsk.remasc;
 import co.rsk.config.RemascConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -88,6 +89,11 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
     @Override
     public void init(Transaction executionTx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
         this.remasc = new Remasc(constants, activationConfig, repository, blockStore, remascConfig, executionTx, contractAddress, executionBlock, logs);
+    }
+
+    @Override
+    public List<ProgramSubtrace> getSubtraces() {
+        return this.remasc.getSubtraces();
     }
 
     @Override

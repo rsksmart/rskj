@@ -17,47 +17,29 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.vm.program.invoke;
+package co.rsk.rpc.modules.trace;
 
-import org.ethereum.core.Repository;
-import org.ethereum.db.BlockStore;
-import org.ethereum.vm.DataWord;
+import org.ethereum.vm.MessageCall;
 
-/**
- * @author Roman Mandeleil
- * @since 03.06.2014
- */
-public interface ProgramInvoke extends InvokeData {
+public enum CallType {
+    NONE,
+    CALL,
+    CALLCODE,
+    DELEGATECODE,
+    STATICCALL;
 
-    DataWord getBalance();
-
-    DataWord getOriginAddress();
-
-    DataWord getMinGasPrice();
-
-    DataWord getPrevHash();
-
-    DataWord getCoinbase();
-
-    DataWord getTimestamp();
-
-    DataWord getNumber();
-
-    DataWord getTransactionIndex();
-
-    DataWord getDifficulty();
-
-    DataWord getGaslimit();
-
-    boolean byTransaction();
-
-    boolean byTestingSuite();
-
-    int getCallDeep();
-
-    Repository getRepository();
-
-    BlockStore getBlockStore();
-
-    boolean isStaticCall();
+    public static CallType fromMsgType(MessageCall.MsgType msgType) {
+        switch (msgType) {
+            case CALL:
+                return CALL;
+            case CALLCODE:
+                return CALLCODE;
+            case DELEGATECALL:
+                return DELEGATECODE;
+            case STATICCALL:
+                return STATICCALL;
+            default:
+                return NONE;
+        }
+    }
 }
