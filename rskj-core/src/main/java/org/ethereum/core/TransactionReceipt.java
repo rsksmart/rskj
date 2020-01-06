@@ -171,7 +171,11 @@ public class TransactionReceipt {
     }
 
     public boolean isSuccessful() {
-        return Arrays.equals(this.status, SUCCESS_STATUS);
+        return statusIsSuccessful(this.status);
+    }
+
+    public static boolean statusIsSuccessful(byte[] status) {
+        return Arrays.equals(status, SUCCESS_STATUS);
     }
 
     public void setTxStatus(boolean success) {

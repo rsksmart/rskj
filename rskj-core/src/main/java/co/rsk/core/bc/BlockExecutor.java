@@ -329,10 +329,10 @@ public class BlockExecutor {
             receipt.setGasUsed(gasUsed);
             receipt.setCumulativeGas(totalGasUsed);
 
-            receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
+            receipt.setTxStatus(txExecutor.isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
-            receipt.setStatus(txExecutor.getReceipt().getStatus());
+            receipt.setStatus(txExecutor.getStatus());
 
             logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
 

@@ -19,7 +19,6 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.metrics.profilers.Metric;
@@ -30,13 +29,9 @@ import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
@@ -67,65 +62,50 @@ public class TransactionExecutor {
     private final Constants constants;
     private final ActivationConfig.ForBlock activations;
     private final Transaction tx;
-    private final int txindex;
     private final Repository track;
     private final Repository cacheTrack;
-    private final BlockStore blockStore;
-    private final ReceiptStore receiptStore;
-    private final BlockFactory blockFactory;
-    private final VmConfig vmConfig;
-    private final PrecompiledContracts precompiledContracts;
-    private final boolean playVm;
+
     private final boolean enableRemasc;
     private final ExecutorService vmExecutorService;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
 
-    private final ProgramInvokeFactory programInvokeFactory;
     private final RskAddress coinbase;
 
-    private TransactionReceipt receipt;
-    private ProgramResult result = new ProgramResult();
     private final Block executionBlock;
 
+    private final TransactionExecutorHelper transactionExecutorHelper;
+
+    // TODO reduce the scattered use of these variables: vm, program, result, mEndGas
     private VM vm;
     private Program program;
     private List<ProgramSubtrace> subtraces;
-
-    private PrecompiledContracts.PrecompiledContract precompiledContract;
-
+    private ProgramResult result = new ProgramResult();
     private BigInteger mEndGas = BigInteger.ZERO;
-    private long basicTxCost = 0;
-    private List<LogInfo> logs = null;
-    private final Set<DataWord> deletedAccounts;
 
-    private boolean localCall = false;
+    private List<LogInfo> logs = null;
+
+    private long basicTxCost = 0;
 
     public TransactionExecutor(
-            Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
-            Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
-            ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
-            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts, ExecutorService vmExecution) {
+            TransactionExecutorHelper transactionExecutorHelper,
+            Constants constants, ActivationConfig activationConfig, Transaction tx, RskAddress coinbase,
+            Repository track,
+            Block executionBlock, long gasUsedInTheBlock,
+            boolean remascEnabled, ExecutorService vmExecution) {
         this.constants = constants;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
         this.tx = tx;
-        this.txindex = txindex;
         this.coinbase = coinbase;
         this.track = track;
         this.cacheTrack = track.startTracking();
-        this.blockStore = blockStore;
-        this.receiptStore = receiptStore;
-        this.blockFactory = blockFactory;
-        this.programInvokeFactory = programInvokeFactory;
         this.executionBlock = executionBlock;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
-        this.vmConfig = vmConfig;
-        this.precompiledContracts = precompiledContracts;
-        this.playVm = playVm;
         this.enableRemasc = remascEnabled;
-        this.deletedAccounts = new HashSet<>(deletedAccounts);
         this.vmExecutorService = vmExecution;
+
+        this.transactionExecutorHelper = transactionExecutorHelper;
     }
 
     /**
@@ -134,11 +114,17 @@ public class TransactionExecutor {
      * @return true if the transaction is valid and executed, false if the transaction is invalid
      */
     public boolean executeTransaction() {
-        if (!this.init()) {
+        this.tx.setLocalCallTransaction(false);
+
+        basicTxCost = this.tx.transactionCost(constants, activations);
+
+        if (!this.transactionIsValid()) {
             return false;
         }
 
-        this.execute();
+        this.adjustNonceAndBalance();
+
+        this.execute(false);
         this.go();
         this.finalization();
 
@@ -146,17 +132,24 @@ public class TransactionExecutor {
     }
 
     /**
+     * Executes the transaction as local
+     * without changes to sender nonce and balances
+     *
+     */
+    public void executeLocalTransaction() {
+        this.tx.setLocalCallTransaction(true);
+
+        basicTxCost = this.tx.transactionCost(constants, activations);
+
+        this.execute(true);
+        this.go();
+    }
+
+    /**
      * Do all the basic validation, if the executor
      * will be ready to run the transaction at the end
-     * set readyToExecute = true
      */
-    private boolean init() {
-        basicTxCost = tx.transactionCost(constants, activations);
-
-        if (localCall) {
-            return true;
-        }
-
+    private boolean transactionIsValid() {
         BigInteger txGasLimit = new BigInteger(1, tx.getGasLimit());
         BigInteger curBlockGasLimit = new BigInteger(1, executionBlock.getGasLimit());
 
@@ -258,28 +251,27 @@ public class TransactionExecutor {
         return true;
     }
 
-    private void execute() {
+    private void adjustNonceAndBalance() {
+        track.increaseNonce(tx.getSender());
+
+        BigInteger txGasLimit = toBI(tx.getGasLimit());
+        Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
+        track.addBalance(tx.getSender(), txGasCost.negate());
+
+        logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
+    }
+
+    private void execute(boolean isLocalCall) {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
-
-        if (!localCall) {
-
-            track.increaseNonce(tx.getSender());
-
-            BigInteger txGasLimit = toBI(tx.getGasLimit());
-            Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
-            track.addBalance(tx.getSender(), txGasCost.negate());
-
-            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
-        }
 
         if (tx.isContractCreation()) {
             create();
         } else {
-            call();
+            call(isLocalCall);
         }
     }
 
-    private void call() {
+    private void call(boolean isLocalCall) {
         logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         RskAddress targetAddress = tx.getReceiveAddress();
@@ -287,55 +279,14 @@ public class TransactionExecutor {
         // DataWord(targetAddress)) can fail with exception:
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
-        // But init() will detect this earlier
-        precompiledContract = precompiledContracts.getContractForAddress(activations, DataWord.valueOf(targetAddress.getBytes()));
+        // But transactionIsValid() will detect this earlier
+        PrecompiledContracts.PrecompiledContract precompiledContract = this.transactionExecutorHelper.getPrecompiledContract(targetAddress);
 
         this.subtraces = new ArrayList<>();
 
         if (precompiledContract != null) {
-            Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
-            precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
-            profiler.stop(metric);
-
-            metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
-            BigInteger requiredGas = BigInteger.valueOf(precompiledContract.getGasForData(tx.getData()));
-            BigInteger txGasLimit = toBI(tx.getGasLimit());
-            BigInteger gasUsed = requiredGas.add(BigInteger.valueOf(basicTxCost));
-
-            if (!localCall &&
-                    ((!activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(requiredGas) < 0) ||
-                            (activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(gasUsed) < 0))) {
-                // no refund no endowment
-                execError(String.format(
-                        "Out of Gas calling precompiled contract at block %d for address 0x%s. required: %s, used: %s, left: %s ",
-                        executionBlock.getNumber(),
-                        targetAddress.toString(),
-                        requiredGas,
-                        gasUsed,
-                        mEndGas));
-                mEndGas = BigInteger.ZERO;
-                profiler.stop(metric);
+            if (!executePrecompiledContract(targetAddress, precompiledContract, isLocalCall)) {
                 return;
-            } else {
-                mEndGas = txGasLimit.subtract(gasUsed);
-
-                // FIXME: save return for vm trace
-                try {
-                    byte[] out = precompiledContract.execute(tx.getData());
-                    this.subtraces = precompiledContract.getSubtraces();
-                    result.setHReturn(out);
-                    if (!track.isExist(targetAddress)) {
-                        track.createAccount(targetAddress);
-                        track.setupContract(targetAddress);
-                    } else if (!track.isContract(targetAddress)) {
-                        track.setupContract(targetAddress);
-                    }
-                } catch (RuntimeException e) {
-                    result.setException(e);
-                }
-
-                result.spendGas(gasUsed.longValue());
-                profiler.stop(metric);
             }
         } else {
             byte[] code = track.getCode(targetAddress);
@@ -344,11 +295,8 @@ public class TransactionExecutor {
                 mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
                 result.spendGas(basicTxCost);
             } else {
-                ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
-
-                this.vm = new VM(vmConfig, precompiledContracts);
-                this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts);
+                this.vm = this.transactionExecutorHelper.createVM();
+                this.program = this.transactionExecutorHelper.createProgram(code, cacheTrack);
             }
         }
 
@@ -356,6 +304,55 @@ public class TransactionExecutor {
             Coin endowment = tx.getValue();
             cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
         }
+    }
+
+    private boolean executePrecompiledContract(RskAddress targetAddress, PrecompiledContracts.PrecompiledContract precompiledContract, boolean isLocalCall) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
+        this.transactionExecutorHelper.initializedPrecompiledContract(precompiledContract, result.getLogInfoList(), track);
+        profiler.stop(metric);
+
+        metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
+        BigInteger requiredGas = BigInteger.valueOf(precompiledContract.getGasForData(tx.getData()));
+        BigInteger txGasLimit = toBI(tx.getGasLimit());
+        BigInteger gasUsed = requiredGas.add(BigInteger.valueOf(basicTxCost));
+
+        if (!isLocalCall &&
+                ((!activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(requiredGas) < 0) ||
+                        (activations.isActive(ConsensusRule.RSKIP136) && txGasLimit.compareTo(gasUsed) < 0))) {
+            // no refund no endowment
+            execError(String.format(
+                    "Out of Gas calling precompiled contract at block %d for address 0x%s. required: %s, used: %s, left: %s ",
+                    executionBlock.getNumber(),
+                    targetAddress.toString(),
+                    requiredGas,
+                    gasUsed,
+                    mEndGas));
+            mEndGas = BigInteger.ZERO;
+            profiler.stop(metric);
+
+            return false;
+        }
+
+        mEndGas = txGasLimit.subtract(gasUsed);
+
+        // FIXME: save return for vm trace
+        try {
+            byte[] out = precompiledContract.execute(tx.getData());
+            result.setHReturn(out);
+            if (!track.isExist(targetAddress)) {
+                track.createAccount(targetAddress);
+                track.setupContract(targetAddress);
+            } else if (!track.isContract(targetAddress)) {
+                track.setupContract(targetAddress);
+            }
+        } catch (RuntimeException e) {
+            result.setException(e);
+        }
+
+        result.spendGas(gasUsed.longValue());
+        profiler.stop(metric);
+
+        return true;
     }
 
     private void create() {
@@ -368,10 +365,9 @@ public class TransactionExecutor {
             // storage. It doesn't even call setupContract() to setup a storage root
         } else {
             cacheTrack.setupContract(newContractAddress);
-            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
-            this.vm = new VM(vmConfig, precompiledContracts);
-            this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts);
+            this.vm = this.transactionExecutorHelper.createVM();
+            this.program = this.transactionExecutorHelper.createProgram(tx.getData(), cacheTrack);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
@@ -414,9 +410,7 @@ public class TransactionExecutor {
             // Charge basic cost of the transaction
             program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
 
-            if (playVm) {
-                playVirtualMachine();
-            }
+            playVirtualMachine();
 
             result = program.getResult();
             mEndGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));
@@ -491,26 +485,15 @@ public class TransactionExecutor {
         }
     }
 
-    public TransactionReceipt getReceipt() {
-        if (receipt == null) {
-            receipt = new TransactionReceipt();
-            long totalGasUsed = gasUsedInTheBlock + getGasUsed();
-            receipt.setCumulativeGas(totalGasUsed);
-            receipt.setTransaction(tx);
-            receipt.setLogInfoList(getVMLogs());
-            receipt.setGasUsed(getGasUsed());
-            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
-        }
-        return receipt;
+    public boolean isSuccessful() {
+        return TransactionReceipt.statusIsSuccessful(this.getStatus());
     }
 
+    public byte[] getStatus() {
+        return executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS;
+    }
 
     private void finalization() {
-        // RSK if local call gas balances must not be changed
-        if (localCall) {
-            return;
-        }
-
         logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         cacheTrack.commit();
@@ -596,12 +579,6 @@ public class TransactionExecutor {
 
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
-    }
-
-    public TransactionExecutor setLocalCall(boolean localCall) {
-        this.localCall = localCall;
-        this.tx.setLocalCallTransaction(localCall);
-        return this;
     }
 
     public List<LogInfo> getVMLogs() {
