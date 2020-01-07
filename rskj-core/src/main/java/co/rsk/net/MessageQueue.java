@@ -10,9 +10,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public class MessageQueue {
 
     private static final int NEW_BLOCK_HASHES_MAX_CAPACITY = 10;
-    private TaskQueue newBlockHashesPerPeer;
-    private TaskQueue nonPriorityQueue;
-    private TaskQueue priorityQueue;
+
+    private List<TaskQueue> pushingOrder;
+    private List<TaskQueue> poppingOrder;
 
     private int size;
     private final ReentrantLock lock;
@@ -20,6 +20,9 @@ public class MessageQueue {
 
     public MessageQueue() {
         size = 0;
+        pushingOrder = new ArrayList<>();
+        poppingOrder = new ArrayList<>();
+
         Set<MessageType> priorityMessages = new HashSet<>();
         priorityMessages.add(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
         priorityMessages.add(MessageType.BLOCK_RESPONSE_MESSAGE);
@@ -27,11 +30,20 @@ public class MessageQueue {
         priorityMessages.add(MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
         priorityMessages.add(MessageType.STATUS_MESSAGE);
         priorityMessages.add(MessageType.BODY_RESPONSE_MESSAGE);
-        priorityQueue = new UnboundedTaskQueue(AcceptancePolicy.AcceptTypes(priorityMessages));
-        newBlockHashesPerPeer = new PeerBoundedTaskQueue(
-                AcceptancePolicy.AcceptTypes(Collections.singleton(MessageType.NEW_BLOCK_HASHES)),
-                NEW_BLOCK_HASHES_MAX_CAPACITY);
-        nonPriorityQueue = new UnboundedTaskQueue(AcceptancePolicy.AcceptAll());
+        Set<MessageType> blockHashesMessages = Collections.singleton(MessageType.NEW_BLOCK_HASHES);
+
+        UnboundedTaskQueue priority = new UnboundedTaskQueue(AcceptancePolicy.AcceptTypes(priorityMessages));
+        PeerBoundedTaskQueue newHashes = new PeerBoundedTaskQueue(AcceptancePolicy.AcceptTypes(blockHashesMessages), NEW_BLOCK_HASHES_MAX_CAPACITY);
+        UnboundedTaskQueue nonPriority = new UnboundedTaskQueue(AcceptancePolicy.AcceptAll());
+
+        pushingOrder.add(priority);
+        pushingOrder.add(newHashes);
+        pushingOrder.add(nonPriority);
+
+        poppingOrder.add(priority);
+        poppingOrder.add(nonPriority);
+        poppingOrder.add(newHashes);
+
         lock = new ReentrantLock();
         empty = lock.newCondition();
     }
@@ -43,17 +55,12 @@ public class MessageQueue {
     public void push(MessageTask messageTask) {
         try {
             lock.lock();
-            if (priorityQueue.accepts(messageTask)) {
-                priorityQueue.push(messageTask);
-            } else if (messageTask.getMessage().getMessageType().equals(MessageType.NEW_BLOCK_HASHES)) {
-                newBlockHashesPerPeer.push(messageTask);
-            } else {
-                nonPriorityQueue.push(messageTask);
-            }
+
+            pushingOrder.stream().filter(q -> q.accepts(messageTask)).findFirst().get().push(messageTask);
 
             empty.signal();
         } finally {
-            size = nonPriorityQueue.size() + priorityQueue.size() + newBlockHashesPerPeer.size();
+            size = calculateSize();
             lock.unlock();
         }
     }
@@ -64,15 +71,10 @@ public class MessageQueue {
 
             while (true) {
                 //Order of priority for message consumption
-                Optional<MessageTask> res = priorityQueue.pop();
-                if (res.isPresent()) {
-                    return res;
-                }
-                res = nonPriorityQueue.pop();
-                if (res.isPresent()) {
-                    return res;
-                }
-                res = newBlockHashesPerPeer.pop();
+
+                Optional<MessageTask> res = poppingOrder.stream().filter(q -> q.size() > 0)
+                        .findFirst()
+                        .flatMap(TaskQueue::pop);
                 if (res.isPresent()) {
                     return res;
                 }
@@ -88,8 +90,12 @@ public class MessageQueue {
                 }
             }
         } finally {
-            size = nonPriorityQueue.size() + priorityQueue.size() + newBlockHashesPerPeer.size();
+            size = calculateSize();
             lock.unlock();
         }
+    }
+
+    private Integer calculateSize() {
+        return pushingOrder.stream().map(TaskQueue::size).reduce(0, Integer::sum);
     }
 }

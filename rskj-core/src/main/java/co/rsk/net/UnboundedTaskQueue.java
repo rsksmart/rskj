@@ -4,12 +4,14 @@ import java.util.ArrayDeque;
 import java.util.Optional;
 import java.util.Queue;
 
-public class UnboundedTaskQueue extends TaskQueue {
+public class UnboundedTaskQueue implements TaskQueue {
 
+    private final AcceptancePolicy acceptance;
     private Queue<MessageTask> queue;
 
     public UnboundedTaskQueue(AcceptancePolicy acceptance) {
 
+        this.acceptance = acceptance;
         queue = new ArrayDeque<>();
     }
 
@@ -30,5 +32,10 @@ public class UnboundedTaskQueue extends TaskQueue {
     @Override
     public int size() {
         return queue.size();
+    }
+
+    @Override
+    public boolean accepts(MessageTask messageTask) {
+        return acceptance.accepts(messageTask);
     }
 }
