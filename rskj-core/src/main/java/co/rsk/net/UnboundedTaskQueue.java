@@ -4,11 +4,12 @@ import java.util.ArrayDeque;
 import java.util.Optional;
 import java.util.Queue;
 
-public class UnboundedTaskQueue implements TaskQueue {
+public class UnboundedTaskQueue extends TaskQueue {
 
     private Queue<MessageTask> queue;
 
-    public UnboundedTaskQueue() {
+    public UnboundedTaskQueue(AcceptancePolicy acceptance) {
+
         queue = new ArrayDeque<>();
     }
 

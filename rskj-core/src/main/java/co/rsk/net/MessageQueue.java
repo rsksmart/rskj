@@ -13,7 +13,6 @@ public class MessageQueue {
     private TaskQueue newBlockHashesPerPeer;
     private TaskQueue nonPriorityQueue;
     private TaskQueue priorityQueue;
-    private Set<MessageType> priorityMessages;
 
     private int size;
     private final ReentrantLock lock;
@@ -21,17 +20,18 @@ public class MessageQueue {
 
     public MessageQueue() {
         size = 0;
-        priorityMessages = new HashSet<>();
+        Set<MessageType> priorityMessages = new HashSet<>();
         priorityMessages.add(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
         priorityMessages.add(MessageType.BLOCK_RESPONSE_MESSAGE);
         priorityMessages.add(MessageType.SKELETON_RESPONSE_MESSAGE);
         priorityMessages.add(MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
         priorityMessages.add(MessageType.STATUS_MESSAGE);
         priorityMessages.add(MessageType.BODY_RESPONSE_MESSAGE);
-
-        newBlockHashesPerPeer = new PeerBoundedTaskQueue(NEW_BLOCK_HASHES_MAX_CAPACITY);
-        priorityQueue = new UnboundedTaskQueue();
-        nonPriorityQueue = new UnboundedTaskQueue();
+        priorityQueue = new UnboundedTaskQueue(AcceptancePolicy.AcceptTypes(priorityMessages));
+        newBlockHashesPerPeer = new PeerBoundedTaskQueue(
+                AcceptancePolicy.AcceptTypes(Collections.singleton(MessageType.NEW_BLOCK_HASHES)),
+                NEW_BLOCK_HASHES_MAX_CAPACITY);
+        nonPriorityQueue = new UnboundedTaskQueue(AcceptancePolicy.AcceptAll());
         lock = new ReentrantLock();
         empty = lock.newCondition();
     }
@@ -43,7 +43,7 @@ public class MessageQueue {
     public void push(MessageTask messageTask) {
         try {
             lock.lock();
-            if (priorityMessages.contains(messageTask.getMessage().getMessageType())) {
+            if (priorityQueue.accepts(messageTask)) {
                 priorityQueue.push(messageTask);
             } else if (messageTask.getMessage().getMessageType().equals(MessageType.NEW_BLOCK_HASHES)) {
                 newBlockHashesPerPeer.push(messageTask);

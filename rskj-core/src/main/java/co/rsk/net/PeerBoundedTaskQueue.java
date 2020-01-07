@@ -1,14 +1,18 @@
 package co.rsk.net;
 
+
 import java.util.*;
 
 public class PeerBoundedTaskQueue implements TaskQueue {
 
+    private final AcceptancePolicy acceptancePolicy;
     private final int maxMessagesPerPeer;
     private Map<Peer, Queue<MessageTask>> queue;
     private int size;
 
-    public PeerBoundedTaskQueue(int maxMessagesPerPeer) {
+    public PeerBoundedTaskQueue(AcceptancePolicy acceptancePolicy, int maxMessagesPerPeer) {
+
+        this.acceptancePolicy = acceptancePolicy;
         this.maxMessagesPerPeer = maxMessagesPerPeer;
         queue = new HashMap<>();
         size = 0;
@@ -47,5 +51,10 @@ public class PeerBoundedTaskQueue implements TaskQueue {
     @Override
     public int size() {
         return size;
+    }
+
+    @Override
+    public boolean accepts(MessageTask messageTask) {
+        return acceptancePolicy.accepts(messageTask);
     }
 }
