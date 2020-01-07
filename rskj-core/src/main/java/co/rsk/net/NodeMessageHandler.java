@@ -54,7 +54,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private final StatusResolver statusResolver;
 
-    private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
+    private MessageQueue queue = new MessageQueue();
     private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
     private long cleanMsgTimestamp = 0;
 
@@ -123,9 +123,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 }
                 this.receivedMessages.add(encodedMessage);
             }
-            if (!this.queue.offer(new MessageTask(sender, message))){
-                logger.trace("Queue full, message not added to the queue");
-            }
+            this.queue.push(new MessageTask(sender, message));
         } else {
             recordEvent(sender, EventType.REPEATED_MESSAGE);
             logger.trace("Received message already known, not added to the queue");
@@ -159,17 +157,17 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     @Override
     public void run() {
         while (!stopped) {
-            MessageTask task = null;
+            Optional<MessageTask> task = Optional.empty();
             try {
                 logger.trace("Get task");
 
-                task = this.queue.poll(1, TimeUnit.SECONDS);
+                task = this.queue.pop(1);
 
                 loggerMessageProcess.debug("Queued Messages: {}", this.queue.size());
 
-                if (task != null) {
+                if (task.isPresent()) {
                     logger.trace("Start task");
-                    this.processMessage(task.getSender(), task.getMessage());
+                    this.processMessage(task.get().getSender(), task.get().getMessage());
                     logger.trace("End task");
                 } else {
                     logger.trace("No task");
@@ -178,7 +176,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 updateTimedEvents();
             }
             catch (Exception ex) {
-                logger.error("Unexpected error processing: {}", task, ex);
+                logger.error("Unexpected error processing: {}", task.orElse(null), ex);
             }
         }
     }
@@ -188,7 +186,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         Duration timeTick = Duration.ofMillis(now - lastTickSent);
         // TODO(lsebrie): handle timeouts properly
         lastTickSent = now;
-        if (queue.isEmpty()) {
+        if (queue.size() != 0) {
             this.syncProcessor.onTimePassed(timeTick);
         }
 
@@ -210,32 +208,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
 
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
-    }
-
-    private static class MessageTask {
-        private Peer sender;
-        private Message message;
-
-        public MessageTask(Peer sender, Message message) {
-            this.sender = sender;
-            this.message = message;
-        }
-
-        public Peer getSender() {
-            return this.sender;
-        }
-
-        public Message getMessage() {
-            return this.message;
-        }
-
-        @Override
-        public String toString() {
-            return "MessageTask{" +
-                    "sender=" + sender +
-                    ", message=" + message +
-                    '}';
-        }
     }
 }
 
