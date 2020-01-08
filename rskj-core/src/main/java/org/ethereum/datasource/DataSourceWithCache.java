@@ -23,41 +23,50 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DataSourceWithCache implements KeyValueDataSource {
+    private final int cacheSize;
     private final KeyValueDataSource base;
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
     private final Map<ByteArrayWrapper, byte[]> committedCache;
 
     public DataSourceWithCache(KeyValueDataSource base, int cacheSize) {
+        this.cacheSize = cacheSize;
         this.base = base;
-        this.uncommittedCache = new HashMap<>();
+        this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float)0.75, false);
         this.committedCache = new MaxSizeHashMap<>(cacheSize, true);
     }
 
     @Override
-    public byte[] get(byte[] key) {
+    public synchronized byte[] get(byte[] key) {
         Objects.requireNonNull(key);
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
 
         if (committedCache.containsKey(wrappedKey)) {
             return committedCache.get(wrappedKey);
         }
+
         if (uncommittedCache.containsKey(wrappedKey)) {
             return uncommittedCache.get(wrappedKey);
         }
 
         byte[] value = base.get(key);
+
         //null value, as expected, is allowed here to be stored in committedCache
         committedCache.put(wrappedKey, value);
+
         return value;
     }
 
     @Override
-    public byte[] put(byte[] key, byte[] value) {
+    public synchronized byte[] put(byte[] key, byte[] value) {
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
+
         return put(wrappedKey, value);
     }
 
@@ -65,37 +74,48 @@ public class DataSourceWithCache implements KeyValueDataSource {
         Objects.requireNonNull(value);
         // here I could check for equal data or just move to the uncommittedCache.
         byte[] priorValue = committedCache.get(wrappedKey);
+
         if (priorValue != null && Arrays.equals(priorValue, value)) {
             return value;
         }
 
         committedCache.remove(wrappedKey);
-        uncommittedCache.put(wrappedKey, value);
+        this.putKeyValue(wrappedKey, value);
+
         return value;
     }
 
+    private void putKeyValue(ByteArrayWrapper key, byte[] value) {
+        uncommittedCache.put(key, value);
+
+        if (uncommittedCache.size() > cacheSize) {
+            this.flush();
+        }
+    }
+
     @Override
-    public void delete(byte[] key) {
+    public synchronized void delete(byte[] key) {
         delete(ByteUtil.wrap(key));
     }
 
     private void delete(ByteArrayWrapper wrappedKey) {
         // always mark for deletion if we don't know the state in the underlying store
         if (!committedCache.containsKey(wrappedKey)) {
-            uncommittedCache.put(wrappedKey, null);
+            this.putKeyValue(wrappedKey, null);
             return;
         }
 
         byte[] valueToRemove = committedCache.get(wrappedKey);
+
         // a null value means we know for a fact that the key doesn't exist in the underlying store, so this is a noop
         if (valueToRemove != null) {
+            this.putKeyValue(wrappedKey, null);
             committedCache.remove(wrappedKey);
-            uncommittedCache.put(wrappedKey, null);
         }
     }
 
     @Override
-    public Set<byte[]> keys() {
+    public synchronized Set<byte[]> keys() {
         Stream<ByteArrayWrapper> baseKeys = base.keys().stream().map(ByteArrayWrapper::new);
         Stream<ByteArrayWrapper> committedKeys = committedCache.entrySet().stream()
                 .filter(e -> e.getValue() != null)
@@ -118,7 +138,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
+    public synchronized void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
         if (rows.containsKey(null) || rows.containsValue(null)) {
             throw new IllegalArgumentException("Cannot update null values");
         }
@@ -132,7 +152,14 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     @Override
     public synchronized void flush() {
-        Map<ByteArrayWrapper, byte[]> uncommittedBatch = uncommittedCache.entrySet().stream().filter(e -> e.getValue() != null).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<ByteArrayWrapper, byte[]> uncommittedBatch = new LinkedHashMap<>();
+
+        this.uncommittedCache.forEach((key, value) -> {
+            if (value != null) {
+                uncommittedBatch.put(key, value);
+            }
+        });
+
         Set<ByteArrayWrapper> uncommittedKeysToRemove = uncommittedCache.entrySet().stream().filter(e -> e.getValue() == null).map(Map.Entry::getKey).collect(Collectors.toSet());
         base.updateBatch(uncommittedBatch, uncommittedKeysToRemove);
         committedCache.putAll(uncommittedCache);
@@ -143,15 +170,15 @@ public class DataSourceWithCache implements KeyValueDataSource {
         return base.getName() + "-with-uncommittedCache";
     }
 
-    public void init() {
+    public synchronized void init() {
         base.init();
     }
 
-    public boolean isAlive() {
+    public synchronized boolean isAlive() {
         return base.isAlive();
     }
 
-    public void close() {
+    public synchronized void close() {
         flush();
         base.close();
         uncommittedCache.clear();
