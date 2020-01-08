@@ -21,6 +21,7 @@ public class AlternativeSyncProcessorImpl implements SyncProcessor {
 
     private final Blockchain blockchain;
     private final PeersInformation peersInformation;
+    private final BlockNodeInformation nodeInformation;
     private final SyncConfiguration syncConfiguration;
 
     private long messageId;
@@ -28,10 +29,12 @@ public class AlternativeSyncProcessorImpl implements SyncProcessor {
 
     public AlternativeSyncProcessorImpl(Blockchain blockchain,
                                         SyncConfiguration syncConfiguration,
-                                        PeersInformation peersInformation) {
+                                        PeersInformation peersInformation,
+                                        BlockNodeInformation nodeInformation) {
         this.blockchain = blockchain;
         this.syncConfiguration = syncConfiguration;
         this.peersInformation = peersInformation;
+        this.nodeInformation = nodeInformation;
     }
 
     @Override
@@ -110,6 +113,12 @@ public class AlternativeSyncProcessorImpl implements SyncProcessor {
 
             if (header.getNumber() < number && this.blockchain.hasBlockInSomeBlockchain(blockHash)) {
                 continue;
+            }
+
+            // To prevent relay to other nodes when the block arrives
+            // TODO review if near to complete sync
+            for (NodeID nodeId : this.peersInformation.knownNodeIds()) {
+                this.nodeInformation.addBlockToNode(hash, nodeId);
             }
 
             Message message = new GetBlockMessage(blockHash);
