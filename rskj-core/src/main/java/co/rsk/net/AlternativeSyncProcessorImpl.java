@@ -3,6 +3,7 @@ package co.rsk.net;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
+import co.rsk.net.sync.DecidingSyncState;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.BlockHeader;
@@ -134,7 +135,14 @@ public class AlternativeSyncProcessorImpl implements SyncProcessor {
 
     @Override
     public void processNewBlockHash(Peer peer, NewBlockHashMessage message) {
+        NodeID nodeID = peer.getPeerNodeID();
+        logger.debug("Process new block hash from node {} hash {}", nodeID, HashUtil.shortHash(message.getBlockHash()));
+        byte[] hash = message.getBlockHash();
 
+        if (this.blockchain.getBlockByHash(hash) == null) {
+            peersInformation.getOrRegisterPeer(peer);
+            peer.sendMessage(new GetBlockMessage(hash));
+        }
     }
 
     @Override
