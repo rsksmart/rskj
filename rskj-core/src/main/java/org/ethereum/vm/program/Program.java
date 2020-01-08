@@ -71,19 +71,6 @@ public class Program {
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
 
-    /**
-     * This attribute defines the number of recursive calls allowed in the EVM
-     * Note: For the JVM to reach this level without a StackOverflow exception,
-     * ethereumj may need to be started with a JVM argument to increase
-     * the stack size. For example: -Xss10m
-     */
-    private static final int MAX_DEPTH = 1024;
-
-    // MAX_GAS is 2^62-1. It is less than Long.MAX_VALUE (half) to
-    // give som gap for small additions and skip checking for overflows
-    // after each addition (instead, just check at the end).
-    public static final long MAX_GAS = 0x3fffffffffffffffL;
-
     public static final long MAX_MEMORY = (1<<30);
 
     //Max size for stack checks
@@ -178,6 +165,18 @@ public class Program {
         }
 
         return new DetailedProgramTrace(config, programInvoke);
+    }
+
+    /**
+     * Defines the depth of the call stack inside the EVM.
+     * Changed to a value more similar to Ethereum's with EIP150
+     * since RSKIP150.
+     */
+    public int getMaxDepth() {
+        if (activations.isActive(ConsensusRule.RSKIP150)) {
+            return 400;
+        }
+        return 1024;
     }
 
     public int getCallDeep() {
@@ -361,10 +360,6 @@ public class Program {
         return memory.readWord(addr.intValue());
     }
 
-    public DataWord memoryLoad(int address) {
-        return memory.readWord(address);
-    }
-
     public byte[] memoryChunk(int offset, int size) {
         return memory.read(offset, size);
     }
@@ -456,7 +451,8 @@ public class Program {
     }
 
     private void createContract( RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress) {
-        if (getCallDeep() == MAX_DEPTH) {
+        if (getCallDeep() == getMaxDepth()) {
+            logger.debug("max depth reached creating a new contract inside contract run: [{}]", senderAddress);
             stackPushZero();
             return;
         }
@@ -580,14 +576,16 @@ public class Program {
     }
 
     private void refundRemainingGas(long gasLimit, ProgramResult programResult) {
-        long refundGas = gasLimit - programResult.getGasUsed();
-        if (refundGas > 0) {
-            refundGas(refundGas, "remain gas from the internal call");
-            if (isGasLogEnabled) {
-                gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
-                        Hex.toHexString(getOwnerAddress().getLast20Bytes()),
-                        refundGas);
-            }
+        if (programResult.getGasUsed() >= gasLimit) {
+            return;
+        }
+        long refundGas = GasCost.subtract(gasLimit, programResult.getGasUsed());
+        refundGas(refundGas, "remaining gas from the internal call");
+        if (isGasLogEnabled) {
+            gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
+                    Hex.toHexString(getOwnerAddress().getLast20Bytes()),
+                    refundGas
+            );
         }
     }
 
@@ -642,8 +640,9 @@ public class Program {
             byte[] code = programResult.getHReturn();
             int codeLength = getLength(code);
 
-            long storageCost = (long) codeLength * GasCost.CREATE_DATA;
+            long storageCost = GasCost.multiply(GasCost.CREATE_DATA, codeLength);
             long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
+
             if (afterSpend < 0) {
                 programResult.setException(
                         ExceptionHelper.notEnoughSpendingGas(
@@ -677,23 +676,6 @@ public class Program {
 
     }
 
-    public static long limitToMaxGas(DataWord gas) {
-        long r =gas.longValueSafe();
-        if (r>MAX_GAS) {
-            return MAX_GAS;
-        }
-        return r;
-
-    }
-
-    public static long limitToMaxGas(BigInteger gas) {
-        long r =limitToMaxLong(gas);
-        if (r>MAX_GAS) {
-            return MAX_GAS;
-        }
-        return r;
-    }
-
     public static long limitToMaxLong(BigInteger gas) {
         try {
             long r = gas.longValueExact();
@@ -718,16 +700,6 @@ public class Program {
         return d;
     }
 
-    public static long addLimitToMaxLong(long a,long b) {
-        long d;
-        try {
-            d = Math.addExact(a,b);
-        } catch (ArithmeticException e) {
-            d= Long.MAX_VALUE;
-        }
-        return d;
-    }
-
     /**
      * That method is for internal code invocations
      * <p/>
@@ -738,7 +710,7 @@ public class Program {
      */
     public void callToAddress(MessageCall msg) {
 
-        if (getCallDeep() == MAX_DEPTH) {
+        if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             refundGas(msg.getGas().longValue(), " call deep limit reach");
             return;
@@ -797,14 +769,14 @@ public class Program {
         else {
             track.commit();
             callResult = true;
-            refundGas(msg.getGas().longValue(), "remaining gas from the internal call");
+            refundGas(GasCost.toGas(msg.getGas().longValue()), "remaining gas from the internal call");
 
             DataWord callerAddress = DataWord.valueOf(senderAddress.getBytes());
             DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
             DataWord transferValue = DataWord.valueOf(endowment.getBytes());
 
             TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), transferValue);
-            ProgramResult result     = new ProgramResult();
+            ProgramResult result = new ProgramResult();
 
             ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, Collections.emptyList());
 
@@ -820,7 +792,7 @@ public class Program {
         }
     }
 
-    public ProgramInvoke getProgramInvoke() {
+    private ProgramInvoke getProgramInvoke() {
         return this.invoke;
     }
 
@@ -835,7 +807,7 @@ public class Program {
             byte[] data) {
 
         returnDataBuffer = null; // reset return buffer right before the call
-        ProgramResult childResult = null;
+        ProgramResult childResult;
 
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, DataWord.valueOf(contextAddress.getBytes()),
@@ -916,6 +888,7 @@ public class Program {
         if (getRemainingGas()  < gasValue) {
             throw ExceptionHelper.notEnoughSpendingGas(cause, gasValue, this);
         }
+
         getResult().spendGas(gasValue);
     }
 
@@ -950,14 +923,6 @@ public class Program {
 
     public void resetFutureRefund() {
         getResult().resetFutureRefund();
-    }
-
-    public int replaceCode(byte[] newCode) {
-
-        // In any case, remove the account
-        getResult().addCodeChange(this.getOwnerAddress(), newCode);
-
-        return 1; // in the future code size will be bounded.
     }
 
     public void storageSave(DataWord word1, DataWord word2) {
@@ -1351,7 +1316,7 @@ public class Program {
 
     public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
 
-        if (getCallDeep() == MAX_DEPTH) {
+        if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), " call deep limit reach");
             return;
@@ -1427,12 +1392,17 @@ public class Program {
             this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
 
             byte[] out = contract.execute(data);
-
             if (getActivations().isActive(ConsensusRule.RSKIP90)) {
                 this.returnDataBuffer = out;
             }
 
-            this.memorySave(msg.getOutDataOffs().intValue(), out);
+            // Avoid saving null returns to memory and limit the memory it can use.
+            // If we're behind RSK150 activation, don't care about the null return, just save.
+            if (getActivations().isActive(ConsensusRule.RSKIP150) && out != null) {
+                this.memorySaveLimited(msg.getOutDataOffs().intValue(), out, msg.getOutDataSize().intValue());
+            } else if (!getActivations().isActive(ConsensusRule.RSKIP150)) {
+                this.memorySave(msg.getOutDataOffs().intValue(), out);
+            }
             this.stackPushOne();
             track.commit();
         }

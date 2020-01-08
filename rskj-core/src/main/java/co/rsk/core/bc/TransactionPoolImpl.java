@@ -33,6 +33,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -457,7 +458,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private Coin getTxBaseCost(Transaction tx) {
         Coin gasCost = tx.getValue();
         if (bestBlock == null || getTransactionCost(tx, bestBlock.getNumber()) > 0) {
-            BigInteger gasLimit = new BigInteger(1, tx.getGasLimit());
+            BigInteger gasLimit = BigInteger.valueOf(GasCost.toGas(tx.getGasLimit()));
             gasCost = gasCost.add(tx.getGasPrice().multiply(gasLimit));
         }
 

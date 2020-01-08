@@ -65,6 +65,7 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.sync.SyncPool;
+import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
@@ -347,6 +348,7 @@ public class TransactionModuleTest {
                 ),
                 minerClock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 miningConfig
         );
 
