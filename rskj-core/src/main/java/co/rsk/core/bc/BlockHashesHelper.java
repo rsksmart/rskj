@@ -48,7 +48,7 @@ public class BlockHashesHelper {
 
         for (int i = 0; i < transactions.size(); i++) {
             Transaction transaction = transactions.get(i);
-            txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());
+            txsState = txsState.put(RLP.encodeInt(i), transaction.getEncodedForBlock());
         }
 
         return txsState;

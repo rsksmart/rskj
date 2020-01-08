@@ -70,7 +70,8 @@ public class GasCost {
     public static final int REPLACE_DATA = 50; // paid for each byte of code replaced
     public static final int TX_NO_ZERO_DATA = 68;
     public static final int TX_ZERO_DATA = 4;
-    public static final int TRANSACTION = 21000;
+    public static final int TRANSACTION_FORMAT_ZERO = 21000;
+    public static final int TRANSACTION_FORMAT_ONE = 18000;
     public static final int TRANSACTION_DEFAULT = 90000; //compatibility with ethereum (mmarquez)
     public static final int TRANSACTION_CREATE_CONTRACT = 53000;
     public static final int LOG_GAS = 375;

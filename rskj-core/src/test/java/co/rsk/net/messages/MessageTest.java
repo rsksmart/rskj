@@ -27,6 +27,8 @@ import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -251,10 +253,15 @@ public class MessageTest {
     @Test
     public void encodeDecodeTransactionsMessage() {
         List<Transaction> txs = TransactionUtils.getTransactions(10);
+        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
+        for (Transaction tx :txs){
+            tx.setVersion(1);
+            tx.sign(senderPrivKey);
+        }
         TransactionsMessage message = new TransactionsMessage(txs);
 
         byte[] encoded = message.getEncoded();
-
+     
         Message result = Message.create(blockFactory, encoded);
 
         Assert.assertNotNull(result);
@@ -455,6 +462,11 @@ public class MessageTest {
 
         for (int k = 1; k <= 10; k++)
             transactions.add(createTransaction(k));
+
+        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
+        for (Transaction tx : transactions){
+            tx.sign(senderPrivKey);
+        }
 
         List<BlockHeader> uncles = new ArrayList<>();
 

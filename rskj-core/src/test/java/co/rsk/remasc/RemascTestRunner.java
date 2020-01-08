@@ -237,7 +237,6 @@ class RemascTestRunner {
                 //TODO(mc): inject network chain id
                 Constants.REGTEST_CHAIN_ID
         );
-
         tx.sign(txSigningKey.getPrivKeyBytes());
         //createBlook 1
         return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, difficulty, tx);

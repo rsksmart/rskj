@@ -99,7 +99,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
     @Test
     public void buildBlockToMineCheckThatLastTransactionIsForREMASC() {
-        Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0);
+        Transaction tx1 = Tx.create(config, 0, 30000, 100, 0, 0, 0);
         byte[] s1 = new byte[32];
         s1[0] = 0;
         when(tx1.getHash()).thenReturn(new Keccak256(s1));

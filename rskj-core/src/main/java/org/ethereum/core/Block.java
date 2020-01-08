@@ -254,7 +254,7 @@ public class Block {
         byte[][] transactionsEncoded = new byte[transactionsList.size()][];
         int i = 0;
         for (Transaction tx : transactionsList) {
-            transactionsEncoded[i] = tx.getEncoded();
+            transactionsEncoded[i] = tx.getEncodedForBlock();
             ++i;
         }
         return RLP.encodeList(transactionsEncoded);
@@ -284,14 +284,35 @@ public class Block {
         return rlpEncoded;
     }
 
+    private byte[] getVersionOneSigList(){
+        List<byte[]> encodeSigs = new ArrayList<>();
+        for (int j = 0; j < transactionsList.size(); j++) {
+            Transaction tx = transactionsList.get(j);
+            if (tx.getVersion() == 1){
+                byte[] txIdx = RLP.encodeInt(j+1);
+                byte[] rsv = tx.getEncodedRSV();
+                encodeSigs.add(RLP.encodeList(txIdx, rsv));
+            }
+        }
+        if (!encodeSigs.isEmpty()){
+            byte[][] sigsArray = encodeSigs.toArray(new byte[encodeSigs.size()][]);
+            return RLP.encodeList(sigsArray);
+        }
+        return new byte[0];
+
+    }
+
     private List<byte[]> getBodyElements() {
         byte[] transactions = getTransactionsEncoded();
         byte[] uncles = getUnclesEncoded();
-
+        byte[] sigs = getVersionOneSigList();
+        
         List<byte[]> body = new ArrayList<>();
         body.add(transactions);
         body.add(uncles);
-
+        if (sigs != null && sigs.length > 0){
+            body.add(sigs);
+        }
         return body;
     }
 

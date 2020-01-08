@@ -201,6 +201,64 @@ public class BlockExecutorTest {
     }
 
     @Test
+    public void executeBlockWithMixedFormatTwoTransactions() {
+        Block block = getBlockWithMixedFormatTwoTransactions(); // this changes the best block
+        Block parent = blockchain.getBestBlock();
+
+        Transaction tx1 = block.getTransactionsList().get(0);
+        Transaction tx2 = block.getTransactionsList().get(1);
+        RskAddress account = tx1.getSender();
+
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
+
+        Assert.assertNotNull(result);
+
+        Assert.assertNotNull(result.getTransactionReceipts());
+        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
+        Assert.assertEquals(2, result.getTransactionReceipts().size());
+
+        TransactionReceipt receipt = result.getTransactionReceipts().get(0);
+        Assert.assertEquals(tx1, receipt.getTransaction());
+        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assert.assertEquals(21000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
+        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+
+        receipt = result.getTransactionReceipts().get(1);
+        Assert.assertEquals(tx2, receipt.getTransaction());
+        Assert.assertNotEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assert.assertNotEquals(42000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
+        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+
+        Assert.assertNotEquals(42000, result.getGasUsed());
+        Assert.assertNotEquals(42000, result.getPaidFees().asBigInteger().intValueExact());
+
+        //here is the problem: in the prior code repository root would never be overwritten by childs
+        //while the new code does overwrite the root.
+        //Which semantic is correct ? I don't know
+
+        Assert.assertFalse(Arrays.equals(parent.getStateRoot(), result.getFinalState().getHash().getBytes()));
+
+        byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
+        Assert.assertEquals(256, calculatedLogsBloom.length);
+        Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
+
+        AccountState accountState = repository.getAccountState(account);
+
+        Assert.assertNotNull(accountState);
+        Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance().asBigInteger());
+
+        // here is the papa. my commit changes stateroot while previous commit did not.
+
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
+
+        accountState = finalRepository.getAccountState(account);
+
+        Assert.assertNotNull(accountState);
+        Assert.assertNotEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
+    }
+
+    @Test
     public void executeAndFillBlockWithOneTransaction() {
         TestObjects objects = generateBlockWithOneTransaction();
         Block parent = objects.getParent();
@@ -456,6 +514,29 @@ public class BlockExecutorTest {
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
+    private Block getBlockWithMixedFormatTwoTransactions() {
+        // first we modify the best block to have two accounts with balance
+        Repository track = repository.startTracking();
+
+        Account account = createAccount("acctest1", track, Coin.valueOf(60000));
+        Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
+
+        track.commit();
+
+        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+
+        Block bestBlock = blockchain.getBestBlock();
+        bestBlock.setStateRoot(repository.getRoot());
+
+        // then we create the new block to connect
+        List<Transaction> txs = Arrays.asList(
+                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress())),
+                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()).add(BigInteger.ONE),1)
+        );
+        List<BlockHeader> uncles = new ArrayList<>();
+        return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null); 
+    }
+
     private Block getBlockWithTwoTransactions() {
         // first we modify the best block to have two accounts with balance
         Repository track = repository.startTracking();
@@ -480,12 +561,23 @@ public class BlockExecutorTest {
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
     }
 
-    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
+    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce, int version) {
         String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
+        Transaction tx;
+        if (version == 0){ 
+            tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
+        }else{
+            tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(30000), config.getNetworkConstants().getChainId());
+        }
+        tx.setVersion(version);
         tx.sign(privateKeyBytes);
+
         return tx;
+    }
+
+    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
+        return createTransaction(sender, receiver, value, nonce, 0);
     }
 
     public static Account createAccount(String seed, Repository repository, Coin balance) {

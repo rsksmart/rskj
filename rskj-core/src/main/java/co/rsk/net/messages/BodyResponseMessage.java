@@ -3,8 +3,8 @@ package co.rsk.net.messages;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
-
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Created by ajlopez on 25/08/2017.
@@ -31,16 +31,36 @@ public class BodyResponseMessage extends MessageWithId {
     protected byte[] getEncodedMessageWithoutId() {
         byte[][] rlpTransactions = new byte[this.transactions.size()][];
         byte[][] rlpUncles = new byte[this.uncles.size()][];
-
+        byte[][] rlpSigs = null;
+        
         for (int k = 0; k < this.transactions.size(); k++) {
-            rlpTransactions[k] = this.transactions.get(k).getEncoded();
+            rlpTransactions[k] = this.transactions.get(k).getEncodedForBlock();
         }
 
         for (int k = 0; k < this.uncles.size(); k++) {
             rlpUncles[k] = this.uncles.get(k).getFullEncoded();
         }
-
-        return RLP.encodeList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
+        
+        List<byte[]> encodeSigs = new ArrayList<>();
+        for (int j = 0; j < transactions.size(); j++) {
+            Transaction tx = transactions.get(j);
+            if (tx.getVersion() == 1){
+                byte[] txIdx = RLP.encodeInt(j+1);
+                byte[] rsv = tx.getEncodedRSV();
+                if (rsv != null){
+                    encodeSigs.add(RLP.encodeList(txIdx, rsv));
+                }
+            }
+        }
+        if (!encodeSigs.isEmpty()){
+            rlpSigs = encodeSigs.toArray(new byte[encodeSigs.size()][]);
+        }
+        
+        if (rlpSigs == null){
+            return RLP.encodeList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
+        }else{
+            return RLP.encodeList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles), RLP.encodeList(rlpSigs));
+        }
     }
 
     @Override

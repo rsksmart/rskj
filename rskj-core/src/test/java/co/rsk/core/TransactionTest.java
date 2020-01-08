@@ -110,7 +110,7 @@ public class TransactionTest {
                 null);
 
         tx.sign(senderPrivateKey);
-
+        
         System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
         System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
         System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().s)));
@@ -301,7 +301,6 @@ public class TransactionTest {
     public void testTransaction() {
         Transaction tx = new Transaction(9L, 20000000000L, 21000L,
                 "3535353535353535353535353535353535353535", 1000000000000000000L, new byte[0], (byte) 1);
-
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
         String strenc = Hex.toHexString(encoded);
