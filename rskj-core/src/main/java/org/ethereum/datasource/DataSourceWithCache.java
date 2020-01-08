@@ -38,13 +38,14 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public byte[] get(byte[] key) {
+    public synchronized byte[] get(byte[] key) {
         Objects.requireNonNull(key);
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
 
         if (committedCache.containsKey(wrappedKey)) {
             return committedCache.get(wrappedKey);
         }
+
         if (uncommittedCache.containsKey(wrappedKey)) {
             return uncommittedCache.get(wrappedKey);
         }
@@ -56,7 +57,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public byte[] put(byte[] key, byte[] value) {
+    public synchronized byte[] put(byte[] key, byte[] value) {
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
         return put(wrappedKey, value);
     }
@@ -65,6 +66,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         Objects.requireNonNull(value);
         // here I could check for equal data or just move to the uncommittedCache.
         byte[] priorValue = committedCache.get(wrappedKey);
+
         if (priorValue != null && Arrays.equals(priorValue, value)) {
             return value;
         }
@@ -75,7 +77,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public void delete(byte[] key) {
+    public synchronized void delete(byte[] key) {
         delete(ByteUtil.wrap(key));
     }
 
@@ -87,15 +89,16 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
 
         byte[] valueToRemove = committedCache.get(wrappedKey);
+
         // a null value means we know for a fact that the key doesn't exist in the underlying store, so this is a noop
         if (valueToRemove != null) {
-            committedCache.remove(wrappedKey);
             uncommittedCache.put(wrappedKey, null);
+            committedCache.remove(wrappedKey);
         }
     }
 
     @Override
-    public Set<byte[]> keys() {
+    public synchronized Set<byte[]> keys() {
         Stream<ByteArrayWrapper> baseKeys = base.keys().stream().map(ByteArrayWrapper::new);
         Stream<ByteArrayWrapper> committedKeys = committedCache.entrySet().stream()
                 .filter(e -> e.getValue() != null)
@@ -118,7 +121,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     @Override
-    public void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
+    public synchronized void updateBatch(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> keysToRemove) {
         if (rows.containsKey(null) || rows.containsValue(null)) {
             throw new IllegalArgumentException("Cannot update null values");
         }
@@ -143,15 +146,15 @@ public class DataSourceWithCache implements KeyValueDataSource {
         return base.getName() + "-with-uncommittedCache";
     }
 
-    public void init() {
+    public synchronized void init() {
         base.init();
     }
 
-    public boolean isAlive() {
+    public synchronized boolean isAlive() {
         return base.isAlive();
     }
 
-    public void close() {
+    public synchronized void close() {
         flush();
         base.close();
         uncommittedCache.clear();
