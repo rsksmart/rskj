@@ -32,6 +32,7 @@ import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
+import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -234,6 +235,23 @@ public class BridgeUtilsTest {
         tx4.addOutput(Coin.FIFTY_COINS, address2);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isLockTx(tx4, federations, btcContext, bridgeConstants));
+    }
+
+    @Test
+    public void testTxIsProcessable() throws Exception {
+
+        // Before Hardfork
+        ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
+        when(actForBlock.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
+        assertTrue(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2PKH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHP2WPKH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHMULTISIG, actForBlock));
+
+        // After Hardfork
+        when(actForBlock.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+        assertTrue(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2PKH, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHP2WPKH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHMULTISIG, actForBlock));
     }
 
     @Test
