@@ -3,7 +3,6 @@ package co.rsk.net;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
-import co.rsk.net.sync.DecidingSyncState;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.BlockHeader;
