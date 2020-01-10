@@ -730,6 +730,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockToMineBuilder(),
                     getMinerClock(),
                     getBlockFactory(),
+                    getBuildInfo(),
                     getMiningConfig()
             );
         }
@@ -914,14 +915,14 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected GenesisLoader buildGenesisLoader() {
-        RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        ActivationConfig.ForBlock genesisActivations = rskSystemProperties.getActivationConfig().forBlock(0L);
+        RskSystemProperties systemProperties = getRskSystemProperties();
+        ActivationConfig.ForBlock genesisActivations = systemProperties.getActivationConfig().forBlock(0L);
         return new GenesisLoaderImpl(
-                rskSystemProperties.getActivationConfig(),
+                systemProperties.getActivationConfig(),
                 getStateRootHandler(),
                 getTrieStore(),
-                rskSystemProperties.genesisInfo(),
-                rskSystemProperties.getNetworkConstants().getInitialNonce(),
+                systemProperties.genesisInfo(),
+                systemProperties.getNetworkConstants().getInitialNonce(),
                 true,
                 genesisActivations.isActive(ConsensusRule.RSKIP92),
                 genesisActivations.isActive(ConsensusRule.RSKIP126)

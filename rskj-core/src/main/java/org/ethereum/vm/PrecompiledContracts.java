@@ -180,11 +180,12 @@ public class PrecompiledContracts {
         public long getGasForData(byte[] data) {
 
             // gas charge for the execution:
-            // minimum 1 and additional 1 for each 32 bytes word (round  up)
+            // minimum 15 and additional 3 for each 32 bytes word (round  up)
             if (data == null) {
                 return 15;
             }
-            return 15l + (data.length + 31) / 32 * 3;
+            long variableCost = GasCost.multiply(GasCost.add(data.length, 31) / 32, 3);
+            return GasCost.add(15, variableCost);
         }
 
         @Override
@@ -200,11 +201,12 @@ public class PrecompiledContracts {
         public long getGasForData(byte[] data) {
 
             // gas charge for the execution:
-            // minimum 50 and additional 50 for each 32 bytes word (round  up)
+            // minimum 60 and additional 12 for each 32 bytes word (round  up)
             if (data == null) {
                 return 60;
             }
-            return 60l + (data.length + 31) / 32 * 12;
+            long variableCost = GasCost.multiply(GasCost.add(data.length, 31) / 32, 12);
+            return GasCost.add(60, variableCost);
         }
 
         @Override
@@ -226,11 +228,12 @@ public class PrecompiledContracts {
 
             // TODO Replace magic numbers with constants
             // gas charge for the execution:
-            // minimum 50 and additional 50 for each 32 bytes word (round  up)
+            // minimum 600 and additional 120 for each 32 bytes word (round  up)
             if (data == null) {
                 return 600;
             }
-            return 600l + (data.length + 31) / 32 * 120;
+            long variableCost = GasCost.multiply(GasCost.add(data.length, 31) / 32, 120);
+            return GasCost.add(600, variableCost);
         }
 
         @Override
@@ -328,26 +331,22 @@ public class PrecompiledContracts {
             int expLen = parseLen(safeData, EXPONENT);
             int modLen = parseLen(safeData, MODULUS);
 
-            long multComplexity = getMultComplexity(Math.max(baseLen, modLen));
+            long multComplexity = GasCost.toGas(getMultComplexity(Math.max(baseLen, modLen)));
 
             byte[] expHighBytes;
             try {
                 int offset = Math.addExact(ARGS_OFFSET, baseLen);
                 expHighBytes = parseBytes(safeData, offset, Math.min(expLen, 32));
-            }
-            catch (ArithmeticException e) {
+            } catch (ArithmeticException e) {
                 expHighBytes = ByteUtil.EMPTY_BYTE_ARRAY;
             }
 
             long adjExpLen = getAdjustedExponentLength(expHighBytes, expLen);
 
-            // use big numbers to stay safe in case of overflow
-            BigInteger gas = BigInteger.valueOf(multComplexity)
-                    .multiply(BigInteger.valueOf(Math.max(adjExpLen, 1)))
-                    .divide(GQUAD_DIVISOR);
+            BigInteger gas = BigInteger.valueOf(multComplexity).multiply(
+                    BigInteger.valueOf(Math.max(adjExpLen, 1))).divide(GQUAD_DIVISOR);
 
-
-            return gas.min(BigInteger.valueOf(Long.MAX_VALUE)).longValueExact();
+            return GasCost.toGas(gas);
         }
 
         @Override

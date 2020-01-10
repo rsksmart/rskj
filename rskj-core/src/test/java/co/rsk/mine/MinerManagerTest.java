@@ -38,6 +38,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.Simples.SimpleEthereum;
+import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -299,6 +300,7 @@ public class MinerManagerTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 miningConfig
         );
     }

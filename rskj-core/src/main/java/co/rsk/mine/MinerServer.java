@@ -59,5 +59,7 @@ public interface MinerServer extends InternalService {
 
     void setExtraData(byte[] extraData);
 
+    byte[] getExtraData();
+
     Optional<Block> getLatestBlock();
 }
