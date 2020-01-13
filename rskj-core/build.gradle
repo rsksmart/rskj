@@ -90,7 +90,7 @@ dependencies {
     compile "org.mapdb:mapdb:2.0-beta13"
     compile "co.rsk.bitcoinj:bitcoinj-thin:${bitcoinjVersion}"
     compile 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.1'
-    compile 'com.bakaoh:altbn128:1.0'
+    compile 'co.rsk:native:1.0.0'
 
     runtime "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
     runtime "ch.qos.logback:logback-classic:${logbackVersion}"

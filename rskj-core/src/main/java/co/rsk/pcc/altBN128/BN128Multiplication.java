@@ -18,7 +18,7 @@
 
 package co.rsk.pcc.altBN128;
 
-import com.bakaoh.altbn128.cloudflare.JniBn128;
+import co.rsk.altbn128.cloudflare.JniBn128;
 import org.ethereum.vm.PrecompiledContracts;
 
 import static org.ethereum.util.ByteUtil.*;
