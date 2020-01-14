@@ -32,11 +32,6 @@ import java.util.Set;
  */
 public interface RepositorySnapshot extends AccountInformationProvider {
     /**
-     * @return the storage root of this repository
-     */
-    byte[] getRoot();
-
-    /**
      * @return set of all the account addresses
      */
     Set<RskAddress> getAccountsKeys();

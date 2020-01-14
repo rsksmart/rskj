@@ -183,6 +183,8 @@ class RemascTestRunner {
                                       coinbase, blockSiblings, minerFee, this.gasPrice, txNonce, this.txValue, this.txSigningKey, null);
             mainChainBlocks.add(block);
 
+            builder.getRepository().save();
+
             blockExecutor.executeAndFillAll(block, this.blockchain.getBestBlock().getHeader());
 
             block.seal();
@@ -197,7 +199,7 @@ class RemascTestRunner {
     }
 
     public Coin getAccountBalance(RskAddress addr) {
-        RepositorySnapshot repository = builder.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = builder.getRepositoryLocator().getRepositoryAt(blockchain.getBestBlock().getHeader());
         return getAccountBalance(repository, addr);
     }
 

@@ -63,7 +63,7 @@ public class GarbageCollector implements InternalService {
 
     private void collect(long untilBlock) {
         BlockHeader untilHeader = blockStore.getChainBlockByNumber(untilBlock).getHeader();
-        multiTrieStore.collect(repositoryLocator.snapshotAt(untilHeader).getRoot());
+        multiTrieStore.collect(repositoryLocator.getRepositoryAt(untilHeader).getRoot());
     }
 
     private class GarbageCollectorInvoker extends EthereumListenerAdapter {

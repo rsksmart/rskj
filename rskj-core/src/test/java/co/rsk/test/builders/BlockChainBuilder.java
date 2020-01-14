@@ -58,7 +58,7 @@ public class BlockChainBuilder {
     private boolean testing;
     private List<Block> blocks;
 
-    private Repository repository;
+    private TopRepository repository;
     private BlockStore blockStore;
     private Genesis genesis;
     private ReceiptStore receiptStore;
@@ -132,7 +132,7 @@ public class BlockChainBuilder {
         return trieStore;
     }
 
-    public Repository getRepository() {
+    public TopRepository getRepository() {
         return repository;
     }
 
@@ -160,7 +160,7 @@ public class BlockChainBuilder {
         }
 
         if (repository == null) {
-            repository = new MutableRepository(trieStore, new Trie(trieStore));
+            repository = new TopRepository(new Trie(trieStore), trieStore);
         }
 
         if (stateRootHandler == null) {
@@ -173,6 +173,7 @@ public class BlockChainBuilder {
 
         GenesisLoaderImpl.loadGenesisInitalState(repository, genesis);
         repository.commit();
+        repository.save();
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();
 

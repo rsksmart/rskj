@@ -19,7 +19,7 @@ package co.rsk.validators;
 
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
+import co.rsk.db.TopRepository;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
 
 public class BlockTxsValidationRuleTest {
     private BlockTxsValidationRule rule;
-    private RepositorySnapshot repositorySnapshot;
+    private TopRepository repositorySnapshot;
     private Block parent;
 
     @Before
@@ -47,8 +47,8 @@ public class BlockTxsValidationRuleTest {
         when(parent.getHeader()).thenReturn(parentHeader);
 
         RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
-        repositorySnapshot = mock(RepositorySnapshot.class);
-        when(repositoryLocator.snapshotAt(parentHeader)).thenReturn(repositorySnapshot);
+        repositorySnapshot = mock(TopRepository.class);
+        when(repositoryLocator.getRepositoryAt(parentHeader)).thenReturn(repositorySnapshot);
 
         rule = new BlockTxsValidationRule(repositoryLocator);
     }

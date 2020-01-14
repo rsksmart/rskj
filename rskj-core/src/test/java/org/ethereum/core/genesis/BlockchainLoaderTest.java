@@ -43,7 +43,7 @@ public class BlockchainLoaderTest {
             }
         };
         Blockchain blockchain = objects.getBlockchain();// calls loadBlockchain
-        RepositorySnapshot repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
+        RepositorySnapshot repository = objects.getRepositoryLocator().getRepositoryAt(blockchain.getBestBlock().getHeader());
 
         int genesisAccountKeysSize = 12; // PCCs + test accounts in blockchain_loader_genesis.json
         Assert.assertEquals(genesisAccountKeysSize, repository.getAccountsKeys().size());

@@ -40,12 +40,12 @@ import static org.hamcrest.Matchers.is;
 /**
  * Created by ajlopez on 29/03/2017.
  */
-public class RepositoryImplTest {
+public class NewRepositoryImplTest {
     private static Keccak256 emptyHash = TrieHashTest.makeEmptyHash();
 
     @Test
     public void getNonceUnknownAccount() {
-        TopRepository repository = createRepository();
+        Repository repository = createRepository();
         BigInteger nonce = repository.getNonce(randomAccountAddress());
 
         Assert.assertEquals(BigInteger.ZERO, nonce);
@@ -130,7 +130,7 @@ public class RepositoryImplTest {
     public void incrementAccountBalanceForNewAccount() {
         RskAddress accAddress = randomAccountAddress();
 
-        Repository repository = createRepository();
+        TopRepository repository = createRepository();
 
         Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
 
@@ -141,7 +141,7 @@ public class RepositoryImplTest {
     public void incrementAccountBalanceForAlreadyCreatedAccount() {
         RskAddress accAddress = randomAccountAddress();
 
-        Repository repository = createRepository();
+        TopRepository repository = createRepository();
 
         repository.createAccount(accAddress);
         Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
@@ -432,7 +432,7 @@ public class RepositoryImplTest {
     }
 
     private static Repository createRepositoryWithCache() {
-        return new TopRepository(new Trie(), null).startTracking();
+        return new RepositoryTrack(new TopRepository(new Trie(), null));
     }
 
     private static TopRepository createRepository() {

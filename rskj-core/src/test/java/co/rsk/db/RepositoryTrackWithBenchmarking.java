@@ -22,14 +22,13 @@ package co.rsk.db;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 
-public class RepositoryTrackWithBenchmarking extends MutableRepository implements BenchmarkedRepository {
+public class RepositoryTrackWithBenchmarking extends TopRepository implements BenchmarkedRepository {
     protected final Statistics statistics;
 
     public RepositoryTrackWithBenchmarking(TrieStore trieStore, Trie trie) {
-        super(new MutableTrieCache(new MutableTrieImpl(trieStore, trie)));
+        super(trie, trieStore);
         statistics = new Statistics();
     }
 

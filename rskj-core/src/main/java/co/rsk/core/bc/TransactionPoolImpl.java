@@ -156,7 +156,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private RepositorySnapshot getCurrentRepository() {
-        return repositoryLocator.snapshotAt(getBestBlock().getHeader());
+        return repositoryLocator.getRepositoryAt(getBestBlock().getHeader());
     }
 
     @Override

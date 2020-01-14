@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.TopRepository;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
@@ -35,7 +36,6 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
@@ -103,10 +103,10 @@ public class EthModule
 
     public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
         Block bestBlock = blockchain.getBestBlock();
-        Repository track = repositoryLocator.startTrackingAt(bestBlock.getHeader());
+        Repository repository = repositoryLocator.getRepositoryAt(bestBlock.getHeader());
 
         BridgeSupport bridgeSupport = bridgeSupportFactory.newInstance(
-                track, bestBlock, PrecompiledContracts.BRIDGE_ADDR, null);
+                repository, bestBlock, PrecompiledContracts.BRIDGE_ADDR, null);
 
         byte[] result = bridgeSupport.getStateForDebugging();
 
@@ -205,15 +205,15 @@ public class EthModule
             case "pending":
                 return transactionPool.getPendingState();
             case "earliest":
-                return repositoryLocator.snapshotAt(blockchain.getBlockByNumber(0).getHeader());
+                return repositoryLocator.getRepositoryAt(blockchain.getBlockByNumber(0).getHeader());
             case "latest":
-                return repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
+                return repositoryLocator.getRepositoryAt(blockchain.getBestBlock().getHeader());
             default:
                 try {
                     long blockNumber = stringHexToBigInteger(id).longValue();
                     Block requestedBlock = blockchain.getBlockByNumber(blockNumber);
                     if (requestedBlock != null) {
-                        return repositoryLocator.snapshotAt(requestedBlock.getHeader());
+                        return repositoryLocator.getRepositoryAt(requestedBlock.getHeader());
                     }
                     return null;
                 } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
@@ -240,7 +240,7 @@ public class EthModule
     private ProgramResult callConstant_workaround(Web3.CallArguments args, BlockResult executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction_workaround(
-                new MutableRepository(new TrieStoreImpl(new HashMapDB()), executionBlock.getFinalState()),
+                new TopRepository(executionBlock.getFinalState(),  new TrieStoreImpl(new HashMapDB())),
                 executionBlock.getBlock(),
                 executionBlock.getBlock().getCoinbase(),
                 hexArgs.getGasPrice(),

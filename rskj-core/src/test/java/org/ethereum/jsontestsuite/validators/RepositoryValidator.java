@@ -20,6 +20,7 @@
 package org.ethereum.jsontestsuite.validators;
 
 import co.rsk.core.RskAddress;
+import co.rsk.db.TopRepository;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
@@ -30,7 +31,7 @@ import java.util.Set;
 
 public class RepositoryValidator {
 
-    public static List<String> valid(Repository currentRepository, Repository postRepository,
+    public static List<String> valid(TopRepository currentRepository, TopRepository postRepository,
                                      boolean validateRootHash,boolean validateBalances,ValidationStats vStats) {
 
         List<String> results = new ArrayList<>();

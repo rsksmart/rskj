@@ -65,7 +65,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             return true;
         }
 
-        RepositorySnapshot parentRepo = repositoryLocator.snapshotAt(parent.getHeader());
+        RepositorySnapshot parentRepo = repositoryLocator.getRepositoryAt(parent.getHeader());
 
         Map<RskAddress, BigInteger> curNonce = new HashMap<>();
 

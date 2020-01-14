@@ -22,7 +22,6 @@ package org.ethereum.vm.program;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -53,11 +52,6 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void setTraceListener(ProgramListener listener) {
         this.traceListener = listener;
-    }
-
-    @Override
-    public Trie getTrie() {
-        return repository.getTrie();
     }
 
     @Override
@@ -199,18 +193,8 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void save() {
-        repository.save();
-    }
-
-    @Override
     public void rollback() {
         repository.rollback();
-    }
-
-    @Override
-    public byte[] getRoot() {
-        return repository.getRoot();
     }
 
     @Override

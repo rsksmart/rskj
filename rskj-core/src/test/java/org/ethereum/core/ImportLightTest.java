@@ -27,6 +27,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.TopRepository;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.DummyBlockValidator;
@@ -50,7 +51,7 @@ public class ImportLightTest {
     public static BlockChainImpl createBlockchain(
             Genesis genesis,
             TestSystemProperties config,
-            Repository repository,
+            TopRepository repository,
             BlockStore blockStore,
             TrieStore trieStore) {
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());

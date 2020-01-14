@@ -22,14 +22,11 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.trie.Trie;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
 
 public interface Repository extends RepositorySnapshot {
-    Trie getTrie();
-
     /**
      * Create a new account in the database
      *
@@ -112,8 +109,6 @@ public interface Repository extends RepositorySnapshot {
      * to a snapshot of the repository
      */
     void rollback();
-
-    void save();
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 

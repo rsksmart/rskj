@@ -19,13 +19,11 @@
 package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.util.RLP;
 
 import java.util.Optional;
@@ -45,35 +43,37 @@ public class RepositoryLocator {
     }
 
     /**
-     * Similar to snapshotAt but retrieves an optional instead of throwing an exception
+     * Similar to getRepositoryAt but retrieves an optional instead of throwing an exception
      * @return an optional {@link RepositorySnapshot}
      */
     public Optional<RepositorySnapshot> findSnapshotAt(BlockHeader header) {
-        return mutableTrieSnapshotAt(header).map(MutableRepository::new);
+        Keccak256 stateRoot = stateRootHandler.translate(header);
+
+        if (EMPTY_HASH.equals(stateRoot)) {
+            return Optional.of(new TopRepository(new Trie(this.trieStore), this.trieStore));
+        }
+
+        Optional<Trie> trie = trieStore.retrieve(stateRoot.getBytes());
+
+        return trie.map(t -> new TopRepository(t, this.trieStore));
     }
 
     /**
-     * Retrieves a snapshot of the state at a particular header
+     * Retrieves a repository with the state at a particular header
      * @param header the header to retrieve the state from
      * @return a read-only {@link RepositorySnapshot}
      * @throws IllegalArgumentException if the state is not found.
      */
-    public RepositorySnapshot snapshotAt(BlockHeader header) {
-        return mutableTrieSnapshotAt(header)
-                .map(MutableRepository::new)
-                .orElseThrow(() -> trieNotFoundException(header));
-    }
+    public TopRepository getRepositoryAt(BlockHeader header) {
+        Keccak256 stateRoot = stateRootHandler.translate(header);
 
-    /**
-     * Retrieves a repository of the state at a particular header
-     * @param header the header to retrieve the state from
-     * @return a modifiable {@link Repository}
-     * @throws IllegalArgumentException if the state is not found.
-     */
-    public Repository startTrackingAt(BlockHeader header) {
-        return mutableTrieSnapshotAt(header)
-                .map(MutableTrieCache::new)
-                .map(MutableRepository::new)
+        if (EMPTY_HASH.equals(stateRoot)) {
+            return new TopRepository(new Trie(this.trieStore), this.trieStore);
+        }
+
+        Optional<Trie> trie = trieStore.retrieve(stateRoot.getBytes());
+
+        return trie.map(t -> new TopRepository(t, this.trieStore))
                 .orElseThrow(() -> trieNotFoundException(header));
     }
 
@@ -81,17 +81,5 @@ public class RepositoryLocator {
         return new IllegalArgumentException(String.format(
                 "The trie with root %s is missing in this store", header.getHash()
         ));
-    }
-
-    private Optional<MutableTrie> mutableTrieSnapshotAt(BlockHeader header) {
-        Keccak256 stateRoot = stateRootHandler.translate(header);
-
-        if (EMPTY_HASH.equals(stateRoot)) {
-            return Optional.of(new MutableTrieImpl(trieStore, new Trie(trieStore)));
-        }
-
-        Optional<Trie> trie = trieStore.retrieve(stateRoot.getBytes());
-
-        return trie.map(t -> new MutableTrieImpl(trieStore, t));
     }
 }

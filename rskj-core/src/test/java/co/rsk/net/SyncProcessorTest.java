@@ -753,6 +753,8 @@ public class SyncProcessorTest {
                 config.getNetworkConstants().getBridgeConstants(),
                 config.getActivationConfig());
 
+        blockChainBuilder.getRepository().save();
+
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 new RepositoryLocator(blockChainBuilder.getTrieStore(), stateRootHandler),

@@ -18,7 +18,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
+import co.rsk.db.TopRepository;
 import co.rsk.trie.MultiTrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -99,8 +99,8 @@ public class GarbageCollectorTest {
     private void withSnapshotStateRootAtBlockNumber(int i, byte[] stateRoot) {
         Block block = block(i);
         when(blockStore.getChainBlockByNumber(i)).thenReturn(block);
-        RepositorySnapshot snapshot = mock(RepositorySnapshot.class);
-        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(snapshot);
+        TopRepository snapshot = mock(TopRepository.class);
+        when(repositoryLocator.getRepositoryAt(block.getHeader())).thenReturn(snapshot);
         when(snapshot.getRoot()).thenReturn(stateRoot);
     }
 

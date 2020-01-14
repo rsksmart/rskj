@@ -872,7 +872,11 @@ public class Web3ImplTest {
 
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
         byte[] code = new byte[] { 0x01, 0x02, 0x03 };
+
         world.getRepository().saveCode(acc1.getAddress(), code);
+        world.getRepository().commit();
+        world.getRepository().save();
+
         Block genesis = world.getBlockChain().getBestBlock();
         genesis.setStateRoot(world.getRepository().getRoot());
         genesis.flushRLP();

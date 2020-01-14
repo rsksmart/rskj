@@ -131,7 +131,7 @@ public class TestRunner {
 
         Block genesis = build(testCase.getGenesisBlockHeader(), null, null);
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = RepositoryBuilder.build(trieStore, testCase.getPre());
+        TopRepository repository = RepositoryBuilder.build(trieStore, testCase.getPre());
 
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
@@ -220,7 +220,7 @@ public class TestRunner {
             }
         }
 
-        Repository postRepository = RepositoryBuilder.build(testCase.getPostState());
+        TopRepository postRepository = RepositoryBuilder.build(testCase.getPostState());
         List<String> repoResults = RepositoryValidator.valid(repository, postRepository, validateStateRoots,validateBalances,null);
         results.addAll(repoResults);
 
@@ -675,7 +675,7 @@ public class TestRunner {
     }
 
     private static Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        return new TopRepository(new Trie(), null);
     }
 
     public Block build(

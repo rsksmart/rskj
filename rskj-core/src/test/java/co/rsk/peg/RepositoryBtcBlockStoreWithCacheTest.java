@@ -26,12 +26,10 @@ import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.db.MutableTrieCache;
-import co.rsk.db.MutableTrieImpl;
+import co.rsk.db.TopRepository;
 import co.rsk.trie.Trie;
 import org.apache.commons.lang3.tuple.Triple;
 import org.ethereum.core.Repository;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Test;
 
@@ -61,7 +59,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     }
 
     private Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        return new TopRepository(new Trie(), null);
     }
 
     @Test
@@ -278,7 +276,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         // Read original store
         InputStream fileInputStream = ClassLoader.getSystemResourceAsStream("peg/RepositoryBlockStore_data.ser");
         ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
+        Repository repository = new TopRepository(new Trie(), null);
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BtcBlockStoreWithCache store = btcBlockStoreFactory.newInstance(repository);
