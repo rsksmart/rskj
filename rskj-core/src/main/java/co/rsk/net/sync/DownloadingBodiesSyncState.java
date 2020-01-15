@@ -6,7 +6,7 @@ import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
-import co.rsk.validators.BlockCompositeRule;
+import co.rsk.validators.SyncBlockValidatorRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.util.ByteUtil;
@@ -54,7 +54,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private final List<NodeID> suitablePeers;
     // maximum time waiting for a peer to answer
     private final Duration limit;
-    private final BlockCompositeRule blockValidationRule;
+    private final SyncBlockValidatorRule blockValidationRule;
     private final BlockSyncService blockSyncService;
 
     public DownloadingBodiesSyncState(SyncConfiguration syncConfiguration,
@@ -63,7 +63,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                                       Blockchain blockchain,
                                       BlockFactory blockFactory,
                                       BlockSyncService blockSyncService,
-                                      BlockCompositeRule blockValidationRule,
+                                      SyncBlockValidatorRule blockValidationRule,
                                       List<Deque<BlockHeader>> pendingHeaders,
                                       Map<NodeID, List<BlockIdentifier>> skeletons) {
 

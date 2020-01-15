@@ -27,10 +27,7 @@ import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
-import co.rsk.validators.BlockCompositeRule;
-import co.rsk.validators.BlockRootValidationRule;
-import co.rsk.validators.BlockUnclesHashValidationRule;
-import co.rsk.validators.DummyBlockValidationRule;
+import co.rsk.validators.*;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
@@ -63,7 +60,7 @@ public class OneAsyncNodeTest {
                 blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration,
                 new BlockFactory(config.getActivationConfig()),
                 new DummyBlockValidationRule(),
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
+                new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()), new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
         );
         NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
