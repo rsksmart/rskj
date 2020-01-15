@@ -39,7 +39,10 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.util.*;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -61,7 +64,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, getPeerScoringManager()),
@@ -96,7 +99,7 @@ public class SyncProcessorTest {
                 blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -147,7 +150,7 @@ public class SyncProcessorTest {
                 blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService,
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -197,7 +200,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.DEFAULT, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.DEFAULT, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -240,7 +243,7 @@ public class SyncProcessorTest {
                 blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.DEFAULT, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.DEFAULT, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -314,7 +317,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -344,7 +347,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), null,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -378,7 +381,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), null,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -409,7 +412,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), null,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -428,7 +431,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -456,7 +459,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -485,7 +488,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -517,7 +520,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -545,7 +548,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 syncConfiguration, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -580,7 +583,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -631,7 +634,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -692,7 +695,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -782,7 +785,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -833,7 +836,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -866,7 +869,7 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(
                 blockchain, builder.getBlockStore(), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory, new DummyBlockValidationRule(),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -925,7 +928,7 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(
                 blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory, new DummyBlockValidationRule(),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -982,7 +985,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -1026,7 +1029,7 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 syncConfiguration, blockFactory, new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
@@ -1062,7 +1065,7 @@ public class SyncProcessorTest {
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockCompositeRule(
+                new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),

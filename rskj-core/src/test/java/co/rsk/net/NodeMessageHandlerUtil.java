@@ -32,11 +32,17 @@ public class NodeMessageHandlerUtil {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
-                syncConfiguration, blockFactory, new DummyBlockValidationRule(),
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                blockchain,
+                mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class),
+                blockSyncService,
+                syncConfiguration,
+                blockFactory,
+                new DummyBlockValidationRule(),
+                new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
+                DIFFICULTY_CALCULATOR,
+                new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
+                mock(Genesis.class)
+        );
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
@@ -62,9 +68,12 @@ public class NodeMessageHandlerUtil {
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration, blockFactory,
-                blockValidationRule, new BlockCompositeRule(new BlockUnclesHashValidationRule(),
-                new BlockRootValidationRule(config.getActivationConfig())),
+                blockchain,
+                blockStore,
+                mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration, blockFactory, blockValidationRule,
+                        new SyncBlockValidatorRule(
+                                new BlockUnclesHashValidationRule(),
+                                new BlockRootValidationRule(config.getActivationConfig())),
                 DIFFICULTY_CALCULATOR,
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
                 mock(Genesis.class)

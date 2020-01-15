@@ -6,8 +6,8 @@ import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
 import co.rsk.scoring.EventType;
-import co.rsk.validators.BlockCompositeRule;
 import co.rsk.validators.BlockHeaderValidationRule;
+import co.rsk.validators.SyncBlockValidatorRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -34,7 +34,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private final BlockSyncService blockSyncService;
     private final BlockFactory blockFactory;
     private final BlockHeaderValidationRule blockHeaderValidationRule;
-    private final BlockCompositeRule blockValidationRule;
+    private final SyncBlockValidatorRule blockValidationRule;
     private final DifficultyRule difficultyRule;
     private final Genesis genesis;
 
@@ -51,7 +51,7 @@ public class SyncProcessor implements SyncEventsHandler {
                          SyncConfiguration syncConfiguration,
                          BlockFactory blockFactory,
                          BlockHeaderValidationRule blockHeaderValidationRule,
-                         BlockCompositeRule blockValidationRule,
+                         SyncBlockValidatorRule syncBlockValidatorRule,
                          DifficultyCalculator difficultyCalculator,
                          PeersInformation peersInformation,
                          Genesis genesis) {
@@ -62,7 +62,7 @@ public class SyncProcessor implements SyncEventsHandler {
         this.syncConfiguration = syncConfiguration;
         this.blockFactory = blockFactory;
         this.blockHeaderValidationRule = blockHeaderValidationRule;
-        this.blockValidationRule = blockValidationRule;
+        this.blockValidationRule = syncBlockValidatorRule;
         this.difficultyRule = new DifficultyRule(difficultyCalculator);
         this.genesis = genesis;
         this.pendingMessages = new LinkedHashMap<Long, MessageType>() {
