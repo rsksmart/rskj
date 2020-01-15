@@ -1,5 +1,6 @@
 package co.rsk.net.messages;
 
+import co.rsk.net.MessageProcessingVisitor;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,7 +27,7 @@ public class BlockHeadersRequestMessageTest {
         byte[] hash = HashUtil.randomHash();
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 
-        MessageVisitor visitor = mock(MessageVisitor.class);
+        MessageVisitor visitor = mock(MessageProcessingVisitor.class);
 
         message.accept(visitor);
 

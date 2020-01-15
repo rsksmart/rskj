@@ -1,6 +1,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.net.MessageProcessingVisitor;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.Account;
@@ -71,7 +72,7 @@ public class BodyResponseMessageTest {
 
         BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
 
-        MessageVisitor visitor = mock(MessageVisitor.class);
+        MessageVisitor visitor = mock(MessageProcessingVisitor.class);
 
         message.accept(visitor);
 

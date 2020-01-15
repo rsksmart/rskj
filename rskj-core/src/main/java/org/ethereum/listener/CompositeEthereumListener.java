@@ -19,6 +19,7 @@
 
 package org.ethereum.listener;
 
+import co.rsk.net.Peer;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -32,6 +33,7 @@ import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -74,6 +76,11 @@ public class CompositeEthereumListener implements EthereumListener {
     @Override
     public void onRecvMessage(Channel channel, Message message) {
         scheduleListenerCallbacks(listener -> listener.onRecvMessage(channel, message));
+    }
+
+    @Override
+    public void onProcessedMessage(Peer peer, co.rsk.net.messages.Message message, Duration duration) {
+        scheduleListenerCallbacks(listener -> listener.onProcessedMessage(peer, message, duration));
     }
 
     @Override

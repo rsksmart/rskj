@@ -1,5 +1,6 @@
 package co.rsk.net.messages;
 
+import co.rsk.net.MessageProcessingVisitor;
 import org.ethereum.core.BlockHeader;
 import org.junit.Test;
 
@@ -19,7 +20,7 @@ public class BlockHeadersResponseMessageTest {
 
         BlockHeadersResponseMessage message = new BlockHeadersResponseMessage(1, headers);
 
-        MessageVisitor visitor = mock(MessageVisitor.class);
+        MessageVisitor visitor = mock(MessageProcessingVisitor.class);
 
         message.accept(visitor);
 

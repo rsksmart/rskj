@@ -38,6 +38,7 @@
 
     <logger name="execute" level="INFO"/>
     <logger name="blockvalidator" level="INFO"/>
+    <logger name="message_priority" level="TRACE"/>
     <logger name="blockexecutor" level="INFO"/>
     <logger name="general" level="INFO"/>
     <logger name="gaspricetracker" level="INFO"/>

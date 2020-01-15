@@ -18,6 +18,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.net.MessageProcessingVisitor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -49,7 +50,7 @@ public class BlockHashResponseMessageTest {
 
         BlockHashResponseMessage message = new BlockHashResponseMessage(someId, hash);
 
-        MessageVisitor visitor = mock(MessageVisitor.class);
+        MessageVisitor visitor = mock(MessageProcessingVisitor.class);
 
         message.accept(visitor);
 

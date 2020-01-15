@@ -47,7 +47,7 @@ public class BodyResponseMessage extends MessageWithId {
     public MessageType getMessageType() { return MessageType.BODY_RESPONSE_MESSAGE; }
 
     @Override
-    public void accept(MessageVisitor v) {
-        v.apply(this);
+    public<T> T accept(MessageVisitor<T> v) {
+        return v.apply(this);
     }
 }

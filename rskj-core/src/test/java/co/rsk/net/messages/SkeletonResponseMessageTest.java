@@ -19,6 +19,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.net.MessageProcessingVisitor;
 import org.ethereum.core.BlockIdentifier;
 import org.junit.Test;
 
@@ -57,7 +58,7 @@ public class SkeletonResponseMessageTest {
         List<BlockIdentifier> blockIdentifiers = new LinkedList<>();
         SkeletonResponseMessage message = new SkeletonResponseMessage(1, blockIdentifiers);
 
-        MessageVisitor visitor = mock(MessageVisitor.class);
+        MessageVisitor visitor = mock(MessageProcessingVisitor.class);
 
         message.accept(visitor);
 

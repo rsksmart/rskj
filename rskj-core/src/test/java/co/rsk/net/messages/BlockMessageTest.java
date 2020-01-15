@@ -18,6 +18,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.net.MessageProcessingVisitor;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class BlockMessageTest {
         Block block = mock(Block.class);
         BlockMessage message = new BlockMessage(block);
 
-        MessageVisitor visitor = mock(MessageVisitor.class);
+        MessageVisitor visitor = mock(MessageProcessingVisitor.class);
 
         message.accept(visitor);
 

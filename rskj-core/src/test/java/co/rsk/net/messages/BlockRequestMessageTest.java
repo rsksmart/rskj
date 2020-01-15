@@ -19,6 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.net.MessageProcessingVisitor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -43,7 +44,7 @@ public class BlockRequestMessageTest {
         byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         BlockRequestMessage message = new BlockRequestMessage(100, hash);
 
-        MessageVisitor visitor = mock(MessageVisitor.class);
+        MessageVisitor visitor = mock(MessageProcessingVisitor.class);
 
         message.accept(visitor);
 

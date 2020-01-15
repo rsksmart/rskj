@@ -19,11 +19,11 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.net.MessageProcessingVisitor;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -60,7 +60,7 @@ public class NewBlockHashesTest {
         List<BlockIdentifier> blockIdentifiers = new LinkedList<>();
         NewBlockHashesMessage message = new NewBlockHashesMessage(blockIdentifiers);
 
-        MessageVisitor visitor = mock(MessageVisitor.class);
+        MessageVisitor visitor = mock(MessageProcessingVisitor.class);
 
         message.accept(visitor);
 

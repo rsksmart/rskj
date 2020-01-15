@@ -49,7 +49,7 @@ public class BlockHashResponseMessage extends MessageWithId {
     public byte[] getHash() { return this.hash; }
 
     @Override
-    public void accept(MessageVisitor v) {
-        v.apply(this);
+    public<T> T accept(MessageVisitor<T> v) {
+        return v.apply(this);
     }
 }

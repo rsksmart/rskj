@@ -141,7 +141,7 @@ public class Node implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(host, port, id);
+        return Arrays.hashCode(id);
     }
 
     @Override

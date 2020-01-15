@@ -5,7 +5,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
-import co.rsk.validators.BlockValidationRule;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -45,7 +44,7 @@ public class MessageVisitorTest {
         channelManager = mock(ChannelManager.class);
         sender = mock(Peer.class);
 
-        target = new MessageVisitor(
+        target = new MessageProcessingVisitor(
                 config,
                 blockProcessor,
                 syncProcessor,

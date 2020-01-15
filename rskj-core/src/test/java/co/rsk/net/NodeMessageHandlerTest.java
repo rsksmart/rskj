@@ -39,6 +39,8 @@ import co.rsk.validators.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
@@ -46,7 +48,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -70,7 +71,7 @@ public class NodeMessageHandlerTest {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(CompositeEthereumListener.class), mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -102,7 +103,7 @@ public class NodeMessageHandlerTest {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(CompositeEthereumListener.class), mock(StatusResolver.class));
         Block block = new BlockGenerator().getGenesisBlock();
         Message message = new BlockMessage(block);
 
@@ -124,7 +125,7 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         sbp.setBlockGap(100000);
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(CompositeEthereumListener.class), mock(StatusResolver.class));
         Block block = new BlockGenerator().createBlock(200000, 0);
         Message message = new BlockMessage(block);
 
@@ -146,7 +147,7 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -165,7 +166,7 @@ public class NodeMessageHandlerTest {
     public void postBlockMessageUsingProcessor() throws InterruptedException, UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -189,7 +190,7 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         byte[] mergedMiningHeader = block.getBitcoinMergedMiningHeader();
         mergedMiningHeader[76] += 3; //change merged mining nonce.
@@ -215,7 +216,7 @@ public class NodeMessageHandlerTest {
         SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(CompositeEthereumListener.class), mock(StatusResolver.class));
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block = blockGenerator.getGenesisBlock();
 
@@ -244,7 +245,7 @@ public class NodeMessageHandlerTest {
     public void processFutureBlockMessageUsingProcessor() throws UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
         Block block = new BlockGenerator().getGenesisBlock();
         Message message = new BlockMessage(block);
         SimplePeer sender = new SimplePeer();
@@ -265,7 +266,7 @@ public class NodeMessageHandlerTest {
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimplePeer sender = new SimplePeer();
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
@@ -328,7 +329,7 @@ public class NodeMessageHandlerTest {
                 new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()), mock(Genesis.class));
         final NodeMessageHandler handler = new NodeMessageHandler(config,
                 bp, syncProcessor, null, null,
-                null, mock(StatusResolver.class));
+                null, mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
@@ -358,7 +359,7 @@ public class NodeMessageHandlerTest {
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null,
-                null, mock(StatusResolver.class));
+                null, mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer();
 
@@ -393,7 +394,7 @@ public class NodeMessageHandlerTest {
         NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         SimplePeer sender = new SimplePeer();
 
@@ -424,7 +425,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, mock(StatusResolver.class));
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer();
 
@@ -449,7 +450,7 @@ public class NodeMessageHandlerTest {
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer();
 
@@ -484,7 +485,7 @@ public class NodeMessageHandlerTest {
         NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         SimplePeer sender = new SimplePeer();
 
@@ -519,7 +520,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         class TestCase {
             protected final NewBlockHashesMessage message;
@@ -628,7 +629,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, null, null,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         Message message = mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.NEW_BLOCK_HASHES);
@@ -646,7 +647,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, scoring,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
         final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
@@ -688,7 +689,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionGateway, scoring,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer();
 
@@ -719,7 +720,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionGateway, scoring,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer();
 
@@ -755,7 +756,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
 
         final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
         final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
@@ -776,7 +777,7 @@ public class NodeMessageHandlerTest {
     public void processBlockByHashRequestMessageUsingProcessor() throws UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockRequestMessage(100, block.getHash().getBytes());
 
@@ -791,7 +792,7 @@ public class NodeMessageHandlerTest {
         byte[] hash = HashUtil.randomHash();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
-                mock(StatusResolver.class));
+                mock(CompositeEthereumListener.class), mock(StatusResolver.class));
         Message message = new BlockHeadersRequestMessage(100, hash, 50);
 
         processor.processMessage(new SimplePeer(), message);

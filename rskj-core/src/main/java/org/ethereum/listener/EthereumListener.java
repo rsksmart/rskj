@@ -19,6 +19,7 @@
 
 package org.ethereum.listener;
 
+import co.rsk.net.Peer;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
@@ -29,6 +30,7 @@ import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -46,6 +48,8 @@ public interface EthereumListener {
     void onEthStatusUpdated(Channel channel, StatusMessage status);
 
     void onRecvMessage(Channel channel, Message message);
+
+    void onProcessedMessage(Peer peer, co.rsk.net.messages.Message message, Duration processingTime);
 
     void onBlock(Block block, List<TransactionReceipt> receipts);
 

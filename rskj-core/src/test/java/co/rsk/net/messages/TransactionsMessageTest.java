@@ -18,6 +18,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.net.MessageProcessingVisitor;
 import co.rsk.net.utils.TransactionUtils;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
@@ -50,7 +51,7 @@ public class TransactionsMessageTest {
         List<Transaction> txs = new LinkedList<>();
         TransactionsMessage message = new TransactionsMessage(txs);
 
-        MessageVisitor visitor = mock(MessageVisitor.class);
+        MessageVisitor visitor = mock(MessageProcessingVisitor.class);
 
         message.accept(visitor);
 

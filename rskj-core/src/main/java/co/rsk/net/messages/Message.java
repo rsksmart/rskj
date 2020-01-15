@@ -35,7 +35,7 @@ public abstract class Message {
 
     public abstract byte[] getEncodedMessage();
 
-    public abstract void accept(MessageVisitor v);
+    public abstract <T> T accept(MessageVisitor<T> v);
 
     public final byte[] getEncoded() {
         byte[] type = RLP.encodeByte(getMessageType().getTypeAsByte());

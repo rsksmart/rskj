@@ -20,6 +20,7 @@ package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.net.MessageProcessingVisitor;
 import co.rsk.net.Status;
 import org.ethereum.core.Block;
 import org.junit.Assert;
@@ -83,7 +84,7 @@ public class StatusMessageTest {
     public void accept() {
         StatusMessage message = new StatusMessage(mock(Status.class));
 
-        MessageVisitor visitor = mock(MessageVisitor.class);
+        MessageVisitor visitor = mock(MessageProcessingVisitor.class);
 
         message.accept(visitor);
 

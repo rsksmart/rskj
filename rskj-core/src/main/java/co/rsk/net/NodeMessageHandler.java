@@ -22,18 +22,24 @@ import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
+import co.rsk.net.priority.AvgProcessingTimeCalculator;
+import co.rsk.net.priority.AvgTimeBetweenMessagesCalculator;
+import co.rsk.net.priority.MessagePriority;
+import co.rsk.net.priority.TypePriorityCalculator;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
@@ -52,32 +58,43 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
 
+    private final EthereumListener listener;
     private final StatusResolver statusResolver;
 
-    private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
+    private PriorityBlockingQueue<MessageTask> queue;
     private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
     private long cleanMsgTimestamp = 0;
 
     private volatile boolean stopped;
+    private final MessagePriority messagePriority;
 
     /**
+     * @param listener
      * @param statusResolver
      */
     public NodeMessageHandler(RskSystemProperties config,
                               final BlockProcessor blockProcessor,
                               final SyncProcessor syncProcessor,
-                              @Nullable final ChannelManager channelManager,
-                              @Nullable final TransactionGateway transactionGateway,
-                              @Nullable final PeerScoringManager peerScoringManager,
+                              final ChannelManager channelManager,
+                              final TransactionGateway transactionGateway,
+                              final PeerScoringManager peerScoringManager,
+                              final CompositeEthereumListener listener,
                               StatusResolver statusResolver) {
         this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
         this.transactionGateway = transactionGateway;
+        this.listener = listener;
         this.statusResolver = statusResolver;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
+        messagePriority = new MessagePriority(
+                new TypePriorityCalculator(),
+                new AvgTimeBetweenMessagesCalculator(listener),
+                new AvgProcessingTimeCalculator(listener)
+        );
+        this.queue = new PriorityBlockingQueue<>(100, messagePriority);
     }
 
     /**
@@ -90,7 +107,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         long start = System.nanoTime();
         logger.trace("Process message type: {}", message.getMessageType());
 
-        MessageVisitor mv = new MessageVisitor(config,
+        MessageVisitor<Void> mv = new MessageProcessingVisitor(config,
                 blockProcessor,
                 syncProcessor,
                 transactionGateway,
@@ -99,7 +116,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 sender);
         message.accept(mv);
 
-        loggerMessageProcess.debug("Message[{}] processed after [{}] nano.", message.getMessageType(), System.nanoTime() - start);
+        long duration = System.nanoTime() - start;
+        listener.onProcessedMessage(sender, message, Duration.ofNanos(duration));
+        loggerMessageProcess.debug("Message[{}] processed after [{}] nano.", message.getMessageType(), duration);
     }
 
     @Override
@@ -123,8 +142,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 }
                 this.receivedMessages.add(encodedMessage);
             }
-            if (!this.queue.offer(new MessageTask(sender, message))){
+            MessageTask m = new MessageTask(sender, message);
+            if (!this.queue.offer(m)){
                 logger.trace("Queue full, message not added to the queue");
+            } else {
+                messagePriority.evaluate2(m);
             }
         } else {
             recordEvent(sender, EventType.REPEATED_MESSAGE);
@@ -210,32 +232,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
 
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
-    }
-
-    private static class MessageTask {
-        private Peer sender;
-        private Message message;
-
-        public MessageTask(Peer sender, Message message) {
-            this.sender = sender;
-            this.message = message;
-        }
-
-        public Peer getSender() {
-            return this.sender;
-        }
-
-        public Message getMessage() {
-            return this.message;
-        }
-
-        @Override
-        public String toString() {
-            return "MessageTask{" +
-                    "sender=" + sender +
-                    ", message=" + message +
-                    '}';
-        }
     }
 }
 

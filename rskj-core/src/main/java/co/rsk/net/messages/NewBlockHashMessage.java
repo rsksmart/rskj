@@ -28,7 +28,7 @@ public class NewBlockHashMessage extends Message {
     }
 
     @Override
-    public void accept(MessageVisitor v) {
-        v.apply(this);
+    public<T> T accept(MessageVisitor<T> v) {
+        return v.apply(this);
     }
 }
