@@ -18,6 +18,7 @@ import java.util.Set;
 
 public class AlternativeSyncProcessorImpl implements SyncProcessor {
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
+    private static final int BLOCKS_GAP = 10;
 
     private final Blockchain blockchain;
     private final PeersInformation peersInformation;
@@ -54,6 +55,10 @@ public class AlternativeSyncProcessorImpl implements SyncProcessor {
 
         long number = currentStatus.getBestBlockNumber();
 
+        if (Math.abs(number - status.getBestBlockNumber()) <= BLOCKS_GAP) {
+            return;
+        }
+
         MessageWithId message = new SkeletonRequestMessage(messageId++, Math.max(1, number - syncConfiguration.getChunkSize()));
 
         sender.sendMessage(message);
@@ -68,13 +73,11 @@ public class AlternativeSyncProcessorImpl implements SyncProcessor {
         int nsent = 0;
 
         List<BlockIdentifier> blockIdentifiers = skeletonResponse.getBlockIdentifiers();
-        long number = this.blockchain.getStatus().getBestBlock().getNumber();
 
         for (BlockIdentifier blockIdentifier: blockIdentifiers) {
             byte[] blockHash = blockIdentifier.getHash();
-            Keccak256 hash = new Keccak256(blockHash);
 
-            if (blockIdentifier.getNumber() < number && this.blockchain.hasBlockInSomeBlockchain(blockHash)) {
+            if (this.blockchain.hasBlockInSomeBlockchain(blockHash)) {
                 continue;
             }
 
