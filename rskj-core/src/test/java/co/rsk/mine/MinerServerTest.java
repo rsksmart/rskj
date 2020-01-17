@@ -803,7 +803,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
-        assertEquals("SNAPSHOT-cb7f28e", new String(secondItem));
+        assertEquals("WASABI-cb7f28e", new String(secondItem));
     }
 
     @Test
@@ -833,7 +833,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
-        assertEquals("SNAPSHOT-cb7f28e", new String(secondItem));
+        assertEquals("WASABI-cb7f28e", new String(secondItem));
 
         byte[] thirdItem = decodedExtraData.get(2).getRLPData();
         assertNotNull(thirdItem);
@@ -868,11 +868,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
-        assertEquals("SNAPSHOT-cb7f28e", new String(secondItem));
+        assertEquals("WASABI-cb7f28e", new String(secondItem));
 
         byte[] thirdItem = decodedExtraData.get(2).getRLPData();
         assertNotNull(thirdItem);
-        assertEquals("tincho is th", new String(thirdItem));
+        assertEquals("tincho is the ", new String(thirdItem));
     }
 
     private BtcBlock getMergedMiningBlockWithOnlyCoinbase(MinerWork work) {
