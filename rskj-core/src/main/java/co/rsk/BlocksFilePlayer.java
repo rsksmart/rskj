@@ -73,6 +73,10 @@ public class BlocksFilePlayer {
     }
 
     public static void main(String[] args) throws IOException {
+        final boolean useSnappy = true;
+        String destPath = useSnappy ? "/Users/julian/workspace/rskj-projects/dbs/snappy-database-150"
+                : "/Users/julian/workspace/rskj-projects/dbs/normal-database-150";
+        args = new String[]{"-base-path", destPath, "/Users/julian/workspace/rskj-projects/dbs/fileExporter"}; // to DB + from fileExporter
         if (args.length == 0) {
             System.out.println("usage: FileBlockPlayer [<node cli args>] <source file>");
             System.exit(0);
@@ -80,7 +84,6 @@ public class BlocksFilePlayer {
         }
 
         String[] nodeCliArgs = Arrays.copyOf(args, args.length - 1);
-        final boolean useSnappy = false;
         RskContext objects = new RskContext(nodeCliArgs, useSnappy);
         BlocksFilePlayer bplayer = new BlocksFilePlayer(args[args.length - 1], objects);
         bplayer.connectBlocks();
