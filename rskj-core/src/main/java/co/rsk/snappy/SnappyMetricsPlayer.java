@@ -61,8 +61,6 @@ class SnappyMetricsPlay implements Callable<Void> {
         } else {
             return null;
         }
-
-        final long time = sMetrics.runExperiment();
 //        System.out.println(time);
         System.gc();
         return null;
