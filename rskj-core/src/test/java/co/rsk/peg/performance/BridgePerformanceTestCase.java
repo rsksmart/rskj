@@ -192,11 +192,12 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             public Environment build(int executionIndex, TxBuilder txBuilder, int height) {
                 TrieStore trieStore = createTrieStore();
                 Trie trie = new Trie(trieStore);
-                Repository repository = new MutableRepository(trieStore, trie);
+                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore,  trie);
+                Repository repository = benchmarkerTrack.startTracking();
 
-                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, trie);
                 BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock((long) executionIndex));
                 storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex, btcBlockStoreFactory.newInstance(repository));
+                repository.commit();
                 try {
                     storageProvider.save();
                 } catch (Exception e) {
@@ -204,7 +205,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 }
                 benchmarkerTrack.commit();
 
-                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, trie);
+                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, benchmarkerTrack.getTrie());
                 List<LogInfo> logs = new ArrayList<>();
 
                 Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
