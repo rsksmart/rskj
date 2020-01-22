@@ -19,6 +19,9 @@ class SnappyMetricsPlay implements Callable<Void> {
     @Option(names = {"-v", "--values"}, description = "Quantity of blocks to r/w")
     private int values = 3000;
 
+    @Option(names = {"-st", "--store"}, description = "Kind of store (b/r/sr/w)")
+    private String store = "b";
+
     @Option(names = {"-sp", "--snappy"}, description = "Use snappy or not")
     private boolean useSnappy = false;
 
@@ -44,7 +47,21 @@ class SnappyMetricsPlay implements Callable<Void> {
         } else {
             path = normalPath;
         }
-        SnappyMetrics sMetrics = new SnappyMetrics(path, rW, values, seed, useSnappy);
+
+        SnappyBlocksMetrics sMetrics = null;
+
+        if (store.equals("b")) {
+            sMetrics = new SnappyBlocksMetrics(path, rW, values, seed, useSnappy);
+        } else if (store.equals("r")) {
+
+        } else if (store.equals("sr")) {
+
+        } else if (store.equals("w")) {
+
+        } else {
+            return null;
+        }
+
         final long time = sMetrics.runExperiment();
 //        System.out.println(time);
         System.gc();
