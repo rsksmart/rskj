@@ -48,12 +48,13 @@ class SnappyMetricsPlay implements Callable<Void> {
             path = normalPath;
         }
 
-        SnappyMetrics sMetrics = null;
 
         if (store.equals("b")) {
-            sMetrics = new SnappyBlocksMetrics(path, rW, values, seed, useSnappy);
+            SnappyBlocksMetrics sMetrics = new SnappyBlocksMetrics(path, rW, values, seed, useSnappy);
+            sMetrics.runExperiment();
         } else if (store.equals("r")) {
-            sMetrics = new SnappyReceiptsMetrics(path, rW, values, seed, useSnappy);
+            SnappyReceiptsMetrics sMetrics = new SnappyReceiptsMetrics(path, rW, values, seed, useSnappy);
+            sMetrics.runExperiment();
         } else if (store.equals("sr")) {
 
         } else if (store.equals("w")) {
