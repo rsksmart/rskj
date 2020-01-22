@@ -247,6 +247,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     private BridgeStorageProviderInitializer generateBlockChainInitializer(int minBtcBlocks, int maxBtcBlocks, int numberOfConfirmations, int minNumberOfTransactions, int maxNumberOfTransactions) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository);
+            repository.commit();
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
