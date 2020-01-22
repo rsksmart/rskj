@@ -1,5 +1,6 @@
-package co.rsk;
+package co.rsk.snappy;
 
+import co.rsk.RskContext;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 
@@ -15,7 +16,7 @@ public class SnappyMetrics {
     protected boolean useSnappy;
     protected RskContext objects;
 
-    public SnappyMetrics(boolean rw, int values, int seed, boolean useSnappy, String path) {
+    public SnappyMetrics(String path, boolean rw, int values, int seed, boolean useSnappy) {
         this.rw = rw;
         this.values = values;
         this.seed = seed;

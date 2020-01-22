@@ -1,4 +1,4 @@
-package co.rsk;
+package co.rsk.snappy;
 
 
 import picocli.CommandLine;
@@ -48,12 +48,12 @@ class SnappyMetricsPlay implements Callable<Void> {
             path = normalPath;
         }
 
-        SnappyBlocksMetrics sMetrics = null;
+        SnappyMetrics sMetrics = null;
 
         if (store.equals("b")) {
             sMetrics = new SnappyBlocksMetrics(path, rW, values, seed, useSnappy);
         } else if (store.equals("r")) {
-
+            sMetrics = new SnappyReceiptsMetrics(path, rW, values, seed, useSnappy);
         } else if (store.equals("sr")) {
 
         } else if (store.equals("w")) {

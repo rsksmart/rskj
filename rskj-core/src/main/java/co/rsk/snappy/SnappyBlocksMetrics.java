@@ -1,5 +1,6 @@
-package co.rsk;
+package co.rsk.snappy;
 
+import co.rsk.RskContext;
 import co.rsk.net.BlockProcessResult;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -16,23 +17,20 @@ public class SnappyBlocksMetrics extends SnappyMetrics {
     private BlockStore store;
 
     public SnappyBlocksMetrics(String path, boolean rw, int values, int seed, boolean useSnappy) {
-        super(rw, values, seed, useSnappy, path);
+        super(path, rw, values, seed, useSnappy);
         this.store = objects.getBlockStore();
     }
 
-    private long timeForRead(BlockStore store, IntStream blockNumbers) {
-        long time = 0;
-        for (int anInt : blockNumbers.toArray()) {
+    public long runExperiment() {
+        long totalTime ;
 
-            List<BlockInformation> blockinfos = store.getBlocksInformationByNumber(anInt);
-
-            for (BlockInformation bi : blockinfos) {
-                long saveTime = System.nanoTime();
-                store.getBlockByHash(bi.getHash());
-                time += System.nanoTime() - saveTime;
-            }
+        if (rw == READ) {
+            totalTime = measureReads(values, seed);
+        } else {
+            totalTime = measureWrites(values);
         }
-        return time;
+
+        return totalTime;
     }
 
     public long measureReads(long values, long seed) {
@@ -70,10 +68,24 @@ public class SnappyBlocksMetrics extends SnappyMetrics {
         } else {
             System.out.println("n,w,"+totalTime+","+values);
         }
-        dummyStore.flush();
+        dummyStore.flush(); //This if just for prevent bad db closing.
         FileRecursiveDelete.deleteFile(dummyPath);
         return totalTime;
+    }
 
+    private long timeForRead(BlockStore store, IntStream blockNumbers) {
+        long time = 0;
+        for (int anInt : blockNumbers.toArray()) {
+
+            List<BlockInformation> blockinfos = store.getBlocksInformationByNumber(anInt);
+
+            for (BlockInformation bi : blockinfos) {
+                long saveTime = System.nanoTime();
+                store.getBlockByHash(bi.getHash());
+                time += System.nanoTime() - saveTime;
+            }
+        }
+        return time;
     }
 
     private long timeForWrite(BlockStore store, Blockchain dummyBlockchain, long values) {
@@ -95,18 +107,6 @@ public class SnappyBlocksMetrics extends SnappyMetrics {
         }
 
         return time;
-    }
-
-    public long runExperiment() {
-        long totalTime ;
-
-        if (rw == READ) {
-            totalTime = measureReads(values, seed);
-        } else {
-            totalTime = measureWrites(values);
-        }
-
-        return totalTime;
     }
 }
 
