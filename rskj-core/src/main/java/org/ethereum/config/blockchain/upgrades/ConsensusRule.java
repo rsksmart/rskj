@@ -40,6 +40,7 @@ public enum ConsensusRule {
     RSKIP125("rskip125"),
     RSKIP126("rskip126"),
     RSKIP132("rskip132"),
+    RSKIP134("rskip134"),
     RSKIP136("rskip136"),
     RSKIP140("rskip140"),
     RSKIP150("rskip150"),

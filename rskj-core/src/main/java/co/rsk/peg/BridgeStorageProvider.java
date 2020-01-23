@@ -34,12 +34,11 @@ import org.ethereum.vm.DataWord;
 import java.io.IOException;
 import java.util.*;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP123;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP87;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
- * @see co.rsk.peg.BridgeStorageProvider
+ * @see co.rsk.remasc.RemascStorageProvider
  * @author ajlopez
  * @author Oscar Guindzberg
  */
@@ -58,6 +57,7 @@ public class BridgeStorageProvider {
     private static final DataWord LOCK_UNLIMITED_WHITELIST_KEY = DataWord.fromString("unlimitedLockWhitelist");
     private static final DataWord FEE_PER_KB_KEY = DataWord.fromString("feePerKb");
     private static final DataWord FEE_PER_KB_ELECTION_KEY = DataWord.fromString("feePerKbElection");
+    private static final DataWord LOCKING_CAP_KEY = DataWord.fromString("lockingCap");
 
     // Version keys and versions
     private static final DataWord NEW_FEDERATION_FORMAT_VERSION = DataWord.fromString("newFederationFormatVersion");
@@ -98,7 +98,11 @@ public class BridgeStorageProvider {
     private Coin feePerKb;
     private ABICallElection feePerKbElection;
 
+    private Coin lockingCap;
+
     private HashMap<DataWord, Optional<Integer>> storageVersion;
+
+    private HashMap<Sha256Hash, Long> btcTxHashesToSave;
 
     public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
         this.repository = repository;
@@ -142,7 +146,55 @@ public class BridgeStorageProvider {
         saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY, oldFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
-    public Map<Sha256Hash, Long> getBtcTxHashesAlreadyProcessed() throws IOException {
+    public Optional<Long> getHeightIfBtcTxhashIsAlreadyProcessed(Sha256Hash btcTxHash) throws IOException {
+        Map<Sha256Hash, Long> processed = getBtcTxHashesAlreadyProcessed();
+        if (processed.containsKey(btcTxHash)) {
+            return Optional.of(processed.get(btcTxHash));
+        }
+
+        if (!activations.isActive(RSKIP134)) {
+            return Optional.empty();
+        }
+
+        if (btcTxHashesToSave == null) {
+            btcTxHashesToSave = new HashMap<>();
+        }
+
+        if (btcTxHashesToSave.containsKey(btcTxHash)) {
+            return Optional.of(btcTxHashesToSave.get(btcTxHash));
+        }
+
+        Optional<Long> height = getFromRepository(getStorageKeyForBtcTxHashAlreadyProcessed(btcTxHash), BridgeSerializationUtils::deserializeOptionalLong);
+        if (!height.isPresent()) {
+            return height;
+        }
+
+        btcTxHashesToSave.put(btcTxHash, height.get());
+        return height;
+    }
+
+    public void setHeightBtcTxhashAlreadyProcessed(Sha256Hash btcTxHash, long height) throws IOException {
+        if (activations.isActive(RSKIP134)) {
+            if (btcTxHashesToSave == null) {
+                btcTxHashesToSave = new HashMap<>();
+            }
+            btcTxHashesToSave.put(btcTxHash, height);
+        } else {
+            getBtcTxHashesAlreadyProcessed().put(btcTxHash, height);
+        }
+    }
+
+    public void saveHeightBtcTxHashAlreadyProcessed() {
+        if (btcTxHashesToSave == null) {
+            return;
+        }
+
+        btcTxHashesToSave.forEach((btcTxHash, height) ->
+            safeSaveToRepository(getStorageKeyForBtcTxHashAlreadyProcessed(btcTxHash), height, BridgeSerializationUtils::serializeLong)
+        );
+    }
+
+    private Map<Sha256Hash, Long> getBtcTxHashesAlreadyProcessed() throws IOException {
         if (btcTxHashesAlreadyProcessed != null) {
             return btcTxHashesAlreadyProcessed;
         }
@@ -438,6 +490,26 @@ public class BridgeStorageProvider {
         return feePerKbElection;
     }
 
+    public void saveLockingCap() {
+        if (activations.isActive(RSKIP134)) {
+            safeSaveToRepository(LOCKING_CAP_KEY, this.getLockingCap(), BridgeSerializationUtils::serializeCoin);
+        }
+    }
+
+    public void setLockingCap(Coin lockingCap) {
+        this.lockingCap = lockingCap;
+    }
+
+    public Coin getLockingCap() {
+        if (activations.isActive(RSKIP134)) {
+            if (this.lockingCap == null) {
+                this.lockingCap = safeGetFromRepository(LOCKING_CAP_KEY, BridgeSerializationUtils::deserializeCoin);
+            }
+            return this.lockingCap;
+        }
+        return null;
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -459,6 +531,14 @@ public class BridgeStorageProvider {
 
         saveFeePerKb();
         saveFeePerKbElection();
+
+        saveLockingCap();
+
+        saveHeightBtcTxHashAlreadyProcessed();
+    }
+
+    private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
+        return DataWord.fromLongString("btcTxHashAP-" + btcTxHash.toString());
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
