@@ -29,7 +29,6 @@ public class SnappyBlocksMetrics extends SnappyMetrics {
         } else {
             totalTime = measureWrites(values);
         }
-
         return totalTime;
     }
 
@@ -40,9 +39,9 @@ public class SnappyBlocksMetrics extends SnappyMetrics {
         totalTime += timeForRead(store, blockNumbers);
 //        System.out.println("-- Measuring Reads: " + values + " values --");
         if (useSnappy) {
-            System.out.println("s,r,"+totalTime+","+values);
+            System.out.println("b,s,r,"+totalTime+","+values);
         } else {
-            System.out.println("n,r,"+totalTime+","+values);
+            System.out.println("b,n,r,"+totalTime+","+values);
         }
 
         return totalTime;
@@ -64,9 +63,9 @@ public class SnappyBlocksMetrics extends SnappyMetrics {
         }*/
         totalTime += timeForWrite(store, dummyblockchain, values);
         if (useSnappy) {
-            System.out.println("s,w,"+totalTime +","+values);
+            System.out.println("b,s,w,"+totalTime +","+values);
         } else {
-            System.out.println("n,w,"+totalTime+","+values);
+            System.out.println("b,n,w,"+totalTime+","+values);
         }
         dummyStore.flush(); //This if just for prevent bad db closing.
         FileRecursiveDelete.deleteFile(dummyPath);

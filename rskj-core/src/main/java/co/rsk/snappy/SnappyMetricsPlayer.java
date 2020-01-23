@@ -19,7 +19,7 @@ class SnappyMetricsPlay implements Callable<Void> {
     @Option(names = {"-v", "--values"}, description = "Quantity of blocks to r/w")
     private int values = 3000;
 
-    @Option(names = {"-st", "--store"}, description = "Kind of store (b/r/sr/w)")
+    @Option(names = {"-st", "--store"}, description = "Kind of store (b (blocks) / r (receipt))")
     private String store = "b";
 
     @Option(names = {"-sp", "--snappy"}, description = "Use snappy or not")
@@ -33,7 +33,7 @@ class SnappyMetricsPlay implements Callable<Void> {
 
     public static void main(String[] args){
         CommandLine.call(new SnappyMetricsPlay(), args);
-//        SnappyMetrics sMetrics = new SnappyMetrics("/Users/julian/workspace/rskj-projects/dbs/snappy-database-150", false, 1000, 100, true);
+//        SnappyReceiptsMetrics sMetrics = new SnappyReceiptsMetrics("/Users/julian/workspace/rskj-projects/dbs/snappy-database-150", false, 1, 100, true);
 //        sMetrics.runExperiment();
         System.gc();
         System.exit(0);
@@ -48,19 +48,12 @@ class SnappyMetricsPlay implements Callable<Void> {
             path = normalPath;
         }
 
-
         if (store.equals("b")) {
             SnappyBlocksMetrics sMetrics = new SnappyBlocksMetrics(path, rW, values, seed, useSnappy);
             sMetrics.runExperiment();
         } else if (store.equals("r")) {
             SnappyReceiptsMetrics sMetrics = new SnappyReceiptsMetrics(path, rW, values, seed, useSnappy);
             sMetrics.runExperiment();
-        } else if (store.equals("sr")) {
-
-        } else if (store.equals("w")) {
-
-        } else {
-            return null;
         }
 //        System.out.println(time);
         System.gc();

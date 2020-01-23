@@ -43,9 +43,9 @@ public class SnappyReceiptsMetrics extends SnappyMetrics {
         long totalTime = timeForWrite(dummyStore, values);
 
         if (useSnappy) {
-            System.out.println("s,w,"+totalTime +","+values);
+            System.out.println("rc,s,w,"+totalTime +","+values);
         } else {
-            System.out.println("n,w,"+totalTime+","+values);
+            System.out.println("rc,n,w,"+totalTime+","+values);
         }
 
         FileRecursiveDelete.deleteFile(dummyPath);
@@ -71,9 +71,9 @@ public class SnappyReceiptsMetrics extends SnappyMetrics {
         totalTime += timeForRead(store, blockNumbers);
 //        System.out.println("-- Measuring Reads: " + values + " values --");
         if (useSnappy) {
-            System.out.println("s,r,"+totalTime+","+values);
+            System.out.println("rc,s,r,"+totalTime+","+values);
         } else {
-            System.out.println("n,r,"+totalTime+","+values);
+            System.out.println("rc,n,r,"+totalTime+","+values);
         }
 
         return totalTime;
