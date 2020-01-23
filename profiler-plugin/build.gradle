@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+}
+
+group 'co.rsk'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    jcenter()
+    maven {
+        url "https://deps.rsklabs.io"
+    }
+}
+
+dependencies {
+    compile project(':rskj-core')
+    compile group: 'io.prometheus', name: 'simpleclient', version: '0.8.0'
+    compile group: 'io.prometheus', name: 'simpleclient_httpserver', version: '0.8.0'
+}
