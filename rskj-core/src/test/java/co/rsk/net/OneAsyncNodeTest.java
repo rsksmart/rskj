@@ -60,7 +60,7 @@ public class OneAsyncNodeTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         SimpleChannelManager channelManager = new SimpleChannelManager();
-        SyncProcessor syncProcessor = new SyncProcessor(
+        SyncProcessorImpl syncProcessor = new SyncProcessorImpl(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration,
                 new BlockFactory(config.getActivationConfig()),
                 new DummyBlockValidationRule(),
