@@ -523,7 +523,8 @@ public class RskContext implements NodeBootstrapper {
         if (peerScoringManager == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             peerScoringManager = new PeerScoringManager(
-                    () -> new PeerScoring(rskSystemProperties.scoringPunishmentEnabled()),
+                    // XXX: override settings and create a peer scorer with punishment enabled
+                    PeerScoring::new,
                     rskSystemProperties.scoringNumberOfNodes(),
                     new PunishmentParameters(
                             rskSystemProperties.scoringNodesPunishmentDuration(),
