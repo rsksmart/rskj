@@ -18,10 +18,9 @@
 
 package co.rsk.pcc.altBN128;
 
-import co.rsk.altbn128.cloudflare.JniBn128;
 import org.ethereum.vm.PrecompiledContracts;
 
-import static org.ethereum.util.ByteUtil.*;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Computes point addition on Barreto–Naehrig curve.
@@ -54,11 +53,11 @@ public class BN128Addition extends PrecompiledContracts.PrecompiledContract {
         if (data == null) {
             data = EMPTY_BYTE_ARRAY;
         }
-        byte[] output = new byte[64];
-        int rs = new JniBn128().add(data, data.length, output);
+        AltBN128 altBN128 = new AltBN128();
+        int rs = altBN128.add(data, data.length);
         if (rs < 0) {
             return EMPTY_BYTE_ARRAY;
         }
-        return output;
+        return altBN128.getOutput();
     }
 }

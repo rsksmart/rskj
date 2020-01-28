@@ -35,7 +35,6 @@ import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
