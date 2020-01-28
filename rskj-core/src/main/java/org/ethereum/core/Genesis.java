@@ -19,20 +19,13 @@
 
 package org.ethereum.core;
 
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * The genesis block is the first block in the chain and has fixed values according to
@@ -60,31 +53,13 @@ public class Genesis extends Block {
     private static final byte[] ZERO_HASH_2048 = new byte[256];
     protected static final long NUMBER = 0;
 
-    public Genesis(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                   byte[] difficulty, long number, long gasLimit,
-                   long gasUsed, long timestamp,
-                   byte[] extraData,
-                   byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                   byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] minimumGasPrice,
-                   boolean useRskip92Encoding, boolean isRskip126Enabled,
+    public Genesis(boolean isRskip126Enabled,
                    Map<RskAddress, AccountState> initialAccounts,
                    Map<RskAddress, byte[]> initialCodes,
-                   Map<RskAddress, Map<DataWord, byte[]>> initialStorages){
+                   Map<RskAddress, Map<DataWord, byte[]>> initialStorages,
+                   BlockHeader header){
         super(
-                new BlockHeader(
-                        parentHash, unclesHash, new RskAddress(coinbase), ByteUtils.clone(EMPTY_TRIE_HASH),
-                        ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH), logsBloom, RLP.parseBlockDifficulty(difficulty),
-                        number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData, Coin.ZERO,
-                        bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                        bitcoinMergedMiningCoinbaseTransaction, new byte[0],
-                        RLP.parseSignedCoinNonNullZero(minimumGasPrice), 0, false,
-                        useRskip92Encoding, false) {
-
-                    @Override
-                    protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {
-                        return RLP.encodeElement(difficulty);
-                    }
-                },
+                header,
                 Collections.emptyList(),
                 Collections.emptyList(),
                 isRskip126Enabled,
@@ -128,4 +103,5 @@ public class Genesis extends Block {
     public Map<RskAddress, Map<DataWord, byte[]>> getStorages() {
         return initialStorages;
     }
+
 }

@@ -26,7 +26,10 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by Ruben on 6/1/2016.
@@ -73,78 +76,12 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo get(byte[] transactionHash, byte[] blockHash, BlockStore store) {
-        List<TransactionInfo> txsInfo = getAll(transactionHash);
-
-        if (txsInfo.isEmpty()) {
-            return null;
-        }
-
-        Block block = null;
-        Map<Keccak256, Block> tiblocks = new HashMap();
-
-        if (store != null) {
-            block = store.getBlockByHash(blockHash);
-
-            for (TransactionInfo ti : txsInfo) {
-                byte[] bhash = ti.getBlockHash();
-                Keccak256 key = new Keccak256(bhash);
-                tiblocks.put(key, store.getBlockByHash(bhash));
-            }
-        }
-
-        while (true) {
-            int nless = 0;
-
-            for (TransactionInfo ti : txsInfo) {
-                byte[] hash = ti.getBlockHash();
-                Keccak256 key = new Keccak256(hash);
-                Block tiblock = tiblocks.get(key);
-
-                if (tiblock != null && block != null) {
-                    if (tiblock.getNumber() > block.getNumber()) {
-                        nless++;
-                        continue;
-                    }
-
-                    if (tiblock.getNumber() < block.getNumber()) {
-                        continue;
-                    }
-                }
-
-                if (Arrays.equals(ti.getBlockHash(), blockHash)) {
-                    return ti;
-                }
-            }
-
-            if (nless >= txsInfo.size()) {
-                return null;
-            }
-
-            if (store == null) {
-                return null;
-            }
-
-            if (block == null) {
-                block = store.getBlockByHash(blockHash);
-
-                if (block == null) {
-                    return null;
-                }
-            }
-
-            if (block.isGenesis()) {
-                return null;
-            }
-
-            block = store.getBlockByHash(block.getParentHash().getBytes());
-
-            if (block == null) {
-                return null;
-            }
-
-            blockHash = block.getHash().getBytes();
-        }
+    public Optional<TransactionInfo> get(Keccak256 transactionHash, Keccak256 blockHash) {
+        // it is not guaranteed that there will be only one matching TransactionInfo, but if there were more than one,
+        // they would be exactly the same
+        return getAll(transactionHash.getBytes()).stream()
+                .filter(ti -> Arrays.equals(ti.getBlockHash(), blockHash.getBytes()))
+                .findAny();
     }
 
     @Override

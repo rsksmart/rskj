@@ -43,8 +43,10 @@ public class BridgeStateTest {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
-        BridgeStorageConfiguration bridgeStorageConfigurationAtThisHeight = BridgeStorageConfiguration.fromBlockchainConfig(config.getActivationConfig().forBlock(0L));
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, bridgeStorageConfigurationAtThisHeight);
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                bridgeConstants, config.getActivationConfig().forBlock(0L)
+        );
 
         BridgeState state = new BridgeState(42, provider);
 
@@ -52,7 +54,6 @@ public class BridgeStateTest {
 
         Assert.assertNotNull(clone);
         Assert.assertEquals(42, clone.getBtcBlockchainBestChainHeight());
-        Assert.assertTrue(clone.getBtcTxHashesAlreadyProcessed().isEmpty());
         Assert.assertTrue(clone.getActiveFederationBtcUTXOs().isEmpty());
         Assert.assertTrue(clone.getRskTxsWaitingForSignatures().isEmpty());
     }

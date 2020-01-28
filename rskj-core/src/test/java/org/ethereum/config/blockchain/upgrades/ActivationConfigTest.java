@@ -35,6 +35,7 @@ public class ActivationConfigTest {
             "    orchid: 0,",
             "    orchid060: 0,",
             "    wasabi100: 0",
+            "    wasabiPlusOne: 0",
             "    twoToThree: 0",
             "},",
             "consensusRules: {",
@@ -46,7 +47,6 @@ public class ActivationConfigTest {
             "    rskip90: orchid,",
             "    rskip91: orchid,",
             "    rskip92: orchid,",
-            "    rskip94: orchid,",
             "    rskip97: orchid,",
             "    rskip98: orchid,",
             "    rskip103: orchid060,",
@@ -60,7 +60,10 @@ public class ActivationConfigTest {
             "    rskip125: wasabi100",
             "    rskip126: wasabi100",
             "    rskip132: wasabi100",
+            "    rskip134: wasabiPlusOne",
             "    rskip136: bahamas",
+            "    rskip140: wasabiPlusOne",
+            "    rskip152: wasabiPlusOne",
             "    rskip150: twoToThree",
             "}"
     ));

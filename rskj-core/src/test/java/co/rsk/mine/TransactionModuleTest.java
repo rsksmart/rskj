@@ -29,6 +29,7 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -384,7 +385,6 @@ public class TransactionModuleTest {
         return new Web3RskImpl(
                 eth,
                 blockchain,
-                transactionPool,
                 config,
                 minerClient,
                 Web3Mocks.getMockMinerServer(),
@@ -394,9 +394,8 @@ public class TransactionModuleTest {
                 txPoolModule,
                 null,
                 debugModule,
-                null,
+                null, null,
                 channelManager,
-                repositoryLocator,
                 null,
                 null,
                 blockStore,
@@ -406,8 +405,8 @@ public class TransactionModuleTest {
                 null,
                 configCapabilities,
                 null,
-                null
-        );
+                null,
+                null);
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(BlockStore blockStore, ReceiptStore receiptStore) {

@@ -2,6 +2,7 @@ package co.rsk.rpc.modules.rsk;
 
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.trie.Trie;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -11,8 +12,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
-import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +19,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
-import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 public class RskModuleImpl implements RskModule {
@@ -30,11 +29,16 @@ public class RskModuleImpl implements RskModule {
     private final Blockchain blockchain;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final Web3InformationRetriever web3InformationRetriever;
 
-    public RskModuleImpl(Blockchain blockchain, BlockStore blockStore, ReceiptStore receiptStore) {
+    public RskModuleImpl(Blockchain blockchain,
+                         BlockStore blockStore,
+                         ReceiptStore receiptStore,
+                         Web3InformationRetriever web3InformationRetriever) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.web3InformationRetriever = web3InformationRetriever;
     }
 
     @Override
@@ -62,8 +66,8 @@ public class RskModuleImpl implements RskModule {
 
         try {
             Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
-            byte[] bhash = stringHexToByteArray(blockHash);
-            Block block = this.blockchain.getBlockByHash(bhash);
+            Keccak256 bhash = new Keccak256(stringHexToByteArray(blockHash));
+            Block block = this.blockchain.getBlockByHash(bhash.getBytes());
             List<Transaction> transactions = block.getTransactionsList();
             List<TransactionReceipt> receipts = new ArrayList<>();
 
@@ -74,7 +78,13 @@ public class RskModuleImpl implements RskModule {
                 Transaction transaction = transactions.get(k);
                 Keccak256 txh = transaction.getHash();
 
-                TransactionInfo txinfo = this.receiptStore.get(txh.getBytes(), bhash, this.blockStore);
+                Optional<TransactionInfo> txinfoOpt = this.receiptStore.get(txh, bhash);
+                if (!txinfoOpt.isPresent()) {
+                    logger.error("Missing receipt for transaction {} in block {}", txh, bhash);
+                    continue;
+                }
+
+                TransactionInfo txinfo = txinfoOpt.get();
                 receipts.add(txinfo.getReceipt());
 
                 if (txh.equals(txHash)) {
@@ -121,30 +131,13 @@ public class RskModuleImpl implements RskModule {
     public String getRawBlockHeaderByNumber(String bnOrId) {
         String s = null;
         try {
-            Block b = getByJsonBlockId(bnOrId);
-            return s = (b == null ? null : TypeConverter.toUnformattedJsonHex(b.getHeader().getEncoded()));
+            return s = web3InformationRetriever.getBlock(bnOrId)
+                    .map(b -> TypeConverter.toUnformattedJsonHex(b.getHeader().getEncoded()))
+                    .orElse(null);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("rsk_getRawBlockHeaderByNumber({}): {}", bnOrId, s);
             }
         }
     }
-
-    private Block getByJsonBlockId(String id) {
-        if ("earliest".equalsIgnoreCase(id)) {
-            return this.blockchain.getBlockByNumber(0);
-        } else if ("latest".equalsIgnoreCase(id)) {
-            return this.blockchain.getBestBlock();
-        } else if ("pending".equalsIgnoreCase(id)) {
-            throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
-        } else {
-            try {
-                long blockNumber = stringHexToBigInteger(id).longValue();
-                return this.blockchain.getBlockByNumber(blockNumber);
-            } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                throw new JsonRpcInvalidParamException("invalid blocknumber " + id);
-            }
-        }
-    }
-
 }

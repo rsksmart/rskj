@@ -88,8 +88,16 @@ public class WorldDslProcessor {
             processAssertConnectCommand(cmd);
         else if (cmd.isCommand("log_info"))
             processLogInfoCommand(cmd);
+        else if (cmd.isCommand("comment"))
+            processComment(parser);
         else
             throw new DslProcessorException(String.format("Unknown command '%s'", cmd.getVerb()));
+    }
+
+    private static void processComment(DslParser parser) {
+        for (String line = parser.nextLine(); line != null && !line.trim().toLowerCase().equals("end"); line = parser.nextLine()) {
+
+        }
     }
 
     private void processLogInfoCommand(DslCommand cmd) {

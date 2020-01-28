@@ -43,7 +43,7 @@ import java.util.*;
 public class NodeBlockProcessor implements BlockProcessor {
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
 
-    private final BlockStore store;
+    private final NetBlockStore store;
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation;
     // keep tabs on which nodes know which blocks.
@@ -61,7 +61,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param blockSyncService
      */
     public NodeBlockProcessor(
-            @Nonnull final BlockStore store,
+            @Nonnull final NetBlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final BlockSyncService blockSyncService,
@@ -97,7 +97,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param message A message containing a list of block hashes.
      */
     @Override
-    public void processNewBlockHashesMessage(@Nonnull final MessageChannel sender, @Nonnull final NewBlockHashesMessage message) {
+    public void processNewBlockHashesMessage(final Peer sender, final NewBlockHashesMessage message) {
         message.getBlockIdentifiers().stream()
                 .map(bi -> new Keccak256(bi.getHash()))
                 .distinct()
@@ -112,7 +112,7 @@ public class NodeBlockProcessor implements BlockProcessor {
 
 
     @Override
-    public void processBlockHeaders(@Nonnull final MessageChannel sender, @Nonnull final List<BlockHeader> blockHeaders) {
+    public void processBlockHeaders(@Nonnull final Peer sender, @Nonnull final List<BlockHeader> blockHeaders) {
         blockHeaders.stream()
                 .filter(h -> !hasHeader(h.getHash()))
                 // sort block headers in ascending order, so we can process them in that order.
@@ -124,9 +124,8 @@ public class NodeBlockProcessor implements BlockProcessor {
         return hasBlock(hash.getBytes()) || store.hasHeader(hash);
     }
 
-    private void processBlockHeader(@Nonnull final MessageChannel sender, @Nonnull final BlockHeader header) {
+    private void processBlockHeader(@Nonnull final Peer sender, @Nonnull final BlockHeader header) {
         sender.sendMessage(new GetBlockMessage(header.getHash().getBytes()));
-
         this.store.saveHeader(header);
     }
 
@@ -137,7 +136,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param hash   the requested block's hash.
      */
     @Override
-    public void processGetBlock(@Nonnull final MessageChannel sender, @Nonnull final byte[] hash) {
+    public void processGetBlock(@Nonnull final Peer sender, @Nonnull final byte[] hash) {
         logger.trace("Processing get block {} from {}", Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
@@ -157,7 +156,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param hash   the requested block's hash.
      */
     @Override
-    public void processBlockRequest(@Nonnull final MessageChannel sender, long requestId, @Nonnull final byte[] hash) {
+    public void processBlockRequest(@Nonnull final Peer sender, long requestId, @Nonnull final byte[] hash) {
         logger.trace("Processing get block by hash {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
@@ -178,7 +177,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param count  the number of headers to send
      */
     @Override
-    public void processBlockHeadersRequest(@Nonnull final MessageChannel sender, long requestId, @Nonnull final byte[] hash, int count) {
+    public void processBlockHeadersRequest(@Nonnull final Peer sender, long requestId, @Nonnull final byte[] hash, int count) {
         logger.trace("Processing headers request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
 
         if (count > syncConfiguration.getChunkSize()) {
@@ -218,7 +217,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param hash   the requested block's hash.
      */
     @Override
-    public void processBodyRequest(@Nonnull final MessageChannel sender, long requestId, @Nonnull final byte[] hash) {
+    public void processBodyRequest(@Nonnull final Peer sender, long requestId, @Nonnull final byte[] hash) {
         logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
@@ -238,8 +237,9 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param height   the requested block's hash.
      */
     @Override
-    public void processBlockHashRequest(@Nonnull final MessageChannel sender, long requestId, long height) {
+    public void processBlockHashRequest(@Nonnull final Peer sender, long requestId, long height) {
         logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getPeerNodeID());
+
         if (height == 0){
             return;
         }
@@ -261,7 +261,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param startNumber the starting block's hash to get the skeleton.
      */
     @Override
-    public void processSkeletonRequest(@Nonnull final MessageChannel sender, long requestId, long startNumber) {
+    public void processSkeletonRequest(@Nonnull final Peer sender, long requestId, long startNumber) {
         logger.trace("Processing skeleton request {} {} from {}", requestId, startNumber, sender.getPeerNodeID());
         int skeletonStep = syncConfiguration.getChunkSize();
         Block blockStart = this.getBlockFromBlockchainStore(startNumber);
@@ -376,7 +376,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param block  the block to process.
      */
     @Override
-    public BlockProcessResult processBlock(@Nullable final MessageChannel sender, @Nonnull final Block block) {
+    public BlockProcessResult processBlock(@Nullable final Peer sender, @Nonnull final Block block) {
         return blockSyncService.processBlock(block, sender, false);
     }
 

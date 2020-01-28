@@ -229,6 +229,12 @@ public enum OpCode {
     RETURNDATASIZE(0x3d, 0, 1, BASE_TIER),
     RETURNDATACOPY(0x3e, 3, 0, VERY_LOW_TIER),
 
+    /**
+     * (0x3f) Get hash of code running in current
+     * environment
+     */
+    EXTCODEHASH(0x3f, 1, 1, EXT_TIER),
+
     /*  Block Information   */
 
     /**
@@ -256,6 +262,11 @@ public enum OpCode {
      * (0x45) Get the block’s gas limit
      */
     GASLIMIT(0x45, 0, 1, BASE_TIER),
+
+    /**
+     * (0x46) Get the chain id
+     */
+    CHAINID(0x46, 0, 1, BASE_TIER),
 
     /*  Memory, Storage and Flow Operations */
 
@@ -601,11 +612,6 @@ public enum OpCode {
      * TXINDEX
      */
     TXINDEX(0xaa, 0, 1, BASE_TIER),
-
-    /**
-     * CODEREPLACE
-     */
-    CODEREPLACE(0xab, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
 
     /*  System operations   */
 

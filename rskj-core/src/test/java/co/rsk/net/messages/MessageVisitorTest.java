@@ -27,8 +27,7 @@ import static org.mockito.Mockito.*;
 public class MessageVisitorTest {
 
     private MessageVisitor target;
-    private MessageChannel sender;
-    private BlockValidationRule blockValidationRule;
+    private Peer sender;
     private ChannelManager channelManager;
     private PeerScoringManager peerScoringManager;
     private TransactionGateway transactionGateway;
@@ -44,8 +43,7 @@ public class MessageVisitorTest {
         transactionGateway = mock(TransactionGateway.class);
         peerScoringManager = mock(PeerScoringManager.class);
         channelManager = mock(ChannelManager.class);
-        blockValidationRule = mock(BlockValidationRule.class);
-        sender = mock(MessageChannel.class);
+        sender = mock(Peer.class);
 
         target = new MessageVisitor(
                 config,
@@ -54,7 +52,6 @@ public class MessageVisitorTest {
                 transactionGateway,
                 peerScoringManager,
                 channelManager,
-                blockValidationRule,
                 sender
         );
     }
@@ -69,14 +66,18 @@ public class MessageVisitorTest {
         when(sender.getAddress()).thenReturn(peerAddress);
         when(sender.getPeerNodeID()).thenReturn(peer);
         when(message.getBlock()).thenReturn(block);
-        when(blockValidationRule.isValid(block)).thenReturn(false);
+        Keccak256 blockHash = mock(Keccak256.class);
+        when(block.getHash()).thenReturn(blockHash);
+
+        BlockProcessResult result = mock(BlockProcessResult.class);
+        when(result.isInvalidBlock()).thenReturn(true);
+        when(blockProcessor.processBlock(any(), any())).thenReturn(result);
 
         target.apply(message);
 
-
         verify(peerScoringManager, times(1))
                 .recordEvent(eq(peer), eq(peerAddress), eq(EventType.INVALID_BLOCK));
-        verify(blockProcessor, never()).processBlock(any(), any());
+        verify(blockProcessor, times(1)).processBlock(any(), any());
     }
 
     @Test
@@ -113,7 +114,6 @@ public class MessageVisitorTest {
 
         when(message.getBlock()).thenReturn(block);
         when(block.getNumber()).thenReturn(24L);
-        when(blockValidationRule.isValid(eq(block))).thenReturn(true);
         when(blockProcessor.canBeIgnoredForUnclesRewards(anyLong())).thenReturn(true);
 
         target.apply(message);
@@ -134,7 +134,6 @@ public class MessageVisitorTest {
         when(block.getHash()).thenReturn(blockHash);
         when(blockHash.getBytes()).thenReturn(hashBytes);
 
-        when(blockValidationRule.isValid(eq(block))).thenReturn(true);
         when(blockProcessor.hasBlockInSomeBlockchain(eq(hashBytes))).thenReturn(true);
 
         target.apply(message);
@@ -159,7 +158,6 @@ public class MessageVisitorTest {
 
         when(block.getHash()).thenReturn(blockHash);
 
-        when(blockValidationRule.isValid(eq(block))).thenReturn(true);
         when(blockProcessor.processBlock(sender, block)).thenReturn(blockProcessResult);
 
         target.apply(message);
@@ -190,7 +188,6 @@ public class MessageVisitorTest {
         when(block.getHash()).thenReturn(blockHash);
         when(blockHash.getBytes()).thenReturn(hashBytes);
 
-        when(blockValidationRule.isValid(eq(block))).thenReturn(true);
         when(blockProcessor.processBlock(sender, block)).thenReturn(blockProcessResult);
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
         when(blockProcessResult.wasBlockAdded(eq(block))).thenReturn(true);

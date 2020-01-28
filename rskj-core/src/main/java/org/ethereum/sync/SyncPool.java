@@ -322,7 +322,7 @@ public class SyncPool implements InternalService {
     private void heartBeat() {
         synchronized (peers) {
             for (Channel peer : peers.values()) {
-                if (!peer.isIdle() && peer.getSyncStats().secondsSinceLastUpdate() > config.peerChannelReadTimeout()) {
+                if (peer.getSyncStats().secondsSinceLastUpdate() > config.peerChannelReadTimeout()) {
                     logger.info("Peer {}: no response after {} seconds", peer.getPeerIdShort(), config.peerChannelReadTimeout());
                     peer.dropConnection();
                 }

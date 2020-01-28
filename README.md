@@ -2,17 +2,16 @@
 [![CircleCI](https://circleci.com/gh/rsksmart/rskj/tree/master.svg?style=svg)](https://circleci.com/gh/rsksmart/rskj/tree/master)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=rskj&metric=alert_status)](https://sonarcloud.io/dashboard?id=rskj)
 
-
 # About
-RskJ is a Java implementation of the RSK node. For more information about RSK, visit [www.rsk.co](http://www.rsk.co). The [RSK white paper](https://www.rsk.co/wp-content/uploads/2019/02/RSK-White-Paper-Updated.pdf) provides a complete conceptual overview of the platform.
+RskJ is a Java implementation of the RSK node. For more information about RSK, visit [www.rsk.co](http://www.rsk.co). The [RSK white paper](https://www.rsk.co/Whitepapers/RSK-White-Paper-Updated.pdf) provides a complete conceptual overview of the platform.
 
 If you have questions about the code please find us on [![Gitter](https://badges.gitter.im/rsksmart/rskj.svg)](https://gitter.im/rsksmart/rskj?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-You may also want to check [our blog](https://www.rsk.co/noticias/) for articles and updates on the project.
-
+You may also want to check [our blog](https://blog.rsk.co/) for articles and updates on the project.
 
 # Getting Started
 Information about compiling and running an RSK node can be found in the [wiki](https://github.com/rsksmart/rskj/wiki).
+The stable versions are the tags published in [releases tab](https://github.com/rsksmart/rskj/releases).
 
 # Report Security Vulnerabilities
 We have a [vulnerability reporting guideline](https://github.com/rsksmart/rskj/blob/master/SECURITY.md) for details on how to

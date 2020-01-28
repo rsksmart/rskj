@@ -17,13 +17,14 @@
  */
 package co.rsk.rpc.netty;
 
-import co.rsk.jsonrpc.*;
+import co.rsk.jsonrpc.JsonRpcBooleanResult;
+import co.rsk.jsonrpc.JsonRpcIdentifiableMessage;
+import co.rsk.jsonrpc.JsonRpcResultOrError;
 import co.rsk.rpc.EthSubscriptionNotificationEmitter;
 import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 import co.rsk.rpc.modules.RskJsonRpcRequestVisitor;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeRequest;
-import co.rsk.rpc.modules.eth.subscribe.EthSubscribeTypes;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeRequest;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.ByteBufInputStream;
@@ -94,13 +95,6 @@ public class RskJsonRpcHandler
 
     @Override
     public JsonRpcResultOrError visit(EthSubscribeRequest request, ChannelHandlerContext ctx) {
-        EthSubscribeTypes subscribeType = request.getParams().getSubscription();
-        switch (subscribeType) {
-            case NEW_HEADS:
-                return emitter.subscribe(ctx.channel());
-            default:
-                LOGGER.error("Subscription type {} is not implemented", subscribeType);
-                return new JsonRpcInternalError();
-        }
+        return request.getParams().accept(emitter, ctx.channel());
     }
 }

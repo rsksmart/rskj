@@ -120,10 +120,7 @@ public class StateTestRunner {
                 .newInstance(transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
 
         try{
-            executor.init();
-            executor.execute();
-            executor.go();
-            executor.finalization();
+            executor.executeTransaction();
         } catch (StackOverflowError soe){
             logger.error(" !!! StackOverflowError: update your java run command with -Xss32M !!!");
             System.exit(-1);

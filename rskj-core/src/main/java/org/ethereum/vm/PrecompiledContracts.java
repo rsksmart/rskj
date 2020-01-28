@@ -28,6 +28,7 @@ import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.remasc.RemascContract;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -164,6 +165,8 @@ public class PrecompiledContracts {
         public abstract long getGasForData(byte[] data);
 
         public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {}
+
+        public List<ProgramSubtrace> getSubtraces() { return Collections.emptyList(); }
 
         public abstract byte[] execute(byte[] data);
     }

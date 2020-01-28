@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Roman Mandeleil
@@ -49,11 +50,6 @@ public class BlockStoreDummy implements BlockStore {
 
     @Override
     public Block getBlockByHash(byte[] hash) {
-        return null;
-    }
-
-    @Override
-    public Block getBlockByHashAndDepth(byte[] hash, long depth) {
         return null;
     }
 
@@ -96,6 +92,11 @@ public class BlockStoreDummy implements BlockStore {
         return 0;
     }
 
+    @Override
+    public long getMinNumber() {
+        return 0L;
+    }
+
 
     @Override
     public void reBranch(Block forkBlock) {
@@ -114,6 +115,11 @@ public class BlockStoreDummy implements BlockStore {
 
     @Override
     public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
+
+    @Override
+    public boolean isEmpty() {
+        return false;
+    }
 
     @Override
     public Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {

@@ -1,6 +1,6 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.messages.BodyResponseMessage;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockHeader;
@@ -42,7 +42,7 @@ public abstract class BaseSyncState implements SyncState {
     }
 
     @Override
-    public void newBody(BodyResponseMessage message, MessageChannel peer) {
+    public void newBody(BodyResponseMessage message, Peer peer) {
     }
 
     @Override
@@ -53,7 +53,7 @@ public abstract class BaseSyncState implements SyncState {
     public void newPeerStatus() { }
 
     @Override
-    public void newSkeleton(List<BlockIdentifier> skeleton, MessageChannel peer) {
+    public void newSkeleton(List<BlockIdentifier> skeleton, Peer peer) {
     }
 
     @Override

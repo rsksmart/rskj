@@ -19,12 +19,14 @@
 package co.rsk.db;
 
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
@@ -429,7 +431,7 @@ public class RepositoryTest {
 
         final CountDownLatch failSema = new CountDownLatch(2);
 
-        Repository snap = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()));
+        Repository snap = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()).get());
         new Thread(() -> {
             try {
                 int cnt = 1;
@@ -503,7 +505,7 @@ public class RepositoryTest {
         // this new repository to read all nodes from the store. The results must
         // be the same: lazy evaluation of the value must work.
 
-        Repository repository2 = new MutableRepository(trieStore, trieStore.retrieve(prevRoot));
+        Repository repository2 = new MutableRepository(trieStore, trieStore.retrieve(prevRoot).get());
         // Now try to get the size
         codeSize = repository2.getCodeLength(COW);
         assertEquals(codeLongerThan32bytes.length, codeSize);
@@ -511,4 +513,45 @@ public class RepositoryTest {
         returnedCode2 = repository2.getCode(COW);
         assertArrayEquals(codeLongerThan32bytes, returnedCode2);
     }
+
+    @Test
+    public void testGetCodeHash() {
+        RskAddress addressNotAdded = new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5A");
+        Repository track = repository.startTracking();
+
+        byte[] code = "a-great-code".getBytes();
+        byte[] emptyCode = new byte[0];
+
+        Keccak256 codeKeccak = getKeccak256Hash(code);
+        Keccak256 emptyKeccak = getKeccak256Hash(emptyCode);
+
+        track.createAccount(HORSE);
+
+        //Make COW address a contract
+        track.setupContract(COW);
+        track.saveCode(COW, code);
+
+        assertArrayEquals(code, track.getCode(COW));
+        assertNull(track.getCode(HORSE));
+
+        track.commit();
+
+        //Non-empty code hash
+        Keccak256 codeHash = repository.getCodeHash(COW);
+        assertEquals(codeKeccak, codeHash);
+
+        //Empty code hash
+        Keccak256 emptyCodeHash = repository.getCodeHash(HORSE);
+        assertEquals(emptyKeccak, emptyCodeHash);
+
+        //Code hash of non-existing account
+        Keccak256 hashOfNonExistingAccount = repository.getCodeHash(addressNotAdded);
+        assertTrue(hashOfNonExistingAccount.equals(Keccak256.ZERO_HASH));
+    }
+
+    private Keccak256 getKeccak256Hash(byte[] emptyCode) {
+        return new Keccak256(Keccak256Helper.keccak256(emptyCode));
+    }
+
+
 }

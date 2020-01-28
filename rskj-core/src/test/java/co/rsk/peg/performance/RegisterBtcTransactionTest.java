@@ -145,7 +145,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             // Marking as already processed
             if (markAsAlreadyProcessed) {
                 try {
-                    provider.getBtcTxHashesAlreadyProcessed().put(txToLock.getHash(), (long) blockWithTxHeight - 10);
+                    provider.setHeightBtcTxhashAlreadyProcessed(txToLock.getHash(), (long) blockWithTxHeight - 10);
                 } catch (IOException e) {
                     throw new RuntimeException("Exception while trying to mark tx as already processed for test");
                 }

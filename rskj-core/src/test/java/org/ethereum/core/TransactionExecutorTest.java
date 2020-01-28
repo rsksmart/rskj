@@ -69,6 +69,6 @@ public class TransactionExecutorTest {
         when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(68000)));
         // note that the transaction is free of cost
         assertEquals(0, transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())));
-        assertFalse(txExecutor.init());
+        assertFalse(txExecutor.executeTransaction());
     }
 }

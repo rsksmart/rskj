@@ -767,7 +767,7 @@ public class RepositoryImplOriginalTest {
         Repository[] snaps = new Repository[10];
 
         for (int i = 0; i < 10; ++i) {
-            snaps[i] = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()));
+            snaps[i] = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()).get());
         }
         for (int i = 0; i < 10; ++i) {
             int finalI = i;

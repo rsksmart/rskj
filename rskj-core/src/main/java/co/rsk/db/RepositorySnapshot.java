@@ -20,6 +20,7 @@ package co.rsk.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 
@@ -45,6 +46,14 @@ public interface RepositorySnapshot extends AccountInformationProvider {
      * in some cases.
      */
     int getCodeLength(RskAddress addr);
+
+    /**
+     * This method can retrieve the hash code without actually retrieving the code
+     * in some cases.
+     * @param addr of the account
+     * @return hash of the contract code
+     */
+    Keccak256 getCodeHash(RskAddress addr);
 
     /**
      * @param addr - account to check

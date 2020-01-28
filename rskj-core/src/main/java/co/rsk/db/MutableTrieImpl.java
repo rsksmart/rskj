@@ -87,6 +87,16 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
+    public Keccak256 getValueHash(byte[] key) {
+        Trie atrie = trie.find(key);
+        //From RSKIP140 non-existing account specification.
+        if (atrie == null) {
+            return Keccak256.ZERO_HASH;
+        }
+        return atrie.getValueHash();
+    }
+
+    @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         byte[] accountStorageKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
         final int storageKeyOffset = (TrieKeyMapper.storagePrefix().length + TrieKeyMapper.SECURE_KEY_SIZE) * Byte.SIZE - 1;

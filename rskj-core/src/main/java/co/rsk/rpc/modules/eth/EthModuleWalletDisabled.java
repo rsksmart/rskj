@@ -18,11 +18,12 @@
 
 package co.rsk.rpc.modules.eth;
 
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class EthModuleWalletDisabled implements EthModuleWallet {
 
@@ -38,6 +39,6 @@ public class EthModuleWalletDisabled implements EthModuleWallet {
     @Override
     public String sign(String addr, String data) {
         LOGGER.debug("eth_sign({}, {}): {}", addr, data, null);
-        throw new JsonRpcInvalidParamException("Local wallet is disabled in this node");
+        throw invalidParamError("Local wallet is disabled in this node");
     }
 }

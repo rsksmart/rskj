@@ -91,7 +91,6 @@ public class Web3RskImplTest {
         Web3RskImpl web3 = new Web3RskImpl(
                 rsk,
                 blockchain,
-                Web3Mocks.getMockTransactionPool(),
                 config,
                 Web3Mocks.getMockMinerClient(),
                 Web3Mocks.getMockMinerServer(),
@@ -101,9 +100,8 @@ public class Web3RskImplTest {
                 tpm,
                 null,
                 dm,
-                null,
+                null, null,
                 Web3Mocks.getMockChannelManager(),
-                Web3Mocks.getMockRepositoryLocator(),
                 null,
                 networkStateExporter,
                 blockStore,
@@ -113,8 +111,8 @@ public class Web3RskImplTest {
                 null,
                 null,
                 null,
-                null
-        );
+                null,
+                null);
         web3.ext_dumpState();
     }
 

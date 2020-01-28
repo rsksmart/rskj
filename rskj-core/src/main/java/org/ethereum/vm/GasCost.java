@@ -37,7 +37,6 @@ public class GasCost {
     public static final long STEP = 1;
     public static final long SSTORE = 300;
     /* backwards compatibility, remove eventually */
-
     public static final long ZEROSTEP = 0;
     public static final long QUICKSTEP = 2;
     public static final long FASTESTSTEP = 3;

@@ -1,31 +1,38 @@
 package co.rsk.net.sync;
 
 
+import co.rsk.net.Peer;
+import org.ethereum.db.BlockStore;
+
 import java.time.Duration;
+import java.util.Optional;
 
 public class DecidingSyncState extends BaseSyncState {
-    private PeersInformation knownPeers;
+    private PeersInformation peersInformation;
+    private final BlockStore blockStore;
 
     public DecidingSyncState(SyncConfiguration syncConfiguration,
                              SyncEventsHandler syncEventsHandler,
-                             PeersInformation knownPeers) {
+                             PeersInformation peersInformation,
+                             BlockStore blockStore) {
         super(syncEventsHandler, syncConfiguration);
 
-        this.knownPeers = knownPeers;
+        this.peersInformation = peersInformation;
+        this.blockStore = blockStore;
     }
 
     @Override
     public void newPeerStatus() {
-        if (knownPeers.count() >= syncConfiguration.getExpectedPeers()) {
+        if (peersInformation.count() >= syncConfiguration.getExpectedPeers()) {
             tryStartSyncing();
         }
     }
 
     @Override
     public void tick(Duration duration) {
-        knownPeers.cleanExpired();
+        peersInformation.cleanExpired();
         timeElapsed = timeElapsed.plus(duration);
-        if (knownPeers.count() > 0 &&
+        if (peersInformation.count() > 0 &&
                 timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingPeers()) >= 0) {
 
             tryStartSyncing();
@@ -33,6 +40,18 @@ public class DecidingSyncState extends BaseSyncState {
     }
 
     private void tryStartSyncing() {
-        knownPeers.getBestPeer().ifPresent(syncEventsHandler::startSyncing);
+
+        Optional<Peer> bestPeer = peersInformation.getBestPeer();
+        if (!bestPeer.isPresent()) {
+            return;
+        }
+
+        long bpBestBlockNumber = peersInformation.getPeer(bestPeer.get()).getStatus().getBestBlockNumber();
+        long distanceToTip = bpBestBlockNumber - blockStore.getBestBlock().getNumber();
+        if (distanceToTip > syncConfiguration.getLongSyncLimit() || blockStore.getMinNumber() == 0) {
+            syncEventsHandler.startSyncing(bestPeer.get());
+            return;
+        }
+        syncEventsHandler.backwardSyncing(bestPeer.get());
     }
 }

@@ -19,8 +19,12 @@
 
 package org.ethereum.net.server;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.NodeID;
+import co.rsk.net.messages.MessageWithId;
+import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeManager;
 import org.ethereum.sync.SyncPool;
@@ -31,8 +35,10 @@ import org.junit.Test;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -65,7 +71,7 @@ public class ChannelManagerImplTest {
     }
 
     @Test
-    public void blockAddressIsNotAvailable() throws UnknownHostException {
+    public void blockAddressIsNotAvailable() {
         TestSystemProperties config = mock(TestSystemProperties.class);
         when(config.maxConnectionsAllowed()).thenReturn(1);
         when(config.networkCIDR()).thenReturn(32);
@@ -92,4 +98,14 @@ public class ChannelManagerImplTest {
         Assert.assertFalse(channelManager.isAddressBlockAvailable(otherPeer.getInetSocketAddress().getAddress()));
     }
 
+    @Test
+    public void broadcastBlock() {
+        ChannelManager target = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+
+        Block block = mock(Block.class);
+        when(block.getHash()).thenReturn(new Keccak256(new byte[32]));
+        Set<NodeID> nodeIds = target.broadcastBlock(block);
+
+        assertTrue(nodeIds.isEmpty());
+    }
 }

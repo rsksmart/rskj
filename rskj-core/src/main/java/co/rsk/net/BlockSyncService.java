@@ -49,7 +49,7 @@ public class BlockSyncService {
     private long lastKnownBlockNumber = 0;
 
     private static final Logger logger = LoggerFactory.getLogger("blocksyncservice");
-    private final BlockStore store;
+    private final NetBlockStore store;
     private final Blockchain blockchain;
     private final SyncConfiguration syncConfiguration;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
@@ -59,7 +59,7 @@ public class BlockSyncService {
     // and we should use the same objects everywhere to ensure consistency
     public BlockSyncService(
             @Nonnull final RskSystemProperties config,
-            @Nonnull final BlockStore store,
+            @Nonnull final NetBlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final SyncConfiguration syncConfiguration) {
@@ -71,7 +71,7 @@ public class BlockSyncService {
         this.config = config;
     }
 
-    public BlockProcessResult processBlock(@Nonnull Block block, MessageChannel sender, boolean ignoreMissingHashes) {
+    public BlockProcessResult processBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
         Instant start = Instant.now();
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
@@ -134,8 +134,7 @@ public class BlockSyncService {
     }
 
     public boolean hasBetterBlockToSync() {
-        int blocksDistance = syncConfiguration.getChunkSize() / CHUNK_PART_LIMIT;
-        return getLastKnownBlockNumber() >= getBestBlockNumber() + blocksDistance;
+        return getLastKnownBlockNumber() >= getBestBlockNumber() + syncConfiguration.getLongSyncLimit();
     }
 
     public boolean canBeIgnoredForUnclesRewards(long blockNumber) {
@@ -161,7 +160,7 @@ public class BlockSyncService {
         }
     }
 
-    private Map<Keccak256, ImportResult> connectBlocksAndDescendants(MessageChannel sender, List<Block> blocks, boolean ignoreMissingHashes) {
+    private Map<Keccak256, ImportResult> connectBlocksAndDescendants(Peer sender, List<Block> blocks, boolean ignoreMissingHashes) {
         Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
         List<Block> remainingBlocks = blocks;
         while (!remainingBlocks.isEmpty()) {
@@ -172,7 +171,7 @@ public class BlockSyncService {
         return connectionsResult;
     }
 
-    private Set<Block> getConnectedBlocks(List<Block> remainingBlocks, MessageChannel sender, Map<Keccak256, ImportResult> connectionsResult, boolean ignoreMissingHashes) {
+    private Set<Block> getConnectedBlocks(List<Block> remainingBlocks, Peer sender, Map<Keccak256, ImportResult> connectionsResult, boolean ignoreMissingHashes) {
         Set<Block> connected = new HashSet<>();
 
         for (Block block : remainingBlocks) {
@@ -198,7 +197,7 @@ public class BlockSyncService {
         return connected;
     }
 
-    private void requestMissingHashes(MessageChannel sender, Set<Keccak256> hashes) {
+    private void requestMissingHashes(Peer sender, Set<Keccak256> hashes) {
         logger.trace("Missing blocks to process {}", hashes.size());
 
         for (Keccak256 hash : hashes) {
@@ -206,7 +205,7 @@ public class BlockSyncService {
         }
     }
 
-    private void requestMissingHash(MessageChannel sender, Keccak256 hash) {
+    private void requestMissingHash(Peer sender, Keccak256 hash) {
         if (sender == null) {
             return;
         }

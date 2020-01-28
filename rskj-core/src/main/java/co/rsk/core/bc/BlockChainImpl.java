@@ -266,8 +266,6 @@ public class BlockChainImpl implements Blockchain {
                 logger.trace("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
                         status.getTotalDifficulty(), totalDifficulty);
-                BlockFork fork = new BlockFork();
-                fork.calculate(bestBlock, block, blockStore);
                 blockStore.reBranch(block);
             }
 

@@ -18,13 +18,18 @@
 
 package co.rsk.trie;
 
+import java.util.Optional;
+
 public interface TrieStore {
     void save(Trie trie);
 
     void flush();
 
-    /** Retrieve a trie node with the specified hash from this store */
-    Trie retrieve(byte[] hash);
+    /**
+     * @param hash the root of the {@link Trie} to retrieve
+     * @return an optional containing the {@link Trie} with <code>rootHash</code> if found
+     */
+    Optional<Trie> retrieve(byte[] hash);
 
     byte[] retrieveValue(byte[] hash);
 

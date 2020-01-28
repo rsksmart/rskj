@@ -19,14 +19,13 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleBlockProcessor;
-import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.TransactionUtils;
@@ -39,14 +38,13 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.net.server.Channel;
+import org.ethereum.db.BlockStore;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 
@@ -68,11 +66,11 @@ public class NodeMessageHandlerTest {
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test
-    public void processBlockMessageUsingProcessor() throws UnknownHostException {
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+    public void processBlockMessageUsingProcessor() {
+        SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), sbp, null, null, null, scoring, new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -101,10 +99,10 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void skipProcessGenesisBlock() throws UnknownHostException {
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), sbp, null, null, null, scoring, new DummyBlockValidationRule());
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
         Block block = new BlockGenerator().getGenesisBlock();
         Message message = new BlockMessage(block);
 
@@ -122,11 +120,11 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void skipAdvancedBlock() throws UnknownHostException {
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         sbp.setBlockGap(100000);
-        NodeMessageHandler processor = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), sbp, null, null, null, scoring, new DummyBlockValidationRule());
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
         Block block = new BlockGenerator().createBlock(200000, 0);
         Message message = new BlockMessage(block);
 
@@ -144,11 +142,11 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void postBlockMessageTwice() throws InterruptedException, UnknownHostException {
-        MessageChannel sender = new SimpleMessageChannel();
+        Peer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), sbp, null, null, null, scoring,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+                mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -166,13 +164,13 @@ public class NodeMessageHandlerTest {
     @Test
     public void postBlockMessageUsingProcessor() throws InterruptedException, UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), sbp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
+                mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
         processor.start();
-        processor.postMessage(new SimpleMessageChannel(), message);
+        processor.postMessage(new SimplePeer(), message);
 
         Thread.sleep(1000);
 
@@ -187,11 +185,11 @@ public class NodeMessageHandlerTest {
     // This should be executed in a special mode where difficulty is high.
     @Ignore
     public void processInvalidPoWMessageUsingProcessor() throws UnknownHostException {
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), sbp, null, null, null, scoring,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+                mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         byte[] mergedMiningHeader = block.getBitcoinMergedMiningHeader();
         mergedMiningHeader[76] += 3; //change merged mining nonce.
@@ -214,10 +212,10 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processMissingPoWBlockMessageUsingProcessor() throws UnknownHostException {
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), sbp, null, null, null, scoring, new DummyBlockValidationRule());
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, scoring, mock(StatusResolver.class));
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block = blockGenerator.getGenesisBlock();
 
@@ -245,11 +243,11 @@ public class NodeMessageHandlerTest {
     @Test
     public void processFutureBlockMessageUsingProcessor() throws UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), sbp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
+                mock(StatusResolver.class));
         Block block = new BlockGenerator().getGenesisBlock();
         Message message = new BlockMessage(block);
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
@@ -260,14 +258,14 @@ public class NodeMessageHandlerTest {
     public void processStatusMessageUsingNodeBlockProcessor() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final SimplePeer sender = new SimplePeer();
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
+                mock(StatusResolver.class));
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
@@ -289,18 +287,12 @@ public class NodeMessageHandlerTest {
     }
 
     @Test()
-    public void processStatusMessageUsingSyncProcessor() throws UnknownHostException {
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+    public void processStatusMessageUsingSyncProcessor() {
+        final SimplePeer sender = new SimplePeer();
 
         final ChannelManager channelManager = mock(ChannelManager.class);
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(sender.getPeerNodeID());
-        when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(channel));
-        final Message[] msg = new Message[1];
-        when(channelManager.sendMessageTo(eq(sender.getPeerNodeID()), any())).then((InvocationOnMock invocation) -> {
-            msg[0] = invocation.getArgument(1);
-            return true;
-        });
+        when(channelManager.getActivePeers()).thenReturn(Collections.singletonList(sender));
+
         final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -309,35 +301,34 @@ public class NodeMessageHandlerTest {
         final Message message = new StatusMessage(status);
         handler.processMessage(sender, message);
 
-        Assert.assertNotNull(msg[0]);
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, msg[0].getMessageType());
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
     }
 
     @Test
-    public void processStatusMessageWithKnownBestBlock() throws UnknownHostException {
+    public void processStatusMessageWithKnownBestBlock() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
         final SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain,
-                mock(ConsensusValidationMainchainView.class),
+                mock(BlockStore.class), mock(ConsensusValidationMainchainView.class),
                 blockSyncService,
-                RskMockFactory.getChannelManager(),
                 syncConfiguration,
                 blockFactory,
                 new DummyBlockValidationRule(),
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 null,
-                new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()));
+                new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()), mock(Genesis.class));
         final NodeMessageHandler handler = new NodeMessageHandler(config,
-                mock(org.ethereum.db.BlockStore.class), bp, syncProcessor, null, null,
-                null, new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+                bp, syncProcessor, null, null,
+                null, mock(StatusResolver.class));
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
@@ -356,7 +347,7 @@ public class NodeMessageHandlerTest {
         final Block block = new BlockGenerator().getBlock(3);
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
 
         store.saveBlock(block);
@@ -366,10 +357,10 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), bp, null, null, null,
-                null, new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null,
+                null, mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         handler.processMessage(sender, new GetBlockMessage(block.getHash().getBytes()));
 
@@ -389,7 +380,7 @@ public class NodeMessageHandlerTest {
     public void processGetBlockMessageUsingBlockInBlockchain() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 10);
 
@@ -401,10 +392,10 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
+                mock(StatusResolver.class));
 
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
 
         handler.processMessage(sender, new GetBlockMessage(blocks.get(4).getHash().getBytes()));
 
@@ -426,16 +417,16 @@ public class NodeMessageHandlerTest {
 
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), bp, null, null, null, null, new DummyBlockValidationRule());
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null, mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         handler.processMessage(sender, new GetBlockMessage(block.getHash().getBytes()));
 
@@ -448,7 +439,7 @@ public class NodeMessageHandlerTest {
 
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         store.saveBlock(block);
 
@@ -457,10 +448,10 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
+                mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         handler.processMessage(sender, new BlockHeadersRequestMessage(1,block.getHash().getBytes(), 1));
 
@@ -480,7 +471,7 @@ public class NodeMessageHandlerTest {
     public void processBlockHeaderRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 10);
 
@@ -492,10 +483,10 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
+                mock(StatusResolver.class));
 
-        SimpleMessageChannel sender = new SimpleMessageChannel();
+        SimplePeer sender = new SimplePeer();
 
         handler.processMessage(sender, new BlockHeadersRequestMessage(1, blocks.get(4).getHash().getBytes(), 1));
 
@@ -515,7 +506,7 @@ public class NodeMessageHandlerTest {
     public void processNewBlockHashesMessage() throws UnknownHostException {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
 
         final List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), 15);
         final List<Block> bcBlocks = blocks.subList(0, 10);
@@ -527,8 +518,8 @@ public class NodeMessageHandlerTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        final NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), bp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, null, null, null, null,
+                mock(StatusResolver.class));
 
         class TestCase {
             protected final NewBlockHashesMessage message;
@@ -592,7 +583,7 @@ public class NodeMessageHandlerTest {
 
         for (int i = 0; i < testCases.length; i += 1) {
             final TestCase testCase = testCases[i];
-            final SimpleMessageChannel sender = new SimpleMessageChannel();
+            final SimplePeer sender = new SimplePeer();
 
             handler.processMessage(sender, testCase.message);
 
@@ -636,8 +627,8 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), blockProcessor, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, null, null,
+                mock(StatusResolver.class));
 
         Message message = mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.NEW_BLOCK_HASHES);
@@ -654,13 +645,11 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), blockProcessor, null, null, transactionGateway, scoring,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, scoring,
+                mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
-        sender.setPeerNodeID(new NodeID(new byte[] {1}));
-        final SimpleMessageChannel sender2 = new SimpleMessageChannel();
-        sender2.setPeerNodeID(new NodeID(new byte[] {2}));
+        final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
+        final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         final TransactionsMessage message = new TransactionsMessage(txs);
@@ -698,10 +687,10 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), blockProcessor, null, channelManager, transactionGateway, scoring,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionGateway, scoring,
+                mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         final List<Transaction> txs = TransactionUtils.getTransactions(0);
         final TransactionsMessage message = new TransactionsMessage(txs);
@@ -729,10 +718,10 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), blockProcessor, null, channelManager, transactionGateway, scoring,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, transactionGateway, scoring,
+                mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final SimplePeer sender = new SimplePeer();
 
         final List<Transaction> txs = new ArrayList<>();
         BigInteger value = BigInteger.ONE;
@@ -765,13 +754,11 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), blockProcessor, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
+                mock(StatusResolver.class));
 
-        final SimpleMessageChannel sender = new SimpleMessageChannel();
-        sender.setPeerNodeID(new NodeID(new byte[] {1}));
-        final SimpleMessageChannel sender2 = new SimpleMessageChannel();
-        sender2.setPeerNodeID(new NodeID(new byte[] {2}));
+        final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
+        final SimplePeer sender2 = new SimplePeer(new NodeID(new byte[] {2}));
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         final TransactionsMessage message = new TransactionsMessage(txs);
@@ -788,12 +775,12 @@ public class NodeMessageHandlerTest {
     @Test
     public void processBlockByHashRequestMessageUsingProcessor() throws UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), sbp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
+                mock(StatusResolver.class));
         Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
         Message message = new BlockRequestMessage(100, block.getHash().getBytes());
 
-        processor.processMessage(new SimpleMessageChannel(), message);
+        processor.processMessage(new SimplePeer(), message);
 
         Assert.assertEquals(100, sbp.getRequestId());
         Assert.assertArrayEquals(block.getHash().getBytes(), sbp.getHash());
@@ -803,11 +790,11 @@ public class NodeMessageHandlerTest {
     public void processBlockHeadersRequestMessageUsingProcessor() throws UnknownHostException {
         byte[] hash = HashUtil.randomHash();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), sbp, null, null, null, null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null,
+                mock(StatusResolver.class));
         Message message = new BlockHeadersRequestMessage(100, hash, 50);
 
-        processor.processMessage(new SimpleMessageChannel(), message);
+        processor.processMessage(new SimplePeer(), message);
 
         Assert.assertEquals(100, sbp.getRequestId());
         Assert.assertArrayEquals(hash, sbp.getHash());
@@ -820,46 +807,6 @@ public class NodeMessageHandlerTest {
                 new PunishmentParameters(600000, 10, 10000000),
                 new PunishmentParameters(600000, 10, 10000000)
         );
-    }
-
-    @Test
-    public void sendStatusToAll() {
-        org.ethereum.db.BlockStore continuousBlockStore = mock(org.ethereum.db.BlockStore.class);
-        Block bestBlock = mock(Block.class);
-        Keccak256 blockHash = mock(Keccak256.class);
-        byte[] hashBytes = new byte[]{0x00};
-        long blockNumber = 52;
-
-        BlockDifficulty totalDifficulty = mock(BlockDifficulty.class);
-
-        ChannelManager channelManager = mock(ChannelManager.class);
-        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(
-                mock(RskSystemProperties.class),
-                continuousBlockStore,
-                mock(BlockProcessor.class),
-                mock(SyncProcessor.class),
-                channelManager,
-                mock(TransactionGateway.class),
-                mock(PeerScoringManager.class),
-                mock(BlockValidationRule.class));
-
-        when(continuousBlockStore.getBestBlock()).thenReturn(bestBlock);
-        when(bestBlock.getHash()).thenReturn(blockHash);
-        when(bestBlock.getParentHash()).thenReturn(blockHash);
-        when(blockHash.getBytes()).thenReturn(hashBytes);
-        when(bestBlock.getNumber()).thenReturn(blockNumber);
-        when(continuousBlockStore.getTotalDifficultyForHash(eq(hashBytes))).thenReturn(totalDifficulty);
-
-        nodeMessageHandler.sendStatusToAll();
-
-        ArgumentCaptor<Status> argument = ArgumentCaptor.forClass(Status.class);
-        verify(channelManager, times(1)).broadcastStatus(argument.capture());
-
-        Status value = argument.getValue();
-        Assert.assertEquals(blockNumber, value.getBestBlockNumber());
-        Assert.assertEquals(hashBytes, value.getBestBlockHash());
-        Assert.assertEquals(hashBytes, value.getBestBlockParentHash());
-        Assert.assertEquals(totalDifficulty, value.getTotalDifficulty());
     }
 }
 

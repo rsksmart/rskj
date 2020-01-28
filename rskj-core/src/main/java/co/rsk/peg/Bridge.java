@@ -27,6 +27,7 @@ import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -178,6 +179,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // Adds the given key to the current pending federation
     public static final CallTransaction.Function VOTE_FEE_PER_KB = BridgeMethods.VOTE_FEE_PER_KB.getFunction();
 
+    // Increases the peg locking cap
+    public static final CallTransaction.Function INCREASE_LOCKING_CAP = BridgeMethods.INCREASE_LOCKING_CAP.getFunction();
+    // Gets the peg locking cap
+    public static final CallTransaction.Function GET_LOCKING_CAP = BridgeMethods.GET_LOCKING_CAP.getFunction();
+
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
     public static final int LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
@@ -287,6 +293,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 rskExecutionBlock,
                 contractAddress,
                 logs);
+    }
+
+    @Override
+    public List<ProgramSubtrace> getSubtraces() {
+        return this.bridgeSupport.getSubtraces();
     }
 
     @Override
@@ -1031,6 +1042,25 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getFeePerKb");
 
         return bridgeSupport.getFeePerKb().getValue();
+    }
+
+    public long getLockingCap(Object[] args) {
+        logger.trace("getLockingCap");
+
+        Coin lockingCap = bridgeSupport.getLockingCap();
+
+        return lockingCap.getValue();
+    }
+
+    public boolean increaseLockingCap(Object[] args) {
+        logger.trace("increaseLockingCap");
+
+        Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
+        if (newLockingCap.getValue() <= 0) {
+            throw new BridgeIllegalArgumentException("Locking cap must be bigger than zero");
+        }
+
+        return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {

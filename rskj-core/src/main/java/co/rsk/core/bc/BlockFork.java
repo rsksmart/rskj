@@ -19,18 +19,23 @@
 package co.rsk.core.bc;
 
 import org.ethereum.core.Block;
-import org.ethereum.db.BlockStore;
 
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Created by ajlopez on 09/08/2016.
  */
 public class BlockFork {
-    private Block commonAncestor;
-    private List<Block> oldBlocks = new LinkedList<>();
-    private List<Block> newBlocks = new LinkedList<>();
+    private final Block commonAncestor;
+    private final List<Block> oldBlocks;
+    private final List<Block> newBlocks;
+
+    public BlockFork(Block commonAncestor, List<Block> oldBlocks, List<Block> newBlocks) {
+        this.commonAncestor = commonAncestor;
+        this.oldBlocks = Collections.unmodifiableList(oldBlocks);
+        this.newBlocks = Collections.unmodifiableList(newBlocks);
+    }
 
     /**
      * getCommonAncestor gets the common ancestor of the two chains.
@@ -58,35 +63,5 @@ public class BlockFork {
      */
     public List<Block> getNewBlocks() {
         return newBlocks;
-    }
-
-    public void calculate(Block fromBlock, Block toBlock, BlockStore store) {
-        Block oldBlock = fromBlock;
-        Block newBlock = toBlock;
-
-        if (oldBlock.isParentOf(newBlock)) {
-            commonAncestor = oldBlock;
-            newBlocks.add(newBlock);
-            return;
-        }
-
-        while (newBlock.getNumber() > oldBlock.getNumber()) {
-            newBlocks.add(0, newBlock);
-            newBlock = store.getBlockByHash(newBlock.getParentHash().getBytes());
-        }
-
-        while (oldBlock.getNumber() > newBlock.getNumber()) {
-            oldBlocks.add(0, oldBlock);
-            oldBlock = store.getBlockByHash(oldBlock.getParentHash().getBytes());
-        }
-
-        while (!oldBlock.getHash().equals(newBlock.getHash())) {
-            newBlocks.add(0, newBlock);
-            newBlock = store.getBlockByHash(newBlock.getParentHash().getBytes());
-            oldBlocks.add(0, oldBlock);
-            oldBlock = store.getBlockByHash(oldBlock.getParentHash().getBytes());
-        }
-
-        commonAncestor = oldBlock;
     }
 }

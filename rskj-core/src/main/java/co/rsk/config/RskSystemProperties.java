@@ -292,13 +292,21 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("sync.maxSkeletonChunks");
     }
 
+    public int getMaxRequestedBodies() {
+        return configFromFiles.getInt("sync.maxRequestedBodies");
+    }
+
+    public int getLongSyncLimit() {
+        return configFromFiles.getInt("sync.longSyncLimit");
+    }
+
     // its fixed, cannot be set by config file
     public int getChunkSize() {
         return CHUNK_SIZE;
     }
 
     public VmConfig getVmConfig() {
-        return new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle());
+        return new VmConfig(vmTrace(), vmTraceOptions(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle(), getNetworkConstants().getChainId());
     }
 
     public long peerDiscoveryCleanPeriod() {

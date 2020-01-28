@@ -38,7 +38,7 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -63,7 +63,7 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -88,7 +88,7 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -113,7 +113,7 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -138,7 +138,7 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -163,7 +163,7 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -188,7 +188,7 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -213,7 +213,7 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.getHash(), trie2.getHash());
@@ -270,7 +270,7 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.trieSize(), trie2.trieSize());
@@ -292,7 +292,7 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Trie trie2 = store.retrieve(trie.getHash().getBytes());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes()).get();
 
         Assert.assertNotNull(trie2);
         Assert.assertEquals(trie.trieSize(), trie2.trieSize());

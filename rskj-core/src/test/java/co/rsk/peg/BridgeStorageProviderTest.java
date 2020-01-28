@@ -36,7 +36,10 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.util.RLP;
 import org.ethereum.db.MutableRepository;
@@ -61,7 +64,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -71,21 +74,16 @@ import static org.mockito.Mockito.*;
 @PrepareForTest({ BridgeSerializationUtils.class, RskAddress.class })
 public class BridgeStorageProviderTest {
     private final TestSystemProperties config = new TestSystemProperties();
+    private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
+    private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
     private final NetworkParameters networkParameters = config.getNetworkConstants().getBridgeConstants().getBtcParams();
-    private final BridgeStorageConfiguration bridgeStorageConfigurationBeforeForks = new BridgeStorageConfiguration(false, false);
-    private final BridgeStorageConfiguration bridgeStorageConfigurationFedMultiKey = new BridgeStorageConfiguration(false, true);
 
     private int transactionOffset;
 
     @Test
     public void createInstance() throws IOException {
         Repository repository = createRepository();
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
-
-        Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
-
-        Assert.assertNotNull(processed);
-        Assert.assertTrue(processed.isEmpty());
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
 
@@ -113,8 +111,7 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
-        provider0.getBtcTxHashesAlreadyProcessed();
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
         provider0.getReleaseRequestQueue();
         provider0.getReleaseTransactionSet();
         provider0.getRskTxsWaitingForSignatures();
@@ -128,19 +125,13 @@ public class BridgeStorageProviderTest {
         RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
         Assert.assertThat(repository.isContract(contractAddress), is(true));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("btcTxHashesAP".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("releaseRequestQueue".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("releaseTransactionSet".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("rskTxsWaitingFS".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("newFederationBtcUTXOs".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, DataWord.valueOf("oldFederationBtcUTXOs".getBytes())));
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
-
-        Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
-
-        Assert.assertNotNull(processed);
-        Assert.assertTrue(processed.isEmpty());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
 
@@ -176,21 +167,18 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
-        provider0.getBtcTxHashesAlreadyProcessed().put(hash1, 1L);
-        provider0.getBtcTxHashesAlreadyProcessed().put(hash2, 1L);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
+        provider0.setHeightBtcTxhashAlreadyProcessed(hash1, 1L);
+        provider0.setHeightBtcTxhashAlreadyProcessed(hash2, 1L);
         provider0.save();
         track.commit();
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
-        Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
-        Set<Sha256Hash> processedHashes = processed.keySet();
-
-        Assert.assertTrue(processedHashes.contains(hash1));
-        Assert.assertTrue(processedHashes.contains(hash2));
+        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1).isPresent());
+        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(hash2).isPresent());
     }
 
     @Test
@@ -205,7 +193,7 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
         provider0.getRskTxsWaitingForSignatures().put(hash1, tx1);
         provider0.getRskTxsWaitingForSignatures().put(hash2, tx2);
         provider0.getRskTxsWaitingForSignatures().put(hash3, tx3);
@@ -215,7 +203,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         SortedMap<Keccak256, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
 
@@ -242,7 +230,7 @@ public class BridgeStorageProviderTest {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
         provider0.getNewFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
         provider0.getNewFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
         provider0.save();
@@ -250,7 +238,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         List<UTXO> utxos = provider.getNewFederationBtcUTXOs();
 
@@ -265,7 +253,7 @@ public class BridgeStorageProviderTest {
         Federation newFederation = buildMockFederation(100, 200, 300);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -308,7 +296,7 @@ public class BridgeStorageProviderTest {
         List<Integer> storageCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -345,7 +333,7 @@ public class BridgeStorageProviderTest {
         Federation newFederation = buildMockFederation(100, 200, 300);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -387,7 +375,7 @@ public class BridgeStorageProviderTest {
         List<Integer> storageCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -425,9 +413,11 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         useOriginalIntegerSerialization();
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"),
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
-        PowerMockito.when(BridgeSerializationUtils.serializeFederationOnlyBtcKeys(any(Federation.class))).then((InvocationOnMock invocation) -> {
+        PowerMockito.when(BridgeSerializationUtils.serializeFederationOnlyBtcKeys(any(Federation.class)))
+        .then((InvocationOnMock invocation) -> {
             Federation federation = invocation.getArgument(0);
             Assert.assertEquals(newFederation, federation);
             serializeCalls.add(0);
@@ -463,7 +453,8 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         useOriginalIntegerSerialization();
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationFedMultiKey);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), 
+                activationsAllForks);
 
         PowerMockito.when(BridgeSerializationUtils.serializeFederation(any(Federation.class))).then((InvocationOnMock invocation) -> {
             Federation federation = invocation.getArgument(0);
@@ -509,7 +500,7 @@ public class BridgeStorageProviderTest {
         Federation oldFederation = buildMockFederation(100, 200, 300);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -550,7 +541,7 @@ public class BridgeStorageProviderTest {
         List<Integer> storageCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -587,7 +578,7 @@ public class BridgeStorageProviderTest {
         Federation oldFederation = buildMockFederation(100, 200, 300);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -628,7 +619,7 @@ public class BridgeStorageProviderTest {
         List<Integer> storageCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -666,7 +657,7 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         useOriginalIntegerSerialization();
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         PowerMockito.when(BridgeSerializationUtils.serializeFederationOnlyBtcKeys(any(Federation.class))).then((InvocationOnMock invocation) -> {
             Federation federation = invocation.getArgument(0);
@@ -704,7 +695,7 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         useOriginalIntegerSerialization();
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationFedMultiKey);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsAllForks);
 
         PowerMockito.when(BridgeSerializationUtils.serializeFederation(any(Federation.class))).then((InvocationOnMock invocation) -> {
             Federation federation = invocation.getArgument(0);
@@ -749,7 +740,7 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         useOriginalIntegerSerialization();
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         Mockito.doAnswer((InvocationOnMock invocation) -> {
             storageBytesCalls.add(0);
@@ -760,7 +751,7 @@ public class BridgeStorageProviderTest {
             // Make sure the bytes are set to the correct address in the repo and that what's saved is null
             Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
             Assert.assertEquals(DataWord.fromString("oldFederation"), address);
-            Assert.assertNull(data);
+            assertNull(data);
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
 
@@ -783,7 +774,7 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         useOriginalIntegerSerialization();
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationFedMultiKey);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsAllForks);
 
         Mockito.doAnswer((InvocationOnMock invocation) -> {
             storageBytesCalls.add(0);
@@ -801,7 +792,7 @@ public class BridgeStorageProviderTest {
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is null
                 Assert.assertTrue(Arrays.equals(Hex.decode("aabbccdd"), contractAddress.getBytes()));
                 Assert.assertEquals(DataWord.fromString("oldFederation"), address);
-                Assert.assertNull(data);
+                assertNull(data);
             }
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
@@ -826,7 +817,7 @@ public class BridgeStorageProviderTest {
         PendingFederation pendingFederation = buildMockPendingFederation(100, 200, 300);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -865,7 +856,7 @@ public class BridgeStorageProviderTest {
         List<Integer> storageCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -900,7 +891,7 @@ public class BridgeStorageProviderTest {
         PendingFederation pendingFederation = buildMockPendingFederation(100, 200, 300);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -939,7 +930,7 @@ public class BridgeStorageProviderTest {
         List<Integer> storageCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageCalls.add(0);
@@ -974,7 +965,7 @@ public class BridgeStorageProviderTest {
         List<Integer> serializeCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         PowerMockito.when(BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(any(PendingFederation.class))).then((InvocationOnMock invocation) -> {
             PendingFederation federation = invocation.getArgument(0);
@@ -1009,7 +1000,7 @@ public class BridgeStorageProviderTest {
         List<Integer> storageBytesCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         Mockito.doAnswer((InvocationOnMock invocation) -> {
             storageBytesCalls.add(0);
@@ -1019,7 +1010,7 @@ public class BridgeStorageProviderTest {
             // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress.getBytes()));
             Assert.assertEquals(DataWord.fromString("pendingFederation"), address);
-            Assert.assertNull(data);
+            assertNull(data);
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
 
@@ -1044,7 +1035,7 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         useOriginalIntegerSerialization();
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationFedMultiKey);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsAllForks);
 
         PowerMockito.when(BridgeSerializationUtils.serializePendingFederation(any(PendingFederation.class))).then((InvocationOnMock invocation) -> {
             PendingFederation federation = invocation.getArgument(0);
@@ -1088,7 +1079,7 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         useOriginalIntegerSerialization();
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationFedMultiKey);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsAllForks);
 
         Mockito.doAnswer((InvocationOnMock invocation) -> {
             storageBytesCalls.add(0);
@@ -1105,7 +1096,7 @@ public class BridgeStorageProviderTest {
                 Assert.assertEquals(2, storageBytesCalls.size());
                 // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
                 Assert.assertEquals(DataWord.fromString("pendingFederation"), address);
-                Assert.assertNull(data);
+                assertNull(data);
             }
             return null;
         }).when(repositoryMock).addStorageBytes(any(RskAddress.class), any(DataWord.class), any());
@@ -1130,7 +1121,7 @@ public class BridgeStorageProviderTest {
         ABICallElection electionMock = mock(ABICallElection.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -1162,7 +1153,7 @@ public class BridgeStorageProviderTest {
         ABICallElection electionMock = mock(ABICallElection.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -1191,7 +1182,7 @@ public class BridgeStorageProviderTest {
         List<Integer> serializeCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         PowerMockito.when(BridgeSerializationUtils.serializeElection(any(ABICallElection.class))).then((InvocationOnMock invocation) -> {
             ABICallElection election = invocation.getArgument(0);
@@ -1231,9 +1222,9 @@ public class BridgeStorageProviderTest {
         whitelistMock.put(unlimitedEntry.address(), unlimitedEntry);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        // Overriding BridgeStorageConfiguration to make sure it serializes the unlimited whitelist data
+        // Overriding Activation to make sure it serializes the unlimited whitelist data
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
-                BridgeStorageConfiguration.fromBlockchainConfig(config.getActivationConfig().forBlock(500L)));
+                activationsAllForks);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
         .then((InvocationOnMock invocation) -> {
@@ -1292,7 +1283,7 @@ public class BridgeStorageProviderTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
-                BridgeStorageConfiguration.fromBlockchainConfig(config.getActivationConfig().forBlock(500L)));
+                activationsAllForks);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class)))
             .then((InvocationOnMock invocation) -> {
@@ -1331,9 +1322,9 @@ public class BridgeStorageProviderTest {
         List<Integer> serializeCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        // Overriding BridgeStorageConfiguration to make sure it serializes the unlimited whitelist data
+        // Overriding activation to make sure it serializes the unlimited whitelist data
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
-                BridgeStorageConfiguration.fromBlockchainConfig(config.getActivationConfig().forBlock(500L)));
+                activationsAllForks);
 
         // Mock the One-Off serialization
         PowerMockito
@@ -1402,7 +1393,7 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         OneOffWhiteListEntry oneOffEntry = new OneOffWhiteListEntry(getBtcAddress("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), Coin.COIN);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(),
-                BridgeStorageConfiguration.fromBlockchainConfig(config.getActivationConfig().forBlock(500L)));
+                config.getActivationConfig().forBlock(500L));
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.valueOf("lockWhitelist".getBytes(StandardCharsets.UTF_8)))))
                 .then((InvocationOnMock invocation) -> new byte[]{(byte)0xaa});
@@ -1439,7 +1430,7 @@ public class BridgeStorageProviderTest {
         ReleaseRequestQueue requestQueueMock = mock(ReleaseRequestQueue.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -1470,7 +1461,7 @@ public class BridgeStorageProviderTest {
         ReleaseTransactionSet transactionSetMock = mock(ReleaseTransactionSet.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -1500,7 +1491,7 @@ public class BridgeStorageProviderTest {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         Coin expectedCoin = Coin.valueOf(5325);
         provider0.setFeePerKb(expectedCoin);
@@ -1509,7 +1500,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         assertThat(provider.getFeePerKb(), is(expectedCoin));
     }
@@ -1518,7 +1509,7 @@ public class BridgeStorageProviderTest {
     public void getFeePerKbElection_emptyVotes() {
         AddressBasedAuthorizer authorizerMock = mock(AddressBasedAuthorizer.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         HashMap<ABICallSpec, List<RskAddress>> electionVotes = new HashMap<>();
         byte[] serializedElection = BridgeSerializationUtils.serializeElection(
@@ -1541,7 +1532,7 @@ public class BridgeStorageProviderTest {
                 .thenReturn(1);
         when(authorizerMock.isAuthorized(any(RskAddress.class)))
                 .thenReturn(true);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), bridgeStorageConfigurationBeforeForks);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork);
 
         byte[] electionFee = new byte[] {0x43, 0x19};
         ABICallSpec expectedWinner = new ABICallSpec("setFeePerKb", new byte[][]{electionFee});
@@ -1558,6 +1549,241 @@ public class BridgeStorageProviderTest {
         ABICallElection result = storageProvider.getFeePerKbElection(authorizerMock);
         assertThat(result.getVotes(), is(electionVotes));
         assertThat(result.getWinner(), is(expectedWinner));
+    }
+
+    @Test
+    public void setLockingCap_before_fork() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider0.setLockingCap(Coin.ZERO);
+        provider0.saveLockingCap();
+
+        // If the network upgrade is not enabled we shouldn't be writing in the repository
+        verify(repository, never()).addStorageBytes(any(), any(), any());
+    }
+
+    @Test
+    public void setLockingCap_after_fork() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider0.setLockingCap(Coin.ZERO);
+        provider0.saveLockingCap();
+
+        // Once the network upgrade is active, we will store the locking cap in the repository
+        verify(repository, times(1)).addStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromString("lockingCap"),
+                BridgeSerializationUtils.serializeCoin(Coin.ZERO)
+        );
+    }
+
+    @Test
+    public void getLockingCap_before_fork() {
+        Repository repository = mock(Repository.class);
+        // If by chance the repository is called I want to force the tests to fail
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"))).thenReturn(new byte[] { 1 });
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertNull(provider0.getLockingCap());
+
+        // If the network upgrade is not enabled we shouldn't be reading the repository
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"));
+    }
+
+    @Test
+    public void getLockingCap_after_fork() {
+        Repository repository = mock(Repository.class);
+        // If by chance the repository is called I want to force the tests to fail
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"))).thenReturn(new byte[] { 1 });
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertEquals(Coin.SATOSHI, provider0.getLockingCap());
+
+        // If the network upgrade is not enabled we shouldn't be reading the repository
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lockingCap"));
+    }
+
+    @Test
+    public void setLockingCapAndGetLockingCap() {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        Coin expectedCoin = Coin.valueOf(666);
+
+        // We store the locking cap
+        provider0.setLockingCap(expectedCoin);
+        provider0.saveLockingCap();
+        track.commit();
+
+        track = repository.startTracking();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        // And then we get it back
+        assertThat(provider.getLockingCap(), is(expectedCoin));
+    }
+
+    @Test
+    public void getHeightIfBtcTxhashIsAlreadyProcessed_before_RSKIP134_does_not_use_new_storage() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        HashMap<Sha256Hash, Long> hashes = new HashMap<>();
+        hashes.put(hash, 1L);
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP")))
+                .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(1), result.get());
+
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash.toString()));
+    }
+
+    @Test
+    public void getHeightIfBtcTxhashIsAlreadyProcessed_after_RSKIP134_uses_new_storage() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash1 = Sha256Hash.ZERO_HASH;
+        Sha256Hash hash2 = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
+
+        HashMap<Sha256Hash, Long> hashes = new HashMap<>();
+        hashes.put(hash1, 1L);
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP")))
+                .thenReturn(BridgeSerializationUtils.serializeMapOfHashesToLong(hashes));
+
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString())))
+                .thenReturn(BridgeSerializationUtils.serializeLong(2L));
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        // Get hash1 which is stored in old storage
+        Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash1);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(1), result.get());
+
+        // old storage was accessed and new storage not
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
+
+        // Get hash2 which is stored in new storage
+        result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash2);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(2), result.get());
+
+        // old storage wasn't accessed anymore (because it is cached) and new storage was accessed
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
+
+        // Get hash2 again
+        result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash2);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(2), result.get());
+
+        // No more accesses to repository, as both values are in cache
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("btcTxHashAP-" + hash2.toString()));
+    }
+
+    @Test
+    public void setHeightBtcTxhashAlreadyProcessed_before_RSKIP134_does_not_use_new_storage() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
+
+        // The repository is accessed once to set the value
+        verify(repository, times(1)).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+
+        Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(1), result.get());
+    }
+
+    @Test
+    public void setHeightBtcTxhashAlreadyProcessed_before_RSKIP134_uses_new_storage() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
+
+        // The repository is never accessed as the new storage keeps the values in cache until save
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+
+        Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(1), result.get());
+    }
+
+    @Test
+    public void saveHeightBtcTxHashAlreadyProcessed() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider0.setHeightBtcTxhashAlreadyProcessed(hash, 1L);
+
+        provider0.saveHeightBtcTxHashAlreadyProcessed();
+
+        // The repository is never accessed as the new storage keeps the values in cache until save
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("btcTxHashesAP"));
+
+        Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
+        assertTrue(result.isPresent());
+        assertEquals(Long.valueOf(1), result.get());
     }
 
     private BtcTransaction createTransaction() {

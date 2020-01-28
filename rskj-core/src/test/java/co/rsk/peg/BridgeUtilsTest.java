@@ -477,6 +477,21 @@ public class BridgeUtilsTest {
         new ImmutableTransaction(null);
     }
 
+    @Test(expected = BridgeIllegalArgumentException.class)
+    public void getCoinFromBigInteger_bigger_than_long_value() {
+        BridgeUtils.getCoinFromBigInteger(new BigInteger("9223372036854775808"));
+    }
+
+    @Test(expected = BridgeIllegalArgumentException.class)
+    public void getCoinFromBigInteger_null_value() {
+        BridgeUtils.getCoinFromBigInteger(null);
+    }
+
+    @Test
+    public void getCoinFromBigInteger() {
+        Assert.assertEquals(Coin.COIN, BridgeUtils.getCoinFromBigInteger(BigInteger.valueOf(Coin.COIN.getValue())));
+    }
+
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {
         List<Script> watchedScripts = wallet.getWatchedScripts();
         Assert.assertEquals(1, watchedScripts.size());

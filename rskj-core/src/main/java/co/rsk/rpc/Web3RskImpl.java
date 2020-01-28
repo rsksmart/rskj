@@ -20,7 +20,6 @@ package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
-import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.*;
@@ -31,6 +30,7 @@ import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
+import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.core.*;
@@ -67,7 +67,6 @@ public class Web3RskImpl extends Web3Impl {
     public Web3RskImpl(
             Ethereum eth,
             Blockchain blockchain,
-            TransactionPool transactionPool,
             RskSystemProperties properties,
             MinerClient minerClient,
             MinerServer minerServer,
@@ -77,9 +76,8 @@ public class Web3RskImpl extends Web3Impl {
             TxPoolModule txPoolModule,
             MnrModule mnrModule,
             DebugModule debugModule,
-            RskModule rskModule,
+            TraceModule traceModule, RskModule rskModule,
             ChannelManager channelManager,
-            RepositoryLocator repositoryLocator,
             PeerScoringManager peerScoringManager,
             NetworkStateExporter networkStateExporter,
             BlockStore blockStore,
@@ -89,11 +87,12 @@ public class Web3RskImpl extends Web3Impl {
             HashRateCalculator hashRateCalculator,
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
-            BlocksBloomStore blocksBloomStore) {
-        super(eth, blockchain, transactionPool, blockStore, receiptStore, properties, minerClient, minerServer,
-              personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, rskModule,
-              channelManager, repositoryLocator, peerScoringManager, peerServer, nodeBlockProcessor,
-              hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore);
+            BlocksBloomStore blocksBloomStore,
+            Web3InformationRetriever retriever) {
+            super(eth, blockchain, blockStore, receiptStore, properties, minerClient, minerServer,
+                    personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, traceModule, rskModule,
+                    channelManager, peerScoringManager, peerServer, nodeBlockProcessor,
+                    hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever);
 
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;

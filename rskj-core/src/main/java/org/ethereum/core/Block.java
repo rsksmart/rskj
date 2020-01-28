@@ -280,6 +280,7 @@ public class Block {
 
             this.rlpEncoded = RLP.encodeList(elements);
         }
+
         return rlpEncoded;
     }
 

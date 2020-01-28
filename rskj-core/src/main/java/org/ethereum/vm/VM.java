@@ -21,11 +21,13 @@ package org.ethereum.vm;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -792,6 +794,44 @@ public class VM {
         program.step();
     }
 
+    protected void doEXTCODEHASH() {
+        if (computeGas) {
+            gasCost = GasCost.EXT_CODE_HASH;
+            spendOpCodeGas();
+        }
+
+        //EXECUTION PHASE
+        DataWord address = program.stackPop();
+
+        ActivationConfig.ForBlock activations = program.getActivations();
+        PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, address);
+        boolean isPrecompiledContract = precompiledContract != null;
+
+        if (isPrecompiledContract) {
+            byte[] emptyHash = Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY);
+            program.stackPush(DataWord.valueOf(emptyHash));
+
+            if (isLogEnabled) {
+                hint = "hash: " + Hex.toHexString(emptyHash);
+            }
+        } else {
+            Keccak256 codeHash = program.getCodeHashAt(address);
+            //If account does not exist, 0 is pushed in stack
+            if (codeHash.equals(Keccak256.ZERO_HASH)) {
+                program.stackPush(DataWord.ZERO);
+            } else {
+                DataWord word = DataWord.valueOf(codeHash.getBytes());
+                program.stackPush(word);
+            }
+
+            if (isLogEnabled) {
+                hint = "hash: " + codeHash.toHexString();
+            }
+        }
+
+        program.step();
+    }
+
     protected void doCODECOPY() {
         DataWord size;
         long newMemSize ;
@@ -1015,6 +1055,19 @@ public class VM {
         }
 
         program.stackPush(gaslimit);
+        program.step();
+    }
+
+    protected void doCHAINID() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord chainId = DataWord.valueOf(vmConfig.getChainId());
+
+        if (isLogEnabled) {
+            hint = "chainId: " + chainId;
+        }
+
+        program.stackPush(chainId);
         program.step();
     }
 
@@ -1596,54 +1649,6 @@ public class VM {
         program.stop();
     }
 
-    protected void doCODEREPLACE() {
-
-        DataWord size;
-        long newCodeSizeLong;
-        long newMemSize ;
-        if (computeGas) {
-            gasCost = GasCost.CODEREPLACE;
-            size = stack.get(stack.size() - 2);
-            newCodeSizeLong = Program.limitToMaxLong(size);
-            checkSizeArgument(newCodeSizeLong); // max 30 bits
-            newMemSize = memNeeded(stack.peek(), newCodeSizeLong); // max 30 bits
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0); // max 32 bits
-            long oldCodeSize = program.getCode().length;
-
-            // If the contract is been created (initialization code is been executed)
-            // then the meaning of codereplace is less clear. It's better to disallow it.
-            long storedLength = program.getCodeAt(program.getOwnerAddress()).length;
-            if (storedLength == 0) { // rise OOG, but a specific exception would be better
-                throw Program.ExceptionHelper.notEnoughOpGas(op, Long.MAX_VALUE, program.getRemainingGas());
-            }
-
-            // every byte replaced pays REPLACE_DATA
-            // every byte added pays CREATE_DATA
-            if (newCodeSizeLong <= oldCodeSize) {
-                gasCost += GasCost.REPLACE_DATA * newCodeSizeLong; // max 38 bits
-            } else {
-                gasCost += GasCost.REPLACE_DATA * oldCodeSize;
-                gasCost += GasCost.CREATE_DATA * (newCodeSizeLong-oldCodeSize);
-            }
-
-            spendOpCodeGas();
-        }
-        // EXECUTION PHASE
-        DataWord memOffsetData = program.stackPop();
-        DataWord lengthData = program.stackPop();
-        byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
-        int resultInt = program.replaceCode(buffer);
-
-        DataWord result = DataWord.valueOf(resultInt);
-
-        if (isLogEnabled) {
-            hint = result.toString();
-        }
-
-        program.stackPush(result);
-        program.step();
-    }
-
     protected void executeOpcode() {
         // Execute operation
         ActivationConfig.ForBlock activations = program.getActivations();
@@ -1749,6 +1754,14 @@ public class VM {
             case OpCodes.OP_CODECOPY:
             case OpCodes.OP_EXTCODECOPY: doCODECOPY();
             break;
+
+
+            case OpCodes.OP_EXTCODEHASH:
+                if (!activations.isActive(RSKIP140)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doEXTCODEHASH();
+            break;
             case OpCodes.OP_RETURNDATASIZE: doRETURNDATASIZE();
             break;
             case OpCodes.OP_RETURNDATACOPY: doRETURNDATACOPY();
@@ -1770,6 +1783,12 @@ public class VM {
             case OpCodes.OP_DIFFICULTY: doDIFFICULTY();
             break;
             case OpCodes.OP_GASLIMIT: doGASLIMIT();
+            break;
+            case OpCodes.OP_CHAINID:
+                if (!activations.isActive(RSKIP152)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doCHAINID();
             break;
             case OpCodes.OP_TXINDEX: doTXINDEX();
             break;
@@ -1897,12 +1916,6 @@ public class VM {
             case OpCodes.OP_REVERT: doREVERT();
             break;
             case OpCodes.OP_SUICIDE: doSUICIDE();
-            break;
-            case OpCodes.OP_CODEREPLACE:
-                if (activations.isActive(RSKIP94)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
-                }
-                doCODEREPLACE();
             break;
             case OpCodes.OP_DUPN: doDUPN();
                 break;
