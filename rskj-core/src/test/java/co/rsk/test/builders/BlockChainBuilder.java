@@ -217,8 +217,7 @@ public class BlockChainBuilder {
         repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
         transactionPool = new TransactionPoolImpl(
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
-                transactionExecutorFactory, new SignatureCache(), 10,
-                100);
+                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,

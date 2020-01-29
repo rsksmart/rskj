@@ -91,7 +91,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), new SignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), new ReceivedTxSignatureCache(), 10, 100);
 
         Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false);
 
@@ -116,7 +116,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), new SignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), new ReceivedTxSignatureCache(), 10, 100);
 
         Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, true);
 
@@ -177,7 +177,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), new SignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), new ReceivedTxSignatureCache(), 10, 100);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true);
 
@@ -204,7 +204,7 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), new SignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), new ReceivedTxSignatureCache(), 10, 100);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false);
 

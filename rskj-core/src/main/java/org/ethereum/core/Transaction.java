@@ -398,12 +398,12 @@ public class Transaction {
         return sender;
     }
 
-    public synchronized RskAddress getSender(SignatureCache signatureCache) {
+    public synchronized RskAddress getSender(ReceivedTxSignatureCache receivedTxSignatureCache) {
         if (sender != null) {
             return sender;
         }
 
-            sender = signatureCache.getSender(this);
+            sender = receivedTxSignatureCache.getSender(this);
 
         return sender;
     }
