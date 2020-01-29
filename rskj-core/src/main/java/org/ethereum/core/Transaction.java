@@ -398,6 +398,16 @@ public class Transaction {
         return sender;
     }
 
+    public synchronized RskAddress getSender(SignatureCache signatureCache) {
+        if (sender != null) {
+            return sender;
+        }
+
+            sender = signatureCache.getSender(this);
+
+        return sender;
+    }
+
     public byte getChainId() {
         return chainId;
     }

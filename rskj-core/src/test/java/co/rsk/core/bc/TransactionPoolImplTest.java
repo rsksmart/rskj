@@ -72,9 +72,9 @@ public class TransactionPoolImplTest {
                 rskTestContext.getBlockFactory(),
                 rskTestContext.getCompositeEthereumListener(),
                 rskTestContext.getTransactionExecutorFactory(),
+                rskTestContext.getSignatureCache(),
                 10,
-                100
-        );
+                100);
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
 

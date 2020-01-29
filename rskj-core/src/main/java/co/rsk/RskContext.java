@@ -85,10 +85,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
@@ -238,6 +235,7 @@ public class RskContext implements NodeBootstrapper {
     private StatusResolver statusResolver;
     private Web3InformationRetriever web3InformationRetriever;
     private BootstrapImporter bootstrapImporter;
+    private SignatureCache signatureCache;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -346,12 +344,20 @@ public class RskContext implements NodeBootstrapper {
                     getBlockFactory(),
                     getCompositeEthereumListener(),
                     getTransactionExecutorFactory(),
+                    getSignatureCache(),
                     rskSystemProperties.txOutdatedThreshold(),
-                    rskSystemProperties.txOutdatedTimeout()
-            );
+                    rskSystemProperties.txOutdatedTimeout());
         }
 
         return transactionPool;
+    }
+
+    public SignatureCache getSignatureCache() {
+        if (signatureCache == null) {
+            signatureCache = new SignatureCache();
+        }
+
+        return signatureCache;
     }
 
     public RepositoryLocator getRepositoryLocator() {
