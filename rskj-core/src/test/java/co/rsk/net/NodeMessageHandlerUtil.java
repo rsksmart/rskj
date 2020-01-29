@@ -34,7 +34,7 @@ public class NodeMessageHandlerUtil {
         SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 syncConfiguration, blockFactory, new DummyBlockValidationRule(),
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
+                new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class));
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
@@ -63,7 +63,7 @@ public class NodeMessageHandlerUtil {
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration, blockFactory,
-                blockValidationRule, new BlockCompositeRule(new BlockUnclesHashValidationRule(),
+                blockValidationRule, new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(),
                 new BlockRootValidationRule(config.getActivationConfig())),
                 DIFFICULTY_CALCULATOR,
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),

@@ -323,7 +323,7 @@ public class NodeMessageHandlerTest {
                 syncConfiguration,
                 blockFactory,
                 new DummyBlockValidationRule(),
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
+                new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 null,
                 new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()), mock(Genesis.class));
         final NodeMessageHandler handler = new NodeMessageHandler(config,
