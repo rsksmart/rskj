@@ -235,7 +235,7 @@ public class RskContext implements NodeBootstrapper {
     private StatusResolver statusResolver;
     private Web3InformationRetriever web3InformationRetriever;
     private BootstrapImporter bootstrapImporter;
-    private SignatureCache signatureCache;
+    private ReceivedTxSignatureCache receivedTxSignatureCache;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -344,7 +344,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockFactory(),
                     getCompositeEthereumListener(),
                     getTransactionExecutorFactory(),
-                    getSignatureCache(),
+                    getReceivedTxSignatureCache(),
                     rskSystemProperties.txOutdatedThreshold(),
                     rskSystemProperties.txOutdatedTimeout());
         }
@@ -352,12 +352,12 @@ public class RskContext implements NodeBootstrapper {
         return transactionPool;
     }
 
-    public SignatureCache getSignatureCache() {
-        if (signatureCache == null) {
-            signatureCache = new SignatureCache();
+    public ReceivedTxSignatureCache getReceivedTxSignatureCache() {
+        if (receivedTxSignatureCache == null) {
+            receivedTxSignatureCache = new ReceivedTxSignatureCache();
         }
 
-        return signatureCache;
+        return receivedTxSignatureCache;
     }
 
     public RepositoryLocator getRepositoryLocator() {
