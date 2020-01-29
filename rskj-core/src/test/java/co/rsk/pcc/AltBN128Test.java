@@ -21,6 +21,7 @@ package co.rsk.pcc;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
+import co.rsk.pcc.altBN128.AltBN128;
 import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
@@ -608,6 +609,22 @@ public class AltBN128Test {
 
         assertThat("Incorrect gas cost", altBN128OperationContract.getGasForData(input), is(gasCost));
         assertThat(errorMessage, Hex.toHexString(output), is(expectedOutput));
+
+        runAgainWithJavaImpl(expectedOutput, input, contractAddress);
+    }
+
+    private void runAgainWithJavaImpl(String expectedOutput, byte[] input, DataWord contractAddress) {
+        AltBN128 altBN128 = new AltBN128();
+
+        if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_ADD_DW)) {
+            altBN128.addJava(input);
+        } else if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_MUL_DW)) {
+            altBN128.mulJava(input);
+        } else {
+            altBN128.pairingJava(input);
+        }
+
+        assertThat(Hex.toHexString(altBN128.getOutput()), is(expectedOutput));
     }
 
     private void altBN128MulTest(BigInteger x1, BigInteger y1, BigInteger scalar, String expectedOutput) {

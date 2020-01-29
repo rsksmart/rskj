@@ -58,7 +58,7 @@ public class AltBN128 {
         }
     }
 
-    private int addJava(byte[] data) {
+    public int addJava(byte[] data) {
         output = new byte[64];
 
         byte[] x1 = parseWord(data, 0);
@@ -171,6 +171,6 @@ public class AltBN128 {
     }
 
     public byte[] getOutput() {
-        return output;
+        return output.clone();
     }
 }
