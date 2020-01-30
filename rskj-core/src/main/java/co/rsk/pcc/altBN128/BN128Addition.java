@@ -45,7 +45,7 @@ public class BN128Addition extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public long getGasForData(byte[] data) {
-        return 500;
+        return 150;
     }
 
     @Override

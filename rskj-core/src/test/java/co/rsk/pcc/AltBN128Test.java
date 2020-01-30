@@ -57,6 +57,9 @@ public class AltBN128Test {
     private final PrecompiledContracts precompiledContracts;
     private ActivationConfig.ForBlock activations;
 
+    private static final int ADD_GAS_COST = 150;
+    private static final int MUL_GAS_COST = 6000;
+
     public AltBN128Test() {
         this.config = new TestSystemProperties();
         this.precompiledContracts = new PrecompiledContracts(config, null);
@@ -121,7 +124,7 @@ public class AltBN128Test {
 
         altBN128OperationTest(input, output, "Sum is incorrect",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                500);
+                ADD_GAS_COST);
     }
 
     @Test
@@ -141,7 +144,7 @@ public class AltBN128Test {
                 output,
                 "Output of sum should be zero",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                500);
+                ADD_GAS_COST);
     }
 
     @Test
@@ -158,7 +161,7 @@ public class AltBN128Test {
                 output,
                 "Output of sum should be zero",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                500);
+                ADD_GAS_COST);
     }
 
     @Test
@@ -176,7 +179,7 @@ public class AltBN128Test {
                 point,
                 "Output should be the same as input",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                500);
+                ADD_GAS_COST);
     }
 
     @Test
@@ -194,7 +197,7 @@ public class AltBN128Test {
                 point,
                 "Output should be the same as input",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                500);
+                ADD_GAS_COST);
     }
 
     @Test
@@ -213,7 +216,7 @@ public class AltBN128Test {
                 output,
                 "Error: Point is not on curve, should return zero",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                500);
+                ADD_GAS_COST);
 
     }
 
@@ -315,7 +318,7 @@ public class AltBN128Test {
 
         altBN128OperationTest(input, output, "Output should be empty",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
-                40000);
+                MUL_GAS_COST);
     }
 
     @Test
@@ -327,7 +330,7 @@ public class AltBN128Test {
 
         altBN128OperationTest(input, output, "Output should be empty",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
-                40000);
+                MUL_GAS_COST);
     }
 
     @Test
@@ -341,7 +344,7 @@ public class AltBN128Test {
                 "0000000000000000000000000000000000000000000000000000000000000000";
         altBN128OperationTest(input, output, "Output should be empty",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
-                40000);
+                MUL_GAS_COST);
     }
 
     @Test
@@ -356,7 +359,7 @@ public class AltBN128Test {
 
         assertThat("Incorrect gas cost",
                 altBN128OperationContract.getGasForData(null),
-                is(100_000L));
+                is(45_000L));
 
         assertThat("Output should be empty",
                 Hex.toHexString(output),
@@ -384,7 +387,7 @@ public class AltBN128Test {
         String input =  g1Point0 + g2Point0 + g1Point1 + g2Point1;
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000001";
         altBN128OperationTest(input, expectedOutput, "Invalid output of paring of valid point",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 260_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000);
     }
 
     @Test
@@ -452,7 +455,7 @@ public class AltBN128Test {
 
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000001";
         altBN128OperationTest(input, expectedOutput, "Invalid output of paring of valid point",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 900_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 385_000);
     }
 
     @Test
@@ -462,7 +465,7 @@ public class AltBN128Test {
         String expectedOutput = "";
 
         altBN128OperationTest(input, expectedOutput, "Output should be empty",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 100_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 45_000);
     }
 
     @Test
@@ -472,7 +475,7 @@ public class AltBN128Test {
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000001";
 
         altBN128OperationTest(input, expectedOutput, "Output should be valid",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 100_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 45_000);
     }
 
     @Test
@@ -495,7 +498,7 @@ public class AltBN128Test {
         String expectedOutput = "";
 
         altBN128OperationTest(input, expectedOutput, "Invalid output of paring of valid point",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 260_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000);
     }
 
     @Test
@@ -516,7 +519,7 @@ public class AltBN128Test {
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000000";
 
         altBN128OperationTest(inputString, expectedOutput, "Invalid output of paring of valid point",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 260_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000);
 
     }
 
@@ -641,7 +644,7 @@ public class AltBN128Test {
         altBN128OperationTest(Hex.toHexString(input), expectedOutput,
                 "Wrong result of multiplication",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
-                40000);
+                MUL_GAS_COST);
 
     }
 
@@ -659,7 +662,7 @@ public class AltBN128Test {
         System.arraycopy(y2Bytes, 0, input, 128 - y2Bytes.length, y2Bytes.length);
 
         altBN128OperationTest(Hex.toHexString(input), expectedOutput,
-                errorMessage, PrecompiledContracts.ALT_BN_128_ADD_DW, 500);
+                errorMessage, PrecompiledContracts.ALT_BN_128_ADD_DW, ADD_GAS_COST);
 
     }
 

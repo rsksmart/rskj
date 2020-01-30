@@ -52,12 +52,11 @@ public class BN128Pairing extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public long getGasForData(byte[] data) {
-
         if (data == null) {
-            return 100000;
+            return 45_000;
         }
 
-        return 80000L * (data.length / PAIR_SIZE) + 100000L;
+        return 34_000L * (data.length / PAIR_SIZE) + 45_000L;
     }
 
     @Override

@@ -45,7 +45,7 @@ public class BN128Multiplication extends PrecompiledContracts.PrecompiledContrac
 
     @Override
     public long getGasForData(byte[] data) {
-        return 40000;
+        return 6000;
     }
 
     @Override
