@@ -24,4 +24,8 @@ public class ReceivedTxSignatureCache {
 
         return addressesCache.computeIfAbsent(transaction, Transaction::getSender);
     }
+
+    public boolean containsTx(Transaction transaction) {
+        return addressesCache.containsKey(transaction);
+    }
 }
