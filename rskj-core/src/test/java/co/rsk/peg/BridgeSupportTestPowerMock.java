@@ -3491,46 +3491,6 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void getBtcTransactionConfirmations_ok() throws BlockStoreException, IOException {
-        Repository repository = createRepository();
-        Repository track = repository.startTracking();
-
-        Sha256Hash blockHash = Sha256Hash.of(Hex.decode("aabbcc"));
-        Sha256Hash merkleRoot = Sha256Hash.of(Hex.decode("ddeeff"));
-
-        BtcBlock blockHeader = mock(BtcBlock.class);
-        when(blockHeader.getHash()).thenReturn(blockHash);
-        when(blockHeader.getMerkleRoot()).thenReturn(merkleRoot);
-
-        int height = 50;
-        StoredBlock block = new StoredBlock(blockHeader, new BigInteger("0"), height);
-
-        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStore.getFromCache(blockHash)).thenReturn(block);
-
-        StoredBlock chainHead = new StoredBlock(blockHeader, new BigInteger("0"), 132);
-        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
-
-        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
-        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
-
-
-        Sha256Hash btcTransactionHash = Sha256Hash.of(Hex.decode("112233"));
-
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
-                activationsBeforeForks);
-        BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
-
-        MerkleBranch merkleBranch = mock(MerkleBranch.class);
-        when(merkleBranch.proves(btcTransactionHash, blockHeader)).thenReturn(true);
-
-        int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, merkleBranch);
-
-        Assert.assertEquals(132 - 50 + 1, confirmations);
-    }
-
-    @Test
     public void getBtcTransactionConfirmations_inexistentBlockHash() throws BlockStoreException, IOException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -3685,7 +3645,6 @@ public class BridgeSupportTestPowerMock {
         when(btcBlockStore.getChainHead()).thenReturn(chainHead);
 
         when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenThrow(new BlockStoreException("blah"));
-        ;
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
@@ -3731,7 +3690,7 @@ public class BridgeSupportTestPowerMock {
                 activationsBeforeForks);
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
         MerkleBranch merkleBranch = mock(MerkleBranch.class);
-        when(merkleBranch.proves(btcTransactionHash, blockHeader)).thenReturn(false);
+        when(merkleBranch.reduceFrom(btcTransactionHash)).thenReturn(Sha256Hash.ZERO_HASH);
 
         int confirmations = bridgeSupport.getBtcTransactionConfirmations(btcTransactionHash, blockHash, merkleBranch);
 

@@ -183,6 +183,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function INCREASE_LOCKING_CAP = BridgeMethods.INCREASE_LOCKING_CAP.getFunction();
     // Gets the peg locking cap
     public static final CallTransaction.Function GET_LOCKING_CAP = BridgeMethods.GET_LOCKING_CAP.getFunction();
+    public static final CallTransaction.Function REGISTER_BTC_COINBASE_TRANSACTION = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction();
+    public static final CallTransaction.Function HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION = BridgeMethods.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.getFunction();
 
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
@@ -1061,6 +1063,31 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
+    }
+
+    public void registerBtcCoinbaseTransaction(Object[] args)
+    {
+        logger.trace("registerBtcCoinbaseTransaction");
+
+        byte[] btcTxSerialized = (byte[]) args[0];
+        Sha256Hash blockHash = Sha256Hash.wrap((byte[]) args[1]);
+        byte[] pmtSerialized = (byte[]) args[2];
+        Sha256Hash witnessMerkleRoot = Sha256Hash.wrap((byte[]) args[3]);
+        byte[] witnessReservedValue = (byte[]) args[4];
+
+        try {
+            bridgeSupport.registerBtcCoinbaseTransaction(btcTxSerialized, blockHash, pmtSerialized, witnessMerkleRoot, witnessReservedValue);
+        } catch (IOException | BlockStoreException e) {
+            logger.warn("Exception in registerBtcCoinbaseTransaction", e);
+            throw new RuntimeException("Exception in registerBtcCoinbaseTransaction", e);
+        }
+    }
+
+    public boolean hasBtcBlockCoinbaseTransactionInformation(Object[] args) {
+        logger.trace("hasBtcBlockCoinbaseTransactionInformation");
+        Sha256Hash blockHash = Sha256Hash.wrap((byte[]) args[0]);
+
+        return bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(blockHash);
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {

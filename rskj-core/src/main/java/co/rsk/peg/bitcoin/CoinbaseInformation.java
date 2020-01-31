@@ -4,19 +4,14 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 
 public class CoinbaseInformation {
 
-    private final Sha256Hash witnessCommitment;
-    private final byte[] reservedValue;
+    private final Sha256Hash witnessMerkleRoot;
 
-    public CoinbaseInformation(Sha256Hash witnessCommitment, byte[] reservedValue) {
-        this.witnessCommitment = witnessCommitment;
-        this.reservedValue = reservedValue;
+    public CoinbaseInformation(Sha256Hash witnessMerkleRoot) {
+        this.witnessMerkleRoot = witnessMerkleRoot;
     }
 
-    public Sha256Hash getWitnessCommitment() {
-        return witnessCommitment;
+    public Sha256Hash getWitnessMerkleRoot() {
+        return witnessMerkleRoot;
     }
 
-    public byte[] getReservedValue() {
-        return reservedValue;
-    }
 }

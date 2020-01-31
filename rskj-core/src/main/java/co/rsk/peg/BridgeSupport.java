@@ -30,6 +30,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
@@ -305,15 +306,23 @@ public class BridgeSupport {
         }
 
         if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
-            logger.warn("Btc Tx {} has no inputs ", btcTxHash);
-            // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
-            throw new VerificationException.EmptyInputsOrOutputs();
+            if (activations.isActive(ConsensusRule.RSKIP143)) {
+                if (BtcTransactionFormatUtils.getInputsCountForSegwit(btcTxSerialized) == 0) {
+                    logger.warn("Btc Segwit Tx {} has no inputs ", btcTxHash);
+                    // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+                    throw new VerificationException.EmptyInputsOrOutputs();
+                }
+            } else {
+                logger.warn("Btc Tx {} has no inputs ", btcTxHash);
+                // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+                throw new VerificationException.EmptyInputsOrOutputs();
+            }
         }
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         // BTC blockstore is available since we've already queried the best chain height
         BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
-        if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
+        if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
             String panicMessage = String.format(
                     "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
                     btcTxHash.toString(),
@@ -1160,7 +1169,9 @@ public class BridgeSupport {
             return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
         }
 
-        if (!merkleBranch.proves(btcTxHash, block.getHeader())) {
+        Sha256Hash merkleRoot = merkleBranch.reduceFrom(btcTxHash);
+
+        if (!isBlockMerkleRootValid(merkleRoot, block.getHeader())) {
             return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE;
         }
 
@@ -1999,6 +2010,71 @@ public class BridgeSupport {
         return true;
     }
 
+    public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws IOException, BlockStoreException {
+        Context.propagate(btcContext);
+        this.ensureBtcBlockStore();
+
+        Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
+
+        if (witnessReservedValue.length != 32) {
+            throw new BridgeIllegalArgumentException("WitnessResevedValue length can't be different than 32 bytes");
+        }
+
+        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
+            throw new BridgeIllegalArgumentException("PartialMerkleTree doesn't have expected size");
+        }
+
+        Sha256Hash merkleRoot;
+
+        try {
+            PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(), pmtSerialized, 0);
+            List<Sha256Hash> hashesInPmt = new ArrayList<>();
+            merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
+            if (!hashesInPmt.contains(btcTxHash)) {
+                logger.warn("Supplied Btc Tx {} is not in the supplied partial merkle tree", btcTxHash);
+                return;
+            }
+        } catch (VerificationException e) {
+            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed %s", Hex.toHexString(pmtSerialized)), e);
+        }
+
+        // Check merkle root equals btc block merkle root at the specified height in the btc best chain
+        // Btc blockstore is available since we've already queried the best chain height
+        StoredBlock storedBlock = btcBlockStore.getFromCache(blockHash);
+        if (storedBlock == null) {
+            throw new BridgeIllegalArgumentException(String.format("Block not registered %s", blockHash.toString()));
+        }
+        BtcBlock blockHeader = storedBlock.getHeader();
+        if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
+            String panicMessage = String.format(
+                    "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
+                    btcTxHash.toString(),
+                    merkleRoot,
+                    blockHeader.getMerkleRoot()
+            );
+            logger.warn(panicMessage);
+            panicProcessor.panic("btclock", panicMessage);
+            return;
+        }
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
+        btcTx.verify();
+
+        Sha256Hash witnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
+
+        if(!witnessCommitment.equals(btcTx.findWitnessCommitment())){
+            throw new BridgeIllegalArgumentException("WitnessCommitment does not match");
+        }
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
+        provider.setCoinbaseInformation(blockHeader.getHash(), coinbaseInformation);
+    }
+
+    public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) {
+        CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHash);
+        return coinbaseInformation != null;
+    }
+
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {
         // Gather the current btc chain's head
         // IMPORTANT: we assume that getting the chain head from the btc blockstore
@@ -2176,6 +2252,22 @@ public class BridgeSupport {
         Coin currentBridgeBalance = rskRepository.getBalance(PrecompiledContracts.BRIDGE_ADDR).toBitcoin();
 
         return maxRbtc.subtract(currentBridgeBalance);
+    }
+
+    @VisibleForTesting
+    protected boolean isBlockMerkleRootValid(Sha256Hash merkleRoot, BtcBlock blockHeader) {
+        boolean isValid = false;
+
+        if (blockHeader.getMerkleRoot().equals(merkleRoot)) {
+            isValid = true;
+        }
+        else {
+            if (activations.isActive(ConsensusRule.RSKIP143)) {
+                CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHeader.getHash());
+                isValid = coinbaseInformation != null && coinbaseInformation.getWitnessMerkleRoot().equals(merkleRoot);
+            }
+        }
+        return isValid;
     }
 }
 
