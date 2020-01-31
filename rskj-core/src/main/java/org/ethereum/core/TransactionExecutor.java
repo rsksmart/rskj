@@ -440,22 +440,16 @@ public class TransactionExecutor {
                 } else {
                     execError("REVERT opcode executed");
                 }
-            } else {
-                cacheTrack.commit();
             }
-
-        } catch (Throwable e) {
-            // NOTE: we really should about the node, shutdown everything, and fail safe.
-            // TODO: catch whatever they will throw on you !!!
-//            https://github.com/ethereum/cpp-ethereum/blob/develop/libethereum/Executive.cpp#L241
+        } catch (Exception e) {
             cacheTrack.rollback();
             mEndGas = 0;
             execError(e);
-
-        }
-        finally {
             profiler.stop(metric);
+            return;
         }
+        cacheTrack.commit();
+        profiler.stop(metric);
     }
 
     private void createContract() {
