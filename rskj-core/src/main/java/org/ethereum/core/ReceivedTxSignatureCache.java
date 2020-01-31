@@ -6,7 +6,7 @@ import co.rsk.util.MaxSizeHashMap;
 
 import java.util.Map;
 
-public class ReceivedTxSignatureCache {
+public class ReceivedTxSignatureCache implements ISignatureCache {
 
     private static final int MAX_CACHE_SIZE = 6000; //Txs in three blocks
 
@@ -16,6 +16,7 @@ public class ReceivedTxSignatureCache {
         addressesCache = new MaxSizeHashMap<>(MAX_CACHE_SIZE,true);
     }
 
+    @Override
     public RskAddress getSender(Transaction transaction) {
 
         if (transaction instanceof RemascTransaction) {

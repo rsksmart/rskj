@@ -6,14 +6,14 @@ import co.rsk.util.MaxSizeHashMap;
 
 import java.util.Map;
 
-public class BlockTxSignatureCache {
+public class BlockTxSignatureCache implements ISignatureCache {
 
     private static final int MAX_CACHE_SIZE = 900;
 
     private final Map<Transaction, RskAddress> addressesCache;
-    private ReceivedTxSignatureCache internalCache;
+    private ISignatureCache internalCache;
 
-    public BlockTxSignatureCache(ReceivedTxSignatureCache internalCache) {
+    public BlockTxSignatureCache(ISignatureCache internalCache) {
         this.internalCache = internalCache;
         addressesCache = new MaxSizeHashMap<>(MAX_CACHE_SIZE,false);
     }
@@ -39,5 +39,9 @@ public class BlockTxSignatureCache {
         }
 
         return sender;
+    }
+
+     public boolean containsTx(Transaction transaction) {
+        return addressesCache.containsKey(transaction);
     }
 }
