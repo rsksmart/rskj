@@ -28,6 +28,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
@@ -2018,6 +2019,135 @@ public class BridgeStorageProviderTest {
         Optional<Long> result = provider0.getHeightIfBtcTxhashIsAlreadyProcessed(hash);
         assertTrue(result.isPresent());
         assertEquals(Long.valueOf(1), result.get());
+    }
+
+    @Test
+    public void getCoinBaseInformation_before_RSKIP143() {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        CoinbaseInformation result = provider.getCoinbaseInformation(hash);
+        assertNull(result);
+
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("coinbaseInformation-" + hash.toString()));
+    }
+
+    @Test
+    public void getCoinBaseInformation_after_RSKIP143() {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH, new byte[]{ 0 });
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("coinbaseInformation-" + hash.toString())))
+                .thenReturn(BridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation));
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        CoinbaseInformation result = provider.getCoinbaseInformation(hash);
+        assertEquals(coinbaseInformation.getWitnessCommitment(),result.getWitnessCommitment());
+        assertArrayEquals(coinbaseInformation.getReservedValue(),result.getReservedValue());
+    }
+
+    @Test
+    public void setCoinBaseInformation_before_RSKIP143() {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertNull(provider.getCoinbaseInformation(hash));
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH, new byte[]{0});
+        provider.setCoinbaseInformation(hash, coinbaseInformation);
+
+        assertNull(provider.getCoinbaseInformation(hash));
+    }
+
+    @Test
+    public void setCoinBaseInformation_after_RSKIP143() {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertNull(provider.getCoinbaseInformation(hash));
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH, new byte[]{0});
+        provider.setCoinbaseInformation(hash, coinbaseInformation);
+
+        assertEquals(coinbaseInformation, provider.getCoinbaseInformation(hash));
+    }
+
+    @Test
+    public void saveCoinBaseInformation_before_RSKIP143() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertNull(provider.getCoinbaseInformation(hash));
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH, new byte[]{0});
+        provider.setCoinbaseInformation(hash, coinbaseInformation);
+
+        assertNull(provider.getCoinbaseInformation(hash));
+
+        provider.save();
+
+        verify(repository, never()).addStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromLongString("coinbaseInformation" + hash.toString()),
+                BridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation)
+        );
+    }
+
+    @Test
+    public void saveCoinBaseInformation_after_RSKIP143() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertNull(provider.getCoinbaseInformation(hash));
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH, new byte[]{0});
+        provider.setCoinbaseInformation(hash, coinbaseInformation);
+
+        assertEquals(coinbaseInformation, provider.getCoinbaseInformation(hash));
+
+        provider.save();
+
+        verify(repository, times(1)).addStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromLongString("coinbaseInformation-" + hash.toString()),
+                BridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation)
+        );
     }
 
     private BtcTransaction createTransaction() {

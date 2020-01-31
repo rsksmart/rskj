@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
@@ -705,6 +706,32 @@ public class BridgeSerializationUtils {
             return Optional.empty();
         }
         return Optional.of(RLP.decodeBigInteger(data, 0).longValue());
+    }
+
+    public static CoinbaseInformation deserializeCoinbaseInformation(byte[] data) {
+        if (data == null) {
+            return null;
+        }
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        if (rlpList.size() != 2) {
+            throw new RuntimeException(String.format("Invalid serialized coinbase information, expected 2 values but got %n", rlpList.size()));
+        }
+
+        Sha256Hash witnessCommitment = Sha256Hash.wrap(rlpList.get(0).getRLPData());
+        byte[] witnessReservedValue = rlpList.get(1).getRLPData();
+
+        return new CoinbaseInformation(witnessCommitment, witnessReservedValue);
+    }
+
+    public static byte[] serializeCoinbaseInformation(CoinbaseInformation coinbaseInformation) {
+        if (coinbaseInformation == null) {
+            return null;
+        }
+        byte[][] rlpElements = new byte[2][];
+        rlpElements[0] = RLP.encodeElement(coinbaseInformation.getWitnessCommitment().getBytes());
+        rlpElements[1] = RLP.encodeElement(coinbaseInformation.getReservedValue());
+        return RLP.encodeList(rlpElements);
     }
 
     // An ABI call spec is serialized as:
