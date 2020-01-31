@@ -264,6 +264,10 @@ public class OpCodes {
      * (0x46) Get the chain id
      */
     public static final byte OP_CHAINID =0x46 ;
+    /**
+     * (0x45) Get the senders balance
+     */
+    public static final byte OP_SELFBALANCE = 0x47 ;
 
     /*  Memory Storage and F Operations */
 

@@ -1071,6 +1071,19 @@ public class VM {
         program.step();
     }
 
+    protected void doSELFBALANCE(){
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord balance = program.getBalance(program.getOwnerAddress());
+
+        if (isLogEnabled) {
+            hint = "selfBalance: " + balance;
+        }
+
+        program.stackPush(balance);
+        program.step();
+    }
+
     protected void doPOP(){
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1789,6 +1802,12 @@ public class VM {
                     throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
                 }
                 doCHAINID();
+            break;
+            case OpCodes.OP_SELFBALANCE:
+                if (!activations.isActive(RSKIP151)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doSELFBALANCE();
             break;
             case OpCodes.OP_TXINDEX: doTXINDEX();
             break;

@@ -20,6 +20,8 @@ package co.rsk.vm;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -38,7 +40,8 @@ import java.util.HashSet;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 25/01/2017.
@@ -710,12 +713,71 @@ public class VMExecutionTest {
         vmConfig = mock(VmConfig.class);
         when(vmConfig.getChainId()).thenReturn(chainIDExpected);
 
-        Program program = executeCodeWithActivationConfig("CHAINID",1 , activations);
+        Program program = executeCodeWithActivationConfig("CHAINID", 1, activations);
 
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(DataWord.valueOf(chainIDExpected), stack.peek());
+    }
+
+    @Test(expected = Program.IllegalOperationException.class)
+    public void selfBalanceFailsWithRSKIPNotActivated() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP151)).thenReturn(false);
+
+        executeCodeWithActivationConfig("SELFBALANCE", 1, activations);
+    }
+
+    @Test
+    public void selfBalanceRunsCorrectly() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP151)).thenReturn(true);
+
+        int balanceValue = 100;
+
+        RskAddress testAddress = new RskAddress(invoke.getCallerAddress());
+        invoke.setOwnerAddress(testAddress);
+        invoke.getRepository().addBalance(testAddress, Coin.valueOf(balanceValue));
+
+        Program program = executeCodeWithActivationConfig("SELFBALANCE", 1, activations);
+        Stack stack = program.getStack();
+
+        long selfBalanceGas = OpCode.SELFBALANCE.getTier().asInt();
+
+        Assert.assertEquals(selfBalanceGas, program.getResult().getGasUsed());
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueOf(balanceValue), stack.peek());
+    }
+
+    @Test
+    public void selfBalanceIsSameAsBalance() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP151)).thenReturn(true);
+
+        int balanceValue = 100;
+
+        RskAddress testAddress = new RskAddress(invoke.getCallerAddress());
+        invoke.setOwnerAddress(testAddress);
+        invoke.getRepository().addBalance(testAddress, Coin.valueOf(balanceValue));
+
+        Program programSelfBalance = executeCodeWithActivationConfig("SELFBALANCE",1, activations);
+        Stack stackSelfBalance = programSelfBalance.getStack();
+
+        Program programBalance = executeCodeWithActivationConfig("PUSH20 0x" + testAddress.toHexString() +
+                " BALANCE", 2, activations);
+        Stack stackBalance = programBalance.getStack();
+
+        Assert.assertEquals(1, stackSelfBalance.size());
+
+        DataWord selfBalance = stackSelfBalance.pop();
+        DataWord balance = stackBalance.pop();
+
+        long selfBalanceGas = OpCode.SELFBALANCE.getTier().asInt();
+
+        Assert.assertEquals(selfBalanceGas, programSelfBalance.getResult().getGasUsed());
+        Assert.assertEquals(selfBalance, DataWord.valueOf(balanceValue));
+        Assert.assertEquals(balance, selfBalance);
     }
 
     private Program executeCode(String code, int nsteps) {
