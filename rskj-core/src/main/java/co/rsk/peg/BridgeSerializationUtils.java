@@ -633,23 +633,21 @@ public class BridgeSerializationUtils {
         }
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        if (rlpList.size() != 2) {
+        if (rlpList.size() != 1) {
             throw new RuntimeException(String.format("Invalid serialized coinbase information, expected 2 values but got %n", rlpList.size()));
         }
 
-        Sha256Hash witnessCommitment = Sha256Hash.wrap(rlpList.get(0).getRLPData());
-        byte[] witnessReservedValue = rlpList.get(1).getRLPData();
+        Sha256Hash witnessMerkleRoot = Sha256Hash.wrap(rlpList.get(0).getRLPData());
 
-        return new CoinbaseInformation(witnessCommitment, witnessReservedValue);
+        return new CoinbaseInformation(witnessMerkleRoot);
     }
 
     public static byte[] serializeCoinbaseInformation(CoinbaseInformation coinbaseInformation) {
         if (coinbaseInformation == null) {
             return null;
         }
-        byte[][] rlpElements = new byte[2][];
-        rlpElements[0] = RLP.encodeElement(coinbaseInformation.getWitnessCommitment().getBytes());
-        rlpElements[1] = RLP.encodeElement(coinbaseInformation.getReservedValue());
+        byte[][] rlpElements = new byte[1][];
+        rlpElements[0] = RLP.encodeElement(coinbaseInformation.getWitnessMerkleRoot().getBytes());
         return RLP.encodeList(rlpElements);
     }
 

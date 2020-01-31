@@ -1810,7 +1810,7 @@ public class BridgeStorageProviderTest {
 
         Sha256Hash hash = Sha256Hash.ZERO_HASH;
 
-        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH, new byte[]{ 0 });
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
         when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("coinbaseInformation-" + hash.toString())))
                 .thenReturn(BridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation));
 
@@ -1820,8 +1820,7 @@ public class BridgeStorageProviderTest {
         );
 
         CoinbaseInformation result = provider.getCoinbaseInformation(hash);
-        assertEquals(coinbaseInformation.getWitnessCommitment(),result.getWitnessCommitment());
-        assertArrayEquals(coinbaseInformation.getReservedValue(),result.getReservedValue());
+        assertEquals(coinbaseInformation.getWitnessMerkleRoot(),result.getWitnessMerkleRoot());
     }
 
     @Test
@@ -1837,7 +1836,7 @@ public class BridgeStorageProviderTest {
 
         assertNull(provider.getCoinbaseInformation(hash));
 
-        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH, new byte[]{0});
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
         provider.setCoinbaseInformation(hash, coinbaseInformation);
 
         assertNull(provider.getCoinbaseInformation(hash));
@@ -1856,7 +1855,7 @@ public class BridgeStorageProviderTest {
 
         assertNull(provider.getCoinbaseInformation(hash));
 
-        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH, new byte[]{0});
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
         provider.setCoinbaseInformation(hash, coinbaseInformation);
 
         assertEquals(coinbaseInformation, provider.getCoinbaseInformation(hash));
@@ -1875,7 +1874,7 @@ public class BridgeStorageProviderTest {
 
         assertNull(provider.getCoinbaseInformation(hash));
 
-        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH, new byte[]{0});
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
         provider.setCoinbaseInformation(hash, coinbaseInformation);
 
         assertNull(provider.getCoinbaseInformation(hash));
@@ -1902,7 +1901,7 @@ public class BridgeStorageProviderTest {
 
         assertNull(provider.getCoinbaseInformation(hash));
 
-        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH, new byte[]{0});
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
         provider.setCoinbaseInformation(hash, coinbaseInformation);
 
         assertEquals(coinbaseInformation, provider.getCoinbaseInformation(hash));
