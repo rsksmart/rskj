@@ -99,6 +99,7 @@ public class TransactionExecutor {
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
+    private BlockTxSignatureCache blockTxSignatureCache;
 
     private boolean localCall = false;
 
@@ -106,8 +107,10 @@ public class TransactionExecutor {
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
-            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts, ExecutorService vmExecution) {
+            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
+            ExecutorService vmExecution, BlockTxSignatureCache blockTxSignatureCache) {
         this.constants = constants;
+        this.blockTxSignatureCache = blockTxSignatureCache;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
         this.tx = tx;
         this.txindex = txindex;
@@ -225,7 +228,7 @@ public class TransactionExecutor {
     }
 
     private boolean nonceIsValid() {
-        BigInteger reqNonce = track.getNonce(tx.getSender());
+        BigInteger reqNonce = track.getNonce(tx.getSender(blockTxSignatureCache));
         BigInteger txNonce = toBI(tx.getNonce());
 
         if (isNotEqual(reqNonce, txNonce)) {

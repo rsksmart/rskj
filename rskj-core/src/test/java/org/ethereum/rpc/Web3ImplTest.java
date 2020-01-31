@@ -437,8 +437,8 @@ public class Web3ImplTest {
 
         BlockChainImpl blockChain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore );
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
         transactionPool.processBest(blockChain.getBestBlock());
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
@@ -1261,8 +1261,8 @@ public class Web3ImplTest {
         World world = new World(receiptStore);
         BlockChainImpl blockChain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore);
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
         // **** Initializes data ******************
@@ -1365,9 +1365,9 @@ public class Web3ImplTest {
 
     private Web3Impl createWeb3(Ethereum eth, World world, ReceiptStore receiptStore) {
         BlockStore blockStore = world.getBlockStore();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore);
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore,
-                                                                  blockFactory, null, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
+                                                                  blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
         return createWeb3(eth, world, transactionPool, receiptStore);
     }
 
@@ -1382,9 +1382,9 @@ public class Web3ImplTest {
     private Web3Impl createWeb3(World world, BlockProcessor blockProcessor, ReceiptStore receiptStore) {
         BlockChainImpl blockChain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore);
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(),
-                                                                  blockStore, blockFactory, null, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
+                                                                  blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
         RepositoryLocator repositoryLocator = new RepositoryLocator(world.getTrieStore(), world.getStateRootHandler());
         return createWeb3(
                 Web3Mocks.getMockEthereum(), blockChain, repositoryLocator, transactionPool,
@@ -1564,13 +1564,14 @@ public class Web3ImplTest {
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(
-            BlockStore blockStore) {
+            BlockStore blockStore, BlockTxSignatureCache blockTxSignatureCache) {
         return new TransactionExecutorFactory(
                 config,
                 blockStore,
                 null,
                 blockFactory,
                 null,
-                null);
+                null,
+                blockTxSignatureCache);
     }
 }

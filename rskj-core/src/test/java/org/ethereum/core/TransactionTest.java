@@ -462,7 +462,8 @@ public class TransactionTest {
                             null,
                             blockFactory,
                             invokeFactory,
-                            new PrecompiledContracts(config, bridgeSupportFactory));
+                            new PrecompiledContracts(config, bridgeSupportFactory),
+                            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
@@ -595,6 +596,7 @@ public class TransactionTest {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
                         trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
@@ -610,7 +612,7 @@ public class TransactionTest {
         String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"homicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"multipleHomicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"payable\":true,\"type\":\"fallback\"}]";
 
         Transaction tx = createTx(sender, new byte[0], Hex.decode(code), repository);
-        executeTransaction(blockchain, blockStore, tx, repository);
+        executeTransaction(blockchain, blockStore, tx, repository, blockTxSignatureCache);
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
 
@@ -636,7 +638,7 @@ public class TransactionTest {
         }
 
         Transaction tx1 = createTx(sender, contractAddress, callData, repository);
-        ProgramResult programResult = executeTransaction(blockchain, blockStore, tx1, repository).getResult();
+        ProgramResult programResult = executeTransaction(blockchain, blockStore, tx1, repository, blockTxSignatureCache).getResult();
 
         // suicide of a single account should be counted only once
         Assert.assertEquals(24000, programResult.getFutureRefund());
@@ -673,6 +675,7 @@ public class TransactionTest {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
                         trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
@@ -692,16 +695,16 @@ public class TransactionTest {
         String abi2 = "[{\"constant\":false,\"inputs\":[{\"name\":\"invokedAddress\",\"type\":\"address\"}],\"name\":\"doIt\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"externalEvent\",\"type\":\"event\"}]";
 
         Transaction tx1 = createTx(sender, new byte[0], Hex.decode(code1), repository);
-        executeTransaction(blockchain, blockStore, tx1, repository);
+        executeTransaction(blockchain, blockStore, tx1, repository, blockTxSignatureCache);
 
         Transaction tx2 = createTx(sender, new byte[0], Hex.decode(code2), repository);
-        executeTransaction(blockchain, blockStore, tx2, repository);
+        executeTransaction(blockchain, blockStore, tx2, repository, blockTxSignatureCache);
 
         CallTransaction.Contract contract2 = new CallTransaction.Contract(abi2);
         byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(tx1.getContractAddress().getBytes()));
 
         Transaction tx3 = createTx(sender, tx2.getContractAddress().getBytes(), data, repository);
-        TransactionExecutor executor = executeTransaction(blockchain, blockStore, tx3, repository);
+        TransactionExecutor executor = executeTransaction(blockchain, blockStore, tx3, repository, blockTxSignatureCache);
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
         Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
@@ -728,7 +731,8 @@ public class TransactionTest {
             Blockchain blockchain,
             BlockStore blockStore,
             Transaction tx,
-            Repository repository) {
+            Repository repository,
+            BlockTxSignatureCache blockTxSignatureCache) {
         Repository track = repository.startTracking();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
@@ -742,7 +746,8 @@ public class TransactionTest {
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory));
+                new PrecompiledContracts(config, bridgeSupportFactory),
+                blockTxSignatureCache);
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
 

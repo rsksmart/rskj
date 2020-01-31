@@ -115,7 +115,8 @@ public class StateTestRunner {
                 null,
                 blockFactory,
                 invokeFactory,
-                precompiledContracts);
+                precompiledContracts,
+                new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, blockchain.getBestBlock(), 0);
 
@@ -157,7 +158,8 @@ public class StateTestRunner {
                                 null,
                                 blockFactory,
                                 new ProgramInvokeFactoryImpl(),
-                                precompiledContracts
+                                precompiledContracts,
+                                new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                         )
                 ),
                 stateRootHandler

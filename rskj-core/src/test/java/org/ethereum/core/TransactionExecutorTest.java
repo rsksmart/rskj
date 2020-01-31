@@ -45,11 +45,14 @@ public class TransactionExecutorTest {
         PrecompiledContracts precompiledContracts = mock(PrecompiledContracts.class);
         Set<DataWord> deletedAccounts = new HashSet<>();
         ExecutorService vmExecution = mock(ExecutorService.class);
+        BlockTxSignatureCache blockTxSignatureCache = mock(BlockTxSignatureCache.class);
+
         TransactionExecutor txExecutor = new TransactionExecutor(
                 constants, activationConfig, transaction, txIndex, rskAddress,
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
-                true, true, precompiledContracts, deletedAccounts, vmExecution
+                true, true, precompiledContracts, deletedAccounts,
+                vmExecution, blockTxSignatureCache
         );
 
 

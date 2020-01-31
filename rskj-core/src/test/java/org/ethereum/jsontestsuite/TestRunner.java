@@ -58,7 +58,6 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
-import org.ethereum.vm.trace.DetailedProgramTrace;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,6 +140,7 @@ public class TestRunner {
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
@@ -148,7 +148,8 @@ public class TestRunner {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                null);
+                null,
+                blockTxSignatureCache);
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 

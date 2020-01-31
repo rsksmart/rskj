@@ -236,6 +236,7 @@ public class RskContext implements NodeBootstrapper {
     private Web3InformationRetriever web3InformationRetriever;
     private BootstrapImporter bootstrapImporter;
     private ReceivedTxSignatureCache receivedTxSignatureCache;
+    private BlockTxSignatureCache blockTxSignatureCache;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -360,6 +361,14 @@ public class RskContext implements NodeBootstrapper {
         return receivedTxSignatureCache;
     }
 
+    private BlockTxSignatureCache getBlockTxSignatureCache() {
+        if (blockTxSignatureCache == null) {
+            blockTxSignatureCache = new BlockTxSignatureCache(getReceivedTxSignatureCache());
+        }
+
+        return blockTxSignatureCache;
+    }
+
     public RepositoryLocator getRepositoryLocator() {
         if (repositoryLocator == null) {
             repositoryLocator = buildRepositoryLocator();
@@ -480,7 +489,8 @@ public class RskContext implements NodeBootstrapper {
                     getReceiptStore(),
                     getBlockFactory(),
                     getProgramInvokeFactory(),
-                    getPrecompiledContracts()
+                    getPrecompiledContracts(),
+                    getBlockTxSignatureCache()
             );
         }
 

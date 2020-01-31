@@ -1017,7 +1017,8 @@ public class RemascProcessMinerFeesTest {
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory)
+                        new PrecompiledContracts(config, bridgeSupportFactory),
+                        new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 )
         );
     }
