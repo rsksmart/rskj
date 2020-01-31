@@ -29,7 +29,6 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
-import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
@@ -91,9 +90,10 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), new ReceivedTxSignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
+                world.getReceivedTxSignatureCache(), 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false);
+        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache());
 
         String tx = sendTransaction(web3, repository);
 
@@ -116,9 +116,10 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), new ReceivedTxSignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
+                world.getReceivedTxSignatureCache(), 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, true);
+        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, true, world.getBlockTxSignatureCache());
 
         String tx = sendTransaction(web3, repository);
 
@@ -150,7 +151,7 @@ public class TransactionModuleTest {
 
         TransactionPool transactionPool = world.getTransactionPool();
 
-        Web3Impl web3 = createEnvironment(blockchain, mainchainView, receiptStore, transactionPool, blockStore, true, stateRootHandler, repositoryLocator);
+        Web3Impl web3 = createEnvironment(blockchain, mainchainView, receiptStore, transactionPool, blockStore, true, stateRootHandler, repositoryLocator, world.getBlockTxSignatureCache());
 
         for (int i = 1; i < 100; i++) {
             String tx = sendTransaction(web3, repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader()));
@@ -177,9 +178,10 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), new ReceivedTxSignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
+                world.getReceivedTxSignatureCache(), 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true);
+        Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true, world.getBlockTxSignatureCache());
 
         String txHash = sendRawTransaction(web3);
 
@@ -204,9 +206,10 @@ public class TransactionModuleTest {
 
         BlockStore blockStore = world.getBlockStore();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore), new ReceivedTxSignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
+                world.getReceivedTxSignatureCache(), 10, 100);
 
-        Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false);
+        Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache());
 
         String txHash = sendRawTransaction(web3);
 
@@ -277,7 +280,8 @@ public class TransactionModuleTest {
                                        TrieStore store,
                                        TransactionPool transactionPool,
                                        BlockStore blockStore,
-                                       boolean mineInstant) {
+                                       boolean mineInstant,
+                                       BlockTxSignatureCache signatureCache) {
         StateRootHandler stateRootHandler = new StateRootHandler(
                 config.getActivationConfig(),
                 new TrieConverter(),
@@ -291,10 +295,11 @@ public class TransactionModuleTest {
                 blockStore,
                 mineInstant,
                 stateRootHandler,
-                new RepositoryLocator(store, stateRootHandler));
+                new RepositoryLocator(store, stateRootHandler),
+                signatureCache);
     }
 
-    private Web3Impl createEnvironment(Blockchain blockchain, MiningMainchainView mainchainView, ReceiptStore receiptStore, TransactionPool transactionPool, BlockStore blockStore, boolean mineInstant, StateRootHandler stateRootHandler, RepositoryLocator repositoryLocator) {
+    private Web3Impl createEnvironment(Blockchain blockchain, MiningMainchainView mainchainView, ReceiptStore receiptStore, TransactionPool transactionPool, BlockStore blockStore, boolean mineInstant, StateRootHandler stateRootHandler, RepositoryLocator repositoryLocator, BlockTxSignatureCache signatureCache) {
         transactionPool.processBest(blockchain.getBestBlock());
 
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
@@ -316,8 +321,7 @@ public class TransactionModuleTest {
                 blockchain
         );
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
-
-        transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, receiptStore);
+        transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, receiptStore, signatureCache);
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         MinerServer minerServer = new MinerServerImpl(
                 config,
@@ -409,7 +413,7 @@ public class TransactionModuleTest {
                 null);
     }
 
-    private TransactionExecutorFactory buildTransactionExecutorFactory(BlockStore blockStore, ReceiptStore receiptStore) {
+    private TransactionExecutorFactory buildTransactionExecutorFactory(BlockStore blockStore, ReceiptStore receiptStore, BlockTxSignatureCache blockTxSignatureCache) {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
@@ -420,7 +424,8 @@ public class TransactionModuleTest {
                 receiptStore,
                 blockFactory,
                 null,
-                new PrecompiledContracts(config, bridgeSupportFactory)
+                new PrecompiledContracts(config, bridgeSupportFactory),
+                blockTxSignatureCache
         );
     }
 }

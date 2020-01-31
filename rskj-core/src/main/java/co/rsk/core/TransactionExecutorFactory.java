@@ -38,6 +38,7 @@ public class TransactionExecutorFactory {
     private final BlockFactory blockFactory;
     private final ProgramInvokeFactory programInvokeFactory;
     private final PrecompiledContracts precompiledContracts;
+    private BlockTxSignatureCache blockTxSignatureCache;
 
     public TransactionExecutorFactory(
             RskSystemProperties config,
@@ -45,13 +46,15 @@ public class TransactionExecutorFactory {
             ReceiptStore receiptStore,
             BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory,
-            PrecompiledContracts precompiledContracts) {
+            PrecompiledContracts precompiledContracts,
+            BlockTxSignatureCache blockTxSignatureCache) {
         this.config = config;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.precompiledContracts = precompiledContracts;
+        this.blockTxSignatureCache = blockTxSignatureCache;
     }
 
     public TransactionExecutor newInstance(
@@ -106,7 +109,8 @@ public class TransactionExecutorFactory {
                 config.playVM(),
                 config.isRemascEnabled(),
                 precompiledContracts,
-                deletedAccounts
+                deletedAccounts,
+                blockTxSignatureCache
         );
     }
 }

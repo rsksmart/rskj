@@ -63,6 +63,8 @@ public class World {
     private Repository repository;
     private TransactionPool transactionPool;
     private BridgeSupportFactory bridgeSupportFactory;
+    private BlockTxSignatureCache blockTxSignatureCache;
+    private ReceivedTxSignatureCache receivedTxSignatureCache;
 
     public World() {
         this(new BlockChainBuilder());
@@ -108,6 +110,8 @@ public class World {
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
                 config.getActivationConfig());
+        this.receivedTxSignatureCache = new ReceivedTxSignatureCache();
+        this.blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
@@ -133,7 +137,8 @@ public class World {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             programInvokeFactory,
-                            new PrecompiledContracts(config, bridgeSupportFactory)
+                            new PrecompiledContracts(config, bridgeSupportFactory),
+                            blockTxSignatureCache
                     )
             );
         }
@@ -196,4 +201,9 @@ public class World {
     public BlockStore getBlockStore() {
         return blockStore;
     }
+
+    public BlockTxSignatureCache getBlockTxSignatureCache() { return blockTxSignatureCache; }
+
+    public ReceivedTxSignatureCache getReceivedTxSignatureCache() { return receivedTxSignatureCache; }
+
 }

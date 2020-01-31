@@ -59,6 +59,8 @@ public class ImportLightTest {
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
+        ReceivedTxSignatureCache receivedTxSignatureCache = new ReceivedTxSignatureCache();
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
@@ -66,12 +68,12 @@ public class ImportLightTest {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-
-                null);
+                null,
+                blockTxSignatureCache);
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100);
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,

@@ -408,6 +408,16 @@ public class Transaction {
         return sender;
     }
 
+    public RskAddress getSender(BlockTxSignatureCache blockTxSignatureCache) {
+        if (sender != null) {
+            return sender;
+        }
+
+        sender = blockTxSignatureCache.getSender(this);
+
+        return sender;
+    }
+
     public byte getChainId() {
         return chainId;
     }
