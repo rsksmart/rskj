@@ -290,6 +290,11 @@ public class BlockExecutor {
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts);
+
+            if (vmTrace) {
+                txExecutor.setLocalCall(true);
+            }
+
             boolean readyToExecute = txExecutor.init();
 
 
@@ -349,7 +354,9 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
-        track.save();
+        if (!vmTrace) {
+            track.save();
+        }
 
         BlockResult result = new BlockResult(
                 block,
@@ -357,7 +364,7 @@ public class BlockExecutor {
                 receipts,
                 totalGasUsed,
                 totalPaidFees,
-                track.getTrie()
+                vmTrace ? null : track.getTrie()
         );
         profiler.stop(metric);
         return result;
