@@ -291,7 +291,6 @@ public class BlockExecutor {
                     deletedAccounts);
             boolean transactionExecuted = txExecutor.executeTransaction();
 
-
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
                     logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
@@ -345,7 +344,9 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
-        track.save();
+        if (!vmTrace) {
+            track.save();
+        }
 
         BlockResult result = new BlockResult(
                 block,
@@ -353,7 +354,7 @@ public class BlockExecutor {
                 receipts,
                 totalGasUsed,
                 totalPaidFees,
-                track.getTrie()
+                vmTrace ? null : track.getTrie()
         );
         profiler.stop(metric);
         return result;
