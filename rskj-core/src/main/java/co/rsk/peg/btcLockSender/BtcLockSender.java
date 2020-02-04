@@ -7,9 +7,10 @@ import co.rsk.core.RskAddress;
 public abstract class BtcLockSender {
 
     public enum TxType {
-           P2PKH,
-           P2SHP2WPKH,
-           P2SHMULTISIG
+        P2PKH,
+        P2SHP2WPKH,
+        P2SHMULTISIG,
+        P2SHP2WSH
     }
 
     protected BtcLockSender.TxType transactionType;
@@ -17,7 +18,7 @@ public abstract class BtcLockSender {
     protected RskAddress rskAddress;
 
     public BtcLockSender(BtcTransaction btcTx) throws BtcLockSenderParseException {
-         this.parse(btcTx);
+        this.parse(btcTx);
     }
 
     protected abstract void parse(BtcTransaction btcTx) throws BtcLockSenderParseException;
