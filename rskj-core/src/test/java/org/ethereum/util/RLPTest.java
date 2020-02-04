@@ -394,7 +394,6 @@ public class RLPTest {
 
         ArrayList<RLPElement> rlpList = decode2(payload);
 
-        RLPList.recursivePrint(rlpList);
         // TODO: add some asserts in place of just printing the rlpList
     }
 
@@ -565,7 +564,6 @@ public class RLPTest {
 
         ArrayList<RLPElement> rlpList = decode2(payload);
 
-        RLPList.recursivePrint(rlpList);
         // TODO: add some asserts in place of just printing the rlpList
     }
 
@@ -577,7 +575,6 @@ public class RLPTest {
 
         ArrayList<RLPElement> rlpList = decode2(payload);
 
-        RLPList.recursivePrint(rlpList);
         // TODO: add some asserts in place of just printing the rlpList
     }
 
@@ -593,7 +590,6 @@ public class RLPTest {
 
         ArrayList<RLPElement> rlpList = decode2(payload);
 
-        RLPList.recursivePrint(rlpList);
         // TODO: add some asserts in place of just printing the rlpList
     }
 

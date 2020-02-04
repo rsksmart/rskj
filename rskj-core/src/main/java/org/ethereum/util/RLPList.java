@@ -19,7 +19,6 @@
 
 package org.ethereum.util;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 
 /**
@@ -42,32 +41,5 @@ public class RLPList extends ArrayList<RLPElement> implements RLPElement {
 
     public byte[] getRLPRawData() {
         return this.rlpData;
-    }
-
-    public static void recursivePrint(RLPElement element) {
-
-        if (element == null) {
-            throw new RuntimeException("RLPElement object can't be null");
-        }
-        if (element instanceof RLPList) {
-
-            RLPList rlpList = (RLPList) element;
-            System.out.print("[");
-            for (RLPElement singleElement : rlpList) {
-                recursivePrint(singleElement);
-            }
-            System.out.print("]");
-        } else {
-            String hex = ByteUtil.toHexString(element.getRLPData());
-            System.out.print(hex + ", ");
-        }
-    }
-
-    public static void recursivePrint(@Nonnull ArrayList<RLPElement> list) {
-        System.out.print('[');
-        for (RLPElement singleElement : list) {
-            recursivePrint(singleElement);
-        }
-        System.out.print(']');
     }
 }
