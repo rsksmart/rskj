@@ -374,22 +374,6 @@ public class RLP {
         return length;
     }
 
-    private static int calcLengthRaw(int lengthOfLength, byte[] msgData, int index) {
-        byte pow = (byte) (lengthOfLength - 1);
-        int length = 0;
-        for (int i = 1; i <= lengthOfLength; ++i) {
-            length += msgData[index + i] << (8 * pow);
-            pow--;
-        }
-        return length;
-    }
-
-    public static byte getCommandCode(byte[] data) {
-        int index = getFirstListElement(data, 0);
-        final byte command = data[index];
-        return ((command & 0xFF) == OFFSET_SHORT_ITEM) ? 0 : command;
-    }
-
     /**
      * Parse wire byte[] message into RLP elements
      *
@@ -751,42 +735,6 @@ public class RLP {
         }
 
         return header;
-    }
-
-
-    public static byte[] encodeLongElementHeader(int length) {
-
-        if (length < SIZE_THRESHOLD) {
-
-            if (length == 0) {
-                return new byte[]{(byte) 0x80};
-            } else {
-                return new byte[]{(byte) (0x80 + length)};
-            }
-
-        } else {
-
-            // length of length = BX
-            // prefix = [BX, [length]]
-            int tmpLength = length;
-            byte byteNum = 0;
-            while (tmpLength != 0) {
-                ++byteNum;
-                tmpLength = tmpLength >> 8;
-            }
-
-            byte[] lenBytes = new byte[byteNum];
-            for (int i = 0; i < byteNum; ++i) {
-                lenBytes[byteNum - 1 - i] = (byte) ((length >> (8 * i)) & 0xFF);
-            }
-
-            // first byte = F7 + bytes.length
-            byte[] header = new byte[1 + lenBytes.length];
-            header[0] = (byte) (OFFSET_LONG_ITEM + byteNum);
-            System.arraycopy(lenBytes, 0, header, 1, lenBytes.length);
-
-            return header;
-        }
     }
 
     public static byte[] encodeSet(Set<ByteArrayWrapper> data) {
