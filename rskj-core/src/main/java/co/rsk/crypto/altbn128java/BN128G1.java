@@ -49,21 +49,14 @@ public class BN128G1 extends BN128Fp {
 
         if (p == null) {return null;}
 
+        // if (!isGroupMember(p)) return null;
         // isGroupMember is always true so it is redundant,
         // SonarCloud sees it as a bug so it is commented
-        //if (!isGroupMember(p)) return null;
+        // Formally we have to do this check
+        // but in our domain it's not necessary,
+        // thus always return true
 
         return new BN128G1(p);
     }
 
-    /**
-     * Formally we have to do this check
-     * but in our domain it's not necessary,
-     * thus always return true
-
-    private static boolean isGroupMember(BN128<Fp> p) {
-        return true;
-    }
-     RSKJ: We comment this unused method because of failing Sonar Cloud issues
-     */
 }

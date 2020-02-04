@@ -18,6 +18,7 @@
 
 package co.rsk.pcc.altBN128;
 
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -45,7 +46,7 @@ public class BN128Multiplication extends PrecompiledContracts.PrecompiledContrac
 
     @Override
     public long getGasForData(byte[] data) {
-        return 6000;
+        return GasCost.toGas(6000);
     }
 
     @Override

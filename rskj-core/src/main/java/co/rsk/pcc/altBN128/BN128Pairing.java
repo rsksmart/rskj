@@ -18,6 +18,7 @@
 
 package co.rsk.pcc.altBN128;
 
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -52,11 +53,14 @@ public class BN128Pairing extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public long getGasForData(byte[] data) {
+        long baseCost = GasCost.toGas(45_000);
+        long perPairCost = GasCost.toGas(34_000L);
+
         if (data == null) {
-            return 45_000;
+            return baseCost;
         }
 
-        return 34_000L * (data.length / PAIR_SIZE) + 45_000L;
+        return  GasCost.add(GasCost.multiply(perPairCost, (data.length / PAIR_SIZE)) , baseCost);
     }
 
     @Override

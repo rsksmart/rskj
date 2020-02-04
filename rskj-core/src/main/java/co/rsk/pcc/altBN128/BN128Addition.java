@@ -18,6 +18,7 @@
 
 package co.rsk.pcc.altBN128;
 
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -45,7 +46,7 @@ public class BN128Addition extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public long getGasForData(byte[] data) {
-        return 150;
+        return GasCost.toGas(150);
     }
 
     @Override

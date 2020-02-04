@@ -19,12 +19,12 @@ package co.rsk.pcc;
  */
 
 
+import co.rsk.altbn128.cloudflare.Utils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
-import co.rsk.pcc.altBN128.AltBN128;
-import co.rsk.pcc.altBN128.BN128Addition;
-import co.rsk.pcc.altBN128.BN128Multiplication;
-import co.rsk.pcc.altBN128.BN128Pairing;
+import co.rsk.pcc.altBN128.*;
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
+import co.rsk.pcc.altBN128.impls.JavaAltBN128;
 import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -617,17 +617,19 @@ public class AltBN128Test {
     }
 
     private void runAgainWithJavaImpl(String expectedOutput, byte[] input, DataWord contractAddress) {
-        AltBN128 altBN128 = new AltBN128();
+        if (Utils.isLinux()){
+            // If we are in Linux, we test the Java Implementation
+            AbstractAltBN128 altBN128 = new JavaAltBN128();
 
-        if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_ADD_DW)) {
-            altBN128.addJava(input);
-        } else if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_MUL_DW)) {
-            altBN128.mulJava(input);
-        } else {
-            altBN128.pairingJava(input);
+            if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_ADD_DW)) {
+                altBN128.add(input,input.length);
+            } else if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_MUL_DW)) {
+                altBN128.mul(input,input.length);
+            } else {
+                altBN128.pairing(input,input.length);
+            }
+            assertThat(Hex.toHexString(altBN128.getOutput()), is(expectedOutput));
         }
-
-        assertThat(Hex.toHexString(altBN128.getOutput()), is(expectedOutput));
     }
 
     private void altBN128MulTest(BigInteger x1, BigInteger y1, BigInteger scalar, String expectedOutput) {
