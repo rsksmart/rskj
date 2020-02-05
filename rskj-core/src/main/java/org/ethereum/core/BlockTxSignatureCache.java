@@ -39,8 +39,6 @@ public class BlockTxSignatureCache implements ISignatureCache {
 
     public RskAddress getSender(Transaction transaction) {
 
-        RskAddress sender;
-
         if (transaction instanceof RemascTransaction) {
             return RemascTransaction.REMASC_ADDRESS;
         }
@@ -51,16 +49,37 @@ public class BlockTxSignatureCache implements ISignatureCache {
         }
 
         if (internalCache.containsTx(transaction)) {
-            sender = internalCache.getSender(transaction);
+            RskAddress sender = internalCache.getSender(transaction);
             addressesCache.put(transaction, sender);
-        } else {
-            sender = addressesCache.computeIfAbsent(transaction, Transaction::getSender);
+            return sender;
         }
 
-        return sender;
+        return transaction.getSender();
     }
 
-     public boolean containsTx(Transaction transaction) {
+    @Override
+    public boolean containsTx(Transaction transaction) {
         return addressesCache.containsKey(transaction);
+    }
+
+    @Override
+    public void storeSender(Transaction transaction) {
+
+        if (transaction instanceof RemascTransaction) {
+            return;
+        }
+
+        RskAddress sender = addressesCache.get(transaction);
+
+        if (sender != null) {
+            return;
+        }
+
+        if (internalCache.containsTx(transaction)) {
+            sender = internalCache.getSender(transaction);
+            addressesCache.put(transaction, sender);
+        }
+
+        addressesCache.put(transaction, transaction.getSender());
     }
 }

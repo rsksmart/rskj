@@ -527,6 +527,9 @@ public class TransactionExecutor {
 
         cacheTrack.commit();
 
+        //Transaction sender is stored in cache
+        signatureCache.storeSender(tx);
+
         // Should include only LogInfo's that was added during not rejected transactions
         List<LogInfo> notRejectedLogInfos = result.getLogInfoList().stream()
                 .filter(logInfo -> !logInfo.isRejected())

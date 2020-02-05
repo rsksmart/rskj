@@ -245,7 +245,7 @@ public class TransactionPoolImpl implements TransactionPool {
         BigInteger txNonce = tx.getNonceAsInteger();
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
-
+            signatureCache.storeSender(tx);
             return TransactionPoolAddResult.ok();
         }
 
@@ -263,6 +263,7 @@ public class TransactionPoolImpl implements TransactionPool {
             });
         }
 
+        signatureCache.storeSender(tx);
         return TransactionPoolAddResult.ok();
     }
 
