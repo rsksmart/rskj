@@ -42,10 +42,33 @@ public class ReceivedTxSignatureCache implements ISignatureCache {
             return RemascTransaction.REMASC_ADDRESS;
         }
 
-        return addressesCache.computeIfAbsent(transaction, Transaction::getSender);
+        RskAddress address = addressesCache.get(transaction);
+
+        if (address == null) {
+            return transaction.getSender();
+        }
+
+        return address;
     }
 
+    @Override
     public boolean containsTx(Transaction transaction) {
         return addressesCache.containsKey(transaction);
+    }
+
+    @Override
+    public void storeSender(Transaction transaction) {
+
+        if (transaction instanceof RemascTransaction) {
+            return;
+        }
+
+        RskAddress sender = addressesCache.get(transaction);
+
+        if (sender != null) {
+            return;
+        }
+
+        addressesCache.put(transaction, transaction.getSender());
     }
 }
