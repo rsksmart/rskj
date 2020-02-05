@@ -4,7 +4,6 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -17,26 +16,26 @@ public class P2shP2wpkhBtcLockSender extends BtcLockSender {
     }
 
     @Override
-    protected void parse(BtcTransaction tx) throws BtcLockSenderParseException {
-        if (tx == null) {
+    protected void parse(BtcTransaction btcTx) throws BtcLockSenderParseException {
+        if (btcTx == null) {
             throw new BtcLockSenderParseException();
         }
-        if (!tx.hasWitness()) {
+        if (!btcTx.hasWitness()) {
             throw new BtcLockSenderParseException();
         }
-        if (tx.getInput(0).getScriptBytes() == null) {
+        if (btcTx.getInput(0).getScriptBytes() == null) {
             throw new BtcLockSenderParseException();
         }
-        if (tx.getInput(0).getScriptSig().getChunks().size() != 1) {
+        if (btcTx.getInput(0).getScriptSig().getChunks().size() != 1) {
             throw new BtcLockSenderParseException();
         }
-        if (tx.getWitness(0).getPushCount() != 2) {
+        if (btcTx.getWitness(0).getPushCount() != 2) {
             throw new BtcLockSenderParseException();
         }
 
-        byte[] pubKey = tx.getWitness(0).getPush(1);
+        byte[] pubKey = btcTx.getWitness(0).getPush(1);
         // get pubKey from witness
-        BtcECKey key = BtcECKey.fromPublicOnly(tx.getWitness(0).getPush(1));
+        BtcECKey key = BtcECKey.fromPublicOnly(btcTx.getWitness(0).getPush(1));
 
         if (!key.isCompressed()) {
             throw new BtcLockSenderParseException();
@@ -51,7 +50,7 @@ public class P2shP2wpkhBtcLockSender extends BtcLockSender {
         byte[] redeemScript = ByteUtil.merge(new byte[]{ 0x00, 0x14}, keyHash);
         byte[] scriptPubKey = HashUtil.ripemd160(Sha256Hash.hash(redeemScript));
 
-        this.btcAddress = new Address(tx.getParams(), tx.getParams().getP2SHHeader(), scriptPubKey);
+        this.btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
         this.rskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPublicOnly(pubKey).getAddress());
     }
 }

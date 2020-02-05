@@ -49,7 +49,6 @@ public class P2shP2wshBtcLockSender extends BtcLockSender {
         byte[] merged = ByteUtil.merge(new byte[]{0x00, 0x20}, redeemScriptHash);
         byte[] hashedAgain = Sha256Hash.hash(merged);
         byte[] scriptPubKey = HashUtil.ripemd160(hashedAgain);
-        //TODO: rename variables?
 
         this.btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
     }
