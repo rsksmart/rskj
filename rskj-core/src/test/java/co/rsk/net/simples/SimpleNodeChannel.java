@@ -21,6 +21,7 @@ package co.rsk.net.simples;
 import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
 
 import java.net.InetAddress;
 import java.util.Objects;
@@ -50,6 +51,15 @@ public class SimpleNodeChannel implements Peer {
 
     @Override
     public InetAddress getAddress() { return null; }
+
+    @Override
+    public double score(long currentTime, MessageType type) {
+        return 0;
+    }
+
+    @Override
+    public void imported(boolean best) {
+    }
 
     @Override
     public boolean equals(Object o) {

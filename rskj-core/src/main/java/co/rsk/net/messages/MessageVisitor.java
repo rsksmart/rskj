@@ -114,6 +114,12 @@ public class MessageVisitor {
 
         tryRelayBlock(block, result);
 
+        if (result.isBest()) {
+            sender.imported(true);
+        } else {
+            sender.imported(false);
+        }
+
         recordEvent(sender, EventType.VALID_BLOCK);
     }
 
