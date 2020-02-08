@@ -22,10 +22,8 @@ package org.ethereum.util;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.util.ByteBufferUtil;
 import co.rsk.util.RLPElementType;
 import co.rsk.util.RLPElementView;
-import co.rsk.util.RLPException;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -71,6 +69,9 @@ import static org.ethereum.util.ByteUtil.*;
  * @since 01.04.2014
  */
 public class RLP {
+    private static final int EMPTY_MARK = 128;
+    private static final int TINY_SIZE = 55;
+
     /**
      * Allow for content up to size of 2^64 bytes *
      */
@@ -383,10 +384,97 @@ public class RLP {
      */
     @Nonnull
     public static ArrayList<RLPElement> decode2(@CheckForNull byte[] msgData) {
+        ArrayList<RLPElement> elements = new ArrayList<>();
+
         if (msgData == null) {
-            return new ArrayList<>();
+            return elements;
         }
-        return decode(ByteBuffer.wrap(msgData));
+
+        int tlength = msgData.length;
+        int position = 0;
+
+        while (position < tlength) {
+            int b0 = msgData[position] & 0xff;
+
+            if (b0 >= 192) {
+                int length;
+                int offset;
+
+                if (b0 <= 192 + TINY_SIZE) {
+                    length = b0 - 192 + 1;
+                    offset = 1;
+                }
+                else {
+                    int nbytes = b0 - 247;
+                    length = 1 + nbytes + bytesToLength(msgData, position + 1, nbytes);
+                    offset = 1 + nbytes;
+                }
+
+                byte[] bytes = Arrays.copyOfRange(msgData, position + offset, position + length);
+                byte[] bytes2 = Arrays.copyOfRange(msgData, position, position + length);
+                ArrayList<RLPElement> listElements = RLP.decode2(bytes);
+                RLPList list = new RLPList();
+                list.setRLPData(bytes2);
+                list.addAll(listElements);
+
+                elements.add(list);
+
+                position += length;
+
+                continue;
+            }
+
+            if (b0 == EMPTY_MARK) {
+                elements.add(new RLPItem(ByteUtil.EMPTY_BYTE_ARRAY));
+
+                position++;
+
+                continue;
+            }
+
+            if (b0 < EMPTY_MARK) {
+                byte[] data = new byte[1];
+                data[0] = msgData[position];
+                elements.add(new RLPItem(data));
+
+                position++;
+
+                continue;
+            }
+
+            int length;
+            int offset;
+
+            if (b0 > (EMPTY_MARK + TINY_SIZE)) {
+                offset = b0 - (EMPTY_MARK + TINY_SIZE) + 1;
+                length = bytesToLength(msgData, position + 1, offset - 1);
+            }
+            else {
+                length = b0 & 0x7f;
+                offset = 1;
+            }
+
+            byte[] decoded = new byte[length];
+
+            System.arraycopy(msgData, position + offset, decoded, 0, length);
+
+            elements.add(new RLPItem(decoded));
+
+            position += offset + length;
+        }
+
+        return elements;
+    }
+
+    private static int bytesToLength(byte[] bytes, int position, int size) {
+        int length = 0;
+
+        for (int k = 0; k < size; k++) {
+            length <<= 8;
+            length += bytes[position + k] & 0xff;
+        }
+
+        return length;
     }
 
     /**
@@ -413,13 +501,6 @@ public class RLP {
         }
         return RLPElementView.calculateFirstElementInfo(ByteBuffer.wrap(msgData, startPos, msgData.length - startPos))
                 .getOrCreateElement();
-    }
-
-    @Nonnull
-    private static ArrayList<RLPElement> decode(@Nonnull ByteBuffer msgData) {
-        ArrayList<RLPElement> rlpList = new ArrayList<>();
-        fullTraverse(msgData, rlpList);
-        return rlpList;
     }
 
     @Nonnull
@@ -476,26 +557,6 @@ public class RLP {
         }
 
         return new BlockDifficulty(new BigInteger(bytes));
-    }
-
-    /**
-     * Get exactly one message payload
-     */
-    private static void fullTraverse(@Nonnull ByteBuffer msgData, @Nonnull ArrayList<RLPElement> rlpList) {
-
-        try {
-            RLPElementView.forEachRlp(msgData, view -> {
-                // getOrCreateElement will recursively populate lists and sublists
-                RLPElement element = view.getOrCreateElement();
-                rlpList.add(element);
-            });
-        } catch (RLPException ex) {
-            throw ex;
-        } catch (OutOfMemoryError e) {
-            throw new RuntimeException("Invalid RLP (excessive mem allocation while parsing) (" + ByteBufferUtil.toHexString(msgData) + ")", e);
-        } catch (Exception e) {
-            throw new RuntimeException("RLP wrong encoding (" + ByteBufferUtil.toHexString(msgData) + ")", e);
-        }
     }
 
     /* ******************************************************
