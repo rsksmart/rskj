@@ -94,7 +94,8 @@ dependencies {
     runtime "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
     runtime "ch.qos.logback:logback-classic:${logbackVersion}"
     runtime "ch.qos.logback:logback-core:${logbackVersion}"
-
+    runtime files('../profiler-plugin/libs/profiler-plugin-1.0-SNAPSHOT.jar')
+    
     testCompile "com.googlecode.json-simple:json-simple:1.1.1"
     testCompile "junit:junit:${junitVersion}"
     testCompile "org.mockito:mockito-core:${mockitoVersion}"

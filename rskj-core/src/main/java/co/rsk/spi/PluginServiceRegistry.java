@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,28 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package co.rsk.spi;
 
 /**
- * The entrypoint for the RSK full node
+ * Registers long running services and attaches them to the node lifecycle.
  */
-public class Start {
-    private static Logger logger = LoggerFactory.getLogger("start");
-
-    public static void main(String[] args) {
-
-        RskContext ctx = new RskContext(args);
-        NodeRunner runner = ctx.getNodeRunner();
-        try {
-            runner.run();
-            Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
-        } catch (Exception e) {
-            logger.error("The RSK node main thread failed, closing program", e);
-            runner.stop();
-            System.exit(1);
-        }
-    }
+public interface PluginServiceRegistry {
+    void register(PluginService service);
 }
