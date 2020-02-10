@@ -19,27 +19,30 @@
 
 package org.ethereum.util;
 
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Roman Mandeleil
  * @since 21.04.14
  */
-// TODO(mc) extending ArrayList without syncing the rlpData makes this hard to understand.
-// Also, saving both the elements and the raw RLP data is a waste of space
-public class RLPList extends ArrayList<RLPElement> implements RLPElement {
+public class RLPList extends RLPItem implements RLPElement {
+    private final List<RLPElement> elements;
 
-    byte[] rlpData;
-
-    public void setRLPData(byte[] rlpData) {
-        this.rlpData = rlpData;
+    public RLPList(byte[] rlpData, List<RLPElement> elements) {
+        super(rlpData);
+        this.elements = Collections.unmodifiableList(elements);
     }
 
-    public byte[] getRLPData() {
-        return rlpData;
+    public int size() {
+        return this.elements.size();
     }
 
-    public byte[] getRLPRawData() {
-        return this.rlpData;
+    public RLPElement get(int n) {
+        return this.elements.get(n);
+    }
+
+    public List<RLPElement> getElements() {
+        return this.elements;
     }
 }

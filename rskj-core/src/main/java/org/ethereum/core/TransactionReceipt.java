@@ -83,7 +83,7 @@ public class TransactionReceipt {
             this.status = transactionStatus;
         }
 
-        for (RLPElement log : logs) {
+        for (RLPElement log : logs.getElements()) {
             LogInfo logInfo = new LogInfo(log.getRLPData());
             logInfoList.add(logInfo);
         }

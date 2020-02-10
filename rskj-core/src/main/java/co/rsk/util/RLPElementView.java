@@ -1,9 +1,6 @@
 package co.rsk.util;
 
-import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
+import org.ethereum.util.*;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
@@ -191,11 +188,8 @@ public class RLPElementView {
             byte[] item = ByteBufferUtil.copyToArray(data);
             return new RLPItem(item);
         } else { // list
-            // TODO(mc) saving both the elements and the raw RLP data is a waste of space
             byte[] rlpData = ByteBufferUtil.copyToArray(dataWithPrefix);
-            RLPList newList = new RLPList();
-            newList.setRLPData(rlpData);
-            forEachRlp(data, view -> newList.add(view.getOrCreateElement()));
+            RLPList newList = RLP.decodeList(rlpData);
             return newList;
         }
     }

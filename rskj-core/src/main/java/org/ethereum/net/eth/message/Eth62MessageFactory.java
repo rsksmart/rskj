@@ -47,7 +47,7 @@ public class Eth62MessageFactory {
                 return new StatusMessage(encoded);
             case RSK_MESSAGE:
                 RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
-                return new RskMessage(co.rsk.net.messages.Message.create(blockFactory, (RLPList) paramsList.get(0)));
+                return new RskMessage(co.rsk.net.messages.Message.create(blockFactory, ((RLPList) paramsList.get(0)).getElements()));
             default:
                 throw new IllegalArgumentException("No such message");
         }

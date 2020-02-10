@@ -244,7 +244,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         if (signatureRlpElements.size() != 1) {
             return false;
         }
-        List<RLPElement> signatureRLP = (RLPList) signatureRlpElements.get(0);
+        List<RLPElement> signatureRLP = ((RLPList) signatureRlpElements.get(0)).getElements();
         if (signatureRLP.size() != 3) {
             return false;
         }

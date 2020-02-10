@@ -58,7 +58,7 @@ public class LogInfo {
         this.address = address.getRLPData() != null ? address.getRLPData() : new byte[]{};
         this.data = data.getRLPData() != null ? data.getRLPData() : new byte[]{};
 
-        for (RLPElement topic1 : topics) {
+        for (RLPElement topic1 : topics.getElements()) {
             byte[] topic = topic1.getRLPData();
             this.topics.add(DataWord.valueOf(topic));
         }

@@ -77,7 +77,7 @@ public enum MessageType {
     TRANSACTIONS(7) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            List<Transaction> txs = list.stream()
+            List<Transaction> txs = list.getElements().stream()
                     .map(RLPElement::getRLPData)
                     .filter(MessageType::validTransactionLength)
                     .map(ImmutableTransaction::new)
@@ -130,7 +130,7 @@ public enum MessageType {
             RLPList rlpHeaders = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
-            List<BlockHeader> headers = rlpHeaders.stream()
+            List<BlockHeader> headers = rlpHeaders.getElements().stream()
                     .map(el -> blockFactory.decodeHeader(el.getRLPData()))
                     .collect(Collectors.toList());
 
@@ -168,7 +168,7 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
             RLPList paramsList = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
-            List<BlockIdentifier> blockIdentifiers = paramsList.stream()
+            List<BlockIdentifier> blockIdentifiers = paramsList.getElements().stream()
                     .map(param -> new BlockIdentifier((RLPList)param))
                     .collect(Collectors.toList());
 
@@ -207,7 +207,7 @@ public enum MessageType {
                 transactions.add(tx);
             }
 
-            List<BlockHeader> uncles = rlpUncles.stream()
+            List<BlockHeader> uncles = rlpUncles.getElements().stream()
                     .map(el -> blockFactory.decodeHeader(el.getRLPData()))
                     .collect(Collectors.toList());
 

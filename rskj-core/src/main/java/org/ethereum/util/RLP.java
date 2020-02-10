@@ -413,9 +413,7 @@ public class RLP {
                 byte[] bytes = Arrays.copyOfRange(msgData, position + offset, position + length);
                 byte[] bytes2 = Arrays.copyOfRange(msgData, position, position + length);
                 ArrayList<RLPElement> listElements = RLP.decode2(bytes);
-                RLPList list = new RLPList();
-                list.setRLPData(bytes2);
-                list.addAll(listElements);
+                RLPList list = new RLPList(bytes2, listElements);
 
                 elements.add(list);
 

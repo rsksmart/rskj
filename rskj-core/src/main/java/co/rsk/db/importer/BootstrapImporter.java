@@ -73,13 +73,13 @@ public class BootstrapImporter {
         TrieStoreImpl fakeStore = new TrieStoreImpl(hashMapDB);
 
         List<Trie> nodes = new ArrayList<>();
-        nodesData.forEach(i -> {
+        nodesData.getElements().forEach(i -> {
             byte[] rlpData = i.getRLPData();
             Trie trie = Trie.fromMessage(rlpData, fakeStore);
             hashMapDB.put(trie.getHash().getBytes(), rlpData);
             nodes.add(trie);
         });
-        valuesData.forEach(i -> {
+        valuesData.getElements().forEach(i -> {
             byte[] rlpData = i.getRLPData();
             hashMapDB.put(Keccak256Helper.keccak256(rlpData), rlpData);
         });
@@ -91,7 +91,7 @@ public class BootstrapImporter {
                                      BlockFactory blockFactory,
                                      RLPElement encodedTuples) {
         RLPList blocksData = RLP.decodeList(encodedTuples.getRLPData());
-        blocksData.stream()
+        blocksData.getElements().stream()
                 .map(encodedData -> RLP.decodeList(encodedData.getRLPData()))
                 .forEach(blockData -> {
                     RLPList tuple = RLP.decodeList(blockData.getRLPData());

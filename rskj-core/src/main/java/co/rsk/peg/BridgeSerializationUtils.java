@@ -257,7 +257,7 @@ public class BridgeSerializationUtils {
         byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
         long creationBlockNumber = BigIntegers.fromUnsignedByteArray(creationBlockNumberBytes).longValue();
 
-        List<FederationMember> federationMembers = ((RLPList) rlpList.get(FEDERATION_MEMBERS_INDEX)).stream()
+        List<FederationMember> federationMembers = ((RLPList) rlpList.get(FEDERATION_MEMBERS_INDEX)).getElements().stream()
                 .map(memberBytes -> federationMemberDesserializer.deserialize(memberBytes.getRLPData()))
                 .collect(Collectors.toList());
 
@@ -366,7 +366,7 @@ public class BridgeSerializationUtils {
     public static PendingFederation deserializePendingFederation(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        List<FederationMember> members = rlpList.stream()
+        List<FederationMember> members = rlpList.getElements().stream()
                 .map(memberBytes -> deserializeFederationMember(memberBytes.getRLPData()))
                 .collect(Collectors.toList());
 
@@ -754,7 +754,7 @@ public class BridgeSerializationUtils {
         }
 
         String function = new String(rlpList.get(0).getRLPData(), StandardCharsets.UTF_8);
-        byte[][] arguments = ((RLPList)rlpList.get(1)).stream().map(rlpElement -> rlpElement.getRLPData()).toArray(byte[][]::new);
+        byte[][] arguments = ((RLPList)rlpList.get(1)).getElements().stream().map(rlpElement -> rlpElement.getRLPData()).toArray(byte[][]::new);
 
         return new ABICallSpec(function, arguments);
     }
@@ -775,7 +775,7 @@ public class BridgeSerializationUtils {
     private static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        return rlpList.stream()
+        return rlpList.getElements().stream()
                 .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
                 .collect(Collectors.toList());
     }
@@ -795,7 +795,7 @@ public class BridgeSerializationUtils {
     private static List<RskAddress> deserializeVoters(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        return rlpList.stream()
+        return rlpList.getElements().stream()
                 .map(pubKeyBytes -> new RskAddress(pubKeyBytes.getRLPData()))
                 .collect(Collectors.toList());
     }

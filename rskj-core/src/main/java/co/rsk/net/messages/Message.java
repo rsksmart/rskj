@@ -24,7 +24,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by ajlopez on 5/10/2016.
@@ -45,10 +45,10 @@ public abstract class Message {
 
     @VisibleForTesting
     static Message create(BlockFactory blockFactory, byte[] encoded) {
-        return create(blockFactory, (RLPList) RLP.decode2(encoded).get(0));
+        return create(blockFactory, ((RLPList) RLP.decode2(encoded).get(0)).getElements());
     }
 
-    public static Message create(BlockFactory blockFactory, ArrayList<RLPElement> paramsList) {
+    public static Message create(BlockFactory blockFactory, List<RLPElement> paramsList) {
         byte[] body = paramsList.get(1).getRLPData();
 
         if (body != null) {
