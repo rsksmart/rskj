@@ -20,11 +20,27 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import co.rsk.remasc.RemascTransaction;
 
-public interface ISignatureCache {
-    RskAddress getSender(Transaction transaction);
+import java.util.Map;
 
-    boolean containsTx(Transaction transaction);
+public abstract class SignatureCache {
+    protected Map<Transaction, RskAddress> addressesCache;
 
-    void storeSender(Transaction tx);
+    public abstract RskAddress getSender(Transaction transaction);
+
+    public boolean containsTx(Transaction transaction) {
+        return addressesCache.containsKey(transaction);
+    }
+
+    public abstract void storeSender(Transaction tx);
+
+    protected boolean hasToComputeSender(Transaction transaction) {
+        if (transaction instanceof RemascTransaction) {
+            return false;
+        }
+
+        RskAddress sender = addressesCache.get(transaction);
+        return sender == null;
+    }
 }

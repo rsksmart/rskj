@@ -398,7 +398,7 @@ public class Transaction {
         return sender;
     }
 
-    public synchronized RskAddress getSender(ISignatureCache signatureCache) {
+    public synchronized RskAddress getSender(SignatureCache signatureCache) {
         if (sender != null) {
             return sender;
         }

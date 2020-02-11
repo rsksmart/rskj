@@ -23,20 +23,19 @@ import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.MaxSizeHashMap;
 
-import java.util.Map;
 
-public class BlockTxSignatureCache implements ISignatureCache {
+public class BlockTxSignatureCache extends SignatureCache {
 
     private static final int MAX_CACHE_SIZE = 900;
 
-    private final Map<Transaction, RskAddress> addressesCache;
-    private ISignatureCache internalCache;
+    private SignatureCache internalCache;
 
-    public BlockTxSignatureCache(ISignatureCache internalCache) {
+    public BlockTxSignatureCache(SignatureCache internalCache) {
         this.internalCache = internalCache;
         addressesCache = new MaxSizeHashMap<>(MAX_CACHE_SIZE,false);
     }
 
+    @Override
     public RskAddress getSender(Transaction transaction) {
 
         if (transaction instanceof RemascTransaction) {
@@ -58,25 +57,14 @@ public class BlockTxSignatureCache implements ISignatureCache {
     }
 
     @Override
-    public boolean containsTx(Transaction transaction) {
-        return addressesCache.containsKey(transaction);
-    }
-
-    @Override
     public void storeSender(Transaction transaction) {
 
-        if (transaction instanceof RemascTransaction) {
-            return;
-        }
-
-        RskAddress sender = addressesCache.get(transaction);
-
-        if (sender != null) {
+        if (!hasToComputeSender(transaction)) {
             return;
         }
 
         if (internalCache.containsTx(transaction)) {
-            sender = internalCache.getSender(transaction);
+            RskAddress sender = internalCache.getSender(transaction);
             addressesCache.put(transaction, sender);
         }
 

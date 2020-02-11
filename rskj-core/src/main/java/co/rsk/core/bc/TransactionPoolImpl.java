@@ -66,7 +66,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private final BlockFactory blockFactory;
     private final EthereumListener listener;
     private final TransactionExecutorFactory transactionExecutorFactory;
-    private final ISignatureCache signatureCache;
+    private final SignatureCache signatureCache;
     private final int outdatedThreshold;
     private final int outdatedTimeout;
 
@@ -84,7 +84,7 @@ public class TransactionPoolImpl implements TransactionPool {
             BlockFactory blockFactory,
             EthereumListener listener,
             TransactionExecutorFactory transactionExecutorFactory,
-            ISignatureCache signatureCache,
+            SignatureCache signatureCache,
             int outdatedThreshold,
             int outdatedTimeout) {
         this.config = config;

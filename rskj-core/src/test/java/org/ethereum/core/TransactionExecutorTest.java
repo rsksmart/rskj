@@ -184,7 +184,7 @@ public class TransactionExecutorTest {
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
                 true, true, precompiledContracts, deletedAccounts,
-                vmExecution, blockTxSignatureCache
+                blockTxSignatureCache
         );
 
         assertEquals(0, transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())));
@@ -217,7 +217,7 @@ public class TransactionExecutorTest {
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
                 true, true, precompiledContracts, deletedAccounts,
-                vmExecution, blockTxSignatureCache
+                blockTxSignatureCache
         );
 
         assertEquals(0, transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())));
@@ -294,7 +294,7 @@ public class TransactionExecutorTest {
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
                 true, true, precompiledContracts, deletedAccounts,
-                vmExecution, blockTxSignatureCache
+                blockTxSignatureCache
         );
 
         return txExecutor.executeTransaction();
