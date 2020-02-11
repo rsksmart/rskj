@@ -23,13 +23,10 @@ import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.MaxSizeHashMap;
 
-import java.util.Map;
 
-public class ReceivedTxSignatureCache implements ISignatureCache {
+public class ReceivedTxSignatureCache extends SignatureCache {
 
     private static final int MAX_CACHE_SIZE = 6000; //Txs in three blocks
-
-    private final Map<Transaction, RskAddress> addressesCache;
 
     public ReceivedTxSignatureCache() {
         addressesCache = new MaxSizeHashMap<>(MAX_CACHE_SIZE,true);
@@ -52,20 +49,9 @@ public class ReceivedTxSignatureCache implements ISignatureCache {
     }
 
     @Override
-    public boolean containsTx(Transaction transaction) {
-        return addressesCache.containsKey(transaction);
-    }
-
-    @Override
     public void storeSender(Transaction transaction) {
 
-        if (transaction instanceof RemascTransaction) {
-            return;
-        }
-
-        RskAddress sender = addressesCache.get(transaction);
-
-        if (sender != null) {
+        if (!hasToComputeSender(transaction)) {
             return;
         }
 
