@@ -291,10 +291,6 @@ public class BlockExecutor {
                     vmTraceOptions,
                     deletedAccounts);
 
-            if (vmTrace) {
-                txExecutor.setLocalCall(true);
-            }
-
             boolean readyToExecute = txExecutor.init();
 
 
