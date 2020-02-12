@@ -110,7 +110,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
             // Generate some release requests to process
             for (int i = 0; i < Helper.randomInRange(minReleaseRequests, maxReleaseRequests); i++) {
                 Coin value = Coin.MILLICOIN.multiply(Helper.randomInRange(minMilliReleaseBtc, maxMilliReleaseBtc));
-                queue.add(new BtcECKey().toAddress(parameters), value);
+                queue.add(new BtcECKey().toAddress(parameters), value, null);
             }
         };
 

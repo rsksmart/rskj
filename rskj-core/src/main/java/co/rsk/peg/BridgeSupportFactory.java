@@ -67,7 +67,7 @@ public class BridgeSupportFactory {
         if (logs == null) {
             eventLogger = null;
         } else {
-            eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
+            eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
         }
 
         return new BridgeSupport(bridgeConstants, provider, eventLogger, repository, executionBlock, btcContext,

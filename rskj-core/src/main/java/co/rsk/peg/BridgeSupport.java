@@ -252,6 +252,7 @@ public class BridgeSupport {
      * @throws BlockStoreException
      * @throws IOException
      */
+
     public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized) throws IOException, BlockStoreException {
         Context.propagate(btcContext);
 
@@ -368,6 +369,10 @@ public class BridgeSupport {
                 this.transferTo(sender, amount);
 
                 logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, sender);
+
+                if (activations.isActive(ConsensusRule.RSKIP146)) {
+                    eventLogger.logLockBtc(sender, btcTx, senderBtcAddress, totalAmount);
+                }
             } else {
                 locked = false;
             }
@@ -378,7 +383,7 @@ public class BridgeSupport {
             // We could call removeUsedUTXOs(btcTx) here, but we decided to not do that.
             // Used utxos should had been removed when we created the release tx.
             // Invoking removeUsedUTXOs() here would make "some" sense in theses scenarios:
-            // a) In testnet, devnet or local: we restart the RSK blockchain whithout changing the federation address. We don't want to have utxos that were already spent.
+            // a) In testnet, devnet or local: we restart the RSK blockchain without changing the federation address. We don't want to have utxos that were already spent.
             // Open problem: TxA spends TxB. registerBtcTransaction() for TxB is called, it spends a utxo the bridge is not yet aware of,
             // so nothing is removed. Then registerBtcTransaction() for TxA and the "already spent" utxo is added as it was not spent.
             // When is not guaranteed to be called in the chronological order, so a Federator can inform
@@ -471,7 +476,7 @@ public class BridgeSupport {
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
         Coin value = rskTx.getValue().toBitcoin();
-        boolean addResult = requestRelease(btcDestinationAddress, value);
+        boolean addResult = requestRelease(btcDestinationAddress, value, rskTx);
 
         if (addResult) {
             logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
@@ -491,12 +496,16 @@ public class BridgeSupport {
      * considered dust and therefore ignored.
      * @throws IOException
      */
-    private boolean requestRelease(Address destinationAddress, Coin value) throws IOException {
+    private boolean requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
         if (!value.isGreaterThan(bridgeConstants.getMinimumReleaseTxValue())) {
             return false;
         }
 
-        provider.getReleaseRequestQueue().add(destinationAddress, value);
+        if (activations.isActive(ConsensusRule.RSKIP146)) {
+            provider.getReleaseRequestQueue().add(destinationAddress, value, rskTx.getHash());
+        } else {
+            provider.getReleaseRequestQueue().add(destinationAddress, value);
+        }
 
         return true;
     }
@@ -528,7 +537,7 @@ public class BridgeSupport {
 
         eventLogger.logUpdateCollections(rskTx);
 
-        processFundsMigration();
+        processFundsMigration(rskTx);
 
         processReleaseRequests();
 
@@ -557,7 +566,7 @@ public class BridgeSupport {
                 && retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
     }
 
-    private void processFundsMigration() throws IOException {
+    private void processFundsMigration(Transaction rskTx) throws IOException {
         Wallet retiringFederationWallet = getRetiringFederationWallet();
         List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
         ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
@@ -574,7 +583,15 @@ public class BridgeSupport {
             List<UTXO> selectedUTXOs = createResult.getRight();
 
             // Add the TX to the release set
-            releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                Coin amountMigrated = selectedUTXOs.stream().map(utxo -> utxo.getValue())
+                        .reduce(Coin.ZERO, (total, elem) -> total.add(elem));
+                releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTx.getHash());
+                // Log the Release request
+                eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), btcTx, amountMigrated);
+            } else {
+                releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+            }
 
             // Mark UTXOs as spent
             availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
@@ -594,7 +611,15 @@ public class BridgeSupport {
                     List<UTXO> selectedUTXOs = createResult.getRight();
 
                     // Add the TX to the release set
-                    releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+                    if (activations.isActive(ConsensusRule.RSKIP146)) {
+                        Coin amountMigrated = selectedUTXOs.stream().map(utxo -> utxo.getValue())
+                                .reduce(Coin.ZERO, (total, elem) -> total.add(elem));
+                        releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTx.getHash());
+                        // Log the Release request
+                        eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), btcTx, amountMigrated);
+                    } else {
+                        releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+                    }
 
                     // Mark UTXOs as spent
                     availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
@@ -689,8 +714,20 @@ public class BridgeSupport {
                 return false;
             }
 
-            // Add the TX
-            releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                Keccak256 rskTxHash = releaseRequest.getRskTxHash();
+                // Add the TX
+                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), rskTxHash);
+                // For a short time period, there could be items in the release request queue that don't have the rskTxHash
+                // (these are releases created right before the consensus rule activation, that weren't processed before its activation)
+                // We shouldn't generate the event for those releases
+                if (rskTxHash != null) {
+                    // Log the Release request
+                    eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, releaseRequest.getAmount());
+                }
+            } else {
+                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+            }
 
             // Mark UTXOs as spent
             availableUTXOs.removeAll(selectedUTXOs);
@@ -734,13 +771,21 @@ public class BridgeSupport {
         // TODO: (at least at this stage).
 
         // IMPORTANT: sliceWithEnoughConfirmations also modifies the transaction set in place
-        Set<BtcTransaction> txsWithEnoughConfirmations = releaseTransactionSet.sliceWithConfirmations(
+        Set<ReleaseTransactionSet.Entry> txsWithEnoughConfirmations = releaseTransactionSet.sliceWithConfirmations(
                 rskExecutionBlock.getNumber(),
                 bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
                 Optional.of(1)
         );
         if (txsWithEnoughConfirmations.size() > 0) {
-            txsWaitingForSignatures.put(rskTx.getHash(), txsWithEnoughConfirmations.iterator().next());
+            ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                // The release transaction may have been created prior to the Consensus Rule activation
+                // therefore it won't have a rskTxHash value, fallback to this transaction's hash
+                txsWaitingForSignatures.put(entry.getRskTxHash() == null ? rskTx.getHash() : entry.getRskTxHash(), entry.getTransaction());
+            }
+            else {
+                txsWaitingForSignatures.put(rskTx.getHash(), entry.getTransaction());
+            }
         }
     }
 
@@ -877,7 +922,7 @@ public class BridgeSupport {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
             provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
 
-            eventLogger.logReleaseBtc(btcTx);
+            eventLogger.logReleaseBtc(btcTx, rskTxHash);
         } else {
             logger.debug("Tx not yet fully signed {}.", new Keccak256(rskTxHash));
         }
@@ -2039,7 +2084,12 @@ public class BridgeSupport {
     private void generateRejectionRelease(BtcTransaction btcTx, Address senderBtcAddress, Transaction rskTx, Coin totalAmount) throws IOException {
         Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress);
         if (buildReturnResult.isPresent()) {
-            provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber(), rskTx.getHash());
+                eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), buildReturnResult.get().getBtcTx(), totalAmount);
+            } else {
+                provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
+            }
             logger.info("Rejecting lock: return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
         } else {
             logger.warn("Rejecting lock: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
