@@ -22,8 +22,7 @@ package org.ethereum.util;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.util.RLPElementType;
-import co.rsk.util.RLPElementView;
+import co.rsk.util.RLPException;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -31,7 +30,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -177,12 +175,14 @@ public class RLP {
     }
 
     public static BigInteger decodeBigInteger(byte[] data, int index) {
-        RLPElementView info = RLPElementView.calculateFirstElementInfo(ByteBuffer.wrap(data, index, data.length - index));
-        if (info.getType() == RLPElementType.NULL_ITEM) {
+        RLPElement element = RLP.decodeFirstElement(data, index);
+        byte[] bytes = element.getRLPData();
+
+        if (bytes == null || bytes.length == 0) {
             return BigInteger.ZERO;
         }
 
-        return BigIntegers.fromUnsignedByteArray(info.getOrCreateElement().getRLPData());
+        return BigIntegers.fromUnsignedByteArray(bytes);
     }
 
     public static byte[] decodeIP4Bytes(byte[] data, int index) {
@@ -462,7 +462,79 @@ public class RLP {
         return elements;
     }
 
+    public static RLPElement decodeFirstElement(@CheckForNull byte[] msgData, int position) {
+        int b0 = msgData[position] & 0xff;
+
+        if (b0 >= 192) {
+            int length;
+            int offset;
+
+            if (b0 <= 192 + TINY_SIZE) {
+                length = b0 - 192 + 1;
+                offset = 1;
+            }
+            else {
+                int nbytes = b0 - 247;
+                length = 1 + nbytes + bytesToLength(msgData, position + 1, nbytes);
+                offset = 1 + nbytes;
+            }
+
+            if (position + length > msgData.length) {
+                throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
+            }
+
+            byte[] bytes = Arrays.copyOfRange(msgData, position, position + length);
+            RLPList list = new RLPList(bytes, offset);
+
+            return list;
+        }
+
+        if (b0 == EMPTY_MARK) {
+            return new RLPItem(ByteUtil.EMPTY_BYTE_ARRAY);
+        }
+
+        if (b0 < EMPTY_MARK) {
+            if (position + 1 > msgData.length) {
+                throw new RLPException("The length of the RLP item length can't possibly fit the data byte array");
+            }
+
+            byte[] data = new byte[1];
+            data[0] = msgData[position];
+            return new RLPItem(data);
+        }
+
+        int length;
+        int offset;
+
+        if (b0 > (EMPTY_MARK + TINY_SIZE)) {
+            offset = b0 - (EMPTY_MARK + TINY_SIZE) + 1;
+            length = bytesToLength(msgData, position + 1, offset - 1);
+        }
+        else {
+            length = b0 & 0x7f;
+            offset = 1;
+        }
+
+        if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
+            throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
+        }
+
+        if (position + offset + length < 0 || position + offset + length > msgData.length) {
+            throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
+        }
+
+        byte[] decoded = new byte[length];
+
+        System.arraycopy(msgData, position + offset, decoded, 0, length);
+
+        return new RLPItem(decoded);
+    }
+
     private static int bytesToLength(byte[] bytes, int position, int size) {
+        if (position + size > bytes.length) {
+            throw new RLPException("The length of the RLP item length can't possibly fit the data byte array");
+        }
+
         int length = 0;
 
         for (int k = 0; k < size; k++) {
@@ -495,8 +567,8 @@ public class RLP {
         if (msgData == null) {
             return null;
         }
-        return RLPElementView.calculateFirstElementInfo(ByteBuffer.wrap(msgData, startPos, msgData.length - startPos))
-                .getOrCreateElement();
+
+        return RLP.decodeFirstElement(msgData, startPos);
     }
 
     @Nonnull
