@@ -335,10 +335,13 @@ public class BridgeSupport {
         if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
             Optional<BtcLockSender> btcLockSenderOptional = btcLockSenderProvider.tryGetBtcLockSender(btcTx);
-            if(!btcLockSenderOptional.isPresent()) {
+            if(!btcLockSenderOptional.isPresent() ||
+                    !BridgeUtils.txIsProcessable(btcLockSenderOptional.get().getType(), activations)) {
                 logger.warn("[btcTx:{}] Could not get BtcLockSender from Btc tx", btcTx.getHash());
                 return;
             }
+            BtcLockSender btcLockSender = btcLockSenderOptional.get();
+            Address senderBtcAddress = btcLockSender.getBTCAddress();
 
             // Compute the total amount sent. Value could have been sent both to the
             // currently active federation as well as to the currently retiring federation.
@@ -351,30 +354,29 @@ public class BridgeSupport {
             }
             Coin totalAmount = amountToActive.add(amountToRetiring);
 
-            BtcLockSender btcLockSender = btcLockSenderOptional.get();
-            Address senderBtcAddress = btcLockSender.getBTCAddress();
-            if(!txIsProcessable(btcLockSender.getType())) {
-                logger.warn("[btcTx:{}] Btc tx type not supported: {}", btcTx.getHash(), btcLockSender.getType());
-                return;
-            }
-
             // Confirm we should process this lock
-            if (verifyLockSenderIsWhitelisted(rskTx, btcTx, senderBtcAddress, totalAmount, height) &&
-                verifyLockDoesNotSurpassLockingCap(rskTx, btcTx, senderBtcAddress, totalAmount)) {
+            if(txIsLockable(btcLockSender.getType())) {
+                if (verifyLockSenderIsWhitelisted(rskTx, btcTx, senderBtcAddress, totalAmount, height) &&
+                        verifyLockDoesNotSurpassLockingCap(rskTx, btcTx, senderBtcAddress, totalAmount)) {
 
-                co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(totalAmount);
+                    co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(totalAmount);
 
-                this.transferTo(btcLockSender.getRskAddress(), amount);
+                    this.transferTo(btcLockSender.getRskAddress(), amount);
 
-                logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, btcLockSender.getRskAddress());
+                    logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, btcLockSender.getRskAddress());
 
-                if (activations.isActive(ConsensusRule.RSKIP146)) {
-                    eventLogger.logLockBtc(btcLockSender.getRskAddress(), btcTx, senderBtcAddress, totalAmount);
+                    if (activations.isActive(ConsensusRule.RSKIP146)) {
+                        eventLogger.logLockBtc(btcLockSender.getRskAddress(), btcTx, senderBtcAddress, totalAmount);
+                    }
+                } else {
+                    locked = false;
                 }
             } else {
+                logger.warn("[btcTx:{}] Btc tx type not supported: {}, returning funds to sender: {}",
+                        btcTx.getHash(), btcLockSender.getType(), senderBtcAddress);
+                generateRejectionRelease(btcTx, senderBtcAddress, rskTx, totalAmount);
                 locked = false;
             }
-
         } else if (BridgeUtils.isReleaseTx(btcTx, getLiveFederations())) {
             logger.debug("This is a release tx {}", btcTx);
             // do-nothing
@@ -404,6 +406,11 @@ public class BridgeSupport {
             saveNewUTXOs(btcTx);
         }
         logger.info("BTC Tx {} processed in RSK", btcTxHash);
+    }
+
+    private boolean txIsLockable(BtcLockSender.TxType txType) {
+        return txType.equals(BtcLockSender.TxType.P2PKH) ||
+                (txType.equals(BtcLockSender.TxType.P2SHP2WPKH) && activations.isActive(ConsensusRule.RSKIP143));
     }
 
     /**

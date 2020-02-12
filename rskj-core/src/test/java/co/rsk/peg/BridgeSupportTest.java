@@ -1902,14 +1902,14 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void when_registerBtcTransaction_usesMultisigType_afterFork_no_lock_and_no_refund() throws Exception {
+    public void when_registerBtcTransaction_usesMultisigType_afterFork_no_lock_and_refund() throws Exception {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
-        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
+        List<BtcECKey> federation1Keys = Arrays.asList(
                 BtcECKey.fromPrivate(Hex.decode("fa01")),
-                BtcECKey.fromPrivate(Hex.decode("fa02")),
-        });
+                BtcECKey.fromPrivate(Hex.decode("fa02"))
+        );
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
         Federation federation1 = new Federation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
@@ -1926,14 +1926,13 @@ public class BridgeSupportTest {
 
         Repository track = repository.startTracking();
 
+        BtcECKey srcKey1 = new BtcECKey();
+        Address btcAddress = srcKey1.toAddress(btcParams);
+        Coin amountToLock = Coin.COIN.multiply(5);
+
         // First transaction goes only to the first federation
         BtcTransaction tx1 = new BtcTransaction(btcParams);
-        BtcECKey srcKey1 = new BtcECKey();
-        ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
-        Address btcAddress = srcKey1.toAddress(btcParams);
-        RskAddress rskAddress = new RskAddress(key.getAddress());
-
-        tx1.addOutput(Coin.COIN.multiply(5), federation1.getAddress());
+        tx1.addOutput(amountToLock, federation1.getAddress());
         tx1.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey1));
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -1941,18 +1940,16 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, bridgeConstants, activations);
         provider.setNewFederation(federation1);
 
-        // Whitelist the addresses
-        LockWhitelist whitelist = provider.getLockWhitelist();
-        whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(5)));
-
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(track)).thenReturn(btcBlockStore);
+
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2SHMULTISIG, btcAddress, null);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
                 provider,
                 track,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHMULTISIG, btcAddress, rskAddress),
+                btcLockSenderProvider,
                 executionBlock,
                 mockFactory,
                 activations
@@ -1974,7 +1971,7 @@ public class BridgeSupportTest {
                 1,
                 1,
                 1,
-                new ArrayList<BtcTransaction>()
+                new ArrayList<>()
         );
 
         int height = 30;
@@ -1983,19 +1980,26 @@ public class BridgeSupportTest {
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
         track.commit();
 
-        Assert.assertThat(whitelist.isWhitelisted(btcAddress), is(true));
-
-        co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.ZERO;
-
-        Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
-        Assert.assertEquals(LIMIT_MONETARY_BASE.subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
-
+        Assert.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
-
         Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+
+        List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+                .stream()
+                .map(e -> e.getTransaction())
+                .collect(Collectors.toList());
+
+        // First release tx should correspond to the 5 BTC lock tx
+        BtcTransaction releaseTx = releaseTxs.get(0);
+        Assert.assertEquals(1, releaseTx.getOutputs().size());
+        Assert.assertThat(amountToLock.subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assert.assertEquals(btcAddress, releaseTx.getOutput(0).getScriptPubKey().getToAddress(btcParams));
+        Assert.assertEquals(1, releaseTx.getInputs().size());
+        Assert.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
+        Assert.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
         Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertFalse(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
+        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
     private void assertLockingCap(boolean shouldLock, boolean isLockingCapEnabled, Coin lockingCap, Coin amountSentToNewFed, Coin amountSentToOldFed,

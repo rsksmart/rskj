@@ -239,19 +239,20 @@ public class BridgeUtilsTest {
 
     @Test
     public void testTxIsProcessable() throws Exception {
-
         // Before Hardfork
         ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
         when(actForBlock.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
         assertTrue(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2PKH, actForBlock));
         assertFalse(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHP2WPKH, actForBlock));
         assertFalse(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHMULTISIG, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHP2WSH, actForBlock));
 
         // After Hardfork
         when(actForBlock.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
         assertTrue(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2PKH, actForBlock));
         assertTrue(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHP2WPKH, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHMULTISIG, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHMULTISIG, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessable(BtcLockSender.TxType.P2SHP2WSH, actForBlock));
     }
 
     @Test

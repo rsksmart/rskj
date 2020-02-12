@@ -21,6 +21,16 @@ public class BtcLockSenderProvider {
         } catch(BtcLockSenderParseException e) {
             // Nothing to do...
         }
+        try {
+            return Optional.of(new P2shMultisigBtcLockSender(tx));
+        } catch(BtcLockSenderParseException e) {
+            // Nothing to do...
+        }
+        try {
+            return Optional.of(new P2shP2wshBtcLockSender(tx));
+        } catch(BtcLockSenderParseException e) {
+            // Nothing to do...
+        }
 
         return Optional.empty();
     }

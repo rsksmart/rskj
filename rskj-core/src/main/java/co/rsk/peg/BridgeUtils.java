@@ -141,14 +141,14 @@ public class BridgeUtils {
     }
 
     /**
-     * It checks if the tx can be processed if it is P2PKH or it is P2SHP2WPKH after the activation of the harfork.
+     * It checks if the tx can be processed, if it is sent from a P2PKH address or RSKIP 143 is active
      * @param txType type of the transaction
-     * @param activations to can identify if some hardfork is active or not.
+     * @param activations to identify if certain hardfork is active or not.
      * @return true if this tx can be locked
      */
     public static boolean txIsProcessable(BtcLockSender.TxType txType, ActivationConfig.ForBlock activations) {
-        return txType.equals(BtcLockSender.TxType.P2PKH) ||
-                (txType.equals(BtcLockSender.TxType.P2SHP2WPKH) && activations.isActive(ConsensusRule.RSKIP143));
+        //After RSKIP 143 activation, if a BtcLockSender object could be parsed then it's processable
+        return txType.equals(BtcLockSender.TxType.P2PKH) || activations.isActive(ConsensusRule.RSKIP143);
     }
 
     private static boolean isReleaseTx(BtcTransaction tx, Federation federation) {
