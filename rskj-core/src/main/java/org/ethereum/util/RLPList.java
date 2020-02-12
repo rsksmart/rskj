@@ -19,6 +19,7 @@
 
 package org.ethereum.util;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,22 +28,32 @@ import java.util.List;
  * @since 21.04.14
  */
 public class RLPList extends RLPItem implements RLPElement {
-    private final List<RLPElement> elements;
+    private List<RLPElement> elements;
+    private final int offset;
 
-    public RLPList(byte[] rlpData, List<RLPElement> elements) {
+    public RLPList(byte[] rlpData, int offset) {
         super(rlpData);
-        this.elements = Collections.unmodifiableList(elements);
+        this.offset = offset;
     }
 
     public int size() {
-        return this.elements.size();
+        return this.getElements().size();
     }
 
     public RLPElement get(int n) {
-        return this.elements.get(n);
+        return this.getElements().get(n);
     }
 
     public List<RLPElement> getElements() {
+        if (this.elements != null) {
+            return this.elements;
+        }
+
+        byte[] bytes = this.getRLPData();
+        byte[] content = Arrays.copyOfRange(bytes, offset, bytes.length);
+
+        this.elements = RLP.decode2(content);
+
         return this.elements;
     }
 }
