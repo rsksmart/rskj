@@ -54,13 +54,13 @@ public class LockWhitelist {
     }
 
     public boolean isWhitelisted(Address address) {
-        return whitelistedAddresses.containsKey(address);
+        return isWhitelisted(address.toBase58());
     }
 
-    public boolean isWhitelisted(byte[] address) {
+    public boolean isWhitelisted(String base58Address) {
         return whitelistedAddresses.keySet().stream()
-                .map(Address::getHash160)
-                .anyMatch(hash -> Arrays.equals(hash, address));
+                .map(Address::toBase58)
+                .anyMatch(base58 -> base58.equals(base58Address));
     }
 
     public boolean isWhitelistedFor(Address address, Coin amount, int height) {
