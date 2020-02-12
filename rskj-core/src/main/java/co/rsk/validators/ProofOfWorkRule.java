@@ -240,11 +240,14 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         }
 
         ECKey fallbackMiningPubKey = ECKey.fromPublicOnly(fallbackMiningPubKeyBytes);
+
         List<RLPElement> signatureRlpElements = RLP.decode2(signatureBytesRLP);
         if (signatureRlpElements.size() != 1) {
             return false;
         }
-        List<RLPElement> signatureRLP = ((RLPList) signatureRlpElements.get(0)).getElements();
+
+        RLPList signatureRLP = (RLPList) signatureRlpElements.get(0);
+
         if (signatureRLP.size() != 3) {
             return false;
         }

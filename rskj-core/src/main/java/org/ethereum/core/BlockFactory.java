@@ -72,9 +72,15 @@ public class BlockFactory {
         List<Transaction> transactionList = parseTxs((RLPList) block.get(1));
 
         RLPList uncleHeadersRlp = (RLPList) block.get(2);
-        List<BlockHeader> uncleList = uncleHeadersRlp.getElements().stream()
-                .map(uncleHeader -> decodeHeader((RLPList) uncleHeader, sealed))
-                .collect(Collectors.toList());
+
+        List<BlockHeader> uncleList = new ArrayList<>();
+
+        for (int k = 0; k < uncleHeadersRlp.size(); k++) {
+            RLPElement element = uncleHeadersRlp.get(k);
+            BlockHeader uncleHeader = decodeHeader((RLPList)element, sealed);
+            uncleList.add(uncleHeader);
+        }
+
         return newBlock(header, transactionList, uncleList, sealed);
     }
 

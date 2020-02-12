@@ -45,10 +45,10 @@ public abstract class Message {
 
     @VisibleForTesting
     static Message create(BlockFactory blockFactory, byte[] encoded) {
-        return create(blockFactory, ((RLPList) RLP.decode2(encoded).get(0)).getElements());
+        return create(blockFactory, (RLPList) RLP.decode2(encoded).get(0));
     }
 
-    public static Message create(BlockFactory blockFactory, List<RLPElement> paramsList) {
+    public static Message create(BlockFactory blockFactory, RLPList paramsList) {
         byte[] body = paramsList.get(1).getRLPData();
 
         if (body != null) {
@@ -56,8 +56,8 @@ public abstract class Message {
             MessageType messageType = MessageType.valueOfType(type);
             RLPList list = (RLPList) RLP.decode2(body).get(0);
             return messageType.createMessage(blockFactory, list);
-
         }
+
         return null;
     }
 

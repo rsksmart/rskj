@@ -38,7 +38,7 @@ import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.util.List;
 import java.util.Objects;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -102,7 +101,7 @@ public class Transaction {
     private Keccak256 rawHash;
 
     protected Transaction(byte[] rawData) {
-        List<RLPElement> transaction = RLP.decodeList(rawData).getElements();
+        RLPList transaction = RLP.decodeList(rawData);
 
         if (transaction.size() != 9) {
             throw new IllegalArgumentException("A transaction must have exactly 9 elements");

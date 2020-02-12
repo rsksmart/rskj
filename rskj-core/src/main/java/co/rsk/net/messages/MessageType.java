@@ -77,11 +77,21 @@ public enum MessageType {
     TRANSACTIONS(7) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            List<Transaction> txs = list.getElements().stream()
-                    .map(RLPElement::getRLPData)
-                    .filter(MessageType::validTransactionLength)
-                    .map(ImmutableTransaction::new)
-                    .collect(Collectors.toList());
+            List<Transaction> txs = new ArrayList<>();
+
+            for (int k = 0; k < list.size(); k++) {
+                RLPElement element = list.get(k);
+                byte[] data = element.getRLPData();
+
+                if (!MessageType.validTransactionLength(data)) {
+                    continue;
+                }
+
+                ImmutableTransaction tx = new ImmutableTransaction(data);
+
+                txs.add(tx);
+            }
+
             return new TransactionsMessage(txs);
         }
     },
@@ -130,9 +140,13 @@ public enum MessageType {
             RLPList rlpHeaders = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
-            List<BlockHeader> headers = rlpHeaders.getElements().stream()
-                    .map(el -> blockFactory.decodeHeader(el.getRLPData()))
-                    .collect(Collectors.toList());
+            List<BlockHeader> headers = new ArrayList<>();
+
+            for (int k = 0; k < rlpHeaders.size(); k++) {
+                RLPElement element = rlpHeaders.get(k);
+                BlockHeader header = blockFactory.decodeHeader(element.getRLPData());
+                headers.add(header);
+            }
 
             return new BlockHeadersResponseMessage(id, headers);
         }
@@ -168,9 +182,14 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
             RLPList paramsList = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
-            List<BlockIdentifier> blockIdentifiers = paramsList.getElements().stream()
-                    .map(param -> new BlockIdentifier((RLPList)param))
-                    .collect(Collectors.toList());
+
+            List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
+
+            for (int k = 0; k < paramsList.size(); k++) {
+                RLPElement param = paramsList.get(k);
+                BlockIdentifier blockIdentifier = new BlockIdentifier((RLPList)param);
+                blockIdentifiers.add(blockIdentifier);
+            }
 
             return new SkeletonResponseMessage(id, blockIdentifiers);
         }

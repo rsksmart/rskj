@@ -63,7 +63,7 @@ public class BootstrapImporter {
         RLPList rlpElements = RLP.decodeList(encodedData);
         insertBlocks(blockStore, blockFactory, rlpElements.get(0));
         insertState(trieStore, rlpElements.get(1));
-}
+    }
 
     private static void insertState(TrieStore destinationTrieStore, RLPElement rlpElement) {
         RLPList statesData = RLP.decodeList(rlpElement.getRLPData());
@@ -73,16 +73,20 @@ public class BootstrapImporter {
         TrieStoreImpl fakeStore = new TrieStoreImpl(hashMapDB);
 
         List<Trie> nodes = new ArrayList<>();
-        nodesData.getElements().forEach(i -> {
-            byte[] rlpData = i.getRLPData();
+
+        for (int k = 0; k < nodesData.size(); k++) {
+            RLPElement element = nodesData.get(k);
+            byte[] rlpData = element.getRLPData();
             Trie trie = Trie.fromMessage(rlpData, fakeStore);
             hashMapDB.put(trie.getHash().getBytes(), rlpData);
             nodes.add(trie);
-        });
-        valuesData.getElements().forEach(i -> {
-            byte[] rlpData = i.getRLPData();
+        };
+
+        for (int k = 0; k < valuesData.size(); k++) {
+            RLPElement element = valuesData.get(k);
+            byte[] rlpData = element.getRLPData();
             hashMapDB.put(Keccak256Helper.keccak256(rlpData), rlpData);
-        });
+        };
 
         nodes.forEach(destinationTrieStore::save);
     }
@@ -91,14 +95,16 @@ public class BootstrapImporter {
                                      BlockFactory blockFactory,
                                      RLPElement encodedTuples) {
         RLPList blocksData = RLP.decodeList(encodedTuples.getRLPData());
-        blocksData.getElements().stream()
-                .map(encodedData -> RLP.decodeList(encodedData.getRLPData()))
-                .forEach(blockData -> {
-                    RLPList tuple = RLP.decodeList(blockData.getRLPData());
-                    Block block = blockFactory.decodeBlock(tuple.get(0).getRLPData());
-                    BlockDifficulty blockDifficulty = new BlockDifficulty(new BigInteger(tuple.get(1).getRLPData()));
-                    blockStore.saveBlock(block, blockDifficulty, true);
-                });
+
+        for (int k = 0; k < blocksData.size(); k++) {
+            RLPElement element = blocksData.get(k);
+            RLPList blockData = RLP.decodeList(element.getRLPData());
+            RLPList tuple = RLP.decodeList(blockData.getRLPData());
+            Block block = blockFactory.decodeBlock(tuple.get(0).getRLPData());
+            BlockDifficulty blockDifficulty = new BlockDifficulty(new BigInteger(tuple.get(1).getRLPData()));
+            blockStore.saveBlock(block, blockDifficulty, true);
+        }
+
         blockStore.flush();
     }
 }

@@ -95,12 +95,14 @@ public class FreeBlock {
 
         // Parse Uncles
         RLPList uncleBlocks = (RLPList) block.get(2);
-        for (RLPElement rawUncle : uncleBlocks.getElements()) {
 
+        for (int k = 0; k < uncleBlocks.size(); k++) {
+            RLPElement rawUncle = uncleBlocks.get(k);
             RLPList uncleHeader = (RLPList) rawUncle;
             FreeBlockHeader blockData = new FreeBlockHeader(uncleHeader);
             this.uncleList.add(blockData);
         }
+
         this.parsed = true;
     }
 

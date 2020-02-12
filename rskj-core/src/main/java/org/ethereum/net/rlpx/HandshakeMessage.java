@@ -57,20 +57,22 @@ public class HandshakeMessage {
     static HandshakeMessage parse(byte[] wire) {
         RLPList list = (RLPList) RLP.decode2(wire).get(0);
         HandshakeMessage message = new HandshakeMessage();
-        Iterator<RLPElement> iter = list.getElements().iterator();
-        message.version = ByteUtil.byteArrayToInt(iter.next().getRLPData()); // FIXME long
-        message.name = new String(iter.next().getRLPData(), Charset.forName("UTF-8"));
+        message.version = ByteUtil.byteArrayToInt(list.get(0).getRLPData()); // FIXME long
+        message.name = new String(list.get(1).getRLPData(), Charset.forName("UTF-8"));
         // caps
         message.caps = new ArrayList<>();
-        for (RLPElement capEl : ((RLPList)iter.next()).getElements()) {
+
+        for (RLPElement capEl : ((RLPList)list.get(2)).getElements()) {
             RLPList capElList = (RLPList)capEl;
             String name = new String(capElList.get(0).getRLPData(), Charset.forName("UTF-8"));
             long version = ByteUtil.byteArrayToInt(capElList.get(1).getRLPData());
 
             message.caps.add(new Capability(name, (byte)version)); // FIXME long
         }
-        message.listenPort = ByteUtil.byteArrayToInt(iter.next().getRLPData());
-        message.nodeId = iter.next().getRLPData();
+
+        message.listenPort = ByteUtil.byteArrayToInt(list.get(3).getRLPData());
+        message.nodeId = list.get(4).getRLPData();
+
         return message;
     }
 

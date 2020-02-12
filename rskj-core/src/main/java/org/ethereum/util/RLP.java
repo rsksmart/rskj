@@ -410,6 +410,10 @@ public class RLP {
                     offset = 1 + nbytes;
                 }
 
+                if (position + length > msgData.length) {
+                    throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
+                }
+
                 byte[] bytes = Arrays.copyOfRange(msgData, position, position + length);
                 RLPList list = new RLPList(bytes, offset);
 
@@ -448,6 +452,14 @@ public class RLP {
             else {
                 length = b0 & 0x7f;
                 offset = 1;
+            }
+
+            if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
+                throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
+            }
+
+            if (position + offset + length < 0 || position + offset + length > msgData.length) {
+                throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
             }
 
             byte[] decoded = new byte[length];
@@ -494,10 +506,6 @@ public class RLP {
         }
 
         if (b0 < EMPTY_MARK) {
-            if (position + 1 > msgData.length) {
-                throw new RLPException("The length of the RLP item length can't possibly fit the data byte array");
-            }
-
             byte[] data = new byte[1];
             data[0] = msgData[position];
             return new RLPItem(data);
