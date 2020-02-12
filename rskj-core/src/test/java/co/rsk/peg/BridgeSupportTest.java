@@ -30,9 +30,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -364,7 +364,7 @@ public class BridgeSupportTest {
     @Test
     public void registerBtcTransaction_before_RSKIP134_activation_sends_above_lockingcap() throws IOException, BlockStoreException {
         // Sending above locking cap evaluating different conditions (sending to both fed, to one, including funds in wallet and in utxos waiting for signatures...)
-        assertLockingCap(true, false , Coin.COIN.multiply(3), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
+        assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.COIN, Coin.COIN, Coin.COIN, Coin.COIN);
         assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.ZERO, Coin.COIN.multiply(2), Coin.COIN, Coin.COIN);
         assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.COIN.multiply(2), Coin.ZERO, Coin.COIN, Coin.COIN);
         assertLockingCap(true, false, Coin.COIN.multiply(3), Coin.COIN.multiply(2), Coin.ZERO, Coin.COIN, Coin.COIN);
@@ -2491,11 +2491,11 @@ public class BridgeSupportTest {
                 new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
         // We need a random new fed
         provider.setNewFederation(this.getFederation(bridgeConstants,
-                Arrays.asList(new BtcECKey[]{
+                Arrays.asList(
                         BtcECKey.fromPrivate(Hex.decode("fb01")),
                         BtcECKey.fromPrivate(Hex.decode("fb02")),
                         BtcECKey.fromPrivate(Hex.decode("fb03"))
-                })
+                )
         ));
         // Use genesis fed as old
         provider.setOldFederation(federation);
@@ -2634,11 +2634,11 @@ public class BridgeSupportTest {
     }
 
     private Federation getFederation(BridgeConstants bridgeConstants, List<BtcECKey> fedKeys) {
-        List<BtcECKey> defaultFederationKeys = Arrays.asList(new BtcECKey[]{
+        List<BtcECKey> defaultFederationKeys = Arrays.asList(
                 BtcECKey.fromPrivate(Hex.decode("fa01")),
-                BtcECKey.fromPrivate(Hex.decode("fa02")),
-        });
-        List<BtcECKey> federationKeys = fedKeys ==  null ? defaultFederationKeys : fedKeys;
+                BtcECKey.fromPrivate(Hex.decode("fa02"))
+        );
+        List<BtcECKey> federationKeys = fedKeys == null ? defaultFederationKeys : fedKeys;
         federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
         return new Federation(
