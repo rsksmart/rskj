@@ -418,7 +418,7 @@ public class TransactionPoolImpl implements TransactionPool {
                         new byte[32], best.getDifficulty().getBytes(), best.getNumber() + 1,
                         ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE), 0, best.getTimestamp() + 1,
                         new byte[0], Coin.ZERO, new byte[0], new byte[0], new byte[0], new byte[0],
-                        ByteUtil.bigIntegerToBytes(BigInteger.ZERO), 0
+                        ByteUtil.bigIntegerToBytes(BigInteger.ZERO), 0,null
                 ),
                 Collections.emptyList(),
                 Collections.emptyList()

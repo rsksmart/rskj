@@ -24,7 +24,8 @@ public enum NetworkUpgrade {
     AFTER_BRIDGE_SYNC("afterBridgeSync"),
     ORCHID("orchid"),
     ORCHID_060("orchid060"),
-    WASABI_100("wasabi100");
+    WASABI_100("wasabi100"),
+    FUTURE("future");
 
     private String name;
 

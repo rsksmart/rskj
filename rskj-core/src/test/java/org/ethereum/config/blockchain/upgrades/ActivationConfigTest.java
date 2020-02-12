@@ -35,6 +35,7 @@ public class ActivationConfigTest {
             "    orchid: 0,",
             "    orchid060: 0,",
             "    wasabi100: 0",
+            "    future: 0",
             "},",
             "consensusRules: {",
             "    areBridgeTxsPaid: afterBridgeSync,",
@@ -60,6 +61,7 @@ public class ActivationConfigTest {
             "    rskip126: wasabi100",
             "    rskip132: wasabi100",
             "    rskip136: bahamas",
+            "    rskipumm: future",
             "}"
     ));
 

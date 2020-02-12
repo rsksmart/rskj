@@ -69,7 +69,8 @@ public class Genesis extends Block {
                    boolean useRskip92Encoding, boolean isRskip126Enabled,
                    Map<RskAddress, AccountState> initialAccounts,
                    Map<RskAddress, byte[]> initialCodes,
-                   Map<RskAddress, Map<DataWord, byte[]>> initialStorages){
+                   Map<RskAddress, Map<DataWord, byte[]>> initialStorages,
+                   byte[] mergeMiningRightHash){
         super(
                 new BlockHeader(
                         parentHash, unclesHash, new RskAddress(coinbase), ByteUtils.clone(EMPTY_TRIE_HASH),
@@ -78,7 +79,7 @@ public class Genesis extends Block {
                         bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                         bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                         RLP.parseSignedCoinNonNullZero(minimumGasPrice), 0, false,
-                        useRskip92Encoding, false) {
+                        useRskip92Encoding, false,mergeMiningRightHash) {
 
                     @Override
                     protected byte[] encodeBlockDifficulty(BlockDifficulty ignored) {

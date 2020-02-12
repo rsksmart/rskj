@@ -194,7 +194,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, minGasPrice, useRskip92Encoding,
-                isRskip126Enabled, accounts, codes, storages);
+                isRskip126Enabled, accounts, codes, storages,null);
     }
 
     private Trie loadGenesisTrie(Genesis genesis) {

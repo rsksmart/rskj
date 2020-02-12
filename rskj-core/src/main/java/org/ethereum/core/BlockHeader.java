@@ -102,6 +102,7 @@ public class BlockHeader {
 
     private byte[] miningForkDetectionData;
 
+    private byte[] mergeMiningRightHash; // this can be an empty byte[] vector
     /**
      * The mgp for a tx to be included in the block.
      */
@@ -116,7 +117,6 @@ public class BlockHeader {
 
     /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
     private boolean includeForkDetectionData;
-
     public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
                        long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
@@ -124,6 +124,20 @@ public class BlockHeader {
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                        Coin minimumGasPrice, int uncleCount, boolean sealed,
                        boolean useRskip92Encoding, boolean includeForkDetectionData) {
+        this( parentHash, unclesHash, coinbase,  stateRoot,
+         txTrieRoot,  receiptTrieRoot,  logsBloom,  difficulty,
+         number, gasLimit,  gasUsed, timestamp,  extraData,
+         paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
+         bitcoinMergedMiningCoinbaseTransaction, mergedMiningForkDetectionData,
+         minimumGasPrice, uncleCount,  sealed,useRskip92Encoding,  includeForkDetectionData,null);
+    }
+    public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
+                       byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
+                       long number, byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
+                       Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+                       byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
+                       Coin minimumGasPrice, int uncleCount, boolean sealed,
+                       boolean useRskip92Encoding, boolean includeForkDetectionData,byte[] mergeMiningRightHash) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -148,6 +162,7 @@ public class BlockHeader {
         this.sealed = sealed;
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
+        this.mergeMiningRightHash = mergeMiningRightHash;
     }
 
     @VisibleForTesting
@@ -343,7 +358,9 @@ public class BlockHeader {
 
         byte[] uncleCount = RLP.encodeBigInteger(BigInteger.valueOf(this.uncleCount));
         fieldToEncodeList.add(uncleCount);
-
+        if (mergeMiningRightHash !=null) {
+            fieldToEncodeList.add(RLP.encodeElement(mergeMiningRightHash));
+        }
         if (withMergedMiningFields && hasMiningFields()) {
             byte[] bitcoinMergedMiningHeader = RLP.encodeElement(this.bitcoinMergedMiningHeader);
             fieldToEncodeList.add(bitcoinMergedMiningHeader);
@@ -353,6 +370,7 @@ public class BlockHeader {
                 byte[] bitcoinMergedMiningCoinbaseTransaction = RLP.encodeElement(this.bitcoinMergedMiningCoinbaseTransaction);
                 fieldToEncodeList.add(bitcoinMergedMiningCoinbaseTransaction);
             }
+
         }
 
         return RLP.encodeList(fieldToEncodeList.toArray(new byte[][]{}));
@@ -472,10 +490,32 @@ public class BlockHeader {
         return HashUtil.shortHash(getHashForMergedMining());
     }
 
+    public byte[] getHashRootForMergedMining(byte[] hashForMergedMining) {
+        byte[] left = hashForMergedMining;
+
+        if ((mergeMiningRightHash.length != 20) && (mergeMiningRightHash.length != 0)){
+            throw new IllegalStateException(
+                    String.format("Merge Mining Right Hash length must be either 0 or 20. Found: %d",mergeMiningRightHash.length )
+            );
+        }
+        byte[] leftRight = org.bouncycastle.util.Arrays.concatenate(left,mergeMiningRightHash);
+        byte[] root256 = HashUtil.keccak256(leftRight);
+        return root256;
+    }
+
+    public boolean nonEmptyMergeMiningRightHash() {
+        return mergeMiningRightHash!=null;
+    }
+
     public byte[] getHashForMergedMining() {
         byte[] encodedBlock = getEncoded(false, false);
         byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
+
+        if (nonEmptyMergeMiningRightHash()) {
+            hashForMergedMining= getHashRootForMergedMining(hashForMergedMining);
+        }
         if (includeForkDetectionData) {
+
             byte[] mergedMiningForkDetectionData = hasMiningFields() ?
                     getMiningForkDetectionData() :
                     miningForkDetectionData;
@@ -489,6 +529,10 @@ public class BlockHeader {
         }
 
         return hashForMergedMining;
+    }
+
+    public byte[] getMergeMiningRightHash() {
+        return mergeMiningRightHash;
     }
 
     public String getShortHash() {

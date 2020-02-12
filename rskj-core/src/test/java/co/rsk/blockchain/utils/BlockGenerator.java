@@ -99,10 +99,14 @@ public class BlockGenerator {
 
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, 0);
+        boolean isRskipUMMEnabled = activationConfig.isActive(ConsensusRule.RSKIPUMM,0);
+        byte[] rightHash  = null;
+        if (isRskipUMMEnabled)
+            rightHash = new byte[0];
         return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 null, null, null, BigInteger.valueOf(100L).toByteArray(), useRskip92Encoding,
-                isRskip126Enabled, accounts, Collections.emptyMap(), Collections.emptyMap()
+                isRskip126Enabled, accounts, Collections.emptyMap(), Collections.emptyMap(),rightHash
         );
     }
 
@@ -140,7 +144,7 @@ public class BlockGenerator {
                         ByteUtils.clone(parent.getStateRoot()), EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         ByteUtils.clone(new Bloom().getData()), difficulty, parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count, EMPTY_BYTE_ARRAY,
-                        Coin.valueOf(fees), null, null, null, new byte[12], null, uncles.size()
+                        Coin.valueOf(fees), null, null, null, new byte[12], null, uncles.size(),null
                 ),
                 Collections.emptyList(),
                 uncles
@@ -162,7 +166,7 @@ public class BlockGenerator {
                         stateRoot, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled),
                         EMPTY_TRIE_HASH, logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], null, 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], null, 0,null
                 ),
                 txs,
                 Collections.emptyList(),
@@ -207,7 +211,11 @@ public class BlockGenerator {
         }
 
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
-
+        byte [] rightHash=null;
+        boolean isRskipUMMEnabled = activationConfig.isActive(ConsensusRule.RSKIPUMM, 0);
+        if (isRskipUMMEnabled) {
+            rightHash = new byte[0];
+        }
         BlockHeader newHeader = blockFactory.newHeader(parent.getHash().getBytes(),
                 unclesListHash,
                 coinbase.getBytes(),
@@ -225,7 +233,8 @@ public class BlockGenerator {
                         new byte[12] :
                         new byte[0],
                 (minGasPrice != null) ? minGasPrice.toByteArray() : null,
-                uncles.size()
+                uncles.size(),
+                rightHash
         );
 
         if (difficulty == 0) {
@@ -268,7 +277,7 @@ public class BlockGenerator {
                         EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled), EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), number,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], minimumGasPrice.getBytes(), 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], minimumGasPrice.getBytes(), 0,null
                 ),
                 txs,
                 Collections.emptyList()
@@ -290,7 +299,7 @@ public class BlockGenerator {
                         EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
                         parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0
+                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0,null
                 ),
                 txs,
                 Collections.emptyList()

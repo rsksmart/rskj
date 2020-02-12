@@ -196,6 +196,10 @@ public class BlockToMineBuilder {
         byte[] forkDetectionData = forkDetectionDataCalculator.calculateWithBlockHeaders(mainchainHeaders);
 
         long blockNumber = newBlockParentHeader.getNumber() + 1;
+        byte[] rightHash = null;
+        if (activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber)) {
+            rightHash = new byte[0];
+        }
         final BlockHeader newHeader = blockFactory.newHeader(
                 newBlockParentHeader.getHash().getBytes(),
                 unclesListHash,
@@ -218,7 +222,7 @@ public class BlockToMineBuilder {
                 new byte[]{},
                 forkDetectionData,
                 minimumGasPrice.getBytes(),
-                uncles.size()
+                uncles.size(),rightHash
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));
         return newHeader;

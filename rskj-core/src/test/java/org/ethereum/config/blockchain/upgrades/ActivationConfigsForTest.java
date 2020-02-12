@@ -27,7 +27,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ActivationConfigsForTest {
-
+    // TO DO: This is very bad: Some tests use  REGTEST to create blocks
+    // but then use .all() to validate them.
+    // Either all use regtest or all should use .all().
     private static final ActivationConfig REGTEST = read("config/regtest");
 
     public static ActivationConfig genesis() {

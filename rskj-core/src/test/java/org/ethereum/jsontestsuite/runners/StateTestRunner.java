@@ -216,7 +216,7 @@ public class StateTestRunner {
                         EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
                         ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentDifficulty(), byteArrayToLong(env.getCurrentNumber()),
                         env.getCurrentGasLimit(), 0L, byteArrayToLong(env.getCurrentTimestamp()),
-                        new byte[32], Coin.ZERO, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY,null, 0
+                        new byte[32], Coin.ZERO, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY,null, 0,null
                 ),
                 Collections.emptyList(),
                 Collections.emptyList(),

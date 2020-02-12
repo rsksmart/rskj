@@ -36,10 +36,10 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -85,6 +85,7 @@ public class BlockFactoryTest {
         assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
 
+
     @Test
     public void decodeBlockPriorToHeight449AndRskip110Off() {
         long number = 20L;
@@ -114,6 +115,65 @@ public class BlockFactoryTest {
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
         assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
+    }
+
+    @Test
+    public void decodeBlockUMMfterHeightRskip110OFFEmptyRightHash() {
+        long number = 457L;
+        enableRulesAt(number, RSKIP92,RSKIPUMM);
+        // null
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0]);
+
+        byte[] encodedHeader = header.getEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(20));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getMergeMiningRightHash(), is(decodedHeader.getMergeMiningRightHash()));
+        assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
+    }
+
+
+    @Test
+    public void decodeBlockUMMfterHeightRskip110OFFNullRightHash() {
+        long number = 457L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM);
+        // null
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null);
+
+        byte[] encodedHeader = header.getEncoded();
+
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+
+        // This decodes into a block prior the UMM hard-fork which will
+        // be rejected by nodes
+        assertThat(headerRLP.size(), is(19));
+        try {
+            BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        } catch (IndexOutOfBoundsException e) {
+            // this is the correct behaviour
+            // I don't like @Test(expected=IndexOutOfBoundsException.class)
+            // because it's less specific on where the exception occurs
+            return;
+        }
+        assertTrue("Exception IndexOutOfBoundsException not thrown",false);
+    }
+    @Test
+    public void decodeBlockUMMfterHeightRskip110OFF() {
+        long number = 457L;
+        enableRulesAt(number, RSKIP92,RSKIPUMM);
+        // the right hash is 20 bytes in length.
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[20]);
+
+        byte[] encodedHeader = header.getEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(20));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getMergeMiningRightHash(), is(decodedHeader.getMergeMiningRightHash()));
         assertThat(header.getMiningForkDetectionData(), is(decodedHeader.getMiningForkDetectionData()));
     }
 
@@ -190,6 +250,12 @@ public class BlockFactoryTest {
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             long number,
             byte[] forkDetectionData) {
+        return createBlockHeaderWithMergedMiningFields(
+         number, forkDetectionData,null);
+    }
+    private BlockHeader createBlockHeaderWithMergedMiningFields(
+            long number,
+            byte[] forkDetectionData,byte[] mergeMiningRightHash) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
@@ -214,7 +280,7 @@ public class BlockFactoryTest {
                 new byte[128],
                 forkDetectionData,
                 Coin.valueOf(10L).getBytes(),
-                0);
+                0,mergeMiningRightHash);
     }
 
     private BlockHeader createBlockHeader(
@@ -244,6 +310,6 @@ public class BlockFactoryTest {
                 null,
                 forkDetectionData,
                 Coin.valueOf(10L).getBytes(),
-                0);
+                0,null);
     }
 }

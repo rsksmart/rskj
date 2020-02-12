@@ -40,8 +40,10 @@ import java.util.stream.Collectors;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public class BlockFactory {
-    private static final int RLP_HEADER_SIZE = 16;
-    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 19;
+    // These are the last sizes when all consensus changes are active
+    // In prior blocks, headers can contain less than 16/19 elements
+    private static final int RLP_HEADER_SIZE = 17;
+    private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 20;
 
     private final ActivationConfig activationConfig;
 
@@ -91,13 +93,13 @@ public class BlockFactory {
             byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
             byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
             byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] miningForkDetectionData,
-            byte[] minimumGasPrice, int uncleCount) {
+            byte[] minimumGasPrice, int uncleCount, byte[] rightHash) {
         return newHeader(
                 parentHash, unclesHash, coinbase,
                 ByteUtils.clone(EMPTY_TRIE_HASH), null, ByteUtils.clone(EMPTY_TRIE_HASH),
                 logsBloom, difficulty, number, gasLimit, gasUsed, timestamp, extraData, Coin.ZERO,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, miningForkDetectionData, minimumGasPrice, uncleCount
+                bitcoinMergedMiningCoinbaseTransaction, miningForkDetectionData, minimumGasPrice, uncleCount,rightHash
         );
     }
 
@@ -107,7 +109,7 @@ public class BlockFactory {
             byte[] gasLimit, long gasUsed, long timestamp, byte[] extraData,
             Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
             byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
-            byte[] minimumGasPrice, int uncleCount) {
+            byte[] minimumGasPrice, int uncleCount,byte[] mergeMiningRightHash) {
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, number);
         boolean includeForkDetectionData = activationConfig.isActive(ConsensusRule.RSKIP110, number) &&
                 mergedMiningForkDetectionData.length > 0;
@@ -118,7 +120,7 @@ public class BlockFactory {
                 gasLimit, gasUsed, timestamp, extraData, paidFees,
                 bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
                 mergedMiningForkDetectionData, RLP.parseSignedCoinNonNullZero(minimumGasPrice), uncleCount,
-                false, useRskip92Encoding, includeForkDetectionData
+                false, useRskip92Encoding, includeForkDetectionData,mergeMiningRightHash
         );
     }
 
@@ -131,7 +133,7 @@ public class BlockFactory {
                 parentHash, unclesHash, coinbase, logsBloom, difficulty,
                 number, gasLimit, gasUsed, timestamp, extraData,
                 null, null, null, new byte[0],
-                minimumGasPrice, uncleCount
+                minimumGasPrice, uncleCount,null
         );
     }
 
@@ -141,13 +143,6 @@ public class BlockFactory {
 
     public BlockHeader decodeHeader(RLPList rlpHeader, boolean sealed) {
         // TODO fix old tests that have other sizes
-        if (rlpHeader.size() != RLP_HEADER_SIZE && rlpHeader.size() != RLP_HEADER_SIZE_WITH_MERGED_MINING) {
-            throw new IllegalArgumentException(String.format(
-                    "A block header must have 16 elements or 19 including merged-mining fields but it had %d",
-                    rlpHeader.size()
-            ));
-        }
-
         byte[] parentHash = rlpHeader.get(0).getRLPData();
         byte[] unclesHash = rlpHeader.get(1).getRLPData();
         RskAddress coinbase = RLP.parseRskAddress(rlpHeader.get(2).getRLPData());
@@ -187,20 +182,40 @@ public class BlockFactory {
         int r = 15;
 
         int uncleCount = 0;
-        if (rlpHeader.size() == RLP_HEADER_SIZE || rlpHeader.size() == RLP_HEADER_SIZE_WITH_MERGED_MINING) {
+        // After the UMM hardfork, we simplify header parsing, we won't need
+        // to check for exact elements count such as rlpHeader.size() == RLP_HEADER_SIZE
+        // extra-elements means it is an invalid header.
+        boolean willIncludeMergeMiningRightHash = activationConfig.isActive(ConsensusRule.RSKIPUMM, number);
+        boolean willIncludeUncleCount = willIncludeMergeMiningRightHash ||
+                // These are the sizes prior the UMM is activates
+                (rlpHeader.size() == RLP_HEADER_SIZE-1) || (rlpHeader.size() == RLP_HEADER_SIZE_WITH_MERGED_MINING-1);
+
+        if (willIncludeUncleCount) {
             byte[] ucBytes = rlpHeader.get(r++).getRLPData();
             uncleCount = parseBigInteger(ucBytes).intValueExact();
         }
+        byte[] mergeMiningRightHash = null;
+        if (willIncludeMergeMiningRightHash) {
+                mergeMiningRightHash = rlpHeader.get(r++).getRLPRawData();
+                // We accept empty mergeMiningRightHash. That is treated
+                // as a block without UMM.
 
+        }
         byte[] bitcoinMergedMiningHeader = null;
         byte[] bitcoinMergedMiningMerkleProof = null;
         byte[] bitcoinMergedMiningCoinbaseTransaction = null;
+
         if (rlpHeader.size() > r) {
             bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
             bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPRawData();
             bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
         }
-
+        if (rlpHeader.size() > r) {
+           throw new IllegalArgumentException(String.format(
+                    "A block header must have 16/17 elements or 19/20 including merged-mining fields but it had %d",
+                    rlpHeader.size()
+            ));
+        }
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, number);
         boolean includeForkDetectionData = activationConfig.isActive(ConsensusRule.RSKIP110, number) &&
                 number >= MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION;
@@ -211,7 +226,7 @@ public class BlockFactory {
                 number, glBytes, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
-                minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData
+                minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,mergeMiningRightHash
         );
     }
 
