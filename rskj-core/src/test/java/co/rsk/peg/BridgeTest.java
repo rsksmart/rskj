@@ -2,7 +2,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
@@ -150,7 +149,7 @@ public class BridgeTest {
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         Integer zero = new Integer(0);
 
-        byte[] data = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction().encode(new Object[]{ value, zero, value, zero, zero });
+        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(new Object[]{ value, zero, value, zero, zero });
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -166,7 +165,7 @@ public class BridgeTest {
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         Integer zero = new Integer(0);
 
-        byte[] data = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction().encode(new Object[]{ value, zero, value, zero, zero });
+        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(new Object[]{ value, zero, value, zero, zero });
 
         bridge.execute(data);
         verify(bridgeSupportMock, times(1)).registerBtcCoinbaseTransaction(value, Sha256Hash.wrap(value), value, Sha256Hash.wrap(value), value);
@@ -180,15 +179,15 @@ public class BridgeTest {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
 
-        byte[] data = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction().encodeSignature();
+        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature();
         byte[] result = bridge.execute(data);
         Assert.assertNull(result);
 
-        data = ByteUtil.merge(BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction().encodeSignature(), Hex.decode("ab"));
+        data = ByteUtil.merge(Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature(), Hex.decode("ab"));
         result = bridge.execute(data);
         Assert.assertNull(result);
 
-        data = ByteUtil.merge(BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction().encodeSignature(), Hex.decode("0000000000000000000000000000000000000000000000080000000000000000"));
+        data = ByteUtil.merge(Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature(), Hex.decode("0000000000000000000000000000000000000000000000080000000000000000"));
         result = bridge.execute(data);
         Assert.assertNull(result);
     }

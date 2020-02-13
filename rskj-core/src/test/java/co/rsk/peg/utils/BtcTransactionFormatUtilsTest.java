@@ -18,9 +18,9 @@
 
 package co.rsk.peg.utils;
 
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.config.BridgeRegTestConstants;
 import org.junit.Assert;
 import org.junit.Test;
 import org.bouncycastle.util.encoders.Hex;
@@ -69,5 +69,39 @@ public class BtcTransactionFormatUtilsTest {
                 "010000000017a914056bce3306ec98a0247cebb654809943045d6b51877ff21500000000001976a914f7da7f0f7669bce303cfc48921bb7303e3918b" +
                 "1288acdfdc0700");
         Assert.assertThat(BtcTransactionFormatUtils.getInputsCount(rawBtcTransaction), is(4L));
+    }
+
+    @Test
+    public void getInputsCountFromSegwitTx() {
+        String rawTx = "020000000001017001d967a340069c0b169fcbeb9cb6e0d78a27c94a41acbce762abc695aefab10000000017160014c" +
+                "fa63de9979e2a8005e6cb516b86202860ff3971ffffffff0200c2eb0b0000000017a914291a7ddc558810708149a731f39cd3c3" +
+                "a8782cfd870896e1110000000017a91425a2e67511a0207c4387ce8d3eeef498a4782e64870247304402207e0615f440bbc5035" +
+                "1fb5d8839b3fae6c74f652c9ffc9291008f4ea39f9565980220354c734511a0560367b300eecb1a7472317a995462622e06ee91" +
+                "cbe0517c17e1012102e87cd90f3cb0d64eeba797fbb8f8ceaadc09e0128afbaefb0ee9535875ea395400000000";
+
+        BtcTransaction tx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams(), Hex.decode(rawTx));
+        Assert.assertThat(tx.getInputs().size(), is(1));
+        Assert.assertThat(BtcTransactionFormatUtils.getInputsCountForSegwit(Hex.decode(rawTx)), is(1L));
+    }
+
+    @Test
+    public void getInputsCountFromSegwitTxWithWitness() {
+        String rawTx = "020000000001017001d967a340069c0b169fcbeb9cb6e0d78a27c94a41acbce762abc695aefab10000000017160014c" +
+                "fa63de9979e2a8005e6cb516b86202860ff3971ffffffff0200c2eb0b0000000017a914291a7ddc558810708149a731f39cd3c3" +
+                "a8782cfd870896e1110000000017a91425a2e67511a0207c4387ce8d3eeef498a4782e64870247304402207e0615f440bbc5035" +
+                "1fb5d8839b3fae6c74f652c9ffc9291008f4ea39f9565980220354c734511a0560367b300eecb1a7472317a995462622e06ee91" +
+                "cbe0517c17e1012102e87cd90f3cb0d64eeba797fbb8f8ceaadc09e0128afbaefb0ee9535875ea395400000000";
+
+        BtcTransaction otherTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
+        otherTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        TransactionWitness txWit = new TransactionWitness(1);
+        txWit.setPush(0, new byte[]{});
+        otherTx.setWitness(0, txWit);
+        otherTx.addOutput(Coin.COIN, Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+
+        BtcTransaction tx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams(), Hex.decode(rawTx));
+
+        Assert.assertThat(tx.getInputs().size(), is(1));
+        Assert.assertThat(BtcTransactionFormatUtils.getInputsCountForSegwit(otherTx.bitcoinSerialize()), is(1L));
     }
 }

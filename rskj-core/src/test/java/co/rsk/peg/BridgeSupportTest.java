@@ -7,10 +7,12 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -18,6 +20,7 @@ import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -1058,6 +1061,1096 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertFalse(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
+    }
+
+    @Test(expected = VerificationException.EmptyInputsOrOutputs.class)
+    public void registerBtcTransaction_rejects_tx_with_witness_before_rskip_143_activation() throws BlockStoreException, IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams);
+        tx1.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        TransactionWitness txWit = new TransactionWitness(1);
+        txWit.setPush(0, new byte[]{});
+        tx1.setWitness(0, txWit);
+        tx1.addOutput(Coin.COIN, Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                Sha256Hash.ZERO_HASH,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        List<Sha256Hash> hashes2 = new ArrayList<>();
+        hashes2.add(tx1.getHash(true));
+        PartialMerkleTree pmtWithWitness = new PartialMerkleTree(btcParams, bits, hashes2, 1);
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
+
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize());
+
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        verify(btcTx, times(0)).verify();
+    }
+
+    @Test
+    public void registerBtcTransaction_accepts_lock_tx_with_witness_after_rskip_143_activation() throws BlockStoreException, IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")),
+        });
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation1 = new Federation(
+                FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+                Instant.ofEpochMilli(1000L),
+                0L,
+                btcParams
+        );
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams);
+        BtcECKey srcKey1 = new BtcECKey();
+        ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
+        Address btcAddress = srcKey1.toAddress(btcParams);
+        RskAddress rskAddress = new RskAddress(key.getAddress());
+
+        tx1.addOutput(Coin.COIN.multiply(10), federation1.getAddress());
+        tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        TransactionWitness txWit = new TransactionWitness(1);
+        txWit.setPush(0, new byte[]{});
+        tx1.setWitness(0, txWit);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx1.getHash());
+        PartialMerkleTree pmtWithoutWitness = new PartialMerkleTree(btcParams, bits, hashes, 1);
+        List<Sha256Hash> hashlist = new ArrayList<>();
+        Sha256Hash blockMerkleRoot = pmtWithoutWitness.getTxnHashAndMerkleRoot(hashlist);
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                blockMerkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        List<Sha256Hash> hashes2 = new ArrayList<>();
+        hashes2.add(tx1.getHash(true));
+        PartialMerkleTree pmtWithWitness = new PartialMerkleTree(btcParams, bits, hashes2, 1);
+        List<Sha256Hash> hashlist2 = new ArrayList<>();
+        Sha256Hash witnessMerkleRoot = pmtWithWitness.getTxnHashAndMerkleRoot(hashlist2);
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(track, contractAddress, bridgeConstants, activations));
+        provider.setNewFederation(federation1);
+
+        // Whitelist the addresses
+        LockWhitelist whitelist = provider.getLockWhitelist();
+        whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(10)));
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, btcAddress, rskAddress),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
+        doReturn(coinbaseInformation).when(provider).getCoinbaseInformation(registerHeader.getHash());
+
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize());
+        track.commit();
+
+        co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(10, 0));
+
+        Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
+        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN.multiply(10), provider.getNewFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash(true)).isPresent());
+    }
+
+    @Test
+    public void registerBtcTransaction_rejects_tx_with_witness_and_unregistered_coinbase_after_rskip_143_activation() throws BlockStoreException, IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")),
+        });
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation1 = new Federation(
+                FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+                Instant.ofEpochMilli(1000L),
+                0L,
+                btcParams
+        );
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams);
+        BtcECKey srcKey1 = new BtcECKey();
+        ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
+        Address btcAddress = srcKey1.toAddress(btcParams);
+        RskAddress rskAddress = new RskAddress(key.getAddress());
+
+        tx1.addOutput(Coin.COIN.multiply(10), federation1.getAddress());
+        tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        TransactionWitness txWit = new TransactionWitness(1);
+        txWit.setPush(0, new byte[]{});
+        tx1.setWitness(0, txWit);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                Sha256Hash.ZERO_HASH,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        List<Sha256Hash> hashes2 = new ArrayList<>();
+        hashes2.add(tx1.getHash(true));
+        PartialMerkleTree pmtWithWitness = new PartialMerkleTree(btcParams, bits, hashes2, 1);
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(track, contractAddress, bridgeConstants, activations));
+        provider.setNewFederation(federation1);
+
+        // Whitelist the addresses
+        LockWhitelist whitelist = provider.getLockWhitelist();
+        whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(10)));
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, btcAddress, rskAddress),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        doReturn(null).when(provider).getCoinbaseInformation(registerHeader.getHash());
+
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize());
+        track.commit();
+
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        verify(btcTx, times(0)).verify();
+    }
+
+    @Test
+    public void registerBtcTransaction_rejects_tx_with_witness_and_unqual_witness_root_after_rskip_143_activation() throws BlockStoreException, IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")),
+        });
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation1 = new Federation(
+                FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+                Instant.ofEpochMilli(1000L),
+                0L,
+                btcParams
+        );
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams);
+        BtcECKey srcKey1 = new BtcECKey();
+        ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
+        Address btcAddress = srcKey1.toAddress(btcParams);
+        RskAddress rskAddress = new RskAddress(key.getAddress());
+
+        tx1.addOutput(Coin.COIN.multiply(10), federation1.getAddress());
+        tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+        TransactionWitness txWit = new TransactionWitness(1);
+        txWit.setPush(0, new byte[]{});
+        tx1.setWitness(0, txWit);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                Sha256Hash.ZERO_HASH,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        List<Sha256Hash> hashes2 = new ArrayList<>();
+        hashes2.add(tx1.getHash(true));
+        PartialMerkleTree pmtWithWitness = new PartialMerkleTree(btcParams, bits, hashes2, 1);
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(track, contractAddress, bridgeConstants, activations));
+        provider.setNewFederation(federation1);
+
+        // Whitelist the addresses
+        LockWhitelist whitelist = provider.getLockWhitelist();
+        whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(10)));
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, btcAddress, rskAddress),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
+        doReturn(coinbaseInformation).when(provider).getCoinbaseInformation(registerHeader.getHash());
+
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize());
+        track.commit();
+
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        verify(btcTx, times(0)).verify();
+    }
+
+    @Test
+    public void registerBtcTransaction_rejects_tx_without_witness_unequal_roots_after_rskip_143() throws BlockStoreException, IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")),
+        });
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation1 = new Federation(
+                FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+                Instant.ofEpochMilli(1000L),
+                0L,
+                btcParams
+        );
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams);
+        BtcECKey srcKey1 = new BtcECKey();
+        ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
+        Address btcAddress = srcKey1.toAddress(btcParams);
+        RskAddress rskAddress = new RskAddress(key.getAddress());
+
+        tx1.addOutput(Coin.COIN.multiply(10), federation1.getAddress());
+        tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                Sha256Hash.ZERO_HASH,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        List<Sha256Hash> hashes2 = new ArrayList<>();
+        hashes2.add(tx1.getHash(true));
+        PartialMerkleTree pmtWithWitness = new PartialMerkleTree(btcParams, bits, hashes2, 1);
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(track, contractAddress, bridgeConstants, activations));
+        provider.setNewFederation(federation1);
+
+        // Whitelist the addresses
+        LockWhitelist whitelist = provider.getLockWhitelist();
+        whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(10)));
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, btcAddress, rskAddress),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
+        doReturn(coinbaseInformation).when(provider).getCoinbaseInformation(registerHeader.getHash());
+
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize());
+        track.commit();
+
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        verify(btcTx, times(0)).verify();
+    }
+
+    @Test
+    public void registerBtcTransaction_accepts_lock_tx_without_witness_after_rskip_143_activation() throws BlockStoreException, IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")),
+        });
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation1 = new Federation(
+                FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+                Instant.ofEpochMilli(1000L),
+                0L,
+                btcParams
+        );
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams);
+        BtcECKey srcKey1 = new BtcECKey();
+        ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
+        Address btcAddress = srcKey1.toAddress(btcParams);
+        RskAddress rskAddress = new RskAddress(key.getAddress());
+
+        tx1.addOutput(Coin.COIN.multiply(10), federation1.getAddress());
+        tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx1.getHash());
+        PartialMerkleTree pmtWithoutWitness = new PartialMerkleTree(btcParams, bits, hashes, 1);
+        List<Sha256Hash> hashlist = new ArrayList<>();
+        Sha256Hash blockMerkleRoot = pmtWithoutWitness.getTxnHashAndMerkleRoot(hashlist);
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                blockMerkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(track, contractAddress, bridgeConstants, activations));
+        provider.setNewFederation(federation1);
+
+        // Whitelist the addresses
+        LockWhitelist whitelist = provider.getLockWhitelist();
+        whitelist.put(btcAddress, new OneOffWhiteListEntry(btcAddress, Coin.COIN.multiply(10)));
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, btcAddress, rskAddress),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithoutWitness.bitcoinSerialize());
+        track.commit();
+
+        co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(Coin.valueOf(10, 0));
+
+        Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskAddress));
+        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN.multiply(10), provider.getNewFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash(true)).isPresent());
+    }
+
+
+    @Test
+    public void isBlockMerkleRootValid_equal_merkle_roots() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                mock(BridgeStorageProvider.class),
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mock(BtcBlockStoreWithCache.Factory.class),
+                activations
+        );
+
+        Sha256Hash merkleRoot = PegTestUtils.createHash(1);
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        when(btcBlock.getMerkleRoot()).thenReturn(merkleRoot);
+        Assert.assertTrue(bridgeSupport.isBlockMerkleRootValid(merkleRoot, btcBlock));
+    }
+
+    @Test
+    public void isBlockMerkleRootValid_unequal_merkle_roots_before_rskip_143() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress, bridgeConstants, activations);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        Sha256Hash merkleRoot = PegTestUtils.createHash(1);
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        when(btcBlock.getMerkleRoot()).thenReturn(Sha256Hash.ZERO_HASH);
+        Assert.assertFalse(bridgeSupport.isBlockMerkleRootValid(merkleRoot, btcBlock));
+    }
+
+    @Test
+    public void isBlockMerkleRootValid_coinbase_information_null_after_rskip_143() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+
+        when(provider.getCoinbaseInformation(Sha256Hash.ZERO_HASH)).thenReturn(null);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        when(btcBlock.getMerkleRoot()).thenReturn(Sha256Hash.ZERO_HASH);
+        when(btcBlock.getHash()).thenReturn(Sha256Hash.ZERO_HASH);
+
+        Assert.assertFalse(bridgeSupport.isBlockMerkleRootValid(PegTestUtils.createHash(1), btcBlock));
+    }
+
+    @Test
+    public void isBlockMerkleRootValid_coinbase_information_not_null_and_unequal_mroots_after_rskip_143() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+
+        CoinbaseInformation coinbaseInformation = mock(CoinbaseInformation.class);
+        when(coinbaseInformation.getWitnessMerkleRoot()).thenReturn(PegTestUtils.createHash(1));
+
+        when(provider.getCoinbaseInformation(Sha256Hash.ZERO_HASH)).thenReturn(coinbaseInformation);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        when(btcBlock.getMerkleRoot()).thenReturn(Sha256Hash.ZERO_HASH);
+        when(btcBlock.getHash()).thenReturn(Sha256Hash.ZERO_HASH);
+
+        Assert.assertFalse(bridgeSupport.isBlockMerkleRootValid(PegTestUtils.createHash(2), btcBlock));
+    }
+
+    @Test
+    public void isBlockMerkleRootValid_coinbase_information_not_null_and_equal_mroots_after_rskip_143() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+
+        Sha256Hash merkleRoot = PegTestUtils.createHash(1);
+
+        CoinbaseInformation coinbaseInformation = mock(CoinbaseInformation.class);
+        when(coinbaseInformation.getWitnessMerkleRoot()).thenReturn(merkleRoot);
+        when(provider.getCoinbaseInformation(Sha256Hash.ZERO_HASH)).thenReturn(coinbaseInformation);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        when(btcBlock.getMerkleRoot()).thenReturn(Sha256Hash.ZERO_HASH);
+        when(btcBlock.getHash()).thenReturn(Sha256Hash.ZERO_HASH);
+
+        Assert.assertTrue(bridgeSupport.isBlockMerkleRootValid(merkleRoot, btcBlock));
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_rejects_tx_with_witness_before_rskip_143() throws Exception {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        byte[] rawTx = Hex.decode("020000000001017db0c99ea2643e94f89e190807402c86b2d9ef83d96c0648ecfb11e6643eb4d90000" +
+                "00001716001447866ddb7dd3180e99c8e3c6c85ebb0023b5d9b4ffffffff0200c2eb0b0000000017a914896ed9f3446d51b5510" +
+                "f7f0b6ef81b2bde55140e87443324180100000017a914c7dcd0c19a12407a2fb5866bd44e4218888e4f0e870246304302207c9a" +
+                "3d83409349d6676cec578c7fa5a2e83091abc2ab9d2bad3402a549568fa6021f1e43b726ec9c8199ddfb96d2e0e71e17ecc3416" +
+                "f16073045528c0a28872d3d0121024be0015a1b0ab4a778e3abf81db544dcc18a18dc6a9a3da8d0c90286ef38a0b100000000");
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams, rawTx);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx1.getHash());
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
+        List<Sha256Hash> hashlist = new ArrayList<>();
+        Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                blockMerkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory);
+
+        MerkleBranch merkleBranch = mock(MerkleBranch.class);
+
+        int confirmations = bridgeSupport.getBtcTransactionConfirmations(tx1.getHash(true), registerHeader.getHash(), merkleBranch);
+        Assert.assertEquals(-5, confirmations);
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_accepts_tx_with_witness_after_rskip_143() throws Exception {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        byte[] rawTx = Hex.decode("020000000001017db0c99ea2643e94f89e190807402c86b2d9ef83d96c0648ecfb11e6643eb4d90000" +
+                "00001716001447866ddb7dd3180e99c8e3c6c85ebb0023b5d9b4ffffffff0200c2eb0b0000000017a914896ed9f3446d51b5510" +
+                "f7f0b6ef81b2bde55140e87443324180100000017a914c7dcd0c19a12407a2fb5866bd44e4218888e4f0e870246304302207c9a" +
+                "3d83409349d6676cec578c7fa5a2e83091abc2ab9d2bad3402a549568fa6021f1e43b726ec9c8199ddfb96d2e0e71e17ecc3416" +
+                "f16073045528c0a28872d3d0121024be0015a1b0ab4a778e3abf81db544dcc18a18dc6a9a3da8d0c90286ef38a0b100000000");
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams, rawTx);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx1.getHash());
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
+        List<Sha256Hash> hashlist = new ArrayList<>();
+        Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                blockMerkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        List<Sha256Hash> hashes2 = new ArrayList<>();
+        hashes2.add(tx1.getHash(true));
+        PartialMerkleTree pmt2 = new PartialMerkleTree(btcParams, bits, hashes2, 1);
+        List<Sha256Hash> hashlist2 = new ArrayList<>();
+        Sha256Hash witnessMerkleRoot = pmt2.getTxnHashAndMerkleRoot(hashlist2);
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
+                activations));
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        MerkleBranch merkleBranch = mock(MerkleBranch.class);
+        when(merkleBranch.reduceFrom(tx1.getHash(true))).thenReturn(witnessMerkleRoot);
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
+        doReturn(coinbaseInformation).when(provider).getCoinbaseInformation(registerHeader.getHash());
+
+        int confirmations = bridgeSupport.getBtcTransactionConfirmations(tx1.getHash(true), registerHeader.getHash(), merkleBranch);
+        Assert.assertEquals(132 - 50 + 1, confirmations);
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_unregistered_coinbase_after_rskip_143() throws Exception {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        byte[] rawTx = Hex.decode("020000000001017db0c99ea2643e94f89e190807402c86b2d9ef83d96c0648ecfb11e6643eb4d90000" +
+                "00001716001447866ddb7dd3180e99c8e3c6c85ebb0023b5d9b4ffffffff0200c2eb0b0000000017a914896ed9f3446d51b5510" +
+                "f7f0b6ef81b2bde55140e87443324180100000017a914c7dcd0c19a12407a2fb5866bd44e4218888e4f0e870246304302207c9a" +
+                "3d83409349d6676cec578c7fa5a2e83091abc2ab9d2bad3402a549568fa6021f1e43b726ec9c8199ddfb96d2e0e71e17ecc3416" +
+                "f16073045528c0a28872d3d0121024be0015a1b0ab4a778e3abf81db544dcc18a18dc6a9a3da8d0c90286ef38a0b100000000");
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams, rawTx);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx1.getHash());
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
+        List<Sha256Hash> hashlist = new ArrayList<>();
+        Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                blockMerkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        List<Sha256Hash> hashes2 = new ArrayList<>();
+        hashes2.add(tx1.getHash(true));
+        PartialMerkleTree pmt2 = new PartialMerkleTree(btcParams, bits, hashes2, 1);
+        List<Sha256Hash> hashlist2 = new ArrayList<>();
+        Sha256Hash witnessMerkleRoot = pmt2.getTxnHashAndMerkleRoot(hashlist2);
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
+                activations));
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        MerkleBranch merkleBranch = mock(MerkleBranch.class);
+        when(merkleBranch.reduceFrom(tx1.getHash(true))).thenReturn(witnessMerkleRoot);
+
+        doReturn(null).when(provider).getCoinbaseInformation(registerHeader.getHash());
+
+        int confirmations = bridgeSupport.getBtcTransactionConfirmations(tx1.getHash(true), registerHeader.getHash(), merkleBranch);
+        Assert.assertEquals(-5, confirmations);
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_registered_coinbase_unequal_witnessroot_after_rskip_143() throws Exception {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        byte[] rawTx = Hex.decode("020000000001017db0c99ea2643e94f89e190807402c86b2d9ef83d96c0648ecfb11e6643eb4d90000" +
+                "00001716001447866ddb7dd3180e99c8e3c6c85ebb0023b5d9b4ffffffff0200c2eb0b0000000017a914896ed9f3446d51b5510" +
+                "f7f0b6ef81b2bde55140e87443324180100000017a914c7dcd0c19a12407a2fb5866bd44e4218888e4f0e870246304302207c9a" +
+                "3d83409349d6676cec578c7fa5a2e83091abc2ab9d2bad3402a549568fa6021f1e43b726ec9c8199ddfb96d2e0e71e17ecc3416" +
+                "f16073045528c0a28872d3d0121024be0015a1b0ab4a778e3abf81db544dcc18a18dc6a9a3da8d0c90286ef38a0b100000000");
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams, rawTx);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx1.getHash());
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
+        List<Sha256Hash> hashlist = new ArrayList<>();
+        Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                blockMerkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        List<Sha256Hash> hashes2 = new ArrayList<>();
+        hashes2.add(tx1.getHash(true));
+        PartialMerkleTree pmt2 = new PartialMerkleTree(btcParams, bits, hashes2, 1);
+        List<Sha256Hash> hashlist2 = new ArrayList<>();
+        Sha256Hash witnessMerkleRoot = pmt2.getTxnHashAndMerkleRoot(hashlist2);
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
+                activations));
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        MerkleBranch merkleBranch = mock(MerkleBranch.class);
+        when(merkleBranch.reduceFrom(tx1.getHash(true))).thenReturn(witnessMerkleRoot);
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
+        doReturn(coinbaseInformation).when(provider).getCoinbaseInformation(registerHeader.getHash());
+
+        int confirmations = bridgeSupport.getBtcTransactionConfirmations(tx1.getHash(true), registerHeader.getHash(), merkleBranch);
+        Assert.assertEquals(-5, confirmations);
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_tx_without_witness_unequal_roots_after_rskip_143() throws Exception {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                Sha256Hash.ZERO_HASH,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        List<Sha256Hash> hashes2 = new ArrayList<>();
+        hashes2.add(tx1.getHash(true));
+        PartialMerkleTree pmt2 = new PartialMerkleTree(btcParams, bits, hashes2, 1);
+        List<Sha256Hash> hashlist2 = new ArrayList<>();
+        Sha256Hash witnessMerkleRoot = pmt2.getTxnHashAndMerkleRoot(hashlist2);
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
+                activations));
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        MerkleBranch merkleBranch = mock(MerkleBranch.class);
+        when(merkleBranch.reduceFrom(tx1.getHash())).thenReturn(witnessMerkleRoot);
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
+        doReturn(coinbaseInformation).when(provider).getCoinbaseInformation(registerHeader.getHash());
+
+        int confirmations = bridgeSupport.getBtcTransactionConfirmations(tx1.getHash(true), registerHeader.getHash(), merkleBranch);
+        Assert.assertEquals(-5, confirmations);
+    }
+
+    @Test
+    public void getBtcTransactionConfirmations_accepts_tx_without_witness_after_rskip_143() throws Exception {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx1.getHash());
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
+        List<Sha256Hash> hashlist = new ArrayList<>();
+        Sha256Hash blockMerkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                blockMerkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        int height = 50;
+        StoredBlock block = new StoredBlock(registerHeader, new BigInteger("0"), height);
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getFromCache(registerHeader.getHash())).thenReturn(block);
+
+        StoredBlock chainHead = new StoredBlock(registerHeader, new BigInteger("0"), 132);
+        when(btcBlockStore.getChainHead()).thenReturn(chainHead);
+
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants,
+                activations));
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mockFactory,
+                activations
+        );
+
+        MerkleBranch merkleBranch = mock(MerkleBranch.class);
+        when(merkleBranch.reduceFrom(tx1.getHash())).thenReturn(blockMerkleRoot);
+
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        when(btcBlock.getMerkleRoot()).thenReturn(blockMerkleRoot);
+
+        int confirmations = bridgeSupport.getBtcTransactionConfirmations(tx1.getHash(), registerHeader.getHash(), merkleBranch);
+        Assert.assertEquals(132 - 50 + 1, confirmations);
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)

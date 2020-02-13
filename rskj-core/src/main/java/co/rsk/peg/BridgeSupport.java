@@ -306,15 +306,23 @@ public class BridgeSupport {
         }
 
         if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
-            logger.warn("Btc Tx {} has no inputs ", btcTxHash);
-            // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
-            throw new VerificationException.EmptyInputsOrOutputs();
+            if (activations.isActive(ConsensusRule.RSKIP143)) {
+                if (BtcTransactionFormatUtils.getInputsCountForSegwit(btcTxSerialized) == 0) {
+                    logger.warn("Btc Segwit Tx {} has no inputs ", btcTxHash);
+                    // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+                    throw new VerificationException.EmptyInputsOrOutputs();
+                }
+            } else {
+                logger.warn("Btc Tx {} has no inputs ", btcTxHash);
+                // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+                throw new VerificationException.EmptyInputsOrOutputs();
+            }
         }
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         // BTC blockstore is available since we've already queried the best chain height
         BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
-        if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
+        if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
             String panicMessage = String.format(
                     "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
                     btcTxHash.toString(),
@@ -1110,7 +1118,9 @@ public class BridgeSupport {
             return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
         }
 
-        if (!merkleBranch.proves(btcTxHash, block.getHeader())) {
+        Sha256Hash merkleRoot = merkleBranch.reduceFrom(btcTxHash);
+
+        if (!isBlockMerkleRootValid(merkleRoot, block.getHeader())) {
             return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE;
         }
 
@@ -2209,9 +2219,24 @@ public class BridgeSupport {
         return witnessReserved;
     }
 
-
     private Sha256Hash calculateWitnessCommitment(byte[] witnessRoot, byte[] witnessReserved) {
         return Sha256Hash.twiceOf(witnessRoot, witnessReserved);
+    }
+
+    @VisibleForTesting
+    protected boolean isBlockMerkleRootValid(Sha256Hash merkleRoot, BtcBlock blockHeader) {
+        boolean isValid = false;
+
+        if (blockHeader.getMerkleRoot().equals(merkleRoot)) {
+            isValid = true;
+        }
+        else {
+            if (activations.isActive(ConsensusRule.RSKIP143)) {
+                CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHeader.getHash());
+                isValid = coinbaseInformation != null && coinbaseInformation.getWitnessMerkleRoot().equals(merkleRoot);
+            }
+        }
+        return isValid;
     }
 }
 
