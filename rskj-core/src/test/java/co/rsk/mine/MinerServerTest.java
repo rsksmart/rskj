@@ -803,7 +803,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
-        assertEquals("SNAPSHOT-cb7f28e", new String(secondItem));
+        assertEquals(config.projectVersionModifier().concat("-cb7f28e"), new String(secondItem));
     }
 
     @Test
@@ -833,7 +833,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
-        assertEquals("SNAPSHOT-cb7f28e", new String(secondItem));
+        assertEquals(config.projectVersionModifier().concat("-cb7f28e"), new String(secondItem));
 
         byte[] thirdItem = decodedExtraData.get(2).getRLPData();
         assertNotNull(thirdItem);
@@ -868,11 +868,18 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
-        assertEquals("SNAPSHOT-cb7f28e", new String(secondItem));
+        assertEquals(config.projectVersionModifier().concat("-cb7f28e"), new String(secondItem));
 
         byte[] thirdItem = decodedExtraData.get(2).getRLPData();
         assertNotNull(thirdItem);
-        assertEquals("tincho is th", new String(thirdItem));
+
+        // The final client extra data may be truncated by the combined size of the other encoded elements
+        int extraDataMaxLength = 32;
+        int extraDataEncodingOverhead = 3;
+        Integer clientExtraDataSize =
+                extraDataMaxLength - extraDataEncodingOverhead - firstItem.length - secondItem.length;
+
+        assertEquals("tincho is the king of mining".substring(0, clientExtraDataSize), new String(thirdItem));
     }
 
     private BtcBlock getMergedMiningBlockWithOnlyCoinbase(MinerWork work) {
