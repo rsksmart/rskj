@@ -211,6 +211,14 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
+        if (pendingTransactions.hasTransaction(tx)) {
+            return TransactionPoolAddResult.withError("pending transaction with same hash already exists");
+        }
+
+        if (queuedTransactions.hasTransaction(tx)) {
+            return TransactionPoolAddResult.withError("queued transaction with same hash already exists");
+        }
+
         RepositorySnapshot currentRepository = getCurrentRepository();
         TransactionValidationResult validationResult = shouldAcceptTx(tx, currentRepository);
         if (!validationResult.transactionIsValid()) {
@@ -221,14 +229,6 @@ public class TransactionPoolImpl implements TransactionPool {
         logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
-
-        if (pendingTransactions.hasTransaction(tx)) {
-            return TransactionPoolAddResult.withError("pending transaction with same hash already exists");
-        }
-
-        if (queuedTransactions.hasTransaction(tx)) {
-            return TransactionPoolAddResult.withError("queued transaction with same hash already exists");
-        }
 
         if (!isBumpingGasPriceForSameNonceTx(tx)) {
             return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
