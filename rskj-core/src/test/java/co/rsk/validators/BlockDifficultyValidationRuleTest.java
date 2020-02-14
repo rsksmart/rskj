@@ -20,6 +20,7 @@ package co.rsk.validators;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -33,6 +34,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
+
+import static org.ethereum.json.Utils.parseData;
+import static org.ethereum.json.Utils.parseNumericData;
 
 /**
  * Created by sergio on 23/01/17.
@@ -51,10 +55,13 @@ public class BlockDifficultyValidationRuleTest {
     }
 
     private BlockHeader getEmptyHeader(BlockDifficulty difficulty, long blockTimestamp, int uCount) {
-        BlockHeader header = blockFactory.newHeader(null, null,
-                TestUtils.randomAddress().getBytes(), null, difficulty.getBytes(), 0,
-                null, 0,
-                blockTimestamp, null, null, uCount);
+        BlockHeader header = blockFactory.getBlockHeaderBuilder().
+                setCoinbase(TestUtils.randomAddress()).
+                setDifficulty(difficulty).
+                setTimestamp(blockTimestamp).
+                setUncleCount(uCount).
+                build(true,true);
+
         return header;
     }
 

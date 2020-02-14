@@ -20,6 +20,7 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.RskAddress;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.ethereum.TestUtils;
 import org.ethereum.core.BlockFactory;
@@ -27,6 +28,8 @@ import org.ethereum.core.BlockHeader;
 
 import java.math.BigInteger;
 
+import static org.ethereum.json.Utils.parseData;
+import static org.ethereum.json.Utils.parseNumericData;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -94,20 +97,31 @@ public class DifficultyTestCase {
     }
 
     public BlockHeader getCurrent(BlockFactory blockFactory) {
-        return blockFactory.newHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY, null,
-                org.ethereum.json.Utils.parseLong(currentBlockNumber), new byte[] {0}, 0,
-                org.ethereum.json.Utils.parseLong(currentTimestamp),
-                EMPTY_BYTE_ARRAY, null, 0);
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder().
+                setParentHash(EMPTY_BYTE_ARRAY).
+                setUnclesHash(EMPTY_BYTE_ARRAY).
+                setCoinbase(TestUtils.randomAddress()).
+                setLogsBloom(EMPTY_BYTE_ARRAY).
+                setNumber(org.ethereum.json.Utils.parseLong(currentBlockNumber)).
+                setTimestamp(org.ethereum.json.Utils.parseLong(currentTimestamp)).
+                build(true,true);
+
+        return newHeader;
     }
 
     public BlockHeader getParent(BlockFactory blockFactory) {
-        return blockFactory.newHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY,
-                parseDifficulty(parentDifficulty).toByteArray(),
-                org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1, new byte[] {0}, 0,
-                org.ethereum.json.Utils.parseLong(parentTimestamp),
-                EMPTY_BYTE_ARRAY, null, 0);
+
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder().
+                setParentHash(EMPTY_BYTE_ARRAY).
+                setUnclesHash(EMPTY_BYTE_ARRAY).
+                setDifficultyFromBytes(parseDifficulty(parentDifficulty).toByteArray()).
+                setCoinbase(TestUtils.randomAddress()).
+                setLogsBloom(EMPTY_BYTE_ARRAY).
+                setNumber(org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1).
+                setTimestamp(org.ethereum.json.Utils.parseLong(parentTimestamp)).
+                build(true,true);
+
+        return newHeader;
     }
 
     public BlockDifficulty getExpectedDifficulty() {

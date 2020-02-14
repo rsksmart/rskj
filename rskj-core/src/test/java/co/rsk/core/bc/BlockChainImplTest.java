@@ -40,6 +40,7 @@ import org.ethereum.util.FastByteComparisons;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -155,9 +156,7 @@ public class BlockChainImplTest {
     public void addInvalidBlockOneBadStateRoot() {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
-
-        alterBytes(block1.getHeader().getStateRoot());
-
+        block1.getHeader().setStateRoot(cloneAlterBytes(block1.getHeader().getStateRoot()));
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
 
@@ -166,7 +165,7 @@ public class BlockChainImplTest {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        alterBytes(block1.getHeader().getReceiptsRoot());
+        block1.getHeader().setReceiptsRoot(cloneAlterBytes(block1.getHeader().getReceiptsRoot()));
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
@@ -176,7 +175,7 @@ public class BlockChainImplTest {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        alterBytes(block1.getHeader().getLogsBloom());
+        block1.getHeader().setLogsBloom(cloneAlterBytes(block1.getHeader().getLogsBloom()));
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
@@ -348,6 +347,9 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block2b));
     }
 
+    // Test gives
+    // Genesis block configuration is corrupted or not found ./resources/genesis/...
+    // when executed in batch.
     @Test
     public void switchToOtherChainInvalidBadBlockBadStateRoot() {
         Block genesis = blockChain.getBestBlock();
@@ -427,6 +429,13 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block2b));
     }
 
+    // NOTE on switchToOtherChainInvalidBadPaidFees
+    // This test passes when run in batch with all the other tests.
+    // But when run isolated it fails with a strange message:
+    // "Genesis block configuration is corrupted or not found ./resources/genesis/..."
+    //
+    // importing an invalid or missing genesis block
+    //////////////////////////////////////////////////////////
     @Test
     public void switchToOtherChainInvalidBadPaidFees() {
         Block genesis = blockChain.getBestBlock();
@@ -662,17 +671,15 @@ public class BlockChainImplTest {
         return block;
     }
 
-    private static void alterBytes(byte[] bytes) {
-        bytes[0] = (byte)((bytes[0] + 1) % 256);
-    }
-
+    // I removed the function alterBytes because the BlockHeaderBuilder does not
+    // clone EMPTY_TRIE_HASH. It's just copied over and over.
     private static byte[] cloneAlterBytes(byte[] bytes) {
         byte[] cloned = Arrays.clone(bytes);
 
         if (cloned == null)
             return new byte[] { 0x01 };
 
-        alterBytes(cloned);
+        cloned[0] = (byte)((cloned[0] + 1) % 256);
         return cloned;
     }
 

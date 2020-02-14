@@ -29,6 +29,7 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -349,14 +350,15 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
 
         Block genesis = blockGenerator.getGenesisBlock();
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder().
+                setCoinbase(TestUtils.randomAddress()).
+                setDifficulty(TEST_DIFFICULTY).
+                setEmptyMergedMiningForkDetectionData().
+                setMinimumGasPrice(Coin.valueOf(10)).
+                build(true,true);
+
         Block uncle1a = blockGenerator.createChildBlock(blockFactory.newBlock(
-                blockFactory.newHeader(
-                        null, null, TestUtils.randomAddress().getBytes(),
-                        null, HashUtil.EMPTY_TRIE_HASH, null,
-                        null, TEST_DIFFICULTY.getBytes(), 0,
-                        null, 0L, 0L, new byte[]{}, Coin.ZERO,
-                        null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0,null
-                ),
+                newHeader,
                 Collections.emptyList(),
                 Collections.emptyList()
         ));

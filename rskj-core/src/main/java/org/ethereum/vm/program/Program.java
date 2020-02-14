@@ -20,6 +20,7 @@
 package org.ethereum.vm.program;
 
 import co.rsk.config.VmConfig;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.pcc.NativeContract;
@@ -27,7 +28,6 @@ import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -57,7 +57,6 @@ import java.util.*;
 
 import static co.rsk.util.ListArrayUtil.*;
 import static java.lang.String.format;
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -1359,13 +1358,17 @@ public class Program {
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
 
             Block executionBlock = blockFactory.newBlock(
-                    blockFactory.newHeader(
-                            getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(),
-                            ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
-                            ByteUtils.clone(EMPTY_TRIE_HASH), EMPTY_BYTE_ARRAY, getDifficulty().getData(),
-                            getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
-                            EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[0], null, 0,null
-                    ),
+                    blockFactory.getBlockHeaderBuilder().
+                            setParentHash(getPrevHash().getData()).
+                            setCoinbase(new RskAddress(getCoinbase().getLast20Bytes())).
+                            setEmptyStateRoot().
+                            setEmptyReceiptTrieRoot().
+                            setEmptyLogsBloom(). // is this equial to the empty byte array ?
+                            setDifficulty(new BlockDifficulty(getDifficulty().value())).
+                            setNumber(getNumber().longValue()).
+                            setGasLimit(getGasLimit().getData()).
+                            setTimestamp(getTimestamp().longValue()).
+                            build(true,true),
                     Collections.emptyList(),
                     Collections.emptyList()
             );

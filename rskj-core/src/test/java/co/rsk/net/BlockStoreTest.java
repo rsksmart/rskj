@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.RskAddress;
 import com.google.common.collect.Lists;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -32,6 +33,9 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.ethereum.json.Utils.parseData;
+import static org.ethereum.json.Utils.parseNumericData;
 
 /**
  * Created by ajlopez on 5/11/2016.
@@ -221,24 +225,17 @@ public class BlockStoreTest {
     @Test
     public void saveHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = blockFactory.newHeader(new byte[]{},
-                new byte[]{},
-                TestUtils.randomAddress().getBytes(),
-                new Bloom().getData(),
-                null,
-                1,
-                new byte[]{},
-                0,
-                0,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{0},
-                0,
-                null
-        );
+
+        BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder().
+                setParentHash(new byte[]{}).
+                setUnclesHash(new byte[]{}).
+                setCoinbase(TestUtils.randomAddress()).
+                setEmptyStateRoot().
+                setEmptyTxTrieRoot().
+                setEmptyReceiptTrieRoot().
+                setEmptyLogsBloom().
+                setNumber(1).
+                build(true,true);
 
         store.saveHeader(blockHeader);
         Assert.assertTrue(store.hasHeader(blockHeader.getHash()));
@@ -247,23 +244,16 @@ public class BlockStoreTest {
     @Test
     public void removeHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = blockFactory.newHeader(new byte[]{},
-                new byte[]{},
-                TestUtils.randomAddress().getBytes(),
-                new Bloom().getData(),
-                null,
-                1,
-                new byte[]{},
-                0,
-                0,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{0},
-                0,null
-        );
+        BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder().
+                setParentHash(new byte[]{}).
+                setUnclesHash(new byte[]{}).
+                setCoinbase(TestUtils.randomAddress()).
+                setEmptyStateRoot().
+                setEmptyTxTrieRoot().
+                setEmptyReceiptTrieRoot().
+                setEmptyLogsBloom().
+                setNumber(1).
+                build(true,true);
 
         store.saveHeader(blockHeader);
         store.removeHeader(blockHeader);

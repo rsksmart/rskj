@@ -24,7 +24,11 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 public class Web3HttpServerTest {
-
+    ///////////////////////////////////////////////////////////////
+    // Important note
+    // Some of these tests require Internet connectivity.
+    // They will FAIL if Internet connectivity is nonexistent
+    //////////////////////////////////////////////////////////////
     public static final String APPLICATION_JSON = "application/json";
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();

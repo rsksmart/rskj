@@ -45,6 +45,12 @@ public class BlockChainImplInvalidTest {
 
     @Before
     public void setup() {
+        //////////////////////////////////////////////////////////////////////////
+        // IMPORTANT NOTE:
+        // These tests are using the configuration file
+        // \src\main\resources\config\main.conf
+        // This seems WRONG. Units tests should not use a main configuration file
+        //////////////////////////////////////////////////////////////////////////
         objects = new RskTestContext(new String[0]) {
             @Override
             protected GenesisLoader buildGenesisLoader() {
