@@ -49,7 +49,7 @@ public class TransactionExecutorTest {
                 constants, activationConfig, transaction, txIndex, rskAddress,
                 repository, blockStore, receiptStore, blockFactory,
                 programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
-                true, true, precompiledContracts, deletedAccounts, vmExecution
+                true, true, precompiledContracts, deletedAccounts
         );
 
 
