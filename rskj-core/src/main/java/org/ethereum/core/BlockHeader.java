@@ -504,7 +504,7 @@ public class BlockHeader {
     }
 
     public boolean nonEmptyMergeMiningRightHash() {
-        return mergeMiningRightHash!=null;
+        return (mergeMiningRightHash!=null) && (mergeMiningRightHash.length!=0);
     }
 
     public byte[] getHashForMergedMining() {

@@ -61,6 +61,8 @@ public class BlockGenerator {
     private int count = 0;
     private ActivationConfig activationConfig;
 
+    private byte[] mergeMiningRightHash;
+
     public BlockGenerator() {
         this(Constants.regtest(), ActivationConfigsForTest.regtest());
     }
@@ -244,6 +246,7 @@ public class BlockGenerator {
                 setMergedMiningForkDetectionData(miningForkDetectionData).
                 setMinimumGasPrice(coinMinGasPrice).
                 setUncleCount(uncles.size()).
+                setMergeMiningRightHash(mergeMiningRightHash).
                 build();
 
         if (difficulty == 0) {
@@ -291,6 +294,7 @@ public class BlockGenerator {
                 setTimestamp(parent.getTimestamp() + ++count).
                 setEmptyMergedMiningForkDetectionData().
                 setMinimumGasPrice(minimumGasPrice).
+                setMergeMiningRightHash(mergeMiningRightHash).
                 build();
 
         return blockFactory.newBlock(
@@ -323,6 +327,7 @@ public class BlockGenerator {
                 setTimestamp(parent.getTimestamp() + ++count).
                 setEmptyMergedMiningForkDetectionData().
                 setMinimumGasPrice(minimumGasPrice).
+                setMergeMiningRightHash(mergeMiningRightHash).
                 build();
 
         return blockFactory.newBlock(
@@ -469,4 +474,13 @@ public class BlockGenerator {
                 nullReplace(block.get(1).getRLPData()),
                 nullReplace(block.get(2).getRLPData()));
     }
+
+    public byte[] getMergeMiningRightHash() {
+        return mergeMiningRightHash;
+    }
+
+    public void setMergeMiningRightHash(byte[] mergeMiningRightHash) {
+        this.mergeMiningRightHash = mergeMiningRightHash;
+    }
+
 }
