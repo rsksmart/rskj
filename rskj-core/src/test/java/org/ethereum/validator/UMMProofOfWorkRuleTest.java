@@ -9,8 +9,10 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.crypto.HashUtil;
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 
 public class UMMProofOfWorkRuleTest {
@@ -39,6 +41,13 @@ public class UMMProofOfWorkRuleTest {
         this.networkConstants = config.getNetworkConstants();
         this.blockFactory = new BlockFactory(activationConfig);
     }
+    public byte[] getHashRootForMergedMining(byte[] leftHashForMergedMining,byte[] mergeMiningRightHash) {
+        byte[] left = leftHashForMergedMining;
+
+        byte[] leftRight = org.bouncycastle.util.Arrays.concatenate(left,mergeMiningRightHash);
+        byte[] root256 = HashUtil.keccak256(leftRight);
+        return root256;
+    }
     @Test
     public void test_1() {
         // mined block
@@ -47,5 +56,10 @@ public class UMMProofOfWorkRuleTest {
         bg.setMergeMiningRightHash(mergeMiningRightHash);
         Block b = new BlockMiner(activationConfig).mineBlock(bg.getBlock(1));
         assertTrue(rule.isValid(b));
+        byte[] encodedBlock = b.getHeader().getEncoded(false, false);
+        byte[] headerHashForMergedMining = HashUtil.keccak256(encodedBlock);
+        byte[] newRoot= getHashRootForMergedMining(headerHashForMergedMining,mergeMiningRightHash);
+        byte[] rootFromHeader =b.getHashForMergedMining();
+        assertArrayEquals(rootFromHeader,newRoot);
     }
 }
