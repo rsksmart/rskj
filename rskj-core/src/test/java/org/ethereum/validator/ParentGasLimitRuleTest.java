@@ -91,7 +91,7 @@ public class ParentGasLimitRuleTest {
                 setCoinbase(TestUtils.randomAddress()).
                 setDifficulty(BlockDifficulty.ZERO).
                 setGasLimit(gasLimit).
-                build(true,true);
+                build();
 
         return header;
     }

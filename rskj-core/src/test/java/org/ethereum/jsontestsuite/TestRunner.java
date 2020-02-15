@@ -724,7 +724,7 @@ public class TestRunner {
                         setTimestamp(getPositiveLong(headerTck.getTimestamp())).
                         setExtraData(parseData(headerTck.getExtraData())).
                         setUncleCount(0).
-                        build(true,true);
+                        build();
 
         return newHeader;
     }

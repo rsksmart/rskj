@@ -1368,7 +1368,7 @@ public class Program {
                             setNumber(getNumber().longValue()).
                             setGasLimit(getGasLimit().getData()).
                             setTimestamp(getTimestamp().longValue()).
-                            build(true,true),
+                            build(),
                     Collections.emptyList(),
                     Collections.emptyList()
             );

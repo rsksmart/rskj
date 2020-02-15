@@ -106,10 +106,35 @@ public class BlockHeaderBuilder {
     private boolean includeForkDetectionData;
     private ActivationConfig activationConfig;
 
+
+    /* Additional options on how to build the header */
+    boolean createConsensusComplaintHeader;
+    boolean createUMMComplaintHeader;
+
     public BlockHeaderBuilder(ActivationConfig activationConfig) {
         this.activationConfig =activationConfig;
+        createConsensusComplaintHeader = true;
+        createUMMComplaintHeader = true;
+
     }
 
+    public boolean isCreateConsensusComplaintHeader() {
+        return createConsensusComplaintHeader;
+    }
+
+    public BlockHeaderBuilder setCreateConsensusComplaintHeader(boolean createConsensusComplaintHeader) {
+        this.createConsensusComplaintHeader = createConsensusComplaintHeader;
+        return this;
+    }
+
+    public boolean isCreateUMMComplaintHeader() {
+        return createUMMComplaintHeader;
+    }
+
+    public BlockHeaderBuilder setCreateUMMComplaintHeader(boolean createUMMComplaintHeader) {
+        this.createUMMComplaintHeader = createUMMComplaintHeader;
+        return this;
+    }
     public int getUncleCount() {
         return uncleCount;
     }
@@ -465,7 +490,7 @@ public class BlockHeaderBuilder {
         if (mergedMiningForkDetectionData==null)
                 mergedMiningForkDetectionData = new byte[]{};
     }
-    public BlockHeader build(boolean createConsensusComplaintHeader,boolean createUMMComplaintHeader) {
+    public BlockHeader build() {
         // Initial null values in some fields are replaced by empty
         // arrays
         normalize();

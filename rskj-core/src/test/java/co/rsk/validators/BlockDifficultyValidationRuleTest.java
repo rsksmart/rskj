@@ -60,7 +60,7 @@ public class BlockDifficultyValidationRuleTest {
                 setDifficulty(difficulty).
                 setTimestamp(blockTimestamp).
                 setUncleCount(uCount).
-                build(true,true);
+                build();
 
         return header;
     }

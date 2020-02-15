@@ -416,7 +416,9 @@ public class TransactionPoolImpl implements TransactionPool {
                         setNumber(best.getNumber() + 1).
                         setGasLimitMaxValue().
                         setTimestamp(best.getTimestamp() + 1).
-                        build(false,false),
+                        setCreateConsensusComplaintHeader(false).
+                        setCreateUMMComplaintHeader(false).
+                        build(),
                 Collections.emptyList(),
                 Collections.emptyList()
         );

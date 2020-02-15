@@ -224,7 +224,7 @@ public class StateTestRunner {
                 setExtraData(new byte[32]).
                 setEmptyMergedMiningForkDetectionData().
                 setUncleCount(0).
-                build(true,true);
+                build();
 
         return blockFactory.newBlock(
                 newHeader,

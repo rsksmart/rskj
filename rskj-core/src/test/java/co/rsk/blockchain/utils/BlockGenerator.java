@@ -150,7 +150,7 @@ public class BlockGenerator {
                 setPaidFees(Coin.valueOf(fees)).
                 setEmptyMergedMiningForkDetectionData().
                 setUncleCount(uncles.size()).
-                build(true,true);
+                build();
 
         return blockFactory.newBlock(
                 newHeader,
@@ -179,7 +179,7 @@ public class BlockGenerator {
                 setGasUsed( parent.getGasUsed()). // why ? I just copied the value before
                 setTimestamp(parent.getTimestamp() + ++count).
                 setEmptyMergedMiningForkDetectionData().
-                build(true,true);
+                build();
         return blockFactory.newBlock(
                 newHeader,
                 txs,
@@ -244,7 +244,7 @@ public class BlockGenerator {
                 setMergedMiningForkDetectionData(miningForkDetectionData).
                 setMinimumGasPrice(coinMinGasPrice).
                 setUncleCount(uncles.size()).
-                build(true,true);
+                build();
 
         if (difficulty == 0) {
             newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()));
@@ -291,7 +291,7 @@ public class BlockGenerator {
                 setTimestamp(parent.getTimestamp() + ++count).
                 setEmptyMergedMiningForkDetectionData().
                 setMinimumGasPrice(minimumGasPrice).
-                build(true,true);
+                build();
 
         return blockFactory.newBlock(
                 newHeader,
@@ -323,7 +323,7 @@ public class BlockGenerator {
                 setTimestamp(parent.getTimestamp() + ++count).
                 setEmptyMergedMiningForkDetectionData().
                 setMinimumGasPrice(minimumGasPrice).
-                build(true,true);
+                build();
 
         return blockFactory.newBlock(
                 newHeader,

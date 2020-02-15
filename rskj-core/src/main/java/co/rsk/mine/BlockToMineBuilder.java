@@ -213,7 +213,7 @@ public class BlockToMineBuilder {
                 setExtraData(extraData).
                 setMergedMiningForkDetectionData(forkDetectionData).
                 setMinimumGasPrice(minimumGasPrice).
-                setUncleCount(uncles.size()).build(true,true);
+                setUncleCount(uncles.size()).build();
 
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));
         return newHeader;

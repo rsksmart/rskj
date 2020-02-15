@@ -355,7 +355,7 @@ public class BlockValidatorTest {
                 setDifficulty(TEST_DIFFICULTY).
                 setEmptyMergedMiningForkDetectionData().
                 setMinimumGasPrice(Coin.valueOf(10)).
-                build(true,true);
+                build();
 
         Block uncle1a = blockGenerator.createChildBlock(blockFactory.newBlock(
                 newHeader,

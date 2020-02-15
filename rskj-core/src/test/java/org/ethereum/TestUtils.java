@@ -117,7 +117,7 @@ public final class TestUtils {
                     setEmptyLogsBloom().
                     setDifficultyFromBytes(difficutly).
                     setNumber(lastIndex).
-                    build(true,true);
+                    build();
             Block block = blockFactory.newBlock(
                     newHeader,
                     Collections.emptyList(),

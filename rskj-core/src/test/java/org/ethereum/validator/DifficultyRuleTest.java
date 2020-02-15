@@ -61,7 +61,7 @@ public class DifficultyRuleTest {
         BlockHeader header = blockFactory.getBlockHeaderBuilder().
                 setCoinbase(TestUtils.randomAddress()).
                 setDifficultyFromBytes(difficulty).
-               build(true,true);
+               build();
         return header;
     }
 }

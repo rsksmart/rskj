@@ -104,7 +104,7 @@ public class DifficultyTestCase {
                 setLogsBloom(EMPTY_BYTE_ARRAY).
                 setNumber(org.ethereum.json.Utils.parseLong(currentBlockNumber)).
                 setTimestamp(org.ethereum.json.Utils.parseLong(currentTimestamp)).
-                build(true,true);
+                build();
 
         return newHeader;
     }
@@ -119,7 +119,7 @@ public class DifficultyTestCase {
                 setLogsBloom(EMPTY_BYTE_ARRAY).
                 setNumber(org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1).
                 setTimestamp(org.ethereum.json.Utils.parseLong(parentTimestamp)).
-                build(true,true);
+                build();
 
         return newHeader;
     }

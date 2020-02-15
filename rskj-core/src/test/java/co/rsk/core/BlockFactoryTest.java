@@ -281,7 +281,8 @@ public class BlockFactoryTest {
                 setMinimumGasPrice(Coin.valueOf(10L)).
                 setUncleCount(0).
                 setMergeMiningRightHash(mergeMiningRightHash).
-                build(true,mergeMiningRightHash!=null);
+                setCreateUMMComplaintHeader(mergeMiningRightHash!=null).
+                build();
         return newHeader;
     }
 
@@ -308,7 +309,7 @@ public class BlockFactoryTest {
                 setMergedMiningForkDetectionData(forkDetectionData).
                 setMinimumGasPrice(Coin.valueOf(10L)).
                 setUncleCount(0).
-                build(true,true);
+                build();
 
         return newHeader;
     }

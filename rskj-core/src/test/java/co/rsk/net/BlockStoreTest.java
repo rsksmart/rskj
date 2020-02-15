@@ -235,7 +235,7 @@ public class BlockStoreTest {
                 setEmptyReceiptTrieRoot().
                 setEmptyLogsBloom().
                 setNumber(1).
-                build(true,true);
+                build();
 
         store.saveHeader(blockHeader);
         Assert.assertTrue(store.hasHeader(blockHeader.getHash()));
@@ -253,7 +253,7 @@ public class BlockStoreTest {
                 setEmptyReceiptTrieRoot().
                 setEmptyLogsBloom().
                 setNumber(1).
-                build(true,true);
+                build();
 
         store.saveHeader(blockHeader);
         store.removeHeader(blockHeader);

@@ -62,7 +62,7 @@ public class ParentNumberRuleTest {
                 setCoinbase(TestUtils.randomAddress()).
                 setDifficulty(BlockDifficulty.ZERO).
                 setNumber(number).
-                build(true,true);
+                build();
 
         return header;
     }
