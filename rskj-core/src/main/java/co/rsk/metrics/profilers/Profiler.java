@@ -51,4 +51,6 @@ public interface Profiler {
      * @param metric Metric instance that needs to be finalized
      */
     void stop(Metric metric);
+
+    void newBlock(long blockId, int trxQty);
 }
