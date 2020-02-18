@@ -713,7 +713,7 @@ public class Web3Impl implements Web3 {
 
             if (uncle == null) {
                 boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, uncleHeader.getNumber());
-                uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList(), isRskip126Enabled, true);
+                uncle = Block.createBlockFromHeader(uncleHeader, isRskip126Enabled);
             }
 
             return s = getBlockResult(uncle, false);
