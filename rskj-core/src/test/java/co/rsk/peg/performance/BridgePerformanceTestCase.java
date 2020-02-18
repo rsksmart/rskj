@@ -194,22 +194,22 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 Trie trie = new Trie(trieStore);
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore,  trie);
                 Repository repository = benchmarkerTrack.startTracking();
+                BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository);
 
                 BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock((long) executionIndex));
-                storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex, btcBlockStoreFactory.newInstance(repository));
+                storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex, btcBlockStore);
                 repository.commit();
                 try {
                     storageProvider.save();
                 } catch (Exception e) {
                     throw new RuntimeException("Error trying to save the storage after initialization", e);
                 }
+
                 benchmarkerTrack.commit();
 
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, benchmarkerTrack.getTrie());
                 List<LogInfo> logs = new ArrayList<>();
 
-                Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
-                        constants.getBridgeConstants().getBtcParams());
                 BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                         btcBlockStoreFactory, constants.getBridgeConstants(), activationConfig);
 

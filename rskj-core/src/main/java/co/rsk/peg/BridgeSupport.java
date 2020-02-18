@@ -1984,14 +1984,14 @@ public class BridgeSupport {
                 return;
             }
         } catch (VerificationException e) {
-            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed {}", Hex.toHexString(pmtSerialized)), e);
+            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed %s", Hex.toHexString(pmtSerialized)), e);
         }
 
         // Check merkle root equals btc block merkle root at the specified height in the btc best chain
         // Btc blockstore is available since we've already queried the best chain height
         StoredBlock storedBlock = btcBlockStore.getFromCache(blockHash);
         if (storedBlock == null) {
-            throw new BridgeIllegalArgumentException(String.format("No Block registered at height %n"));
+            throw new BridgeIllegalArgumentException(String.format("Block not registered %s", blockHash.toString()));
         }
         BtcBlock blockHeader = storedBlock.getHeader();
         if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
