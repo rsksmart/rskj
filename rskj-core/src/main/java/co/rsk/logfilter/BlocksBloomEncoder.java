@@ -19,6 +19,7 @@
 
 package co.rsk.logfilter;
 
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Bloom;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -52,18 +53,10 @@ public class BlocksBloomEncoder {
     }
 
     private static byte[] encodeLong(long value) {
-        if (value == -1) {
-            return RLP.encodedEmptyByteArray();
-        }
-
         return RLP.encodeBigInteger(BigInteger.valueOf(value));
     }
 
     private static long decodeLong(byte[] data) {
-        if (data == null || data.length == 0) {
-            return -1;
-        }
-
-        return RLP.decodeBigInteger(data, 0).longValue();
+        return data == null ? 0 : BigIntegers.fromUnsignedByteArray(data).longValueExact();
     }
 }

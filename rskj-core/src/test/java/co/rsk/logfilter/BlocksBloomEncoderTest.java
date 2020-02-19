@@ -23,6 +23,8 @@ import org.ethereum.core.Bloom;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Random;
+
 /**
  * Created by ajlopez on 19/02/2020.
  */
@@ -42,5 +44,39 @@ public class BlocksBloomEncoderTest {
         byte[] bytes = new byte[Bloom.BLOOM_BYTES];
 
         Assert.assertArrayEquals(bytes, result.getBloom().getData());
+    }
+
+    @Test
+    public void encodeDecodeBlocksBloom() {
+        BlocksBloom blocksBloom = new BlocksBloom(0, 100, new Bloom());
+
+        byte[] data = BlocksBloomEncoder.encode(blocksBloom);
+
+        Assert.assertNotNull(data);
+
+        BlocksBloom result = BlocksBloomEncoder.decode(data);
+
+        Assert.assertEquals(blocksBloom.fromBlock(), result.fromBlock());
+        Assert.assertEquals(blocksBloom.toBlock(), result.toBlock());
+        Assert.assertEquals(blocksBloom.size(), result.size());
+        Assert.assertArrayEquals(blocksBloom.getBloom().getData(), result.getBloom().getData());
+    }
+
+    @Test
+    public void encodeDecodeBlocksBloomWithData() {
+        byte[] bloomData = new byte[Bloom.BLOOM_BYTES];
+        (new Random()).nextBytes(bloomData);
+        BlocksBloom blocksBloom = new BlocksBloom(100, 2000, new Bloom(bloomData));
+
+        byte[] data = BlocksBloomEncoder.encode(blocksBloom);
+
+        Assert.assertNotNull(data);
+
+        BlocksBloom result = BlocksBloomEncoder.decode(data);
+
+        Assert.assertEquals(blocksBloom.fromBlock(), result.fromBlock());
+        Assert.assertEquals(blocksBloom.toBlock(), result.toBlock());
+        Assert.assertEquals(blocksBloom.size(), result.size());
+        Assert.assertArrayEquals(blocksBloom.getBloom().getData(), result.getBloom().getData());
     }
 }
