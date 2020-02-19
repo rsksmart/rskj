@@ -19,6 +19,9 @@
 
 package co.rsk.logfilter;
 
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.vm.DataWord;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,22 +32,54 @@ public class BlocksBloomStore {
     private final int noBlocks;
     private final int noConfirmations;
     private final Map<Long, BlocksBloom> blocksBloom = new ConcurrentHashMap<>();
+    private final KeyValueDataSource dataSource;
 
-    public BlocksBloomStore(int noBlocks, int noConfirmations) {
+    public BlocksBloomStore(int noBlocks, int noConfirmations, KeyValueDataSource dataSource) {
         this.noBlocks = noBlocks;
         this.noConfirmations = noConfirmations;
+        this.dataSource = dataSource;
     }
 
     public boolean hasBlockNumber(long blockNumber) {
-        return this.blocksBloom.containsKey(this.firstNumberInRange(blockNumber));
+        if (this.blocksBloom.containsKey(this.firstNumberInRange(blockNumber))) {
+            return true;
+        }
+
+        if (this.dataSource != null && this.dataSource.get(longToKey(blockNumber)) != null) {
+            return true;
+        }
+
+        return false;
     }
 
     public BlocksBloom getBlocksBloomByNumber(long number) {
-        return this.blocksBloom.get(firstNumberInRange(number));
+        long key = firstNumberInRange(number);
+
+        BlocksBloom blocksBloom = this.blocksBloom.get(key);
+
+        if (blocksBloom != null) {
+            return blocksBloom;
+        }
+
+        if (this.dataSource == null) {
+            return null;
+        }
+
+        byte[] data = this.dataSource.get(longToKey(key));
+
+        if (data == null) {
+            return null;
+        }
+
+        return BlocksBloomEncoder.decode(data);
     }
 
     public void setBlocksBloom(BlocksBloom blocksBloom) {
         this.blocksBloom.put(blocksBloom.fromBlock(), blocksBloom);
+
+        if (this.dataSource != null) {
+            this.dataSource.put(longToKey(blocksBloom.fromBlock()), BlocksBloomEncoder.encode(blocksBloom));
+        }
     }
 
     public long firstNumberInRange(long number) {
@@ -60,4 +95,8 @@ public class BlocksBloomStore {
     }
 
     public int getNoConfirmations() { return this.noConfirmations; }
+
+    public static byte[] longToKey(long value) {
+        return DataWord.valueOf(value).getByteArrayForStorage();
+    }
 }

@@ -1030,7 +1030,7 @@ public class Web3ImplLogsTest {
                 null,
                 new SimpleConfigCapabilities(),
                 null,
-                new BlocksBloomStore(2, 0),
+                new BlocksBloomStore(2, 0, null),
                 mock(Web3InformationRetriever.class));
     }
 

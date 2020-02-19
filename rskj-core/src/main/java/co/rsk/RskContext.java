@@ -769,7 +769,7 @@ public class RskContext implements NodeBootstrapper {
 
     public BlocksBloomStore getBlocksBloomStore() {
         if (blocksBloomStore == null) {
-            blocksBloomStore = new BlocksBloomStore(64, 20);
+            blocksBloomStore = new BlocksBloomStore(64, 20, null);
         }
 
         return blocksBloomStore;
