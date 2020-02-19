@@ -25,9 +25,21 @@ import org.ethereum.core.Bloom;
  * Created by ajlopez on 29/01/2019.
  */
 public class BlocksBloom {
-    private final Bloom bloom = new Bloom();
+    private final Bloom bloom;
     private long fromBlock = -1;
     private long toBlock = -1;
+
+    public BlocksBloom() {
+        this.bloom = new Bloom();
+        this.fromBlock = -1;
+        this.toBlock = -1;
+    }
+
+    public BlocksBloom(long fromBlock, long toBlock, Bloom bloom) {
+        this.bloom = bloom;
+        this.fromBlock = fromBlock;
+        this.toBlock = toBlock;
+    }
 
     public Bloom getBloom() { return this.bloom; }
 

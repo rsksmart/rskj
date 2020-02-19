@@ -919,4 +919,11 @@ public class RLP {
     public static byte[] encodedEmptyList() {
         return new byte[] {(byte) OFFSET_SHORT_LIST};
     }
+
+    /**
+     * An encoded empty byte array
+     */
+    public static byte[] encodedEmptyByteArray() {
+        return new byte[] {(byte) OFFSET_SHORT_ITEM};
+    }
 }
