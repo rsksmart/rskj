@@ -28,6 +28,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -53,7 +55,7 @@ public class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCas
     @Test
     public void registerBtcCoinbaseTransaction() {
         ExecutionStats stats = new ExecutionStats("registerBtcCoinbaseTransaction");
-        registerBtcCoinbaseTransaction_success(1000, stats);
+        registerBtcCoinbaseTransaction_success(5000, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
@@ -63,7 +65,17 @@ public class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCas
                 2000
         );
 
-        executeAndAverage("registerBtcCoinbaseTransaction-sucess", times, getABIEncoder(), storageInitializer, Helper.getZeroValueValueTxBuilderFromFedMember(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("registerBtcCoinbaseTransaction-sucess",
+                times,
+                getABIEncoder(),
+                storageInitializer,
+                Helper.getZeroValueValueTxBuilderFromFedMember(),
+                Helper.getRandomHeightProvider(10),
+                stats,
+                (EnvironmentBuilder.Environment environment, byte[] result) -> {
+                    BridgeStorageProvider bsp = new BridgeStorageProvider((Repository) environment.getBenchmarkedRepository(), PrecompiledContracts.BRIDGE_ADDR, constants.getBridgeConstants(), activationConfig.forBlock(0));
+                    Assert.assertEquals(witnessRoot, bsp.getCoinbaseInformation(registerHeader.getHash()).getWitnessMerkleRoot());
+                });
     }
 
     private ABIEncoder getABIEncoder() {

@@ -1083,16 +1083,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public Boolean hasBtcBlockCoinbaseTransactionInformation(Object[] args) {
+    public boolean hasBtcBlockCoinbaseTransactionInformation(Object[] args) {
         logger.trace("hasBtcBlockCoinbaseTransactionInformation");
         Sha256Hash blockHash = Sha256Hash.wrap((byte[]) args[0]);
 
-        try {
-            return bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(blockHash);
-        } catch (IOException | BlockStoreException e) {
-            logger.warn("Exception in hasBtcBlockCoinbaseTransactionInformation", e); // PAMELA
-            throw new RuntimeException("Exception in hasBtcBlockCoinbaseTransactionInformation", e);
-        }
+        return bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(blockHash);
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {

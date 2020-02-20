@@ -7,7 +7,6 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
@@ -16,11 +15,9 @@ import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
-import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
-import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -39,8 +36,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -2596,8 +2591,82 @@ public class BridgeSupportTest {
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessRoot);
 
         ArgumentCaptor<CoinbaseInformation> argumentCaptor = ArgumentCaptor.forClass(CoinbaseInformation.class);
-        verify(provider).setCoinbaseInformation(eq(tx1.getHash()), argumentCaptor.capture());
+        verify(provider).setCoinbaseInformation(eq(registerHeader.getHash()), argumentCaptor.capture());
         assertEquals(coinbaseInformation.getWitnessMerkleRoot(), argumentCaptor.getValue().getWitnessMerkleRoot());
+    }
+
+    @Test
+    public void hasBtcCoinbaseTransaction_before_rskip_143_activation() throws AddressFormatException  {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mock(BtcBlockStoreWithCache.Factory.class),
+                activations
+        );
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
+        provider.setCoinbaseInformation(Sha256Hash.ZERO_HASH, coinbaseInformation);
+        Assert.assertFalse(bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(Sha256Hash.ZERO_HASH));
+    }
+
+    @Test
+    public void hasBtcCoinbaseTransaction_after_rskip_143_activation() throws AddressFormatException  {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mock(BtcBlockStoreWithCache.Factory.class),
+                activations
+        );
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
+        provider.setCoinbaseInformation(Sha256Hash.ZERO_HASH, coinbaseInformation);
+        when(provider.getCoinbaseInformation(Sha256Hash.ZERO_HASH)).thenReturn(coinbaseInformation);
+        Assert.assertTrue(bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(Sha256Hash.ZERO_HASH));
+    }
+
+    @Test
+    public void hasBtcCoinbaseTransaction_fails_with_null_coinbase_information_after_rskip_143_activation() throws AddressFormatException  {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                mock(BtcLockSenderProvider.class),
+                mock(Block.class),
+                mock(BtcBlockStoreWithCache.Factory.class),
+                activations
+        );
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(Sha256Hash.ZERO_HASH);
+        provider.setCoinbaseInformation(Sha256Hash.ZERO_HASH, coinbaseInformation);
+        when(provider.getCoinbaseInformation(Sha256Hash.ZERO_HASH)).thenReturn(null);
+        Assert.assertFalse(bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(Sha256Hash.ZERO_HASH));
     }
 
     private void assertLockingCap(boolean shouldLock, boolean isLockingCapEnabled, Coin lockingCap, Coin amountSentToNewFed, Coin amountSentToOldFed,

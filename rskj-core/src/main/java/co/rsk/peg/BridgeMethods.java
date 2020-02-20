@@ -561,7 +561,7 @@ public enum BridgeMethods {
                     new String[]{"bytes", "bytes32", "bytes", "bytes32", "bytes32"},
                     new String[]{}
             ),
-            fixedCost(22000L), // TODO: Recalculate values for this functions. At the moment we are using the same value as registerBtcTransaction
+            fixedCost(10000L),
             (BridgeMethodExecutorVoid) Bridge::registerBtcCoinbaseTransaction,
             activations -> activations.isActive(RSKIP143),
             false
@@ -572,8 +572,8 @@ public enum BridgeMethods {
                     new String[]{"bytes32"},
                     new String[]{"bool"}
             ),
-            fixedCost(5000L), // TODO: Recalculate values for this functions.
-            (BridgeMethodExecutorVoid) Bridge::hasBtcBlockCoinbaseTransactionInformation,
+            fixedCost(5000L),
+            (BridgeMethodExecutorTyped) Bridge::hasBtcBlockCoinbaseTransactionInformation,
             activations -> activations.isActive(RSKIP143),
             false
     );

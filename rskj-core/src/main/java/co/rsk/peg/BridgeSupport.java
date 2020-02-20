@@ -2016,22 +2016,12 @@ public class BridgeSupport {
         }
 
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
-        provider.setCoinbaseInformation(btcTx.getHash(), coinbaseInformation);
+        provider.setCoinbaseInformation(blockHeader.getHash(), coinbaseInformation);
     }
 
-    public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) throws IOException, BlockStoreException {
-        Context.propagate(btcContext);
-        this.ensureBtcBlockStore();
-
-        StoredBlock storedBlock = btcBlockStore.getFromCache(blockHash);
-
-        if (storedBlock != null) {
-            CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(storedBlock.getHeader().getHash());
-            if (coinbaseInformation != null) {
-                return true;
-            }
-        }
-        return false;
+    public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) {
+        CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHash);
+        return coinbaseInformation != null;
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {

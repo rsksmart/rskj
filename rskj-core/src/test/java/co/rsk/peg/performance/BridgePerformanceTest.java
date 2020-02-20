@@ -41,7 +41,7 @@ import org.junit.runners.Suite;
         StateForBtcReleaseClientTest.class,
         GetBtcTransactionConfirmationsTest.class,
         RegisterBtcCoinbaseTransactionTest.class,
-        hasBtcBlockCoinbaseTransactionInformation.class
+        HasBtcBlockCoinbaseTransactionInformationTest.class
 })
 @Ignore
 public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {
