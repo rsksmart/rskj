@@ -2019,7 +2019,10 @@ public class BridgeSupport {
         provider.setCoinbaseInformation(btcTx.getHash(), coinbaseInformation);
     }
 
-    public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) {
+    public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) throws IOException, BlockStoreException {
+        Context.propagate(btcContext);
+        this.ensureBtcBlockStore();
+
         StoredBlock storedBlock = btcBlockStore.getFromCache(blockHash);
 
         if (storedBlock != null) {
