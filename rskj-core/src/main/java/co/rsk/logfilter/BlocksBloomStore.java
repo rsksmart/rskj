@@ -71,7 +71,11 @@ public class BlocksBloomStore {
             return null;
         }
 
-        return BlocksBloomEncoder.decode(data);
+        blocksBloom = BlocksBloomEncoder.decode(data);
+
+        this.blocksBloom.put(key, blocksBloom);
+
+        return blocksBloom;
     }
 
     public void setBlocksBloom(BlocksBloom blocksBloom) {
