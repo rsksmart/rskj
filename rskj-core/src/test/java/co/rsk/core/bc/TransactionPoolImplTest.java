@@ -38,16 +38,17 @@ import java.util.List;
 
 import static org.ethereum.util.TransactionFactoryHelper.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 08/08/2016.
  */
 public class TransactionPoolImplTest {
+    private static final int MAX_CACHE_SIZE = 6001;
     private Blockchain blockChain;
     private TransactionPoolImpl transactionPool;
     private Repository repository;
+    private ReceivedTxSignatureCache signatureCache;
 
     @Before
     public void setUp() {
@@ -65,6 +66,7 @@ public class TransactionPoolImplTest {
         blockChain = rskTestContext.getBlockchain();
         RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
         repository = repositoryLocator.startTrackingAt(blockChain.getBestBlock().getHeader());
+        signatureCache = spy(rskTestContext.getReceivedTxSignatureCache());
         transactionPool = new TransactionPoolImpl(
                 rskTestContext.getRskSystemProperties(),
                 repositoryLocator,
@@ -72,9 +74,9 @@ public class TransactionPoolImplTest {
                 rskTestContext.getBlockFactory(),
                 rskTestContext.getCompositeEthereumListener(),
                 rskTestContext.getTransactionExecutorFactory(),
+                signatureCache,
                 10,
-                100
-        );
+                100);
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
 
@@ -708,6 +710,76 @@ public class TransactionPoolImplTest {
 
         Assert.assertEquals(1, transactionPool.getPendingTransactions().size());
         Assert.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
+    }
+
+    @Test
+    public void aNewTxIsAddedInTxPoolAndShouldBeAddedInCache(){
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+        Account account1 = createAccount(1);
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
+        transactionPool.addTransaction(tx);
+
+        Assert.assertTrue(signatureCache.containsTx(tx));
+        Assert.assertArrayEquals(signatureCache.getSender(tx).getBytes(), account1.getAddress().getBytes());
+    }
+
+    @Test
+    public void twoTxsAreAddedInTxPoolAndShouldBeAddedInCache(){
+        Coin balance = Coin.valueOf(1000000);
+        Account account1 = createAccount(1);
+        createTestAccounts(2, balance);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
+        Transaction tx2 = createSampleTransaction(1, 2, 1000, 1);
+
+        transactionPool.addTransaction(tx1);
+        transactionPool.addTransaction(tx2);
+
+        Assert.assertTrue(signatureCache.containsTx(tx1));
+        Assert.assertTrue(signatureCache.containsTx(tx2));
+        Assert.assertArrayEquals(signatureCache.getSender(tx1).getBytes(), account1.getAddress().getBytes());
+        Assert.assertArrayEquals(signatureCache.getSender(tx2).getBytes(), account1.getAddress().getBytes());
+    }
+
+    @Test
+    public void invalidTxsIsSentAndShouldntBeInCache(){
+        Coin balance = Coin.valueOf(0);
+        createTestAccounts(2, balance);
+        Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
+        transactionPool.addTransaction(tx1);
+        Assert.assertFalse(signatureCache.containsTx(tx1));
+    }
+
+    @Test
+    public void remascTxIsReceivedAndShouldntBeInCache() {
+        RemascTransaction tx = new RemascTransaction(10);
+        transactionPool.addTransaction(tx);
+
+        Assert.assertFalse(signatureCache.containsTx(tx));
+        verify(signatureCache, times(0)).storeSender(tx);
+
+        signatureCache.storeSender(tx);
+        Assert.assertFalse(signatureCache.containsTx(tx));
+    }
+
+    @Test
+    public void firstTxIsRemovedWhenTheCacheLimitSizeIsExceeded() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(6005, balance);
+        Transaction tx = createSampleTransaction(1, 2, 1, 1);
+        transactionPool.addTransaction(tx);
+
+        for (int i = 0; i < MAX_CACHE_SIZE; i++) {
+            if (i == MAX_CACHE_SIZE - 1) {
+                Assert.assertTrue(signatureCache.containsTx(tx));
+            }
+            Transaction sampleTransaction = createSampleTransaction(i, 2, 1, 0);
+            transactionPool.addTransaction(sampleTransaction);
+            Assert.assertTrue(TransactionPoolAddResult.ok().transactionWasAdded());
+
+        }
+
+        Assert.assertFalse(signatureCache.containsTx(tx));
     }
 
     private void createTestAccounts(int naccounts, Coin balance) {

@@ -66,6 +66,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private final BlockFactory blockFactory;
     private final EthereumListener listener;
     private final TransactionExecutorFactory transactionExecutorFactory;
+    private final SignatureCache signatureCache;
     private final int outdatedThreshold;
     private final int outdatedTimeout;
 
@@ -83,6 +84,7 @@ public class TransactionPoolImpl implements TransactionPool {
             BlockFactory blockFactory,
             EthereumListener listener,
             TransactionExecutorFactory transactionExecutorFactory,
+            SignatureCache signatureCache,
             int outdatedThreshold,
             int outdatedTimeout) {
         this.config = config;
@@ -91,6 +93,7 @@ public class TransactionPoolImpl implements TransactionPool {
         this.blockFactory = blockFactory;
         this.listener = listener;
         this.transactionExecutorFactory = transactionExecutorFactory;
+        this.signatureCache = signatureCache;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
 
@@ -242,7 +245,7 @@ public class TransactionPoolImpl implements TransactionPool {
         BigInteger txNonce = tx.getNonceAsInteger();
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
-
+            signatureCache.storeSender(tx);
             return TransactionPoolAddResult.ok();
         }
 
@@ -260,6 +263,7 @@ public class TransactionPoolImpl implements TransactionPool {
             });
         }
 
+        signatureCache.storeSender(tx);
         return TransactionPoolAddResult.ok();
     }
 
@@ -432,7 +436,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private TransactionValidationResult shouldAcceptTx(Transaction tx, RepositorySnapshot currentRepository) {
-        AccountState state = currentRepository.getAccountState(tx.getSender());
+        AccountState state = currentRepository.getAccountState(tx.getSender(signatureCache));
         return validator.isValid(tx, bestBlock, state);
     }
 

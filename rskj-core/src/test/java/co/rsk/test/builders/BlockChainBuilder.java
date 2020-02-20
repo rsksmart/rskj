@@ -206,19 +206,23 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
+        ReceivedTxSignatureCache receivedTxSignatureCache = new ReceivedTxSignatureCache();
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
+
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory)
+                new PrecompiledContracts(config, bridgeSupportFactory),
+                blockTxSignatureCache
         );
         repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
+
         transactionPool = new TransactionPoolImpl(
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
-                transactionExecutorFactory, 10, 100
-        );
+                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,

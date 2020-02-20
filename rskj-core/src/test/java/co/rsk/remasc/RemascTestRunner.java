@@ -128,7 +128,7 @@ class RemascTestRunner {
 
         BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()),
@@ -145,7 +145,8 @@ class RemascTestRunner {
                         null,
                         blockFactory,
                         programInvokeFactory,
-                        precompiledContracts
+                        precompiledContracts,
+                        blockTxSignatureCache
                 )
         );
 

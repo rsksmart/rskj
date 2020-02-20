@@ -97,6 +97,7 @@ public class TransactionExecutor {
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
+    private SignatureCache signatureCache;
 
     private boolean localCall = false;
 
@@ -104,8 +105,10 @@ public class TransactionExecutor {
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
-            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts) {
+            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
+            SignatureCache signatureCache) {
         this.constants = constants;
+        this.signatureCache = signatureCache;
         this.activations = activationConfig.forBlock(executionBlock.getNumber());
         this.tx = tx;
         this.txindex = txindex;
@@ -222,7 +225,7 @@ public class TransactionExecutor {
     }
 
     private boolean nonceIsValid() {
-        BigInteger reqNonce = track.getNonce(tx.getSender());
+        BigInteger reqNonce = track.getNonce(tx.getSender(signatureCache));
         BigInteger txNonce = toBI(tx.getNonce());
 
         if (isNotEqual(reqNonce, txNonce)) {
@@ -500,6 +503,9 @@ public class TransactionExecutor {
         logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         cacheTrack.commit();
+
+        //Transaction sender is stored in cache
+        signatureCache.storeSender(tx);
 
         // Should include only LogInfo's that was added during not rejected transactions
         List<LogInfo> notRejectedLogInfos = result.getLogInfoList().stream()

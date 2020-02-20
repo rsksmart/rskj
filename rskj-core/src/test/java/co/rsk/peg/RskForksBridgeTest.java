@@ -470,8 +470,9 @@ public class RskForksBridgeTest {
                 null,
                 new BlockFactory(beforeBambooProperties.getActivationConfig()),
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory())
-                );
+                new PrecompiledContracts(beforeBambooProperties, world.getBridgeSupportFactory()),
+                world.getBlockTxSignatureCache()
+        );
         Repository track = repository.startTracking();
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(rskTx, 0, blockChain.getBestBlock().getCoinbase(), track, blockChain.getBestBlock(), 0)
