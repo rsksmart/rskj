@@ -1044,6 +1044,69 @@ public class Web3ImplTest {
         Assert.assertEquals(TypeConverter.toQuantityJsonHex(30), result.getCumulativeDifficulty());
     }
 
+    @Test
+    public void getUncleByBlockHashAndIndexBlockWithUnclesCorrespondingToAnUnknownBlock() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
+
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block blockA = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockA.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockA));
+
+        Block blockB = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockB.setBitcoinMergedMiningHeader(new byte[]{0x02});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockB));
+
+        Block blockC = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockC.setBitcoinMergedMiningHeader(new byte[]{0x03});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockC));
+
+        // block D must have a higher difficulty than block E and its uncles so it doesn't fall behind due to a reorg
+        Block blockD = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(100).parent(blockA).build();
+        blockD.setBitcoinMergedMiningHeader(new byte[]{0x04});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockD));
+
+        Transaction tx = new TransactionBuilder()
+                .sender(acc1)
+                .gasLimit(BigInteger.valueOf(100000))
+                .gasPrice(BigInteger.ONE)
+                .build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+
+        List<BlockHeader> blockEUncles = Arrays.asList(blockB.getHeader(), blockC.getHeader());
+        Block blockE = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockA).uncles(blockEUncles)
+                .transactions(txs).buildWithoutExecution();
+
+        blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
+
+        Assert.assertEquals(1, blockE.getTransactionsList().size());
+        Assert.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
+
+        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
+        blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockF));
+
+        String blockFhash = "0x" + blockF.getHash();
+        String blockEhash = "0x" + blockE.getHash();
+
+        BlockResultDTO result = web3.eth_getUncleByBlockHashAndIndex(blockFhash, "0x00");
+
+        Assert.assertEquals(blockEhash, result.getHash());
+        Assert.assertEquals(0, result.getUncles().size());
+        Assert.assertEquals(0, result.getTransactions().size());
+        Assert.assertEquals("0x" + Hex.toHexString(blockE.getTxTrieRoot()), result.getTransactionsRoot());
+    }
 
     @Test
     public void getUncleByBlockNumberAndIndexBlockWithUncles() {
@@ -1108,6 +1171,69 @@ public class Web3ImplTest {
         Assert.assertTrue(result.getUncles().contains(blockBhash));
         Assert.assertTrue(result.getUncles().contains(blockChash));
         Assert.assertEquals(TypeConverter.toQuantityJsonHex(30), result.getCumulativeDifficulty());
+    }
+
+    @Test
+    public void getUncleByBlockNumberAndIndexBlockWithUnclesCorrespondingToAnUnknownBlock() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
+
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block blockA = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockA.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockA));
+
+        Block blockB = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockB.setBitcoinMergedMiningHeader(new byte[]{0x02});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockB));
+
+        Block blockC = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockC.setBitcoinMergedMiningHeader(new byte[]{0x03});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockC));
+
+        // block D must have a higher difficulty than block E and its uncles so it doesn't fall behind due to a reorg
+        Block blockD = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(100).parent(blockA).build();
+        blockD.setBitcoinMergedMiningHeader(new byte[]{0x04});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockD));
+
+        Transaction tx = new TransactionBuilder()
+                .sender(acc1)
+                .gasLimit(BigInteger.valueOf(100000))
+                .gasPrice(BigInteger.ONE)
+                .build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+
+        List<BlockHeader> blockEUncles = Arrays.asList(blockB.getHeader(), blockC.getHeader());
+        Block blockE = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockA).uncles(blockEUncles)
+                .transactions(txs).buildWithoutExecution();
+
+        blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
+
+        Assert.assertEquals(1, blockE.getTransactionsList().size());
+        Assert.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
+
+        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
+        blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockF));
+
+        String blockEhash = "0x" + blockE.getHash();
+
+        BlockResultDTO result = web3.eth_getUncleByBlockNumberAndIndex("0x" + blockF.getNumber(), "0x00");
+
+        Assert.assertEquals(blockEhash, result.getHash());
+        Assert.assertEquals(0, result.getUncles().size());
+        Assert.assertEquals(0, result.getTransactions().size());
+        Assert.assertEquals("0x" + Hex.toHexString(blockE.getTxTrieRoot()), result.getTransactionsRoot());
     }
 
     @Test
