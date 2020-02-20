@@ -42,7 +42,6 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.InvalidInetAddressException;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -691,10 +690,10 @@ public class Web3Impl implements Web3 {
         return new TransactionReceiptDTO(block, txInfo);
     }
 
-
     @Override
     public BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) {
         BlockResultDTO s = null;
+
         try {
             Block block = blockchain.getBlockByHash(stringHexToByteArray(blockHash));
 
@@ -702,21 +701,9 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            int idx = JSonHexToInt(uncleIdx);
+            s = getUncleResultDTO(uncleIdx, block);
 
-            if (idx >= block.getUncleList().size()) {
-                return null;
-            }
-
-            BlockHeader uncleHeader = block.getUncleList().get(idx);
-            Block uncle = blockchain.getBlockByHash(uncleHeader.getHash().getBytes());
-
-            if (uncle == null) {
-                boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, uncleHeader.getNumber());
-                uncle = Block.createBlockFromHeader(uncleHeader, isRskip126Enabled);
-            }
-
-            return s = getBlockResult(uncle, false);
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getUncleByBlockHashAndIndex({}, {}): {}", blockHash, uncleIdx, s);
@@ -724,13 +711,36 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    private BlockResultDTO getUncleResultDTO(String uncleIdx, Block block) {
+        int idx = JSonHexToInt(uncleIdx);
+
+        if (idx >= block.getUncleList().size()) {
+            return null;
+        }
+
+        BlockHeader uncleHeader = block.getUncleList().get(idx);
+        Block uncle = blockchain.getBlockByHash(uncleHeader.getHash().getBytes());
+
+        if (uncle == null) {
+            boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, uncleHeader.getNumber());
+            uncle = Block.createBlockFromHeader(uncleHeader, isRskip126Enabled);
+        }
+
+        return getBlockResult(uncle, false);
+    }
+
     @Override
     public BlockResultDTO eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) {
         BlockResultDTO s = null;
         try {
-            s = web3InformationRetriever.getBlock(blockId)
-                    .map(b -> eth_getUncleByBlockHashAndIndex(Hex.toHexString(b.getHash().getBytes()), uncleIdx))
-                    .orElse(null);
+            Optional<Block> block = web3InformationRetriever.getBlock(blockId);
+
+            if (!block.isPresent()) {
+                return null;
+            }
+
+            s = getUncleResultDTO(uncleIdx, block.get());
+
             return s;
         } finally {
             if (logger.isDebugEnabled()) {
