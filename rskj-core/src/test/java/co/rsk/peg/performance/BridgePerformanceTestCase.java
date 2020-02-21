@@ -25,7 +25,6 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.*;
-import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
@@ -36,7 +35,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.BeforeClass;
@@ -192,23 +190,29 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             public Environment build(int executionIndex, TxBuilder txBuilder, int height) {
                 TrieStore trieStore = createTrieStore();
                 Trie trie = new Trie(trieStore);
-                Repository repository = new MutableRepository(trieStore, trie);
-
-                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, trie);
+                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore,  trie);
+                Repository repository = benchmarkerTrack.startTracking();
+                BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository);
                 BridgeStorageProvider storageProvider = new BridgeStorageProvider(benchmarkerTrack, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock((long) executionIndex));
-                storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex, btcBlockStoreFactory.newInstance(repository));
+                storageInitializer.initialize(storageProvider, benchmarkerTrack, executionIndex, btcBlockStore);
+                repository.commit();
+
                 try {
                     storageProvider.save();
                 } catch (Exception e) {
                     throw new RuntimeException("Error trying to save the storage after initialization", e);
                 }
+
                 benchmarkerTrack.commit();
 
-                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, trie);
+                benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore, benchmarkerTrack.getTrie());
                 List<LogInfo> logs = new ArrayList<>();
 
-                Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
-                        constants.getBridgeConstants().getBtcParams());
+                // TODO: This was commented to make registerBtcCoinbaseTransactionTest & getBtcTransactionConfirmationTest work.
+                //  Cache is not being populated.
+//                Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+//                        constants.getBridgeConstants().getBtcParams());
+
                 BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                         btcBlockStoreFactory, constants.getBridgeConstants(), activationConfig);
 
@@ -259,7 +263,6 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 }
                 return environment;
             }
-
         };
 
         return super.executeAndAverage(name, times, environmentBuilder, abiEncoder, txBuilder, heightProvider, stats, resultCallback);
