@@ -20,30 +20,36 @@ public class P2shMultisigBtcLockSenderTest {
         networkParameters = bridgeConstants.getBtcParams();
     }
 
-    @Test(expected = BtcLockSenderParseException.class)
-    public void throws_exception_if_transaction_is_null() throws BtcLockSenderParseException {
-        new P2shMultisigBtcLockSender(null);
-    }
-
-    @Test(expected = BtcLockSenderParseException.class)
-    public void throws_exception_if_tx_doesnt_have_inputs() throws BtcLockSenderParseException {
-        BtcTransaction btcTx = new BtcTransaction(networkParameters);
-        new P2shMultisigBtcLockSender(btcTx);
-    }
-
-    @Test(expected = BtcLockSenderParseException.class)
-    public void throws_exception_if_tx_doesnt_have_scriptsig() throws BtcLockSenderParseException {
-        BtcTransaction btcTx = new BtcTransaction(networkParameters);
-        btcTx.addInput(new TransactionInput(networkParameters, null, null));
-        new P2shMultisigBtcLockSender(btcTx);
+    @Test
+    public void doesnt_parse_if_transaction_is_null() {
+        BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
+        Assert.assertFalse(btcLockSender.tryParse(null));
     }
 
     @Test
-    public void gets_p2sh_multisig_btc_lock_sender_from_raw_transaction() throws BtcLockSenderParseException {
+    public void doesnt_parse_if_tx_doesnt_have_inputs() {
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        
+        BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
+        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+    }
+
+    @Test
+    public void doesnt_parse_if_tx_doesnt_have_scriptsig() {
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        btcTx.addInput(new TransactionInput(networkParameters, null, null));
+
+        BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
+        Assert.assertFalse(btcLockSender.tryParse(btcTx));
+    }
+
+    @Test
+    public void gets_p2sh_multisig_btc_lock_sender_from_raw_transaction() {
         String rawTx = RawTransactions.txs.get(BtcLockSender.TxType.P2SHMULTISIG);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
-        BtcLockSender lockSender = new P2shMultisigBtcLockSender(btcTx);
+        BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
+        Assert.assertTrue(btcLockSender.tryParse(btcTx));
 
         byte[] redeemScript = Hex.decode(
                 "52210379e85ce9fe428abaf25783b00fd39490789a5da74c83ba79ee4af734c18e58b22103045c37a5a34ec12b5768dbe" +
@@ -53,33 +59,38 @@ public class P2shMultisigBtcLockSenderTest {
         byte[] scriptPubKey = HashUtil.ripemd160(Sha256Hash.hash(redeemScript));
         Address btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
 
-        Assert.assertEquals("2NCSzuju8gU5Ly5Fp9q9SZwt34dhUVEb3ZJ", lockSender.getBTCAddress().toBase58());
-        Assert.assertEquals(btcAddress, lockSender.getBTCAddress());
-        Assert.assertEquals(BtcLockSender.TxType.P2SHMULTISIG, lockSender.getType());
-        Assert.assertNull(lockSender.getRskAddress());
+        Assert.assertEquals("2NCSzuju8gU5Ly5Fp9q9SZwt34dhUVEb3ZJ", btcLockSender.getBTCAddress().toBase58());
+        Assert.assertEquals(btcAddress, btcLockSender.getBTCAddress());
+        Assert.assertEquals(BtcLockSender.TxType.P2SHMULTISIG, btcLockSender.getType());
+        Assert.assertNull(btcLockSender.getRskAddress());
     }
 
-    @Test(expected = BtcLockSenderParseException.class)
-    public void rejects_p2pkh_transaction() throws BtcLockSenderParseException {
+    @Test
+    public void rejects_p2pkh_transaction() {
         String rawTx = RawTransactions.txs.get(BtcLockSender.TxType.P2PKH);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
-        new P2shMultisigBtcLockSender(btcTx);
+
+        BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
+        Assert.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
-    @Test(expected = BtcLockSenderParseException.class)
-    public void rejects_p2sh_p2wpkh_transaction() throws BtcLockSenderParseException {
+    @Test
+    public void rejects_p2sh_p2wpkh_transaction() {
         String rawTx = RawTransactions.txs.get(BtcLockSender.TxType.P2SHP2WPKH);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
-        new P2shMultisigBtcLockSender(btcTx);
+
+        BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
+        Assert.assertFalse(btcLockSender.tryParse(btcTx));
     }
 
-    @Test(expected = BtcLockSenderParseException.class)
-    public void rejects_p2sh_p2wsh_transaction() throws BtcLockSenderParseException {
+    @Test
+    public void rejects_p2sh_p2wsh_transaction() {
         String rawTx = RawTransactions.txs.get(BtcLockSender.TxType.P2SHP2WSH);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
-        new P2shMultisigBtcLockSender(btcTx);
+        BtcLockSender btcLockSender = new P2shMultisigBtcLockSender();
+        Assert.assertFalse(btcLockSender.tryParse(btcTx));
     }
 }

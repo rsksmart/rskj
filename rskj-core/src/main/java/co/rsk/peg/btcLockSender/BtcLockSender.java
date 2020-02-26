@@ -4,34 +4,20 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.core.RskAddress;
 
-public abstract class BtcLockSender {
+public interface BtcLockSender {
 
-    public enum TxType {
+    enum TxType {
         P2PKH,
         P2SHP2WPKH,
         P2SHMULTISIG,
         P2SHP2WSH
     }
 
-    protected BtcLockSender.TxType transactionType;
-    protected Address btcAddress;
-    protected RskAddress rskAddress;
+    boolean tryParse(BtcTransaction btcTx);
 
-    public BtcLockSender(BtcTransaction btcTx) throws BtcLockSenderParseException {
-        this.parse(btcTx);
-    }
+    BtcLockSender.TxType getType();
 
-    protected abstract void parse(BtcTransaction btcTx) throws BtcLockSenderParseException;
+    Address getBTCAddress();
 
-    public BtcLockSender.TxType getType() {
-        return transactionType;
-    }
-
-    public Address getBTCAddress() {
-        return this.btcAddress;
-    }
-
-    public RskAddress getRskAddress() {
-        return this.rskAddress;
-    }
+    RskAddress getRskAddress();
 }

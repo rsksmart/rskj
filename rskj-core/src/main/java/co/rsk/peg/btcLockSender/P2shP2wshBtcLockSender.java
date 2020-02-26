@@ -4,32 +4,46 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.core.RskAddress;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 
-public class P2shP2wshBtcLockSender extends BtcLockSender {
+public class P2shP2wshBtcLockSender implements BtcLockSender {
 
-    public P2shP2wshBtcLockSender(BtcTransaction btcTx) throws BtcLockSenderParseException {
-        super(btcTx);
+    private BtcLockSender.TxType transactionType;
+    private Address btcAddress;
+
+    public P2shP2wshBtcLockSender() {
         this.transactionType = TxType.P2SHP2WSH;
     }
 
-    @Override
-    protected void parse(BtcTransaction btcTx) throws BtcLockSenderParseException {
+    public BtcLockSender.TxType getType() {
+        return transactionType;
+    }
+
+    public Address getBTCAddress() {
+        return this.btcAddress;
+    }
+
+    public RskAddress getRskAddress() {
+        return null;
+    }
+
+    public boolean tryParse(BtcTransaction btcTx) {
         if (btcTx == null) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
         if (!btcTx.hasWitness()) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
         if (btcTx.getInput(0).getScriptBytes() == null) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
         if (btcTx.getInput(0).getScriptSig().getChunks().size() != 1) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
         if (btcTx.getWitness(0).getPushCount() < 3) { //At least 3 pushes: a 0, at least 1 signature, redeem script
-            throw new BtcLockSenderParseException();
+            return false;
         }
 
         int pushesLength = btcTx.getWitness(0).getPushCount();
@@ -37,19 +51,25 @@ public class P2shP2wshBtcLockSender extends BtcLockSender {
 
         Script redeem = new Script(redeemScript);
         if (!redeem.isSentToMultiSig()) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
 
-        // Get btc address
-        // witnessVersion = 0x00
-        // push32 = 0x20
-        // scriptPubKey = hash160(sha256(witnessVersion push32 redeemScript))
-        // Ref: https://github.com/bitcoinbook/bitcoinbook/blob/22a5950abfdd3dbd629c88534e50472822f0e356/ch07.asciidoc#pay-to-witness-public-key-hash-inside-pay-to-script-hash
-        byte[] redeemScriptHash = Sha256Hash.hash(redeemScript);
-        byte[] merged = ByteUtil.merge(new byte[]{0x00, 0x20}, redeemScriptHash);
-        byte[] hashedAgain = Sha256Hash.hash(merged);
-        byte[] scriptPubKey = HashUtil.ripemd160(hashedAgain);
+        try {
+            // Get btc address
+            // witnessVersion = 0x00
+            // push32 = 0x20
+            // scriptPubKey = hash160(sha256(witnessVersion push32 redeemScript))
+            // Ref: https://github.com/bitcoinbook/bitcoinbook/blob/22a5950abfdd3dbd629c88534e50472822f0e356/ch07.asciidoc#pay-to-witness-public-key-hash-inside-pay-to-script-hash
+            byte[] redeemScriptHash = Sha256Hash.hash(redeemScript);
+            byte[] merged = ByteUtil.merge(new byte[]{0x00, 0x20}, redeemScriptHash);
+            byte[] hashedAgain = Sha256Hash.hash(merged);
+            byte[] scriptPubKey = HashUtil.ripemd160(hashedAgain);
 
-        this.btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
+            this.btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
+        } catch (Exception e) {
+            return false;
+        }
+
+        return true;
     }
 }

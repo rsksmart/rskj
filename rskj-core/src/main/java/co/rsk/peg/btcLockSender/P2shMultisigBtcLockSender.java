@@ -4,30 +4,44 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.core.RskAddress;
 import org.ethereum.crypto.HashUtil;
 
-public class P2shMultisigBtcLockSender extends BtcLockSender {
+public class P2shMultisigBtcLockSender implements BtcLockSender {
 
-    public P2shMultisigBtcLockSender(BtcTransaction btcTx) throws BtcLockSenderParseException {
-        super(btcTx);
+    private BtcLockSender.TxType transactionType;
+    private Address btcAddress;
+
+    public P2shMultisigBtcLockSender() {
         this.transactionType = TxType.P2SHMULTISIG;
     }
 
-    @Override
-    protected void parse(BtcTransaction btcTx) throws BtcLockSenderParseException {
+    public BtcLockSender.TxType getType() {
+        return transactionType;
+    }
+
+    public Address getBTCAddress() {
+        return this.btcAddress;
+    }
+
+    public RskAddress getRskAddress() {
+        return null;
+    }
+
+    public boolean tryParse(BtcTransaction btcTx) {
         if (btcTx == null) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
         if (btcTx.getInputs().size() == 0) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
         if (btcTx.getInput(0).getScriptBytes() == null) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
 
         Script scriptSig = btcTx.getInput(0).getScriptSig();
         if (scriptSig.getChunks().size() < 3) { //At least 3 chunks: a 0, at least 1 signature, and redeem script
-            throw new BtcLockSenderParseException();
+            return false;
         }
 
         int chunksLength = scriptSig.getChunks().size();
@@ -35,11 +49,18 @@ public class P2shMultisigBtcLockSender extends BtcLockSender {
 
         Script redeem = new Script(redeemScript);
         if(!redeem.isSentToMultiSig()) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
 
-        // Get btc address
-        byte[] scriptPubKey = HashUtil.ripemd160(Sha256Hash.hash(redeemScript));
-        this.btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
+        try {
+            // Get btc address
+            byte[] scriptPubKey = HashUtil.ripemd160(Sha256Hash.hash(redeemScript));
+            this.btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
+
+        } catch(Exception e) {
+            return false;
+        }
+
+        return true;
     }
 }

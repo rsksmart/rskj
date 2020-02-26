@@ -11,25 +11,26 @@ public class BtcLockSenderProvider {
             return Optional.empty();
         }
 
-        try {
-            return Optional.of(new P2pkhBtcLockSender(tx));
-        } catch(BtcLockSenderParseException e) {
-            // Nothing to do...
+        BtcLockSender result;
+
+        result = new P2pkhBtcLockSender();
+        if (result.tryParse(tx)) {
+            return Optional.of(result);
         }
-        try {
-            return Optional.of(new P2shP2wpkhBtcLockSender(tx));
-        } catch(BtcLockSenderParseException e) {
-            // Nothing to do...
+
+        result = new P2shP2wpkhBtcLockSender();
+        if (result.tryParse(tx)) {
+            return Optional.of(result);
         }
-        try {
-            return Optional.of(new P2shMultisigBtcLockSender(tx));
-        } catch(BtcLockSenderParseException e) {
-            // Nothing to do...
+
+        result = new P2shMultisigBtcLockSender();
+        if (result.tryParse(tx)) {
+            return Optional.of(result);
         }
-        try {
-            return Optional.of(new P2shP2wshBtcLockSender(tx));
-        } catch(BtcLockSenderParseException e) {
-            // Nothing to do...
+
+        result = new P2shP2wshBtcLockSender();
+        if (result.tryParse(tx)) {
+            return Optional.of(result);
         }
 
         return Optional.empty();

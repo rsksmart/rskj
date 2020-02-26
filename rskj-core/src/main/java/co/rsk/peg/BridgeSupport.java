@@ -418,8 +418,8 @@ public class BridgeSupport {
     }
 
     private boolean txIsLockable(BtcLockSender.TxType txType) {
-        return txType.equals(BtcLockSender.TxType.P2PKH) ||
-                (txType.equals(BtcLockSender.TxType.P2SHP2WPKH) && activations.isActive(ConsensusRule.RSKIP143));
+        return txType == BtcLockSender.TxType.P2PKH ||
+                (txType == BtcLockSender.TxType.P2SHP2WPKH && activations.isActive(ConsensusRule.RSKIP143));
     }
 
     /**
@@ -446,11 +446,6 @@ public class BridgeSupport {
         ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
 
         this.subtraces.add(subtrace);
-    }
-
-    private boolean txIsProcessable(BtcLockSender.TxType txType) {
-        return txType.equals(BtcLockSender.TxType.P2PKH) ||
-                (txType.equals(BtcLockSender.TxType.P2SHP2WPKH) && activations.isActive(ConsensusRule.RSKIP143));
     }
 
     /*

@@ -6,38 +6,57 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 
-public class P2pkhBtcLockSender extends BtcLockSender {
+public class P2pkhBtcLockSender implements BtcLockSender {
 
-    public P2pkhBtcLockSender(BtcTransaction btcTx) throws BtcLockSenderParseException {
-        super(btcTx);
+    private BtcLockSender.TxType transactionType;
+    private Address btcAddress;
+    private RskAddress rskAddress;
+
+    public P2pkhBtcLockSender() {
         this.transactionType = TxType.P2PKH;
     }
 
-    @Override
-    protected void parse (BtcTransaction btcTx) throws BtcLockSenderParseException {
+    public BtcLockSender.TxType getType() {
+        return transactionType;
+    }
+
+    public Address getBTCAddress() {
+        return this.btcAddress;
+    }
+
+    public RskAddress getRskAddress() {
+        return this.rskAddress;
+    }
+
+    public boolean tryParse (BtcTransaction btcTx) {
         if (btcTx == null) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
         if (btcTx.getInputs().size() == 0) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
         if (btcTx.getInput(0).getScriptBytes() == null) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
 
         Script scriptSig = btcTx.getInput(0).getScriptSig();
         if (scriptSig.getChunks().size() != 2) {
-            throw new BtcLockSenderParseException();
+            return false;
         }
 
-        byte[] data = scriptSig.getChunks().get(1).data;
+        try {
+            byte[] data = scriptSig.getChunks().get(1).data;
 
-        //Looking for btcAddress
-        BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
-        this.btcAddress = new Address(btcTx.getParams(), senderBtcKey.getPubKeyHash());
+            //Looking for btcAddress
+            BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
+            this.btcAddress = new Address(btcTx.getParams(), senderBtcKey.getPubKeyHash());
 
-        //Looking for rskAddress
-        org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
-        this.rskAddress = new RskAddress(key.getAddress());
+            //Looking for rskAddress
+            org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
+            this.rskAddress = new RskAddress(key.getAddress());
+        } catch(Exception e) {
+            return false;
+        }
+        return true;
     }
 }

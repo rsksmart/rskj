@@ -148,7 +148,7 @@ public class BridgeUtils {
      */
     public static boolean txIsProcessable(BtcLockSender.TxType txType, ActivationConfig.ForBlock activations) {
         //After RSKIP 143 activation, if a BtcLockSender object could be parsed then it's processable
-        return txType.equals(BtcLockSender.TxType.P2PKH) || activations.isActive(ConsensusRule.RSKIP143);
+        return txType == BtcLockSender.TxType.P2PKH || activations.isActive(ConsensusRule.RSKIP143);
     }
 
     private static boolean isReleaseTx(BtcTransaction tx, Federation federation) {
