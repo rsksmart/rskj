@@ -125,4 +125,10 @@ public class BlockBuilder {
 
         return block;
     }
+
+    public Block buildWithoutExecution() {
+        Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
+
+        return block;
+    }
 }

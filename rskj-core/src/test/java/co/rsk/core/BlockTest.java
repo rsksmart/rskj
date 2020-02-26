@@ -340,4 +340,15 @@ public class BlockTest {
         byte[] trieListHash = BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), true);
         Assert.assertArrayEquals(trieHash, trieListHash);
     }
+
+    @Test
+    public void createBlockFromHeader() {
+        Block block = new BlockGenerator().createBlock(10, 0);
+        BlockHeader header = block.getHeader();
+
+        Block result = Block.createBlockFromHeader(header, false);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(header.getHash().getBytes(), result.getHash().getBytes());
+    }
 }
