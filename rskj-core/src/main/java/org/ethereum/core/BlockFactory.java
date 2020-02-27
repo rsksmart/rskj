@@ -191,7 +191,8 @@ public class BlockFactory {
                 number, glBytes, gasUsed, timestamp, extraData,
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
-                minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData
+                minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
+                null
         );
     }
 

@@ -169,7 +169,6 @@ public class BlockGenerator {
                 Collections.emptyList(),
                 uncles
         );
-//        return createChildBlock(parent, 0);
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot) {

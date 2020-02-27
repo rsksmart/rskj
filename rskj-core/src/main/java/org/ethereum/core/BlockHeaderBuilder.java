@@ -56,6 +56,7 @@ public class BlockHeaderBuilder {
     private byte[] bitcoinMergedMiningMerkleProof;
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     private byte[] mergedMiningForkDetectionData;
+    private byte[] ummRoot;
 
     private Coin minimumGasPrice;
     private int uncleCount;
@@ -239,6 +240,11 @@ public class BlockHeaderBuilder {
         return this;
     }
 
+    public BlockHeaderBuilder setUmmRoot(byte[] ummRoot) {
+        this.ummRoot = copy(ummRoot);
+        return this;
+    }
+
     private void initializeWithDefaultValues() {
         extraData = normalizeValue(extraData, new byte[0]);
         bitcoinMergedMiningHeader = normalizeValue(bitcoinMergedMiningHeader, new byte[0]);
@@ -255,6 +261,7 @@ public class BlockHeaderBuilder {
         minimumGasPrice = normalizeValue(minimumGasPrice, Coin.ZERO);
 
         mergedMiningForkDetectionData = normalizeValue(mergedMiningForkDetectionData, new byte[12]);
+        ummRoot = normalizeValue(ummRoot, new byte[0]);
     }
 
     private <T> T normalizeValue(T value, T defaultValue) {
@@ -294,7 +301,7 @@ public class BlockHeaderBuilder {
                 mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount,
                 false, useRskip92Encoding,
-                includeForkDetectionData
+                includeForkDetectionData, ummRoot
         );
     }
 }

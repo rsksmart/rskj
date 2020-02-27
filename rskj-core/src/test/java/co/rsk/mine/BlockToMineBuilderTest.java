@@ -161,7 +161,7 @@ public class BlockToMineBuilderTest {
                 new Bloom().getData(), BlockDifficulty.ZERO, 1L,
                 EMPTY_BYTE_ARRAY, 0L, 0L, EMPTY_BYTE_ARRAY, Coin.ZERO,
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
-                Coin.ZERO, 0, false, true, false
+                Coin.ZERO, 0, false, true, false, null
         );
     }
 }

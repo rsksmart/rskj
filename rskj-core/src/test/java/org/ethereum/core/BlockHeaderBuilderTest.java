@@ -359,4 +359,21 @@ public class BlockHeaderBuilderTest {
 
         assertArrayEquals(new byte[12], header.getMiningForkDetectionData());
     }
+
+    @Test
+    public void createsHeaderWithUmmRoot() {
+        byte[] ummRoot = TestUtils.randomBytes(20);
+        BlockHeader header = blockHeaderBuilder
+                .setUmmRoot(ummRoot)
+                .build();
+
+        assertArrayEquals(ummRoot, header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithEmptyUmmRoot() {
+        BlockHeader header = blockHeaderBuilder.build();
+
+        assertArrayEquals(new byte[0], header.getUmmRoot());
+    }
 }

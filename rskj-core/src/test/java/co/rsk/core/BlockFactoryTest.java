@@ -25,7 +25,6 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
@@ -38,8 +37,7 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP110;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP92;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.AdditionalMatchers.geq;
@@ -69,7 +67,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);
 
-        BlockHeader header = createBlockHeader(number, new byte[0]);
+        BlockHeader header = createBlockHeader(number, new byte[0], new byte[0]);
 
         Keccak256 hash = header.getHash();
         byte[] hashForMergedMining = header.getHashForMergedMining();
@@ -82,7 +80,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0]);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0]);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -98,7 +96,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0]);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0]);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -114,7 +112,7 @@ public class BlockFactoryTest {
         long number = 457L;
         enableRulesAt(number, RSKIP92);
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0]);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0]);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -131,7 +129,7 @@ public class BlockFactoryTest {
         enableRulesAt(number, RSKIP92, RSKIP110);
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData, new byte[0]);
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
@@ -158,7 +156,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
-        BlockHeader header = createBlockHeader(number, new byte[0]);
+        BlockHeader header = createBlockHeader(number, new byte[0], new byte[0]);
 
         byte[] encodedHeader = header.getEncoded(false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -179,7 +177,7 @@ public class BlockFactoryTest {
         enableRulesAt(number, RSKIP92);
 
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        BlockHeader header = createBlockHeader(number, forkDetectionData);
+        BlockHeader header = createBlockHeader(number, forkDetectionData, new byte[0]);
 
         byte[] encodedHeader = header.getEncoded(false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -197,7 +195,8 @@ public class BlockFactoryTest {
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             long number,
-            byte[] forkDetectionData) {
+            byte[] forkDetectionData,
+            byte[] ummRoot) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
@@ -227,7 +226,8 @@ public class BlockFactoryTest {
 
     private BlockHeader createBlockHeader(
             long number,
-            byte[] forkDetectionData) {
+            byte[] forkDetectionData,
+            byte[] ummRoot) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05

@@ -47,6 +47,7 @@ public class BlockHeader {
 
     private static final int HASH_FOR_MERGED_MINING_PREFIX_LENGTH = 20;
     private static final int FORK_DETECTION_DATA_LENGTH = 12;
+    private static final int UMM_ROOT_LENGTH = 20;
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
     private byte[] parentHash;
@@ -102,6 +103,8 @@ public class BlockHeader {
 
     private byte[] miningForkDetectionData;
 
+    private byte[] ummRoot;
+
     /**
      * The mgp for a tx to be included in the block.
      */
@@ -123,7 +126,7 @@ public class BlockHeader {
                        Coin paidFees, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                        byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] mergedMiningForkDetectionData,
                        Coin minimumGasPrice, int uncleCount, boolean sealed,
-                       boolean useRskip92Encoding, boolean includeForkDetectionData) {
+                       boolean useRskip92Encoding, boolean includeForkDetectionData, byte[] ummRoot) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
         this.coinbase = coinbase;
@@ -148,6 +151,7 @@ public class BlockHeader {
         this.sealed = sealed;
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
+        this.ummRoot = ummRoot;
     }
 
     @VisibleForTesting
@@ -349,6 +353,10 @@ public class BlockHeader {
         byte[] uncleCount = RLP.encodeBigInteger(BigInteger.valueOf(this.uncleCount));
         fieldToEncodeList.add(uncleCount);
 
+        if (isUMMBlock()) {
+            fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
+        }
+
         if (withMergedMiningFields && hasMiningFields()) {
             byte[] bitcoinMergedMiningHeader = RLP.encodeElement(this.bitcoinMergedMiningHeader);
             fieldToEncodeList.add(bitcoinMergedMiningHeader);
@@ -477,9 +485,18 @@ public class BlockHeader {
         return HashUtil.shortHash(getHashForMergedMining());
     }
 
+    public boolean isUMMBlock() {
+        return this.ummRoot != null && this.ummRoot.length != 0;
+    }
+
     public byte[] getHashForMergedMining() {
         byte[] encodedBlock = getEncoded(false, false);
         byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
+
+        if (isUMMBlock()) {
+            hashForMergedMining = this.getHashRootForMergedMining(hashForMergedMining);
+        }
+
         if (includeForkDetectionData) {
             byte[] mergedMiningForkDetectionData = hasMiningFields() ?
                     getMiningForkDetectionData() :
@@ -494,6 +511,20 @@ public class BlockHeader {
         }
 
         return hashForMergedMining;
+    }
+
+    private byte[] getHashRootForMergedMining(byte[] leftHash) {
+        if ((ummRoot.length != UMM_ROOT_LENGTH) && (ummRoot.length != 0)){
+            throw new IllegalStateException(
+                    String.format("UMM Root length must be either 0 or 20. Found: %d", ummRoot.length)
+            );
+        }
+
+        byte[] leftRight = Arrays.copyOf(leftHash, leftHash.length + ummRoot.length);
+        arraycopy(ummRoot, 0, leftRight, leftHash.length, ummRoot.length);
+
+        byte[] root256 = HashUtil.keccak256(leftRight);
+        return root256;
     }
 
     public String getShortHash() {
@@ -540,5 +571,9 @@ public class BlockHeader {
 
     public boolean isParentOf(BlockHeader header) {
         return this.getHash().equals(header.getParentHash());
+    }
+
+    public byte[] getUmmRoot() {
+        return ummRoot;
     }
 }
