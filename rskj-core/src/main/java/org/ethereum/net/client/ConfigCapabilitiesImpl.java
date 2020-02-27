@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import static org.ethereum.net.client.Capability.LC;
 import static org.ethereum.net.client.Capability.RSK;
 import static org.ethereum.net.eth.EthVersion.fromCode;
 
@@ -51,6 +52,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
                 allCaps.add(new Capability(RSK, v.getCode()));
             }
         }
+        allCaps.add(new Capability(LC, (byte) 0));
         this.config = config;
     }
 
