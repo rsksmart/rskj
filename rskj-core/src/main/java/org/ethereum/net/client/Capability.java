@@ -26,6 +26,7 @@ public class Capability implements Comparable<Capability> {
 
     public static final String P2P = "p2p";
     public static final String RSK = "rsk";
+    public static final String LC = "lc";
 
     private String name;
     private byte version;
