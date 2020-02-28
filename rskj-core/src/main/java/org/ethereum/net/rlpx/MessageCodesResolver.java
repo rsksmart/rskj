@@ -73,6 +73,10 @@ public class MessageCodesResolver {
         return withOffset(code, Capability.RSK);
     }
 
+    public byte withLightClientOffset(byte code) {
+        return withOffset(code, Capability.LC);
+    }
+
     public byte withOffset(byte code, String cap) {
         byte offset = getOffset(cap);
         return (byte)(code + offset);
