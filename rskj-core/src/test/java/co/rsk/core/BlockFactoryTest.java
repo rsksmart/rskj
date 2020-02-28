@@ -187,6 +187,110 @@ public class BlockFactoryTest {
         assertThat(header.getHash(), is(decodedHeader.getHash()));
     }
 
+    @Test
+    public void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsValidUMMRoot() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM);
+
+        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+        BlockHeader header = createBlockHeader(number, new byte[0], ummRoot);
+
+        byte[] encodedHeader = header.getEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(17));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
+    }
+
+    @Test
+    public void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsEmptyUMMRoot() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM);
+
+        BlockHeader header = createBlockHeader(number, new byte[0], new byte[0]);
+
+        byte[] encodedHeader = header.getEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(16));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
+    }
+
+    @Test
+    public void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsNullUMMRoot() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM);
+
+        BlockHeader header = createBlockHeader(number, new byte[0], null);
+
+        byte[] encodedHeader = header.getEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(16));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+
+        assertThat(decodedHeader.getHash(), is(header.getHash()));
+        assertThat(decodedHeader.getUmmRoot(), is(new byte[0]));
+    }
+
+    @Test
+    public void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsValidUMMRoot() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM);
+
+        byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], ummRoot);
+
+        byte[] encodedHeader = header.getFullEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(20));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
+    }
+
+    @Test
+    public void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsEmptyUmmRoot() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM);
+
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0]);
+
+        byte[] encodedHeader = header.getFullEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(19));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
+    }
+
+    @Test
+    public void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsNullUmmRoot() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP92, RSKIPUMM);
+
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null);
+
+        byte[] encodedHeader = header.getFullEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(19));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+
+        assertThat(decodedHeader.getHash(), is(header.getHash()));
+        assertThat(decodedHeader.getUmmRoot(), is(new byte[0]));
+    }
+
     private void enableRulesAt(long number, ConsensusRule... consensusRules) {
         for (ConsensusRule consensusRule : consensusRules) {
             when(activationConfig.isActive(eq(consensusRule), geq(number))).thenReturn(true);

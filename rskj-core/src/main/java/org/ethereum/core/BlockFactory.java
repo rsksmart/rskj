@@ -41,6 +41,9 @@ public class BlockFactory {
     private static final int RLP_HEADER_SIZE = 16;
     private static final int RLP_HEADER_SIZE_WITH_MERGED_MINING = 19;
 
+    private static final int RLP_HEADER_SIZE_UMM = 17;
+    private static final int RLP_HEADER_SIZE_UMM_WITH_MERGED_MINING = 20;
+
     private final ActivationConfig activationConfig;
 
     public BlockFactory(ActivationConfig activationConfig) {
@@ -97,10 +100,9 @@ public class BlockFactory {
     }
 
     private BlockHeader decodeHeader(RLPList rlpHeader, boolean sealed) {
-        // TODO fix old tests that have other sizes
-        if (rlpHeader.size() != RLP_HEADER_SIZE && rlpHeader.size() != RLP_HEADER_SIZE_WITH_MERGED_MINING) {
+        if (!canBeDecoded(rlpHeader)) {
             throw new IllegalArgumentException(String.format(
-                    "A block header must have 16 elements or 19 including merged-mining fields but it had %d",
+                    "A block header must have 16/17 elements or 19/20 including merged-mining fields but it had %d",
                     rlpHeader.size()
             ));
         }
@@ -146,10 +148,13 @@ public class BlockFactory {
 
         int r = 15;
 
-        int uncleCount = 0;
-        if (rlpHeader.size() == RLP_HEADER_SIZE || rlpHeader.size() == RLP_HEADER_SIZE_WITH_MERGED_MINING) {
-            byte[] ucBytes = rlpHeader.get(r++).getRLPData();
-            uncleCount = parseBigInteger(ucBytes).intValueExact();
+        byte[] ucBytes = rlpHeader.get(r++).getRLPData();
+        int uncleCount = parseBigInteger(ucBytes).intValueExact();
+
+        byte[] ummRoot = new byte[0];
+        if (activationConfig.isActive(ConsensusRule.RSKIPUMM, number) && (rlpHeader.size() == RLP_HEADER_SIZE_UMM ||
+                                                                          rlpHeader.size() == RLP_HEADER_SIZE_UMM_WITH_MERGED_MINING)) {
+            ummRoot = rlpHeader.get(r++).getRLPRawData();
         }
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -192,8 +197,13 @@ public class BlockFactory {
                 paidFees, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, new byte[0],
                 minimumGasPrice, uncleCount, sealed, useRskip92Encoding, includeForkDetectionData,
-                null
+                ummRoot
         );
+    }
+
+    private boolean canBeDecoded(RLPList rlpHeader) {
+        return rlpHeader.size() == RLP_HEADER_SIZE || rlpHeader.size() == RLP_HEADER_SIZE_WITH_MERGED_MINING ||
+                rlpHeader.size() == RLP_HEADER_SIZE_UMM || rlpHeader.size() == RLP_HEADER_SIZE_UMM_WITH_MERGED_MINING;
     }
 
     private static BigInteger parseBigInteger(byte[] bytes) {
