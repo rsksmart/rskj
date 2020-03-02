@@ -34,6 +34,7 @@ import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.junit.Before;
@@ -50,6 +51,7 @@ import java.util.Collections;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -60,6 +62,7 @@ public class BlockToMineBuilderTest {
     private BlockToMineBuilder blockBuilder;
     private BlockValidationRule validationRules;
     private BlockExecutor blockExecutor;
+    private ActivationConfig activationConfig;
 
     @Before
     public void setUp() {
@@ -71,10 +74,11 @@ public class BlockToMineBuilderTest {
         DifficultyCalculator difficultyCalculator = mock(DifficultyCalculator.class);
         MinimumGasPriceCalculator minimumGasPriceCalculator = mock(MinimumGasPriceCalculator.class);
         MinerUtils minerUtils = mock(MinerUtils.class);
+        activationConfig = mock(ActivationConfig.class);
 
         blockExecutor = mock(BlockExecutor.class);
         blockBuilder = new BlockToMineBuilder(
-                mock(ActivationConfig.class),
+                activationConfig,
                 miningConfig,
                 repositoryLocator,
                 mock(BlockStore.class),
@@ -134,6 +138,52 @@ public class BlockToMineBuilderTest {
         assertThat(blockCaptor.getValue().getUncleList(), hasSize(1));
     }
 
+    @Test
+    public void buildBlockBeforeUMMActivation() {
+        Keccak256 parentHash = TestUtils.randomHash();
+
+        BlockHeader parent = mock(BlockHeader.class);
+        when(parent.getNumber()).thenReturn(500L);
+        when(parent.getHash()).thenReturn(parentHash);
+        when(parent.getGasLimit()).thenReturn(new byte[0]);
+        when(parent.getMinimumGasPrice()).thenReturn(mock(Coin.class));
+
+        when(validationRules.isValid(any())).thenReturn(true);
+        when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(false);
+
+        BlockResult expectedResult = mock(BlockResult.class);
+        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
+        when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
+
+        blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
+
+        Block actualBlock = blockCaptor.getValue();
+        assertThat(actualBlock.getHeader().getUmmRoot(), is(new byte[0]));
+    }
+
+    @Test
+    public void buildBlockAfterUMMActivation() {
+        Keccak256 parentHash = TestUtils.randomHash();
+
+        BlockHeader parent = mock(BlockHeader.class);
+        when(parent.getNumber()).thenReturn(500L);
+        when(parent.getHash()).thenReturn(parentHash);
+        when(parent.getGasLimit()).thenReturn(new byte[0]);
+        when(parent.getMinimumGasPrice()).thenReturn(mock(Coin.class));
+
+        when(validationRules.isValid(any())).thenReturn(true);
+        when(activationConfig.isActive(ConsensusRule.RSKIPUMM, 501L)).thenReturn(true);
+
+        BlockResult expectedResult = mock(BlockResult.class);
+        ArgumentCaptor<Block> blockCaptor = ArgumentCaptor.forClass(Block.class);
+        when(blockExecutor.executeAndFill(blockCaptor.capture(), any())).thenReturn(expectedResult);
+
+        blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
+
+        Block actualBlock = blockCaptor.getValue();
+        assertThat(actualBlock.getHeader().getUmmRoot(), is(new byte[0]));
+    }
+
     private BlockHeader buildBlockHeaderWithSibling() {
         BlockHeader blockHeader = mock(BlockHeader.class);
         long blockNumber = 42L;
@@ -161,7 +211,8 @@ public class BlockToMineBuilderTest {
                 new Bloom().getData(), BlockDifficulty.ZERO, 1L,
                 EMPTY_BYTE_ARRAY, 0L, 0L, EMPTY_BYTE_ARRAY, Coin.ZERO,
                 EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
-                Coin.ZERO, 0, false, true, false, null
+                Coin.ZERO, 0, false, true, false,
+                new byte[0]
         );
     }
 }

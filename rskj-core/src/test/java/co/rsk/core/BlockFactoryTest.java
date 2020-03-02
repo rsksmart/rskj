@@ -325,6 +325,7 @@ public class BlockFactoryTest {
                 .setMergedMiningForkDetectionData(forkDetectionData)
                 .setMinimumGasPrice(Coin.valueOf(10L))
                 .setUncleCount(0)
+                .setUmmRoot(ummRoot)
                 .build();
     }
 
@@ -353,6 +354,7 @@ public class BlockFactoryTest {
                 .setMergedMiningForkDetectionData(forkDetectionData)
                 .setMinimumGasPrice(Coin.valueOf(10L))
                 .setUncleCount(0)
+                .setUmmRoot(ummRoot)
                 .build();
     }
 

@@ -151,7 +151,7 @@ public class BlockHeader {
         this.sealed = sealed;
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
-        this.ummRoot = ummRoot;
+        this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : new byte[0];
     }
 
     @VisibleForTesting
@@ -574,6 +574,6 @@ public class BlockHeader {
     }
 
     public byte[] getUmmRoot() {
-        return ummRoot;
+        return Arrays.copyOf(ummRoot, ummRoot.length);
     }
 }
