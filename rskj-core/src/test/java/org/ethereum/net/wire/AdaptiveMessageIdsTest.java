@@ -19,7 +19,7 @@
 
 package org.ethereum.net.wire;
 
-import co.rsk.net.lc.LightClientMessageCodes;
+import co.rsk.net.light.LightClientMessageCodes;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessageCodes;
