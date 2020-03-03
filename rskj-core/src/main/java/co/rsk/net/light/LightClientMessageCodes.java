@@ -21,6 +21,14 @@ public enum LightClientMessageCodes {
         this.cmd = cmd;
     }
 
+    public static boolean inRange(byte code) {
+        return code >= TEST.asByte() && code <= TEST.asByte();
+    }
+
+    public static LightClientMessageCodes fromByte(byte i) {
+        return intToTypeMap.get((int) i);
+    }
+
     public byte asByte() {
         return (byte) (cmd);
     }
