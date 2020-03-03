@@ -1,5 +1,7 @@
 package org.ethereum.net.rlpx;
 
+import co.rsk.net.light.message.TestMessage;
+import co.rsk.net.rlpx.LCMessageFactory;
 import io.netty.channel.ChannelHandlerContext;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
@@ -115,6 +117,35 @@ public class MessageCodecTest {
             assertArrayEquals(ethTestMessage.getEncoded(), ethMessage.getEncoded());
 
 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void encodeDecodeLCFrameAndShouldReturnLCMessage() {
+
+        TestMessage lcTestMessage = new TestMessage();
+        List<Capability> cap = new LinkedList<>();
+        cap.add(new Capability(Capability.LC, (byte) 0));
+        MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
+        messageCodec.initMessageCodes(cap);
+        messageCodec.setChannel(peer);
+        messageCodec.setLCMessageFactory(new LCMessageFactory());
+
+        List<Object> outFrame = new LinkedList<>();
+        List<Object> outMsg = new LinkedList<>();
+
+        try {
+            messageCodec.encode(ctx, lcTestMessage, outFrame);
+            assertEquals(outFrame.size(), 1);
+
+            FrameCodec.Frame ethFrame = (FrameCodec.Frame) outFrame.get(0);
+            messageCodec.decode(ctx, ethFrame, outMsg);
+            assertEquals(outMsg.size(), 1);
+
+            TestMessage lcMessage =  (TestMessage) outMsg.get(0);
+            assertArrayEquals(lcTestMessage.getEncoded(), lcMessage.getEncoded());
         } catch (Exception e) {
             e.printStackTrace();
         }
