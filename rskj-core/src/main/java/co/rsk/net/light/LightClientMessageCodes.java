@@ -1,4 +1,4 @@
-package co.rsk.net.lc;
+package co.rsk.net.light;
 
 import java.util.HashMap;
 import java.util.Map;
