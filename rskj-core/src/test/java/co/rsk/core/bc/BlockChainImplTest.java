@@ -156,7 +156,7 @@ public class BlockChainImplTest {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        alterBytes(block1.getHeader().getStateRoot());
+        block1.getHeader().setStateRoot(cloneAlterBytes(block1.getHeader().getStateRoot()));
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
@@ -166,7 +166,7 @@ public class BlockChainImplTest {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        alterBytes(block1.getHeader().getReceiptsRoot());
+        block1.getHeader().setReceiptsRoot(cloneAlterBytes(block1.getHeader().getReceiptsRoot()));
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
@@ -176,7 +176,7 @@ public class BlockChainImplTest {
         Block genesis = blockChain.getBestBlock();
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
-        alterBytes(block1.getHeader().getLogsBloom());
+        block1.getHeader().setLogsBloom(cloneAlterBytes(block1.getHeader().getLogsBloom()));
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
@@ -662,17 +662,13 @@ public class BlockChainImplTest {
         return block;
     }
 
-    private static void alterBytes(byte[] bytes) {
-        bytes[0] = (byte)((bytes[0] + 1) % 256);
-    }
-
     private static byte[] cloneAlterBytes(byte[] bytes) {
         byte[] cloned = Arrays.clone(bytes);
 
         if (cloned == null)
             return new byte[] { 0x01 };
 
-        alterBytes(cloned);
+        cloned[0] = (byte)((cloned[0] + 1) % 256);
         return cloned;
     }
 

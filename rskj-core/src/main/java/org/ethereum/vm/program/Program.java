@@ -28,9 +28,9 @@ import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.CreationData;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -48,7 +48,6 @@ import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.ethereum.vm.program.invoke.*;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
-import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.vm.trace.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +57,6 @@ import java.util.*;
 
 import static co.rsk.util.ListArrayUtil.*;
 import static java.lang.String.format;
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -1367,13 +1365,14 @@ public class Program {
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
 
             Block executionBlock = blockFactory.newBlock(
-                    blockFactory.newHeader(
-                            getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getLast20Bytes(),
-                            ByteUtils.clone(EMPTY_TRIE_HASH), ByteUtils.clone(EMPTY_TRIE_HASH),
-                            ByteUtils.clone(EMPTY_TRIE_HASH), EMPTY_BYTE_ARRAY, getDifficulty().getData(),
-                            getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
-                            EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[0], null, 0
-                    ),
+                    blockFactory.getBlockHeaderBuilder()
+                        .setParentHash(getPrevHash().getData())
+                        .setCoinbase(new RskAddress(getCoinbase().getLast20Bytes()))
+                        .setDifficultyFromBytes(getDifficulty().getData())
+                        .setNumber(getNumber().longValue())
+                        .setGasLimit(getGasLimit().getData())
+                        .setTimestamp(getTimestamp().longValue())
+                        .build(),
                     Collections.emptyList(),
                     Collections.emptyList()
             );
