@@ -365,6 +365,7 @@ public class BridgeSupport {
 
             // Confirm we should process this lock
             if(txIsLockable(btcLockSender.getType())) {
+                logger.debug("[btcTx:{}] Is a lock from a {} sender", btcTx.getHash(), btcLockSender.getType());
                 if (verifyLockSenderIsWhitelisted(rskTx, btcTx, senderBtcAddress, totalAmount, height) &&
                         verifyLockDoesNotSurpassLockingCap(rskTx, btcTx, senderBtcAddress, totalAmount)) {
 
@@ -2012,10 +2013,12 @@ public class BridgeSupport {
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
         if (witnessReservedValue.length != 32) {
+            logger.warn("[btcTx:{}] WitnessResevedValue length can't be different than 32 bytes", btcTxHash);
             throw new BridgeIllegalArgumentException("WitnessResevedValue length can't be different than 32 bytes");
         }
 
         if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
+            logger.warn("[btcTx:{}] PartialMerkleTree doesn't have expected size", btcTxHash);
             throw new BridgeIllegalArgumentException("PartialMerkleTree doesn't have expected size");
         }
 
@@ -2030,6 +2033,7 @@ public class BridgeSupport {
                 return;
             }
         } catch (VerificationException e) {
+            logger.warn("[btcTx:{}] PartialMerkleTree could not be parsed", btcTxHash);
             throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed %s", Hex.toHexString(pmtSerialized)), e);
         }
 
@@ -2037,6 +2041,7 @@ public class BridgeSupport {
         // Btc blockstore is available since we've already queried the best chain height
         StoredBlock storedBlock = btcBlockStore.getFromCache(blockHash);
         if (storedBlock == null) {
+            logger.warn("[btcTx:{}] Block not registered", btcTxHash);
             throw new BridgeIllegalArgumentException(String.format("Block not registered %s", blockHash.toString()));
         }
         BtcBlock blockHeader = storedBlock.getHeader();
@@ -2058,11 +2063,14 @@ public class BridgeSupport {
         Sha256Hash witnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
 
         if(!witnessCommitment.equals(btcTx.findWitnessCommitment())){
+            logger.warn("[btcTx:{}] WitnessCommitment does not match", btcTxHash);
             throw new BridgeIllegalArgumentException("WitnessCommitment does not match");
         }
 
         CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
         provider.setCoinbaseInformation(blockHeader.getHash(), coinbaseInformation);
+
+        logger.warn("[btcTx:{}] Registered coinbase information", btcTxHash);
     }
 
     public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) {
@@ -2186,6 +2194,7 @@ public class BridgeSupport {
         // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
         LockWhitelist lockWhitelist = provider.getLockWhitelist();
         if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
+            logger.info("Rejecting lock. Address {} is not whitelisted.", senderBtcAddress);
             generateRejectionRelease(btcTx, senderBtcAddress, rskTx, totalAmount);
             return false;
         }
@@ -2254,12 +2263,19 @@ public class BridgeSupport {
         boolean isValid = false;
 
         if (blockHeader.getMerkleRoot().equals(merkleRoot)) {
+            logger.trace("block merkle root is valid");
             isValid = true;
         }
         else {
             if (activations.isActive(ConsensusRule.RSKIP143)) {
                 CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHeader.getHash());
+                if (coinbaseInformation == null) {
+                    logger.trace("coinbase information for block {} is not yet registered", blockHeader.getHash());
+                }
                 isValid = coinbaseInformation != null && coinbaseInformation.getWitnessMerkleRoot().equals(merkleRoot);
+                logger.trace("witness merkle root is {} valid", (isValid ? "":"NOT"));
+            } else {
+                logger.trace("RSKIP143 is not active, avoid checking witness merkle root");
             }
         }
         return isValid;
