@@ -90,6 +90,10 @@ public class MessageCodesResolver {
         return resolve(code, Capability.RSK);
     }
 
+    public byte resolveLC(byte code) {
+        return resolve(code, Capability.LC);
+    }
+
     private byte resolve(byte code, String cap) {
         byte offset = getOffset(cap);
         return (byte)(code - offset);
