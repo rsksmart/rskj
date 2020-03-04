@@ -8,11 +8,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.ethereum.core.Genesis;
 import org.ethereum.net.MessageQueue;
-import org.ethereum.net.eth.EthVersion;
-import org.ethereum.net.eth.handler.Eth;
-import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.server.Channel;
-import org.ethereum.sync.SyncStatistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -20,7 +18,8 @@ import org.ethereum.sync.SyncStatistics;
  * really Handlers for the communication channel
  */
 
-public class LightClientHandler extends SimpleChannelInboundHandler<TestMessage> implements Eth {
+public class LightClientHandler extends SimpleChannelInboundHandler<TestMessage> {
+    private static final Logger logger = LoggerFactory.getLogger("lightnet");
 
     private final RskSystemProperties config;
     private final StatusResolver statusResolver;
@@ -50,48 +49,14 @@ public class LightClientHandler extends SimpleChannelInboundHandler<TestMessage>
     protected void channelRead0(ChannelHandlerContext ctx, TestMessage msg) throws Exception {
 
         switch (msg.getCommand()) {
+            case TEST:
+                logger.debug("Read message: {}", msg);
+                msgQueue.receivedMessage(msg);
+                break;
+            default:
+                break;
         }
 
-    }
-
-    @Override
-    public boolean hasStatusPassed() {
-        return false;
-    }
-
-    @Override
-    public boolean hasStatusSucceeded() {
-        return false;
-    }
-
-    @Override
-    public SyncStatistics getStats() {
-        return null;
-    }
-
-    @Override
-    public EthVersion getVersion() {
-        return null;
-    }
-
-    @Override
-    public void sendStatus() {
-
-    }
-
-    @Override
-    public void dropConnection() {
-
-    }
-
-    @Override
-    public void sendMessage(EthMessage message) {
-
-    }
-
-    @Override
-    public boolean isUsingNewProtocol() {
-        return false;
     }
 
     private enum LightState {
