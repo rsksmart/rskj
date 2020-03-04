@@ -44,10 +44,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.hamcrest.Matchers.is;
 
 /**
  * Created by Julian Len and Sebastian Sicardi on 20/10/19.
@@ -89,9 +89,6 @@ public class LightProcessorTest {
         when(blockchain.getTransactionInfo(tx.getHash().getBytes())).thenReturn(transactionInfo);
         when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(transactionInfo.getReceipt()).thenReturn(receipt);
-
-        final SimplePeer sender = new SimplePeer();
-
         lightProcessor.processBlockReceiptsRequest(sender, 100, block.getHash().getBytes());
 
         assertEquals(1, sender.getMessages().size());
@@ -110,7 +107,6 @@ public class LightProcessorTest {
     @Test
     public void processBlockReceiptRequestMessageWithIncorrectBlockHash() {
         Keccak256 blockHash = new Keccak256(HASH_1);
-
         lightProcessor.processBlockReceiptsRequest(sender, 100, blockHash.getBytes());
 
         assertEquals(0, sender.getMessages().size());

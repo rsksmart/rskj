@@ -222,7 +222,7 @@ public class BlockExecutor {
     }
 
     public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
-        return executeInternal(null, block, parent, discardInvalidTxs, ignoreReadyToExecute);
+        return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
     }
 
     /**
@@ -230,21 +230,23 @@ public class BlockExecutor {
      */
     public void traceBlock(
             ProgramTraceProcessor programTraceProcessor,
+            int vmTraceOptions,
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean ignoreReadyToExecute) {
         executeInternal(
-                Objects.requireNonNull(programTraceProcessor), block, parent, discardInvalidTxs, ignoreReadyToExecute
+                Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs, ignoreReadyToExecute
         );
     }
 
     private BlockResult executeInternal(
             @Nullable ProgramTraceProcessor programTraceProcessor,
+            int vmTraceOptions,
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
-            boolean ignoreReadyToExecute) {
+            boolean acceptInvalidTransactions) {
         boolean vmTrace = programTraceProcessor != null;
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
@@ -274,7 +276,6 @@ public class BlockExecutor {
 
         int txindex = 0;
 
-
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
@@ -286,11 +287,12 @@ public class BlockExecutor {
                     block,
                     totalGasUsed,
                     vmTrace,
+                    vmTraceOptions,
                     deletedAccounts);
-            boolean readyToExecute = txExecutor.init();
+            boolean transactionExecuted = txExecutor.executeTransaction();
 
 
-            if (!ignoreReadyToExecute && !readyToExecute) {
+            if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
                     logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
                     continue;
@@ -304,9 +306,6 @@ public class BlockExecutor {
 
             executedTransactions.add(tx);
 
-            txExecutor.execute();
-            txExecutor.go();
-            txExecutor.finalization();
             if (vmTrace) {
                 txExecutor.extractTrace(programTraceProcessor);
             }

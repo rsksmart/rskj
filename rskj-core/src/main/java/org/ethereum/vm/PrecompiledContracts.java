@@ -23,11 +23,15 @@ import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.pcc.altBN128.BN128Addition;
+import co.rsk.pcc.altBN128.BN128Multiplication;
+import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.remasc.RemascContract;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -60,6 +64,11 @@ public class PrecompiledContracts {
     public static final String RIPEMPD160_ADDR_STR = "0000000000000000000000000000000000000003";
     public static final String IDENTITY_ADDR_STR = "0000000000000000000000000000000000000004";
     public static final String BIG_INT_MODEXP_ADDR_STR = "0000000000000000000000000000000000000005";
+
+    public static final String ALT_BN_128_ADD_ADDR_STR = "0000000000000000000000000000000000000006";
+    public static final String ALT_BN_128_MUL_ADDR_STR = "0000000000000000000000000000000000000007";
+    public static final String ALT_BN_128_PAIRING_ADDR_STR = "0000000000000000000000000000000000000008";
+
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
@@ -70,6 +79,11 @@ public class PrecompiledContracts {
     public static final DataWord RIPEMPD160_ADDR_DW = DataWord.valueFromHex(RIPEMPD160_ADDR_STR);
     public static final DataWord IDENTITY_ADDR_DW = DataWord.valueFromHex(IDENTITY_ADDR_STR);
     public static final DataWord BIG_INT_MODEXP_ADDR_DW = DataWord.valueFromHex(BIG_INT_MODEXP_ADDR_STR);
+
+    public static final DataWord ALT_BN_128_ADD_DW = DataWord.valueFromHex(ALT_BN_128_ADD_ADDR_STR);
+    public static final DataWord ALT_BN_128_MUL_DW = DataWord.valueFromHex(ALT_BN_128_MUL_ADDR_STR);
+    public static final DataWord ALT_BN_128_PAIRING_DW = DataWord.valueFromHex(ALT_BN_128_PAIRING_ADDR_STR);
+
     public static final DataWord BRIDGE_ADDR_DW = DataWord.valueFromHex(BRIDGE_ADDR_STR);
     public static final DataWord REMASC_ADDR_DW = DataWord.valueFromHex(REMASC_ADDR_STR);
     public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
@@ -80,6 +94,11 @@ public class PrecompiledContracts {
     public static final RskAddress RIPEMPD160_ADDR = new RskAddress(RIPEMPD160_ADDR_DW);
     public static final RskAddress IDENTITY_ADDR = new RskAddress(IDENTITY_ADDR_DW);
     public static final RskAddress BIG_INT_MODEXP_ADDR = new RskAddress(BIG_INT_MODEXP_ADDR_DW);
+
+    public static final RskAddress ALT_BN_128_ADD_ADDR = new RskAddress(ALT_BN_128_ADD_DW);
+    public static final RskAddress ALT_BN_128_MUL_ADDR = new RskAddress(ALT_BN_128_MUL_DW);
+    public static final RskAddress ALT_BN_128_PAIRING_ADDR = new RskAddress(ALT_BN_128_PAIRING_DW);
+
     public static final RskAddress BRIDGE_ADDR = new RskAddress(BRIDGE_ADDR_DW);
     public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_DW);
     public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
@@ -99,7 +118,10 @@ public class PrecompiledContracts {
     public static final Map<RskAddress, ConsensusRule> CONSENSUS_ENABLED_ADDRESSES = Collections.unmodifiableMap(
         Stream.of(
             new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
-            new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119)
+            new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
+            new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
+            new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
+            new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137)
         ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
     );
 
@@ -155,6 +177,18 @@ public class PrecompiledContracts {
             return new HDWalletUtils(config.getActivationConfig(), HD_WALLET_UTILS_ADDR);
         }
 
+        if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_ADD_DW)) {
+            return new BN128Addition();
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_MUL_DW)) {
+            return new BN128Multiplication();
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_PAIRING_DW)) {
+            return new BN128Pairing();
+        }
+
         return null;
     }
 
@@ -164,6 +198,8 @@ public class PrecompiledContracts {
         public abstract long getGasForData(byte[] data);
 
         public void init(Transaction tx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {}
+
+        public List<ProgramSubtrace> getSubtraces() { return Collections.emptyList(); }
 
         public abstract byte[] execute(byte[] data);
     }
@@ -177,11 +213,12 @@ public class PrecompiledContracts {
         public long getGasForData(byte[] data) {
 
             // gas charge for the execution:
-            // minimum 1 and additional 1 for each 32 bytes word (round  up)
+            // minimum 15 and additional 3 for each 32 bytes word (round  up)
             if (data == null) {
                 return 15;
             }
-            return 15l + (data.length + 31) / 32 * 3;
+            long variableCost = GasCost.multiply(GasCost.add(data.length, 31) / 32, 3);
+            return GasCost.add(15, variableCost);
         }
 
         @Override
@@ -197,11 +234,12 @@ public class PrecompiledContracts {
         public long getGasForData(byte[] data) {
 
             // gas charge for the execution:
-            // minimum 50 and additional 50 for each 32 bytes word (round  up)
+            // minimum 60 and additional 12 for each 32 bytes word (round  up)
             if (data == null) {
                 return 60;
             }
-            return 60l + (data.length + 31) / 32 * 12;
+            long variableCost = GasCost.multiply(GasCost.add(data.length, 31) / 32, 12);
+            return GasCost.add(60, variableCost);
         }
 
         @Override
@@ -223,11 +261,12 @@ public class PrecompiledContracts {
 
             // TODO Replace magic numbers with constants
             // gas charge for the execution:
-            // minimum 50 and additional 50 for each 32 bytes word (round  up)
+            // minimum 600 and additional 120 for each 32 bytes word (round  up)
             if (data == null) {
                 return 600;
             }
-            return 600l + (data.length + 31) / 32 * 120;
+            long variableCost = GasCost.multiply(GasCost.add(data.length, 31) / 32, 120);
+            return GasCost.add(600, variableCost);
         }
 
         @Override
@@ -325,26 +364,22 @@ public class PrecompiledContracts {
             int expLen = parseLen(safeData, EXPONENT);
             int modLen = parseLen(safeData, MODULUS);
 
-            long multComplexity = getMultComplexity(Math.max(baseLen, modLen));
+            long multComplexity = GasCost.toGas(getMultComplexity(Math.max(baseLen, modLen)));
 
             byte[] expHighBytes;
             try {
                 int offset = Math.addExact(ARGS_OFFSET, baseLen);
                 expHighBytes = parseBytes(safeData, offset, Math.min(expLen, 32));
-            }
-            catch (ArithmeticException e) {
+            } catch (ArithmeticException e) {
                 expHighBytes = ByteUtil.EMPTY_BYTE_ARRAY;
             }
 
             long adjExpLen = getAdjustedExponentLength(expHighBytes, expLen);
 
-            // use big numbers to stay safe in case of overflow
-            BigInteger gas = BigInteger.valueOf(multComplexity)
-                    .multiply(BigInteger.valueOf(Math.max(adjExpLen, 1)))
-                    .divide(GQUAD_DIVISOR);
+            BigInteger gas = BigInteger.valueOf(multComplexity).multiply(
+                    BigInteger.valueOf(Math.max(adjExpLen, 1))).divide(GQUAD_DIVISOR);
 
-
-            return gas.min(BigInteger.valueOf(Long.MAX_VALUE)).longValueExact();
+            return GasCost.toGas(gas);
         }
 
         @Override
@@ -421,5 +456,6 @@ public class PrecompiledContracts {
         }
 
     }
+
 
 }

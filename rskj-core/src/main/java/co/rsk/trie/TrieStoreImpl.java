@@ -39,7 +39,8 @@ public class TrieStoreImpl implements TrieStore {
     private KeyValueDataSource store;
 
     /** Weak references are removed once the tries are garbage collected */
-    private Set<Trie> savedTries = Collections.newSetFromMap(new WeakHashMap<>());
+    private Set<Trie> savedTries = Collections
+            .newSetFromMap(Collections.synchronizedMap(new WeakHashMap<>()));
 
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
@@ -59,6 +60,13 @@ public class TrieStoreImpl implements TrieStore {
     private void save(Trie trie, boolean forceSaveRoot) {
         if (savedTries.contains(trie)) {
             // it is guaranteed that the children of a saved node are also saved
+            return;
+        }
+
+        byte[] trieKeyBytes = trie.getHash().getBytes();
+
+        if (forceSaveRoot && this.store.get(trieKeyBytes) != null) {
+            // the full trie is already saved
             return;
         }
 
@@ -82,7 +90,7 @@ public class TrieStoreImpl implements TrieStore {
             return;
         }
 
-        this.store.put(trie.getHash().getBytes(), trie.toMessage());
+        this.store.put(trieKeyBytes, trie.toMessage());
         savedTries.add(trie);
     }
 

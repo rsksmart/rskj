@@ -19,9 +19,11 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.crypto.Keccak256;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Representation of a queue of BTC release
@@ -44,11 +46,15 @@ public class ReleaseTransactionSet {
 
         private BtcTransaction transaction;
         private Long rskBlockNumber;
+        private Keccak256 rskTxHash;
 
-        public Entry(BtcTransaction transaction, Long rskBlockNumber) {
+        public Entry(BtcTransaction transaction, Long rskBlockNumber, Keccak256 rskTxHash) {
             this.transaction = transaction;
             this.rskBlockNumber = rskBlockNumber;
+            this.rskTxHash = rskTxHash;
         }
+
+        public Entry(BtcTransaction transaction, Long rskBlockNumber) { this(transaction, rskBlockNumber, null); }
 
         public BtcTransaction getTransaction() {
             return transaction;
@@ -58,6 +64,8 @@ public class ReleaseTransactionSet {
             return rskBlockNumber;
         }
 
+        public Keccak256 getRskTxHash() { return rskTxHash; }
+
         @Override
         public boolean equals(Object o) {
             if (o == null || this.getClass() != o.getClass()) {
@@ -66,7 +74,9 @@ public class ReleaseTransactionSet {
 
             Entry otherEntry = (Entry) o;
             return otherEntry.getTransaction().equals(getTransaction()) &&
-                    otherEntry.getRskBlockNumber().equals(getRskBlockNumber());
+                    otherEntry.getRskBlockNumber().equals(getRskBlockNumber()) &&
+                            (otherEntry.getRskTxHash() == null && getRskTxHash() == null ||
+                                    otherEntry.getRskTxHash() != null && otherEntry.getRskTxHash().equals(getRskTxHash()));
          }
 
         @Override
@@ -81,14 +91,29 @@ public class ReleaseTransactionSet {
         this.entries = new HashSet<>(entries);
     }
 
+    public Set<Entry> getEntriesWithoutHash() {
+        return entries.stream().filter(e -> e.getRskTxHash() == null).collect(Collectors.toSet());
+    }
+
+    public Set<Entry> getEntriesWithHash() {
+        return entries.stream().filter(e -> e.getRskTxHash() != null).collect(Collectors.toSet());
+    }
+
     public Set<Entry> getEntries() {
         return new HashSet<>(entries);
     }
 
     public void add(BtcTransaction transaction, Long blockNumber) {
         // Disallow duplicate transactions
-        if (!entries.stream().anyMatch(e -> e.getTransaction().equals(transaction))) {
-            entries.add(new Entry(transaction, blockNumber));
+        if (entries.stream().noneMatch(e -> e.getTransaction().equals(transaction))) {
+            entries.add(new Entry(transaction, blockNumber, null));
+        }
+    }
+
+    public void add(BtcTransaction transaction, Long blockNumber, Keccak256 rskTxHash) {
+        // Disallow duplicate transactions
+        if (entries.stream().noneMatch(e -> e.getTransaction().equals(transaction))) {
+            entries.add(new Entry(transaction, blockNumber, rskTxHash));
         }
     }
 
@@ -102,17 +127,17 @@ public class ReleaseTransactionSet {
      * @param currentBlockNumber the current execution block number (height).
      * @param minimumConfirmations the minimum desired confirmations for the slice elements.
      * @param maximumSliceSize (optional) the maximum number of elements in the slice.
-     * @return the slice of btc transactions.
+     * @return the slice of entries.
      */
-    public Set<BtcTransaction> sliceWithConfirmations(Long currentBlockNumber, Integer minimumConfirmations, Optional<Integer> maximumSliceSize) {
-        Set<BtcTransaction> output = new HashSet<>();
+    public Set<Entry> sliceWithConfirmations(Long currentBlockNumber, Integer minimumConfirmations, Optional<Integer> maximumSliceSize) {
+        Set<Entry> output = new HashSet<>();
 
         int count = 0;
         Iterator<Entry> iterator = entries.iterator();
         while (iterator.hasNext()) {
             Entry entry = iterator.next();
             if (hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations) && (!maximumSliceSize.isPresent() || count < maximumSliceSize.get())) {
-                output.add(entry.getTransaction());
+                output.add(entry);
                 iterator.remove();
                 count++;
                 if (maximumSliceSize.isPresent() && count == maximumSliceSize.get()) {

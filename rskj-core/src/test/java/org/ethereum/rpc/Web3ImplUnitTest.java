@@ -73,6 +73,7 @@ public class Web3ImplUnitTest {
                 mock(TxPoolModule.class),
                 mock(MnrModule.class),
                 mock(DebugModule.class),
+                null,
                 mock(RskModule.class),
                 mock(ChannelManager.class),
                 mock(PeerScoringManager.class),

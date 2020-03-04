@@ -24,7 +24,6 @@ import co.rsk.net.*;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
-import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
@@ -32,7 +31,6 @@ import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -56,7 +54,6 @@ public class MessageVisitor {
     private final Peer sender;
     private final PeerScoringManager peerScoringManager;
     private final RskSystemProperties config;
-    private final BlockValidationRule blockValidationRule;
     private final ChannelManager channelManager;
 
     public MessageVisitor(RskSystemProperties config,
@@ -66,7 +63,6 @@ public class MessageVisitor {
                           TransactionGateway transactionGateway,
                           PeerScoringManager peerScoringManager,
                           ChannelManager channelManager,
-                          BlockValidationRule blockValidationRule,
                           Peer sender) {
 
         this.blockProcessor = blockProcessor;
@@ -75,7 +71,6 @@ public class MessageVisitor {
         this.transactionGateway = transactionGateway;
         this.peerScoringManager = peerScoringManager;
         this.channelManager = channelManager;
-        this.blockValidationRule = blockValidationRule;
         this.config = config;
         this.sender = sender;
     }
@@ -103,12 +98,6 @@ public class MessageVisitor {
             return;
         }
 
-        if (!isValidBlock(block)) {
-            logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
-            recordEvent(sender, EventType.INVALID_BLOCK);
-            return;
-        }
-
         if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
             logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
             return;
@@ -120,7 +109,15 @@ public class MessageVisitor {
         }
 
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
+
+        if (result.isInvalidBlock()) {
+            logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
+            recordEvent(sender, EventType.INVALID_BLOCK);
+            return;
+        }
+
         tryRelayBlock(block, result);
+
         recordEvent(sender, EventType.VALID_BLOCK);
     }
 
@@ -248,22 +245,6 @@ public class MessageVisitor {
         }
 
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
-    }
-
-    /**
-     * isValidBlock validates if the given block meets the minimum criteria to be processed:
-     * The PoW should be valid and the block can't be too far in the future.
-     *
-     * @param block the block to check
-     * @return true if the block is valid, false otherwise.
-     */
-    private boolean isValidBlock(@Nonnull final Block block) {
-        try {
-            return blockValidationRule.isValid(block);
-        } catch (Exception e) {
-            logger.error("Failed to validate PoW from block {}: {}", block.getShortHash(), e);
-            return false;
-        }
     }
 
     private void  tryRelayBlock(Block block, BlockProcessResult result) {

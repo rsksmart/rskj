@@ -29,6 +29,7 @@ import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 
 /**
@@ -51,7 +52,7 @@ public class RskTestContext extends RskContext {
     }
 
     @Override
-    protected TrieStore buildTrieStore(String name) {
+    protected TrieStore buildTrieStore(Path trieStorePath) {
         return new TrieStoreImpl(new HashMapDB());
     }
 

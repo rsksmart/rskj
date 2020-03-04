@@ -39,6 +39,9 @@ import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.util.BuildInfo;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -148,6 +151,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -194,6 +198,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -263,6 +268,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -318,6 +324,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -376,6 +383,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -441,6 +449,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -499,6 +508,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -561,6 +571,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -605,6 +616,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -649,6 +661,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
 
@@ -699,6 +712,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 builder,
                 clock,
                 mock(BlockFactory.class),
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -744,6 +758,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 ),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -761,6 +776,110 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         } finally {
             minerServer.stop();
         }
+    }
+
+    @Test
+    public void extraDataNotInitializedWithClientData() {
+        MinerServer minerServer = new MinerServerImpl(
+                config,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new BuildInfo("cb7f28e", "master"),
+                ConfigUtils.getDefaultMiningConfig()
+        );
+
+        byte[] extraData = minerServer.getExtraData();
+        RLPList decodedExtraData = RLP.decodeList(extraData);
+        assertEquals(2, decodedExtraData.size());
+
+        byte[] firstItem = decodedExtraData.get(0).getRLPData();
+        assertNotNull(firstItem);
+        assertEquals(1, (RLP.decodeInt(firstItem,0)));
+
+        byte[] secondItem = decodedExtraData.get(1).getRLPData();
+        assertNotNull(secondItem);
+        assertEquals(config.projectVersionModifier().concat("-cb7f28e"), new String(secondItem));
+    }
+
+    @Test
+    public void extraDataWithClientData() {
+        MinerServer minerServer = new MinerServerImpl(
+                config,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new BuildInfo("cb7f28e", "master"),
+                ConfigUtils.getDefaultMiningConfig()
+        );
+
+        minerServer.setExtraData("tincho".getBytes());
+
+        byte[] extraData = minerServer.getExtraData();
+        RLPList decodedExtraData = RLP.decodeList(extraData);
+        assertEquals(3, decodedExtraData.size());
+
+        byte[] firstItem = decodedExtraData.get(0).getRLPData();
+        assertNotNull(firstItem);
+        assertEquals(1, (RLP.decodeInt(firstItem,0)));
+
+        byte[] secondItem = decodedExtraData.get(1).getRLPData();
+        assertNotNull(secondItem);
+        assertEquals(config.projectVersionModifier().concat("-cb7f28e"), new String(secondItem));
+
+        byte[] thirdItem = decodedExtraData.get(2).getRLPData();
+        assertNotNull(thirdItem);
+        assertEquals("tincho", new String(thirdItem));
+    }
+
+    @Test
+    public void extraDataWithClientDataMoreThan32Bytes() {
+        MinerServer minerServer = new MinerServerImpl(
+                config,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new BuildInfo("cb7f28e", "master"),
+                ConfigUtils.getDefaultMiningConfig()
+        );
+
+        minerServer.setExtraData("tincho is the king of mining".getBytes());
+
+        byte[] extraData = minerServer.getExtraData();
+        assertEquals(32, extraData.length);
+        RLPList decodedExtraData = RLP.decodeList(extraData);
+        assertEquals(3, decodedExtraData.size());
+
+        byte[] firstItem = decodedExtraData.get(0).getRLPData();
+        assertNotNull(firstItem);
+        assertEquals(1, (RLP.decodeInt(firstItem,0)));
+
+        byte[] secondItem = decodedExtraData.get(1).getRLPData();
+        assertNotNull(secondItem);
+        assertEquals(config.projectVersionModifier().concat("-cb7f28e"), new String(secondItem));
+
+        byte[] thirdItem = decodedExtraData.get(2).getRLPData();
+        assertNotNull(thirdItem);
+
+        // The final client extra data may be truncated by the combined size of the other encoded elements
+        int extraDataMaxLength = 32;
+        int extraDataEncodingOverhead = 3;
+        Integer clientExtraDataSize =
+                extraDataMaxLength - extraDataEncodingOverhead - firstItem.length - secondItem.length;
+
+        assertEquals("tincho is the king of mining".substring(0, clientExtraDataSize), new String(thirdItem));
     }
 
     private BtcBlock getMergedMiningBlockWithOnlyCoinbase(MinerWork work) {

@@ -25,6 +25,7 @@ import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import java.util.List;
+
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -50,7 +51,6 @@ public class BridgeSupportFactory {
 
     public BridgeSupport newInstance(Repository repository, Block executionBlock,
             RskAddress contractAddress, List<LogInfo> logs) {
-
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlock.getNumber());
         Context btcContext = new Context(bridgeConstants.getBtcParams());
 
@@ -58,7 +58,7 @@ public class BridgeSupportFactory {
             repository,
             contractAddress,
             bridgeConstants,
-            BridgeStorageConfiguration.fromBlockchainConfig(activations)
+            activations
         );
 
         FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock);
@@ -67,7 +67,7 @@ public class BridgeSupportFactory {
         if (logs == null) {
             eventLogger = null;
         } else {
-            eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
+            eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
         }
 
         return new BridgeSupport(bridgeConstants, provider, eventLogger, repository, executionBlock, btcContext,

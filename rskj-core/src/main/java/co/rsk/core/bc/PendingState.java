@@ -174,11 +174,10 @@ public class PendingState implements AccountInformationProvider {
 
     private void executeTransaction(Repository currentRepository, Transaction tx) {
         LOGGER.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
+
         TransactionExecutor executor = transactionExecutorFactory.newInstance(currentRepository, tx);
-        executor.init();
-        executor.execute();
-        executor.go();
-        executor.finalization();
+
+        executor.executeTransaction();
     }
 
     private interface PostExecutionAction<T> {

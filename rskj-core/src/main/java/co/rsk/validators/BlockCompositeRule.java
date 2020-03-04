@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +27,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by mario on 18/01/17.
+ * A rule which gathers an arbitrary amount of rules for validation of blocks.
+ * This a lower-level validator which is intended to be used in specific cases and in tests,
+ * but usage of higher-level validators like SyncBlockValidationRule or BlockValidationRule
+ * should be preferred.
  */
+@VisibleForTesting
 public class BlockCompositeRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");

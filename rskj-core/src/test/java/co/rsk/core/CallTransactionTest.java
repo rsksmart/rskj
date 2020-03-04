@@ -18,6 +18,9 @@
 
 package co.rsk.core;
 
+import co.rsk.peg.BridgeEvents;
+import jdk.nashorn.internal.codegen.CompilerConstants;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
@@ -115,5 +118,16 @@ public class CallTransactionTest {
                 104, 101, 108, 108, 111, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
         Assert.assertEquals("hello", type.decode(toDecode));
+    }
+
+    @Test
+    public void decodeEventData() {
+        CallTransaction.Function event = CallTransaction.Function.fromEventSignature("test", new CallTransaction.Param[]{
+                new CallTransaction.Param(true, "txHash", SolidityType.getType("bytes32")),
+                new CallTransaction.Param(false, "amount", SolidityType.getType("uint"))
+        });
+
+        String value = "0000000000000000000000000000000000000000000000000000000000000020";
+        Assert.assertEquals(new BigInteger("32"), event.decodeEventData(Hex.decode(value))[0]);
     }
 }

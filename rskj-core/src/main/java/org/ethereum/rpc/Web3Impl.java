@@ -37,6 +37,7 @@ import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
+import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.InvalidInetAddressException;
 import co.rsk.scoring.PeerScoringInformation;
@@ -107,6 +108,7 @@ public class Web3Impl implements Web3 {
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
     private final DebugModule debugModule;
+    private final TraceModule traceModule;
     private final RskModule rskModule;
 
     protected Web3Impl(
@@ -123,6 +125,7 @@ public class Web3Impl implements Web3 {
             TxPoolModule txPoolModule,
             MnrModule mnrModule,
             DebugModule debugModule,
+            TraceModule traceModule,
             RskModule rskModule,
             ChannelManager channelManager,
             PeerScoringManager peerScoringManager,
@@ -145,6 +148,7 @@ public class Web3Impl implements Web3 {
         this.txPoolModule = txPoolModule;
         this.mnrModule = mnrModule;
         this.debugModule = debugModule;
+        this.traceModule = traceModule;
         this.rskModule = rskModule;
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
@@ -979,6 +983,11 @@ public class Web3Impl implements Web3 {
     @Override
     public DebugModule getDebugModule() {
         return debugModule;
+    }
+
+    @Override
+    public TraceModule getTraceModule() {
+        return traceModule;
     }
 
     @Override

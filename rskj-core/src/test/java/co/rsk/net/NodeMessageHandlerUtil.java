@@ -27,7 +27,7 @@ public class NodeMessageHandlerUtil {
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
-    public static NodeMessageHandler createHandler(BlockValidationRule validationRule, Blockchain blockchain) {
+    public static NodeMessageHandler createHandler(Blockchain blockchain) {
         final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -36,13 +36,12 @@ public class NodeMessageHandlerUtil {
         SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
                 syncConfiguration, blockFactory, new DummyBlockValidationRule(),
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
+                new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
                 mock(Genesis.class));
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         LightProcessor lightProcessor = new LightProcessor(blockchain, mock(BlockStore.class), mock(RepositoryLocator.class));
-
-        return new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule, mock(StatusResolver.class));
+        return new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration, ChannelManager channelManager) {
@@ -66,14 +65,13 @@ public class NodeMessageHandlerUtil {
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration, blockFactory,
-                blockValidationRule, new BlockCompositeRule(new BlockUnclesHashValidationRule(),
+                blockValidationRule, new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(),
                 new BlockRootValidationRule(config.getActivationConfig())),
                 DIFFICULTY_CALCULATOR,
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
                 mock(Genesis.class)
         );
         LightProcessor lightProcessor = new LightProcessor(blockchain, mock(BlockStore.class), mock(RepositoryLocator.class));
-
-        return new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, channelManager, null, null, blockValidationRule, mock(StatusResolver.class));
+        return new NodeMessageHandler(config, processor, syncProcessor, lightProcessor, channelManager, null, null, mock(StatusResolver.class));
     }
 }

@@ -33,17 +33,33 @@ import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ProgramTraceProcessorTest {
+public class DetailedProgramTraceProcessorTest {
     @Test
     public void getUnknownTrace() {
         Keccak256 hash = TestUtils.randomHash();
         Keccak256 otherHash = TestUtils.randomHash();
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
-        ProgramTrace trace = buildTestTrace(DataWord.valueOf(42));
+        DetailedProgramTrace trace = buildTestTrace(DataWord.valueOf(42));
         processor.processProgramTrace(trace, hash);
 
+        Assert.assertNull(processor.getProgramTrace(otherHash));
         Assert.assertNull(processor.getProgramTraceAsJsonNode(otherHash));
+    }
+
+    @Test
+    public void setAndGetTrace() {
+        Keccak256 hash = TestUtils.randomHash();
+        ProgramTraceProcessor processor = new ProgramTraceProcessor();
+
+        DataWord ownerDW = DataWord.valueOf(42);
+        DetailedProgramTrace trace = buildTestTrace(ownerDW);
+        processor.processProgramTrace(trace, hash);
+
+        ProgramTrace result = processor.getProgramTrace(hash);
+
+        Assert.assertNotNull(result);
+        Assert.assertSame(trace, result);
     }
 
     @Test
@@ -52,7 +68,7 @@ public class ProgramTraceProcessorTest {
         ProgramTraceProcessor processor = new ProgramTraceProcessor();
 
         DataWord ownerDW = DataWord.valueOf(42);
-        ProgramTrace trace = buildTestTrace(ownerDW);
+        DetailedProgramTrace trace = buildTestTrace(ownerDW);
         processor.processProgramTrace(trace, hash);
 
         JsonNode jnode = processor.getProgramTraceAsJsonNode(hash);
@@ -70,12 +86,12 @@ public class ProgramTraceProcessorTest {
         Assert.assertTrue(jsonText.contains("\"storageSize\""));
     }
 
-    private ProgramTrace buildTestTrace(DataWord ownerDW) {
+    private DetailedProgramTrace buildTestTrace(DataWord ownerDW) {
         ProgramInvoke programInvoke = mock(ProgramInvoke.class);
         when(programInvoke.getOwnerAddress()).thenReturn(ownerDW);
         when(programInvoke.getRepository()).thenReturn(mock(Repository.class));
         VmConfig vmConfig = mock(VmConfig.class);
         when(vmConfig.vmTrace()).thenReturn(true);
-        return new ProgramTrace(vmConfig, programInvoke);
+        return new DetailedProgramTrace(vmConfig, programInvoke);
     }
 }

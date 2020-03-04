@@ -136,28 +136,35 @@ public class VM {
         // This comparison assumes (oldMemSize % 32 == 0)
         if (newMemSize > oldMemSize) { // optimization to avoid div/mul
             long memoryUsage = (newMemSize+31) / 32 * 32; // rounds up
+
             if (memoryUsage > oldMemSize) {
                 memWords = (memoryUsage / 32); // 25 sig digits
                 long memWordsOld = (oldMemSize / 32);
                 long memGas;
 
                  // MemWords*MemWords has 50 sig digits, so this cannot overflow
-                 memGas = (GasCost.MEMORY * memWords + memWords * memWords / 512)
-                        - (GasCost.MEMORY * memWordsOld + memWordsOld * memWordsOld / 512);
-
-                currentGasCost += memGas;
+                memGas = GasCost.subtract(
+                        GasCost.add(
+                                GasCost.multiply(GasCost.MEMORY, memWords),
+                                GasCost.multiply(memWords, memWords) / 512
+                        ),
+                        GasCost.add(
+                                GasCost.multiply(GasCost.MEMORY, memWordsOld),
+                                GasCost.multiply(memWordsOld, memWordsOld) / 512
+                        )
+                );
+                currentGasCost = GasCost.add(currentGasCost, memGas);
             }
         }
 
         // copySize is invalid if newMemSize > 2^63, but it only gets here if newMemSize is <= 2^30
         if (copySize > 0) {
-            long copyGas = GasCost.COPY_GAS * ((copySize + 31) / 32);
-            currentGasCost += copyGas;
+            long copyGas = GasCost.multiply(GasCost.COPY_GAS, GasCost.add(copySize, 31) / 32);
+            currentGasCost = GasCost.add(currentGasCost, copyGas);
         }
 
         return currentGasCost;
     }
-
 
     public void step(Program aprogram) {
         steps(aprogram,1);
@@ -181,7 +188,6 @@ public class VM {
 
     }
 
-
     public static long limitedAddToMaxLong(long left, long right) {
         try {
             return Math.addExact(left, right);
@@ -194,15 +200,16 @@ public class VM {
         if (!computeGas) {
             return;
         }
+
         program.spendGas(gasCost, op.name());
     }
-
 
     protected void doSTOP() {
         if (computeGas) {
             gasCost = GasCost.STOP;
             spendOpCodeGas();
         }
+
         // EXECUTION PHASE
         program.setHReturn(EMPTY_BYTE_ARRAY);
         program.stop();
@@ -311,7 +318,7 @@ public class VM {
         if (computeGas) {
             DataWord exp = stack.get(stack.size() - 2);
             int bytesOccupied = exp.bytesOccupied();
-            gasCost = (long)GasCost.EXP_GAS + GasCost.EXP_BYTE_GAS * bytesOccupied;
+            gasCost = GasCost.calculateTotal(GasCost.EXP_GAS, GasCost.EXP_BYTE_GAS, bytesOccupied);
         }
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -611,8 +618,8 @@ public class VM {
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.peek(), sizeLong);
             long chunkUsed = (sizeLong + 31) / 32;
-            gasCost += chunkUsed * GasCost.SHA3_WORD;
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.calculateTotal(gasCost, GasCost.SHA3_WORD, chunkUsed);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
 
             spendOpCodeGas();
         }
@@ -732,7 +739,7 @@ public class VM {
 
     protected void doCALLDATACOPY() {
         if (computeGas) {
-            gasCost += computeDataCopyGas();
+            gasCost = GasCost.add(gasCost, computeDataCopyGas());
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -780,13 +787,10 @@ public class VM {
                 }
             }
         }
-
         if (isLogEnabled) {
             hint = "size: " + codeLength;
         }
-
         program.stackPush(codeLength);
-
         program.step();
     }
 
@@ -840,13 +844,13 @@ public class VM {
                 copySize = Program.limitToMaxLong(size);
                 checkSizeArgument(copySize);
                 newMemSize = memNeeded(stack.get(stack.size() - 2), copySize);
-                gasCost += calcMemGas(oldMemSize, newMemSize, copySize);
+                gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, copySize));
             } else {
                 size = stack.get(stack.size() - 3);
                 copySize = Program.limitToMaxLong(size);
                 checkSizeArgument(copySize);
                 newMemSize = memNeeded(stack.peek(), copySize);
-                gasCost += calcMemGas(oldMemSize, newMemSize, copySize);
+                gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, copySize));
             }
             spendOpCodeGas();
         }
@@ -922,7 +926,7 @@ public class VM {
 
     protected void doRETURNDATACOPY() {
         if (computeGas) {
-            gasCost += computeDataCopyGas();
+            gasCost = GasCost.add(gasCost, computeDataCopyGas());
             spendOpCodeGas();
         }
 
@@ -1054,6 +1058,32 @@ public class VM {
         program.step();
     }
 
+    protected void doCHAINID() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord chainId = DataWord.valueOf(vmConfig.getChainId());
+
+        if (isLogEnabled) {
+            hint = "chainId: " + chainId;
+        }
+
+        program.stackPush(chainId);
+        program.step();
+    }
+
+    protected void doSELFBALANCE(){
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord balance = program.getBalance(program.getOwnerAddress());
+
+        if (isLogEnabled) {
+            hint = "selfBalance: " + balance;
+        }
+
+        program.stackPush(balance);
+        program.step();
+    }
+
     protected void doPOP(){
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1124,17 +1154,10 @@ public class VM {
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.peek(), sizeLong);
 
-            long dataCost = Program.multiplyLimitToMaxLong(sizeLong, GasCost.LOG_DATA_GAS);
+            long dataCost = GasCost.multiply(sizeLong, GasCost.LOG_DATA_GAS);
 
-            if (dataCost > Program.MAX_GAS) {
-                throw Program.ExceptionHelper.notEnoughOpGas(op, dataCost, program.getRemainingGas());
-            }
-
-            gasCost = GasCost.LOG_GAS +
-                    GasCost.LOG_TOPIC_GAS * nTopics +
-                    dataCost;
-
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.calculateTotal(GasCost.add(GasCost.LOG_GAS, dataCost), GasCost.LOG_TOPIC_GAS, nTopics);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
 
             spendOpCodeGas();
         }
@@ -1170,7 +1193,7 @@ public class VM {
 
         if (computeGas) {
             newMemSize = memNeeded(stack.peek(), 32);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -1190,7 +1213,7 @@ public class VM {
 
         if (computeGas) {
             newMemSize = memNeeded(stack.peek(), 32);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -1210,7 +1233,7 @@ public class VM {
 
         if (computeGas) {
             newMemSize = memNeeded(stack.peek(), 1);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
 
             spendOpCodeGas();
         }
@@ -1398,7 +1421,7 @@ public class VM {
             sizeLong = Program.limitToMaxLong(size);
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.get(stack.size() - 2), sizeLong);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
 
             spendOpCodeGas();
         }
@@ -1424,10 +1447,15 @@ public class VM {
         }
 
         if (computeGas){
-            Long codeSize = stack.get(stack.size() - 3).longValueSafe();
-            gasCost = GasCost.CREATE +
-                    calcMemGas(oldMemSize, memNeeded(stack.get(stack.size() - 2), codeSize), 0) +
-                    (codeSize+31)/32 * GasCost.SHA3_WORD;
+            long codeSize = stack.get(stack.size() - 3).longValueSafe();
+            gasCost = GasCost.calculateTotal(
+                    GasCost.add(
+                            GasCost.CREATE,
+                            calcMemGas(oldMemSize, memNeeded(stack.get(stack.size() - 2), codeSize), 0)
+                    ),
+                    GasCost.SHA3_WORD,
+                    GasCost.add(codeSize, 31) / 32
+            );
             spendOpCodeGas();
         }
 
@@ -1481,30 +1509,34 @@ public class VM {
         // gasCost doesn't include the calleeGas at this point
         // because we want to throw gasOverflow instead of notEnoughSpendingGas
         long requiredGas = gasCost;
-        long remainingGas = program.getRemainingGas() - requiredGas;
-        if (remainingGas < 0) {
+        if (requiredGas > program.getRemainingGas()) {
             throw Program.ExceptionHelper.gasOverflow(BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
         }
+        long remainingGas = GasCost.subtract(program.getRemainingGas(), requiredGas);
 
         // We give the callee a basic stipend whenever we transfer value,
         // basically to avoid problems when invoking a contract's default function.
         long minimumTransferGas = 0;
         if (!value.isZero()) {
-            minimumTransferGas += GasCost.STIPEND_CALL;
 
+            minimumTransferGas = GasCost.add(minimumTransferGas, GasCost.STIPEND_CALL);
             if (remainingGas < minimumTransferGas) {
                 throw Program.ExceptionHelper.notEnoughSpendingGas(op.name(), minimumTransferGas, program);
             }
         }
 
+        long userSpecifiedGas = Program.limitToMaxLong(gas);
+        long specifiedGasPlusMin = activations.isActive(RSKIP150) ?
+                GasCost.add(userSpecifiedGas, minimumTransferGas) :
+                userSpecifiedGas + minimumTransferGas;
+
         // If specified gas is higher than available gas then move all remaining gas to callee.
         // This will have one possibly undesired behavior: if the specified gas is higher than the remaining gas,
         // the callee will receive less gas than the parent expected.
-        long userSpecifiedGas = Program.limitToMaxLong(gas);
-        long calleeGas = Math.min(remainingGas, userSpecifiedGas + minimumTransferGas);
+        long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
 
         if (computeGas) {
-            gasCost += calleeGas;
+            gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
         }
 
@@ -1552,12 +1584,11 @@ public class VM {
 
         //check to see if account does not exist and is not a precompiled contract
         if (op == OpCode.CALL && !program.getStorage().isExist(new RskAddress(codeAddress))) {
-            callGas += GasCost.NEW_ACCT_CALL;
+            callGas = GasCost.add(callGas, GasCost.NEW_ACCT_CALL);
         }
-
         // RSKIP103: we don't need to check static call nor delegate call since value will always be zero
         if (!value.isZero()) {
-            callGas += GasCost.VT_CALL;
+            callGas = GasCost.add(callGas, GasCost.VT_CALL);
         }
 
         long inSizeLong = Program.limitToMaxLong(inDataSize);
@@ -1566,7 +1597,7 @@ public class VM {
         long in = memNeeded(inDataOffs, inSizeLong); // in offset+size
         long out = memNeeded(outDataOffs, outSizeLong); // out offset+size
         long newMemSize = Long.max(in, out);
-        callGas += calcMemGas(oldMemSize, newMemSize, 0);
+        callGas = GasCost.add(callGas, calcMemGas(oldMemSize, newMemSize, 0));
         return callGas;
     }
 
@@ -1587,8 +1618,7 @@ public class VM {
             sizeLong = Program.limitToMaxLong(size);
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.peek(), sizeLong);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
-
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -1617,7 +1647,7 @@ public class VM {
             gasCost = GasCost.SUICIDE;
             DataWord suicideAddressWord = stack.get(stack.size() - 1);
             if (!program.getStorage().isExist(new RskAddress(suicideAddressWord))) {
-                gasCost += GasCost.NEW_ACCT_SUICIDE;
+                gasCost = GasCost.add(gasCost, GasCost.NEW_ACCT_SUICIDE);
             }
             spendOpCodeGas();
         }
@@ -1766,6 +1796,18 @@ public class VM {
             case OpCodes.OP_DIFFICULTY: doDIFFICULTY();
             break;
             case OpCodes.OP_GASLIMIT: doGASLIMIT();
+            break;
+            case OpCodes.OP_CHAINID:
+                if (!activations.isActive(RSKIP152)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doCHAINID();
+            break;
+            case OpCodes.OP_SELFBALANCE:
+                if (!activations.isActive(RSKIP151)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                }
+                doSELFBALANCE();
             break;
             case OpCodes.OP_TXINDEX: doTXINDEX();
             break;

@@ -52,6 +52,14 @@ public class BridgeConstants {
 
     protected Coin genesisFeePerKb;
 
+    protected Coin maxFeePerKb;
+
+    protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
+
+    protected Coin initialLockingCap;
+
+    protected int lockingCapIncrementsMultiplier;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -98,5 +106,15 @@ public class BridgeConstants {
 
     public AddressBasedAuthorizer getFeePerKbChangeAuthorizer() { return feePerKbChangeAuthorizer; }
 
+    public AddressBasedAuthorizer getIncreaseLockingCapAuthorizer() { return increaseLockingCapAuthorizer; }
+
+    public int getLockingCapIncrementsMultiplier() { return lockingCapIncrementsMultiplier; }
+
+    public Coin getInitialLockingCap() { return initialLockingCap; }
+
     public Coin getGenesisFeePerKb() { return genesisFeePerKb; }
+
+    public Coin getMaxFeePerKb() { return maxFeePerKb; }
+
+    public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
 }
