@@ -43,10 +43,7 @@ import co.rsk.net.discovery.PeerExplorer;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
-import co.rsk.net.eth.MessageFilter;
-import co.rsk.net.eth.MessageRecorder;
-import co.rsk.net.eth.RskWireProtocol;
-import co.rsk.net.eth.WriterMessageRecorder;
+import co.rsk.net.eth.*;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
@@ -218,6 +215,7 @@ public class RskContext implements NodeBootstrapper {
     private TxPoolModule txPoolModule;
     private RskModule rskModule;
     private RskWireProtocol.Factory rskWireProtocolFactory;
+    private LightClientHandler.Factory lightClientHandlerFactory;
     private Eth62MessageFactory eth62MessageFactory;
     private GasLimitCalculator gasLimitCalculator;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
@@ -1555,6 +1553,21 @@ public class RskContext implements NodeBootstrapper {
             lightProcessor = new LightProcessor(getBlockchain(), getBlockStore(), getRepositoryLocator());
         }
         return lightProcessor;
+    }
+
+    private LightClientHandler.Factory getLightClientHandlerFactory() {
+        if (lightClientHandlerFactory == null) {
+            lightClientHandlerFactory = (messageQueue, channel) -> new LightClientHandler(
+                    getRskSystemProperties(),
+                    getNodeMessageHandler(),
+                    getGenesis(),
+                    getMessageRecorder(),
+                    getStatusResolver(),
+                    messageQueue,
+                    channel);
+        }
+
+        return lightClientHandlerFactory;
     }
 
     private StatusResolver getStatusResolver() {
