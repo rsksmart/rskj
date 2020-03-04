@@ -20,7 +20,9 @@
 package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.eth.RskWireProtocol;
+import co.rsk.net.rlpx.LCMessageFactory;
 import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -56,8 +58,10 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
     private final NodeManager nodeManager;
     private final RskWireProtocol.Factory rskWireProtocolFactory;
     private final Eth62MessageFactory eth62MessageFactory;
+    private final LightClientHandler.Factory lightClientHandlerFactory;
     private final StaticMessages staticMessages;
     private final PeerScoringManager peerScoringManager;
+    private final LCMessageFactory lcMessageFactory;
 
     public EthereumChannelInitializer(
             String remoteId,
@@ -68,6 +72,8 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
             NodeManager nodeManager,
             RskWireProtocol.Factory rskWireProtocolFactory,
             Eth62MessageFactory eth62MessageFactory,
+            LightClientHandler.Factory lightClientHandlerFactory,
+            LCMessageFactory lcMessageFactory,
             StaticMessages staticMessages,
             PeerScoringManager peerScoringManager) {
         this.remoteId = remoteId;
@@ -78,6 +84,8 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
         this.nodeManager = nodeManager;
         this.rskWireProtocolFactory = rskWireProtocolFactory;
         this.eth62MessageFactory = eth62MessageFactory;
+        this.lightClientHandlerFactory = lightClientHandlerFactory;
+        this.lcMessageFactory = lcMessageFactory;
         this.staticMessages = staticMessages;
         this.peerScoringManager = peerScoringManager;
     }
@@ -106,7 +114,7 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
             P2pHandler p2pHandler = new P2pHandler(ethereumListener, messageQueue, config.getPeerP2PPingInterval());
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
             HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager, p2pHandler, messageCodec, configCapabilities);
-            Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, eth62MessageFactory, staticMessages, remoteId);
+            Channel channel = new Channel(messageQueue, messageCodec, nodeManager, rskWireProtocolFactory, lightClientHandlerFactory.newInstance(messageQueue), eth62MessageFactory, lcMessageFactory, staticMessages, remoteId);
 
             ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(config.peerChannelReadTimeout(), TimeUnit.SECONDS));
             ch.pipeline().addLast("handshakeHandler", handshakeHandler);

@@ -43,11 +43,9 @@ import co.rsk.net.discovery.PeerExplorer;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
-import co.rsk.net.eth.MessageFilter;
-import co.rsk.net.eth.MessageRecorder;
-import co.rsk.net.eth.RskWireProtocol;
-import co.rsk.net.eth.WriterMessageRecorder;
+import co.rsk.net.eth.*;
 import co.rsk.net.light.LightProcessor;
+import co.rsk.net.rlpx.LCMessageFactory;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.peg.BridgeSupportFactory;
@@ -218,7 +216,9 @@ public class RskContext implements NodeBootstrapper {
     private TxPoolModule txPoolModule;
     private RskModule rskModule;
     private RskWireProtocol.Factory rskWireProtocolFactory;
+    private LightClientHandler.Factory lightClientHandlerFactory;
     private Eth62MessageFactory eth62MessageFactory;
+    private LCMessageFactory lcMessageFactory;
     private GasLimitCalculator gasLimitCalculator;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
     private TransactionExecutorFactory transactionExecutorFactory;
@@ -1145,12 +1145,22 @@ public class RskContext implements NodeBootstrapper {
                     getNodeManager(),
                     getRskWireProtocolFactory(),
                     getEth62MessageFactory(),
+                    getLightClientHandlerFactory(),
+                    getLCMessageFactory(),
                     getStaticMessages(),
                     getPeerScoringManager()
             );
         }
 
         return ethereumChannelInitializerFactory;
+    }
+
+    private LCMessageFactory getLCMessageFactory() {
+        if (lcMessageFactory == null) {
+            lcMessageFactory = new LCMessageFactory();
+        }
+
+        return lcMessageFactory;
     }
 
     private Eth62MessageFactory getEth62MessageFactory() {
@@ -1555,6 +1565,14 @@ public class RskContext implements NodeBootstrapper {
             lightProcessor = new LightProcessor(getBlockchain(), getBlockStore(), getRepositoryLocator());
         }
         return lightProcessor;
+    }
+
+    private LightClientHandler.Factory getLightClientHandlerFactory() {
+        if (lightClientHandlerFactory == null) {
+            lightClientHandlerFactory = LightClientHandler::new;
+        }
+
+        return lightClientHandlerFactory;
     }
 
     private StatusResolver getStatusResolver() {
