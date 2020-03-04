@@ -21,9 +21,11 @@ package org.ethereum.net.server;
 
 import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.eth.RskMessage;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.messages.Message;
+import co.rsk.net.rlpx.LCMessageFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.net.MessageQueue;
@@ -60,11 +62,14 @@ public class Channel implements Peer {
     private final MessageCodec messageCodec;
     private final NodeManager nodeManager;
     private final RskWireProtocol.Factory rskWireProtocolFactory;
+    private final LightClientHandler lightClientHandler;
     private final Eth62MessageFactory eth62MessageFactory;
+    private final LCMessageFactory lcMessageFactory;
     private final StaticMessages staticMessages;
     private final boolean isActive;
 
     private Eth eth = new EthAdapter();
+    private LightClientHandler lc;
 
     private InetSocketAddress inetSocketAddress;
 
@@ -77,14 +82,18 @@ public class Channel implements Peer {
                    MessageCodec messageCodec,
                    NodeManager nodeManager,
                    RskWireProtocol.Factory rskWireProtocolFactory,
+                   LightClientHandler lightClientHandler,
                    Eth62MessageFactory eth62MessageFactory,
+                   LCMessageFactory lcMessageFactory,
                    StaticMessages staticMessages,
                    String remoteId) {
         this.msgQueue = msgQueue;
         this.messageCodec = messageCodec;
         this.nodeManager = nodeManager;
         this.rskWireProtocolFactory = rskWireProtocolFactory;
+        this.lightClientHandler = lightClientHandler;
         this.eth62MessageFactory = eth62MessageFactory;
+        this.lcMessageFactory = lcMessageFactory;
         this.staticMessages = staticMessages;
         this.isActive = remoteId != null && !remoteId.isEmpty();
     }
@@ -129,6 +138,16 @@ public class Channel implements Peer {
         handler.activate();
 
         eth = handler;
+    }
+
+    public void activateLC(ChannelHandlerContext ctx) {
+        messageCodec.setLCMessageFactory(lcMessageFactory);
+
+        LightClientHandler handler = lightClientHandler;
+        logger.info("LC [ address = {} | id = {} ]", inetSocketAddress, getPeerIdShort());
+
+        ctx.pipeline().addLast(Capability.LC, handler);
+        lc = handler;
     }
 
     public void setInetSocketAddress(InetSocketAddress inetSocketAddress) {

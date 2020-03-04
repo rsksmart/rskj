@@ -23,7 +23,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.NodeID;
-import co.rsk.net.messages.MessageWithId;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeManager;
@@ -82,14 +81,14 @@ public class ChannelManagerImplTest {
         String remoteId = "remoteId";
         NodeManager nodeManager = new NodeManager(null, config);
 
-        Channel peer = spy(new Channel(null, null, nodeManager, null, null, null, remoteId));
+        Channel peer = spy(new Channel(null, null, nodeManager,null, null, null, null, null, remoteId));
         peer.setInetSocketAddress(new InetSocketAddress("127.0.0.1",5554));
         peer.setNode(new NodeID(HashUtil.randomPeerId()).getID());
         when(peer.isProtocolsInitialized()).thenReturn(true);
         when(peer.isActive()).thenReturn(true);
         when(peer.isUsingNewProtocol()).thenReturn(true);
 
-        Channel otherPeer = new Channel(null, null, nodeManager, null, null, null, remoteId);
+        Channel otherPeer = new Channel(null, null, nodeManager, null, null, null, null, null, remoteId);
         otherPeer.setInetSocketAddress(new InetSocketAddress("127.0.0.1",5554));
 
         channelManager.add(peer);
