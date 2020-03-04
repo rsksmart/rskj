@@ -40,6 +40,7 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.List;
 
+import static org.ethereum.net.client.Capability.LC;
 import static org.ethereum.net.client.Capability.RSK;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -82,6 +83,13 @@ public class HandshakeHandlerTest {
     }
 
     @Test
+    public void shouldActivateLCIfHandshakeIsSuccessful() throws Exception {
+        simulateHandshakeStartedByPeer(Collections.singletonList(new Capability(LC, (byte) 0)));
+        verify(channel, times(1)).activateLC(ctx);
+        assertTrue(ch.isOpen());
+    }
+
+    @Test
     public void shouldDisconnectIfNoCapabilityIsPresent() throws Exception {
         simulateHandshakeStartedByPeer(Collections.emptyList());
         // this will only happen when an exception is raised
@@ -89,8 +97,8 @@ public class HandshakeHandlerTest {
     }
 
     @Test
-    public void shouldDisconnectIfRskCapabilityIsMissing() throws Exception {
-        simulateHandshakeStartedByPeer(Collections.singletonList(new Capability("eth", (byte) 62)));
+    public void shouldDisconnectIfRskAndLCCapabilitiesAreMissing() throws Exception {
+        simulateHandshakeStartedByPeer(Collections.singletonList(new Capability("eth", (byte) 0)));
         // this will only happen when an exception is raised
         assertFalse(ch.isOpen());
     }

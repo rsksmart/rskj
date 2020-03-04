@@ -35,7 +35,6 @@ import org.ethereum.crypto.ECIESCoder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.*;
 import org.ethereum.net.server.Channel;
@@ -46,6 +45,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.ethereum.net.eth.EthVersion.fromCode;
@@ -375,18 +375,22 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     private void processHelloMessage(ChannelHandlerContext ctx, HelloMessage helloMessage) {
         List<Capability> capInCommon = configCapabilities.getSupportedCapabilities(helloMessage);
         channel.initMessageCodes(capInCommon);
+        List<Capability> capsToActivate = new LinkedList();
         for (Capability capability : capInCommon) {
-            // It seems that the only supported capability is RSK, and everything else is ignored.
-            if (Capability.RSK.equals(capability.getName())) {
-                publicRLPxHandshakeFinished(ctx, helloMessage, fromCode(capability.getVersion()));
-                return;
+            if (Capability.RSK.equals(capability.getName()) || Capability.LC.equals(capability.getName())) {
+                capsToActivate.add(capability);
             }
         }
 
-        throw new RuntimeException("The remote peer didn't support the RSK capability");
+        if (!capsToActivate.isEmpty()) {
+            publicRLPxHandshakeFinished(ctx, helloMessage, capsToActivate);
+            return;
+        }
+
+        throw new RuntimeException("The remote peer didn't support the RSK capability and LC capability neither");
     }
 
-    private void publicRLPxHandshakeFinished(ChannelHandlerContext ctx, HelloMessage helloRemote, EthVersion ethVersion) {
+    private void publicRLPxHandshakeFinished(ChannelHandlerContext ctx, HelloMessage helloRemote, List<Capability> capsToActivate) {
         if (!P2pHandler.isProtocolVersionSupported(helloRemote.getP2PVersion())) {
             throw new RuntimeException(String.format(
                     "The remote peer protocol version %s isn't supported", helloRemote.getP2PVersion()
@@ -405,7 +409,16 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
         p2pHandler.setChannel(channel);
         p2pHandler.setHandshake(helloRemote);
-        channel.activateEth(ctx, ethVersion);
+
+        for (Capability c : capsToActivate) {
+            if (c.getName().equals(Capability.RSK)) {
+                channel.activateEth(ctx, fromCode(c.getVersion()));
+            }
+
+            if (c.getName().equals(Capability.LC)) {
+                channel.activateLC(ctx);
+            }
+        }
 
         channel.getNodeStatistics().rlpxHandshake.add();
 
