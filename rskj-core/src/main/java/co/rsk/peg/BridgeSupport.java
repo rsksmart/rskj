@@ -337,6 +337,12 @@ public class BridgeSupport {
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
         btcTx.verify();
 
+        // Check again that the tx was not already processed but making sure to use the txid (no witness)
+        if (getBtcTxHashProcessedHeight(btcTx.getHash(false)) > -1L) {
+            logger.warn("Supplied Btc Tx {} was already processed", btcTx.getHash(false));
+            return;
+        }
+
         boolean locked = true;
 
         Federation activeFederation = getActiveFederation();
@@ -407,8 +413,8 @@ public class BridgeSupport {
             return;
         }
 
-        // Mark tx as processed on this block
-        provider.setHeightBtcTxhashAlreadyProcessed(btcTxHash, rskExecutionBlock.getNumber());
+        // Mark tx as processed on this block (and use the txid without the witness)
+        provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
 
         // Save UTXOs from the federation(s) only if we actually
         // locked the funds.

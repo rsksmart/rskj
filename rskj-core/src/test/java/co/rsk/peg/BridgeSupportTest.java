@@ -1092,6 +1092,109 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void registerBtcTransaction_sending_segwit_tx_twice_locks_just_once() throws BlockStoreException, IOException {
+        ActivationConfig.ForBlock mockedActivations = mock(ActivationConfig.ForBlock.class);
+        when(mockedActivations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
+
+        BtcTransaction txWithWitness = new BtcTransaction(btcParams);
+
+        // first input spends P2PKH
+        BtcECKey srcKey1 = new BtcECKey();
+        ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
+        txWithWitness.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey1));
+
+        // second input spends P2SH-P2PWKH (actually, just has a witness doesn't matter if it truly spends a witness for the test's sake)
+        txWithWitness.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        TransactionWitness txWit = new TransactionWitness(1);
+        txWit.setPush(0, new byte[]{});
+        txWithWitness.setWitness(0, txWit);
+
+        List<BtcECKey> fedKeys = Arrays.asList(
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02"))
+        );
+        fedKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation fed = new Federation(
+                FederationTestUtils.getFederationMembersWithBtcKeys(fedKeys),
+                Instant.ofEpochMilli(1000L),
+                0L,
+                btcParams
+        );
+
+        txWithWitness.addOutput(Coin.COIN.multiply(5), fed.getAddress());
+
+        // Create the pmt without witness and calculate the block merkle root
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        PartialMerkleTree pmtWithoutWitness = new PartialMerkleTree(btcParams, bits, Arrays.asList(txWithWitness.getHash()), 1);
+        Sha256Hash merkleRoot = pmtWithoutWitness.getTxnHashAndMerkleRoot(new ArrayList<>());
+
+        PartialMerkleTree pmtWithWitness = new PartialMerkleTree(btcParams, bits, Arrays.asList(txWithWitness.getHash(true)), 1);
+        Sha256Hash witnessMerkleRoot = pmtWithWitness.getTxnHashAndMerkleRoot(new ArrayList<>());
+
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                btcParams,
+                1,
+                PegTestUtils.createHash(1),
+                merkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<>()
+        );
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getNewFederation()).thenReturn(fed);
+        when(provider.getCoinbaseInformation(registerHeader.getHash())).thenReturn(new CoinbaseInformation(witnessMerkleRoot));
+        when(provider.getLockWhitelist()).thenReturn(new LockWhitelist(new HashMap<>(), 0));
+        when(provider.getLockingCap()).thenReturn(Coin.FIFTY_COINS);
+        // mock an actual store for the processed txs
+        HashMap<Sha256Hash, Long> processedTxs = new HashMap<>();
+        doAnswer(a -> {
+            processedTxs.put(a.getArgument(0), a.getArgument(1));
+            return null;
+        }).when(provider).setHeightBtcTxhashAlreadyProcessed(any(), anyLong());
+        doAnswer(a -> Optional.ofNullable(processedTxs.get(a.getArgument(0))))
+                .when(provider).getHeightIfBtcTxhashIsAlreadyProcessed(any());
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(666L);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                mock(Repository.class),
+                new BtcLockSenderProvider(),
+                executionBlock,
+                mockFactory,
+                mockedActivations
+        );
+
+        int height = 30;
+        mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
+
+        // Tx is locked
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), txWithWitness.bitcoinSerialize(), height, pmtWithWitness.bitcoinSerialize());
+        verify(provider, never()).setHeightBtcTxhashAlreadyProcessed(txWithWitness.getHash(true), executionBlock.getNumber());
+        verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(txWithWitness.getHash(false), executionBlock.getNumber());
+
+        BtcTransaction txWithoutWitness = new BtcTransaction(btcParams, txWithWitness.bitcoinSerialize());
+        txWithoutWitness.setWitness(0, null);
+        assertFalse(txWithoutWitness.hasWitness());
+
+        // Tx is NOT locked again!
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), txWithoutWitness.bitcoinSerialize(), height, pmtWithoutWitness.bitcoinSerialize());
+        verify(provider, times(1)).setHeightBtcTxhashAlreadyProcessed(txWithoutWitness.getHash(), executionBlock.getNumber());
+
+        assertFalse(txWithWitness.getHash(true).equals(txWithoutWitness.getHash()));
+    }
+
+    @Test
     public void callProcessFundsMigration_is_migrating_before_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);
@@ -2648,7 +2751,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash(true)).isPresent());
+        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash(false)).isPresent());
     }
 
     @Test
