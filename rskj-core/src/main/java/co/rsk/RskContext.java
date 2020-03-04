@@ -219,7 +219,7 @@ public class RskContext implements NodeBootstrapper {
     private TxPoolModule txPoolModule;
     private RskModule rskModule;
     private RskWireProtocol.Factory rskWireProtocolFactory;
-    private LightClientHandler.Factory lightClientHandlerFactory;
+    private LightClientHandler lightClientHandler;
     private Eth62MessageFactory eth62MessageFactory;
     private GasLimitCalculator gasLimitCalculator;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
@@ -1563,19 +1563,12 @@ public class RskContext implements NodeBootstrapper {
         return lightProcessor;
     }
 
-    private LightClientHandler.Factory getLightClientHandlerFactory() {
-        if (lightClientHandlerFactory == null) {
-            lightClientHandlerFactory = (messageQueue, channel) -> new LightClientHandler(
-                    getRskSystemProperties(),
-                    getNodeMessageHandler(),
-                    getGenesis(),
-                    getMessageRecorder(),
-                    getStatusResolver(),
-                    messageQueue,
-                    channel);
+    private LightClientHandler getLightClientHandler() {
+        if (lightClientHandler == null) {
+            lightClientHandler = new LightClientHandler();
         }
 
-        return lightClientHandlerFactory;
+        return lightClientHandler;
     }
 
     private StatusResolver getStatusResolver() {
