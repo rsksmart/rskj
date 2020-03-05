@@ -28,17 +28,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -55,16 +47,9 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ RLP.class, BridgeSerializationUtils.class, RskAddress.class })
 public class BridgeSerializationUtilsTest {
     @Test
     public void serializeMapOfHashesToLong() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_encodeElement();
-        mock_RLP_encodeBigInteger();
-        mock_RLP_encodeList();
-
         Map<Sha256Hash, Long> sample = new HashMap<>();
         sample.put(Sha256Hash.wrap(charNTimes('b', 64)), 1L);
         sample.put(Sha256Hash.wrap(charNTimes('d', 64)), 2L);
@@ -72,32 +57,43 @@ public class BridgeSerializationUtilsTest {
         sample.put(Sha256Hash.wrap(charNTimes('c', 64)), 4L);
 
         byte[] result = BridgeSerializationUtils.serializeMapOfHashesToLong(sample);
+
         String hexResult = Hex.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
+
+        expectedBuilder.append("f888");
+
         char[] sorted = new char[]{'a','b','c','d'};
+
         for (char c : sorted) {
             String key = charNTimes(c, 64);
-            expectedBuilder.append("dd");
+            expectedBuilder.append("a0");
             expectedBuilder.append(key);
-            expectedBuilder.append("ff");
-            expectedBuilder.append(Hex.toHexString(BigInteger.valueOf(sample.get(Sha256Hash.wrap(key))).toByteArray()));
+            expectedBuilder.append("0" + String.valueOf(sample.get(Sha256Hash.wrap(key)).longValue()));
         }
+
         assertEquals(expectedBuilder.toString(), hexResult);
     }
 
     @Test
-    public void desserializeMapOfHashesToLong_emptyOrNull() throws Exception {
+    public void deserializeMapOfHashesToLong_emptyOrNull() throws Exception {
         assertEquals(BridgeSerializationUtils.deserializeMapOfHashesToLong(null), new HashMap<>());
         assertEquals(BridgeSerializationUtils.deserializeMapOfHashesToLong(new byte[]{}), new HashMap<>());
     }
 
     @Test
-    public void desserializeMapOfHashesToLong_nonEmpty() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2_forMapOfHashesToLong();
+    public void deserializeMapOfHashesToLong_nonEmpty() throws Exception {
+        byte[] rlpFirstKey = RLP.encodeElement(Hex.decode(charNTimes('b', 64)));
+        byte[] rlpSecondKey = RLP.encodeElement(Hex.decode(charNTimes('d', 64)));
+        byte[] rlpThirdKey = RLP.encodeElement(Hex.decode(charNTimes('a', 64)));
 
-        byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a', 123};
-        Map<Sha256Hash, Long> result = BridgeSerializationUtils.deserializeMapOfHashesToLong(sample);
+        byte[] rlpFirstValue = RLP.encodeBigInteger(BigInteger.valueOf(7));
+        byte[] rlpSecondValue = RLP.encodeBigInteger(BigInteger.valueOf(76));
+        byte[] rlpThirdValue = RLP.encodeBigInteger(BigInteger.valueOf(123));
+
+        byte[] data = RLP.encodeList(rlpFirstKey, rlpFirstValue, rlpSecondKey, rlpSecondValue, rlpThirdKey, rlpThirdValue);
+
+        Map<Sha256Hash, Long> result = BridgeSerializationUtils.deserializeMapOfHashesToLong(data);
         assertEquals(3, result.size());
         assertEquals(7L, result.get(Sha256Hash.wrap(charNTimes('b', 64))).longValue());
         assertEquals(76L, result.get(Sha256Hash.wrap(charNTimes('d', 64))).longValue());
@@ -105,14 +101,22 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void desserializeMapOfHashesToLong_nonEmptyOddSize() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2_forMapOfHashesToLong();
+    public void deserializeMapOfHashesToLong_nonEmptyOddSize() throws Exception {
+        byte[] rlpFirstKey = RLP.encodeElement(Hex.decode(charNTimes('b', 64)));
+        byte[] rlpSecondKey = RLP.encodeElement(Hex.decode(charNTimes('d', 64)));
+        byte[] rlpThirdKey = RLP.encodeElement(Hex.decode(charNTimes('a', 64)));
+        byte[] rlpFourthKey = RLP.encodeElement(Hex.decode(charNTimes('e', 64)));
+
+        byte[] rlpFirstValue = RLP.encodeBigInteger(BigInteger.valueOf(7));
+        byte[] rlpSecondValue = RLP.encodeBigInteger(BigInteger.valueOf(76));
+        byte[] rlpThirdValue = RLP.encodeBigInteger(BigInteger.valueOf(123));
+
+        byte[] data = RLP.encodeList(rlpFirstKey, rlpFirstValue, rlpSecondKey, rlpSecondValue, rlpThirdKey, rlpThirdValue, rlpFourthKey);
 
         boolean thrown = false;
+
         try {
-            byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a'};
-            BridgeSerializationUtils.deserializeMapOfHashesToLong(sample);
+            BridgeSerializationUtils.deserializeMapOfHashesToLong(data);
         } catch (RuntimeException e) {
             thrown = true;
         }
@@ -121,11 +125,6 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void serializeFederationOnlyBtcKeys() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_encodeBigInteger();
-        mock_RLP_encodeList();
-        mock_RLP_encodeElement();
-
         byte[][] publicKeyBytes = new byte[][]{
                 BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
                 BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
@@ -152,76 +151,73 @@ public class BridgeSerializationUtilsTest {
 
         byte[] result = BridgeSerializationUtils.serializeFederationOnlyBtcKeys(federation);
         StringBuilder expectedBuilder = new StringBuilder();
-        expectedBuilder.append("ff00abcdef"); // Creation time
-        expectedBuilder.append("ff2a"); // Creation block number
+        expectedBuilder.append("f8d3"); // Outer list
+        expectedBuilder.append("83abcdef"); // Creation time
+        expectedBuilder.append("2a"); // Creation block number
+        expectedBuilder.append("f8cc"); // Inner list
+
         federation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
-            expectedBuilder.append("dd");
+            expectedBuilder.append("a1");
             expectedBuilder.append(Hex.toHexString(key.getPubKey()));
         });
-        byte[] expected = Hex.decode(expectedBuilder.toString());
-        Assert.assertTrue(Arrays.equals(expected, result));
+
+        String expected = expectedBuilder.toString();
+
+        Assert.assertEquals(expected, Hex.toHexString(result));
     }
 
     @Test
-    public void desserializeFederationOnlyBtcKeys_ok() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.LAST_ELEMENT);
-
+    public void deserializeFederationOnlyBtcKeys_ok() throws Exception {
         byte[][] publicKeyBytes = Arrays.asList(100, 200, 300, 400, 500, 600).stream()
-            .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
-            .sorted(BtcECKey.PUBKEY_COMPARATOR)
-            .map(k -> k.getPubKey())
-            .toArray(byte[][]::new);
+                .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .map(k -> k.getPubKey())
+                .toArray(byte[][]::new);
 
-        StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("03"); // Length of outer list
-        sampleBuilder.append("02"); // Length of first element
-        sampleBuilder.append("02"); // Length of second element
-        sampleBuilder.append("cd"); // Length of third element
-        sampleBuilder.append("1388"); // First element (creation date -> 5000 milliseconds from epoch)
-        sampleBuilder.append("002a"); // Second element block number 42
-        sampleBuilder.append("06212121212121"); // third element (inner list, public keys). 6 elements of 33 bytes (0x21 bytes) each.
-        for (int i = 0; i < publicKeyBytes.length; i++) {
-            sampleBuilder.append(Hex.toHexString(publicKeyBytes[i]));
+        byte[][] rlpKeys = new byte[publicKeyBytes.length][];
+
+        for (int k = 0; k < publicKeyBytes.length; k++) {
+            rlpKeys[k] = RLP.encodeElement(publicKeyBytes[k]);
         }
-        byte[] sample = Hex.decode(sampleBuilder.toString());
 
-        Federation deserializedFederation = BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(sample, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        byte[] rlpFirstElement = RLP.encodeElement(Hex.decode("1388")); // First element (creation date -> 5000 milliseconds from epoch)
+        byte[] rlpSecondElement = RLP.encodeElement(Hex.decode("002a")); // Second element block number 42
+        byte[] rlpKeyList = RLP.encodeList(rlpKeys);
+
+        byte[] data = RLP.encodeList(rlpFirstElement, rlpSecondElement, rlpKeyList);
+
+        Federation deserializedFederation = BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
 
         Assert.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
         Assert.assertEquals(4, deserializedFederation.getNumberOfSignaturesRequired());
         Assert.assertEquals(6, deserializedFederation.getBtcPublicKeys().size());
         Assert.assertThat(deserializedFederation.getCreationBlockNumber(), is(42L));
+
         for (int i = 0; i < 6; i++) {
             Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedFederation.getBtcPublicKeys().get(i).getPubKey()));
         }
+
         Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), deserializedFederation.getBtcParams());
     }
 
     @Test
-    public void desserializeFederationOnlyBtcKeys_wrongListSize() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.NONE);
+    public void deserializeFederationOnlyBtcKeys_wrongListSize() throws Exception {
+        byte[] rlpFirstElement = RLP.encodeElement(Hex.decode("1388")); // First element (creation date -> 5000 milliseconds from epoch)
+        byte[] rlpSecondElement = RLP.encodeElement(Hex.decode("03")); // Second element (# of signatures required - 3)
+        byte[] rlpThirdElement = RLP.encodeElement(Hex.decode("03"));
+        byte[] rlpFourthElement = RLP.encodeElement(Hex.decode("aabbccdd"));
 
-        StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("04"); // Length of outer list
-        sampleBuilder.append("02"); // Length of first element
-        sampleBuilder.append("01"); // Length of second element
-        sampleBuilder.append("01"); // Length of third element
-        sampleBuilder.append("04"); // Length of fourth element
-        sampleBuilder.append("1388"); // First element (creation date -> 5000 milliseconds from epoch)
-        sampleBuilder.append("03"); // Second element (# of signatures required - 3)
-        sampleBuilder.append("03"); // Third element
-        sampleBuilder.append("aabbccdd"); // Fourth element
-        byte[] sample = Hex.decode(sampleBuilder.toString());
+        byte[] data = RLP.encodeList(rlpFirstElement, rlpSecondElement, rlpThirdElement, rlpFourthElement);
 
         boolean thrown = false;
+
         try {
-            BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(sample, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Expected 3 elements"));
             thrown = true;
         }
+
         Assert.assertTrue(thrown);
     }
 
@@ -241,10 +237,10 @@ public class BridgeSerializationUtilsTest {
 
             byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
 
-            Federation desserializedTestFederation = BridgeSerializationUtils.deserializeFederation(
+            Federation deserializedTestFederation = BridgeSerializationUtils.deserializeFederation(
                     serializedTestFederation, networkParameters);
 
-            Assert.assertEquals(testFederation, desserializedTestFederation);
+            Assert.assertEquals(testFederation, deserializedTestFederation);
         }
     }
 
@@ -315,8 +311,6 @@ public class BridgeSerializationUtilsTest {
     public void serializeAndDeserializePendingFederation() {
         final int NUM_CASES = 20;
 
-        final NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-
         for (int i = 0; i < NUM_CASES; i++) {
             int numMembers = randomInRange(2, 14);
             List<FederationMember> members = new ArrayList<>();
@@ -327,10 +321,10 @@ public class BridgeSerializationUtilsTest {
 
             byte[] serializedTestPendingFederation = BridgeSerializationUtils.serializePendingFederation(testPendingFederation);
 
-            PendingFederation desserializedTestPendingFederation = BridgeSerializationUtils.deserializePendingFederation(
+            PendingFederation deserializedTestPendingFederation = BridgeSerializationUtils.deserializePendingFederation(
                     serializedTestPendingFederation);
 
-            Assert.assertEquals(testPendingFederation, desserializedTestPendingFederation);
+            Assert.assertEquals(testPendingFederation, deserializedTestPendingFederation);
         }
     }
 
@@ -379,10 +373,6 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void serializePendingFederationOnlyBtcKeys() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_encodeList();
-        mock_RLP_encodeElement();
-
         byte[][] publicKeyBytes = new byte[][]{
                 BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
                 BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
@@ -406,33 +396,33 @@ public class BridgeSerializationUtilsTest {
 
         byte[] result = BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(pendingFederation);
         StringBuilder expectedBuilder = new StringBuilder();
+        expectedBuilder.append("f8cc");
         pendingFederation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
-            expectedBuilder.append("dd");
+            expectedBuilder.append("a1");
             expectedBuilder.append(Hex.toHexString(key.getPubKey()));
         });
-        byte[] expected = Hex.decode(expectedBuilder.toString());
-        Assert.assertTrue(Arrays.equals(expected, result));
+
+        String expected = expectedBuilder.toString();
+        Assert.assertEquals(expected, Hex.toHexString(result));
     }
 
     @Test
     public void deserializePendingFederationOnlyBtcKeys() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.NONE);
-
         byte[][] publicKeyBytes = Arrays.asList(100, 200, 300, 400, 500, 600).stream()
                 .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(k -> k.getPubKey())
                 .toArray(byte[][]::new);
 
-        StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("06212121212121"); // 6 elements of 33 bytes (0x21 bytes) each.
-        for (int i = 0; i < publicKeyBytes.length; i++) {
-            sampleBuilder.append(Hex.toHexString(publicKeyBytes[i]));
-        }
-        byte[] sample = Hex.decode(sampleBuilder.toString());
+        byte[][] rlpBytes = new byte[publicKeyBytes.length][];
 
-        PendingFederation deserializedPendingFederation = BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(sample);
+        for (int k = 0; k < publicKeyBytes.length; k++) {
+            rlpBytes[k] = RLP.encodeElement(publicKeyBytes[k]);
+        }
+
+        byte[] data = RLP.encodeList(rlpBytes);
+
+        PendingFederation deserializedPendingFederation = BridgeSerializationUtils.deserializePendingFederationOnlyBtcKeys(data);
 
         Assert.assertEquals(6, deserializedPendingFederation.getBtcPublicKeys().size());
         for (int i = 0; i < 6; i++) {
@@ -442,117 +432,115 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void serializeElection() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_encodeElement();
-        mock_RLP_encodeList();
-
-        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(RskAddress.class))).thenReturn(true);
+        AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
 
         Map<ABICallSpec, List<RskAddress>> sampleVotes = new HashMap<>();
         sampleVotes.put(
                 new ABICallSpec("one-function", new byte[][]{}),
-                Arrays.asList(mockAddress("8899"), mockAddress("aabb"))
+                Arrays.asList(createAddress("8899"), createAddress("aabb"))
         );
         sampleVotes.put(
                 new ABICallSpec("another-function", new byte[][]{ Hex.decode("01"), Hex.decode("0203") }),
-                Arrays.asList(mockAddress("ccdd"), mockAddress("eeff"), mockAddress("0011"))
+                Arrays.asList(createAddress("ccdd"), createAddress("eeff"), createAddress("0011"))
         );
         sampleVotes.put(
                 new ABICallSpec("yet-another-function", new byte[][]{ Hex.decode("0405") }),
-                Arrays.asList(mockAddress("fa"), mockAddress("ca"))
+                Arrays.asList(createAddress("fa"), createAddress("ca"))
         );
 
-        ABICallElection sample = new ABICallElection(mockedAuthorizer, sampleVotes);
+        ABICallElection sample = new ABICallElection(authorizer, sampleVotes);
 
         byte[] result = BridgeSerializationUtils.serializeElection(sample);
         String hexResult = Hex.toHexString(result);
 
         StringBuilder expectedBuilder = new StringBuilder();
 
-        expectedBuilder.append("dd");
+        expectedBuilder.append("f8d7d6");
+
+        expectedBuilder.append("90");
         expectedBuilder.append(Hex.toHexString("another-function".getBytes(StandardCharsets.UTF_8)));
-        expectedBuilder.append("dd01dd0203");
-        expectedBuilder.append("dd0011ddccddddeeff");
+        expectedBuilder.append("c4");
+        expectedBuilder.append("01");
+        expectedBuilder.append("820203");
+        expectedBuilder.append("f83f");
+        expectedBuilder.append("94" + createAddress("0011").toString());
+        expectedBuilder.append("94" + createAddress("ccdd").toString());
+        expectedBuilder.append("94" + createAddress("eeff").toString());
 
-        expectedBuilder.append("dd");
+        expectedBuilder.append("ce");
+        expectedBuilder.append("8c");
         expectedBuilder.append(Hex.toHexString("one-function".getBytes(StandardCharsets.UTF_8)));
-        expectedBuilder.append("dd8899ddaabb");
+        expectedBuilder.append("c0");
 
-        expectedBuilder.append("dd");
+        expectedBuilder.append("ea");
+        expectedBuilder.append("94" + createAddress("8899").toString());
+        expectedBuilder.append("94" + createAddress("aabb").toString());
+
+        expectedBuilder.append("d9");
+        expectedBuilder.append("94");
         expectedBuilder.append(Hex.toHexString("yet-another-function".getBytes(StandardCharsets.UTF_8)));
-        expectedBuilder.append("dd0405");
-        expectedBuilder.append("ddcaddfa");
+        expectedBuilder.append("c3");
+        expectedBuilder.append("820405");
+        expectedBuilder.append("ea");
+        expectedBuilder.append("94" + createAddress("ca").toString() + "94" + createAddress("fa").toString());
 
-        assertEquals(expectedBuilder.toString(), hexResult);
+        Assert.assertEquals(expectedBuilder.toString(), hexResult);
     }
 
     @Test
     public void deserializeElection_emptyOrNull() throws Exception {
-        AddressBasedAuthorizer mockAuthorizer = mock(AddressBasedAuthorizer.class);
+        AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
         ABICallElection election;
-        election = BridgeSerializationUtils.deserializeElection(null, mockAuthorizer);
+        election = BridgeSerializationUtils.deserializeElection(null, authorizer);
         Assert.assertEquals(0, election.getVotes().size());
-        election = BridgeSerializationUtils.deserializeElection(new byte[]{}, mockAuthorizer);
+        election = BridgeSerializationUtils.deserializeElection(new byte[]{}, authorizer);
         Assert.assertEquals(0, election.getVotes().size());
     }
 
     @Test
     public void deserializeElection_nonEmpty() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
+        AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
 
-        mockAddressInstantiation("aa");
-        mockAddressInstantiation("bbccdd");
-        mockAddressInstantiation("55");
-        mockAddressInstantiation("66");
-        mockAddressInstantiation("77");
-        mockAddressInstantiation("1111");
-        mockAddressInstantiation("3333");
-        mockAddressInstantiation("5555");
+        ABICallSpec firstSpec = new ABICallSpec("funct", new byte[][]{});
+        List<RskAddress> firstVoters = Arrays.asList(
+                createAddress("aa"),
+                createAddress("bbccdd")
+        );
 
-        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(RskAddress.class))).thenReturn(true);
+        ABICallSpec secondSpec = new ABICallSpec("other-funct", new byte[][]{
+                Hex.decode("1122"),
+                Hex.decode("334455")
+        });;
+        List<RskAddress> secondVoters = Arrays.asList(
+                createAddress("55"),
+                createAddress("66"),
+                createAddress("77")
+        );
 
-        StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("06"); // Total of three specs, two entries for each
-        sampleBuilder.append("0a");
-        sampleBuilder.append("07");
-        sampleBuilder.append("17");
-        sampleBuilder.append("07");
-        sampleBuilder.append("14");
-        sampleBuilder.append("0c");
+        ABICallSpec thirdSpec = new ABICallSpec("random-funct", new byte[][]{
+                Hex.decode("aabb")
+        });
 
-        // First spec + votes
-        sampleBuilder.append("020502");
-        sampleBuilder.append(Hex.toHexString("funct".getBytes(StandardCharsets.UTF_8)));
-        sampleBuilder.append("ff00");
+        List<RskAddress> thirdVoters = Arrays.asList(
+                createAddress("1111"),
+                createAddress("3333"),
+                createAddress("5555"),
+                createAddress("77")
+        );
 
-        sampleBuilder.append("020103");
-        sampleBuilder.append("aabbccdd");
+        Map<ABICallSpec, List<RskAddress>> specsVotersToProcess = new HashMap<>();
 
-        // Second spec + votes
-        sampleBuilder.append("020b09");
-        sampleBuilder.append(Hex.toHexString("other-funct".getBytes(StandardCharsets.UTF_8)));
-        sampleBuilder.append("ff020203");
-        sampleBuilder.append("1122");
-        sampleBuilder.append("334455");
+        specsVotersToProcess.put(firstSpec, firstVoters);
+        specsVotersToProcess.put(secondSpec, secondVoters);
+        specsVotersToProcess.put(thirdSpec, thirdVoters);
 
-        sampleBuilder.append("03010101");
-        sampleBuilder.append("556677");
+        Assert.assertNotEquals(0, thirdVoters.get(0).getBytes().length);
 
-        // Third spec + votes
-        sampleBuilder.append("020c05");
-        sampleBuilder.append(Hex.toHexString("random-funct".getBytes(StandardCharsets.UTF_8)));
-        sampleBuilder.append("ff0102");
-        sampleBuilder.append("aabb");
+        ABICallElection electionToProcess = new ABICallElection(authorizer, specsVotersToProcess);
 
-        sampleBuilder.append("0402020201");
-        sampleBuilder.append("11113333555577");
+        byte[] data = BridgeSerializationUtils.serializeElection(electionToProcess);
 
-        byte[] sample = Hex.decode(sampleBuilder.toString());
-
-        ABICallElection election = BridgeSerializationUtils.deserializeElection(sample, mockedAuthorizer);
+        ABICallElection election = BridgeSerializationUtils.deserializeElection(data, authorizer);
 
         Assert.assertEquals(3, election.getVotes().size());
         List<RskAddress> voters;
@@ -561,8 +549,8 @@ public class BridgeSerializationUtilsTest {
         spec = new ABICallSpec("funct", new byte[][]{});
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                mockAddress("aa"),
-                mockAddress("bbccdd")
+                createAddress("aa"),
+                createAddress("bbccdd")
         );
 
         Assert.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
@@ -574,9 +562,9 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                mockAddress("55"),
-                mockAddress("66"),
-                mockAddress("77")
+                createAddress("55"),
+                createAddress("66"),
+                createAddress("77")
         );
 
         Assert.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
@@ -588,12 +576,13 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                mockAddress("1111"),
-                mockAddress("3333"),
-                mockAddress("5555"),
-                mockAddress("77")
+                createAddress("1111"),
+                createAddress("3333"),
+                createAddress("5555"),
+                createAddress("77")
         );
 
+        Assert.assertEquals(4, election.getVotes().get(spec).size());
         Assert.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
         Assert.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
         Assert.assertArrayEquals(voters.get(2).getBytes(), election.getVotes().get(spec).get(2).getBytes());
@@ -602,21 +591,13 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeElection_unevenOuterList() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
-
         AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(RskAddress.class))).thenReturn(true);
 
-        StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("05"); // Five elements, uneven
-        sampleBuilder.append("0101010101");
-        sampleBuilder.append("1122334455");
-
-        byte[] sample = Hex.decode(sampleBuilder.toString());
+        byte[] rlpFirstElement = RLP.encodeElement(Hex.decode("010203"));
+        byte[] data = RLP.encodeList(rlpFirstElement);
 
         try {
-            BridgeSerializationUtils.deserializeElection(sample, mockedAuthorizer);
+            BridgeSerializationUtils.deserializeElection(data, mockedAuthorizer);
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("expected an even number of entries, but odd given"));
             return;
@@ -627,24 +608,15 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeElection_invalidCallSpec() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
+        AddressBasedAuthorizer authorizer = getTestingAddressBasedAuthorizer();
 
-        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(RskAddress.class))).thenReturn(true);
+        byte[] rlpFirstSpec = RLP.encodeList(RLP.encode(Hex.decode("010203"))); // invalid spec
+        byte[] rlpFirstVoters = RLP.encodeList(RLP.encodeElement(Hex.decode("03"))); // doesn't matter
 
-        StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("02");
-        sampleBuilder.append("07");
-        sampleBuilder.append("01");
-
-        sampleBuilder.append("03010101aabbcc"); // Invalid call spec, should have exactly two elements
-        sampleBuilder.append("aa"); // Doesn't matter
-
-        byte[] sample = Hex.decode(sampleBuilder.toString());
+        byte[] data = RLP.encodeList(rlpFirstSpec, rlpFirstVoters);
 
         try {
-            BridgeSerializationUtils.deserializeElection(sample, mockedAuthorizer);
+            BridgeSerializationUtils.deserializeElection(data, authorizer);
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid serialized ABICallSpec"));
             return;
@@ -655,11 +627,6 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void serializeLockWhitelist() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_encodeBigInteger();
-        mock_RLP_encodeList();
-        mock_RLP_encodeElement();
-
         byte[][] addressesBytes = new byte[][]{
                 BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKeyHash(),
                 BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKeyHash(),
@@ -681,39 +648,39 @@ public class BridgeSerializationUtilsTest {
                 lockWhitelist.getDisableBlockHeight()
         ));
         StringBuilder expectedBuilder = new StringBuilder();
+        expectedBuilder.append("f897");
         Arrays.stream(addressesBytes).sorted(UnsignedBytes.lexicographicalComparator()).forEach(bytes -> {
-            expectedBuilder.append("dd");
+            expectedBuilder.append("94");
             expectedBuilder.append(Hex.toHexString(bytes));
-            expectedBuilder.append("ff");
+            expectedBuilder.append("83");
             expectedBuilder.append(Hex.toHexString(BigInteger.valueOf(maxToTransfer.value).toByteArray()));
         });
-        expectedBuilder.append("ff00");
-        byte[] expected = Hex.decode(expectedBuilder.toString());
-        Assert.assertThat(result, is(expected));
+        expectedBuilder.append("80");
+        String expected = expectedBuilder.toString();
+        Assert.assertEquals(expected, Hex.toHexString(result));
     }
 
     @Test
     public void deserializeOneOffLockWhitelistAndDisableBlockHeight() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.NONE);
-
         byte[][] addressesBytes = Arrays.asList(100, 200, 300, 400).stream()
                 .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(k -> k.getPubKeyHash())
                 .toArray(byte[][]::new);
 
-        StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("09140314031403140302"); // 9 elements: 8 of 20 bytes (0x14 bytes) and 3 bytes interleaved plus one more element of 2 bytes
-        for (int i = 0; i < addressesBytes.length; i++) {
-            sampleBuilder.append(Hex.toHexString(addressesBytes[i]));
-            sampleBuilder.append("0186a0"); // Coin.MILLICOIN
+        byte[][] rlpBytes = new byte[9][0];
+
+        for (int k = 0; k < addressesBytes.length; k++) {
+            rlpBytes[k * 2] = RLP.encodeElement(addressesBytes[k]);
+            rlpBytes[k * 2 + 1] = RLP.encodeElement(Hex.decode("0186a0")); // Coin.MILLICOIN
         }
-        sampleBuilder.append("002a");
-        byte[] sample = Hex.decode(sampleBuilder.toString());
+
+        rlpBytes[8] = RLP.encodeElement(Hex.decode("002a"));
+
+        byte[] data = RLP.encodeList(rlpBytes);
 
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
-                sample,
+                data,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
@@ -727,9 +694,6 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeOneOffLockWhitelistAndDisableBlockHeight_null() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.NONE);
-
         Pair<HashMap<Address, OneOffWhiteListEntry>, Integer> deserializedLockWhitelist = BridgeSerializationUtils.deserializeOneOffLockWhitelistAndDisableBlockHeight(
                 null,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -803,11 +767,6 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void serializeRequestQueue() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_encodeElement();
-        mock_RLP_encodeBigInteger();
-        mock_RLP_encodeList();
-
         List<ReleaseRequestQueue.Entry> sampleEntries = Arrays.asList(
                 new ReleaseRequestQueue.Entry(mockAddressHash160("ccdd"), Coin.valueOf(10)),
                 new ReleaseRequestQueue.Entry(mockAddressHash160("bb"), Coin.valueOf(50)),
@@ -819,14 +778,15 @@ public class BridgeSerializationUtilsTest {
         byte[] result = BridgeSerializationUtils.serializeReleaseRequestQueue(sample);
         String hexResult = Hex.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
-        expectedBuilder.append("ddccdd");
-        expectedBuilder.append("ff0a");
-        expectedBuilder.append("ddbb");
-        expectedBuilder.append("ff32");
-        expectedBuilder.append("ddbb");
-        expectedBuilder.append("ff14");
-        expectedBuilder.append("ddaa");
-        expectedBuilder.append("ff1e");
+        expectedBuilder.append("cd");
+        expectedBuilder.append("82ccdd");
+        expectedBuilder.append("0a");
+        expectedBuilder.append("81bb");
+        expectedBuilder.append("32");
+        expectedBuilder.append("81bb");
+        expectedBuilder.append("14");
+        expectedBuilder.append("81aa");
+        expectedBuilder.append("1e");
         assertEquals(expectedBuilder.toString(), hexResult);
     }
 
@@ -838,42 +798,57 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeRequestQueue_nonEmpty() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.NONE);
-
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         Address a1 = Address.fromBase58(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
         Address a2 = Address.fromBase58(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
         Address a3 = Address.fromBase58(params, "myw7AMh5mpKHao6MArhn7EvkeASGsGJzrZ");
+
         List<ReleaseRequestQueue.Entry> expectedEntries = Arrays.asList(
                 new ReleaseRequestQueue.Entry(a1, Coin.valueOf(10)),
                 new ReleaseRequestQueue.Entry(a2, Coin.valueOf(7)),
                 new ReleaseRequestQueue.Entry(a3, Coin.valueOf(8))
         );
 
-        StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("06140114011401");
-        sampleBuilder.append(Hex.toHexString(a1.getHash160()));
-        sampleBuilder.append("0a");
-        sampleBuilder.append(Hex.toHexString(a2.getHash160()));
-        sampleBuilder.append("07");
-        sampleBuilder.append(Hex.toHexString(a3.getHash160()));
-        sampleBuilder.append("08");
-        byte[] sample = Hex.decode(sampleBuilder.toString());
-        ReleaseRequestQueue result = new ReleaseRequestQueue(BridgeSerializationUtils.deserializeReleaseRequestQueue(sample, params));
+        byte[][] rlpItems = new byte[6][];
+
+        rlpItems[0] = RLP.encodeElement(a1.getHash160());
+        rlpItems[1] = RLP.encodeBigInteger(BigInteger.valueOf(10));
+        rlpItems[2] = RLP.encodeElement(a2.getHash160());
+        rlpItems[3] = RLP.encodeBigInteger(BigInteger.valueOf(7));
+        rlpItems[4] = RLP.encodeElement(a3.getHash160());
+        rlpItems[5] = RLP.encodeBigInteger(BigInteger.valueOf(8));
+
+        byte[] data = RLP.encodeList(rlpItems);
+
+        ReleaseRequestQueue result = new ReleaseRequestQueue(BridgeSerializationUtils.deserializeReleaseRequestQueue(data, params));
+
         List<ReleaseRequestQueue.Entry> entries = result.getEntries();
         assertEquals(expectedEntries, entries);
     }
 
     @Test
     public void deserializeRequestQueue_nonEmptyOddSize() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.NONE);
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+
+        Address a1 = Address.fromBase58(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
+        Address a2 = Address.fromBase58(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
+        Address a3 = Address.fromBase58(params, "myw7AMh5mpKHao6MArhn7EvkeASGsGJzrZ");
+
+        byte[][] rlpItems = new byte[7][];
+
+        rlpItems[0] = RLP.encodeElement(a1.getHash160());
+        rlpItems[1] = RLP.encodeBigInteger(BigInteger.valueOf(10));
+        rlpItems[2] = RLP.encodeElement(a2.getHash160());
+        rlpItems[3] = RLP.encodeBigInteger(BigInteger.valueOf(7));
+        rlpItems[4] = RLP.encodeElement(a3.getHash160());
+        rlpItems[5] = RLP.encodeBigInteger(BigInteger.valueOf(8));
+        rlpItems[6] = RLP.encodeBigInteger(BigInteger.valueOf(8));
+
+        byte[] data = RLP.encodeList(rlpItems);
 
         try {
-            byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a'};
-            BridgeSerializationUtils.deserializeReleaseRequestQueue(sample, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            BridgeSerializationUtils.deserializeReleaseRequestQueue(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (RuntimeException e) {
             return;
         }
@@ -882,11 +857,6 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void serializeTransactionSet() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_encodeElement();
-        mock_RLP_encodeBigInteger();
-        mock_RLP_encodeList();
-
         Set<ReleaseTransactionSet.Entry> sampleEntries = new HashSet<>(Arrays.asList(
                 new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("ccdd"), 10L),
                 new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("bb"), 20L),
@@ -898,14 +868,15 @@ public class BridgeSerializationUtilsTest {
         byte[] result = BridgeSerializationUtils.serializeReleaseTransactionSet(sample);
         String hexResult = Hex.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
-        expectedBuilder.append("ddaa");
-        expectedBuilder.append("ff28");
-        expectedBuilder.append("ddba");
-        expectedBuilder.append("ff1e");
-        expectedBuilder.append("ddbb");
-        expectedBuilder.append("ff14");
-        expectedBuilder.append("ddccdd");
-        expectedBuilder.append("ff0a");
+        expectedBuilder.append("cd");
+        expectedBuilder.append("81aa");
+        expectedBuilder.append("28");
+        expectedBuilder.append("81ba");
+        expectedBuilder.append("1e");
+        expectedBuilder.append("81bb");
+        expectedBuilder.append("14");
+        expectedBuilder.append("82ccdd");
+        expectedBuilder.append("0a");
         assertEquals(expectedBuilder.toString(), hexResult);
     }
 
@@ -917,9 +888,6 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeTransactionSet_nonEmpty() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.NONE);
-
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcTransaction input = new BtcTransaction(params);
@@ -945,27 +913,14 @@ public class BridgeSerializationUtilsTest {
                 new ReleaseTransactionSet.Entry(t4, 20L)
         ));
 
-        StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("08");
-        sampleBuilder.append(Integer.toHexString(t1.bitcoinSerialize().length));
-        sampleBuilder.append("01");
-        sampleBuilder.append(Integer.toHexString(t2.bitcoinSerialize().length));
-        sampleBuilder.append("01");
-        sampleBuilder.append(Integer.toHexString(t3.bitcoinSerialize().length));
-        sampleBuilder.append("01");
-        sampleBuilder.append(Integer.toHexString(t4.bitcoinSerialize().length));
-        sampleBuilder.append("01");
-        sampleBuilder.append(Hex.toHexString(t1.bitcoinSerialize()));
-        sampleBuilder.append("20");
-        sampleBuilder.append(Hex.toHexString(t2.bitcoinSerialize()));
-        sampleBuilder.append("0e");
-        sampleBuilder.append(Hex.toHexString(t3.bitcoinSerialize()));
-        sampleBuilder.append("66");
-        sampleBuilder.append(Hex.toHexString(t4.bitcoinSerialize()));
-        sampleBuilder.append("14");
-        byte[] sample = Hex.decode(sampleBuilder.toString());
-        ReleaseTransactionSet result = BridgeSerializationUtils.deserializeReleaseTransactionSet(sample, params);
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(expectedEntries);
+
+        byte[] data = BridgeSerializationUtils.serializeReleaseTransactionSet(releaseTransactionSet);
+
+        ReleaseTransactionSet result = BridgeSerializationUtils.deserializeReleaseTransactionSet(data, params);
+
         Set<ReleaseTransactionSet.Entry> entries = result.getEntries();
+
         assertEquals(expectedEntries, entries);
     }
 
@@ -1014,12 +969,11 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeTransactionSet_nonEmptyOddSize() throws Exception {
-        PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2(InnerListMode.NONE);
+        byte[] firstItem = RLP.encodeElement(Hex.decode("010203"));
+        byte[] data = RLP.encodeList(firstItem);
 
         try {
-            byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a'};
-            BridgeSerializationUtils.deserializeReleaseTransactionSet(sample, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            BridgeSerializationUtils.deserializeReleaseTransactionSet(data, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (RuntimeException e) {
             return;
         }
@@ -1067,136 +1021,38 @@ public class BridgeSerializationUtilsTest {
         return result;
     }
 
-    private void mock_RLP_encodeElement() {
-        // Identity prepending byte '0xdd'
-        when(RLP.encodeElement(any(byte[].class))).then((InvocationOnMock invocation) -> {
-            byte[] arg = invocation.<byte[]>getArgument(0);
-            byte[] result = new byte[arg.length+1];
-            result[0] = (byte) 0xdd;
-            for (int i = 0; i < arg.length; i++)
-                result[i+1] = arg[i];
-            return result;
-        });
-    }
-
-    private void mock_RLP_encodeBigInteger() {
-        // To byte array prepending byte '0xff'
-        when(RLP.encodeBigInteger(any(BigInteger.class))).then((InvocationOnMock invocation) -> {
-            byte[] arg = (invocation.<BigInteger>getArgument(0)).toByteArray();
-            byte[] result = new byte[arg.length+1];
-            result[0] = (byte) 0xff;
-            for (int i = 0; i < arg.length; i++)
-                result[i+1] = arg[i];
-            return result;
-        });
-    }
-
-    private void mock_RLP_encodeList() {
-        // To flat byte array
-        when(RLP.encodeList(any())).then((InvocationOnMock invocation) -> {
-            Object[] args = invocation.getArguments();
-            byte[][] bytes = new byte[args.length][];
-            for (int i = 0; i < args.length; i++)
-                bytes[i] = (byte[])args[i];
-            return flatten(bytes);
-        });
-    }
-
-    private void mock_RLP_decode2_forMapOfHashesToLong() {
-        // Plain list with first elements being the size
-        // Sizes are 1 byte long
-        // e.g., for list [a,b,c] and a.size = 5, b.size = 7, c.size = 4, then:
-        // 03050704[a bytes][b bytes][c bytes]
-        when(RLP.decode2(any(byte[].class))).then((InvocationOnMock invocation) -> {
-            ArrayList<RLPElement> elements = new ArrayList<>();
-
-            byte[] arg = invocation.<byte[]>getArgument(0);
-            // Even byte -> hash of 64 bytes with same char from byte
-            // Odd byte -> long from byte
-            for (int i = 0; i < arg.length; i++) {
-                byte[] element;
-
-                if (i%2 == 0) {
-                    element = Hex.decode(charNTimes((char) arg[i], 64));
-                } else {
-                    element = new byte[]{arg[i]};
-                }
-
-                elements.add(new RLPItem(element));
-            }
-
-            return elements;
-        });
-    }
-
-    private enum InnerListMode { NONE, LAST_ELEMENT, STARTING_WITH_FF_RECURSIVE };
-
-    private void mock_RLP_decode2(InnerListMode mode) {
-        when(RLP.decode2(any(byte[].class))).then((InvocationOnMock invocation) -> {
-            byte[] bytes = invocation.<byte[]>getArgument(0);
-            return new ArrayList<>(Arrays.asList(decodeTwoMock(bytes, mode)));
-        });
-    }
-
-    private RLPList decodeTwoMock(byte[] bytes, InnerListMode mode) {
-        RLPList list = decodeList(bytes);
-        if (mode == InnerListMode.LAST_ELEMENT) {
-            byte[] lastElementBytes = list.get(list.size() - 1).getRLPData();
-            RLPList innerList = decodeList(lastElementBytes);
-            // TODO Fix
-//            list.set(list.size() - 1, innerList);
-        } else if (mode == InnerListMode.STARTING_WITH_FF_RECURSIVE) {
-            for (int i = 0; i < list.size(); i++) {
-                byte[] elementBytes = list.get(i).getRLPData();
-                if (elementBytes.length > 0 && elementBytes[0] == -1) {
-                    RLPList innerList = decodeTwoMock(Arrays.copyOfRange(elementBytes, 1, elementBytes.length), mode);
-                    // TODO Fix
-                    // list.set(i, innerList);
-                }
-            }
-        }
-        return list;
-    }
-
-    private RLPList decodeList(byte[] bytes) {
-        return RLP.decodeList(bytes);
-    }
-
     private String charNTimes(char c, int n) {
         StringBuilder sb = new StringBuilder(n);
-        for (int i = 0; i < n; i++)
+
+        for (int i = 0; i < n; i++) {
             sb.append(c);
+        }
+
         return sb.toString();
     }
 
-    private byte[] flatten(byte[][] bytes) {
-        int totalLength = 0;
-        for (int i = 0; i < bytes.length; i++)
-            totalLength += bytes[i].length;
+    private RskAddress createAddress(String addr) {
+        String address;
 
-        byte[] result = new byte[totalLength];
-        int offset=0;
-        for (int i = 0; i < bytes.length; i++) {
-            for (int j = 0; j < bytes[i].length; j++)
-                result[offset+j] = bytes[i][j];
-            offset += bytes[i].length;
+        if (addr.length() < RskAddress.LENGTH_IN_BYTES * 2) {
+            address = addr + charNTimes('0', RskAddress.LENGTH_IN_BYTES * 2 - addr.length());
         }
-        return result;
-    }
+        else {
+            address = addr;
+        }
 
-    private void mockAddressInstantiation(String addr) throws Exception {
-        PowerMockito.whenNew(RskAddress.class)
-                .withArguments(Hex.decode(addr))
-                .then((InvocationOnMock invocation) -> mockAddress(addr));
-    }
-
-    private RskAddress mockAddress(String addr) {
-        RskAddress mock = PowerMockito.mock(RskAddress.class);
-        Mockito.when(mock.getBytes()).thenReturn(Hex.decode(addr));
-        return mock;
+        return new RskAddress(Hex.decode(address));
     }
 
     private int randomInRange(int min, int max) {
         return new Random().nextInt(max - min + 1) + min;
+    }
+
+    private static AddressBasedAuthorizer getTestingAddressBasedAuthorizer() {
+        return new AddressBasedAuthorizer(null, null) {
+            public boolean isAuthorized(RskAddress addess) {
+                return true;
+            }
+        };
     }
 }
