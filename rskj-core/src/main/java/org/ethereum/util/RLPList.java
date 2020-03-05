@@ -20,7 +20,6 @@
 package org.ethereum.util;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -44,7 +43,7 @@ public class RLPList extends RLPItem implements RLPElement {
         return this.getElements().get(n);
     }
 
-    public List<RLPElement> getElements() {
+    private List<RLPElement> getElements() {
         if (this.elements != null) {
             return this.elements;
         }

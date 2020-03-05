@@ -25,7 +25,6 @@ import org.ethereum.util.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.longToBytes;
@@ -62,7 +61,10 @@ public class HandshakeMessage {
         // caps
         message.caps = new ArrayList<>();
 
-        for (RLPElement capEl : ((RLPList)list.get(2)).getElements()) {
+        RLPList capElements = (RLPList)list.get(2);
+
+        for (int k = 0; k < capElements.size(); k++) {
+            RLPElement capEl = capElements.get(k);
             RLPList capElList = (RLPList)capEl;
             String name = new String(capElList.get(0).getRLPData(), Charset.forName("UTF-8"));
             long version = ByteUtil.byteArrayToInt(capElList.get(1).getRLPData());

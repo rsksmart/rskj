@@ -29,7 +29,6 @@ import org.bouncycastle.util.BigIntegers;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
 
@@ -208,11 +207,11 @@ public enum MessageType {
     BODY_RESPONSE_MESSAGE(15) {
         @Override
         public Message createMessage(BlockFactory blockFactory, RLPList list) {
-            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            RLPList message = (RLPList) RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            RLPList rlpTransactions = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
-            RLPList rlpUncles = (RLPList)RLP.decode2(message.get(1).getRLPData()).get(0);
+            RLPList rlpTransactions = (RLPList) RLP.decode2(message.get(0).getRLPData()).get(0);
+            RLPList rlpUncles = (RLPList) RLP.decode2(message.get(1).getRLPData()).get(0);
 
             List<Transaction> transactions = new ArrayList<>();
             for (int k = 0; k < rlpTransactions.size(); k++) {
@@ -226,9 +225,12 @@ public enum MessageType {
                 transactions.add(tx);
             }
 
-            List<BlockHeader> uncles = rlpUncles.getElements().stream()
-                    .map(el -> blockFactory.decodeHeader(el.getRLPData()))
-                    .collect(Collectors.toList());
+            List<BlockHeader> uncles = new ArrayList<>();
+
+            for (int j = 0; j < rlpUncles.size(); j++) {
+                RLPElement element = rlpUncles.get(j);
+                uncles.add(blockFactory.decodeHeader(element.getRLPData()));
+            }
 
             return new BodyResponseMessage(id, transactions, uncles);
         }
