@@ -177,6 +177,11 @@ public class RLP {
 
     public static BigInteger decodeBigInteger(byte[] data, int index) {
         RLPElement element = RLP.decodeFirstElement(data, index);
+
+        if (element == null) {
+            return null;
+        }
+
         byte[] bytes = element.getRLPData();
 
         if (bytes == null || bytes.length == 0) {

@@ -28,7 +28,7 @@ import java.io.Serializable;
  * @author Roman Mandeleil
  * @since 01.04.2014
  */
-public interface RLPElement extends Serializable {
+public interface RLPElement {
 
     /**
      * @implNote this function will return null when the RLP data is an empty byte array.
