@@ -23,6 +23,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.util.RLPException;
+import javafx.util.Pair;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -394,87 +395,19 @@ public class RLP {
         int position = 0;
 
         while (position < tlength) {
-            int b0 = msgData[position] & 0xff;
-
-            if (b0 >= 192) {
-                int length;
-                int offset;
-
-                if (b0 <= 192 + TINY_SIZE) {
-                    length = b0 - 192 + 1;
-                    offset = 1;
-                }
-                else {
-                    int nbytes = b0 - 247;
-                    length = 1 + nbytes + bytesToLength(msgData, position + 1, nbytes);
-                    offset = 1 + nbytes;
-                }
-
-                if (position + length > msgData.length) {
-                    throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
-                }
-
-                byte[] bytes = Arrays.copyOfRange(msgData, position, position + length);
-                RLPList list = new RLPList(bytes, offset);
-
-                elements.add(list);
-
-                position += length;
-
-                continue;
-            }
-
-            if (b0 == EMPTY_MARK) {
-                elements.add(new RLPItem(ByteUtil.EMPTY_BYTE_ARRAY));
-
-                position++;
-
-                continue;
-            }
-
-            if (b0 < EMPTY_MARK) {
-                byte[] data = new byte[1];
-                data[0] = msgData[position];
-                elements.add(new RLPItem(data));
-
-                position++;
-
-                continue;
-            }
-
-            int length;
-            int offset;
-
-            if (b0 > (EMPTY_MARK + TINY_SIZE)) {
-                offset = b0 - (EMPTY_MARK + TINY_SIZE) + 1;
-                length = bytesToLength(msgData, position + 1, offset - 1);
-            }
-            else {
-                length = b0 & 0x7f;
-                offset = 1;
-            }
-
-            if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
-                throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
-            }
-
-            if (position + offset + length < 0 || position + offset + length > msgData.length) {
-                throw new RLPException("The RLP byte array doesn't have enough space to hold an element with the specified length");
-            }
-
-            byte[] decoded = new byte[length];
-
-            System.arraycopy(msgData, position + offset, decoded, 0, length);
-
-            elements.add(new RLPItem(decoded));
-
-            position += offset + length;
+            Pair<RLPElement, Integer> next = decodeElement(msgData, position);
+            elements.add(next.getKey());
+            position = next.getValue();
         }
 
         return elements;
     }
 
     public static RLPElement decodeFirstElement(@CheckForNull byte[] msgData, int position) {
+        return decodeElement(msgData, position).getKey();
+    }
+
+    private static Pair<RLPElement, Integer> decodeElement(@CheckForNull byte[] msgData, int position) {
         int b0 = msgData[position] & 0xff;
 
         if (b0 >= 192) {
@@ -498,17 +431,17 @@ public class RLP {
             byte[] bytes = Arrays.copyOfRange(msgData, position, position + length);
             RLPList list = new RLPList(bytes, offset);
 
-            return list;
+            return new Pair<>(list, position + length);
         }
 
         if (b0 == EMPTY_MARK) {
-            return new RLPItem(ByteUtil.EMPTY_BYTE_ARRAY);
+            return new Pair<>(new RLPItem(ByteUtil.EMPTY_BYTE_ARRAY), position + 1);
         }
 
         if (b0 < EMPTY_MARK) {
             byte[] data = new byte[1];
             data[0] = msgData[position];
-            return new RLPItem(data);
+            return new Pair<>(new RLPItem(data), position + 1);
         }
 
         int length;
@@ -535,7 +468,7 @@ public class RLP {
 
         System.arraycopy(msgData, position + offset, decoded, 0, length);
 
-        return new RLPItem(decoded);
+        return new Pair<>(new RLPItem(decoded), position + offset + length);
     }
 
     private static int bytesToLength(byte[] bytes, int position, int size) {
