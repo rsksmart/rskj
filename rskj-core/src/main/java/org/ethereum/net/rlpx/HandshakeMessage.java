@@ -22,7 +22,6 @@ package org.ethereum.net.rlpx;
 import org.ethereum.net.client.Capability;
 import org.ethereum.util.*;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +65,7 @@ public class HandshakeMessage {
         for (int k = 0; k < capElements.size(); k++) {
             RLPElement capEl = capElements.get(k);
             RLPList capElList = (RLPList)capEl;
-            String name = new String(capElList.get(0).getRLPData(), Charset.forName("UTF-8"));
+            String name = new String(capElList.get(0).getRLPData(), StandardCharsets.UTF_8);
             long version = ByteUtil.byteArrayToInt(capElList.get(1).getRLPData());
 
             message.caps.add(new Capability(name, (byte)version)); // FIXME long
