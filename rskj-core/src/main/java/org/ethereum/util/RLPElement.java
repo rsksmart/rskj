@@ -20,7 +20,6 @@
 package org.ethereum.util;
 
 import javax.annotation.Nullable;
-import java.io.Serializable;
 
 /**
  * Wrapper class for decoded elements from an RLP encoded byte array.

@@ -57,7 +57,7 @@ public class HandshakeMessage {
         RLPList list = (RLPList) RLP.decode2(wire).get(0);
         HandshakeMessage message = new HandshakeMessage();
         message.version = ByteUtil.byteArrayToInt(list.get(0).getRLPData()); // FIXME long
-        message.name = new String(list.get(1).getRLPData(), Charset.forName("UTF-8"));
+        message.name = new String(list.get(1).getRLPData(), StandardCharsets.UTF_8);
         // caps
         message.caps = new ArrayList<>();
 
