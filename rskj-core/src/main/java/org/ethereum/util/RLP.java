@@ -23,7 +23,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.util.RLPException;
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -431,17 +431,17 @@ public class RLP {
             byte[] bytes = Arrays.copyOfRange(msgData, position, position + length);
             RLPList list = new RLPList(bytes, offset);
 
-            return new Pair<>(list, position + length);
+            return Pair.of(list, position + length);
         }
 
         if (b0 == EMPTY_MARK) {
-            return new Pair<>(new RLPItem(ByteUtil.EMPTY_BYTE_ARRAY), position + 1);
+            return Pair.of(new RLPItem(ByteUtil.EMPTY_BYTE_ARRAY), position + 1);
         }
 
         if (b0 < EMPTY_MARK) {
             byte[] data = new byte[1];
             data[0] = msgData[position];
-            return new Pair<>(new RLPItem(data), position + 1);
+            return Pair.of(new RLPItem(data), position + 1);
         }
 
         int length;
@@ -468,7 +468,7 @@ public class RLP {
 
         System.arraycopy(msgData, position + offset, decoded, 0, length);
 
-        return new Pair<>(new RLPItem(decoded), position + offset + length);
+        return Pair.of(new RLPItem(decoded), position + offset + length);
     }
 
     private static int bytesToLength(byte[] bytes, int position, int size) {
