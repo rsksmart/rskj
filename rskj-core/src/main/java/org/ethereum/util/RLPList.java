@@ -36,23 +36,25 @@ public class RLPList extends RLPItem implements RLPElement {
     }
 
     public int size() {
-        return this.getElements().size();
+        this.checkElements();
+
+        return this.elements.size();
     }
 
     public RLPElement get(int n) {
-        return this.getElements().get(n);
+        this.checkElements();
+
+        return this.elements.get(n);
     }
 
-    private List<RLPElement> getElements() {
+    private void checkElements() {
         if (this.elements != null) {
-            return this.elements;
+            return;
         }
 
         byte[] bytes = this.getRLPData();
         byte[] content = Arrays.copyOfRange(bytes, offset, bytes.length);
 
         this.elements = RLP.decode2(content);
-
-        return this.elements;
     }
 }

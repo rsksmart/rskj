@@ -404,10 +404,14 @@ public class RLP {
     }
 
     public static RLPElement decodeFirstElement(@CheckForNull byte[] msgData, int position) {
+        if (msgData == null) {
+            return null;
+        }
+
         return decodeElement(msgData, position).getKey();
     }
 
-    private static Pair<RLPElement, Integer> decodeElement(@CheckForNull byte[] msgData, int position) {
+    private static Pair<RLPElement, Integer> decodeElement(byte[] msgData, int position) {
         int b0 = msgData[position] & 0xff;
 
         if (b0 >= 192) {

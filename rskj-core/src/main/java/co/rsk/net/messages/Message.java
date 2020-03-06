@@ -21,10 +21,7 @@ package co.rsk.net.messages;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
-
-import java.util.List;
 
 /**
  * Created by ajlopez on 5/10/2016.

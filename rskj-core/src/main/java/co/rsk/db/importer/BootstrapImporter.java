@@ -80,13 +80,13 @@ public class BootstrapImporter {
             Trie trie = Trie.fromMessage(rlpData, fakeStore);
             hashMapDB.put(trie.getHash().getBytes(), rlpData);
             nodes.add(trie);
-        };
+        }
 
         for (int k = 0; k < valuesData.size(); k++) {
             RLPElement element = valuesData.get(k);
             byte[] rlpData = element.getRLPData();
             hashMapDB.put(Keccak256Helper.keccak256(rlpData), rlpData);
-        };
+        }
 
         nodes.forEach(destinationTrieStore::save);
     }
