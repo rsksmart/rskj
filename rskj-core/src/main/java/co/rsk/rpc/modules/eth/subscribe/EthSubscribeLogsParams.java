@@ -32,18 +32,24 @@ import java.util.Arrays;
 public class EthSubscribeLogsParams implements EthSubscribeParams {
 
     private final RskAddress[] addresses;
+    private final String[] fromBlock;
     private final Topic[][] topics;
+    private final String[] toBlock;
 
     public EthSubscribeLogsParams() {
-        this(new RskAddress[0], new Topic[0][]);
+        this(new RskAddress[0], new String[0], new String[0], new Topic[0][]);
     }
 
     @JsonCreator
     public EthSubscribeLogsParams(
             @JsonProperty("address") @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) RskAddress[] addresses,
+            @JsonProperty("fromBlock") @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) String[] fromBlock,
+            @JsonProperty("toBlock") @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) String[] toBlock,
             @JsonProperty("topics") @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) Topic[][] topics
     ) {
         this.addresses = addresses == null? new RskAddress[0]: addresses;
+        this.fromBlock = fromBlock == null? new String[0]: fromBlock;
+        this.toBlock = fromBlock == null? new String[0]: toBlock;
         this.topics = topics == null? new Topic[0][]: topics;
     }
 
