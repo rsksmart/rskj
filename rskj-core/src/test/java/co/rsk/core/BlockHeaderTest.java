@@ -40,7 +40,7 @@ import static org.junit.Assert.*;
 public class BlockHeaderTest {
     @Test
     public void getHashForMergedMiningWithForkDetectionDataAndIncludedOnAndMergedMiningFields() {
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
@@ -56,7 +56,7 @@ public class BlockHeaderTest {
 
     @Test
     public void getHashForMergedMiningWithNoForkDetectionDataAndIncludedOffAndMergedMiningFields() {
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, new byte[0]);
 
         Keccak256 hash = header.getHash();
         byte[] hashForMergedMining = header.getHashForMergedMining();
@@ -67,7 +67,7 @@ public class BlockHeaderTest {
     @Test
     public void getHashForMergedMiningWithForkDetectionDataAndIncludedOn() {
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        BlockHeader header = createBlockHeaderWithNoMergedMiningFields(forkDetectionData, true);
+        BlockHeader header = createBlockHeaderWithNoMergedMiningFields(forkDetectionData, true, new byte[0]);
 
         byte[] hash = header.getHash().getBytes();
         byte[] hashFirst20Elements = Arrays.copyOfRange(hash, 0, 20);
@@ -81,7 +81,7 @@ public class BlockHeaderTest {
     @Test
     public void getHashForMergedMiningWithForkDetectionDataAndIncludedOff() {
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        BlockHeader header = createBlockHeaderWithNoMergedMiningFields(forkDetectionData, false);
+        BlockHeader header = createBlockHeaderWithNoMergedMiningFields(forkDetectionData, false, new byte[0]);
 
         byte[] hash = header.getHash().getBytes();
         byte[] hashForMergedMining = header.getHashForMergedMining();
@@ -89,9 +89,32 @@ public class BlockHeaderTest {
         assertThat(hash, is(hashForMergedMining));
     }
 
+
     @Test
-    public void getEncodedWithMergedMiningFields() {
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false);
+    public void getEncodedWithUmmRootWithMergedMiningFields() {
+        byte[] ummRoot = TestUtils.randomBytes(20);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, ummRoot);
+
+        byte[] headerEncoded = header.getFullEncoded();
+        RLPList headerRLP = RLP.decodeList(headerEncoded);
+
+        assertThat(headerRLP.size(), is(20));
+    }
+
+    @Test
+    public void getEncodedWithUmmRootWithoutMergedMiningFields() {
+        byte[] ummRoot = TestUtils.randomBytes(20);
+        BlockHeader header = createBlockHeaderWithNoMergedMiningFields(new byte[0], false, ummRoot);
+
+        byte[] headerEncoded = header.getFullEncoded();
+        RLPList headerRLP = RLP.decodeList(headerEncoded);
+
+        assertThat(headerRLP.size(), is(17));
+    }
+
+    @Test
+    public void getEncodedNullUmmRootWithMergedMiningFields() {
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, null);
 
         byte[] headerEncoded = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
@@ -100,8 +123,8 @@ public class BlockHeaderTest {
     }
 
     @Test
-    public void getEncodedWithoutMergedMiningFields() {
-        BlockHeader header = createBlockHeaderWithNoMergedMiningFields(new byte[0], false);
+    public void getEncodedNullUmmRootWithoutMergedMiningFields() {
+        BlockHeader header = createBlockHeaderWithNoMergedMiningFields(new byte[0], false, null);
 
         byte[] headerEncoded = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(headerEncoded);
@@ -110,8 +133,28 @@ public class BlockHeaderTest {
     }
 
     @Test
+    public void getEncodedEmptyUmmRootWithMergedMiningFields() {
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, new byte[0]);
+
+        byte[] headerEncoded = header.getFullEncoded();
+        RLPList headerRLP = RLP.decodeList(headerEncoded);
+
+        assertThat(headerRLP.size(), is(20));
+    }
+
+    @Test
+    public void getEncodedEmptyUmmRootWithoutMergedMiningFields() {
+        BlockHeader header = createBlockHeaderWithNoMergedMiningFields(new byte[0], false, new byte[0]);
+
+        byte[] headerEncoded = header.getFullEncoded();
+        RLPList headerRLP = RLP.decodeList(headerEncoded);
+
+        assertThat(headerRLP.size(), is(17));
+    }
+
+    @Test
     public void getMiningForkDetectionData() {
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
@@ -194,7 +237,7 @@ public class BlockHeaderTest {
      */
     @Test(expected = IllegalStateException.class)
     public void getMiningForkDetectionDataNoDataCanBeFound() {
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
 
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
         byte[] coinbase = concatenate(RskMiningConstants.RSK_TAG, forkDetectionData);
@@ -206,23 +249,23 @@ public class BlockHeaderTest {
 
     @Test
     public void getMiningForkDetectionDataNoDataMustBeIncluded() {
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, new byte[0]);
 
         assertThat(new byte[0], is(header.getMiningForkDetectionData()));
     }
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             byte[] forkDetectionData,
-            boolean includeForkDetectionData){
+            boolean includeForkDetectionData, byte[] ummRoot){
         return createBlockHeader(new byte[80], new byte[32], new byte[128],
-                forkDetectionData, includeForkDetectionData, null, false);
+                forkDetectionData, includeForkDetectionData, ummRoot, false);
     }
 
     private BlockHeader createBlockHeaderWithNoMergedMiningFields(
             byte[] forkDetectionData,
-            boolean includeForkDetectionData) {
+            boolean includeForkDetectionData, byte[] ummRoot) {
         return createBlockHeader(null, null, null,
-                forkDetectionData, includeForkDetectionData, null, true);
+                forkDetectionData, includeForkDetectionData, ummRoot, true);
     }
 
     private BlockHeader createBlockHeaderWithUmmRoot(byte[] ummRoot) {

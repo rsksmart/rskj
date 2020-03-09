@@ -151,7 +151,7 @@ public class BlockHeader {
         this.sealed = sealed;
         this.useRskip92Encoding = useRskip92Encoding;
         this.includeForkDetectionData = includeForkDetectionData;
-        this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : new byte[0];
+        this.ummRoot = ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
     }
 
     @VisibleForTesting
@@ -353,7 +353,7 @@ public class BlockHeader {
         byte[] uncleCount = RLP.encodeBigInteger(BigInteger.valueOf(this.uncleCount));
         fieldToEncodeList.add(uncleCount);
 
-        if (isUMMBlock()) {
+        if (this.ummRoot != null) {
             fieldToEncodeList.add(RLP.encodeElement(this.ummRoot));
         }
 
@@ -574,6 +574,6 @@ public class BlockHeader {
     }
 
     public byte[] getUmmRoot() {
-        return Arrays.copyOf(ummRoot, ummRoot.length);
+        return ummRoot != null ? Arrays.copyOf(ummRoot, ummRoot.length) : null;
     }
 }

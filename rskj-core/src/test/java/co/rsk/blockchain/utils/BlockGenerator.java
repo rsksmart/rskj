@@ -162,6 +162,7 @@ public class BlockGenerator {
                 .setPaidFees(Coin.valueOf(fees))
                 .setEmptyMergedMiningForkDetectionData()
                 .setUncleCount(uncles.size())
+                .setUmmRoot(new byte[0])
                 .build();
 
         return blockFactory.newBlock(

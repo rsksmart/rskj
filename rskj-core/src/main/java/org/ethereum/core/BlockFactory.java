@@ -151,7 +151,7 @@ public class BlockFactory {
         byte[] ucBytes = rlpHeader.get(r++).getRLPData();
         int uncleCount = parseBigInteger(ucBytes).intValueExact();
 
-        byte[] ummRoot = new byte[0];
+        byte[] ummRoot = null;
         if (activationConfig.isActive(ConsensusRule.RSKIPUMM, number) && (rlpHeader.size() == RLP_HEADER_SIZE_UMM ||
                                                                           rlpHeader.size() == RLP_HEADER_SIZE_UMM_WITH_MERGED_MINING)) {
             ummRoot = rlpHeader.get(r++).getRLPRawData();

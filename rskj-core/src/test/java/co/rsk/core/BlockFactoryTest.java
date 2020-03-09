@@ -39,7 +39,7 @@ import java.util.Arrays;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.geq;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -80,7 +80,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0]);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -96,7 +96,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0]);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -112,7 +112,7 @@ public class BlockFactoryTest {
         long number = 457L;
         enableRulesAt(number, RSKIP92);
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0]);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -129,7 +129,7 @@ public class BlockFactoryTest {
         enableRulesAt(number, RSKIP92, RSKIP110);
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData, new byte[0]);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData, null);
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
@@ -156,7 +156,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
-        BlockHeader header = createBlockHeader(number, new byte[0], new byte[0]);
+        BlockHeader header = createBlockHeader(number, new byte[0], null);
 
         byte[] encodedHeader = header.getEncoded(false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -177,7 +177,7 @@ public class BlockFactoryTest {
         enableRulesAt(number, RSKIP92);
 
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        BlockHeader header = createBlockHeader(number, forkDetectionData, new byte[0]);
+        BlockHeader header = createBlockHeader(number, forkDetectionData, null);
 
         byte[] encodedHeader = header.getEncoded(false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -214,7 +214,7 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(16));
+        assertThat(headerRLP.size(), is(17));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
@@ -231,12 +231,12 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(16));
+        assertThat(headerRLP.size(), is(17));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
         assertThat(decodedHeader.getHash(), is(header.getHash()));
-        assertThat(decodedHeader.getUmmRoot(), is(new byte[0]));
+        assertArrayEquals(new byte[0], decodedHeader.getUmmRoot());
     }
 
     @Test
@@ -266,7 +266,7 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(19));
+        assertThat(headerRLP.size(), is(20));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
@@ -283,12 +283,12 @@ public class BlockFactoryTest {
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(19));
+        assertThat(headerRLP.size(), is(20));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
         assertThat(decodedHeader.getHash(), is(header.getHash()));
-        assertThat(decodedHeader.getUmmRoot(), is(new byte[0]));
+        assertArrayEquals(new byte[0], decodedHeader.getUmmRoot());
     }
 
     private void enableRulesAt(long number, ConsensusRule... consensusRules) {

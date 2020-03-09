@@ -88,7 +88,7 @@ public class BlockToMineBuilderTest {
                 new ForkDetectionDataCalculator(),
                 validationRules,
                 mock(MinerClock.class),
-                new BlockFactory(ActivationConfigsForTest.all()),
+                new BlockFactory(activationConfig),
                 blockExecutor,
                 minimumGasPriceCalculator,
                 minerUtils
@@ -158,7 +158,7 @@ public class BlockToMineBuilderTest {
         blockBuilder.build(new ArrayList<>(Collections.singletonList(parent)), new byte[0]);
 
         Block actualBlock = blockCaptor.getValue();
-        assertThat(actualBlock.getHeader().getUmmRoot(), is(new byte[0]));
+        assertNull(actualBlock.getHeader().getUmmRoot());
     }
 
     @Test

@@ -241,7 +241,7 @@ public class BlockHeaderBuilder {
     }
 
     public BlockHeaderBuilder setUmmRoot(byte[] ummRoot) {
-        this.ummRoot = copy(ummRoot);
+        this.ummRoot = copy(ummRoot, null);
         return this;
     }
 
@@ -261,7 +261,6 @@ public class BlockHeaderBuilder {
         minimumGasPrice = normalizeValue(minimumGasPrice, Coin.ZERO);
 
         mergedMiningForkDetectionData = normalizeValue(mergedMiningForkDetectionData, new byte[12]);
-        ummRoot = normalizeValue(ummRoot, new byte[0]);
     }
 
     private <T> T normalizeValue(T value, T defaultValue) {
@@ -273,8 +272,12 @@ public class BlockHeaderBuilder {
     }
 
     private byte[] copy(byte[] bytes) {
+        return copy(bytes, new byte[0]);
+    }
+
+    private byte[] copy(byte[] bytes, byte[] defaultValue) {
         if (bytes == null) {
-            return new byte[0];
+            return defaultValue;
         }
 
         return Arrays.copyOf(bytes, bytes.length);
@@ -284,10 +287,17 @@ public class BlockHeaderBuilder {
         // Initial null values in some fields are replaced by empty
         // arrays
         initializeWithDefaultValues();
+
         if (createConsensusCompliantHeader) {
             useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, number);
             includeForkDetectionData = activationConfig.isActive(ConsensusRule.RSKIP110, number) &&
                     mergedMiningForkDetectionData.length > 0;
+        }
+
+        if (activationConfig.isActive(ConsensusRule.RSKIPUMM, number)) {
+            if (ummRoot == null) {
+                ummRoot = new byte[0];
+            }
         }
 
         return new BlockHeader(

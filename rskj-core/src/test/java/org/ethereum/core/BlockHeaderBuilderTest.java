@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -263,7 +264,7 @@ public class BlockHeaderBuilderTest {
                 .build();
 
         RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(17, rlpList.size());
+        assertEquals(18, rlpList.size());
     }
 
     @Test
@@ -281,7 +282,7 @@ public class BlockHeaderBuilderTest {
                 .build();
 
         RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(19, rlpList.size());
+        assertEquals(20, rlpList.size());
     }
 
     @Test
@@ -300,7 +301,7 @@ public class BlockHeaderBuilderTest {
 
         // the useRskip92Field should be true, hence the merkle proof and coinbase are not included
         RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(17, rlpList.size());
+        assertEquals(18, rlpList.size());
     }
 
     @Test
@@ -371,9 +372,17 @@ public class BlockHeaderBuilderTest {
     }
 
     @Test
-    public void createsHeaderWithEmptyUmmRoot() {
+    public void createsHeaderWithEmptyUmmRootAndRskipUmmOn() {
         BlockHeader header = blockHeaderBuilder.build();
 
         assertArrayEquals(new byte[0], header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithEmptyUmmRootAndRskipUmmOff() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM));
+        BlockHeader header = builder.build();
+
+        assertNull(header.getUmmRoot());
     }
 }
