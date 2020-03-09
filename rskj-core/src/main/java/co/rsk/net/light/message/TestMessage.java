@@ -4,7 +4,7 @@ import co.rsk.net.light.LightClientMessageCodes;
 import org.ethereum.net.message.Message;
 import org.ethereum.util.RLP;
 
-public class TestMessage extends Message {
+public class TestMessage extends LightClientMessage {
 
     public TestMessage() {
     }
