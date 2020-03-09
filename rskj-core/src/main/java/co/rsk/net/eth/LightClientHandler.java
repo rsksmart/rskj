@@ -34,6 +34,16 @@ public class LightClientHandler extends SimpleChannelInboundHandler<TestMessage>
 
     }
 
+    public void activate() {
+        sendTest();
+    }
+
+    private void sendTest() {
+        TestMessage testMessage = new TestMessage();
+        msgQueue.sendMessage(new TestMessage());
+        logger.info("LC [ Sending Message {} ]", testMessage.getCommand());
+    }
+
     public interface Factory {
         LightClientHandler newInstance(MessageQueue messageQueue);
     }
