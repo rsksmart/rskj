@@ -105,6 +105,49 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
+    public void logLockBtc_with_segwit_address() {
+        // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> eventLogs = new LinkedList<>();
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        BridgeConstants constants = BridgeRegTestConstants.getInstance();
+        Address senderAddress = new Address(constants.getBtcParams(), constants.getBtcParams().getP2SHHeader(), Hex.decode("c99a8f22127007255b4a9d8d57b0892ae2103f2d"));
+
+        RskAddress rskAddress = mock(RskAddress.class);
+        when(rskAddress.toString()).thenReturn("0x00000000000000000000000000000000000000");
+
+        // Mock btc transaction
+        BtcTransaction mockedTx = mock(BtcTransaction.class);
+        when(mockedTx.getHash()).thenReturn(PegTestUtils.createHash(0));
+
+        Coin amount = Coin.SATOSHI;
+
+        // Act
+        eventLogger.logLockBtc(rskAddress, mockedTx, senderAddress, amount);
+
+        // Assert log size
+        Assert.assertEquals(1, eventLogs.size());
+
+        LogInfo logResult = eventLogs.get(0);
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
+
+        // Assert address that made the log
+        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
+
+        // Assert log topics
+        Assert.assertEquals(2, logResult.getTopics().size());
+        byte[][] topics = event.encodeEventTopics(rskAddress.toString());
+        for (int i=0; i<topics.length; i++) {
+            Assert.assertArrayEquals(topics[i], logResult.getTopics().get(i).getData());
+        }
+
+        // Assert log data
+        byte[] encodedData = event.encodeEventData(mockedTx.getHash().getBytes(), "2NBdCxoCY6wx1NHpwGWfJThHk9K2tVdNx1A", amount.getValue());
+        Assert.assertArrayEquals(encodedData, logResult.getData());
+    }
+
+    @Test
     public void logUpdateCollectionsBeforeRskip146HardFork() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);

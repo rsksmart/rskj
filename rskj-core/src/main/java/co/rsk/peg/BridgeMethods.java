@@ -554,6 +554,28 @@ public enum BridgeMethods {
             fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::voteFeePerKbChange,
             false
+    ),
+    REGISTER_BTC_COINBASE_TRANSACTION(
+            CallTransaction.Function.fromSignature(
+            "registerBtcCoinbaseTransaction",
+                    new String[]{"bytes", "bytes32", "bytes", "bytes32", "bytes32"},
+                    new String[]{}
+            ),
+            fixedCost(10000L),
+            (BridgeMethodExecutorVoid) Bridge::registerBtcCoinbaseTransaction,
+            activations -> activations.isActive(RSKIP143),
+            false
+    ),
+    HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION(
+            CallTransaction.Function.fromSignature(
+                    "hasBtcBlockCoinbaseTransactionInformation",
+                    new String[]{"bytes32"},
+                    new String[]{"bool"}
+            ),
+            fixedCost(5000L),
+            (BridgeMethodExecutorTyped) Bridge::hasBtcBlockCoinbaseTransactionInformation,
+            activations -> activations.isActive(RSKIP143),
+            false
     );
 
     private final CallTransaction.Function function;

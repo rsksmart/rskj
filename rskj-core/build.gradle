@@ -72,7 +72,7 @@ ext {
     powermockitoVersion = '1.7.4'
     rskLllVersion = '0.0.2'
     logbackVersion = '1.2.2'
-    bitcoinjVersion = '0.14.4-rsk-8'
+    bitcoinjVersion = '0.14.4-rsk-9'
     nettyVersion = '4.0.56.Final'
 }
 
@@ -112,7 +112,7 @@ dependencyVerification {
     verify = [
         'ch.qos.logback:logback-classic:48ade385bbae0222b2934b65738892117d8cb8366b3a3df442d3826c11cedff1',
         'ch.qos.logback:logback-core:280be7a9327e7434d214d6b9eb881c083c3e057a22d0ed7663a7ce81a718a494',
-        'co.rsk.bitcoinj:bitcoinj-thin:122c141afd341dd068e13d03a729c83428616e2f4b1cac60ca04c009e87dcedf',
+        'co.rsk.bitcoinj:bitcoinj-thin:77f2cbf36f4661530160184f48460d4f81b228e39f58fbc2735ad4b511eb5ec2',
         'co.rsk:lll-compiler:a645fdb272f56721761f65dd32caa952453efc07d98d292259d99353b6f647d0',
         'com.fasterxml.jackson.core:jackson-annotations:4caf3936315439b509b8c3ef494d4e47eaa6d25c3b5299aadb0eafb3944ed32f',
         'com.fasterxml.jackson.core:jackson-core:256ff34118ab292d1b4f3ee4d2c3e5e5f0f609d8e07c57e8ad1f51c46d4fbb46',

@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -105,6 +106,8 @@ public class BridgeStorageProvider {
     private HashMap<DataWord, Optional<Integer>> storageVersion;
 
     private HashMap<Sha256Hash, Long> btcTxHashesToSave;
+
+    private Map<Sha256Hash, CoinbaseInformation> coinbaseInformationMap;
 
     public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
         this.repository = repository;
@@ -545,6 +548,50 @@ public class BridgeStorageProvider {
         return null;
     }
 
+    public CoinbaseInformation getCoinbaseInformation(Sha256Hash blockHash) {
+        if (!activations.isActive(RSKIP143)) {
+            return null;
+        }
+
+        if (coinbaseInformationMap == null) {
+            coinbaseInformationMap = new HashMap<>();
+        }
+
+        if (coinbaseInformationMap.containsKey(blockHash)) {
+            return coinbaseInformationMap.get(blockHash);
+        }
+
+        CoinbaseInformation coinbaseInformation =
+                safeGetFromRepository(getStorageKeyForCoinbaseInformation(blockHash), BridgeSerializationUtils::deserializeCoinbaseInformation);
+        coinbaseInformationMap.put(blockHash, coinbaseInformation);
+
+        return coinbaseInformation;
+    }
+
+    public void setCoinbaseInformation(Sha256Hash blockHash, CoinbaseInformation data) {
+        if (!activations.isActive(RSKIP143)) {
+            return;
+        }
+
+        if (coinbaseInformationMap == null) {
+            coinbaseInformationMap = new HashMap<>();
+        }
+
+        coinbaseInformationMap.put(blockHash, data);
+    }
+
+    private void saveCoinbaseInformations() {
+        if (!activations.isActive(RSKIP143)) {
+            return;
+        }
+
+        if (coinbaseInformationMap == null || coinbaseInformationMap.size() == 0) {
+            return;
+        }
+        coinbaseInformationMap.forEach((Sha256Hash blockHash, CoinbaseInformation data) ->
+            safeSaveToRepository(getStorageKeyForCoinbaseInformation(blockHash), data, BridgeSerializationUtils::serializeCoinbaseInformation));
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -570,10 +617,16 @@ public class BridgeStorageProvider {
         saveLockingCap();
 
         saveHeightBtcTxHashAlreadyProcessed();
+
+        saveCoinbaseInformations();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
         return DataWord.fromLongString("btcTxHashAP-" + btcTxHash.toString());
+    }
+
+    private DataWord getStorageKeyForCoinbaseInformation(Sha256Hash btcTxHash) {
+        return DataWord.fromLongString("coinbaseInformation-" + btcTxHash.toString());
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {

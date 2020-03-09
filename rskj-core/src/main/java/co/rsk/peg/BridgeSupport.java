@@ -30,7 +30,10 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
@@ -111,6 +114,7 @@ public class BridgeSupport {
     private final Repository rskRepository;
     private final BridgeEventLogger eventLogger;
     private final List<ProgramSubtrace> subtraces = new ArrayList<>();
+    private final BtcLockSenderProvider btcLockSenderProvider;
 
     private final FederationSupport federationSupport;
 
@@ -125,6 +129,7 @@ public class BridgeSupport {
             BridgeConstants bridgeConstants,
             BridgeStorageProvider provider,
             BridgeEventLogger eventLogger,
+            BtcLockSenderProvider btcLockSenderProvider,
             Repository repository,
             Block executionBlock,
             Context btcContext,
@@ -136,6 +141,7 @@ public class BridgeSupport {
         this.rskExecutionBlock = executionBlock;
         this.bridgeConstants = bridgeConstants;
         this.eventLogger = eventLogger;
+        this.btcLockSenderProvider = btcLockSenderProvider;
         this.btcContext = btcContext;
         this.federationSupport = federationSupport;
         this.btcBlockStoreFactory = btcBlockStoreFactory;
@@ -252,7 +258,6 @@ public class BridgeSupport {
      * @throws BlockStoreException
      * @throws IOException
      */
-
     public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized) throws IOException, BlockStoreException {
         Context.propagate(btcContext);
 
@@ -301,15 +306,23 @@ public class BridgeSupport {
         }
 
         if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
-            logger.warn("Btc Tx {} has no inputs ", btcTxHash);
-            // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
-            throw new VerificationException.EmptyInputsOrOutputs();
+            if (activations.isActive(ConsensusRule.RSKIP143)) {
+                if (BtcTransactionFormatUtils.getInputsCountForSegwit(btcTxSerialized) == 0) {
+                    logger.warn("Btc Segwit Tx {} has no inputs ", btcTxHash);
+                    // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+                    throw new VerificationException.EmptyInputsOrOutputs();
+                }
+            } else {
+                logger.warn("Btc Tx {} has no inputs ", btcTxHash);
+                // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+                throw new VerificationException.EmptyInputsOrOutputs();
+            }
         }
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         // BTC blockstore is available since we've already queried the best chain height
         BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
-        if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
+        if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
             String panicMessage = String.format(
                     "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
                     btcTxHash.toString(),
@@ -324,21 +337,26 @@ public class BridgeSupport {
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
         btcTx.verify();
 
+        // Check again that the tx was not already processed but making sure to use the txid (no witness)
+        if (getBtcTxHashProcessedHeight(btcTx.getHash(false)) > -1L) {
+            logger.warn("Supplied Btc Tx {} was already processed", btcTx.getHash(false));
+            return;
+        }
+
         boolean locked = true;
 
         Federation activeFederation = getActiveFederation();
         // Specific code for lock/release/none txs
         if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
-            Optional<Script> scriptSig = BridgeUtils.getFirstInputScriptSig(btcTx);
-            if (!scriptSig.isPresent()) {
-                logger.warn(
-                        "[btctx:{}] First input does not spend a Pay-to-PubkeyHash {}",
-                        btcTx.getHash(),
-                        btcTx.getInput(0)
-                );
+            Optional<BtcLockSender> btcLockSenderOptional = btcLockSenderProvider.tryGetBtcLockSender(btcTx);
+            if(!btcLockSenderOptional.isPresent() ||
+                    !BridgeUtils.txIsProcessable(btcLockSenderOptional.get().getType(), activations)) {
+                logger.warn("[btcTx:{}] Could not get BtcLockSender from Btc tx", btcTx.getHash());
                 return;
             }
+            BtcLockSender btcLockSender = btcLockSenderOptional.get();
+            Address senderBtcAddress = btcLockSender.getBTCAddress();
 
             // Compute the total amount sent. Value could have been sent both to the
             // currently active federation as well as to the currently retiring federation.
@@ -351,32 +369,30 @@ public class BridgeSupport {
             }
             Coin totalAmount = amountToActive.add(amountToRetiring);
 
-            // Get the sender public key
-            byte[] data = scriptSig.get().getChunks().get(1).data;
-
-            // Tx is a lock tx, check whether the sender is whitelisted
-            BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
-            Address senderBtcAddress = new Address(btcContext.getParams(), senderBtcKey.getPubKeyHash());
-
             // Confirm we should process this lock
-            if (verifyLockSenderIsWhitelisted(rskTx, btcTx, senderBtcAddress, totalAmount, height) &&
-                verifyLockDoesNotSurpassLockingCap(rskTx, btcTx, senderBtcAddress, totalAmount)) {
+            if(txIsLockable(btcLockSender.getType())) {
+                logger.debug("[btcTx:{}] Is a lock from a {} sender", btcTx.getHash(), btcLockSender.getType());
+                if (verifyLockSenderIsWhitelisted(rskTx, btcTx, senderBtcAddress, totalAmount, height) &&
+                        verifyLockDoesNotSurpassLockingCap(rskTx, btcTx, senderBtcAddress, totalAmount)) {
 
-                org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
-                RskAddress sender = new RskAddress(key.getAddress());
-                co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(totalAmount);
+                    co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(totalAmount);
 
-                this.transferTo(sender, amount);
+                    this.transferTo(btcLockSender.getRskAddress(), amount);
 
-                logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, sender);
+                    logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, btcLockSender.getRskAddress());
 
-                if (activations.isActive(ConsensusRule.RSKIP146)) {
-                    eventLogger.logLockBtc(sender, btcTx, senderBtcAddress, totalAmount);
+                    if (activations.isActive(ConsensusRule.RSKIP146)) {
+                        eventLogger.logLockBtc(btcLockSender.getRskAddress(), btcTx, senderBtcAddress, totalAmount);
+                    }
+                } else {
+                    locked = false;
                 }
             } else {
+                logger.warn("[btcTx:{}] Btc tx type not supported: {}, returning funds to sender: {}",
+                        btcTx.getHash(), btcLockSender.getType(), senderBtcAddress);
+                generateRejectionRelease(btcTx, senderBtcAddress, rskTx, totalAmount);
                 locked = false;
             }
-
         } else if (BridgeUtils.isReleaseTx(btcTx, getLiveFederations())) {
             logger.debug("This is a release tx {}", btcTx);
             // do-nothing
@@ -397,8 +413,8 @@ public class BridgeSupport {
             return;
         }
 
-        // Mark tx as processed on this block
-        provider.setHeightBtcTxhashAlreadyProcessed(btcTxHash, rskExecutionBlock.getNumber());
+        // Mark tx as processed on this block (and use the txid without the witness)
+        provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
 
         // Save UTXOs from the federation(s) only if we actually
         // locked the funds.
@@ -406,6 +422,11 @@ public class BridgeSupport {
             saveNewUTXOs(btcTx);
         }
         logger.info("BTC Tx {} processed in RSK", btcTxHash);
+    }
+
+    private boolean txIsLockable(BtcLockSender.TxType txType) {
+        return txType == BtcLockSender.TxType.P2PKH ||
+                (txType == BtcLockSender.TxType.P2SHP2WPKH && activations.isActive(ConsensusRule.RSKIP143));
     }
 
     /**
@@ -1150,7 +1171,9 @@ public class BridgeSupport {
             return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
         }
 
-        if (!merkleBranch.proves(btcTxHash, block.getHeader())) {
+        Sha256Hash merkleRoot = merkleBranch.reduceFrom(btcTxHash);
+
+        if (!isBlockMerkleRootValid(merkleRoot, block.getHeader())) {
             return BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE;
         }
 
@@ -1989,6 +2012,78 @@ public class BridgeSupport {
         return true;
     }
 
+    public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws IOException, BlockStoreException {
+        Context.propagate(btcContext);
+        this.ensureBtcBlockStore();
+
+        Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
+
+        if (witnessReservedValue.length != 32) {
+            logger.warn("[btcTx:{}] WitnessResevedValue length can't be different than 32 bytes", btcTxHash);
+            throw new BridgeIllegalArgumentException("WitnessResevedValue length can't be different than 32 bytes");
+        }
+
+        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
+            logger.warn("[btcTx:{}] PartialMerkleTree doesn't have expected size", btcTxHash);
+            throw new BridgeIllegalArgumentException("PartialMerkleTree doesn't have expected size");
+        }
+
+        Sha256Hash merkleRoot;
+
+        try {
+            PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(), pmtSerialized, 0);
+            List<Sha256Hash> hashesInPmt = new ArrayList<>();
+            merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
+            if (!hashesInPmt.contains(btcTxHash)) {
+                logger.warn("Supplied Btc Tx {} is not in the supplied partial merkle tree", btcTxHash);
+                return;
+            }
+        } catch (VerificationException e) {
+            logger.warn("[btcTx:{}] PartialMerkleTree could not be parsed", btcTxHash);
+            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed %s", Hex.toHexString(pmtSerialized)), e);
+        }
+
+        // Check merkle root equals btc block merkle root at the specified height in the btc best chain
+        // Btc blockstore is available since we've already queried the best chain height
+        StoredBlock storedBlock = btcBlockStore.getFromCache(blockHash);
+        if (storedBlock == null) {
+            logger.warn("[btcTx:{}] Block not registered", btcTxHash);
+            throw new BridgeIllegalArgumentException(String.format("Block not registered %s", blockHash.toString()));
+        }
+        BtcBlock blockHeader = storedBlock.getHeader();
+        if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
+            String panicMessage = String.format(
+                    "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
+                    btcTxHash.toString(),
+                    merkleRoot,
+                    blockHeader.getMerkleRoot()
+            );
+            logger.warn(panicMessage);
+            panicProcessor.panic("btclock", panicMessage);
+            return;
+        }
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
+        btcTx.verify();
+
+        Sha256Hash witnessCommitment = Sha256Hash.twiceOf(witnessMerkleRoot.getReversedBytes(), witnessReservedValue);
+
+        if(!witnessCommitment.equals(btcTx.findWitnessCommitment())){
+            logger.warn("[btcTx:{}] WitnessCommitment does not match", btcTxHash);
+            throw new BridgeIllegalArgumentException("WitnessCommitment does not match");
+        }
+
+        CoinbaseInformation coinbaseInformation = new CoinbaseInformation(witnessMerkleRoot);
+        provider.setCoinbaseInformation(blockHeader.getHash(), coinbaseInformation);
+
+        logger.warn("[btcTx:{}] Registered coinbase information", btcTxHash);
+    }
+
+    public boolean hasBtcBlockCoinbaseTransactionInformation(Sha256Hash blockHash) {
+        CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHash);
+        return coinbaseInformation != null;
+    }
+
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {
         // Gather the current btc chain's head
         // IMPORTANT: we assume that getting the chain head from the btc blockstore
@@ -2105,6 +2200,7 @@ public class BridgeSupport {
         // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
         LockWhitelist lockWhitelist = provider.getLockWhitelist();
         if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
+            logger.info("Rejecting lock. Address {} is not whitelisted.", senderBtcAddress);
             generateRejectionRelease(btcTx, senderBtcAddress, rskTx, totalAmount);
             return false;
         }
@@ -2166,6 +2262,29 @@ public class BridgeSupport {
         Coin currentBridgeBalance = rskRepository.getBalance(PrecompiledContracts.BRIDGE_ADDR).toBitcoin();
 
         return maxRbtc.subtract(currentBridgeBalance);
+    }
+
+    @VisibleForTesting
+    protected boolean isBlockMerkleRootValid(Sha256Hash merkleRoot, BtcBlock blockHeader) {
+        boolean isValid = false;
+
+        if (blockHeader.getMerkleRoot().equals(merkleRoot)) {
+            logger.trace("block merkle root is valid");
+            isValid = true;
+        }
+        else {
+            if (activations.isActive(ConsensusRule.RSKIP143)) {
+                CoinbaseInformation coinbaseInformation = provider.getCoinbaseInformation(blockHeader.getHash());
+                if (coinbaseInformation == null) {
+                    logger.trace("coinbase information for block {} is not yet registered", blockHeader.getHash());
+                }
+                isValid = coinbaseInformation != null && coinbaseInformation.getWitnessMerkleRoot().equals(merkleRoot);
+                logger.trace("witness merkle root is {} valid", (isValid ? "":"NOT"));
+            } else {
+                logger.trace("RSKIP143 is not active, avoid checking witness merkle root");
+            }
+        }
+        return isValid;
     }
 }
 

@@ -20,6 +20,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -228,9 +229,9 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
         SolidityType input0Type = spy(getBtcTransactionConfirmationsFn.inputs[0].type);
         SolidityType input1Type = spy(getBtcTransactionConfirmationsFn.inputs[1].type);
         SolidityType input3ElementType = spy((SolidityType) Whitebox.getInternalState(getBtcTransactionConfirmationsFn.inputs[3].type, "elementType"));
-        when(input0Type.encode(any())).thenAnswer(this::encodeBytes32OnMock);
-        when(input1Type.encode(any())).thenAnswer(this::encodeBytes32OnMock);
-        when(input3ElementType.encode(any())).thenAnswer(this::encodeBytes32OnMock);
+        doAnswer(this::encodeBytes32OnMock).when(input0Type).encode(any());
+        doAnswer(this::encodeBytes32OnMock).when(input1Type).encode(any());
+        doAnswer(this::encodeBytes32OnMock).when(input3ElementType).encode(any());
         getBtcTransactionConfirmationsFn.inputs[0].type = input0Type;
         getBtcTransactionConfirmationsFn.inputs[1].type = input1Type;
         Whitebox.setInternalState(getBtcTransactionConfirmationsFn.inputs[3].type, "elementType", input3ElementType);
@@ -246,11 +247,10 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
     private BridgeStorageProviderInitializer generateBlockChainInitializer(int minBtcBlocks, int maxBtcBlocks, int numberOfConfirmations, int minNumberOfTransactions, int maxNumberOfTransactions) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-            BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
-                btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+                btcBlockChain = new BtcBlockChain(btcContext, blockStore);
             } catch (BlockStoreException e) {
                 throw new RuntimeException("Error initializing btc blockchain for tests");
             }
@@ -299,6 +299,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
             merkleBranchPath = merkleBranch.getPath();
             merkleBranchHashes = merkleBranch.getHashes();
             expectedConfirmations = numberOfConfirmations + 1;
+
         };
     }
 

@@ -1,6 +1,8 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import org.bouncycastle.util.encoders.Hex;
@@ -15,9 +17,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.math.BigInteger;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP134;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP143;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -134,13 +138,66 @@ public class BridgeTest {
         Assert.assertNull(result);
     }
 
+    @Test
+    public void registerBtcCoinbaseTransaction_before_RSKIP143_activation() {
+        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
+        doReturn(false).when(activations).isActive(eq(RSKIP143), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+        Integer zero = new Integer(0);
+
+        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(new Object[]{ value, zero, value, zero, zero });
+
+        Assert.assertNull(bridge.execute(data));
+    }
+
+    @Test
+    public void registerBtcCoinbaseTransaction_after_RSKIP143_activation() throws BlockStoreException, IOException {
+        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
+        doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+        Integer zero = new Integer(0);
+
+        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(new Object[]{ value, zero, value, zero, zero });
+
+        bridge.execute(data);
+        verify(bridgeSupportMock, times(1)).registerBtcCoinbaseTransaction(value, Sha256Hash.wrap(value), value, Sha256Hash.wrap(value), value);
+    }
+
+    @Test
+    public void registerBtcCoinbaseTransaction_after_RSKIP143_activation_null_data() {
+        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
+        doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
+
+        byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature();
+        byte[] result = bridge.execute(data);
+        Assert.assertNull(result);
+
+        data = ByteUtil.merge(Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature(), Hex.decode("ab"));
+        result = bridge.execute(data);
+        Assert.assertNull(result);
+
+        data = ByteUtil.merge(Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature(), Hex.decode("0000000000000000000000000000000000000000000000080000000000000000"));
+        result = bridge.execute(data);
+        Assert.assertNull(result);
+    }
 
     /**
      * Gets a bride instance mocking the transaction and BridgeSupportFactory
      * @param bridgeSupportInstance Provide the bridgeSupport to be used
      * @return
      */
-    private Bridge getBridgeInstance(BridgeSupport bridgeSupportInstance) {
+    private Bridge getBridgeInstance(BridgeSupport bridgeSupportInstance, ActivationConfig activationConfig) {
         Transaction txMock = mock(Transaction.class);
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
 
@@ -152,7 +209,13 @@ public class BridgeTest {
         return bridge;
     }
 
+    @Deprecated
+    private Bridge getBridgeInstance(BridgeSupport bridgeSupportInstance) {
+        return getBridgeInstance(bridgeSupportInstance, activationConfig);
+    }
+
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();
     }
+
 }

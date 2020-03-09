@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import java.util.List;
@@ -70,7 +71,19 @@ public class BridgeSupportFactory {
             eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
         }
 
-        return new BridgeSupport(bridgeConstants, provider, eventLogger, repository, executionBlock, btcContext,
-                federationSupport, btcBlockStoreFactory, activations);
+        BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
+
+        return new BridgeSupport(
+                bridgeConstants,
+                provider,
+                eventLogger,
+                btcLockSenderProvider,
+                repository,
+                executionBlock,
+                btcContext,
+                federationSupport,
+                btcBlockStoreFactory,
+                activations
+        );
     }
 }
