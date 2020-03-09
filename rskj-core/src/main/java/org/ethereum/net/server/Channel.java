@@ -152,6 +152,8 @@ public class Channel implements Peer {
 
         ctx.pipeline().addLast(Capability.LC, handler);
         lc = handler;
+
+//        handler.activate();
     }
 
     public void setInetSocketAddress(InetSocketAddress inetSocketAddress) {
