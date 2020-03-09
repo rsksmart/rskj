@@ -47,7 +47,7 @@ public class BlockHeader {
 
     private static final int HASH_FOR_MERGED_MINING_PREFIX_LENGTH = 20;
     private static final int FORK_DETECTION_DATA_LENGTH = 12;
-    private static final int UMM_ROOT_LENGTH = 20;
+    private static final int UMM_LEAVES_LENGTH = 20;
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
     private byte[] parentHash;
@@ -494,7 +494,8 @@ public class BlockHeader {
         byte[] hashForMergedMining = HashUtil.keccak256(encodedBlock);
 
         if (isUMMBlock()) {
-            hashForMergedMining = this.getHashRootForMergedMining(hashForMergedMining);
+            byte[] leftHash = Arrays.copyOf(hashForMergedMining, UMM_LEAVES_LENGTH);
+            hashForMergedMining = this.getHashRootForMergedMining(leftHash);
         }
 
         if (includeForkDetectionData) {
@@ -514,7 +515,7 @@ public class BlockHeader {
     }
 
     private byte[] getHashRootForMergedMining(byte[] leftHash) {
-        if ((ummRoot.length != UMM_ROOT_LENGTH) && (ummRoot.length != 0)){
+        if ((ummRoot.length != UMM_LEAVES_LENGTH) && (ummRoot.length != 0)){
             throw new IllegalStateException(
                     String.format("UMM Root length must be either 0 or 20. Found: %d", ummRoot.length)
             );

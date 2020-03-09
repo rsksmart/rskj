@@ -207,7 +207,8 @@ public class BlockHeaderTest {
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] oldHashForMergedMining = HashUtil.keccak256(encodedBlock);
-        byte[] hashRoot = HashUtil.keccak256(concatenate(oldHashForMergedMining, ummRoot));
+        byte[] leftHash = Arrays.copyOf(oldHashForMergedMining, 20);
+        byte[] hashRoot = HashUtil.keccak256(concatenate(leftHash, ummRoot));
         byte[] newHashForMergedMining = concatenate(
                 java.util.Arrays.copyOfRange(hashRoot, 0, 20),
                 forkDetectionData
