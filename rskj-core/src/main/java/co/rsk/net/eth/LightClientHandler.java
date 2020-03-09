@@ -1,5 +1,6 @@
 package co.rsk.net.eth;
 
+import co.rsk.net.light.message.LightClientMessage;
 import co.rsk.net.light.message.TestMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -13,7 +14,7 @@ import org.slf4j.LoggerFactory;
  * really Handlers for the communication channel
  */
 
-public class LightClientHandler extends SimpleChannelInboundHandler<TestMessage> {
+public class LightClientHandler extends SimpleChannelInboundHandler<LightClientMessage> {
     private static final Logger logger = LoggerFactory.getLogger("lightnet");
     private final MessageQueue msgQueue;
 
@@ -22,7 +23,7 @@ public class LightClientHandler extends SimpleChannelInboundHandler<TestMessage>
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, TestMessage msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) throws Exception {
         switch (msg.getCommand()) {
             case TEST:
                 logger.debug("Read message: {} TEST. Sending Test response", msg);
