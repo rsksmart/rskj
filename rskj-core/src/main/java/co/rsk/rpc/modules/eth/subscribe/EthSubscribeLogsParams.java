@@ -57,6 +57,14 @@ public class EthSubscribeLogsParams implements EthSubscribeParams {
         return Arrays.copyOf(addresses, addresses.length);
     }
 
+    public String[] getFromBlock(){
+        return Arrays.copyOf(fromBlock, fromBlock.length);
+    }
+
+    public String[] getToBlock(){
+        return Arrays.copyOf(toBlock, toBlock.length);
+    }
+
     public Topic[][] getTopics() {
         // TODO(mc) deep copy
         return Arrays.copyOf(topics, topics.length);
