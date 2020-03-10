@@ -72,6 +72,10 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             return base.multiply(randomInRange(min, max));
         }
 
+        public static Coin randomCoinAddition(Coin base, int min, int max) {
+            return base.add(Coin.valueOf(randomInRange(min, max),0));
+        }
+
         public static TxBuilder getZeroValueValueTxBuilderFromFedMember() {
             return Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey());
         }

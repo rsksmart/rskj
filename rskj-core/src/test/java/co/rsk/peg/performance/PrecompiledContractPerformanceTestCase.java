@@ -163,6 +163,8 @@ public abstract class PrecompiledContractPerformanceTestCase {
                     null);
             tx.sign(sender.getPrivKeyBytes());
             tx.setLocalCallTransaction(true);
+            // Force caching the sender to avoid outliers in the gas estimation
+            tx.getSender();
 
             return tx;
         }
