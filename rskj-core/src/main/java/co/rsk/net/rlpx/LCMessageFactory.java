@@ -23,8 +23,14 @@ import co.rsk.net.light.message.*;
 import org.ethereum.net.message.Message;
 
 public class LCMessageFactory {
-    public Message create(byte code, byte[] encoded) {
+    private long id;
 
+    public LCMessageFactory() {
+        this.id = 0;
+    }
+
+    public Message create(byte code, byte[] encoded) {
+        id++; //We start at 1 by doing this
         LightClientMessageCodes receivedCommand = LightClientMessageCodes.fromByte(code);
         switch (receivedCommand) {
             case TEST:
@@ -33,6 +39,10 @@ public class LCMessageFactory {
                 return new GetBlockReceiptsMessage(encoded);
             case BLOCK_RECEIPTS:
                 return new BlockReceiptsMessage(encoded);
+            case GET_TRANSACTION_INDEX:
+                return GetTransactionIndex.decode(id, encoded);
+            case TRANSACTION_INDEX:
+                return TransactionIndex.decode(encoded);
             case GET_CODE:
                 return new GetCodeMessage(encoded);
             case CODE:
