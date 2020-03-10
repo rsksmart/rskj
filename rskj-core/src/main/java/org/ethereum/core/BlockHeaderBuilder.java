@@ -67,14 +67,21 @@ public class BlockHeaderBuilder {
     private final ActivationConfig activationConfig;
 
     private boolean createConsensusCompliantHeader;
+    private boolean createUmmCompliantHeader;
 
     public BlockHeaderBuilder(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
         createConsensusCompliantHeader = true;
+        createUmmCompliantHeader = true;
     }
 
     public BlockHeaderBuilder setCreateConsensusCompliantHeader(boolean createConsensusCompliantHeader) {
         this.createConsensusCompliantHeader = createConsensusCompliantHeader;
+        return this;
+    }
+
+    public BlockHeaderBuilder setCreateUmmCompliantHeader(boolean createUmmCompliantHeader) {
+        this.createUmmCompliantHeader = createUmmCompliantHeader;
         return this;
     }
 
@@ -294,9 +301,11 @@ public class BlockHeaderBuilder {
                     mergedMiningForkDetectionData.length > 0;
         }
 
-        if (activationConfig.isActive(ConsensusRule.RSKIPUMM, number)) {
-            if (ummRoot == null) {
-                ummRoot = new byte[0];
+        if (createUmmCompliantHeader) {
+            if (activationConfig.isActive(ConsensusRule.RSKIPUMM, number)) {
+                if (ummRoot == null) {
+                    ummRoot = new byte[0];
+                }
             }
         }
 

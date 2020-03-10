@@ -30,6 +30,8 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.junit.Before;
 import org.junit.Test;
@@ -222,16 +224,18 @@ public class BlockFactoryTest {
         assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void decodeBlockRskip110OffRskipUMMOnAndNoMergedMiningFieldsNullUMMRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
+        // this should not be possible after the activation of UMM
+        // blocks are expected to have an empty byte array
         BlockHeader header = createBlockHeader(number, new byte[0], null);
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(17));
+        assertThat(headerRLP.size(), is(16));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
@@ -274,16 +278,18 @@ public class BlockFactoryTest {
         assertThat(header.getUmmRoot(), is(decodedHeader.getUmmRoot()));
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void decodeBlockRskip110OffRskipUMMOnAndMergedMiningFieldsNullUmmRoot() {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
+        // this should not be possible after the activation of UMM
+        // blocks are expected to have an empty byte array
         BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
-        assertThat(headerRLP.size(), is(20));
+        assertThat(headerRLP.size(), is(19));
 
         BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
 
@@ -325,6 +331,7 @@ public class BlockFactoryTest {
                 .setMergedMiningForkDetectionData(forkDetectionData)
                 .setMinimumGasPrice(Coin.valueOf(10L))
                 .setUncleCount(0)
+                .setCreateUmmCompliantHeader(ummRoot != null)
                 .setUmmRoot(ummRoot)
                 .build();
     }
@@ -354,6 +361,7 @@ public class BlockFactoryTest {
                 .setMergedMiningForkDetectionData(forkDetectionData)
                 .setMinimumGasPrice(Coin.valueOf(10L))
                 .setUncleCount(0)
+                .setCreateUmmCompliantHeader(ummRoot != null)
                 .setUmmRoot(ummRoot)
                 .build();
     }

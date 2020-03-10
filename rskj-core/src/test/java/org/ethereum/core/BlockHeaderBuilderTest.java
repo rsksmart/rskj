@@ -385,4 +385,48 @@ public class BlockHeaderBuilderTest {
 
         assertNull(header.getUmmRoot());
     }
+
+    @Test
+    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOn() {
+        BlockHeader header = blockHeaderBuilder
+                .setCreateUmmCompliantHeader(true)
+                .setUmmRoot(null)
+                .build();
+
+        assertArrayEquals(new byte[0], header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOff() {
+        BlockHeader header = blockHeaderBuilder
+                .setCreateUmmCompliantHeader(false)
+                .setUmmRoot(null)
+                .build();
+
+        assertArrayEquals(null, header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOnAndRskipUmmOff() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM));
+
+        BlockHeader header = builder
+                .setCreateUmmCompliantHeader(true)
+                .setUmmRoot(null)
+                .build();
+
+        assertNull(header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOffAndRskipUmmOff() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM));
+
+        BlockHeader header = builder
+                .setCreateUmmCompliantHeader(false)
+                .setUmmRoot(null)
+                .build();
+
+        assertArrayEquals(null, header.getUmmRoot());
+    }
 }
