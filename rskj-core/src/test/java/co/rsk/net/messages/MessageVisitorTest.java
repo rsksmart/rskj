@@ -6,7 +6,6 @@ import co.rsk.net.*;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
-import co.rsk.validators.BlockValidationRule;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -52,7 +51,6 @@ public class MessageVisitorTest {
                 config,
                 blockProcessor,
                 syncProcessor,
-                lightProcessor,
                 transactionGateway,
                 peerScoringManager,
                 channelManager,
@@ -254,53 +252,53 @@ public class MessageVisitorTest {
                 .processBlockResponse(eq(sender), eq(message));
     }
 
-    @Test
-    public void blockReceiptsRequestMessage() {
-        BlockReceiptsRequestMessage message = mock(BlockReceiptsRequestMessage.class);
-        byte[] blockHash = new byte[]{0x0F};
+//    @Test
+//    public void blockReceiptsRequestMessage() {
+//        BlockReceiptsRequestMessage message = mock(BlockReceiptsRequestMessage.class);
+//        byte[] blockHash = new byte[]{0x0F};
+//
+//        when(message.getBlockHash()).thenReturn(blockHash);
+//        when(message.getId()).thenReturn(24L);
+//
+//        target.apply(message);
+//
+//        verify(lightProcessor, times(1))
+//                .processBlockReceiptsRequest(eq(sender), eq(24L), eq(blockHash));
+//    }
 
-        when(message.getBlockHash()).thenReturn(blockHash);
-        when(message.getId()).thenReturn(24L);
+//    @Test
+//    public void blockReceiptsResponseMessage() {
+//        BlockReceiptsResponseMessage message = mock(BlockReceiptsResponseMessage.class);
+//
+//        target.apply(message);
+//
+//        verify(lightProcessor, times(1))
+//                .processBlockReceiptsResponse(eq(sender), eq(message));
+//    }
 
-        target.apply(message);
-
-        verify(lightProcessor, times(1))
-                .processBlockReceiptsRequest(eq(sender), eq(24L), eq(blockHash));
-    }
-
-    @Test
-    public void blockReceiptsResponseMessage() {
-        BlockReceiptsResponseMessage message = mock(BlockReceiptsResponseMessage.class);
-
-        target.apply(message);
-
-        verify(lightProcessor, times(1))
-                .processBlockReceiptsResponse(eq(sender), eq(message));
-    }
-
-    @Test
-    public void transactionIndexRequestMessage() {
-        TransactionIndexRequestMessage message = mock(TransactionIndexRequestMessage.class);
-        byte[] hash = new byte[]{0x0F};
-
-        when(message.getTransactionHash()).thenReturn(hash);
-        when(message.getId()).thenReturn(24L);
-
-        target.apply(message);
-
-        verify(lightProcessor, times(1))
-                .processTransactionIndexRequest(eq(sender), eq(24L), eq(hash));
-    }
-
-    @Test
-    public void transactionIndexResponseMessage() {
-        TransactionIndexResponseMessage message = mock(TransactionIndexResponseMessage.class);
-
-        target.apply(message);
-
-        verify(lightProcessor, times(1))
-                .processTransactionIndexResponseMessage(eq(sender), eq(message));
-    }
+//    @Test
+//    public void transactionIndexRequestMessage() {
+//        TransactionIndexRequestMessage message = mock(TransactionIndexRequestMessage.class);
+//        byte[] hash = new byte[]{0x0F};
+//
+//        when(message.getTransactionHash()).thenReturn(hash);
+//        when(message.getId()).thenReturn(24L);
+//
+//        target.apply(message);
+//
+//        verify(lightProcessor, times(1))
+//                .processTransactionIndexRequest(eq(sender), eq(24L), eq(hash));
+//    }
+//
+//    @Test
+//    public void transactionIndexResponseMessage() {
+//        TransactionIndexResponseMessage message = mock(TransactionIndexResponseMessage.class);
+//
+//        target.apply(message);
+//
+//        verify(lightProcessor, times(1))
+//                .processTransactionIndexResponseMessage(eq(sender), eq(message));
+//    }
 
     @Test
     public void skeletonRequestMessage() {

@@ -21,7 +21,6 @@ package co.rsk.net;
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.light.LightProcessor;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
@@ -46,7 +45,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final RskSystemProperties config;
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
-    private final LightProcessor lightProcessor;
     private final ChannelManager channelManager;
     private final TransactionGateway transactionGateway;
     private final PeerScoringManager peerScoringManager;
@@ -63,13 +61,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private volatile boolean stopped;
 
     /**
-     * @param lightProcessor
      * @param statusResolver
      */
     public NodeMessageHandler(RskSystemProperties config,
                               final BlockProcessor blockProcessor,
                               final SyncProcessor syncProcessor,
-                              final LightProcessor lightProcessor,
                               @Nullable final ChannelManager channelManager,
                               @Nullable final TransactionGateway transactionGateway,
                               @Nullable final PeerScoringManager peerScoringManager,
@@ -78,7 +74,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
-        this.lightProcessor = lightProcessor;
         this.transactionGateway = transactionGateway;
         this.statusResolver = statusResolver;
         this.cleanMsgTimestamp = System.currentTimeMillis();
@@ -99,7 +94,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         MessageVisitor mv = new MessageVisitor(config,
                 blockProcessor,
                 syncProcessor,
-                lightProcessor,
                 transactionGateway,
                 peerScoringManager,
                 channelManager,
