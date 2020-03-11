@@ -44,7 +44,7 @@ import java.util.*;
 
 
 /**
- * Created by Julian Len and Sebastian Sicardi on 20/10/19.
+ * Created by Julian Len and Sebastian Sicardi on 21/10/19.
  */
 public class LightProcessor {
     private static final Logger logger = LoggerFactory.getLogger("lightprocessor");
