@@ -423,25 +423,25 @@ public class MessageTest {
         }
     }
 
-    @Test
-    public void encodeDecodeBlockReceiptsRequestMessage() {
-        long someId = 42;
-        byte[] hash = HashUtil.randomHash();
-        BlockReceiptsRequestMessage message = new BlockReceiptsRequestMessage(someId, hash);
-
-        byte[] encoded = message.getEncoded();
-
-        Message result = Message.create(blockFactory, encoded);
-
-        assertNotNull(result);
-        assertArrayEquals(encoded, result.getEncoded());
-        assertEquals(MessageType.BLOCK_RECEIPTS_REQUEST_MESSAGE, result.getMessageType());
-
-        BlockReceiptsRequestMessage newMessage = (BlockReceiptsRequestMessage) result;
-
-        assertEquals(someId, newMessage.getId());
-        assertArrayEquals(hash, newMessage.getBlockHash());
-    }
+//    @Test
+//    public void encodeDecodeBlockReceiptsRequestMessage() {
+//        long someId = 42;
+//        byte[] hash = HashUtil.randomHash();
+//        BlockReceiptsRequestMessage message = new BlockReceiptsRequestMessage(someId, hash);
+//
+//        byte[] encoded = message.getEncoded();
+//
+//        Message result = Message.create(blockFactory, encoded);
+//
+//        assertNotNull(result);
+//        assertArrayEquals(encoded, result.getEncoded());
+//        assertEquals(MessageType.BLOCK_RECEIPTS_REQUEST_MESSAGE, result.getMessageType());
+//
+//        BlockReceiptsRequestMessage newMessage = (BlockReceiptsRequestMessage) result;
+//
+//        assertEquals(someId, newMessage.getId());
+//        assertArrayEquals(hash, newMessage.getBlockHash());
+//    }
 
     @Test
     public void encodeDecodeSkeletonRequestMessage() {

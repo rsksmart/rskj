@@ -15,30 +15,30 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class BlockReceiptsResponseMessageTest {
-    @Test
-    public void createMessage() {
-        List<TransactionReceipt> receipts = new LinkedList<>();
-        receipts.add(createReceipt());
-        receipts.add(createReceipt());
-
-        BlockReceiptsResponseMessage message = new BlockReceiptsResponseMessage(1, receipts);
-        assertEquals(1, message.getId());
-        assertEquals(receipts, message.getBlockReceipts());
-        assertEquals(MessageType.BLOCK_RECEIPTS_RESPONSE_MESSAGE, message.getMessageType());
-    }
-
-    @Test
-    public void accept() {
-
-        List<TransactionReceipt> receipts = new LinkedList<>();
-        BlockReceiptsResponseMessage message = new BlockReceiptsResponseMessage(1, receipts);
-
-        MessageVisitor visitor = mock(MessageVisitor.class);
-
-        message.accept(visitor);
-
-        verify(visitor, times(1)).apply(message);
-    }
+//    @Test
+//    public void createMessage() {
+//        List<TransactionReceipt> receipts = new LinkedList<>();
+//        receipts.add(createReceipt());
+//        receipts.add(createReceipt());
+//
+//        BlockReceiptsResponseMessage message = new BlockReceiptsResponseMessage(1, receipts);
+//        assertEquals(1, message.getId());
+//        assertEquals(receipts, message.getBlockReceipts());
+//        assertEquals(MessageType.BLOCK_RECEIPTS_RESPONSE_MESSAGE, message.getMessageType());
+//    }
+//
+//    @Test
+//    public void accept() {
+//
+//        List<TransactionReceipt> receipts = new LinkedList<>();
+//        BlockReceiptsResponseMessage message = new BlockReceiptsResponseMessage(1, receipts);
+//
+//        MessageVisitor visitor = mock(MessageVisitor.class);
+//
+//        message.accept(visitor);
+//
+//        verify(visitor, times(1)).apply(message);
+//    }
 
     private static TransactionReceipt createReceipt() {
         byte[] stateRoot = Hex.decode("f5ff3fbd159773816a7c707a9b8cb6bb778b934a8f6466c7830ed970498f4b68");
