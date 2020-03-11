@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.crypto.Keccak256;
@@ -708,6 +709,80 @@ public class TransactionTest {
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
         Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
+    }
+
+    @Test
+    public void testTransactionWireFormat1() throws IOException, InterruptedException {
+        // Test getting the version of transactions
+        Transaction txSigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_SIGNED_TX));
+        Assert.assertEquals(0, txSigned.getFormatVersion());
+
+        Transaction txnew = new ImmutableTransaction(Hex.decode("01c482030105"));
+        Assert.assertEquals(1, txnew.getFormatVersion());
+
+        // Test error thrown with wrong version
+        try {
+            Transaction invalidVersion = new ImmutableTransaction(Hex.decode("0404030201"));
+            Assert.fail("Expected an invalid version exception");
+        } catch (TransactionException e) {
+            Assert.assertEquals(e.getMessage(), "Invalid transaction format version");
+        }
+
+        // Test encoding
+        byte[] nonce = BigIntegers.asUnsignedByteArray(BigInteger.ZERO);
+        byte[] gasPrice = Hex.decode("e8d4a51000");     // 1000000000000
+        byte[] gas = Hex.decode("2710");           // 10000
+        byte[] recieveAddress = Hex.decode("13978aee95f38490e9769c39b2773ed763d9cd5f");
+        byte[] value = Hex.decode("2386f26fc10000"); //10000000000000000"
+        byte[] data = "data in a string".getBytes();
+
+        Transaction tx = new Transaction(nonce, gasPrice, gas, recieveAddress, value, data);
+        Transaction def = new Transaction(BigIntegers.asUnsignedByteArray(BigInteger.ONE), BigIntegers.asUnsignedByteArray(BigInteger.ONE), BigIntegers.asUnsignedByteArray(BigInteger.valueOf(30000)), RskAddress.nullAddress().getBytes(), BigIntegers.asUnsignedByteArray(BigInteger.ZERO), null);
+        String RLP_TX1_DEFAULT = "01c3820301";
+        String RLP_TX = "01f83d0088012386f26fc10000950213978aee95f38490e9769c39b2773ed763d9cd5f8603e8d4a510008304271091056461746120696e206120737472696e67";
+
+        Assert.assertEquals(Hex.toHexString(def.getEncoded(1)), RLP_TX1_DEFAULT);
+        Assert.assertEquals(Hex.toHexString(tx.getEncoded(1)), RLP_TX);
+
+        // Test decoding
+        Transaction decoded = new ImmutableTransaction(Hex.decode("01c3820301"));
+
+        Assert.assertEquals(new BigInteger(1, decoded.getNonce()), BigInteger.ONE);
+        Assert.assertEquals(decoded.getGasPrice().asBigInteger(), BigInteger.ONE);
+        Assert.assertEquals(new BigInteger(1, decoded.getGasLimit()), BigInteger.valueOf(30000));
+        Assert.assertEquals(Hex.toHexString(decoded.getReceiveAddress().getBytes()), Hex.toHexString(new byte[20]));
+        Assert.assertEquals(decoded.getValue().asBigInteger(), BigInteger.ZERO);
+        Assert.assertNull(decoded.getData());
+
+        Transaction rx = new ImmutableTransaction(Hex.decode("01f83d0088012386f26fc10000950213978aee95f38490e9769c39b2773ed763d9cd5f8603e8d4a510008304271091056461746120696e206120737472696e67"));
+
+        Assert.assertEquals(new BigInteger(1, rx.getNonce()), BigInteger.ZERO);
+        Assert.assertEquals(rx.getGasPrice(), new Coin(Hex.decode("e8d4a51000")));
+        Assert.assertEquals(Hex.toHexString(rx.getGasLimit()), "2710");
+        Assert.assertEquals(Hex.toHexString(rx.getReceiveAddress().getBytes()), "13978aee95f38490e9769c39b2773ed763d9cd5f");
+        Assert.assertEquals(rx.getValue(), new Coin(Hex.decode("2386f26fc10000")));
+        Assert.assertEquals(new String(rx.getData()), "data in a string");
+    }
+
+    @Test
+    public void testFullRecAndSignature() throws IOException, InterruptedException {
+        byte[] key = Hex.decode("c28d6524a502b55869e9f32922f5378e7607ff443c74c0e3fb1278bb7a0de5b2");
+
+        Transaction def = new Transaction(BigIntegers.asUnsignedByteArray(BigInteger.ONE), BigIntegers.asUnsignedByteArray(BigInteger.ONE), BigIntegers.asUnsignedByteArray(BigInteger.valueOf(30000)), RskAddress.nullAddress().getBytes(), BigIntegers.asUnsignedByteArray(BigInteger.ZERO), null);
+
+        Assert.assertEquals(Hex.toHexString(def.getFullRec()), "c80001028203010405");
+
+        // Test encoding
+        byte[] nonce = BigIntegers.asUnsignedByteArray(BigInteger.ZERO);
+        byte[] gasPrice = Hex.decode("e8d4a51000");     // 1000000000000
+        byte[] gas = Hex.decode("2710");           // 10000
+        byte[] recieveAddress = Hex.decode("13978aee95f38490e9769c39b2773ed763d9cd5f");
+        byte[] value = Hex.decode("2386f26fc10000"); //10000000000000000"
+        byte[] data = "data in a string".getBytes();
+
+        Transaction tx = new Transaction(nonce, gasPrice, gas, recieveAddress, value, data);
+
+        Assert.assertEquals(Hex.toHexString(tx.getFullRec()), "f83d0088012386f26fc10000950213978aee95f38490e9769c39b2773ed763d9cd5f8603e8d4a510008304271091056461746120696e206120737472696e67");
     }
 
     private Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, final Repository repository) throws InterruptedException {

@@ -30,6 +30,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
+import org.ethereum.crypto.ECKey.ECDSASignature;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -59,8 +60,8 @@ public class BlockFactory {
 
     private Block decodeBlock(byte[] rawData, boolean sealed) {
         RLPList block = RLP.decodeList(rawData);
-        if (block.size() != 3) {
-            throw new IllegalArgumentException("A block must have 3 exactly items");
+        if (block.size() != 3 && block.size() != 4) {
+            throw new IllegalArgumentException("A block must have 3 or 4 exactly items");
         }
 
         RLPList rlpHeader = (RLPList) block.get(0);
@@ -72,6 +73,22 @@ public class BlockFactory {
         List<BlockHeader> uncleList = uncleHeadersRlp.stream()
                 .map(uncleHeader -> decodeHeader((RLPList) uncleHeader, sealed))
                 .collect(Collectors.toList());
+
+        if (block.size() == 4) {
+            RLPList signaturesList = (RLPList) block.get(3);
+            for (RLPElement signat : signaturesList) {
+                // Decode the signature
+                RLPList sig = (RLPList)signat;
+
+                BigInteger txIndex = new BigInteger(sig.get(0).getRLPRawData());
+                RLPList signature = (RLPList)sig.get(1);
+                byte[] r = signature.get(0).getRLPRawData();
+                byte[] s = signature.get(1).getRLPRawData();
+                byte[] v = signature.get(2).getRLPRawData();
+
+                transactionList.get(txIndex.intValue()).setSignature(ECDSASignature.fromComponents(r, s, v[0]));
+            }
+        }
         return newBlock(header, transactionList, uncleList, sealed);
     }
 
