@@ -496,7 +496,7 @@ public class Program {
 
             programResult.setException(ExceptionHelper.addressCollisionException(contractAddress));
             if (isLogEnabled) {
-                logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
+                logger.debug("contract run halted by Exception: contract: [{0}], exception: [{1}]",
                         contractAddress,
                         programResult.getException());
             }
@@ -522,7 +522,7 @@ public class Program {
                 // the first byte in the init code were an invalid opcode
                 programResult.setException(ExceptionHelper.addressCollisionException(contractAddress));
                 if (isLogEnabled) {
-                    logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
+                    logger.debug("contract run halted by Exception: contract: [{0}], exception: [{1}]",
                             contractAddress,
                             programResult.getException());
                 }
@@ -612,7 +612,7 @@ public class Program {
 
         if (programResult.getException() != null || programResult.isRevert()) {
             if (isLogEnabled) {
-                logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
+                logger.debug("contract run halted by Exception: contract: [{0}], exception: [{1}]",
                         contractAddress,
                         programResult.getException());
             }
@@ -829,7 +829,7 @@ public class Program {
 
         if (childResult.getException() != null || childResult.isRevert()) {
             if (isGasLogEnabled) {
-                gasLogger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
+                gasLogger.debug("contract run halted by Exception: contract: [{0}], exception: [{1}]",
                         contextAddress,
                         childResult .getException());
             }
