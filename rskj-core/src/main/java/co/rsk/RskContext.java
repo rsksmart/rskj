@@ -1550,7 +1550,6 @@ public class RskContext implements NodeBootstrapper {
                     getRskSystemProperties(),
                     getNodeBlockProcessor(),
                     getSyncProcessor(),
-                    getLightProcessor(),
                     getChannelManager(),
                     getTransactionGateway(),
                     getPeerScoringManager(),
@@ -1569,7 +1568,7 @@ public class RskContext implements NodeBootstrapper {
 
     private LightClientHandler.Factory getLightClientHandlerFactory() {
         if (lightClientHandlerFactory == null) {
-            lightClientHandlerFactory = LightClientHandler::new;
+            lightClientHandlerFactory = msgQueue -> new LightClientHandler(msgQueue, getLightProcessor());
         }
 
         return lightClientHandlerFactory;

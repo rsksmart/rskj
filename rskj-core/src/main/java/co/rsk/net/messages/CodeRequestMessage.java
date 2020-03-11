@@ -63,6 +63,6 @@ public class CodeRequestMessage extends MessageWithId {
 
     @Override
     public void accept(MessageVisitor v) {
-        v.apply(this);
+//        v.apply(this);
     }
 }
