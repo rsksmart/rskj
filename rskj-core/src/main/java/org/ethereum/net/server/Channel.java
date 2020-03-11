@@ -151,9 +151,9 @@ public class Channel implements Peer {
         logger.info("LC [ address = {} | id = {} ]", inetSocketAddress, getPeerIdShort());
 
         ctx.pipeline().addLast(Capability.LC, handler);
-        lc = handler;
+        handler.activate();
 
-//        handler.activate();
+        lc = handler;
     }
 
     public void setInetSocketAddress(InetSocketAddress inetSocketAddress) {

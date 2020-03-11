@@ -18,13 +18,12 @@
 
 package co.rsk.net.light;
 
-import co.rsk.net.BlockSyncService;
 import co.rsk.net.Peer;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.net.light.message.TestMessage;
 import co.rsk.net.messages.BlockReceiptsResponseMessage;
 import co.rsk.net.messages.CodeResponseMessage;
 import co.rsk.net.messages.Message;
@@ -36,6 +35,7 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 import co.rsk.net.messages.TransactionIndexResponseMessage;
+import org.ethereum.net.MessageQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,7 @@ import java.util.*;
 
 
 /**
- * Created by Julian Len and Sebastian Sicardi on 20/10/19.
+ * Created by Julian Len and Sebastian Sicardi on 21/10/19.
  */
 public class LightProcessor {
     private static final Logger logger = LoggerFactory.getLogger("lightprocessor");
@@ -137,6 +137,10 @@ public class LightProcessor {
 
     public void processCodeResponse(Peer sender, CodeResponseMessage message) {
         throw new UnsupportedOperationException();
+    }
+
+    public void processTestMessage(TestMessage testMessage, MessageQueue msgQueue) {
+        msgQueue.sendMessage(testMessage);
     }
 
     private Block getBlock(byte[] blockHash) {
