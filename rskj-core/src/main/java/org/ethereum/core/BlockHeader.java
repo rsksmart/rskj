@@ -515,7 +515,7 @@ public class BlockHeader {
     }
 
     private byte[] getHashRootForMergedMining(byte[] leftHash) {
-        if ((ummRoot.length != UMM_LEAVES_LENGTH) && (ummRoot.length != 0)){
+        if (ummRoot.length != UMM_LEAVES_LENGTH){
             throw new IllegalStateException(
                     String.format("UMM Root length must be either 0 or 20. Found: %d", ummRoot.length)
             );
