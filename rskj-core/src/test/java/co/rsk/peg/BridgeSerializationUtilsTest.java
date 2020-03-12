@@ -1049,7 +1049,7 @@ public class BridgeSerializationUtilsTest {
     }
 
     private static AddressBasedAuthorizer getTestingAddressBasedAuthorizer() {
-        return new AddressBasedAuthorizer(null, null) {
+        return new AddressBasedAuthorizer(Collections.EMPTY_LIST, null) {
             public boolean isAuthorized(RskAddress addess) {
                 return true;
             }
