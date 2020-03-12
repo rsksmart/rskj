@@ -397,12 +397,12 @@ public class TransactionExecutor {
     }
 
     private void execError(Throwable err) {
-        logger.warn("execError: ", err);
+        logger.error("execError: ", err);
         executionError = err.getMessage();
     }
 
     private void execError(String err) {
-        logger.warn(err);
+        logger.trace(err);
         executionError = err;
     }
 
