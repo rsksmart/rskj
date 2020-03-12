@@ -27,6 +27,7 @@ import java.math.BigInteger;
  */
 public class BlockDifficulty implements Comparable<BlockDifficulty>, Serializable {
     public static final BlockDifficulty ZERO = new BlockDifficulty(BigInteger.ZERO);
+    public static final BlockDifficulty ONE = new BlockDifficulty(BigInteger.ONE);
 
     private final BigInteger value;
 

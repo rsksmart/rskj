@@ -28,11 +28,9 @@ import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.TxPendingValidator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.RLP;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +42,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.BIUtil.toBI;
 
 /**
@@ -52,7 +49,6 @@ import static org.ethereum.util.BIUtil.toBI;
  */
 public class TransactionPoolImpl implements TransactionPool {
     private static final Logger logger = LoggerFactory.getLogger("txpool");
-    private static final byte[] emptyUncleHashList = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
     private final TransactionSet pendingTransactions = new TransactionSet();
     private final TransactionSet queuedTransactions = new TransactionSet();
@@ -422,14 +418,14 @@ public class TransactionPoolImpl implements TransactionPool {
     private Block createFakePendingBlock(Block best) {
         // creating fake lightweight calculated block with no hashes calculations
         return blockFactory.newBlock(
-                blockFactory.newHeader(
-                        best.getHash().getBytes(), emptyUncleHashList, new byte[20],
-                        new byte[32], EMPTY_TRIE_HASH, new byte[32],
-                        new byte[32], best.getDifficulty().getBytes(), best.getNumber() + 1,
-                        ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE), 0, best.getTimestamp() + 1,
-                        new byte[0], Coin.ZERO, new byte[0], new byte[0], new byte[0], new byte[0],
-                        ByteUtil.bigIntegerToBytes(BigInteger.ZERO), 0
-                ),
+                blockFactory.getBlockHeaderBuilder()
+                    .setParentHash(best.getHash().getBytes())
+                    .setDifficulty(best.getDifficulty())
+                    .setNumber(best.getNumber() + 1)
+                    .setGasLimit(ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE))
+                    .setTimestamp(best.getTimestamp() + 1)
+                    .build()
+                ,
                 Collections.emptyList(),
                 Collections.emptyList()
         );

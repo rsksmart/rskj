@@ -349,14 +349,16 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
 
         Block genesis = blockGenerator.getGenesisBlock();
+
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
+                .setCoinbase(TestUtils.randomAddress())
+                .setDifficulty(TEST_DIFFICULTY)
+                .setEmptyMergedMiningForkDetectionData()
+                .setMinimumGasPrice(Coin.valueOf(10))
+                .build();
+
         Block uncle1a = blockGenerator.createChildBlock(blockFactory.newBlock(
-                blockFactory.newHeader(
-                        null, null, TestUtils.randomAddress().getBytes(),
-                        null, HashUtil.EMPTY_TRIE_HASH, null,
-                        null, TEST_DIFFICULTY.getBytes(), 0,
-                        null, 0L, 0L, new byte[]{}, Coin.ZERO,
-                        null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0
-                ),
+                newHeader,
                 Collections.emptyList(),
                 Collections.emptyList()
         ));

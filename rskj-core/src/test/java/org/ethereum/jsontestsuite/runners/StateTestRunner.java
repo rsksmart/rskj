@@ -216,17 +216,23 @@ public class StateTestRunner {
 
     public static final byte[] ZERO32_BYTE_ARRAY = new byte[32];
     public Block build(Env env) {
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
+                // Don't use the empty parent hash because it's used to log and
+                // when log entries are printed with empty parent hash it throws
+                // an exception.
+                .setParentHash(ZERO32_BYTE_ARRAY)
+                .setCoinbase(new RskAddress(env.getCurrentCoinbase()))
+                .setDifficultyFromBytes(env.getCurrentDifficulty())
+                .setNumber(byteArrayToLong(env.getCurrentNumber()))
+                .setGasLimit(env.getCurrentGasLimit())
+                .setGasUsed(0)
+                .setTimestamp(byteArrayToLong(env.getCurrentTimestamp()))
+                .setExtraData(new byte[32])
+                .setUncleCount(0)
+                .build();
+
         return blockFactory.newBlock(
-                blockFactory.newHeader(
-                        // Don't use the empty parent hash because it's used to log and
-                        // when log entries are printed with empty parent hash it throws
-                        // an exception.
-                        ZERO32_BYTE_ARRAY , ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentCoinbase(),
-                        EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
-                        ByteUtil.EMPTY_BYTE_ARRAY, env.getCurrentDifficulty(), byteArrayToLong(env.getCurrentNumber()),
-                        env.getCurrentGasLimit(), 0L, byteArrayToLong(env.getCurrentTimestamp()),
-                        new byte[32], Coin.ZERO, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY, ZERO_BYTE_ARRAY,null, 0
-                ),
+                newHeader,
                 Collections.emptyList(),
                 Collections.emptyList(),
                 false

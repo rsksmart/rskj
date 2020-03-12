@@ -202,27 +202,27 @@ public class BlockFactoryTest {
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
 
-        return factory.newHeader(
-                PegTestUtils.createHash3().getBytes(),
-                HashUtil.keccak256(RLP.encodeList()),
-                TestUtils.randomAddress().getBytes(),
-                HashUtil.EMPTY_TRIE_HASH,
-                "tx_trie_root".getBytes(),
-                HashUtil.EMPTY_TRIE_HASH,
-                new Bloom().getData(),
-                difficulty,
-                number,
-                gasLimit,
-                3000000L,
-                timestamp,
-                null,
-                Coin.ZERO,
-                new byte[80],
-                new byte[32],
-                new byte[128],
-                forkDetectionData,
-                Coin.valueOf(10L).getBytes(),
-                0);
+        return factory.getBlockHeaderBuilder()
+                .setParentHash(TestUtils.randomHash().getBytes())
+                .setEmptyUnclesHash()
+                .setCoinbase(TestUtils.randomAddress())
+                .setEmptyStateRoot()
+                .setTxTrieRoot("tx_trie_root".getBytes())
+                .setEmptyLogsBloom()
+                .setEmptyReceiptTrieRoot()
+                .setDifficultyFromBytes(difficulty)
+                .setNumber(number)
+                .setGasLimit(gasLimit)
+                .setGasUsed( 3000000L)
+                .setTimestamp(timestamp)
+                .setEmptyExtraData()
+                .setBitcoinMergedMiningHeader(new byte[80])
+                .setBitcoinMergedMiningMerkleProof(new byte[32])
+                .setBitcoinMergedMiningCoinbaseTransaction(new byte[128])
+                .setMergedMiningForkDetectionData(forkDetectionData)
+                .setMinimumGasPrice(Coin.valueOf(10L))
+                .setUncleCount(0)
+                .build();
     }
 
     private BlockHeader createBlockHeader(
@@ -232,27 +232,24 @@ public class BlockFactoryTest {
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
 
-        return factory.newHeader(
-                PegTestUtils.createHash3().getBytes(),
-                HashUtil.keccak256(RLP.encodeList()),
-                TestUtils.randomAddress().getBytes(),
-                HashUtil.EMPTY_TRIE_HASH,
-                "tx_trie_root".getBytes(),
-                HashUtil.EMPTY_TRIE_HASH,
-                new Bloom().getData(),
-                difficulty,
-                number,
-                gasLimit,
-                3000000L,
-                timestamp,
-                null,
-                Coin.ZERO,
-                null,
-                null,
-                null,
-                forkDetectionData,
-                Coin.valueOf(10L).getBytes(),
-                0);
+        return factory.getBlockHeaderBuilder()
+                .setParentHash(TestUtils.randomHash().getBytes())
+                .setEmptyUnclesHash()
+                .setCoinbase(TestUtils.randomAddress())
+                .setEmptyStateRoot()
+                .setTxTrieRoot("tx_trie_root".getBytes())
+                .setEmptyLogsBloom()
+                .setEmptyReceiptTrieRoot()
+                .setDifficultyFromBytes(difficulty)
+                .setNumber(number)
+                .setGasLimit(gasLimit)
+                .setGasUsed( 3000000L)
+                .setTimestamp(timestamp)
+                .setEmptyExtraData()
+                .setMergedMiningForkDetectionData(forkDetectionData)
+                .setMinimumGasPrice(Coin.valueOf(10L))
+                .setUncleCount(0)
+                .build();
     }
 
 

@@ -708,27 +708,21 @@ public class TestRunner {
     }
 
     private static BlockHeader buildHeader(BlockFactory blockFactory, BlockHeaderTck headerTck) {
-        return blockFactory.newHeader(
-                parseData(headerTck.getParentHash()),
-                parseData(headerTck.getUncleHash()),
-                parseData(headerTck.getCoinbase()),
-                parseData(headerTck.getStateRoot()),
-                parseData(headerTck.getTransactionsTrie()),
-                parseData(headerTck.getReceiptTrie()),
-                parseData(headerTck.getBloom()),
-                parseNumericData(headerTck.getDifficulty()),
-                getPositiveLong(headerTck.getNumber()),
-                parseData(headerTck.getGasLimit()),
-                getPositiveLong(headerTck.getGasUsed()),
-                getPositiveLong(headerTck.getTimestamp()),
-                parseData(headerTck.getExtraData()),
-                Coin.ZERO,
-                null,
-                null,
-                null,
-                null,
-                null,
-                0
-        );
+        return blockFactory.getBlockHeaderBuilder()
+                .setParentHash(parseData(headerTck.getParentHash()))
+                .setUnclesHash(parseData(headerTck.getUncleHash()))
+                .setCoinbase(new RskAddress(parseData(headerTck.getCoinbase())))
+                .setStateRoot(parseData(headerTck.getStateRoot()))
+                .setTxTrieRoot(parseData(headerTck.getTransactionsTrie()))
+                .setReceiptTrieRoot(parseData(headerTck.getReceiptTrie()))
+                .setLogsBloom(parseData(headerTck.getBloom()))
+                .setDifficultyFromBytes(parseNumericData(headerTck.getDifficulty()))
+                .setNumber(getPositiveLong(headerTck.getNumber()))
+                .setGasLimit(parseData(headerTck.getGasLimit()))
+                .setGasUsed(getPositiveLong(headerTck.getGasUsed()))
+                .setTimestamp(getPositiveLong(headerTck.getTimestamp()))
+                .setExtraData(parseData(headerTck.getExtraData()))
+                .setUncleCount(0)
+                .build();
     }
 }
