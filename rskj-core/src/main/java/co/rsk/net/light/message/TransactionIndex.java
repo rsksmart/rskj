@@ -24,7 +24,8 @@ public class TransactionIndex extends LightClientMessage{
 
     @Override
     public byte[] getEncoded() {
-        return new byte[0];
+        byte[] rlpHash = RLP.encodeElement(this.txHash);
+        return RLP.encodeList(rlpHash);
     }
 
     @Override
@@ -34,6 +35,6 @@ public class TransactionIndex extends LightClientMessage{
 
     @Override
     public String toString() {
-        return null;
+        return "Transaction";
     }
 }

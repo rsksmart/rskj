@@ -5,29 +5,28 @@ import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
-public class GetTransactionIndex extends LightClientMessage{
+public class GetTransactionIndexResponse extends LightClientMessage{
 
-    private final long id;
     private final long blockNumber;
     private final byte[] blockHash;
     private final long txIndex;
 
-    public GetTransactionIndex(long id, long blockNumber, byte[] blockHash, long txIndex) {
-        this.id = id;
+    public GetTransactionIndexResponse(long blockNumber, byte[] blockHash, long txIndex) {
         this.blockNumber = blockNumber;
         this.blockHash = blockHash;
         this.txIndex = txIndex;
     }
 
-    public static GetTransactionIndex decode(long id, byte[] encoded) {
+    public static GetTransactionIndexResponse decode(byte[] encoded) {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
         byte[] txIndexBytes = paramsList.get(2).getRLPData();
         byte[] blockNumberBytes = paramsList.get(3).getRLPData();
         byte[] blockHash = paramsList.get(1).getRLPData();
         long txIndex = txIndexBytes == null ? 0 : BigIntegers.fromUnsignedByteArray(txIndexBytes).longValue();
         long blockNumber = blockNumberBytes == null ? 0 : BigIntegers.fromUnsignedByteArray(blockNumberBytes).longValue();
-        return new GetTransactionIndex(id, blockNumber, blockHash, txIndex);
+        return new GetTransactionIndexResponse(blockNumber, blockHash, txIndex);
     }
 
     @Override
@@ -41,11 +40,14 @@ public class GetTransactionIndex extends LightClientMessage{
 
     @Override
     public Class<?> getAnswerMessage() {
-        return null;
+        return TransactionIndex.class;
     }
 
     @Override
     public String toString() {
-        return null;
+        return "Transaction Index: "+
+                " txIndex " + txIndex +
+                " blockNumber " + blockNumber +
+                " blockHash: " + Arrays.toString(blockHash);
     }
 }
