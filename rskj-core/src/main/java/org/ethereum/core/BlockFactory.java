@@ -156,22 +156,22 @@ public class BlockFactory {
 
         int uncleCount = 0;
         if (includeUncleCount) {
-            byte[] ucBytes = rlpHeader.get(r++).getRLPData();
+            byte[] ucBytes = rlpHeader.get(r).getRLPData(); r += 1;
             uncleCount = parseBigInteger(ucBytes).intValueExact();
         }
 
         byte[] ummRoot = null;
         if (isUmm) {
-            ummRoot = rlpHeader.get(r++).getRLPRawData();
+            ummRoot = rlpHeader.get(r).getRLPRawData(); r += 1;
         }
 
         byte[] bitcoinMergedMiningHeader = null;
         byte[] bitcoinMergedMiningMerkleProof = null;
         byte[] bitcoinMergedMiningCoinbaseTransaction = null;
         if (rlpHeader.size() > r) {
-            bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
-            bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPRawData();
-            bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
+            bitcoinMergedMiningHeader = rlpHeader.get(r).getRLPData(); r += 1;
+            bitcoinMergedMiningMerkleProof = rlpHeader.get(r).getRLPRawData(); r += 1;
+            bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r).getRLPData(); r += 1;
         }
 
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, blockNumber);
