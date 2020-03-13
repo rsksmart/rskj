@@ -137,8 +137,11 @@ public class BlockFactory {
         Coin minimumGasPrice = RLP.parseSignedCoinNonNullZero(minimumGasPriceBytes);
 
         if (!canBeDecoded(rlpHeader, blockNumber)) {
+            String expectedSizes = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? "17/20" : "16/19";
             throw new IllegalArgumentException(String.format(
-                    "A block header must have 16/17 elements or 19/20 including merged-mining fields but it had %d",
+                    "A block header for height %d must have %s elements but it had %d",
+                    blockNumber,
+                    expectedSizes,
                     rlpHeader.size()
             ));
         }
