@@ -56,6 +56,7 @@ public class BlockHeaderBuilder {
     private byte[] bitcoinMergedMiningMerkleProof;
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
     private byte[] mergedMiningForkDetectionData;
+    private byte[] ummRoot;
 
     private Coin minimumGasPrice;
     private int uncleCount;
@@ -66,14 +67,21 @@ public class BlockHeaderBuilder {
     private final ActivationConfig activationConfig;
 
     private boolean createConsensusCompliantHeader;
+    private boolean createUmmCompliantHeader;
 
     public BlockHeaderBuilder(ActivationConfig activationConfig) {
         this.activationConfig = activationConfig;
         createConsensusCompliantHeader = true;
+        createUmmCompliantHeader = true;
     }
 
     public BlockHeaderBuilder setCreateConsensusCompliantHeader(boolean createConsensusCompliantHeader) {
         this.createConsensusCompliantHeader = createConsensusCompliantHeader;
+        return this;
+    }
+
+    public BlockHeaderBuilder setCreateUmmCompliantHeader(boolean createUmmCompliantHeader) {
+        this.createUmmCompliantHeader = createUmmCompliantHeader;
         return this;
     }
 
@@ -239,6 +247,11 @@ public class BlockHeaderBuilder {
         return this;
     }
 
+    public BlockHeaderBuilder setUmmRoot(byte[] ummRoot) {
+        this.ummRoot = copy(ummRoot, null);
+        return this;
+    }
+
     private void initializeWithDefaultValues() {
         extraData = normalizeValue(extraData, new byte[0]);
         bitcoinMergedMiningHeader = normalizeValue(bitcoinMergedMiningHeader, new byte[0]);
@@ -266,8 +279,12 @@ public class BlockHeaderBuilder {
     }
 
     private byte[] copy(byte[] bytes) {
+        return copy(bytes, new byte[0]);
+    }
+
+    private byte[] copy(byte[] bytes, byte[] defaultValue) {
         if (bytes == null) {
-            return new byte[0];
+            return defaultValue;
         }
 
         return Arrays.copyOf(bytes, bytes.length);
@@ -277,10 +294,19 @@ public class BlockHeaderBuilder {
         // Initial null values in some fields are replaced by empty
         // arrays
         initializeWithDefaultValues();
+
         if (createConsensusCompliantHeader) {
             useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, number);
             includeForkDetectionData = activationConfig.isActive(ConsensusRule.RSKIP110, number) &&
                     mergedMiningForkDetectionData.length > 0;
+        }
+
+        if (createUmmCompliantHeader) {
+            if (activationConfig.isActive(ConsensusRule.RSKIPUMM, number)) {
+                if (ummRoot == null) {
+                    ummRoot = new byte[0];
+                }
+            }
         }
 
         return new BlockHeader(
@@ -294,7 +320,7 @@ public class BlockHeaderBuilder {
                 mergedMiningForkDetectionData,
                 minimumGasPrice, uncleCount,
                 false, useRskip92Encoding,
-                includeForkDetectionData
+                includeForkDetectionData, ummRoot
         );
     }
 }

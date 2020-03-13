@@ -56,7 +56,7 @@ public class BlockGenerator {
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    private static final Block[] blockCache = new Block[5];
+    private final Block[] blockCache = new Block[5];
 
     private final DifficultyCalculator difficultyCalculator;
     private final BlockFactory blockFactory;
@@ -148,6 +148,10 @@ public class BlockGenerator {
     public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
+        long blockNumber = parent.getNumber() + 1;
+
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHashFromKeccak256(parent.getHash())
                 .setUnclesHash(unclesListHash).setCoinbase(parent.getCoinbase())
@@ -162,6 +166,7 @@ public class BlockGenerator {
                 .setPaidFees(Coin.valueOf(fees))
                 .setEmptyMergedMiningForkDetectionData()
                 .setUncleCount(uncles.size())
+                .setUmmRoot(ummRoot)
                 .build();
 
         return blockFactory.newBlock(
@@ -169,7 +174,6 @@ public class BlockGenerator {
                 Collections.emptyList(),
                 uncles
         );
-//        return createChildBlock(parent, 0);
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot) {
@@ -180,6 +184,10 @@ public class BlockGenerator {
         Bloom logBloom = new Bloom();
 
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+
+        long blockNumber = parent.getNumber() + 1;
+
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
 
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHashFromKeccak256(parent.getHash())
@@ -194,6 +202,7 @@ public class BlockGenerator {
                 .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
                 .setTimestamp(parent.getTimestamp() + ++count)
                 .setEmptyMergedMiningForkDetectionData()
+                .setUmmRoot(ummRoot)
                 .build();
 
         return blockFactory.newBlock(
@@ -246,6 +255,10 @@ public class BlockGenerator {
                 new byte[12] :
                 new byte[0];
 
+        long blockNumber = parent.getNumber() + 1;
+
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+
         Coin coinMinGasPrice = (minGasPrice != null) ? new Coin(minGasPrice) : null;
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHash(parent.getHash().getBytes())
@@ -260,6 +273,7 @@ public class BlockGenerator {
                 .setMergedMiningForkDetectionData(miningForkDetectionData)
                 .setMinimumGasPrice(coinMinGasPrice)
                 .setUncleCount(uncles.size())
+                .setUmmRoot(ummRoot)
                 .build();
 
         if (difficulty == 0) {
@@ -296,6 +310,9 @@ public class BlockGenerator {
         Coin minimumGasPrice = new MinimumGasPriceCalculator(Coin.valueOf(100L)).calculate(previousMGP);
 
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, number) ? new byte[0] : null;
+
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHashFromKeccak256(parent.getHash())
                 .setCoinbase(parent.getCoinbase())
@@ -310,6 +327,7 @@ public class BlockGenerator {
                 .setTimestamp(parent.getTimestamp() + ++count)
                 .setEmptyMergedMiningForkDetectionData()
                 .setMinimumGasPrice(minimumGasPrice)
+                .setUmmRoot(ummRoot)
                 .build();
 
         return blockFactory.newBlock(
@@ -328,6 +346,10 @@ public class BlockGenerator {
             txs.add(new SimpleRskTransaction(PegTestUtils.createHash3().getBytes()));
         }
 
+        long blockNumber = parent.getNumber() + 1;
+
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHashFromKeccak256(parent.getHash())
                 .setCoinbase(parent.getCoinbase())
@@ -342,6 +364,7 @@ public class BlockGenerator {
                 .setTimestamp(parent.getTimestamp() + ++count)
                 .setEmptyMergedMiningForkDetectionData()
                 .setMinimumGasPrice(Coin.valueOf(10))
+                .setUmmRoot(ummRoot)
                 .build();
 
         return blockFactory.newBlock(

@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -263,7 +264,7 @@ public class BlockHeaderBuilderTest {
                 .build();
 
         RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(17, rlpList.size());
+        assertEquals(18, rlpList.size());
     }
 
     @Test
@@ -281,7 +282,7 @@ public class BlockHeaderBuilderTest {
                 .build();
 
         RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(19, rlpList.size());
+        assertEquals(20, rlpList.size());
     }
 
     @Test
@@ -300,7 +301,7 @@ public class BlockHeaderBuilderTest {
 
         // the useRskip92Field should be true, hence the merkle proof and coinbase are not included
         RLPList rlpList = RLP.decodeList(header.getEncoded());
-        assertEquals(17, rlpList.size());
+        assertEquals(18, rlpList.size());
     }
 
     @Test
@@ -358,5 +359,74 @@ public class BlockHeaderBuilderTest {
                 .build();
 
         assertArrayEquals(new byte[12], header.getMiningForkDetectionData());
+    }
+
+    @Test
+    public void createsHeaderWithUmmRoot() {
+        byte[] ummRoot = TestUtils.randomBytes(20);
+        BlockHeader header = blockHeaderBuilder
+                .setUmmRoot(ummRoot)
+                .build();
+
+        assertArrayEquals(ummRoot, header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithEmptyUmmRootAndRskipUmmOn() {
+        BlockHeader header = blockHeaderBuilder.build();
+
+        assertArrayEquals(new byte[0], header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithEmptyUmmRootAndRskipUmmOff() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM));
+        BlockHeader header = builder.build();
+
+        assertNull(header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOn() {
+        BlockHeader header = blockHeaderBuilder
+                .setCreateUmmCompliantHeader(true)
+                .setUmmRoot(null)
+                .build();
+
+        assertArrayEquals(new byte[0], header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOff() {
+        BlockHeader header = blockHeaderBuilder
+                .setCreateUmmCompliantHeader(false)
+                .setUmmRoot(null)
+                .build();
+
+        assertArrayEquals(null, header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOnAndRskipUmmOff() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM));
+
+        BlockHeader header = builder
+                .setCreateUmmCompliantHeader(true)
+                .setUmmRoot(null)
+                .build();
+
+        assertNull(header.getUmmRoot());
+    }
+
+    @Test
+    public void createsHeaderWithNullUmmrootButUmmCompliantHeaderOffAndRskipUmmOff() {
+        BlockHeaderBuilder builder = new BlockHeaderBuilder(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM));
+
+        BlockHeader header = builder
+                .setCreateUmmCompliantHeader(false)
+                .setUmmRoot(null)
+                .build();
+
+        assertArrayEquals(null, header.getUmmRoot());
     }
 }

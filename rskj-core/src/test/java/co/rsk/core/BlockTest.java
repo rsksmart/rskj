@@ -88,6 +88,7 @@ public class BlockTest {
                 .setEmptyMergedMiningForkDetectionData()
                 .setMinimumGasPrice(new Coin(BigInteger.TEN))
                 .setUncleCount(0)
+                .setUmmRoot(new byte[0])
                 .build();
 
         Block block = blockFactory.newBlock(

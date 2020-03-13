@@ -196,6 +196,9 @@ public class BlockToMineBuilder {
 
         long blockNumber = newBlockParentHeader.getNumber() + 1;
 
+        // ummRoot can not be set to a value yet since the UMM contracts are not yet implemented
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+
         final BlockHeader newHeader = blockFactory
                 .getBlockHeaderBuilder()
                 .setParentHash(newBlockParentHeader.getHash().getBytes())
@@ -214,6 +217,7 @@ public class BlockToMineBuilder {
                 .setMergedMiningForkDetectionData(forkDetectionData)
                 .setMinimumGasPrice(minimumGasPrice)
                 .setUncleCount(uncles.size())
+                .setUmmRoot(ummRoot)
                 .build();
 
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));
