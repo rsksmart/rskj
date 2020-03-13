@@ -28,6 +28,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import javax.annotation.Nullable;
@@ -257,9 +258,15 @@ public class BridgeSerializationUtils {
         byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
         long creationBlockNumber = BigIntegers.fromUnsignedByteArray(creationBlockNumberBytes).longValue();
 
-        List<FederationMember> federationMembers = ((RLPList) rlpList.get(FEDERATION_MEMBERS_INDEX)).stream()
-                .map(memberBytes -> federationMemberDesserializer.deserialize(memberBytes.getRLPData()))
-                .collect(Collectors.toList());
+        RLPList rlpMembers = (RLPList) rlpList.get(FEDERATION_MEMBERS_INDEX);
+
+        List<FederationMember> federationMembers = new ArrayList();
+
+        for (int k = 0; k < rlpMembers.size(); k++) {
+            RLPElement element = rlpMembers.get(k);
+            FederationMember member = federationMemberDesserializer.deserialize(element.getRLPData());
+            federationMembers.add(member);
+        }
 
         return new Federation(federationMembers, creationTime, creationBlockNumber, networkParameters);
     }
@@ -366,9 +373,13 @@ public class BridgeSerializationUtils {
     public static PendingFederation deserializePendingFederation(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        List<FederationMember> members = rlpList.stream()
-                .map(memberBytes -> deserializeFederationMember(memberBytes.getRLPData()))
-                .collect(Collectors.toList());
+        List<FederationMember> members = new ArrayList<>();
+
+        for (int k = 0; k < rlpList.size(); k++) {
+            RLPElement element = rlpList.get(k);
+            FederationMember member = deserializeFederationMember(element.getRLPData());
+            members.add(member);
+        }
 
         return new PendingFederation(members);
     }
@@ -754,7 +765,12 @@ public class BridgeSerializationUtils {
         }
 
         String function = new String(rlpList.get(0).getRLPData(), StandardCharsets.UTF_8);
-        byte[][] arguments = ((RLPList)rlpList.get(1)).stream().map(rlpElement -> rlpElement.getRLPData()).toArray(byte[][]::new);
+        RLPList rlpArguments = (RLPList)rlpList.get(1);
+        byte[][] arguments = new byte[rlpArguments.size()][];
+
+        for (int k = 0; k < rlpArguments.size(); k++) {
+            arguments[k] = rlpArguments.get(k).getRLPData();
+        }
 
         return new ABICallSpec(function, arguments);
     }
@@ -775,9 +791,15 @@ public class BridgeSerializationUtils {
     private static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        return rlpList.stream()
-                .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
-                .collect(Collectors.toList());
+        List<BtcECKey> keys = new ArrayList<>();
+
+        for (int k = 0; k < rlpList.size(); k++) {
+            RLPElement element = rlpList.get(k);
+            BtcECKey key = BtcECKey.fromPublicOnly(element.getRLPData());
+            keys.add(key);
+        }
+
+        return keys;
     }
 
     // A list of voters is serialized as
@@ -795,8 +817,14 @@ public class BridgeSerializationUtils {
     private static List<RskAddress> deserializeVoters(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        return rlpList.stream()
-                .map(pubKeyBytes -> new RskAddress(pubKeyBytes.getRLPData()))
-                .collect(Collectors.toList());
+        List<RskAddress> addresses = new ArrayList<>();
+
+        for (int k = 0; k < rlpList.size(); k++) {
+            RLPElement element = rlpList.get(k);
+            RskAddress address = new RskAddress(element.getRLPData());
+            addresses.add(address);
+        }
+
+        return addresses;
     }
 }

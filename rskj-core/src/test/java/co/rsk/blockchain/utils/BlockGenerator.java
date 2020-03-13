@@ -467,8 +467,9 @@ public class BlockGenerator {
             return rlpEncoded;
         }
 
-        header.remove(header.size() - 1); // remove last element
-        header.remove(header.size() - 1); // remove second last element
+        // TODO Fix
+        //header.remove(header.size() - 1); // remove last element
+        //header.remove(header.size() - 1); // remove second last element
 
         List<byte[]> newHeader = new ArrayList<>();
         for (int i = 0; i < header.size(); i++) {

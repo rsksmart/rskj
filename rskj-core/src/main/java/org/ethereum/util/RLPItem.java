@@ -36,6 +36,7 @@ public class RLPItem implements RLPElement {
         if (rlpData.length == 0) {
             return null;
         }
+
         return rlpData;
     }
 
