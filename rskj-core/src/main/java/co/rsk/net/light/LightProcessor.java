@@ -23,10 +23,10 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.net.light.message.BlockReceiptsMessage;
 import co.rsk.net.light.message.TestMessage;
-import co.rsk.net.messages.BlockReceiptsResponseMessage;
 import co.rsk.net.messages.CodeResponseMessage;
-import co.rsk.net.messages.Message;
+import org.ethereum.net.message.Message;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -63,14 +63,13 @@ public class LightProcessor {
 
     /**
      * processBlockReceiptsRequest sends the requested block receipts if it is available.
-     *
-     * @param sender the sender of the BlockReceipts message.
      * @param requestId the id of the request
      * @param blockHash   the requested block hash.
+     * @param msgQueue the queue for send messages
      */
-    public void processBlockReceiptsRequest(Peer sender, long requestId, byte[] blockHash) {
-        logger.trace("Processing block receipts request {} block {} from {}", requestId, Hex.toHexString(blockHash), sender.getPeerNodeID());
-        final Block block = getBlock(blockHash);
+    public void processGetBlockReceiptsMessage(long requestId, byte[] blockHash, MessageQueue msgQueue) {
+        logger.trace("Processing block receipts request {} block {}", requestId, Hex.toHexString(blockHash));
+        final Block block = blockStore.getBlockByHash(blockHash);
 
         if (block == null) {
             // Don't waste time sending an empty response.
@@ -84,11 +83,11 @@ public class LightProcessor {
             receipts.add(txInfo.getReceipt());
         }
 
-        Message responseMessage = new BlockReceiptsResponseMessage(requestId, receipts);
-        sender.sendMessage(responseMessage);
+        Message responseMessage = new BlockReceiptsMessage(requestId, receipts);
+        msgQueue.sendMessage(responseMessage);
     }
 
-    public void processBlockReceiptsResponse(Peer sender, BlockReceiptsResponseMessage message) {
+    public void processBlockReceiptsMessage(long id, List<TransactionReceipt> blockReceipts, MessageQueue msgQueue) {
         throw new UnsupportedOperationException();
     }
 
@@ -121,7 +120,7 @@ public class LightProcessor {
 
     public void processCodeRequest(Peer sender, long requestId, byte[] blockHash, byte[] address) {
         logger.trace("Processing code request {} block {} code {} from {}", requestId, Hex.toHexString(blockHash), Hex.toHexString(address), sender.getPeerNodeID());
-        final Block block = getBlock(blockHash);
+        final Block block = blockStore.getBlockByHash(blockHash);
 
         if (block == null) {
             // Don't waste time sending an empty response.
@@ -141,15 +140,5 @@ public class LightProcessor {
 
     public void processTestMessage(TestMessage testMessage, MessageQueue msgQueue) {
         msgQueue.sendMessage(testMessage);
-    }
-
-    private Block getBlock(byte[] blockHash) {
-        Block block = blockStore.getBlockByHash(blockHash);
-
-        if (block == null) {
-            block = blockchain.getBlockByHash(blockHash);
-        }
-
-        return block;
     }
 }
