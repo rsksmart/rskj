@@ -24,7 +24,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.message.TestMessage;
-import co.rsk.net.messages.BlockReceiptsResponseMessage;
 import co.rsk.net.messages.CodeResponseMessage;
 import co.rsk.net.messages.Message;
 import org.bouncycastle.util.encoders.Hex;
@@ -61,36 +60,36 @@ public class LightProcessor {
         this.repositoryLocator = repositoryLocator;
     }
 
-    /**
-     * processBlockReceiptsRequest sends the requested block receipts if it is available.
-     *
-     * @param sender the sender of the BlockReceipts message.
-     * @param requestId the id of the request
-     * @param blockHash   the requested block hash.
-     */
-    public void processBlockReceiptsRequest(Peer sender, long requestId, byte[] blockHash) {
-        logger.trace("Processing block receipts request {} block {} from {}", requestId, Hex.toHexString(blockHash), sender.getPeerNodeID());
-        final Block block = getBlock(blockHash);
-
-        if (block == null) {
-            // Don't waste time sending an empty response.
-            return;
-        }
-
-        List<TransactionReceipt> receipts = new LinkedList<>();
-
-        for (Transaction tx :  block.getTransactionsList()) {
-            TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash().getBytes());
-            receipts.add(txInfo.getReceipt());
-        }
-
-        Message responseMessage = new BlockReceiptsResponseMessage(requestId, receipts);
-        sender.sendMessage(responseMessage);
-    }
-
-    public void processBlockReceiptsResponse(Peer sender, BlockReceiptsResponseMessage message) {
-        throw new UnsupportedOperationException();
-    }
+//    /**
+//     * processBlockReceiptsRequest sends the requested block receipts if it is available.
+//     *
+//     * @param sender the sender of the BlockReceipts message.
+//     * @param requestId the id of the request
+//     * @param blockHash   the requested block hash.
+//     */
+//    public void processBlockReceiptsRequest(Peer sender, long requestId, byte[] blockHash) {
+//        logger.trace("Processing block receipts request {} block {} from {}", requestId, Hex.toHexString(blockHash), sender.getPeerNodeID());
+//        final Block block = getBlock(blockHash);
+//
+//        if (block == null) {
+//            // Don't waste time sending an empty response.
+//            return;
+//        }
+//
+//        List<TransactionReceipt> receipts = new LinkedList<>();
+//
+//        for (Transaction tx :  block.getTransactionsList()) {
+//            TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash().getBytes());
+//            receipts.add(txInfo.getReceipt());
+//        }
+//
+//        Message responseMessage = new BlockReceiptsResponseMessage(requestId, receipts);
+//        sender.sendMessage(responseMessage);
+//    }
+//
+//    public void processBlockReceiptsResponse(Peer sender, BlockReceiptsResponseMessage message) {
+//        throw new UnsupportedOperationException();
+//    }
 
     public void processTransactionIndexRequest(Peer sender, long id, byte[] hash) {
         logger.debug("transactionID request Message Received");

@@ -18,37 +18,22 @@
 
 package co.rsk.net;
 
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.LightProcessor;
-import co.rsk.net.messages.TransactionIndexResponseMessage;
-import co.rsk.net.messages.BlockReceiptsResponseMessage;
-import co.rsk.net.messages.Message;
-import co.rsk.net.messages.MessageType;
 import co.rsk.net.simples.SimplePeer;
-import co.rsk.net.messages.*;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.LogInfo;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.hamcrest.Matchers.is;
 
 
 /**
