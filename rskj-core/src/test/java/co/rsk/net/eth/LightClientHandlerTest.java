@@ -46,5 +46,4 @@ public class LightClientHandlerTest {
         lightClientHandler.channelRead0(ctx, m);
         verify(messageQueue, times(1)).sendMessage(any());
     }
-
 }
