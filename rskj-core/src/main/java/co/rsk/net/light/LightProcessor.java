@@ -64,7 +64,7 @@ public class LightProcessor {
     /**
      * processBlockReceiptsRequest sends the requested block receipts if it is available.
      * @param requestId the id of the request
-     * @param blockHash   the requested block hash.
+     * @param blockHash  the requested block hash.
      * @param msgQueue the queue for send messages
      */
     public void processGetBlockReceiptsMessage(long requestId, byte[] blockHash, MessageQueue msgQueue) {
