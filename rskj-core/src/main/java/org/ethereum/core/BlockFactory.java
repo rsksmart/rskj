@@ -146,22 +146,13 @@ public class BlockFactory {
             ));
         }
 
-        int r = 15;
+        byte[] ucBytes = rlpHeader.get(15).getRLPData();
+        int uncleCount = parseBigInteger(ucBytes).intValueExact();
 
-        boolean isUmm = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber);
-
-        boolean includeUncleCount = isUmm ||
-            // sizes prior to UMM activation
-            rlpHeader.size() == (RLP_HEADER_SIZE-1) || rlpHeader.size() == (RLP_HEADER_SIZE_WITH_MERGED_MINING-1);
-
-        int uncleCount = 0;
-        if (includeUncleCount) {
-            byte[] ucBytes = rlpHeader.get(r).getRLPData(); r += 1;
-            uncleCount = parseBigInteger(ucBytes).intValueExact();
-        }
+        int r = 16;
 
         byte[] ummRoot = null;
-        if (isUmm) {
+        if (activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber)) {
             ummRoot = rlpHeader.get(r).getRLPRawData(); r += 1;
         }
 
