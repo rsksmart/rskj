@@ -1,6 +1,8 @@
 package co.rsk.net.eth;
 
 import co.rsk.net.light.LightProcessor;
+import co.rsk.net.light.message.BlockReceiptsMessage;
+import co.rsk.net.light.message.GetBlockReceiptsMessage;
 import co.rsk.net.light.message.LightClientMessage;
 import co.rsk.net.light.message.TestMessage;
 import io.netty.channel.ChannelHandlerContext;
@@ -31,6 +33,16 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
             case TEST:
                 logger.debug("Read message: {} TEST. Sending Test response", msg);
                 lightProcessor.processTestMessage((TestMessage) msg, msgQueue);
+                break;
+            case GET_BLOCK_RECEIPTS:
+                logger.debug("Read message: {} GET_BLOCK_RECEIPTS. Sending receipts request", msg);
+                GetBlockReceiptsMessage getBlockReceiptsMsg = (GetBlockReceiptsMessage) msg;
+                lightProcessor.processGetBlockReceiptsMessage(getBlockReceiptsMsg.getId(), getBlockReceiptsMsg.getBlockHash(), msgQueue);
+                break;
+            case BLOCK_RECEIPTS:
+                logger.debug("Read message: {} BLOCK_RECEIPTS. Sending receipts response", msg);
+                BlockReceiptsMessage blockReceiptsMsg = (BlockReceiptsMessage) msg;
+                lightProcessor.processBlockReceiptsMessage(blockReceiptsMsg.getId(), blockReceiptsMsg.getBlockReceipts(), msgQueue);
                 break;
             default:
                 break;
