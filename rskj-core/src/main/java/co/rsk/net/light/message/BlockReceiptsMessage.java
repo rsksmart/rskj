@@ -18,7 +18,6 @@
 
 package co.rsk.net.light.message;
 
-import co.rsk.net.light.LightClientMessageCodes;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.util.RLP;
@@ -28,6 +27,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
+import static co.rsk.net.light.LightClientMessageCodes.BLOCK_RECEIPTS;
 
 public class BlockReceiptsMessage extends LightClientMessage {
 
@@ -44,6 +45,7 @@ public class BlockReceiptsMessage extends LightClientMessage {
     public BlockReceiptsMessage(long requestId, List<TransactionReceipt> receipts) {
         this.id = requestId;
         this.blockReceipts = new ArrayList<>(receipts);
+        this.code = BLOCK_RECEIPTS.asByte();
     }
 
     public BlockReceiptsMessage(byte[] encoded) {
@@ -61,6 +63,7 @@ public class BlockReceiptsMessage extends LightClientMessage {
         }
 
         this.blockReceipts = receipts;
+        this.code = BLOCK_RECEIPTS.asByte();
     }
 
     public List<TransactionReceipt> getBlockReceipts() { return new ArrayList<>(blockReceipts); }
@@ -89,10 +92,5 @@ public class BlockReceiptsMessage extends LightClientMessage {
     @Override
     public String toString() {
         return "";
-    }
-
-    @Override
-    public LightClientMessageCodes getCommand() {
-        return LightClientMessageCodes.BLOCK_RECEIPTS;
     }
 }

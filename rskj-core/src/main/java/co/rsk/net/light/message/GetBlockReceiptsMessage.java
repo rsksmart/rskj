@@ -18,12 +18,14 @@
 
 package co.rsk.net.light.message;
 
-import co.rsk.net.light.LightClientMessageCodes;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
+
+import static co.rsk.net.light.LightClientMessageCodes.GET_BLOCK_RECEIPTS;
+
 
 public class GetBlockReceiptsMessage extends LightClientMessage {
     private final long id;
@@ -32,6 +34,7 @@ public class GetBlockReceiptsMessage extends LightClientMessage {
     public GetBlockReceiptsMessage(long id, byte[] hash) {
         this.id = id;
         this.hash = hash.clone();
+        this.code = GET_BLOCK_RECEIPTS.asByte();
     }
 
     public GetBlockReceiptsMessage(byte[] encoded) {
@@ -39,6 +42,7 @@ public class GetBlockReceiptsMessage extends LightClientMessage {
         byte[] rlpId = list.get(0).getRLPData();
         this.id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
         this.hash = list.get(1).getRLPData();
+        this.code = GET_BLOCK_RECEIPTS.asByte();
     }
 
     public long getId() {
@@ -64,10 +68,5 @@ public class GetBlockReceiptsMessage extends LightClientMessage {
     @Override
     public String toString() {
         return "";
-    }
-
-    @Override
-    public LightClientMessageCodes getCommand() {
-        return LightClientMessageCodes.GET_BLOCK_RECEIPTS;
     }
 }
