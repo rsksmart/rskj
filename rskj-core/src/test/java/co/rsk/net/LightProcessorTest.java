@@ -18,38 +18,30 @@
 
 package co.rsk.net;
 
-import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.LightProcessor;
-import co.rsk.net.messages.TransactionIndexResponseMessage;
-import co.rsk.net.messages.BlockReceiptsResponseMessage;
-import co.rsk.net.messages.Message;
-import co.rsk.net.messages.MessageType;
-import co.rsk.net.simples.SimplePeer;
-import co.rsk.net.messages.*;
+import co.rsk.net.light.message.BlockReceiptsMessage;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
-
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.net.MessageQueue;
 import org.ethereum.vm.LogInfo;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.hamcrest.Matchers.is;
-
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentCaptor.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by Julian Len and Sebastian Sicardi on 20/10/19.
@@ -60,59 +52,62 @@ public class LightProcessorTest {
 
     private Blockchain blockchain;
     private BlockStore blockStore;
-    private RepositoryLocator repositoryLocator;
     private LightProcessor lightProcessor;
-    private SimplePeer sender;
+    private MessageQueue msgQueue;
+    private Keccak256 blockHash;
 
     @Before
     public void setup(){
         blockchain = mock(Blockchain.class);
-        sender = new SimplePeer();
         blockStore = mock(BlockStore.class);
-        repositoryLocator = mock(RepositoryLocator.class);
-        lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
+        lightProcessor = new LightProcessor(blockchain, blockStore, mock(RepositoryLocator.class));
+        msgQueue = spy(MessageQueue.class);
+        blockHash = new Keccak256(HASH_1);
     }
 
     @Test
-    public void processBlockReceiptRequestMessageAndReturnsReceiptsCorrectly() {
-//        final Block block = mock(Block.class);
-//        Transaction tx = mock(Transaction.class);
-//        TransactionInfo transactionInfo = mock(TransactionInfo.class);
-//
-//        List<Transaction> txs = new LinkedList<>();
-//        txs.add(tx);
-//
-//        TransactionReceipt receipt = createReceipt();
-//
-//        Keccak256 blockHash = new Keccak256(HASH_1);
-//        when(block.getHash()).thenReturn(blockHash);
-//        when(block.getTransactionsList()).thenReturn(txs);
-//        when(tx.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
-//        when(blockchain.getTransactionInfo(tx.getHash().getBytes())).thenReturn(transactionInfo);
-//        when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
-//        when(transactionInfo.getReceipt()).thenReturn(receipt);
-//        lightProcessor.processGetBlockReceiptsMessage(100, block.getHash().getBytes());
-//
-//        assertEquals(1, sender.getMessages().size());
-//
-//        final Message message = sender.getMessages().get(0);
-//
-//        assertEquals(MessageType.BLOCK_RECEIPTS_RESPONSE_MESSAGE, message.getMessageType());
-//
-//        final BlockReceiptsResponseMessage response = (BlockReceiptsResponseMessage) message;
-//
-//        assertEquals(100, response.getId());
-//        assertEquals(receipt, response.getBlockReceipts().get(0));
-//        assertEquals(1, response.getBlockReceipts().size());
+    public void processGetBlockReceiptMessageAndShouldReturnsReceiptsCorrectly() {
+        List<Transaction> txs = new LinkedList<>();
+        int requestId = 0;
+        List<TransactionReceipt> receipts = new LinkedList<>();
+        TransactionReceipt receipt = createReceipt();
+        receipts.add(receipt);
+        final Block block = mock(Block.class);
+        Transaction tx = mock(Transaction.class);
+        txs.add(tx);
+        TransactionInfo transactionInfo = mock(TransactionInfo.class);
+
+        when(block.getHash()).thenReturn(blockHash);
+        when(block.getTransactionsList()).thenReturn(txs);
+        when(tx.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
+        when(blockchain.getTransactionInfo(tx.getHash().getBytes())).thenReturn(transactionInfo);
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(transactionInfo.getReceipt()).thenReturn(receipt);
+
+        BlockReceiptsMessage expectedMessage = new BlockReceiptsMessage(0, receipts);
+
+        ArgumentCaptor<BlockReceiptsMessage> argument = forClass(BlockReceiptsMessage.class);
+        lightProcessor.processGetBlockReceiptsMessage(requestId, block.getHash().getBytes(), msgQueue);
+        verify(msgQueue).sendMessage(argument.capture());
+        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
     }
 
     @Test
-    public void processBlockReceiptRequestMessageWithIncorrectBlockHash() {
-//        Keccak256 blockHash = new Keccak256(HASH_1);
-//        lightProcessor.processGetBlockReceiptsMessage(100, blockHash.getBytes());
-//
-//        assertEquals(0, sender.getMessages().size());
+    public void processGetBlockReceiptMessageWithInvalidBlockHash() {
+        lightProcessor.processGetBlockReceiptsMessage(0, blockHash.getBytes(), msgQueue);
+        verify(spy(msgQueue), times(0)).sendMessage(any());
+    }
 
+    @Test
+    public void processBlockReceiptMessageAndShouldThrowAnException() {
+        int requestId = 0;
+        List<TransactionReceipt> receipts = new LinkedList<>();
+        String expected = "Not supported BlockReceipt processing";
+        try {
+            lightProcessor.processBlockReceiptsMessage(requestId, receipts, msgQueue);
+        } catch (UnsupportedOperationException e) {
+            assertEquals(expected, e.getMessage());
+        }
     }
 
     @Test
