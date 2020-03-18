@@ -63,7 +63,7 @@ public class TransactionIndex extends LightClientMessage {
         return blockHash;
     }
 
-    public long getTxIndex() {
+    public long getTransactionIndex() {
         return txIndex;
     }
 
