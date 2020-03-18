@@ -1,12 +1,13 @@
 package co.rsk.net.light.message;
 
+import co.rsk.net.light.LightClientMessageCodes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
-public class GetTransactionIndex extends LightClientMessage{
+public class GetTransactionIndex extends LightClientMessage {
 
     private final long id;
     private final byte[] txHash;
@@ -14,6 +15,7 @@ public class GetTransactionIndex extends LightClientMessage{
     public GetTransactionIndex(long id, byte[] txHash) {
         this.id = id;
         this.txHash = txHash;
+        this.code = LightClientMessageCodes.GET_TRANSACTION_INDEX.asByte();
     }
 
     public static GetTransactionIndex decode(byte[] encoded) {
@@ -41,8 +43,9 @@ public class GetTransactionIndex extends LightClientMessage{
 
     @Override
     public Class<?> getAnswerMessage() {
-        return null;
+        return GetTransactionIndex.class;
     }
+
 
     @Override
     public String toString() {
