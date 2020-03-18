@@ -1,21 +1,3 @@
-/*
- * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 package co.rsk.net;
 
 import co.rsk.core.DifficultyCalculator;
@@ -24,8 +6,8 @@ import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
 import co.rsk.scoring.EventType;
-import co.rsk.validators.BlockCompositeRule;
 import co.rsk.validators.BlockHeaderValidationRule;
+import co.rsk.validators.SyncBlockValidatorRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -41,7 +23,7 @@ import java.util.*;
 /**
  * This class' methods are executed one at a time because NodeMessageHandler is synchronized.
  */
-public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
+public class SyncProcessorImpl implements SyncProcessor, SyncEventsHandler {
     private static final int MAX_PENDING_MESSAGES = 100_000;
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
@@ -52,7 +34,7 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
     private final BlockSyncService blockSyncService;
     private final BlockFactory blockFactory;
     private final BlockHeaderValidationRule blockHeaderValidationRule;
-    private final BlockCompositeRule blockValidationRule;
+    private final SyncBlockValidatorRule blockValidationRule;
     private final DifficultyRule difficultyRule;
     private final Genesis genesis;
 
@@ -63,16 +45,16 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
     private long lastRequestId;
 
     public SyncProcessorImpl(Blockchain blockchain,
-                             BlockStore blockStore,
-                             ConsensusValidationMainchainView consensusValidationMainchainView,
-                             BlockSyncService blockSyncService,
-                             SyncConfiguration syncConfiguration,
-                             BlockFactory blockFactory,
-                             BlockHeaderValidationRule blockHeaderValidationRule,
-                             BlockCompositeRule blockValidationRule,
-                             DifficultyCalculator difficultyCalculator,
-                             PeersInformation peersInformation,
-                             Genesis genesis) {
+                         BlockStore blockStore,
+                         ConsensusValidationMainchainView consensusValidationMainchainView,
+                         BlockSyncService blockSyncService,
+                         SyncConfiguration syncConfiguration,
+                         BlockFactory blockFactory,
+                         BlockHeaderValidationRule blockHeaderValidationRule,
+                         SyncBlockValidatorRule syncBlockValidatorRule,
+                         DifficultyCalculator difficultyCalculator,
+                         PeersInformation peersInformation,
+                         Genesis genesis) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.consensusValidationMainchainView = consensusValidationMainchainView;
@@ -80,7 +62,7 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         this.syncConfiguration = syncConfiguration;
         this.blockFactory = blockFactory;
         this.blockHeaderValidationRule = blockHeaderValidationRule;
-        this.blockValidationRule = blockValidationRule;
+        this.blockValidationRule = syncBlockValidatorRule;
         this.difficultyRule = new DifficultyRule(difficultyCalculator);
         this.genesis = genesis;
         this.pendingMessages = new LinkedHashMap<Long, MessageType>() {
@@ -98,14 +80,12 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         setSyncState(new DecidingSyncState(syncConfiguration, this, peersInformation, blockStore));
     }
 
-    @Override
     public void processStatus(Peer sender, Status status) {
         logger.debug("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.shortHash(status.getBestBlockHash()));
         peersInformation.registerPeer(sender).setStatus(status);
         syncState.newPeerStatus();
     }
 
-    @Override
     public void processSkeletonResponse(Peer peer, SkeletonResponseMessage message) {
         logger.debug("Process skeleton response from node {}", peer.getPeerNodeID());
         peersInformation.getOrRegisterPeer(peer);
@@ -120,7 +100,6 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         }
     }
 
-    @Override
     public void processBlockHashResponse(Peer peer, BlockHashResponseMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.debug("Process block hash response from node {} hash {}", nodeID, HashUtil.shortHash(message.getHash()));
@@ -136,7 +115,6 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         }
     }
 
-    @Override
     public void processBlockHeadersResponse(Peer peer, BlockHeadersResponseMessage message) {
         logger.debug("Process block headers response from node {}", peer.getPeerNodeID());
         peersInformation.getOrRegisterPeer(peer);
@@ -151,7 +129,6 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         }
     }
 
-    @Override
     public void processBodyResponse(Peer peer, BodyResponseMessage message) {
         logger.debug("Process body response from node {}", peer.getPeerNodeID());
         peersInformation.getOrRegisterPeer(peer);
@@ -166,7 +143,6 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         }
     }
 
-    @Override
     public void processNewBlockHash(Peer peer, NewBlockHashMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.debug("Process new block hash from node {} hash {}", nodeID, HashUtil.shortHash(message.getBlockHash()));
@@ -178,7 +154,6 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         }
     }
 
-    @Override
     public void processBlockResponse(Peer peer, BlockResponseMessage message) {
         NodeID nodeID = peer.getPeerNodeID();
         logger.debug("Process block response from node {} block {} {}", nodeID, message.getBlock().getNumber(), message.getBlock().getShortHash());
@@ -227,12 +202,10 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         return message.getId();
     }
 
-    @Override
     public Set<NodeID> getKnownPeersNodeIDs() {
         return this.peersInformation.knownNodeIds();
     }
 
-    @Override
     public void onTimePassed(Duration timePassed) {
         this.syncState.tick(timePassed);
     }
@@ -390,7 +363,6 @@ public class SyncProcessorImpl implements SyncEventsHandler, SyncProcessor {
         pendingMessages.put(message.getId(), message.getMessageType());
     }
 
-    @Override
     @VisibleForTesting
     public SyncState getSyncState() {
         return this.syncState;
