@@ -216,18 +216,6 @@ public class MessageVisitor {
 
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }
-
-//    public void apply(BlockReceiptsRequestMessage message) {
-//        this.lightProcessor.processBlockReceiptsRequest(sender, message.getId(), message.getBlockHash());
-//    }
-//
-//    public void apply(BlockReceiptsResponseMessage message) {
-//        this.lightProcessor.processBlockReceiptsResponse(sender, message);
-//
-//    }
-
-//    public void apply(BlockReceiptsResponseMessage message) {
-//        this.lightProcessor.processBlockReceiptsResponse(sender, message);
 //    }
 //    public void apply(TransactionIndexRequestMessage message) {
 //        lightProcessor.processTransactionIndexRequest(sender, message.getId(), message.getTransactionHash());
