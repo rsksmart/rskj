@@ -154,45 +154,6 @@ public class LightProcessorTest {
 //        assertEquals(0, sender.getMessages().size());
     }
 
-    @Test
-    public void processCodeRequestMessageAndReturnsCodeCorrectly() {
-//        final Block block = mock(Block.class);
-//        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
-//
-//        byte[] codeHash = TestUtils.randomBytes(32);
-//        RskAddress address = new RskAddress(TestUtils.randomBytes(20));
-//        Keccak256 blockHash = new Keccak256(HASH_1);
-//        long id = 100;
-//
-//        when(block.getHash()).thenReturn(blockHash);
-//        when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
-//        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
-//        when(repositorySnapshot.getCodeHash(address)).thenReturn(new Keccak256(codeHash));
-//
-//        lightProcessor.processCodeRequest(sender, id, blockHash.getBytes(), address.getBytes());
-//
-//        assertEquals(1, sender.getMessages().size());
-//
-//        final Message message = sender.getMessages().get(0);
-//
-//        assertEquals(MessageType.CODE_RESPONSE_MESSAGE, message.getMessageType());
-//
-//        final CodeResponseMessage response = (CodeResponseMessage) message;
-//
-//        assertEquals(id, response.getId());
-//        assertArrayEquals(codeHash, response.getCodeHash());
-    }
-
-    @Test
-    public void processCodeRequestMessageAndReturnsCodeWithIncorrectBlockHash() {
-//        long id = 100;
-//        RskAddress rskAddress = new RskAddress(TestUtils.randomBytes(20));
-//        Keccak256 blockHash = new Keccak256(HASH_1);
-//
-//        lightProcessor.processCodeRequest(sender, id, blockHash.getBytes(), rskAddress.getBytes());
-//        assertEquals(0, sender.getMessages().size());
-    }
-
     // from TransactionTest
     private static TransactionReceipt createReceipt() {
         byte[] stateRoot = Hex.decode("f5ff3fbd159773816a7c707a9b8cb6bb778b934a8f6466c7830ed970498f4b68");
