@@ -60,12 +60,12 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
                 lightProcessor.processBlockReceiptsMessage(blockReceiptsMsg.getId(), blockReceiptsMsg.getBlockReceipts(), msgQueue);
             case GET_TRANSACTION_INDEX:
                 logger.debug("Read message: {} GET_TRANSACTION_INDEX.", msg);
-                GetTransactionIndex getTxIndexMsg = new GetTransactionIndex(msg.getEncoded());
+                GetTransactionIndexMessage getTxIndexMsg = new GetTransactionIndexMessage(msg.getEncoded());
                 lightProcessor.processGetTransactionIndex(msgQueue, getTxIndexMsg.getId(), getTxIndexMsg.getTxHash());
                 break;
             case TRANSACTION_INDEX:
                 logger.debug("Read message: {} TRANSACTION_INDEX.", msg);
-                TransactionIndex txIndexMsg = new TransactionIndex(msg.getEncoded());
+                TransactionIndexMessage txIndexMsg = new TransactionIndexMessage(msg.getEncoded());
                 lightProcessor.processTransactionIndexMessage(msgQueue, txIndexMsg);
                 break;
             case GET_CODE:

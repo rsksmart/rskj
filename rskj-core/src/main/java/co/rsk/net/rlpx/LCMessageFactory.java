@@ -33,9 +33,9 @@ public class LCMessageFactory {
             case BLOCK_RECEIPTS:
                 return new BlockReceiptsMessage(encoded);
             case GET_TRANSACTION_INDEX:
-                return new GetTransactionIndex(encoded);
+                return new GetTransactionIndexMessage(encoded);
             case TRANSACTION_INDEX:
-                return new TransactionIndex(encoded);
+               return new TransactionIndexMessage(encoded);
             case GET_CODE:
                 return new GetCodeMessage(encoded);
             case CODE:

@@ -28,7 +28,7 @@ import co.rsk.net.light.message.BlockReceiptsMessage;
 import co.rsk.net.light.message.CodeMessage;
 import co.rsk.net.light.message.TestMessage;
 import org.ethereum.net.message.Message;
-import co.rsk.net.light.message.TransactionIndex;
+import co.rsk.net.light.message.TransactionIndexMessage;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -107,11 +107,11 @@ public class LightProcessor {
         long blockNumber = blockchain.getBlockByHash(blockHash).getNumber();
         long txIndex = txinfo.getIndex();
 
-        TransactionIndex response = new TransactionIndex(id, blockNumber, blockHash, txIndex);
+        TransactionIndexMessage response = new TransactionIndexMessage(id, blockNumber, blockHash, txIndex);
         msgqueue.sendMessage(response);
     }
 
-    public void processTransactionIndexMessage(MessageQueue msgqueue, TransactionIndex message) {
+    public void processTransactionIndexMessage(MessageQueue msgqueue, TransactionIndexMessage message) {
         logger.debug("transactionIndex response Message Received");
         logger.debug("ID: " + message.getId());
         logger.debug("BlockHash: " + Hex.toHexString(message.getBlockHash()));

@@ -7,14 +7,14 @@ import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
-public class TransactionIndex extends LightClientMessage {
+public class TransactionIndexMessage extends LightClientMessage {
 
     private final long id;
     private final long blockNumber;
     private final byte[] blockHash;
     private final long txIndex;
 
-    public TransactionIndex(long id, long blockNumber, byte[] blockHash, long txIndex) {
+    public TransactionIndexMessage(long id, long blockNumber, byte[] blockHash, long txIndex) {
         this.id = id;
         this.blockNumber = blockNumber;
         this.blockHash = blockHash;
@@ -22,7 +22,7 @@ public class TransactionIndex extends LightClientMessage {
         this.code = LightClientMessageCodes.TRANSACTION_INDEX.asByte();
     }
 
-    public TransactionIndex(byte[] encoded) {
+    public TransactionIndexMessage(byte[] encoded) {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
         byte[] rlpId = paramsList.get(0).getRLPData();
 
