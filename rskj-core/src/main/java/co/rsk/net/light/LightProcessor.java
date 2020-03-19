@@ -112,12 +112,7 @@ public class LightProcessor {
     }
 
     public void processTransactionIndexMessage(MessageQueue msgqueue, TransactionIndexMessage message) {
-        logger.debug("transactionIndex response Message Received");
-        logger.debug("ID: " + message.getId());
-        logger.debug("BlockHash: " + Hex.toHexString(message.getBlockHash()));
-        logger.debug("Blocknumber: " + message.getBlockNumber());
-        logger.debug("TxIndex: " + message.getTransactionIndex());
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not supported TransactionIndexMessage processing");
     }
 
     public void processGetCodeMessage(long requestId, byte[] blockHash, byte[] address, MessageQueue msgQueue) {
