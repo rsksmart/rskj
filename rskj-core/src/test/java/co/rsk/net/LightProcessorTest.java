@@ -25,6 +25,7 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.light.message.BlockReceiptsMessage;
 import co.rsk.net.light.message.CodeMessage;
+import co.rsk.net.light.message.TransactionIndexMessage;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -43,7 +44,7 @@ import java.util.List;
 import static org.ethereum.TestUtils.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentCaptor.*;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
 
 /**
@@ -114,6 +115,51 @@ public class LightProcessorTest {
             assertEquals(expected, e.getMessage());
         }
     }
+    
+    @Test
+    public void processGetTransactionIndexMessageAndReturnsTransactionIndexCorrectly() {
+        final Block block = mock(Block.class);
+        Transaction tx = mock(Transaction.class);
+        TransactionInfo transactionInfo = mock(TransactionInfo.class);
+
+        Keccak256 txHash = new Keccak256(randomBytes(32));
+
+        long id = 100;
+        long blockNumber = 101;
+        int txIndex = 42069;
+        Keccak256 blockHash = new Keccak256(HASH_1);
+
+        when(block.getHash()).thenReturn(blockHash);
+        when(tx.getHash()).thenReturn(txHash);
+        when(blockchain.getTransactionInfo(tx.getHash().getBytes())).thenReturn(transactionInfo);
+
+        when(transactionInfo.getBlockHash()).thenReturn(blockHash.getBytes());
+        when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getNumber()).thenReturn(blockNumber);
+        when(transactionInfo.getIndex()).thenReturn(txIndex);
+
+        TransactionIndexMessage expectedMessage = new TransactionIndexMessage(id, blockNumber, block.getHash().getBytes(), txIndex);
+
+        ArgumentCaptor<TransactionIndexMessage> argument = forClass(TransactionIndexMessage.class);
+        lightProcessor.processGetTransactionIndex(msgQueue, id, txHash.getBytes());
+        verify(msgQueue).sendMessage(argument.capture());
+        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
+    public void processGetTransactionIndexMessageWithIncorrectBlockHash() {
+        lightProcessor.processGetTransactionIndex(msgQueue, 100, new Keccak256(HASH_1).getBytes());
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void processTransactionIndexMessageAndShouldThrowAnException() {
+        try {
+            lightProcessor.processTransactionIndexMessage(msgQueue, null);
+        } catch (UnsupportedOperationException e) {
+            assertEquals("Not supported TransactionIndexMessage processing", e.getMessage());
+        }
+    }
 
     @Test
     public void processGetCodeMessageAndShouldReturnsCodeHashCorrectly() {
@@ -158,52 +204,6 @@ public class LightProcessorTest {
         } catch (UnsupportedOperationException e) {
             assertEquals(expected, e.getMessage());
         }
-    }
-
-
-
-    @Test
-    public void processTransactionIndexRequestMessageAndReturnsTransactionIndexCorrectly() {
-//        final Block block = mock(Block.class);
-//        Transaction tx = mock(Transaction.class);
-//        TransactionInfo transactionInfo = mock(TransactionInfo.class);
-//
-//        Keccak256 txHash = new Keccak256(TestUtils.randomBytes(32));
-//
-//        long id = 100;
-//        long blockNumber = 101;
-//        int txIndex = 42069;
-//        Keccak256 blockHash = new Keccak256(HASH_1);
-//
-//        when(block.getHash()).thenReturn(blockHash);
-//        when(tx.getHash()).thenReturn(txHash);
-//        when(blockchain.getTransactionInfo(tx.getHash().getBytes())).thenReturn(transactionInfo);
-//
-//        when(transactionInfo.getBlockHash()).thenReturn(blockHash.getBytes());
-//        when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
-//        when(block.getNumber()).thenReturn(blockNumber);
-//        when(transactionInfo.getIndex()).thenReturn(txIndex);
-//
-//        lightProcessor.processTransactionIndexRequest(sender, id, txHash.getBytes());
-//
-//        assertThat(sender.getMessages().size(), is(1));
-//
-//        final Message message = sender.getMessages().get(0);
-//
-//        assertEquals(MessageType.TRANSACTION_INDEX_RESPONSE_MESSAGE, message.getMessageType());
-//
-//        final TransactionIndexResponseMessage response = (TransactionIndexResponseMessage) message;
-//
-//        assertThat(response.getId(), is(id));
-//        assertThat(response.getBlockHash(), is(blockHash.getBytes()));
-//        assertThat(response.getTransactionIndex(), is((long)txIndex));
-//        assertThat(response.getBlockNumber(), is(blockNumber));
-    }
-
-    @Test
-    public void processTransactionIndexRequestMessageWithIncorrectBlockHash() {
-//        lightProcessor.processTransactionIndexRequest(sender, 100, new Keccak256(HASH_1).getBytes());
-//        assertEquals(0, sender.getMessages().size());
     }
 
     // from TransactionTest
