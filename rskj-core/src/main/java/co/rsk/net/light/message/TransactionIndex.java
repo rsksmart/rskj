@@ -22,18 +22,19 @@ public class TransactionIndex extends LightClientMessage {
         this.code = LightClientMessageCodes.TRANSACTION_INDEX.asByte();
     }
 
-    public static TransactionIndex decode(byte[] encoded) {
+    public TransactionIndex(byte[] encoded) {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
         byte[] rlpId = paramsList.get(0).getRLPData();
 
-        long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
         byte[] txIndexBytes = paramsList.get(2).getRLPData();
         byte[] blockNumberBytes = paramsList.get(3).getRLPData();
-        byte[] blockHash = paramsList.get(1).getRLPData();
-        long txIndex = txIndexBytes == null ? 0 : BigIntegers.fromUnsignedByteArray(txIndexBytes).longValue();
-        long blockNumber = blockNumberBytes == null ? 0 : BigIntegers.fromUnsignedByteArray(blockNumberBytes).longValue();
 
-        return new TransactionIndex(id, blockNumber, blockHash, txIndex);
+        id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+        blockHash = paramsList.get(1).getRLPData();
+        txIndex = txIndexBytes == null ? 0 : BigIntegers.fromUnsignedByteArray(txIndexBytes).longValue();
+        blockNumber = blockNumberBytes == null ? 0 : BigIntegers.fromUnsignedByteArray(blockNumberBytes).longValue();
+
+        this.code = LightClientMessageCodes.TRANSACTION_INDEX.asByte();
     }
 
     @Override

@@ -18,12 +18,12 @@ public class GetTransactionIndex extends LightClientMessage {
         this.code = LightClientMessageCodes.GET_TRANSACTION_INDEX.asByte();
     }
 
-    public static GetTransactionIndex decode(byte[] encoded) {
+    public GetTransactionIndex(byte[] encoded) {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
         byte[] rlpId = paramsList.get(0).getRLPData();
-        byte[] txHash = paramsList.get(1).getRLPData();
-        long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-        return new GetTransactionIndex(id, txHash);
+        txHash = paramsList.get(1).getRLPData();
+        id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+        this.code = LightClientMessageCodes.GET_TRANSACTION_INDEX.asByte();
     }
 
     public long getId() {
