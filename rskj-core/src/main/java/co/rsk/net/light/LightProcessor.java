@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2019 RSK Labs Ltd.
+ * Copyright (C) 2020 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,9 +18,13 @@
 
 package co.rsk.net.light;
 
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.Peer;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.light.message.BlockReceiptsMessage;
+import co.rsk.net.light.message.CodeMessage;
 import co.rsk.net.light.message.TestMessage;
 import org.ethereum.net.message.Message;
 import org.bouncycastle.util.encoders.Hex;
@@ -111,6 +115,28 @@ public class LightProcessor {
         logger.debug("Blocknumber: " + message.getBlockNumber());
         logger.debug("TxIndex: " + message.getTransactionIndex());
         throw new UnsupportedOperationException();
+    }
+
+    public void processGetCodeMessage(long requestId, byte[] blockHash, byte[] address, MessageQueue msgQueue) {
+        logger.trace("Processing code request {} block {} code {}", requestId, Hex.toHexString(blockHash), Hex.toHexString(address));
+
+        final Block block = blockStore.getBlockByHash(blockHash);
+
+        if (block == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+        RepositorySnapshot repositorySnapshot = repositoryLocator.snapshotAt(block.getHeader());
+        RskAddress addr = new RskAddress(address);
+        Keccak256 codeHash = repositorySnapshot.getCodeHash(addr);
+
+        CodeMessage response = new CodeMessage(requestId, codeHash.getBytes());
+        msgQueue.sendMessage(response);
+    }
+
+    public void processCodeMessage(long id, byte[] codeHash, MessageQueue msgQueue) {
+        throw new UnsupportedOperationException("Not supported Code processing");
     }
 
     public void processTestMessage(TestMessage testMessage, MessageQueue msgQueue) {
