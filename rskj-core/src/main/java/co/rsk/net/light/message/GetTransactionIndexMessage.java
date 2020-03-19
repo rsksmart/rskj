@@ -49,6 +49,6 @@ public class GetTransactionIndexMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "Transaction";
+        return "";
     }
 }

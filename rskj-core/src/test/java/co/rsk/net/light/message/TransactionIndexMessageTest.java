@@ -1,0 +1,53 @@
+package co.rsk.net.light.message;
+
+import co.rsk.net.light.LightClientMessageCodes;
+import co.rsk.net.rlpx.LCMessageFactory;
+import org.ethereum.crypto.HashUtil;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class TransactionIndexMessageTest {
+
+    @Test
+    public void createMessage() {
+        long id = 1L;
+        long blockNumber = 1000L;
+        byte[] blockHash = HashUtil.randomHash();
+        long txIndex = 1234L;
+
+        TransactionIndexMessage message = new TransactionIndexMessage(id, blockNumber, blockHash, txIndex);
+
+        assertEquals(LightClientMessageCodes.TRANSACTION_INDEX, message.getCommand());
+        assertEquals(id, message.getId());
+        assertEquals(blockNumber, message.getBlockNumber());
+        assertEquals(blockHash, message.getBlockHash());
+        assertEquals(txIndex, message.getTransactionIndex());
+        assertNull(message.getAnswerMessage());
+    }
+
+    @Test
+    public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1L;
+        long blockNumber = 1000L;
+        byte[] blockHash = HashUtil.randomHash();
+        long txIndex = 1234L;
+
+        TransactionIndexMessage testMessage = new TransactionIndexMessage(id, blockNumber, blockHash, txIndex);
+        byte[] encoded = testMessage.getEncoded();
+
+        byte code = LightClientMessageCodes.TRANSACTION_INDEX.asByte();
+
+        LCMessageFactory lcMessageFactory = new LCMessageFactory();
+        TransactionIndexMessage message = (TransactionIndexMessage) lcMessageFactory.create(code, encoded);
+
+        assertEquals(testMessage.getId(), message.getId());
+        assertEquals(testMessage.getBlockNumber(), message.getBlockNumber());
+        assertEquals(testMessage.getBlockHash(), message.getBlockHash());
+        assertEquals(testMessage.getTransactionIndex(), message.getTransactionIndex());
+
+        assertEquals(testMessage.getCommand(), message.getCommand());
+        assertEquals(testMessage.getAnswerMessage(), message.getAnswerMessage());
+        assertArrayEquals(encoded, message.getEncoded());
+    }
+}
