@@ -48,6 +48,8 @@ public class TrieKeyMapper {
         byte[] secureKey = secureKeyPrefix(addr.getBytes());
         byte[] key = ByteUtil.merge(DOMAIN_PREFIX, secureKey, addr.getBytes());
 
+        accountKeys.put(addr, key);
+
         return Arrays.copyOf(key, key.length);
     }
 
