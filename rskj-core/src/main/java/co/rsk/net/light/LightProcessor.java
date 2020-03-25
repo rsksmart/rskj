@@ -37,7 +37,6 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.net.MessageQueue;
-import org.ethereum.net.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
