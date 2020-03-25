@@ -28,7 +28,6 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,7 +37,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 /**
@@ -504,51 +502,6 @@ public class MessageTest {
 
         for (int k = 0; k < uncles.size(); k++)
             assertArrayEquals(uncles.get(k).getFullEncoded(), newmessage.getUncles().get(k).getFullEncoded());
-    }
-
-    @Test
-    public void encodeDecodeTransactionIndexResponseMessage() {
-        long someId = 42;
-        long someBlockNumber = 43;
-        long someTxIndex = 44;
-
-        byte[] someBlockHash = HashUtil.randomHash();
-
-        TransactionIndexResponseMessage message = new TransactionIndexResponseMessage(someId,someBlockNumber,someBlockHash,someTxIndex);
-        byte[] encoded = message.getEncoded();
-
-        Message result = Message.create(blockFactory, encoded);
-
-        assertNotNull(result);
-        assertThat(result.getEncoded(), is(encoded));
-        assertThat(result.getMessageType(), is(MessageType.TRANSACTION_INDEX_RESPONSE_MESSAGE));
-
-        TransactionIndexResponseMessage newMessage = (TransactionIndexResponseMessage) result;
-
-        assertThat(newMessage.getId(),is(someId));
-        assertThat(newMessage.getBlockNumber(),is(someBlockNumber));
-        assertThat(newMessage.getTransactionIndex(),is(someTxIndex));
-        assertThat(newMessage.getBlockHash(),is(someBlockHash));
-    }
-
-    @Test
-    public void encodeDecodeTransactionIndexRequestMessage() {
-        long someId = 42;
-        byte[] hash = HashUtil.randomHash();
-        TransactionIndexRequestMessage message = new TransactionIndexRequestMessage(someId, hash);
-
-        byte[] encoded = message.getEncoded();
-
-        Message result = Message.create(blockFactory, encoded);
-
-        assertNotNull(result);
-        assertArrayEquals(encoded, result.getEncoded());
-        assertEquals(MessageType.TRANSACTION_INDEX_REQUEST_MESSAGE, result.getMessageType());
-
-        TransactionIndexRequestMessage newMessage = (TransactionIndexRequestMessage) result;
-
-        assertEquals(someId, newMessage.getId());
-        assertArrayEquals(hash, newMessage.getTransactionHash());
     }
 
     private static Transaction createTransaction(int number) {
