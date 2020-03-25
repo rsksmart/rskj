@@ -21,12 +21,12 @@ package co.rsk.net.light;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.net.Peer;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.light.message.BlockReceiptsMessage;
 import co.rsk.net.light.message.CodeMessage;
 import co.rsk.net.light.message.TestMessage;
 import org.ethereum.net.message.Message;
+import co.rsk.net.light.message.TransactionIndexMessage;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -34,13 +34,13 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
-import co.rsk.net.messages.TransactionIndexResponseMessage;
 import org.ethereum.net.MessageQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 
 
 /**
@@ -90,7 +90,7 @@ public class LightProcessor {
         throw new UnsupportedOperationException("Not supported BlockReceipt processing");
     }
 
-    public void processTransactionIndexRequest(Peer sender, long id, byte[] hash) {
+    public void processGetTransactionIndex(long id, byte[] hash, MessageQueue msgqueue) {
         logger.debug("transactionID request Message Received");
 
         TransactionInfo txinfo = blockchain.getTransactionInfo(hash);
@@ -104,17 +104,12 @@ public class LightProcessor {
         long blockNumber = blockchain.getBlockByHash(blockHash).getNumber();
         long txIndex = txinfo.getIndex();
 
-        TransactionIndexResponseMessage response = new TransactionIndexResponseMessage(id, blockNumber, blockHash, txIndex);
-        sender.sendMessage(response);
+        TransactionIndexMessage response = new TransactionIndexMessage(id, blockNumber, blockHash, txIndex);
+        msgqueue.sendMessage(response);
     }
 
-    public void processTransactionIndexResponseMessage(Peer sender, TransactionIndexResponseMessage message) {
-        logger.debug("transactionIndex response Message Received");
-        logger.debug("ID: " + message.getId());
-        logger.debug("BlockHash: " + Hex.toHexString(message.getBlockHash()));
-        logger.debug("Blocknumber: " + message.getBlockNumber());
-        logger.debug("TxIndex: " + message.getTransactionIndex());
-        throw new UnsupportedOperationException();
+    public void processTransactionIndexMessage(long id, long blockNumber, byte[] blockHash, long txIndex, MessageQueue msgqueue) {
+        throw new UnsupportedOperationException("Not supported TransactionIndexMessage processing");
     }
 
     public void processGetCodeMessage(long requestId, byte[] blockHash, byte[] address, MessageQueue msgQueue) {

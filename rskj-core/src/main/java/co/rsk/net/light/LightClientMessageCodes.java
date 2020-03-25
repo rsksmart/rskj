@@ -11,6 +11,10 @@ public enum LightClientMessageCodes {
 
     BLOCK_RECEIPTS(0x02),
 
+    GET_TRANSACTION_INDEX(0x03),
+
+    TRANSACTION_INDEX(0x04),
+
     GET_CODE(0x05),
 
     CODE(0x06);

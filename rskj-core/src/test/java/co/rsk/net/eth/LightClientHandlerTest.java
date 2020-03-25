@@ -29,9 +29,11 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.TransactionInfo;
 import org.ethereum.net.MessageQueue;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +44,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentCaptor.*;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
 
 public class LightClientHandlerTest {
@@ -104,6 +106,48 @@ public class LightClientHandlerTest {
     }
 
     @Test
+    public void lightClientHandlerSendsGetTransactionIndexToQueue() throws Exception {
+        final Block block = mock(Block.class);
+        Transaction tx = mock(Transaction.class);
+        TransactionInfo transactionInfo = mock(TransactionInfo.class);
+
+        Keccak256 txHash = new Keccak256(TestUtils.randomBytes(32));
+
+        long id = 100;
+        long blockNumber = 101;
+        int txIndex = 42069;
+        Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
+
+        when(block.getHash()).thenReturn(blockHash);
+        when(tx.getHash()).thenReturn(txHash);
+        when(blockchain.getTransactionInfo(tx.getHash().getBytes())).thenReturn(transactionInfo);
+
+        when(transactionInfo.getBlockHash()).thenReturn(blockHash.getBytes());
+        when(blockchain.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getNumber()).thenReturn(blockNumber);
+        when(transactionInfo.getIndex()).thenReturn(txIndex);
+
+        GetTransactionIndexMessage m = new GetTransactionIndexMessage(id, txHash.getBytes());
+        TransactionIndexMessage response = new TransactionIndexMessage(id, blockNumber, blockHash.getBytes(), txIndex);
+
+        lightClientHandler.channelRead0(ctx, m);
+
+        ArgumentCaptor<TransactionIndexMessage> argument = forClass(TransactionIndexMessage.class);
+        verify(messageQueue).sendMessage(argument.capture());
+        assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
+    public void lightClientHandlerSendsTransactionIndexMessageToQueueAndShouldThrowAnException() throws Exception {
+        TransactionIndexMessage m = new TransactionIndexMessage(2, 42, new byte[] {0x23}, 23);
+        try {
+            lightClientHandler.channelRead0(ctx, m);
+        } catch (UnsupportedOperationException e) {
+            assertEquals("Not supported TransactionIndexMessage processing", e.getMessage());
+        }
+    }
+
+    @Test
     public void lightClientHandlerSendsGetCodeToQueue() throws Exception {
         Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
         byte[] codeHash = HashUtil.randomHash();
@@ -138,6 +182,4 @@ public class LightClientHandlerTest {
             assertEquals("Not supported Code processing", e.getMessage());
         }
     }
-
-
 }
