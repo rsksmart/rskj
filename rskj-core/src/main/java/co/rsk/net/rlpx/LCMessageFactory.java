@@ -1,9 +1,25 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2020 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.net.rlpx;
 
 import co.rsk.net.light.LightClientMessageCodes;
-import co.rsk.net.light.message.BlockReceiptsMessage;
-import co.rsk.net.light.message.GetBlockReceiptsMessage;
-import co.rsk.net.light.message.TestMessage;
+import co.rsk.net.light.message.*;
 import org.ethereum.net.message.Message;
 
 public class LCMessageFactory {
@@ -17,6 +33,10 @@ public class LCMessageFactory {
                 return new GetBlockReceiptsMessage(encoded);
             case BLOCK_RECEIPTS:
                 return new BlockReceiptsMessage(encoded);
+            case GET_CODE:
+                return new GetCodeMessage(encoded);
+            case CODE:
+                return new CodeMessage(encoded);
             default:
                 throw new IllegalArgumentException("No such message");
         }
