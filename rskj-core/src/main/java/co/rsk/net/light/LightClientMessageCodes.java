@@ -9,7 +9,11 @@ public enum LightClientMessageCodes {
 
     GET_BLOCK_RECEIPTS(0x01),
 
-    BLOCK_RECEIPTS(0x02);
+    BLOCK_RECEIPTS(0x02),
+
+    GET_CODE(0x05),
+
+    CODE(0x06);
 
     private final int cmd;
 
@@ -26,7 +30,7 @@ public enum LightClientMessageCodes {
     }
 
     public static boolean inRange(byte code) {
-        return code >= TEST.asByte() && code <= BLOCK_RECEIPTS.asByte();
+        return code >= TEST.asByte() && code <= CODE.asByte();
     }
 
     public static LightClientMessageCodes fromByte(byte i) {
