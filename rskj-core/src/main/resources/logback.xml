@@ -37,7 +37,7 @@
     </appender>
 
     <logger name="execute" level="TRACE"/>
-    <logger name="blockvalidator" level="INFO"/>
+    <logger name="blockvalidator" level="TRACE"/>
     <logger name="blockexecutor" level="TRACE"/>
     <logger name="general" level="INFO"/>
     <logger name="gaspricetracker" level="INFO"/>
