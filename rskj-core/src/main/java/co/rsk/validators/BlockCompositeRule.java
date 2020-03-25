@@ -55,6 +55,8 @@ public class BlockCompositeRule implements BlockValidationRule {
         long number = block.getNumber();
         logger.debug("Validating block {} {}", shortHash, number);
         for(BlockValidationRule rule : this.rules) {
+            logger.debug("Validation rule {}", rule.getClass().getSimpleName());
+
             if(!rule.isValid(block)) {
                 logger.warn("Error Validating block {} {}", shortHash, number);
                 return false;
