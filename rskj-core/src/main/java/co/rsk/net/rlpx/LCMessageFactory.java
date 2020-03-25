@@ -24,7 +24,6 @@ import org.ethereum.net.message.Message;
 
 public class LCMessageFactory {
     public Message create(byte code, byte[] encoded) {
-
         LightClientMessageCodes receivedCommand = LightClientMessageCodes.fromByte(code);
         switch (receivedCommand) {
             case TEST:
@@ -33,6 +32,10 @@ public class LCMessageFactory {
                 return new GetBlockReceiptsMessage(encoded);
             case BLOCK_RECEIPTS:
                 return new BlockReceiptsMessage(encoded);
+            case GET_TRANSACTION_INDEX:
+                return new GetTransactionIndexMessage(encoded);
+            case TRANSACTION_INDEX:
+               return new TransactionIndexMessage(encoded);
             case GET_CODE:
                 return new GetCodeMessage(encoded);
             case CODE:
