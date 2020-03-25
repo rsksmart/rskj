@@ -20,9 +20,7 @@ package co.rsk.net.light;
 
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.net.Peer;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.light.message.BlockReceiptsMessage;
 import co.rsk.net.light.message.CodeMessage;
