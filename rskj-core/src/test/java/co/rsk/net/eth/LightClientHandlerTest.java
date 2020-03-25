@@ -139,7 +139,7 @@ public class LightClientHandlerTest {
 
     @Test
     public void lightClientHandlerSendsTransactionIndexMessageToQueueAndShouldThrowAnException() throws Exception {
-        TransactionIndexMessage m = new TransactionIndexMessage(0, 0, new byte[] {}, 0);
+        TransactionIndexMessage m = new TransactionIndexMessage(2, 42, new byte[] {0x23}, 23);
         try {
             lightClientHandler.channelRead0(ctx, m);
         } catch (UnsupportedOperationException e) {

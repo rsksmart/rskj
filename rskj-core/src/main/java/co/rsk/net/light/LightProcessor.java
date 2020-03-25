@@ -93,7 +93,7 @@ public class LightProcessor {
         throw new UnsupportedOperationException("Not supported BlockReceipt processing");
     }
 
-    public void processGetTransactionIndex(MessageQueue msgqueue, long id, byte[] hash) {
+    public void processGetTransactionIndex(long id, byte[] hash, MessageQueue msgqueue) {
         logger.debug("transactionID request Message Received");
 
         TransactionInfo txinfo = blockchain.getTransactionInfo(hash);
@@ -111,7 +111,7 @@ public class LightProcessor {
         msgqueue.sendMessage(response);
     }
 
-    public void processTransactionIndexMessage(MessageQueue msgqueue, TransactionIndexMessage message) {
+    public void processTransactionIndexMessage(long id, long blockNumber, byte[] blockHash, long txIndex, MessageQueue msgqueue) {
         throw new UnsupportedOperationException("Not supported TransactionIndexMessage processing");
     }
 

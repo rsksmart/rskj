@@ -14,7 +14,7 @@ public class GetTransactionIndexMessage extends LightClientMessage {
 
     public GetTransactionIndexMessage(long id, byte[] txHash) {
         this.id = id;
-        this.txHash = txHash;
+        this.txHash = txHash.clone();
         this.code = LightClientMessageCodes.GET_TRANSACTION_INDEX.asByte();
     }
 
@@ -31,7 +31,7 @@ public class GetTransactionIndexMessage extends LightClientMessage {
     }
 
     public byte[] getTxHash() {
-        return this.txHash;
+        return this.txHash.clone();
     }
 
     @Override

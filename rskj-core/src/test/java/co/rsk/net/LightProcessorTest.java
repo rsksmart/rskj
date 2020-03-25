@@ -141,21 +141,21 @@ public class LightProcessorTest {
         TransactionIndexMessage expectedMessage = new TransactionIndexMessage(id, blockNumber, block.getHash().getBytes(), txIndex);
 
         ArgumentCaptor<TransactionIndexMessage> argument = forClass(TransactionIndexMessage.class);
-        lightProcessor.processGetTransactionIndex(msgQueue, id, txHash.getBytes());
+        lightProcessor.processGetTransactionIndex(id, txHash.getBytes(), msgQueue);
         verify(msgQueue).sendMessage(argument.capture());
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
     }
 
     @Test
     public void processGetTransactionIndexMessageWithIncorrectBlockHash() {
-        lightProcessor.processGetTransactionIndex(msgQueue, 100, new Keccak256(HASH_1).getBytes());
+        lightProcessor.processGetTransactionIndex(100, new Keccak256(HASH_1).getBytes(), msgQueue);
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
     @Test
     public void processTransactionIndexMessageAndShouldThrowAnException() {
         try {
-            lightProcessor.processTransactionIndexMessage(msgQueue, null);
+            lightProcessor.processTransactionIndexMessage(0, 0, null, 0, msgQueue);
         } catch (UnsupportedOperationException e) {
             assertEquals("Not supported TransactionIndexMessage processing", e.getMessage());
         }
