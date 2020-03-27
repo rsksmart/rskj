@@ -1,6 +1,6 @@
 package org.ethereum.net.rlpx;
 
-import co.rsk.net.light.message.TestMessage;
+import co.rsk.net.light.message.StatusMessage;
 import co.rsk.net.rlpx.LCMessageFactory;
 import io.netty.channel.ChannelHandlerContext;
 import org.bouncycastle.util.encoders.Hex;
@@ -12,7 +12,6 @@ import org.ethereum.net.client.Capability;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.eth.message.EthMessage;
-import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.p2p.P2pMessage;
@@ -92,7 +91,7 @@ public class MessageCodecTest {
     public void encodeDecodeETHFrameAndShouldReturnETHMessage() {
 
         byte[] payload = Hex.decode("f84927808425c60144a0832056d3c93ff2739ace7199952e5365aa29f18805be05634c4db125c5340216a0955f36d073ccb026b78ab3424c15cf966a7563aa270413859f78702b9e8e22cb");
-        EthMessage ethTestMessage = new StatusMessage(payload);
+        EthMessage ethTestMessage = new org.ethereum.net.eth.message.StatusMessage(payload);
         BlockFactory blockFactory = mock(BlockFactory.class);
         List<Capability> cap = new LinkedList<>();
         cap.add(new Capability(Capability.RSK, EthVersion.UPPER));
@@ -125,7 +124,7 @@ public class MessageCodecTest {
     @Test
     public void encodeDecodeLCFrameAndShouldReturnLCMessage() {
 
-        TestMessage lcTestMessage = new TestMessage();
+        StatusMessage lcStatusMessage = new StatusMessage();
         List<Capability> cap = new LinkedList<>();
         cap.add(new Capability(Capability.LC, (byte) 0));
         MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
@@ -137,15 +136,15 @@ public class MessageCodecTest {
         List<Object> outMsg = new LinkedList<>();
 
         try {
-            messageCodec.encode(ctx, lcTestMessage, outFrame);
+            messageCodec.encode(ctx, lcStatusMessage, outFrame);
             assertEquals(1, outFrame.size());
 
             FrameCodec.Frame ethFrame = (FrameCodec.Frame) outFrame.get(0);
             messageCodec.decode(ctx, ethFrame, outMsg);
             assertEquals(1, outMsg.size());
 
-            TestMessage lcMessage =  (TestMessage) outMsg.get(0);
-            assertArrayEquals(lcTestMessage.getEncoded(), lcMessage.getEncoded());
+            StatusMessage lcMessage =  (StatusMessage) outMsg.get(0);
+            assertArrayEquals(lcStatusMessage.getEncoded(), lcMessage.getEncoded());
         } catch (Exception e) {
             e.printStackTrace();
         }

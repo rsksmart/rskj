@@ -5,7 +5,7 @@ import java.util.Map;
 
 public enum LightClientMessageCodes {
 
-    TEST(0x00),
+    STATUS(0x00),
 
     GET_BLOCK_RECEIPTS(0x01),
 
@@ -42,7 +42,7 @@ public enum LightClientMessageCodes {
     }
 
     public static boolean inRange(byte code) {
-        return code >= TEST.asByte() && code <= BLOCK_HEADER.asByte();
+        return code >= STATUS.asByte() && code <= BLOCK_HEADER.asByte();
     }
 
     public static LightClientMessageCodes fromByte(byte i) {

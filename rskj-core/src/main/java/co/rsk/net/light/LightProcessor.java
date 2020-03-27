@@ -154,8 +154,8 @@ public class LightProcessor {
         throw new UnsupportedOperationException("Not supported AccountsMessage processing");
     }
 
-    public void processTestMessage(TestMessage testMessage, MessageQueue msgQueue) {
-        msgQueue.sendMessage(testMessage);
+    public void processStatusMessage(StatusMessage statusMessage, MessageQueue msgQueue) {
+        msgQueue.sendMessage(statusMessage);
     }
 
     public void processGetBlockHeaderMessage(long id, byte[] blockHash, MessageQueue msgQueue) {

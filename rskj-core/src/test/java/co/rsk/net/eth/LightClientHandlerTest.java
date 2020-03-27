@@ -73,7 +73,7 @@ public class LightClientHandlerTest {
 
     @Test
     public void lightClientHandlerSendsMessageToQueue() throws Exception {
-        TestMessage m = new TestMessage();
+        StatusMessage m = new StatusMessage();
         lightClientHandler.channelRead0(ctx, m);
         verify(messageQueue, times(1)).sendMessage(any());
     }

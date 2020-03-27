@@ -45,9 +45,9 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) throws Exception {
         switch (msg.getCommand()) {
-            case TEST:
-                logger.debug("Read message: {} TEST", msg);
-                lightProcessor.processTestMessage((TestMessage) msg, msgQueue);
+            case STATUS:
+                logger.debug("Read message: {} TEST. Sending Test response", msg);
+                lightProcessor.processStatusMessage((StatusMessage) msg, msgQueue);
                 break;
             case GET_BLOCK_RECEIPTS:
                 logger.debug("Read message: {} GET_BLOCK_RECEIPTS", msg);
@@ -109,13 +109,13 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
     }
 
     public void activate() {
-        sendTest();
+        sendStatusMessage();
     }
 
-    private void sendTest() {
-        TestMessage testMessage = new TestMessage();
-        msgQueue.sendMessage(new TestMessage());
-        logger.info("LC [ Sending Message {} ]", testMessage.getCommand());
+    private void sendStatusMessage() {
+        StatusMessage statusMessage = new StatusMessage();
+        msgQueue.sendMessage(new StatusMessage());
+        logger.info("LC [ Sending Message {} ]", statusMessage.getCommand());
     }
 
     public interface Factory {
