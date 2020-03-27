@@ -80,6 +80,15 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
                 CodeMessage codeMsg = (CodeMessage) msg;
                 lightProcessor.processCodeMessage(codeMsg.getId(), codeMsg.getCodeHash(), msgQueue);
                 break;
+            case GET_ACCOUNTS:
+                logger.debug("Read message: {} GET_ACCOUNTS. Sending code request", msg);
+                GetAccountsMessage getAccountsMsg = (GetAccountsMessage) msg;
+                lightProcessor.processGetAccountsMessage(getAccountsMsg.getId(), getAccountsMsg.getBlockHash(), getAccountsMsg.getAddressHash(), msgQueue);
+                break;
+            case ACCOUNTS:
+                logger.debug("Read message: {} ACCOUNTS. Sending code response", msg);
+                AccountsMessage accountsMsg = (AccountsMessage) msg;
+                break;
             case GET_BLOCK_HEADER:
                 logger.debug("Read message: {} GET_BLOCK_HEADER", msg);
                 GetBlockHeaderMessage getBlockHeaderMessage = (GetBlockHeaderMessage) msg;

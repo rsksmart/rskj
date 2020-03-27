@@ -85,7 +85,7 @@ public class LightProcessor {
     }
 
     public void processGetTransactionIndex(long id, byte[] hash, MessageQueue msgqueue) {
-        logger.debug("transactionID request Message Received");
+        logger.debug("Get Transaction Index Message Received");
 
         TransactionInfo txinfo = blockchain.getTransactionInfo(hash);
 
@@ -126,6 +126,10 @@ public class LightProcessor {
 
     public void processCodeMessage(long id, byte[] codeHash, MessageQueue msgQueue) {
         throw new UnsupportedOperationException("Not supported Code processing");
+    }
+
+    public void processGetAccountsMessage(long id, byte[] blockHash, byte[] addressHash, MessageQueue msgQueue) {
+        logger.debug("Get Accounts Message Received: id {}, blockhash: {}, addresHash {}", id, blockHash, addressHash);
     }
 
     public void processTestMessage(TestMessage testMessage, MessageQueue msgQueue) {
