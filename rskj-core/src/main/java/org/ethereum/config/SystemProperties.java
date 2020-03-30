@@ -66,6 +66,7 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_BLOCKCHAIN_CONFIG = "blockchain.config";
     public static final String PROPERTY_BC_CONFIG_NAME = PROPERTY_BLOCKCHAIN_CONFIG + ".name";
+    public static final String PROPERTY_BC_VERIFY = PROPERTY_BLOCKCHAIN_CONFIG + ".verify";
     public static final String PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS = "genesis_constants.federationPublicKeys";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_BASE_PATH = "database.dir";

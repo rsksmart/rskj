@@ -29,6 +29,7 @@ import org.ethereum.config.SystemProperties;
 public enum NodeCliFlags implements CliArg {
     DB_RESET("reset", SystemProperties.PROPERTY_DB_RESET, true),
     DB_IMPORT("import", SystemProperties.PROPERTY_DB_IMPORT, true),
+    VERIFY_CONFIG("verify-config", SystemProperties.PROPERTY_BC_VERIFY, true),
     NETWORK_TESTNET("testnet", SystemProperties.PROPERTY_BC_CONFIG_NAME, "testnet"),
     NETWORK_REGTEST("regtest", SystemProperties.PROPERTY_BC_CONFIG_NAME, "regtest"),
     NETWORK_DEVNET("devnet", SystemProperties.PROPERTY_BC_CONFIG_NAME, "devnet"),
