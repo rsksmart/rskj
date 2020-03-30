@@ -28,6 +28,7 @@ import co.rsk.net.light.message.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.TestUtils;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -55,15 +56,19 @@ public class LightClientHandlerTest {
     private Blockchain blockchain;
     private BlockStore blockStore;
     private RepositoryLocator repositoryLocator;
+    private SystemProperties config;
+    private Genesis genesis;
 
     @Before
     public void setup() {
         messageQueue = spy(MessageQueue.class);
         blockchain = mock(Blockchain.class);
         blockStore = mock(BlockStore.class);
+        config = mock(SystemProperties.class);
         repositoryLocator = mock(RepositoryLocator.class);
+        genesis = mock(Genesis.class);
         lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
-        LightClientHandler.Factory factory = msgQueue -> new LightClientHandler(msgQueue, lightProcessor);
+        LightClientHandler.Factory factory = msgQueue -> new LightClientHandler(msgQueue, lightProcessor, config, genesis, blockStore);
         lightClientHandler = factory.newInstance(messageQueue);
 
         EmbeddedChannel ch = new EmbeddedChannel();
@@ -72,10 +77,24 @@ public class LightClientHandlerTest {
     }
 
     @Test
-    public void lightClientHandlerSendsMessageToQueue() throws Exception {
-        StatusMessage m = new StatusMessage();
-        lightClientHandler.channelRead0(ctx, m);
-        verify(messageQueue, times(1)).sendMessage(any());
+    public void lightClientHandlerSendsStatusMessageToQueue() throws Exception {
+//        long id, byte protocolVersion, int networkId,
+//        BlockDifficulty totalDifficulty, byte[] bestHash, long bestNumber, byte[] genesisHash
+//
+//        Block bestBlock = mock(Block.class);
+//        Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
+//        BlockDifficulty
+//
+//        when(bestBlock.getHash()).thenReturn(blockHash);
+//        when()
+//
+//        byte[] genesisHash = HashUtil.randomHash();
+//        long blockNumber = 12;
+//
+//
+//        StatusMessage m = new StatusMessage(0L, (byte) 0, );
+//        lightClientHandler.channelRead0(ctx, m);
+//        verify(messageQueue, times(1)).sendMessage(any());
     }
 
     @Test

@@ -1,5 +1,7 @@
 package org.ethereum.net.rlpx;
 
+import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.light.message.StatusMessage;
 import co.rsk.net.rlpx.LCMessageFactory;
 import io.netty.channel.ChannelHandlerContext;
@@ -20,10 +22,12 @@ import org.ethereum.net.server.Channel;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.net.SocketAddress;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.ethereum.crypto.HashUtil.randomHash;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -124,7 +128,16 @@ public class MessageCodecTest {
     @Test
     public void encodeDecodeLCFrameAndShouldReturnLCMessage() {
 
-        StatusMessage lcStatusMessage = new StatusMessage();
+        long id = 1L;
+        byte protocolVersion = (byte) 2;
+        int networkId = 2;
+        Keccak256 bestHash = new Keccak256(randomHash());
+        long bestNumber = 10L;
+        byte[] genesisHash = randomHash();
+        BlockDifficulty totalDifficulty = new BlockDifficulty(BigInteger.ONE);
+        StatusMessage lcStatusMessage = new StatusMessage(id, protocolVersion, networkId,
+                totalDifficulty, bestHash.getBytes(), bestNumber, genesisHash);
+
         List<Capability> cap = new LinkedList<>();
         cap.add(new Capability(Capability.LC, (byte) 0));
         MessageCodec messageCodec = new MessageCodec(ethereumListener, config);

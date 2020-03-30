@@ -18,10 +18,15 @@
 
 package co.rsk.net.eth;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.light.message.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import org.ethereum.config.SystemProperties;
+import org.ethereum.core.Block;
+import org.ethereum.core.Genesis;
+import org.ethereum.db.BlockStore;
 import org.ethereum.net.MessageQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,11 +40,17 @@ import org.slf4j.LoggerFactory;
 public class LightClientHandler extends SimpleChannelInboundHandler<LightClientMessage> {
     private static final Logger logger = LoggerFactory.getLogger("lightnet");
     private final MessageQueue msgQueue;
+    private final SystemProperties config;
+    private final Genesis genesis;
+    private final BlockStore blockStore;
     private LightProcessor lightProcessor;
 
-    public LightClientHandler(MessageQueue msgQueue, LightProcessor lightProcessor) {
+    public LightClientHandler(MessageQueue msgQueue, LightProcessor lightProcessor, SystemProperties config, Genesis genesis, BlockStore blockStore) {
         this.msgQueue = msgQueue;
         this.lightProcessor = lightProcessor;
+        this.config = config;
+        this.genesis = genesis;
+        this.blockStore = blockStore;
     }
 
     @Override
@@ -113,8 +124,12 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
     }
 
     private void sendStatusMessage() {
-        StatusMessage statusMessage = new StatusMessage();
-        msgQueue.sendMessage(new StatusMessage());
+        Block block = blockStore.getBestBlock();
+        byte[] bestHash = block.getHash().getBytes();
+        long bestNumber = block.getNumber();
+        BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestHash);
+        StatusMessage statusMessage = new StatusMessage(0L, (byte) 0, config.networkId(), totalDifficulty, bestHash, bestNumber, genesis.getHash().getBytes());
+        msgQueue.sendMessage(statusMessage);
         logger.info("LC [ Sending Message {} ]", statusMessage.getCommand());
     }
 
