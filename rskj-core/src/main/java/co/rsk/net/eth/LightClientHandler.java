@@ -18,15 +18,11 @@
 
 package co.rsk.net.eth;
 
-import co.rsk.core.BlockDifficulty;
 import co.rsk.net.light.LightProcessor;
+import co.rsk.net.light.LightSyncProcessor;
 import co.rsk.net.light.message.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.ethereum.config.SystemProperties;
-import org.ethereum.core.Block;
-import org.ethereum.core.Genesis;
-import org.ethereum.db.BlockStore;
 import org.ethereum.net.MessageQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,25 +36,21 @@ import org.slf4j.LoggerFactory;
 public class LightClientHandler extends SimpleChannelInboundHandler<LightClientMessage> {
     private static final Logger logger = LoggerFactory.getLogger("lightnet");
     private final MessageQueue msgQueue;
-    private final SystemProperties config;
-    private final Genesis genesis;
-    private final BlockStore blockStore;
+    private LightSyncProcessor lightSyncProcessor;
     private LightProcessor lightProcessor;
 
-    public LightClientHandler(MessageQueue msgQueue, LightProcessor lightProcessor, SystemProperties config, Genesis genesis, BlockStore blockStore) {
+    public LightClientHandler(MessageQueue msgQueue, LightProcessor lightProcessor, LightSyncProcessor lightSyncProcessor) {
         this.msgQueue = msgQueue;
         this.lightProcessor = lightProcessor;
-        this.config = config;
-        this.genesis = genesis;
-        this.blockStore = blockStore;
+        this.lightSyncProcessor = lightSyncProcessor;
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) {
         switch (msg.getCommand()) {
             case STATUS:
-                logger.debug("Read message: {} TEST. Sending Test response", msg);
-                lightProcessor.processStatusMessage((StatusMessage) msg, msgQueue);
+                logger.debug("Read message: {} STATUS. Sending Test response", msg);
+                lightSyncProcessor.processStatusMessage((StatusMessage) msg, msgQueue, ctx, this);
                 break;
             case GET_BLOCK_RECEIPTS:
                 logger.debug("Read message: {} GET_BLOCK_RECEIPTS", msg);
@@ -120,17 +112,7 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
     }
 
     public void activate() {
-        sendStatusMessage();
-    }
-
-    private void sendStatusMessage() {
-        Block block = blockStore.getBestBlock();
-        byte[] bestHash = block.getHash().getBytes();
-        long bestNumber = block.getNumber();
-        BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestHash);
-        StatusMessage statusMessage = new StatusMessage(0L, (byte) 0, config.networkId(), totalDifficulty, bestHash, bestNumber, genesis.getHash().getBytes());
-        msgQueue.sendMessage(statusMessage);
-        logger.info("LC [ Sending Message {} ]", statusMessage.getCommand());
+        lightSyncProcessor.sendStatusMessage(msgQueue);
     }
 
     public interface Factory {

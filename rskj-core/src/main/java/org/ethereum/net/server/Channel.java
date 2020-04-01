@@ -147,7 +147,7 @@ public class Channel implements Peer {
         messageCodec.setLCMessageFactory(lcMessageFactory);
 
         LightClientHandler handler = lightClientHandler;
-        logger.info("LC [ address = {} | id = {} ]", inetSocketAddress, getPeerIdShort());
+        logger.info("LC{} [ address = {} | id = {} ]", (byte) 0, inetSocketAddress, getPeerIdShort());
 
         ctx.pipeline().addLast(Capability.LC, handler);
         handler.activate();

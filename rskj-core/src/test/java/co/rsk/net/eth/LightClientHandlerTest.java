@@ -19,11 +19,13 @@
 package co.rsk.net.eth;
 
 import co.rsk.core.Coin;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.LightProcessor;
+import co.rsk.net.light.LightSyncProcessor;
 import co.rsk.net.light.message.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -34,6 +36,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.net.MessageQueue;
+import org.ethereum.net.message.ReasonCode;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -58,48 +61,118 @@ public class LightClientHandlerTest {
     private RepositoryLocator repositoryLocator;
     private SystemProperties config;
     private Genesis genesis;
+    private LightSyncProcessor lightSyncProcessor;
+    private Keccak256 genesisHash;
+    private Keccak256 blockHash;
 
     @Before
     public void setup() {
-        messageQueue = spy(MessageQueue.class);
+        messageQueue = mock(MessageQueue.class);
         blockchain = mock(Blockchain.class);
         blockStore = mock(BlockStore.class);
         config = mock(SystemProperties.class);
         repositoryLocator = mock(RepositoryLocator.class);
         genesis = mock(Genesis.class);
+        genesisHash = new Keccak256(HashUtil.randomHash());
         lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
-        LightClientHandler.Factory factory = msgQueue -> new LightClientHandler(msgQueue, lightProcessor, config, genesis, blockStore);
+        lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore);
+        LightClientHandler.Factory factory = msgQueue -> new LightClientHandler(msgQueue, lightProcessor, lightSyncProcessor);
         lightClientHandler = factory.newInstance(messageQueue);
+        blockHash = new Keccak256(HashUtil.randomHash());
+
+
+        when(genesis.getHash()).thenReturn(genesisHash);
 
         EmbeddedChannel ch = new EmbeddedChannel();
         ch.pipeline().addLast(lightClientHandler);
         ctx = ch.pipeline().firstContext();
     }
 
-    @Test
-    public void lightClientHandlerSendsStatusMessageToQueue() throws Exception {
-//        long id, byte protocolVersion, int networkId,
-//        BlockDifficulty totalDifficulty, byte[] bestHash, long bestNumber, byte[] genesisHash
-//
-//        Block bestBlock = mock(Block.class);
+//    @Test
+//    public void lightClientHandlerSendsStatusMessageToQueue() throws Exception {
 //        Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
-//        BlockDifficulty
+//        Keccak256 genesisHash = new Keccak256(HashUtil.randomHash());
 //
-//        when(bestBlock.getHash()).thenReturn(blockHash);
-//        when()
+//        long bestNumber = 10L;
+//        BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
 //
-//        byte[] genesisHash = HashUtil.randomHash();
-//        long blockNumber = 12;
+//        when(genesis.getHash()).thenReturn(genesisHash);
 //
-//
-//        StatusMessage m = new StatusMessage(0L, (byte) 0, );
+//        StatusMessage m = new StatusMessage(0L, (byte) 0, 0, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
 //        lightClientHandler.channelRead0(ctx, m);
-//        verify(messageQueue, times(1)).sendMessage(any());
+//
+//    }
+
+    @Test
+    public void lightClientHandlerSendValidStatusMessage() {
+        Block bestBlock = mock(Block.class);
+        BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
+        long bestNumber = 0L;
+        int networkId = 0;
+        byte protocolVersion = (byte) 0;
+        BigInteger totalDifficulty = BigInteger.ONE;
+
+        when(blockStore.getBestBlock()).thenReturn(bestBlock);
+        when(bestBlock.getHash()).thenReturn(blockHash);
+        when(bestBlock.getNumber()).thenReturn(bestNumber);
+        when(blockStore.getTotalDifficultyForHash(blockHash.getBytes())).thenReturn(blockDifficulty);
+        when(blockDifficulty.asBigInteger()).thenReturn(totalDifficulty);
+        when(genesis.getHash()).thenReturn(genesisHash);
+        when(config.networkId()).thenReturn(networkId);
+
+        StatusMessage statusMessage = new StatusMessage(0L, protocolVersion, networkId, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
+
+        lightClientHandler.activate();
+
+        ArgumentCaptor<StatusMessage> argument = forClass(StatusMessage.class);
+        verify(messageQueue).sendMessage(argument.capture());
+        assertArrayEquals(statusMessage.getEncoded(), argument.getValue().getEncoded());
+
+    }
+
+    @Test
+    public void lightClientHandlerProcessStatusWithInvalidProtocolVersion() throws Exception {
+        long bestNumber = 10L;
+        BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
+
+        when(genesis.getHash()).thenReturn(genesisHash);
+
+        StatusMessage m = new StatusMessage(0L, (byte) 1, 0, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
+
+        lightClientHandler.channelRead0(ctx, m);
+
+        verify(messageQueue).disconnect(eq(ReasonCode.INCOMPATIBLE_PROTOCOL));
+    }
+
+    @Test
+    public void lightClientHandlerProcessStatusWithInvalidNetworkId() throws Exception {
+        long bestNumber = 10L;
+        BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
+
+        when(genesis.getHash()).thenReturn(genesisHash);
+
+        StatusMessage m = new StatusMessage(0L, (byte) 0, 55, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
+
+        lightClientHandler.channelRead0(ctx, m);
+
+        verify(messageQueue).disconnect(eq(ReasonCode.NULL_IDENTITY));
+    }
+
+    @Test
+    public void lightClientHandlerProcessStatusWithInvalidGenesisHash() throws Exception {
+        long bestNumber = 10L;
+        BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
+        byte[] invalidHash = HashUtil.randomHash();
+
+        StatusMessage m = new StatusMessage(0L, (byte) 0, 0, blockDifficulty, blockHash.getBytes(), bestNumber, invalidHash);
+
+        lightClientHandler.channelRead0(ctx, m);
+
+        verify(messageQueue).disconnect(eq(ReasonCode.UNEXPECTED_GENESIS));
     }
 
     @Test
     public void lightClientHandlerSendsGetBlockReceiptsToQueue() throws Exception {
-        Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
         Block block = mock(Block.class);
         List<TransactionReceipt> receipts = new LinkedList<>();
         GetBlockReceiptsMessage m = new GetBlockReceiptsMessage(0, blockHash.getBytes());
@@ -131,7 +204,6 @@ public class LightClientHandlerTest {
         long id = 100;
         long blockNumber = 101;
         int txIndex = 42069;
-        Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
 
         when(block.getHash()).thenReturn(blockHash);
         when(tx.getHash()).thenReturn(txHash);
@@ -160,7 +232,6 @@ public class LightClientHandlerTest {
 
     @Test
     public void lightClientHandlerSendsGetCodeToQueue() throws Exception {
-        Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
         byte[] codeHash = HashUtil.randomHash();
         RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
         RskAddress address = TestUtils.randomAddress();

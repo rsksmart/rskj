@@ -154,10 +154,6 @@ public class LightProcessor {
         throw new UnsupportedOperationException("Not supported AccountsMessage processing");
     }
 
-    public void processStatusMessage(StatusMessage msg, MessageQueue msgQueue) {
-
-    }
-
     public void processGetBlockHeaderMessage(long id, byte[] blockHash, MessageQueue msgQueue) {
         logger.trace("Processing block header request {} block {}", id, Hex.toHexString(blockHash));
 
