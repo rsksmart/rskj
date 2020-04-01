@@ -23,18 +23,19 @@ public class GetAccountsMessage extends LightClientMessage {
 
     public GetAccountsMessage(byte[] encoded) {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+
         byte[] rlpId = paramsList.get(0).getRLPData();
+        id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
         blockHash = paramsList.get(1).getRLPData();
         addressHash = paramsList.get(2).getRLPData();
-        id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
     }
 
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(id));
-        byte[] rlpBlockHash = RLP.encodeElement(this.blockHash);
-        byte[] rlpAddressHash = RLP.encodeElement(this.addressHash);
+        byte[] rlpBlockHash = RLP.encodeElement(blockHash);
+        byte[] rlpAddressHash = RLP.encodeElement(addressHash);
 
         return RLP.encodeList(rlpId, rlpBlockHash, rlpAddressHash);
     }

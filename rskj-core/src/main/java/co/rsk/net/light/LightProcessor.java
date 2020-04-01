@@ -129,7 +129,28 @@ public class LightProcessor {
     }
 
     public void processGetAccountsMessage(long id, byte[] blockHash, byte[] addressHash, MessageQueue msgQueue) {
-        logger.debug("Get Accounts Message Received: id {}, blockhash: {}, addresHash {}", id, blockHash, addressHash);
+        logger.debug("Get Accounts Message Received: id {}, blockhash: {}, addressHash {}", id, blockHash, addressHash);
+
+        final Block block = blockStore.getBlockByHash(blockHash);
+
+        if (block == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+        RepositorySnapshot repositorySnapshot = repositoryLocator.snapshotAt(block.getHeader());
+        RskAddress address = new RskAddress(addressHash);
+        AccountState state = repositorySnapshot.getAccountState(address);
+
+        AccountsMessage response = new AccountsMessage(id, (byte) 0, state.getBalance().asBigInteger().longValue(),
+                state.getNonce().longValue(), repositorySnapshot.getCodeHash(address).getBytes(), repositorySnapshot.getRoot());
+
+        msgQueue.sendMessage(response);
+    }
+
+    public void processAccountsMessage(long id, byte merkleInclusionProof, long nonce, long balance,
+                                       byte[] codeHash, byte[] storageRoot, MessageQueue msgQueue) {
+        throw new UnsupportedOperationException("Not supported AccountsMessage processing");
     }
 
     public void processTestMessage(TestMessage testMessage, MessageQueue msgQueue) {
