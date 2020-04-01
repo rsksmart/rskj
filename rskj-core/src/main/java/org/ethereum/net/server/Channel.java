@@ -70,7 +70,6 @@ public class Channel implements Peer {
     private final boolean isActive;
 
     private Eth eth = new EthAdapter();
-    private LightClientHandler lc;
 
     private InetSocketAddress inetSocketAddress;
 
@@ -152,8 +151,6 @@ public class Channel implements Peer {
 
         ctx.pipeline().addLast(Capability.LC, handler);
         handler.activate();
-
-        lc = handler;
     }
 
     public void setInetSocketAddress(InetSocketAddress inetSocketAddress) {
