@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.net.light.LightPeer;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.light.message.*;
 import org.bouncycastle.util.encoders.Hex;
@@ -31,6 +32,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.net.MessageQueue;
+import org.ethereum.net.server.Channel;
 import org.ethereum.vm.LogInfo;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,6 +61,7 @@ public class LightProcessorTest {
     private MessageQueue msgQueue;
     private Keccak256 blockHash;
     private RepositoryLocator repositoryLocator;
+    private LightPeer lightPeer;
 
     @Before
     public void setup(){
@@ -68,6 +71,7 @@ public class LightProcessorTest {
         lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
         msgQueue = spy(MessageQueue.class);
         blockHash = new Keccak256(HASH_1);
+        lightPeer = new LightPeer(mock(Channel.class), msgQueue);
     }
 
     @Test
@@ -92,14 +96,14 @@ public class LightProcessorTest {
         BlockReceiptsMessage expectedMessage = new BlockReceiptsMessage(0, receipts);
 
         ArgumentCaptor<BlockReceiptsMessage> argument = forClass(BlockReceiptsMessage.class);
-        lightProcessor.processGetBlockReceiptsMessage(requestId, block.getHash().getBytes(), msgQueue);
+        lightProcessor.processGetBlockReceiptsMessage(requestId, block.getHash().getBytes(), lightPeer);
         verify(msgQueue).sendMessage(argument.capture());
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
     }
 
     @Test
     public void processGetBlockReceiptMessageWithInvalidBlockHash() {
-        lightProcessor.processGetBlockReceiptsMessage(0, blockHash.getBytes(), msgQueue);
+        lightProcessor.processGetBlockReceiptsMessage(0, blockHash.getBytes(), lightPeer);
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
@@ -107,7 +111,7 @@ public class LightProcessorTest {
     public void processBlockReceiptMessageAndShouldThrowAnException() {
         long requestId = 0;
         List<TransactionReceipt> receipts = new LinkedList<>();
-        lightProcessor.processBlockReceiptsMessage(requestId, receipts, msgQueue);
+        lightProcessor.processBlockReceiptsMessage(requestId, receipts, lightPeer);
     }
     
     @Test
@@ -135,20 +139,20 @@ public class LightProcessorTest {
         TransactionIndexMessage expectedMessage = new TransactionIndexMessage(id, blockNumber, block.getHash().getBytes(), txIndex);
 
         ArgumentCaptor<TransactionIndexMessage> argument = forClass(TransactionIndexMessage.class);
-        lightProcessor.processGetTransactionIndex(id, txHash.getBytes(), msgQueue);
+        lightProcessor.processGetTransactionIndex(id, txHash.getBytes(), lightPeer);
         verify(msgQueue).sendMessage(argument.capture());
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
     }
 
     @Test
     public void processGetTransactionIndexMessageWithIncorrectBlockHash() {
-        lightProcessor.processGetTransactionIndex(100, blockHash.getBytes(), msgQueue);
+        lightProcessor.processGetTransactionIndex(100, blockHash.getBytes(), lightPeer);
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void processTransactionIndexMessageAndShouldThrowAnException() {
-        lightProcessor.processTransactionIndexMessage(0, 0, null, 0, msgQueue);
+        lightProcessor.processTransactionIndexMessage(0, 0, null, 0, lightPeer);
     }
 
     @Test
@@ -168,7 +172,7 @@ public class LightProcessorTest {
         CodeMessage expectedMessage = new CodeMessage(id, codeHash);
 
         ArgumentCaptor<CodeMessage> argument = forClass(CodeMessage.class);
-        lightProcessor.processGetCodeMessage(id, blockHash.getBytes(), address.getBytes(), msgQueue);
+        lightProcessor.processGetCodeMessage(id, blockHash.getBytes(), address.getBytes(), lightPeer);
         verify(msgQueue).sendMessage(argument.capture());
 
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
@@ -179,7 +183,7 @@ public class LightProcessorTest {
         long id = 100;
         RskAddress address = randomAddress();
 
-        lightProcessor.processGetCodeMessage(id, blockHash.getBytes(), address.getBytes(), msgQueue);
+        lightProcessor.processGetCodeMessage(id, blockHash.getBytes(), address.getBytes(), lightPeer);
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
@@ -188,7 +192,7 @@ public class LightProcessorTest {
         long requestId = 0;
         byte[] codeHash = randomBytes(32);
 
-        lightProcessor.processCodeMessage(requestId, codeHash, msgQueue);
+        lightProcessor.processCodeMessage(requestId, codeHash, lightPeer);
     }
 
     @Test
@@ -217,7 +221,7 @@ public class LightProcessorTest {
                 balance.asBigInteger().longValue(), codeHash.getBytes(), storageRoot);
 
         ArgumentCaptor<AccountsMessage> argument = forClass(AccountsMessage.class);
-        lightProcessor.processGetAccountsMessage(id, blockHash.getBytes(), address.getBytes(), msgQueue);
+        lightProcessor.processGetAccountsMessage(id, blockHash.getBytes(), address.getBytes(), lightPeer);
         verify(msgQueue).sendMessage(argument.capture());
 
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
@@ -229,7 +233,7 @@ public class LightProcessorTest {
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
         byte[] addressHash = HashUtil.randomHash();
 
-        lightProcessor.processGetAccountsMessage(requestId, blockHash.getBytes(), addressHash, msgQueue);
+        lightProcessor.processGetAccountsMessage(requestId, blockHash.getBytes(), addressHash, lightPeer);
 
         verify(msgQueue, times(0)).sendMessage(any());
     }
@@ -243,7 +247,7 @@ public class LightProcessorTest {
         byte[] codeHash = HashUtil.randomHash();
         byte[] storageRoot = HashUtil.randomHash();
 
-        lightProcessor.processAccountsMessage(id, merkleInclusionProof, nonce, balance, codeHash, storageRoot, msgQueue);
+        lightProcessor.processAccountsMessage(id, merkleInclusionProof, nonce, balance, codeHash, storageRoot, lightPeer);
     }
 
     @Test
@@ -260,7 +264,7 @@ public class LightProcessorTest {
         BlockHeaderMessage expectedMessage = new BlockHeaderMessage(requestId, blockHeader);
 
         ArgumentCaptor<BlockHeaderMessage> argument = forClass(BlockHeaderMessage.class);
-        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), msgQueue);
+        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), lightPeer);
         verify(msgQueue).sendMessage(argument.capture());
 
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
@@ -271,7 +275,7 @@ public class LightProcessorTest {
         long requestId = 100;
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
 
-        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), msgQueue);
+        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), lightPeer);
 
         verify(msgQueue, times(0)).sendMessage(any());
     }
@@ -281,7 +285,7 @@ public class LightProcessorTest {
         long requestId = 0;
         BlockHeader blockHeader = mock(BlockHeader.class);
 
-        lightProcessor.processBlockHeaderMessage(requestId, blockHeader, msgQueue);
+        lightProcessor.processBlockHeaderMessage(requestId, blockHeader, lightPeer);
     }
 
     // from TransactionTest

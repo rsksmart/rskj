@@ -8,8 +8,8 @@ import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.net.MessageQueue;
 import org.ethereum.net.message.ReasonCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +33,9 @@ public class LightSyncProcessor {
         this.version = (byte) 0;
     }
 
-    public void processStatusMessage(StatusMessage msg, MessageQueue msgQueue, ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
+    public void processStatusMessage(StatusMessage msg, LightPeer lightPeer, ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
         try {
+            loggerNet.debug("Receiving Status - block {} {}", msg.getBestNumber(), HashUtil.shortHash(msg.getBestHash()));
 
             byte protocolVersion = msg.getProtocolVersion();
             if (protocolVersion != version) {
@@ -42,7 +43,7 @@ public class LightSyncProcessor {
                 loggerNet.info("Protocol version {} - message protocol version {}",
                         version,
                         protocolVersion);
-                msgQueue.disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
+                lightPeer.disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
                 ctx.pipeline().remove(lightClientHandler); // Peer is not compatible for the 'lc' sub-protocol
                 return;
             }
@@ -53,7 +54,7 @@ public class LightSyncProcessor {
                 loggerNet.info("Removing LCHandler for {} due to invalid network", ctx.channel().remoteAddress());
                 loggerNet.info("Different network received: config network ID {} - message network ID {}",
                         networkId, msgNetworkId);
-                msgQueue.disconnect(ReasonCode.NULL_IDENTITY);
+                lightPeer.disconnect(ReasonCode.NULL_IDENTITY);
                 ctx.pipeline().remove(lightClientHandler);
                 return;
             }
@@ -64,7 +65,7 @@ public class LightSyncProcessor {
                 loggerNet.info("Removing LCHandler for {} due to unexpected genesis", ctx.channel().remoteAddress());
                 loggerNet.info("Config genesis hash {} - message genesis hash {}",
                         genesisHash, msgGenesisHash);
-                msgQueue.disconnect(ReasonCode.UNEXPECTED_GENESIS);
+                lightPeer.disconnect(ReasonCode.UNEXPECTED_GENESIS);
                 ctx.pipeline().remove(lightClientHandler);
                 return;
             }
@@ -72,17 +73,18 @@ public class LightSyncProcessor {
             loggerNet.debug("LCHandler already removed");
         }
 
+
     }
 
-    public void sendStatusMessage(MessageQueue msgQueue) {
+    public void sendStatusMessage(LightPeer lightPeer) {
         Block block = blockStore.getBestBlock();
         byte[] bestHash = block.getHash().getBytes();
         long bestNumber = block.getNumber();
         BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestHash);
         StatusMessage statusMessage = new StatusMessage(0L, (byte) 0, config.networkId(), totalDifficulty, bestHash, bestNumber, genesis.getHash().getBytes());
-        msgQueue.sendMessage(statusMessage);
+        lightPeer.sendMessage(statusMessage);
 
-        loggerNet.trace("Sending status best block {}",
-                block.getNumber());
+        loggerNet.trace("Sending status best block {} to {}",
+                block.getNumber(), lightPeer.getPeerIdShort());
     }
 }

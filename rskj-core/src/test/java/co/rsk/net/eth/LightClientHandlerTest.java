@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.net.light.LightPeer;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.light.LightSyncProcessor;
 import co.rsk.net.light.message.*;
@@ -37,6 +38,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.message.ReasonCode;
+import org.ethereum.net.server.Channel;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -64,6 +66,7 @@ public class LightClientHandlerTest {
     private LightSyncProcessor lightSyncProcessor;
     private Keccak256 genesisHash;
     private Keccak256 blockHash;
+    private LightPeer lightPeer;
 
     @Before
     public void setup() {
@@ -76,8 +79,9 @@ public class LightClientHandlerTest {
         genesisHash = new Keccak256(HashUtil.randomHash());
         lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
         lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore);
-        LightClientHandler.Factory factory = msgQueue -> new LightClientHandler(msgQueue, lightProcessor, lightSyncProcessor);
-        lightClientHandler = factory.newInstance(messageQueue);
+        lightPeer = new LightPeer(mock(Channel.class), messageQueue);
+        LightClientHandler.Factory factory = (lightPeer) -> new LightClientHandler(lightPeer, lightProcessor, lightSyncProcessor);
+        lightClientHandler = factory.newInstance(lightPeer);
         blockHash = new Keccak256(HashUtil.randomHash());
 
 
@@ -104,7 +108,7 @@ public class LightClientHandlerTest {
 //    }
 
     @Test
-    public void lightClientHandlerSendValidStatusMessage() {
+    public void lightClientHandlerSendValidStatusMessage()   {
         Block bestBlock = mock(Block.class);
         BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
         long bestNumber = 0L;
