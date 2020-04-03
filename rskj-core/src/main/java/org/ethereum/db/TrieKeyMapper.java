@@ -45,8 +45,7 @@ public class TrieKeyMapper {
             return Arrays.copyOf(key, key.length);
         }
 
-        byte[] secureKey = secureKeyPrefix(addr.getBytes());
-        byte[] key = ByteUtil.merge(DOMAIN_PREFIX, secureKey, addr.getBytes());
+        byte[] key = mapRskAddressToKey(addr);
 
         accountKeys.put(addr, key);
 
@@ -80,4 +79,10 @@ public class TrieKeyMapper {
     public static byte[] storagePrefix() {
         return Arrays.copyOf(STORAGE_PREFIX, STORAGE_PREFIX.length);
     }
+
+    byte[] mapRskAddressToKey(RskAddress addr) {
+        byte[] secureKey = secureKeyPrefix(addr.getBytes());
+        return ByteUtil.merge(DOMAIN_PREFIX, secureKey, addr.getBytes());
+    }
+
 }
