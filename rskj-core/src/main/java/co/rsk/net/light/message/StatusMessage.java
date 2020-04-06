@@ -19,8 +19,8 @@
 
 package co.rsk.net.light.message;
 
-import co.rsk.core.BlockDifficulty;
 import co.rsk.net.light.LightClientMessageCodes;
+import co.rsk.net.light.LightStatus;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -31,23 +31,13 @@ import static co.rsk.net.light.LightClientMessageCodes.STATUS;
 
 public class StatusMessage extends LightClientMessage {
 
-    private final byte protocolVersion;
-    private final int networkId;
-    private final BlockDifficulty totalDifficulty;
-    private final byte[] bestHash;
-    private final long bestNumber;
-    private final byte[] genesisHash;
-    private final long id;
 
-    public StatusMessage(long id, byte protocolVersion, int networkId,
-                         BlockDifficulty totalDifficulty, byte[] bestHash, long bestNumber, byte[] genesisHash) {
+    private final long id;
+    private final LightStatus status;
+
+    public StatusMessage(long id, LightStatus status) {
         this.id = id;
-        this.protocolVersion = protocolVersion;
-        this.networkId = networkId;
-        this.totalDifficulty = totalDifficulty;
-        this.bestHash = bestHash.clone();
-        this.bestNumber = bestNumber;
-        this.genesisHash = genesisHash.clone();
+        this.status = status;
         this.code = STATUS.asByte();
     }
 
@@ -55,29 +45,15 @@ public class StatusMessage extends LightClientMessage {
         RLPList list = (RLPList) RLP.decode2(encoded).get(0);
         byte[] rlpId = list.get(0).getRLPData();
         this.id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-        byte[] rlpProtocolVersion = list.get(1).getRLPData();
-        this.protocolVersion = rlpProtocolVersion == null ? (byte) 0 : BigIntegers.fromUnsignedByteArray(rlpProtocolVersion).byteValue();
-        byte[] rlpNetworkId = list.get(2).getRLPData();
-        this.networkId = rlpNetworkId == null ? (byte) 0 : BigIntegers.fromUnsignedByteArray(rlpNetworkId).intValue();
-        byte[] rlpTotalDifficulty = list.get(3).getRLPData();
-        this.totalDifficulty = rlpTotalDifficulty == null ? BlockDifficulty.ZERO : new BlockDifficulty(BigIntegers.fromUnsignedByteArray(rlpTotalDifficulty));
-        this.bestHash = list.get(4).getRLPData();
-        byte[] rlpBestNumber = list.get(5).getRLPData();
-        this.bestNumber = rlpBestNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBestNumber).longValue();
-        this.genesisHash = list.get(6).getRLPData();
+        this.status = new LightStatus(list.get(1).getRLPData());
         this.code = STATUS.asByte();
     }
 
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
-        byte[] rlpProtocolVersion = RLP.encodeBigInteger(BigInteger.valueOf(getProtocolVersion()));
-        byte[] rlpNetworkId = RLP.encodeBigInteger(BigInteger.valueOf(getNetworkId()));
-        byte[] rlpTotalDifficulty = RLP.encodeBigInteger(getTotalDifficulty().asBigInteger());
-        byte[] rlpBestHash = RLP.encodeElement(getBestHash());
-        byte[] rlpBestNumber = RLP.encodeBigInteger(BigInteger.valueOf(getBestNumber()));
-        byte[] rlpGenesisHash = RLP.encodeElement(getGenesisHash());
-        return RLP.encodeList(rlpId, rlpProtocolVersion, rlpNetworkId, rlpTotalDifficulty, rlpBestHash, rlpBestNumber, rlpGenesisHash);
+        byte[] rlpStatus = status.getEncoded();
+        return RLP.encodeList(rlpId, rlpStatus);
     }
 
     @Override
@@ -95,28 +71,8 @@ public class StatusMessage extends LightClientMessage {
         return STATUS;
     }
 
-    public byte getProtocolVersion() {
-        return protocolVersion;
-    }
-
-    public int getNetworkId() {
-        return networkId;
-    }
-
-    public BlockDifficulty getTotalDifficulty() {
-        return totalDifficulty;
-    }
-
-    public byte[] getBestHash() {
-        return bestHash.clone();
-    }
-
-    public long getBestNumber() {
-        return bestNumber;
-    }
-
-    public byte[] getGenesisHash() {
-        return genesisHash.clone();
+    public LightStatus getStatus() {
+        return status;
     }
 
     public long getId() {

@@ -21,6 +21,7 @@ package co.rsk.net.light.message;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.light.LightStatus;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,6 +42,7 @@ public class StatusMessageTest {
     private byte[] genesisHash;
     private BlockDifficulty totalDifficulty;
     private StatusMessage testMessage;
+    private LightStatus lightStatus;
 
     @Before
     public void setUp() {
@@ -51,19 +53,16 @@ public class StatusMessageTest {
         bestNumber = 10L;
         genesisHash = randomHash();
         totalDifficulty = new BlockDifficulty(BigInteger.ONE);
-        testMessage = new StatusMessage(id, protocolVersion, networkId,
+        lightStatus = new LightStatus(protocolVersion, networkId,
                 totalDifficulty, bestHash.getBytes(), bestNumber, genesisHash);
+        testMessage = new StatusMessage(id, lightStatus);
     }
 
     @Test
     public void messageCreationShouldBeCorrect() {
         assertEquals(STATUS, testMessage.getCommand());
         assertEquals(id, testMessage.getId());
-        assertEquals(protocolVersion, testMessage.getProtocolVersion());
-        assertEquals(networkId, testMessage.getNetworkId());
-        assertArrayEquals(totalDifficulty.getBytes(), testMessage.getTotalDifficulty().getBytes());
-        assertArrayEquals(bestHash.getBytes(), testMessage.getBestHash());
-        assertArrayEquals(genesisHash, testMessage.getGenesisHash());
+        assertArrayEquals(lightStatus.getEncoded(), testMessage.getStatus().getEncoded());
     }
 
     @Test

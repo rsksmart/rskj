@@ -35,9 +35,10 @@ public class LightSyncProcessor {
 
     public void processStatusMessage(StatusMessage msg, LightPeer lightPeer, ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
         try {
-            loggerNet.debug("Receiving Status - block {} {}", msg.getBestNumber(), HashUtil.shortHash(msg.getBestHash()));
+            LightStatus status = msg.getStatus();
+            loggerNet.debug("Receiving Status - block {} {}", status.getBestNumber(), HashUtil.shortHash(status.getBestHash()));
 
-            byte protocolVersion = msg.getProtocolVersion();
+            byte protocolVersion = status.getProtocolVersion();
             if (protocolVersion != version) {
                 loggerNet.info("Removing LCHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
                 loggerNet.info("Protocol version {} - message protocol version {}",
@@ -49,7 +50,7 @@ public class LightSyncProcessor {
             }
 
             int networkId = config.networkId();
-            int msgNetworkId = msg.getNetworkId();
+            int msgNetworkId = status.getNetworkId();
             if (msgNetworkId != networkId) {
                 loggerNet.info("Removing LCHandler for {} due to invalid network", ctx.channel().remoteAddress());
                 loggerNet.info("Different network received: config network ID {} - message network ID {}",
@@ -60,7 +61,7 @@ public class LightSyncProcessor {
             }
 
             Keccak256 genesisHash = genesis.getHash();
-            Keccak256 msgGenesisHash = new Keccak256(msg.getGenesisHash());
+            Keccak256 msgGenesisHash = new Keccak256(status.getGenesisHash());
             if (!msgGenesisHash.equals(genesisHash)) {
                 loggerNet.info("Removing LCHandler for {} due to unexpected genesis", ctx.channel().remoteAddress());
                 loggerNet.info("Config genesis hash {} - message genesis hash {}",
@@ -78,13 +79,19 @@ public class LightSyncProcessor {
 
     public void sendStatusMessage(LightPeer lightPeer) {
         Block block = blockStore.getBestBlock();
-        byte[] bestHash = block.getHash().getBytes();
-        long bestNumber = block.getNumber();
-        BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestHash);
-        StatusMessage statusMessage = new StatusMessage(0L, (byte) 0, config.networkId(), totalDifficulty, bestHash, bestNumber, genesis.getHash().getBytes());
+        LightStatus status = getCurrentStatus(block);
+        StatusMessage statusMessage = new StatusMessage(0L, status);
+
         lightPeer.sendMessage(statusMessage);
 
         loggerNet.trace("Sending status best block {} to {}",
                 block.getNumber(), lightPeer.getPeerIdShort());
+    }
+
+    private LightStatus getCurrentStatus(Block block) {
+        byte[] bestHash = block.getHash().getBytes();
+        long bestNumber = block.getNumber();
+        BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestHash);
+        return new LightStatus((byte) 0, config.networkId(), totalDifficulty, bestHash, bestNumber, genesis.getHash().getBytes());
     }
 }

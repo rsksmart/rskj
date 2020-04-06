@@ -2,6 +2,7 @@ package org.ethereum.net.rlpx;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.light.LightStatus;
 import co.rsk.net.light.message.StatusMessage;
 import co.rsk.net.rlpx.LCMessageFactory;
 import io.netty.channel.ChannelHandlerContext;
@@ -135,8 +136,9 @@ public class MessageCodecTest {
         long bestNumber = 10L;
         byte[] genesisHash = randomHash();
         BlockDifficulty totalDifficulty = new BlockDifficulty(BigInteger.ONE);
-        StatusMessage lcStatusMessage = new StatusMessage(id, protocolVersion, networkId,
+        LightStatus status = new LightStatus(protocolVersion, networkId,
                 totalDifficulty, bestHash.getBytes(), bestNumber, genesisHash);
+        StatusMessage lcStatusMessage = new StatusMessage(id, status);
 
         List<Capability> cap = new LinkedList<>();
         cap.add(new Capability(Capability.LC, (byte) 0));
