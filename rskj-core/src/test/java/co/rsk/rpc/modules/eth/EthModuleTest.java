@@ -71,7 +71,6 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                null,
                 new BridgeSupportFactory(
                         null, null, null));
 
@@ -99,7 +98,6 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                null,
                 new BridgeSupportFactory(
                         null,
                         null,
@@ -121,7 +119,6 @@ public class EthModuleTest {
                 mock(ReversibleTransactionExecutor.class),
                 mock(ExecutionBlockRetriever.class),
                 mock(RepositoryLocator.class),
-                mock(EthModuleSolidity.class),
                 mock(EthModuleWallet.class),
                 mock(EthModuleTransaction.class),
                 mock(BridgeSupportFactory.class)
