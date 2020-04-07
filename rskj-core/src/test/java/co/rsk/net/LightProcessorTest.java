@@ -23,6 +23,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.LightProcessor;
+import co.rsk.net.light.message.BlockHeaderMessage;
 import co.rsk.net.light.message.BlockReceiptsMessage;
 import co.rsk.net.light.message.CodeMessage;
 import co.rsk.net.light.message.TransactionIndexMessage;
@@ -74,7 +75,7 @@ public class LightProcessorTest {
     @Test
     public void processGetBlockReceiptMessageAndShouldReturnsReceiptsCorrectly() {
         List<Transaction> txs = new LinkedList<>();
-        int requestId = 0;
+        long requestId = 0;
         List<TransactionReceipt> receipts = new LinkedList<>();
         TransactionReceipt receipt = createReceipt();
         receipts.add(receipt);
@@ -106,7 +107,7 @@ public class LightProcessorTest {
 
     @Test
     public void processBlockReceiptMessageAndShouldThrowAnException() {
-        int requestId = 0;
+        long requestId = 0;
         List<TransactionReceipt> receipts = new LinkedList<>();
         String expected = "Not supported BlockReceipt processing";
         try {
@@ -195,12 +196,55 @@ public class LightProcessorTest {
 
     @Test
     public void processCodeMessageAndShouldThrowAnException() {
-        int requestId = 0;
+        long requestId = 0;
         byte[] codeHash = randomBytes(32);
 
         String expected = "Not supported Code processing";
         try {
             lightProcessor.processCodeMessage(requestId, codeHash, msgQueue);
+        } catch (UnsupportedOperationException e) {
+            assertEquals(expected, e.getMessage());
+        }
+    }
+
+    @Test
+    public void processGetBlockHeaderMessageAndShouldReturnsBlockHeaderCorrectly() {
+        final Block block = mock(Block.class);
+        long requestId = 100;
+        BlockHeader blockHeader = mock(BlockHeader.class);
+        byte[] blockHeaderHash = randomHash().getBytes();
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getHeader()).thenReturn(blockHeader);
+        when(blockHeader.getFullEncoded()).thenReturn(blockHeaderHash);
+
+        BlockHeaderMessage expectedMessage = new BlockHeaderMessage(requestId, blockHeader);
+
+        ArgumentCaptor<BlockHeaderMessage> argument = forClass(BlockHeaderMessage.class);
+        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), msgQueue);
+        verify(msgQueue).sendMessage(argument.capture());
+
+        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
+    public void processGetBlockHeaderMessageWithInvalidBlockHash() {
+        long requestId = 100;
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
+
+        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), msgQueue);
+
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void processBlockHeaderMessageAndShouldThrowAnException() {
+        long requestId = 0;
+        BlockHeader blockHeader = mock(BlockHeader.class);
+
+        String expected = "Not supported BlockHeader processing";
+        try {
+            lightProcessor.processBlockHeaderMessage(requestId, blockHeader, msgQueue);
         } catch (UnsupportedOperationException e) {
             assertEquals(expected, e.getMessage());
         }
