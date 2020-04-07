@@ -45,9 +45,7 @@ public interface Web3EthModule {
         return getEthModule().estimateGas(args);
     }
 
-    default Map<String, CompilationResultDTO> eth_compileSolidity(String contract) throws Exception {
-        return getEthModule().compileSolidity(contract);
-    }
+
 
     default Map<String, Object> eth_bridgeState() throws Exception {
         return getEthModule().bridgeState();
