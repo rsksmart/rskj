@@ -194,7 +194,6 @@ public class RskContext implements NodeBootstrapper {
     private PeerServer peerServer;
     private PersonalModule personalModule;
     private EthModuleWallet ethModuleWallet;
-    private EthModuleSolidity ethModuleSolidity;
     private EthModuleTransaction ethModuleTransaction;
     private MinerClient minerClient;
     private SyncConfiguration syncConfiguration;
@@ -566,7 +565,6 @@ public class RskContext implements NodeBootstrapper {
                     getReversibleTransactionExecutor(),
                     getExecutionBlockRetriever(),
                     getRepositoryLocator(),
-                    getEthModuleSolidity(),
                     getEthModuleWallet(),
                     getEthModuleTransaction(),
                     getBridgeSupportFactory()
@@ -1353,19 +1351,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return ethModuleWallet;
-    }
-
-    private EthModuleSolidity getEthModuleSolidity() {
-        if (ethModuleSolidity == null) {
-            try {
-                ethModuleSolidity = new EthModuleSolidityEnabled(getSolidityCompiler());
-            } catch (RuntimeException e) {
-                logger.trace("Can't find find Solidity compiler, disabling Solidity support in Web3", e);
-                ethModuleSolidity = new EthModuleSolidityDisabled();
-            }
-        }
-
-        return ethModuleSolidity;
     }
 
     private SolidityCompiler getSolidityCompiler() {

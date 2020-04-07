@@ -121,6 +121,8 @@ public interface Web3EthModule {
 
     Map<String, CompilationResultDTO> eth_compileSerpent(String contract);
 
+    Map<String, CompilationResultDTO> eth_compileSolidity(String contract);
+
     String eth_newFilter(Web3.FilterRequest fr) throws Exception;
 
     String eth_newBlockFilter();
