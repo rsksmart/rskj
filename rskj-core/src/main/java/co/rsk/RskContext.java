@@ -1160,7 +1160,7 @@ public class RskContext implements NodeBootstrapper {
 
     private LCMessageFactory getLCMessageFactory() {
         if (lcMessageFactory == null) {
-            lcMessageFactory = new LCMessageFactory();
+            lcMessageFactory = new LCMessageFactory(getBlockFactory());
         }
 
         return lcMessageFactory;

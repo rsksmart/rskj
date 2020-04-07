@@ -3,6 +3,7 @@ package co.rsk.net.light.message;
 import co.rsk.net.light.LightClientMessageCodes;
 import co.rsk.net.rlpx.LCMessageFactory;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -14,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 public class BlockReceiptsMessageTest {
 
@@ -41,7 +43,7 @@ public class BlockReceiptsMessageTest {
         BlockReceiptsMessage testMessage = new BlockReceiptsMessage(requestId, receipts);
         byte[] encoded = testMessage.getEncoded();
 
-        LCMessageFactory lcMessageFactory = new LCMessageFactory();
+        LCMessageFactory lcMessageFactory = new LCMessageFactory(mock(BlockFactory.class));
         BlockReceiptsMessage message = (BlockReceiptsMessage) lcMessageFactory.create((byte) 2, encoded);
 
         List<TransactionReceipt> testBlockReceipts = testMessage.getBlockReceipts();

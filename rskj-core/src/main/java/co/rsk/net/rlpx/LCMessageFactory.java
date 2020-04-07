@@ -20,9 +20,16 @@ package co.rsk.net.rlpx;
 
 import co.rsk.net.light.LightClientMessageCodes;
 import co.rsk.net.light.message.*;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.net.message.Message;
 
 public class LCMessageFactory {
+    private BlockFactory blockFactory;
+
+    public LCMessageFactory(BlockFactory blockFactory) {
+        this.blockFactory = blockFactory;
+    }
+
     public Message create(byte code, byte[] encoded) {
         LightClientMessageCodes receivedCommand = LightClientMessageCodes.fromByte(code);
         switch (receivedCommand) {
@@ -40,6 +47,10 @@ public class LCMessageFactory {
                 return new GetCodeMessage(encoded);
             case CODE:
                 return new CodeMessage(encoded);
+            case GET_BLOCK_HEADER:
+                return new GetBlockHeaderMessage(encoded);
+            case BLOCK_HEADER:
+                return new BlockHeaderMessage(encoded, blockFactory);
             default:
                 throw new IllegalArgumentException("No such message");
         }
