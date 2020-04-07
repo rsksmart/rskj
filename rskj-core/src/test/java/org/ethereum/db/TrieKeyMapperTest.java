@@ -71,5 +71,14 @@ public class TrieKeyMapperTest {
             Assert.assertArrayEquals("Account key diff from diff calls.", accountKey, accountKeyCache);
         }
 
+        clearInvocations(this.trieKeyMapper);
+
+        for (int i = offset; i < BATCH_TEST + offset; i++) {
+            RskAddress address = new RskAddress(addressPrefix + i);
+            byte[] accountKey = this.trieKeyMapper.getAccountKey(address);
+            verify(this.trieKeyMapper, times(0)).mapRskAddressToKey(eq(address));
+            Assert.assertNotNull("Shouldnt return null value from cache.", accountKey);
+        }
+
     }
 }
