@@ -61,7 +61,7 @@ public class GetTransactionIndexMessage extends LightClientMessage {
 
     @Override
     public Class<?> getAnswerMessage() {
-        return GetTransactionIndexMessage.class;
+        return TransactionIndexMessage.class;
     }
 
 

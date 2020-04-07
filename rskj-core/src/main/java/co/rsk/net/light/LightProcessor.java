@@ -142,13 +142,13 @@ public class LightProcessor {
         RskAddress address = new RskAddress(addressHash);
         AccountState state = repositorySnapshot.getAccountState(address);
 
-        AccountsMessage response = new AccountsMessage(id, (byte) 0, state.getBalance().asBigInteger().longValue(),
+        AccountsMessage response = new AccountsMessage(id, new byte[] {0x00}, state.getBalance().asBigInteger().longValue(),
                 state.getNonce().longValue(), repositorySnapshot.getCodeHash(address).getBytes(), repositorySnapshot.getRoot());
 
         msgQueue.sendMessage(response);
     }
 
-    public void processAccountsMessage(long id, byte merkleInclusionProof, long nonce, long balance,
+    public void processAccountsMessage(long id, byte[] merkleInclusionProof, long nonce, long balance,
                                        byte[] codeHash, byte[] storageRoot, MessageQueue msgQueue) {
         throw new UnsupportedOperationException("Not supported AccountsMessage processing");
     }

@@ -29,6 +29,8 @@ public class GetAccountsMessage extends LightClientMessage {
 
         blockHash = paramsList.get(1).getRLPData();
         addressHash = paramsList.get(2).getRLPData();
+
+        code = LightClientMessageCodes.GET_ACCOUNTS.asByte();
     }
 
     @Override

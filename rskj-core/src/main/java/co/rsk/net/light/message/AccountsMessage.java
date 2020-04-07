@@ -6,24 +6,23 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-import java.util.Objects;
 
 public class AccountsMessage extends LightClientMessage {
 
     private final long id;
-    private final byte merkleInclusionProof;
+    private final byte[] merkleInclusionProof;
     private final long nonce;
     private final long balance;
     private final byte[] codeHash;
     private final byte[] storageRoot;
 
-    public AccountsMessage(long id, byte merkleInclusionProof, long nonce, long balance, byte[] codeHash, byte[] storageRoot) {
+    public AccountsMessage(long id, byte[] merkleInclusionProof, long nonce, long balance, byte[] codeHash, byte[] storageRoot) {
         this.id = id;
-        this.merkleInclusionProof = merkleInclusionProof;
+        this.merkleInclusionProof = merkleInclusionProof.clone();
         this.nonce = nonce;
         this.balance = balance;
-        this.codeHash = codeHash;
-        this.storageRoot = storageRoot;
+        this.codeHash = codeHash.clone();
+        this.storageRoot = storageRoot.clone();
 
         code = LightClientMessageCodes.ACCOUNTS.asByte();
     }
@@ -34,8 +33,7 @@ public class AccountsMessage extends LightClientMessage {
         byte[] rlpId = list.get(0).getRLPData();
         id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
-        //mIP is a byte value, so we ask for the byte array and get the first element
-        merkleInclusionProof = Objects.requireNonNull(list.get(1).getRLPData())[0];
+        merkleInclusionProof = list.get(1).getRLPData();
 
         byte[] nonceBytes = list.get(2).getRLPData();
         nonce =  nonceBytes == null ? 0 : BigIntegers.fromUnsignedByteArray(nonceBytes).longValue();
@@ -53,7 +51,7 @@ public class AccountsMessage extends LightClientMessage {
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(id));
-        byte[] rlpMerkleInclusionProof = RLP.encodeElement(new byte[] {merkleInclusionProof});
+        byte[] rlpMerkleInclusionProof = RLP.encodeElement(merkleInclusionProof);
         byte[] rlpNonce = RLP.encodeBigInteger(BigInteger.valueOf(nonce));
         byte[] rlpBalance = RLP.encodeBigInteger(BigInteger.valueOf(balance));
         byte[] rlpCodeHash = RLP.encodeElement(codeHash);
@@ -65,8 +63,8 @@ public class AccountsMessage extends LightClientMessage {
         return id;
     }
 
-    public byte getMerkleInclusionProof() {
-        return merkleInclusionProof;
+    public byte[] getMerkleInclusionProof() {
+        return merkleInclusionProof.clone();
     }
 
     public long getNonce() {
@@ -78,11 +76,11 @@ public class AccountsMessage extends LightClientMessage {
     }
 
     public byte[] getCodeHash() {
-        return codeHash;
+        return codeHash.clone();
     }
 
     public byte[] getStorageRoot() {
-        return storageRoot;
+        return storageRoot.clone();
     }
 
     @Override
