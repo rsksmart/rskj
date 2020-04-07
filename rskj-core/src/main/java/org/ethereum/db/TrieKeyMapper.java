@@ -80,7 +80,7 @@ public class TrieKeyMapper {
         return Arrays.copyOf(STORAGE_PREFIX, STORAGE_PREFIX.length);
     }
 
-    byte[] mapRskAddressToKey(RskAddress addr) {
+    protected byte[] mapRskAddressToKey(RskAddress addr) {
         byte[] secureKey = secureKeyPrefix(addr.getBytes());
         return ByteUtil.merge(DOMAIN_PREFIX, secureKey, addr.getBytes());
     }

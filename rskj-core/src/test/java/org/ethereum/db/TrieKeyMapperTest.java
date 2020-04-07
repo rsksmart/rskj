@@ -27,6 +27,7 @@ import static org.mockito.Mockito.*;
 
 public class TrieKeyMapperTest {
 
+    private static final int BATCH_TEST = 500;
     private TrieKeyMapper trieKeyMapper;
 
     @Before
@@ -50,7 +51,25 @@ public class TrieKeyMapperTest {
 
         byte[] accountKeyCache = this.trieKeyMapper.getAccountKey(address);
         verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(eq(address));
-
         Assert.assertArrayEquals("Account key diff from diff calls.", accountKey, accountKeyCache);
+
+    }
+
+    @Test
+    public void getAccountKey_fromCache_multipleKeys() {
+        String addressPrefix = "1000000000000000000000000000000000000";
+
+        int offset = 100;
+        for (int i = offset; i < BATCH_TEST + offset; i++) {
+
+            RskAddress address = new RskAddress(addressPrefix + i);
+            byte[] accountKey = this.trieKeyMapper.getAccountKey(address);
+            verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(eq(address));
+
+            byte[] accountKeyCache = this.trieKeyMapper.getAccountKey(address);
+            verify(this.trieKeyMapper, times(1)).mapRskAddressToKey(eq(address));
+            Assert.assertArrayEquals("Account key diff from diff calls.", accountKey, accountKeyCache);
+        }
+
     }
 }
