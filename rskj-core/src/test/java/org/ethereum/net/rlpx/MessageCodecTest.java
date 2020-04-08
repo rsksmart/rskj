@@ -131,7 +131,7 @@ public class MessageCodecTest {
         MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
         messageCodec.initMessageCodes(cap);
         messageCodec.setChannel(peer);
-        messageCodec.setLCMessageFactory(new LCMessageFactory());
+        messageCodec.setLCMessageFactory(new LCMessageFactory(mock(BlockFactory.class)));
 
         List<Object> outFrame = new LinkedList<>();
         List<Object> outMsg = new LinkedList<>();

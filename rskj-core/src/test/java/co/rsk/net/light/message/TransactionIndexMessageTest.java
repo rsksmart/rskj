@@ -20,11 +20,13 @@ package co.rsk.net.light.message;
 
 import co.rsk.net.light.LightClientMessageCodes;
 import co.rsk.net.rlpx.LCMessageFactory;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 public class TransactionIndexMessageTest {
 
@@ -32,6 +34,7 @@ public class TransactionIndexMessageTest {
     private long blockNumber;
     private byte[] blockHash;
     private long txIndex;
+    private BlockFactory blockFactory;
 
     @Before
     public void setUp() {
@@ -39,6 +42,7 @@ public class TransactionIndexMessageTest {
         blockNumber = 1000L;
         blockHash = HashUtil.randomHash();
         txIndex = 1234L;
+        blockFactory = mock(BlockFactory.class);
     }
 
     @Test
@@ -60,7 +64,7 @@ public class TransactionIndexMessageTest {
 
         byte code = LightClientMessageCodes.TRANSACTION_INDEX.asByte();
 
-        LCMessageFactory lcMessageFactory = new LCMessageFactory();
+        LCMessageFactory lcMessageFactory = new LCMessageFactory(blockFactory);
         TransactionIndexMessage message = (TransactionIndexMessage) lcMessageFactory.create(code, encoded);
 
         assertEquals(testMessage.getCommand(), message.getCommand());
