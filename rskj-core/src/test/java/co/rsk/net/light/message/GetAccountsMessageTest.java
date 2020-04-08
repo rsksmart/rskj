@@ -2,12 +2,14 @@ package co.rsk.net.light.message;
 
 import co.rsk.net.light.LightClientMessageCodes;
 import co.rsk.net.rlpx.LCMessageFactory;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 public class GetAccountsMessageTest {
 
@@ -36,7 +38,7 @@ public class GetAccountsMessageTest {
 
         GetAccountsMessage testMessage = new GetAccountsMessage(id, blockHash, addressHash);
         byte[] encoded = testMessage.getEncoded();
-        LCMessageFactory lcMessageFactory = new LCMessageFactory();
+        LCMessageFactory lcMessageFactory = new LCMessageFactory(mock(BlockFactory.class));
         byte code = LightClientMessageCodes.GET_ACCOUNTS.asByte();
         GetAccountsMessage message = (GetAccountsMessage) lcMessageFactory.create(code, encoded);
 

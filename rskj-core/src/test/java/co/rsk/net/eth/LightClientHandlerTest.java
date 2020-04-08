@@ -208,4 +208,25 @@ public class LightClientHandlerTest {
             assertEquals("Not supported BlockHeader processing", e.getMessage());
         }
     }
+
+    @Test
+    public void lightClientHandlerSendsGetAccountsToQueue() throws Exception {
+
+    }
+
+    @Test
+    public void lightClientHandlerSendsAccountsMsgToQueueAndShouldThrowAnException() throws Exception {
+        long id = 1;
+        byte[] merkleInclusionProof = HashUtil.randomHash();
+        long nonce = 123;
+        long balance = 100;
+        byte[] codeHash = HashUtil.randomHash();
+        byte[] storageRoot = HashUtil.randomHash();
+        AccountsMessage m = new AccountsMessage(id, merkleInclusionProof, nonce, balance, codeHash, storageRoot);
+        try {
+            lightClientHandler.channelRead0(ctx, m);
+        } catch (UnsupportedOperationException e) {
+            assertEquals("Not supported AccountsMessage processing", e.getMessage());
+        }
+    }
 }

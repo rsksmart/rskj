@@ -18,15 +18,13 @@
 
 package co.rsk.net;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.LightProcessor;
-import co.rsk.net.light.message.BlockHeaderMessage;
-import co.rsk.net.light.message.BlockReceiptsMessage;
-import co.rsk.net.light.message.CodeMessage;
-import co.rsk.net.light.message.TransactionIndexMessage;
+import co.rsk.net.light.message.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -38,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -149,7 +148,7 @@ public class LightProcessorTest {
 
     @Test
     public void processGetTransactionIndexMessageWithIncorrectBlockHash() {
-        lightProcessor.processGetTransactionIndex(100, new Keccak256(HASH_1).getBytes(), msgQueue);
+        lightProcessor.processGetTransactionIndex(100, blockHash.getBytes(), msgQueue);
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
@@ -228,11 +227,53 @@ public class LightProcessorTest {
     }
 
     @Test
+    public void processGetAccountsMessageAndShouldReturnsAccountsCorrectly() {
+        long id = 101;
+        RskAddress address = randomAddress();
+        final Block block = mock(Block.class);
+        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
+        Keccak256 codeHash = randomHash();
+        byte[] storageRoot = randomHash().getBytes();
+        AccountState accountState = mock(AccountState.class);
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getHash()).thenReturn(blockHash);
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
+        when(repositorySnapshot.getAccountState(address)).thenReturn(accountState);
+
+        when(accountState.getBalance()).thenReturn(Coin.valueOf(100L));
+        when(accountState.getNonce()).thenReturn(BigInteger.valueOf(101L));
+        when(repositorySnapshot.getCodeHash(address)).thenReturn(codeHash);
+        when(repositorySnapshot.getRoot()).thenReturn(storageRoot);
+
+        AccountsMessage expectedMessage = new AccountsMessage(id, new byte[] {0x00}, 100, 101,
+                codeHash.getBytes(), storageRoot);
+
+        ArgumentCaptor<AccountsMessage> argument = forClass(AccountsMessage.class);
+        lightProcessor.processGetAccountsMessage(id, blockHash.getBytes(), address.getBytes(), msgQueue);
+        verify(msgQueue).sendMessage(argument.capture());
+
+        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
     public void processGetBlockHeaderMessageWithInvalidBlockHash() {
         long requestId = 100;
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
 
         lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), msgQueue);
+
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void processGetAccountsMessageWithInvalidBlockHash() {
+        long requestId = 100;
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
+        byte[] addressHash = HashUtil.randomHash();
+
+        lightProcessor.processGetAccountsMessage(requestId, blockHash.getBytes(), addressHash, msgQueue);
 
         verify(msgQueue, times(0)).sendMessage(any());
     }
@@ -245,6 +286,23 @@ public class LightProcessorTest {
         String expected = "Not supported BlockHeader processing";
         try {
             lightProcessor.processBlockHeaderMessage(requestId, blockHeader, msgQueue);
+        } catch (UnsupportedOperationException e) {
+            assertEquals(expected, e.getMessage());
+        }
+    }
+
+    @Test
+    public void processAccountsMessageAndShouldThrowAnException() {
+        long id = 1;
+        byte [] merkleInclusionProof = new byte[] {0x01};
+        long nonce = 123;
+        long balance = 100;
+        byte[] codeHash = HashUtil.randomHash();
+        byte[] storageRoot = HashUtil.randomHash();
+
+        String expected = "Not supported AccountsMessage processing";
+        try {
+            lightProcessor.processAccountsMessage(id, merkleInclusionProof, nonce, balance, codeHash, storageRoot, msgQueue);
         } catch (UnsupportedOperationException e) {
             assertEquals(expected, e.getMessage());
         }
