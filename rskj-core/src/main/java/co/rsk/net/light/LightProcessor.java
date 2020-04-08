@@ -22,16 +22,10 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.net.light.message.BlockReceiptsMessage;
-import co.rsk.net.light.message.CodeMessage;
-import co.rsk.net.light.message.TestMessage;
+import co.rsk.net.light.message.*;
+import org.ethereum.core.*;
 import org.ethereum.net.message.Message;
-import co.rsk.net.light.message.TransactionIndexMessage;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.net.MessageQueue;
@@ -136,5 +130,23 @@ public class LightProcessor {
 
     public void processTestMessage(TestMessage testMessage, MessageQueue msgQueue) {
         msgQueue.sendMessage(testMessage);
+    }
+
+    public void processGetBlockHeaderMessage(long id, byte[] blockHash, MessageQueue msgQueue) {
+        logger.trace("Processing block header request {} block {}", id, Hex.toHexString(blockHash));
+
+        final Block block = blockStore.getBlockByHash(blockHash);
+
+        if (block == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+        BlockHeaderMessage response = new BlockHeaderMessage(id, block.getHeader());
+        msgQueue.sendMessage(response);
+    }
+
+    public void processBlockHeaderMessage(long id, BlockHeader blockHeader, MessageQueue msgQueue) {
+        throw new UnsupportedOperationException("Not supported BlockHeader processing");
     }
 }

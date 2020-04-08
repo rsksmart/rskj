@@ -17,7 +17,11 @@ public enum LightClientMessageCodes {
 
     GET_CODE(0x05),
 
-    CODE(0x06);
+    CODE(0x06),
+
+    GET_BLOCK_HEADER(0x09),
+
+    BLOCK_HEADER(0x0A);
 
     private final int cmd;
 

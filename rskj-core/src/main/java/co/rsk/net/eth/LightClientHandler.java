@@ -46,16 +46,16 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
     protected void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) throws Exception {
         switch (msg.getCommand()) {
             case TEST:
-                logger.debug("Read message: {} TEST. Sending Test response", msg);
+                logger.debug("Read message: {} TEST", msg);
                 lightProcessor.processTestMessage((TestMessage) msg, msgQueue);
                 break;
             case GET_BLOCK_RECEIPTS:
-                logger.debug("Read message: {} GET_BLOCK_RECEIPTS. Sending receipts request", msg);
+                logger.debug("Read message: {} GET_BLOCK_RECEIPTS", msg);
                 GetBlockReceiptsMessage getBlockReceiptsMsg = (GetBlockReceiptsMessage) msg;
                 lightProcessor.processGetBlockReceiptsMessage(getBlockReceiptsMsg.getId(), getBlockReceiptsMsg.getBlockHash(), msgQueue);
                 break;
             case BLOCK_RECEIPTS:
-                logger.debug("Read message: {} BLOCK_RECEIPTS. Sending receipts response", msg);
+                logger.debug("Read message: {} BLOCK_RECEIPTS", msg);
                 BlockReceiptsMessage blockReceiptsMsg = (BlockReceiptsMessage) msg;
                 lightProcessor.processBlockReceiptsMessage(blockReceiptsMsg.getId(), blockReceiptsMsg.getBlockReceipts(), msgQueue);
                 break;
@@ -71,14 +71,24 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
                         txIndexMsg.getBlockHash(), txIndexMsg.getTransactionIndex(), msgQueue);
                 break;
             case GET_CODE:
-                logger.debug("Read message: {} GET_CODE. Sending code request", msg);
+                logger.debug("Read message: {} GET_CODE", msg);
                 GetCodeMessage getCodeMsg = (GetCodeMessage) msg;
                 lightProcessor.processGetCodeMessage(getCodeMsg.getId(), getCodeMsg.getBlockHash(), getCodeMsg.getAddress(), msgQueue);
                 break;
             case CODE:
-                logger.debug("Read message: {} CODE. Sending code response", msg);
+                logger.debug("Read message: {} CODE", msg);
                 CodeMessage codeMsg = (CodeMessage) msg;
                 lightProcessor.processCodeMessage(codeMsg.getId(), codeMsg.getCodeHash(), msgQueue);
+                break;
+            case GET_BLOCK_HEADER:
+                logger.debug("Read message: {} GET_BLOCK_HEADER", msg);
+                GetBlockHeaderMessage getBlockHeaderMessage = (GetBlockHeaderMessage) msg;
+                lightProcessor.processGetBlockHeaderMessage(getBlockHeaderMessage.getId(), getBlockHeaderMessage.getBlockHash(), msgQueue);
+                break;
+            case BLOCK_HEADER:
+                logger.debug("Read message: {} BLOCK_HEADER", msg);
+                BlockHeaderMessage blockHeaderMessage = (BlockHeaderMessage) msg;
+                lightProcessor.processBlockHeaderMessage(blockHeaderMessage.getId(), blockHeaderMessage.getBlockHeader(), msgQueue);
                 break;
             default:
                 break;
