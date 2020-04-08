@@ -142,8 +142,9 @@ public class LightProcessor {
         RskAddress address = new RskAddress(addressHash);
         AccountState state = repositorySnapshot.getAccountState(address);
 
-        AccountsMessage response = new AccountsMessage(id, new byte[] {0x00}, state.getBalance().asBigInteger().longValue(),
-                state.getNonce().longValue(), repositorySnapshot.getCodeHash(address).getBytes(), repositorySnapshot.getRoot());
+        AccountsMessage response = new AccountsMessage(id, new byte[] {0x00}, state.getNonce().longValue(),
+                state.getBalance().asBigInteger().longValue(), repositorySnapshot.getCodeHash(address).getBytes(),
+                repositorySnapshot.getRoot());
 
         msgQueue.sendMessage(response);
     }

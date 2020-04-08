@@ -229,6 +229,8 @@ public class LightProcessorTest {
     @Test
     public void processGetAccountsMessageAndShouldReturnsAccountsCorrectly() {
         long id = 101;
+        Coin balance = Coin.valueOf(1010);
+        long nonce = 100;
         RskAddress address = randomAddress();
         final Block block = mock(Block.class);
         final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
@@ -242,13 +244,13 @@ public class LightProcessorTest {
         when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
         when(repositorySnapshot.getAccountState(address)).thenReturn(accountState);
 
-        when(accountState.getBalance()).thenReturn(Coin.valueOf(100L));
-        when(accountState.getNonce()).thenReturn(BigInteger.valueOf(101L));
+        when(accountState.getNonce()).thenReturn(BigInteger.valueOf(nonce));
+        when(accountState.getBalance()).thenReturn(balance);
         when(repositorySnapshot.getCodeHash(address)).thenReturn(codeHash);
         when(repositorySnapshot.getRoot()).thenReturn(storageRoot);
 
-        AccountsMessage expectedMessage = new AccountsMessage(id, new byte[] {0x00}, 100, 101,
-                codeHash.getBytes(), storageRoot);
+        AccountsMessage expectedMessage = new AccountsMessage(id, new byte[] {0x00}, nonce,
+                balance.asBigInteger().longValue(), codeHash.getBytes(), storageRoot);
 
         ArgumentCaptor<AccountsMessage> argument = forClass(AccountsMessage.class);
         lightProcessor.processGetAccountsMessage(id, blockHash.getBytes(), address.getBytes(), msgQueue);

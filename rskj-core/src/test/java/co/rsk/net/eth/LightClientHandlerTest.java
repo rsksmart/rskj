@@ -18,6 +18,7 @@
 
 package co.rsk.net.eth;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -36,9 +37,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.ethereum.TestUtils.randomAddress;
+import static org.ethereum.TestUtils.randomHash;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentCaptor.forClass;
@@ -211,7 +215,38 @@ public class LightClientHandlerTest {
 
     @Test
     public void lightClientHandlerSendsGetAccountsToQueue() throws Exception {
+        long id = 101;
+        Keccak256 blockHash = randomHash();
+        RskAddress address = randomAddress();
+        final Block block = mock(Block.class);
+        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
+        Keccak256 codeHash = randomHash();
+        byte[] storageRoot = randomHash().getBytes();
+        AccountState accountState = mock(AccountState.class);
+        Coin balance = Coin.valueOf(1010);
+        long nonce = 100;
 
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getHash()).thenReturn(blockHash);
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
+        when(repositorySnapshot.getAccountState(address)).thenReturn(accountState);
+
+        when(accountState.getNonce()).thenReturn(BigInteger.valueOf(nonce));
+        when(accountState.getBalance()).thenReturn(balance);
+        when(repositorySnapshot.getCodeHash(address)).thenReturn(codeHash);
+        when(repositorySnapshot.getRoot()).thenReturn(storageRoot);
+
+        GetAccountsMessage m = new GetAccountsMessage(id, blockHash.getBytes(), address.getBytes());
+
+        AccountsMessage response = new AccountsMessage(id, new byte[] {0x00}, nonce,
+                balance.asBigInteger().longValue(), codeHash.getBytes(), storageRoot);
+
+        lightClientHandler.channelRead0(ctx, m);
+
+        ArgumentCaptor<AccountsMessage> argument = forClass(AccountsMessage.class);
+        verify(messageQueue).sendMessage(argument.capture());
+        assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
     }
 
     @Test

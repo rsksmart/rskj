@@ -111,6 +111,6 @@ public class AccountsMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return null;
+        return "";
     }
 }
