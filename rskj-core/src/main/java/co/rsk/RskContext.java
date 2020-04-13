@@ -1353,14 +1353,6 @@ public class RskContext implements NodeBootstrapper {
         return ethModuleWallet;
     }
 
-    private SolidityCompiler getSolidityCompiler() {
-        if (solidityCompiler == null) {
-            solidityCompiler = buildSolidityCompiler();
-        }
-
-        return solidityCompiler;
-    }
-
     private EthModuleTransaction getEthModuleTransaction() {
         if (ethModuleTransaction == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
