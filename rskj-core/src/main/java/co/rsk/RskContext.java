@@ -224,7 +224,6 @@ public class RskContext implements NodeBootstrapper {
     private NodeManager nodeManager;
     private StaticMessages staticMessages;
     private MinerServer minerServer;
-    private SolidityCompiler solidityCompiler;
     private BlocksBloomStore blocksBloomStore;
     private BlockExecutor blockExecutor;
     private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
