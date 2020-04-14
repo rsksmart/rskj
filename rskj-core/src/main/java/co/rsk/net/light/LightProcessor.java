@@ -85,7 +85,7 @@ public class LightProcessor {
     }
 
     public void processGetTransactionIndex(long id, byte[] hash, MessageQueue msgqueue) {
-        logger.debug("transactionID request Message Received");
+        logger.debug("Get Transaction Index Message Received");
 
         TransactionInfo txinfo = blockchain.getTransactionInfo(hash);
 
@@ -126,6 +126,32 @@ public class LightProcessor {
 
     public void processCodeMessage(long id, byte[] codeHash, MessageQueue msgQueue) {
         throw new UnsupportedOperationException("Not supported Code processing");
+    }
+
+    public void processGetAccountsMessage(long id, byte[] blockHash, byte[] addressHash, MessageQueue msgQueue) {
+        logger.debug("Get Accounts Message Received: id {}, blockhash: {}, addressHash {}", id, blockHash, addressHash);
+
+        final Block block = blockStore.getBlockByHash(blockHash);
+
+        if (block == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+        RepositorySnapshot repositorySnapshot = repositoryLocator.snapshotAt(block.getHeader());
+        RskAddress address = new RskAddress(addressHash);
+        AccountState state = repositorySnapshot.getAccountState(address);
+
+        AccountsMessage response = new AccountsMessage(id, new byte[] {0x00}, state.getNonce().longValue(),
+                state.getBalance().asBigInteger().longValue(), repositorySnapshot.getCodeHash(address).getBytes(),
+                repositorySnapshot.getRoot());
+
+        msgQueue.sendMessage(response);
+    }
+
+    public void processAccountsMessage(long id, byte[] merkleInclusionProof, long nonce, long balance,
+                                       byte[] codeHash, byte[] storageRoot, MessageQueue msgQueue) {
+        throw new UnsupportedOperationException("Not supported AccountsMessage processing");
     }
 
     public void processTestMessage(TestMessage testMessage, MessageQueue msgQueue) {
