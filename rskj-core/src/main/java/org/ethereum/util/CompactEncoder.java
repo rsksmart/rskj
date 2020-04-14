@@ -111,7 +111,7 @@ public class CompactEncoder {
         }
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         for (int i = 0; i < nibbles.length; i += 2) {
-            buffer.write(16 * nibbles[i] + nibbles[i + 1]);
+            buffer.write(16 * nibbles[i] + nibbles[i + 1]); //lgtm [java/index-out-of-bounds]
         }
         return buffer.toByteArray();
     }
