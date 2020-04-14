@@ -25,45 +25,57 @@ import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
-public class GetTransactionIndexMessage extends LightClientMessage {
+public class GetAccountsMessage extends LightClientMessage {
 
     private final long id;
-    private final byte[] txHash;
+    private final byte[] blockHash;
+    private final byte[] addressHash;
 
-    public GetTransactionIndexMessage(long id, byte[] txHash) {
+    public GetAccountsMessage(long id, byte[] blockHash, byte[] addressHash) {
         this.id = id;
-        this.txHash = txHash.clone();
-        this.code = LightClientMessageCodes.GET_TRANSACTION_INDEX.asByte();
+        this.blockHash = blockHash.clone();
+        this.addressHash = addressHash.clone();
+
+        code = LightClientMessageCodes.GET_ACCOUNTS.asByte();
     }
 
-    public GetTransactionIndexMessage(byte[] encoded) {
+    public GetAccountsMessage(byte[] encoded) {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+
         byte[] rlpId = paramsList.get(0).getRLPData();
-        txHash = paramsList.get(1).getRLPData();
         id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-        this.code = LightClientMessageCodes.GET_TRANSACTION_INDEX.asByte();
-    }
 
-    public long getId() {
-        return this.id;
-    }
+        blockHash = paramsList.get(1).getRLPData();
+        addressHash = paramsList.get(2).getRLPData();
 
-    public byte[] getTxHash() {
-        return this.txHash.clone();
+        code = LightClientMessageCodes.GET_ACCOUNTS.asByte();
     }
 
     @Override
     public byte[] getEncoded() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
-        byte[] rlpHash = RLP.encodeElement(this.txHash);
-        return RLP.encodeList(rlpId, rlpHash);
+        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(id));
+        byte[] rlpBlockHash = RLP.encodeElement(blockHash);
+        byte[] rlpAddressHash = RLP.encodeElement(addressHash);
+
+        return RLP.encodeList(rlpId, rlpBlockHash, rlpAddressHash);
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public byte[] getBlockHash() {
+        return blockHash.clone();
+    }
+
+    public byte[] getAddressHash() {
+        return addressHash.clone();
     }
 
     @Override
     public Class<?> getAnswerMessage() {
-        return TransactionIndexMessage.class;
+        return AccountsMessage.class;
     }
-
 
     @Override
     public String toString() {
