@@ -44,7 +44,6 @@ import java.util.List;
 import static org.ethereum.TestUtils.randomAddress;
 import static org.ethereum.TestUtils.randomHash;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
 
@@ -95,15 +94,11 @@ public class LightClientHandlerTest {
         assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void lightClientHandlerSendsBlockReceiptsToQueueAndShouldThrowAnException() throws Exception {
         List<TransactionReceipt> receipts = new LinkedList<>();
         BlockReceiptsMessage m = new BlockReceiptsMessage(0, receipts);
-        try {
-            lightClientHandler.channelRead0(ctx, m);
-        } catch (UnsupportedOperationException e) {
-            assertEquals("Not supported BlockReceipt processing", e.getMessage());
-        }
+        lightClientHandler.channelRead0(ctx, m);
     }
 
     @Test
@@ -138,14 +133,10 @@ public class LightClientHandlerTest {
         assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void lightClientHandlerSendsTransactionIndexMessageToQueueAndShouldThrowAnException() throws Exception {
         TransactionIndexMessage m = new TransactionIndexMessage(2, 42, new byte[] {0x23}, 23);
-        try {
-            lightClientHandler.channelRead0(ctx, m);
-        } catch (UnsupportedOperationException e) {
-            assertEquals("Not supported TransactionIndexMessage processing", e.getMessage());
-        }
+        lightClientHandler.channelRead0(ctx, m);
     }
 
     @Test
@@ -173,15 +164,12 @@ public class LightClientHandlerTest {
         assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void lightClientHandlerSendsCodeMsgToQueueAndShouldThrowAnException() throws Exception {
         byte[] codeHash = HashUtil.randomHash();
         CodeMessage m = new CodeMessage(0, codeHash);
-        try {
-            lightClientHandler.channelRead0(ctx, m);
-        } catch (UnsupportedOperationException e) {
-            assertEquals("Not supported Code processing", e.getMessage());
-        }
+
+        lightClientHandler.channelRead0(ctx, m);
     }
 
     @Test
@@ -199,7 +187,6 @@ public class LightClientHandlerTest {
 
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(block.getHash()).thenReturn(blockHash);
-        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
         when(repositorySnapshot.getAccountState(address)).thenReturn(accountState);
 
@@ -220,7 +207,7 @@ public class LightClientHandlerTest {
         assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void lightClientHandlerSendsAccountsMsgToQueueAndShouldThrowAnException() throws Exception {
         long id = 1;
         byte[] merkleInclusionProof = HashUtil.randomHash();
@@ -229,11 +216,8 @@ public class LightClientHandlerTest {
         byte[] codeHash = HashUtil.randomHash();
         byte[] storageRoot = HashUtil.randomHash();
         AccountsMessage m = new AccountsMessage(id, merkleInclusionProof, nonce, balance, codeHash, storageRoot);
-        try {
-            lightClientHandler.channelRead0(ctx, m);
-        } catch (UnsupportedOperationException e) {
-            assertEquals("Not supported AccountsMessage processing", e.getMessage());
-        }
+
+        lightClientHandler.channelRead0(ctx, m);
     }
 
     @Test
@@ -255,13 +239,9 @@ public class LightClientHandlerTest {
         assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void lightClientHandlerSendsBlockHeaderMessageToQueueAndShouldThrowAnException() throws Exception {
         BlockHeaderMessage m = new BlockHeaderMessage(1, mock(BlockHeader.class));
-        try {
-            lightClientHandler.channelRead0(ctx, m);
-        } catch (UnsupportedOperationException e) {
-            assertEquals("Not supported BlockHeader processing", e.getMessage());
-        }
+        lightClientHandler.channelRead0(ctx, m);
     }
 }
