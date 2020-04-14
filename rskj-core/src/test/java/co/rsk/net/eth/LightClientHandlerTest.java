@@ -185,35 +185,6 @@ public class LightClientHandlerTest {
     }
 
     @Test
-    public void lightClientHandlerSendsGetBlockHeaderToQueue() throws Exception {
-        Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
-        Block block = mock(Block.class);
-        BlockHeader blockHeader = mock(BlockHeader.class);
-        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
-        when(block.getHeader()).thenReturn(blockHeader);
-
-        GetBlockHeaderMessage m = new GetBlockHeaderMessage(1, blockHash.getBytes());
-
-        lightClientHandler.channelRead0(ctx, m);
-
-        BlockHeaderMessage response = new BlockHeaderMessage(1, blockHeader);
-
-        ArgumentCaptor<BlockHeaderMessage> argument = forClass(BlockHeaderMessage.class);
-        verify(messageQueue).sendMessage(argument.capture());
-        assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
-    }
-
-    @Test
-    public void lightClientHandlerSendsBlockHeaderMessageToQueueAndShouldThrowAnException() throws Exception {
-        BlockHeaderMessage m = new BlockHeaderMessage(1, mock(BlockHeader.class));
-        try {
-            lightClientHandler.channelRead0(ctx, m);
-        } catch (UnsupportedOperationException e) {
-            assertEquals("Not supported BlockHeader processing", e.getMessage());
-        }
-    }
-
-    @Test
     public void lightClientHandlerSendsGetAccountsToQueue() throws Exception {
         long id = 101;
         Keccak256 blockHash = randomHash();
@@ -262,6 +233,35 @@ public class LightClientHandlerTest {
             lightClientHandler.channelRead0(ctx, m);
         } catch (UnsupportedOperationException e) {
             assertEquals("Not supported AccountsMessage processing", e.getMessage());
+        }
+    }
+
+    @Test
+    public void lightClientHandlerSendsGetBlockHeaderToQueue() throws Exception {
+        Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
+        Block block = mock(Block.class);
+        BlockHeader blockHeader = mock(BlockHeader.class);
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getHeader()).thenReturn(blockHeader);
+
+        GetBlockHeaderMessage m = new GetBlockHeaderMessage(1, blockHash.getBytes());
+
+        lightClientHandler.channelRead0(ctx, m);
+
+        BlockHeaderMessage response = new BlockHeaderMessage(1, blockHeader);
+
+        ArgumentCaptor<BlockHeaderMessage> argument = forClass(BlockHeaderMessage.class);
+        verify(messageQueue).sendMessage(argument.capture());
+        assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
+    public void lightClientHandlerSendsBlockHeaderMessageToQueueAndShouldThrowAnException() throws Exception {
+        BlockHeaderMessage m = new BlockHeaderMessage(1, mock(BlockHeader.class));
+        try {
+            lightClientHandler.channelRead0(ctx, m);
+        } catch (UnsupportedOperationException e) {
+            assertEquals("Not supported BlockHeader processing", e.getMessage());
         }
     }
 }

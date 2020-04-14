@@ -207,26 +207,6 @@ public class LightProcessorTest {
     }
 
     @Test
-    public void processGetBlockHeaderMessageAndShouldReturnsBlockHeaderCorrectly() {
-        final Block block = mock(Block.class);
-        long requestId = 100;
-        BlockHeader blockHeader = mock(BlockHeader.class);
-        byte[] blockHeaderHash = randomHash().getBytes();
-
-        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
-        when(block.getHeader()).thenReturn(blockHeader);
-        when(blockHeader.getFullEncoded()).thenReturn(blockHeaderHash);
-
-        BlockHeaderMessage expectedMessage = new BlockHeaderMessage(requestId, blockHeader);
-
-        ArgumentCaptor<BlockHeaderMessage> argument = forClass(BlockHeaderMessage.class);
-        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), msgQueue);
-        verify(msgQueue).sendMessage(argument.capture());
-
-        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
-    }
-
-    @Test
     public void processGetAccountsMessageAndShouldReturnsAccountsCorrectly() {
         long id = 101;
         Coin balance = Coin.valueOf(1010);
@@ -260,16 +240,6 @@ public class LightProcessorTest {
     }
 
     @Test
-    public void processGetBlockHeaderMessageWithInvalidBlockHash() {
-        long requestId = 100;
-        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
-
-        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), msgQueue);
-
-        verify(msgQueue, times(0)).sendMessage(any());
-    }
-
-    @Test
     public void processGetAccountsMessageWithInvalidBlockHash() {
         long requestId = 100;
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
@@ -278,19 +248,6 @@ public class LightProcessorTest {
         lightProcessor.processGetAccountsMessage(requestId, blockHash.getBytes(), addressHash, msgQueue);
 
         verify(msgQueue, times(0)).sendMessage(any());
-    }
-
-    @Test
-    public void processBlockHeaderMessageAndShouldThrowAnException() {
-        long requestId = 0;
-        BlockHeader blockHeader = mock(BlockHeader.class);
-
-        String expected = "Not supported BlockHeader processing";
-        try {
-            lightProcessor.processBlockHeaderMessage(requestId, blockHeader, msgQueue);
-        } catch (UnsupportedOperationException e) {
-            assertEquals(expected, e.getMessage());
-        }
     }
 
     @Test
@@ -305,6 +262,49 @@ public class LightProcessorTest {
         String expected = "Not supported AccountsMessage processing";
         try {
             lightProcessor.processAccountsMessage(id, merkleInclusionProof, nonce, balance, codeHash, storageRoot, msgQueue);
+        } catch (UnsupportedOperationException e) {
+            assertEquals(expected, e.getMessage());
+        }
+    }
+
+    @Test
+    public void processGetBlockHeaderMessageAndShouldReturnsBlockHeaderCorrectly() {
+        final Block block = mock(Block.class);
+        long requestId = 100;
+        BlockHeader blockHeader = mock(BlockHeader.class);
+        byte[] blockHeaderHash = randomHash().getBytes();
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getHeader()).thenReturn(blockHeader);
+        when(blockHeader.getFullEncoded()).thenReturn(blockHeaderHash);
+
+        BlockHeaderMessage expectedMessage = new BlockHeaderMessage(requestId, blockHeader);
+
+        ArgumentCaptor<BlockHeaderMessage> argument = forClass(BlockHeaderMessage.class);
+        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), msgQueue);
+        verify(msgQueue).sendMessage(argument.capture());
+
+        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
+    public void processGetBlockHeaderMessageWithInvalidBlockHash() {
+        long requestId = 100;
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
+
+        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), msgQueue);
+
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void processBlockHeaderMessageAndShouldThrowAnException() {
+        long requestId = 0;
+        BlockHeader blockHeader = mock(BlockHeader.class);
+
+        String expected = "Not supported BlockHeader processing";
+        try {
+            lightProcessor.processBlockHeaderMessage(requestId, blockHeader, msgQueue);
         } catch (UnsupportedOperationException e) {
             assertEquals(expected, e.getMessage());
         }
