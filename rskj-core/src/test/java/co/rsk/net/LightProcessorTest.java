@@ -18,15 +18,13 @@
 
 package co.rsk.net;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.LightProcessor;
-import co.rsk.net.light.message.BlockHeaderMessage;
-import co.rsk.net.light.message.BlockReceiptsMessage;
-import co.rsk.net.light.message.CodeMessage;
-import co.rsk.net.light.message.TransactionIndexMessage;
+import co.rsk.net.light.message.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -38,13 +36,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.ethereum.TestUtils.*;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
 
@@ -105,16 +103,11 @@ public class LightProcessorTest {
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void processBlockReceiptMessageAndShouldThrowAnException() {
         long requestId = 0;
         List<TransactionReceipt> receipts = new LinkedList<>();
-        String expected = "Not supported BlockReceipt processing";
-        try {
-            lightProcessor.processBlockReceiptsMessage(requestId, receipts, msgQueue);
-        } catch (UnsupportedOperationException e) {
-            assertEquals(expected, e.getMessage());
-        }
+        lightProcessor.processBlockReceiptsMessage(requestId, receipts, msgQueue);
     }
     
     @Test
@@ -149,17 +142,13 @@ public class LightProcessorTest {
 
     @Test
     public void processGetTransactionIndexMessageWithIncorrectBlockHash() {
-        lightProcessor.processGetTransactionIndex(100, new Keccak256(HASH_1).getBytes(), msgQueue);
+        lightProcessor.processGetTransactionIndex(100, blockHash.getBytes(), msgQueue);
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void processTransactionIndexMessageAndShouldThrowAnException() {
-        try {
-            lightProcessor.processTransactionIndexMessage(0, 0, null, 0, msgQueue);
-        } catch (UnsupportedOperationException e) {
-            assertEquals("Not supported TransactionIndexMessage processing", e.getMessage());
-        }
+        lightProcessor.processTransactionIndexMessage(0, 0, null, 0, msgQueue);
     }
 
     @Test
@@ -194,17 +183,67 @@ public class LightProcessorTest {
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void processCodeMessageAndShouldThrowAnException() {
         long requestId = 0;
         byte[] codeHash = randomBytes(32);
 
-        String expected = "Not supported Code processing";
-        try {
-            lightProcessor.processCodeMessage(requestId, codeHash, msgQueue);
-        } catch (UnsupportedOperationException e) {
-            assertEquals(expected, e.getMessage());
-        }
+        lightProcessor.processCodeMessage(requestId, codeHash, msgQueue);
+    }
+
+    @Test
+    public void processGetAccountsMessageAndShouldReturnsAccountsCorrectly() {
+        long id = 101;
+        Coin balance = Coin.valueOf(1010);
+        long nonce = 100;
+        RskAddress address = randomAddress();
+        final Block block = mock(Block.class);
+        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
+        Keccak256 codeHash = randomHash();
+        byte[] storageRoot = randomHash().getBytes();
+        AccountState accountState = mock(AccountState.class);
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getHash()).thenReturn(blockHash);
+        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
+        when(repositorySnapshot.getAccountState(address)).thenReturn(accountState);
+
+        when(accountState.getNonce()).thenReturn(BigInteger.valueOf(nonce));
+        when(accountState.getBalance()).thenReturn(balance);
+        when(repositorySnapshot.getCodeHash(address)).thenReturn(codeHash);
+        when(repositorySnapshot.getRoot()).thenReturn(storageRoot);
+
+        AccountsMessage expectedMessage = new AccountsMessage(id, new byte[] {0x00}, nonce,
+                balance.asBigInteger().longValue(), codeHash.getBytes(), storageRoot);
+
+        ArgumentCaptor<AccountsMessage> argument = forClass(AccountsMessage.class);
+        lightProcessor.processGetAccountsMessage(id, blockHash.getBytes(), address.getBytes(), msgQueue);
+        verify(msgQueue).sendMessage(argument.capture());
+
+        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
+    public void processGetAccountsMessageWithInvalidBlockHash() {
+        long requestId = 100;
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
+        byte[] addressHash = HashUtil.randomHash();
+
+        lightProcessor.processGetAccountsMessage(requestId, blockHash.getBytes(), addressHash, msgQueue);
+
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void processAccountsMessageAndShouldThrowAnException() {
+        long id = 1;
+        byte [] merkleInclusionProof = new byte[] {0x01};
+        long nonce = 123;
+        long balance = 100;
+        byte[] codeHash = HashUtil.randomHash();
+        byte[] storageRoot = HashUtil.randomHash();
+
+        lightProcessor.processAccountsMessage(id, merkleInclusionProof, nonce, balance, codeHash, storageRoot, msgQueue);
     }
 
     @Test
@@ -237,17 +276,12 @@ public class LightProcessorTest {
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
-    @Test
+    @Test(expected = UnsupportedOperationException.class)
     public void processBlockHeaderMessageAndShouldThrowAnException() {
         long requestId = 0;
         BlockHeader blockHeader = mock(BlockHeader.class);
 
-        String expected = "Not supported BlockHeader processing";
-        try {
-            lightProcessor.processBlockHeaderMessage(requestId, blockHeader, msgQueue);
-        } catch (UnsupportedOperationException e) {
-            assertEquals(expected, e.getMessage());
-        }
+        lightProcessor.processBlockHeaderMessage(requestId, blockHeader, msgQueue);
     }
 
     // from TransactionTest
