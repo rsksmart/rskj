@@ -280,14 +280,6 @@ public class LightProcessorTest {
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void processBlockHeaderMessageAndShouldThrowAnException() {
-        long requestId = 0;
-        BlockHeader blockHeader = mock(BlockHeader.class);
-
-        lightProcessor.processBlockHeaderMessage(requestId, blockHeader, lightPeer);
-    }
-
     // from TransactionTest
     private static TransactionReceipt createReceipt() {
         byte[] stateRoot = Hex.decode("f5ff3fbd159773816a7c707a9b8cb6bb778b934a8f6466c7830ed970498f4b68");

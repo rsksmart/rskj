@@ -166,8 +166,4 @@ public class LightProcessor {
         BlockHeaderMessage response = new BlockHeaderMessage(id, block.getHeader());
         lightPeer.sendMessage(response);
     }
-
-    public void processBlockHeaderMessage(long id, BlockHeader blockHeader, LightPeer lightPeer) {
-        throw new UnsupportedOperationException("Not supported BlockHeader processing");
-    }
 }

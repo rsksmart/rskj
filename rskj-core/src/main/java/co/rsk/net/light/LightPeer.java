@@ -18,19 +18,25 @@
 
 package co.rsk.net.light;
 
+import org.ethereum.core.BlockHeader;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
 
+import java.util.LinkedList;
+import java.util.List;
+
 public class LightPeer {
 
+    private final LinkedList<BlockHeader> blockHeaders;
     private Channel channel;
     private MessageQueue msgQueue;
 
     public LightPeer(Channel channel, MessageQueue msgQueue) {
         this.channel = channel;
         this.msgQueue = msgQueue;
+        this.blockHeaders = new LinkedList<>();
     }
 
     public String getPeerIdShort() {
@@ -45,7 +51,11 @@ public class LightPeer {
         msgQueue.disconnect(reasonCode);
     }
 
+    public void receivedBlock(BlockHeader blockHeader) {
+        blockHeaders.add(blockHeader);
+    }
 
-
-
+    public List<BlockHeader> getBlocks() {
+        return new LinkedList<>(blockHeaders);
+    }
 }

@@ -46,7 +46,7 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) {
+    public void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) {
         switch (msg.getCommand()) {
             case STATUS:
                 logger.debug("Read message: {} STATUS. Sending Test response", msg);
@@ -103,7 +103,7 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
             case BLOCK_HEADER:
                 logger.debug("Read message: {} BLOCK_HEADER", msg);
                 BlockHeaderMessage blockHeaderMessage = (BlockHeaderMessage) msg;
-                lightProcessor.processBlockHeaderMessage(blockHeaderMessage.getId(), blockHeaderMessage.getBlockHeader(), lightPeer);
+                lightSyncProcessor.processBlockHeaderMessage(blockHeaderMessage.getId(), blockHeaderMessage.getBlockHeader(), lightPeer);
                 break;
             default:
                 break;

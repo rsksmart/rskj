@@ -21,6 +21,7 @@ package co.rsk.net.eth;
 import co.rsk.core.Coin;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
@@ -79,8 +80,8 @@ public class LightClientHandlerTest {
         genesis = mock(Genesis.class);
         genesisHash = new Keccak256(HashUtil.randomHash());
         lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
-        lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore);
-        lightPeer = new LightPeer(mock(Channel.class), messageQueue);
+        lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain);
+        lightPeer = spy(new LightPeer(mock(Channel.class), messageQueue));
         LightClientHandler.Factory factory = (lightPeer) -> new LightClientHandler(lightPeer, lightProcessor, lightSyncProcessor);
         lightClientHandler = factory.newInstance(lightPeer);
         blockHash = new Keccak256(HashUtil.randomHash());
@@ -92,21 +93,6 @@ public class LightClientHandlerTest {
         ch.pipeline().addLast(lightClientHandler);
         ctx = ch.pipeline().firstContext();
     }
-
-//    @Test
-//    public void lightClientHandlerSendsStatusMessageToQueue() throws Exception {
-//        Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
-//        Keccak256 genesisHash = new Keccak256(HashUtil.randomHash());
-//
-//        long bestNumber = 10L;
-//        BlockDifficulty blockDifficulty = mock(BlockDifficulty.class);
-//
-//        when(genesis.getHash()).thenReturn(genesisHash);
-//
-//        StatusMessage m = new StatusMessage(0L, (byte) 0, 0, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
-//        lightClientHandler.channelRead0(ctx, m);
-//
-//    }
 
     @Test
     public void lightClientHandlerSendValidStatusMessage()   {
@@ -178,6 +164,26 @@ public class LightClientHandlerTest {
         lightClientHandler.channelRead0(ctx, m);
 
         verify(messageQueue).disconnect(eq(ReasonCode.UNEXPECTED_GENESIS));
+    }
+
+    @Test
+    public void lightClientHandlerProcessStatusWithHigherBlockDifficulty() {
+        long bestNumber = 10L;
+        BlockDifficulty blockDifficulty = BlockDifficulty.ONE;
+
+        BlockChainStatus blockChainStatus = mock(BlockChainStatus.class);
+
+        when(genesis.getHash()).thenReturn(genesisHash);
+        when(blockchain.getStatus()).thenReturn(blockChainStatus);
+        when(blockChainStatus.getTotalDifficulty()).thenReturn(BlockDifficulty.ZERO);
+
+
+        LightStatus status = new LightStatus((byte) 0, 0, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
+
+        StatusMessage m = new StatusMessage(0L, status);
+        lightClientHandler.channelRead0(ctx, m);
+
+        verify(messageQueue, times(0)).sendMessage(m);
     }
 
     @Test
@@ -338,9 +344,21 @@ public class LightClientHandlerTest {
         assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void lightClientHandlerSendsBlockHeaderMessageToQueueAndShouldThrowAnException() throws Exception {
-        BlockHeaderMessage m = new BlockHeaderMessage(1, mock(BlockHeader.class));
-        lightClientHandler.channelRead0(ctx, m);
+    @Test
+    public void receiveNotPendingMessageAndShouldBeIgnored() {
+
+        BlockHeader blockHeader = mock(BlockHeader.class);
+        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
+
+        when(blockHeader.getHash()).thenReturn(blockHash);
+        byte[] fullEncodedBlockHeader = randomHash().getBytes();
+        when(blockHeader.getFullEncoded()).thenReturn(fullEncodedBlockHeader);
+
+        BlockHeaderMessage blockHeaderMessage = new BlockHeaderMessage(requestId, blockHeader);
+
+        lightClientHandler.channelRead0(ctx, blockHeaderMessage);
+
+        verify(lightPeer, times(0)).receivedBlock(blockHeader);
+
     }
 }
