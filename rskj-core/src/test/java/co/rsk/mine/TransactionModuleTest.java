@@ -377,7 +377,7 @@ public class TransactionModuleTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
                 reversibleTransactionExecutor1, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
-                repositoryLocator, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), transactionModule,
+                repositoryLocator, new EthModuleWalletEnabled(wallet), transactionModule,
                 new BridgeSupportFactory(
                         btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
                         config.getActivationConfig())
