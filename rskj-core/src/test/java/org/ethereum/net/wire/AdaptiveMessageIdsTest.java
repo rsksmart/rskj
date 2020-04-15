@@ -114,6 +114,6 @@ public class AdaptiveMessageIdsTest {
     @Test
     public void quantityOfMessagesAndOffsetOfEachMessageShouldBeCorrect() {
         assertEquals(1, LightClientMessageCodes.values().length);
-        assertEquals(0, messageCodesResolver.withLightClientOffset(LightClientMessageCodes.TEST.asByte()));
+        assertEquals(0, messageCodesResolver.withLightClientOffset(LightClientMessageCodes.STATUS.asByte()));
     }
 }
