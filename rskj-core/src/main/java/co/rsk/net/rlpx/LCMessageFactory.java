@@ -33,8 +33,8 @@ public class LCMessageFactory {
     public Message create(byte code, byte[] encoded) {
         LightClientMessageCodes receivedCommand = LightClientMessageCodes.fromByte(code);
         switch (receivedCommand) {
-            case TEST:
-                return new TestMessage(encoded);
+            case STATUS:
+                return new StatusMessage(encoded);
             case GET_BLOCK_RECEIPTS:
                 return new GetBlockReceiptsMessage(encoded);
             case BLOCK_RECEIPTS:

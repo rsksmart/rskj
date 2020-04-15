@@ -25,7 +25,7 @@ public class ChannelTest {
     private NodeManager nodeManager;
     private RskWireProtocol.Factory rskWireProtocolFactory;
     private Eth62MessageFactory eth62MessageFactory;
-    private LightClientHandler lightClientHandler;
+    private LightClientHandler.Factory lightClientHandlerFactory;
     private LCMessageFactory lcMessageFactory;
     private StaticMessages staticMessages;
     private String remoteId;
@@ -40,14 +40,14 @@ public class ChannelTest {
         rskWireProtocolFactory = mock(RskWireProtocol.Factory.class);
         eth62MessageFactory = mock(Eth62MessageFactory.class);
         staticMessages = mock(StaticMessages.class);
-        lightClientHandler = mock(LightClientHandler.class);
+        lightClientHandlerFactory = mock(LightClientHandler.Factory.class);
         lcMessageFactory = mock(LCMessageFactory.class);
         target = new Channel(
                 messageQueue,
                 messageCodec,
                 nodeManager,
                 rskWireProtocolFactory,
-                lightClientHandler,
+                lightClientHandlerFactory,
                 eth62MessageFactory,
                 lcMessageFactory,
                 staticMessages, remoteId);
@@ -62,7 +62,7 @@ public class ChannelTest {
                 messageCodec,
                 nodeManager,
                 rskWireProtocolFactory,
-                lightClientHandler,
+                lightClientHandlerFactory,
                 eth62MessageFactory,
                 lcMessageFactory,
                 staticMessages, remoteId);
@@ -81,7 +81,7 @@ public class ChannelTest {
                 messageCodec,
                 nodeManager,
                 rskWireProtocolFactory,
-                lightClientHandler,
+                lightClientHandlerFactory,
                 eth62MessageFactory,
                 lcMessageFactory,
                 staticMessages, remoteId);
