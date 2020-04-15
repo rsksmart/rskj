@@ -28,7 +28,6 @@ import org.ethereum.net.message.Message;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.net.MessageQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,9 +57,9 @@ public class LightProcessor {
      * processBlockReceiptsRequest sends the requested block receipts if it is available.
      * @param requestId the id of the request
      * @param blockHash   the requested block hash.
-     * @param msgQueue the queue for send messages
+     * @param lightPeer
      */
-    public void processGetBlockReceiptsMessage(long requestId, byte[] blockHash, MessageQueue msgQueue) {
+    public void processGetBlockReceiptsMessage(long requestId, byte[] blockHash, LightPeer lightPeer) {
         logger.trace("Processing block receipts request {} block {}", requestId, Hex.toHexString(blockHash).substring(0,10));
         final Block block = blockStore.getBlockByHash(blockHash);
 
@@ -77,14 +76,14 @@ public class LightProcessor {
         }
 
         Message responseMessage = new BlockReceiptsMessage(requestId, receipts);
-        msgQueue.sendMessage(responseMessage);
+        lightPeer.sendMessage(responseMessage);
     }
 
-    public void processBlockReceiptsMessage(long id, List<TransactionReceipt> blockReceipts, MessageQueue msgQueue) {
+    public void processBlockReceiptsMessage(long id, List<TransactionReceipt> blockReceipts, LightPeer lightPeer) {
         throw new UnsupportedOperationException("Not supported BlockReceipt processing");
     }
 
-    public void processGetTransactionIndex(long id, byte[] hash, MessageQueue msgqueue) {
+    public void processGetTransactionIndex(long id, byte[] hash, LightPeer lightPeer) {
         logger.debug("Get Transaction Index Message Received");
 
         TransactionInfo txinfo = blockchain.getTransactionInfo(hash);
@@ -99,14 +98,14 @@ public class LightProcessor {
         long txIndex = txinfo.getIndex();
 
         TransactionIndexMessage response = new TransactionIndexMessage(id, blockNumber, blockHash, txIndex);
-        msgqueue.sendMessage(response);
+        lightPeer.sendMessage(response);
     }
 
-    public void processTransactionIndexMessage(long id, long blockNumber, byte[] blockHash, long txIndex, MessageQueue msgqueue) {
+    public void processTransactionIndexMessage(long id, long blockNumber, byte[] blockHash, long txIndex, LightPeer lightPeer) {
         throw new UnsupportedOperationException("Not supported TransactionIndexMessage processing");
     }
 
-    public void processGetCodeMessage(long requestId, byte[] blockHash, byte[] address, MessageQueue msgQueue) {
+    public void processGetCodeMessage(long requestId, byte[] blockHash, byte[] address, LightPeer lightPeer) {
         logger.trace("Processing code request {} block {} code {}", requestId, Hex.toHexString(blockHash), Hex.toHexString(address));
 
         final Block block = blockStore.getBlockByHash(blockHash);
@@ -121,14 +120,14 @@ public class LightProcessor {
         Keccak256 codeHash = repositorySnapshot.getCodeHash(addr);
 
         CodeMessage response = new CodeMessage(requestId, codeHash.getBytes());
-        msgQueue.sendMessage(response);
+        lightPeer.sendMessage(response);
     }
 
-    public void processCodeMessage(long id, byte[] codeHash, MessageQueue msgQueue) {
+    public void processCodeMessage(long id, byte[] codeHash, LightPeer lightPeer) {
         throw new UnsupportedOperationException("Not supported Code processing");
     }
 
-    public void processGetAccountsMessage(long id, byte[] blockHash, byte[] addressHash, MessageQueue msgQueue) {
+    public void processGetAccountsMessage(long id, byte[] blockHash, byte[] addressHash, LightPeer lightPeer) {
         logger.debug("Get Accounts Message Received: id {}, blockhash: {}, addressHash {}", id, blockHash, addressHash);
 
         final Block block = blockStore.getBlockByHash(blockHash);
@@ -146,19 +145,15 @@ public class LightProcessor {
                 state.getBalance().asBigInteger().longValue(), repositorySnapshot.getCodeHash(address).getBytes(),
                 repositorySnapshot.getRoot());
 
-        msgQueue.sendMessage(response);
+        lightPeer.sendMessage(response);
     }
 
     public void processAccountsMessage(long id, byte[] merkleInclusionProof, long nonce, long balance,
-                                       byte[] codeHash, byte[] storageRoot, MessageQueue msgQueue) {
+                                       byte[] codeHash, byte[] storageRoot, LightPeer lightPeer) {
         throw new UnsupportedOperationException("Not supported AccountsMessage processing");
     }
 
-    public void processTestMessage(TestMessage testMessage, MessageQueue msgQueue) {
-        msgQueue.sendMessage(testMessage);
-    }
-
-    public void processGetBlockHeaderMessage(long id, byte[] blockHash, MessageQueue msgQueue) {
+    public void processGetBlockHeaderMessage(long id, byte[] blockHash, LightPeer lightPeer) {
         logger.trace("Processing block header request {} block {}", id, Hex.toHexString(blockHash));
 
         final Block block = blockStore.getBlockByHash(blockHash);
@@ -169,10 +164,6 @@ public class LightProcessor {
         }
 
         BlockHeaderMessage response = new BlockHeaderMessage(id, block.getHeader());
-        msgQueue.sendMessage(response);
-    }
-
-    public void processBlockHeaderMessage(long id, BlockHeader blockHeader, MessageQueue msgQueue) {
-        throw new UnsupportedOperationException("Not supported BlockHeader processing");
+        lightPeer.sendMessage(response);
     }
 }

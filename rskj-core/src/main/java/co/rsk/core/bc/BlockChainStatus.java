@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
+import co.rsk.net.light.LightStatus;
 import org.ethereum.core.Block;
 
 /**
@@ -48,6 +49,10 @@ public class BlockChainStatus {
     }
 
     public boolean hasLowerTotalDifficultyThan(Status status) {
+        return this.totalDifficulty.compareTo(status.getTotalDifficulty()) < 0;
+    }
+
+    public boolean hasLowerDifficultyThan(LightStatus status) {
         return this.totalDifficulty.compareTo(status.getTotalDifficulty()) < 0;
     }
 }
