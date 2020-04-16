@@ -361,4 +361,48 @@ public class LightClientHandlerTest {
         verify(lightPeer, times(0)).receivedBlock(blockHeader);
 
     }
+
+    @Test
+    public void lightClientHandlerSendsGetBlockBodyToQueue() {
+        Block block = mock(Block.class);
+        BlockHeader blockHeader = mock(BlockHeader.class);
+        Transaction transaction = mock(Transaction.class);
+        Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
+        byte[] transactionEncoded = HashUtil.randomHash();
+        byte[] blockHeaderEncoded = HashUtil.randomHash();
+        long requestId = 10;
+
+        LinkedList<BlockHeader> uncleList = new LinkedList<>();
+        uncleList.add(blockHeader);
+
+        LinkedList<Transaction> transactionList = new LinkedList<>();
+        transactionList.add(transaction);
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getUncleList()).thenReturn(uncleList);
+        when(block.getTransactionsList()).thenReturn(transactionList);
+        when(blockHeader.getEncoded()).thenReturn(blockHeaderEncoded);
+        when(blockHeader.getFullEncoded()).thenReturn(blockHeaderEncoded);
+        when(transaction.getEncoded()).thenReturn(transactionEncoded);
+
+        GetBlockBodyMessage m = new GetBlockBodyMessage(requestId, blockHash.getBytes());
+        BlockBodyMessage response = new BlockBodyMessage(requestId, transactionList, uncleList);
+
+        lightClientHandler.channelRead0(ctx, m);
+
+        ArgumentCaptor<BlockBodyMessage> argument = forClass(BlockBodyMessage.class);
+        verify(messageQueue).sendMessage(argument.capture());
+        assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void lightClientHandlerSendBlockBodyMsgToQueueAndShouldThrowAnException() throws Exception {
+        long id = 0;
+        LinkedList<Transaction> transactionList = new LinkedList<>();
+        LinkedList<BlockHeader> uncleList = new LinkedList<>();
+        BlockBodyMessage m = new BlockBodyMessage(id, transactionList, uncleList);
+
+        lightClientHandler.channelRead0(ctx, m);
+    }
+
 }

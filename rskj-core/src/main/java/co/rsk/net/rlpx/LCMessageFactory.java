@@ -55,6 +55,10 @@ public class LCMessageFactory {
                 return new GetBlockHeaderMessage(encoded);
             case BLOCK_HEADER:
                 return new BlockHeaderMessage(encoded, blockFactory);
+            case GET_BLOCK_BODY:
+                return new GetBlockBodyMessage(encoded);
+            case BLOCK_BODY:
+                return new BlockBodyMessage(encoded, blockFactory);
             default:
                 throw new IllegalArgumentException("No such message");
         }
