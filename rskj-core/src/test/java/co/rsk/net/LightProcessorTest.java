@@ -280,6 +280,55 @@ public class LightProcessorTest {
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
+    @Test
+    public void processGetBlocBodyMessageAndShouldReturnsBlockBodyCorrectly() {
+        final Block block = mock(Block.class);
+        Transaction transaction = mock(Transaction.class);
+        BlockHeader blockHeader = mock(BlockHeader.class);
+        byte[] blockHeaderHash = randomHash().getBytes();
+        byte[] transactionHash = randomHash().getBytes();
+        long requestId = 100;
+
+        LinkedList<BlockHeader> uncleList = new LinkedList<>();
+        uncleList.add(blockHeader);
+
+        LinkedList<Transaction> transactionList = new LinkedList<>();
+        transactionList.add(transaction);
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getUncleList()).thenReturn(uncleList);
+        when(block.getTransactionsList()).thenReturn(transactionList);
+        when(blockHeader.getFullEncoded()).thenReturn(blockHeaderHash);
+        when(blockHeader.getEncoded()).thenReturn(blockHeaderHash);
+        when(transaction.getEncoded()).thenReturn(transactionHash);
+
+        BlockBodyMessage expectedMessage = new BlockBodyMessage(requestId, transactionList, uncleList);
+
+        ArgumentCaptor<BlockBodyMessage> argument = forClass(BlockBodyMessage.class);
+        lightProcessor.processGetBlockBodyMessage(requestId, blockHash.getBytes(), lightPeer);
+        verify(msgQueue).sendMessage(argument.capture());
+
+        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
+    public void processGetBlockBodyMessageWithInvalidBlockHash() {
+        long requestId = 100;
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
+
+        lightProcessor.processGetBlockBodyMessage(requestId, blockHash.getBytes(), lightPeer);
+
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void processBlockBodyMessageAndShouldThrowAnException() {
+        LinkedList<Transaction> transactionList = new LinkedList<>();
+        LinkedList<BlockHeader> uncleList = new LinkedList<>();
+
+        lightProcessor.processBlockBodyMessage(0, uncleList, transactionList,  lightPeer);
+    }
+
     // from TransactionTest
     private static TransactionReceipt createReceipt() {
         byte[] stateRoot = Hex.decode("f5ff3fbd159773816a7c707a9b8cb6bb778b934a8f6466c7830ed970498f4b68");

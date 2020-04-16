@@ -105,6 +105,16 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
                 BlockHeaderMessage blockHeaderMessage = (BlockHeaderMessage) msg;
                 lightSyncProcessor.processBlockHeaderMessage(blockHeaderMessage.getId(), blockHeaderMessage.getBlockHeader(), lightPeer);
                 break;
+            case GET_BLOCK_BODY:
+                logger.debug("Read message: {} GET_BLOCK_BODY", msg);
+                GetBlockBodyMessage getBlockBodyMessage = (GetBlockBodyMessage) msg;
+                lightProcessor.processGetBlockBodyMessage(getBlockBodyMessage.getId(), getBlockBodyMessage.getBlockHash(), lightPeer);
+                break;
+            case BLOCK_BODY:
+                logger.debug("Read message: {} BLOCK_BODY", msg);
+                BlockBodyMessage blockBodyMessage = (BlockBodyMessage) msg;
+                lightProcessor.processBlockBodyMessage(blockBodyMessage.getId(), blockBodyMessage.getUncles(), blockBodyMessage.getTransactions(), lightPeer);
+                break;
             default:
                 break;
         }
