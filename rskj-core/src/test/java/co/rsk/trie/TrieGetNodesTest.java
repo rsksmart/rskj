@@ -69,7 +69,8 @@ public class TrieGetNodesTest {
         Assert.assertArrayEquals("bar".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
         Assert.assertNull(nodes.get(1).getValue());  //the null subkey of "foo" i.e. ""
     }
-    // mish understanding how getNodes() works.. with subkeys.
+    // mish: understanding how getNodes() works. Looks like given a key, it walks up the 
+    // trie "f", "foo"
     // so find() and findNodes() probably work the same way?
     @Test
     public void putKeyAndSubkeyAndGetNodes() {
