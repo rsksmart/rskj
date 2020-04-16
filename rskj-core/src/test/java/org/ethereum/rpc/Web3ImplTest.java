@@ -1697,7 +1697,7 @@ public class Web3ImplTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
                 null, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
+                null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
         );
@@ -1784,8 +1784,7 @@ public class Web3ImplTest {
         Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
-                new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator,
-                new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet),
+                new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()));
@@ -1819,120 +1818,6 @@ public class Web3ImplTest {
                 new BuildInfo("test", "test"),
                 null,
                 retriever);
-    }
-
-    @Test
-    @Ignore
-    public void eth_compileSolidity() throws Exception {
-        RskSystemProperties systemProperties = mock(RskSystemProperties.class);
-        String solc = System.getProperty("solc");
-        if (solc == null || solc.isEmpty())
-            solc = "/usr/bin/solc";
-
-        when(systemProperties.customSolcPath()).thenReturn(solc);
-        Ethereum eth = mock(Ethereum.class);
-        EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), null, null,
-                null, new ExecutionBlockRetriever(null, null, null, null), null,
-                new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null, null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
-        );
-        PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
-        Web3Impl web3 = new Web3RskImpl(
-                eth,
-                null,
-                systemProperties,
-                null,
-                null,
-                personalModule,
-                ethModule,
-                null,
-                txPoolModule,
-                null,
-                debugModule,
-                null, null,
-                Web3Mocks.getMockChannelManager(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                mock(Web3InformationRetriever.class));
-        String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
-
-        Map<String, CompilationResultDTO> result = web3.eth_compileSolidity(contract);
-
-        assertNotNull(result);
-
-        CompilationResultDTO dto = result.get("rsk");
-
-        if (dto == null)
-            dto = result.get("<stdin>:rsk");
-
-        org.junit.Assert.assertEquals(contract , dto.info.getSource());
-    }
-
-    @Test
-    public void eth_compileSolidityWithoutSolidity() throws Exception {
-        SystemProperties systemProperties = mock(SystemProperties.class);
-        String solc = System.getProperty("solc");
-        if (solc == null || solc.isEmpty())
-            solc = "/usr/bin/solc";
-
-        when(systemProperties.customSolcPath()).thenReturn(solc);
-
-        Wallet wallet = WalletFactory.createWallet();
-        Ethereum eth = Web3Mocks.getMockEthereum();
-        Blockchain blockchain = Web3Mocks.getMockBlockchain();
-        TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
-        EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
-                null, new ExecutionBlockRetriever(null, null, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()));
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
-        Web3Impl web3 = new Web3RskImpl(
-                eth,
-                blockchain,
-                config,
-                null,
-                null,
-                new PersonalModuleWalletDisabled(),
-                ethModule,
-                null,
-                txPoolModule,
-                null,
-                debugModule,
-                null, null,
-                Web3Mocks.getMockChannelManager(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                mock(Web3InformationRetriever.class));
-
-        String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
-
-        Map<String, CompilationResultDTO> result = web3.eth_compileSolidity(contract);
-
-        assertNotNull(result);
-        org.junit.Assert.assertEquals(0, result.size());
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(
