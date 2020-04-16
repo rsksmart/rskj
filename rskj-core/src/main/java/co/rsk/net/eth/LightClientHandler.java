@@ -118,13 +118,13 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
                 logger.debug("Read message: {} GET_STORAGE", msg);
                 GetStorageMessage getStorageMessage = (GetStorageMessage) msg;
                 lightProcessor.processGetStorageMessage(getStorageMessage.getId(), getStorageMessage.getBlockHash(),
-                        getStorageMessage.getAddressHash(), getStorageMessage.getStorageKeyHash());
+                        getStorageMessage.getAddressHash(), getStorageMessage.getStorageKeyHash(), lightPeer);
                 break;
             case STORAGE:
                 logger.debug("Read message: {} STORAGE", msg);
                 StorageMessage storageMessage = (StorageMessage) msg;
                 lightProcessor.processStorageMessage(storageMessage.getId(), storageMessage.getMerkleInclusionProof(),
-                        storageMessage.getStorageValue());
+                        storageMessage.getStorageValue(), lightPeer);
                 break;
             default:
                 break;

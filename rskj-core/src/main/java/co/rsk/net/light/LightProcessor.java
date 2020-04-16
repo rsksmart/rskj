@@ -28,6 +28,7 @@ import org.ethereum.net.message.Message;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -186,11 +187,27 @@ public class LightProcessor {
         throw new UnsupportedOperationException("Not supported BlockBody processing");
     }
 
-    public void processGetStorageMessage(long id, byte[] blockHash, byte[] addressHash, byte[] storageKeyHash) {
+    public void processGetStorageMessage(long id, byte[] blockHash, byte[] addressHash, byte[] storageKeyHash, LightPeer lightPeer) {
+        final Block block = blockStore.getBlockByHash(blockHash);
 
+        if (block == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+        RepositorySnapshot repositorySnapshot = repositoryLocator.snapshotAt(block.getHeader());
+        RskAddress address = new RskAddress(addressHash);
+        byte[] storageValue = repositorySnapshot.getStorageBytes(address, DataWord.valueOf(storageKeyHash));
+
+        if (storageValue == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+        StorageMessage response = new StorageMessage(id, new byte[] {0x00}, storageValue);
+        lightPeer.sendMessage(response);
     }
 
-    public void processStorageMessage(long id, byte[] merkleInclusionProof, byte[] storageValue) {
+    public void processStorageMessage(long id, byte[] merkleInclusionProof, byte[] storageValue, LightPeer lightPeer) {
         throw new UnsupportedOperationException("Not supported Storage processing");
     }
 }
