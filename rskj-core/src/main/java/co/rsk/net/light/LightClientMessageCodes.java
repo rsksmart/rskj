@@ -43,7 +43,11 @@ public enum LightClientMessageCodes {
 
     GET_BLOCK_HEADER(0x09),
 
-    BLOCK_HEADER(0x0A);
+    BLOCK_HEADER(0x0A),
+
+    GET_BLOCK_BODY(0x0B),
+
+    BLOCK_BODY(0x0C);
 
     private final int cmd;
 
@@ -60,7 +64,7 @@ public enum LightClientMessageCodes {
     }
 
     public static boolean inRange(byte code) {
-        return code >= STATUS.asByte() && code <= BLOCK_HEADER.asByte();
+        return code >= STATUS.asByte() && code <= BLOCK_BODY.asByte();
     }
 
     public static LightClientMessageCodes fromByte(byte i) {

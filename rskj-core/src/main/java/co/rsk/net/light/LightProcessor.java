@@ -166,4 +166,23 @@ public class LightProcessor {
         BlockHeaderMessage response = new BlockHeaderMessage(id, block.getHeader());
         lightPeer.sendMessage(response);
     }
+
+    public void processGetBlockBodyMessage(long id, byte[] blockHash, LightPeer lightPeer) {
+        String logBlockHash = Hex.toHexString(blockHash);
+        logger.trace("Processing block header request {} block {}", id, logBlockHash);
+
+        final Block block = blockStore.getBlockByHash(blockHash);
+
+        if (block == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+        BlockBodyMessage response = new BlockBodyMessage(id, block.getTransactionsList(), block.getUncleList());
+        lightPeer.sendMessage(response);
+    }
+
+    public void processBlockBodyMessage(long id, List<BlockHeader> uncles, List<Transaction> transactions, LightPeer lightPeer) {
+        throw new UnsupportedOperationException("Not supported BlockBody processing");
+    }
 }
