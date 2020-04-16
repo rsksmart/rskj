@@ -185,4 +185,12 @@ public class LightProcessor {
     public void processBlockBodyMessage(long id, List<BlockHeader> uncles, List<Transaction> transactions, LightPeer lightPeer) {
         throw new UnsupportedOperationException("Not supported BlockBody processing");
     }
+
+    public void processGetStorageMessage(long id, byte[] blockHash, byte[] addressHash, byte[] storageKeyHash) {
+
+    }
+
+    public void processStorageMessage(long id, byte[] merkleInclusionProof, byte[] storageValue) {
+        throw new UnsupportedOperationException("Not supported Storage processing");
+    }
 }
