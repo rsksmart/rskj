@@ -1480,9 +1480,23 @@ public class VM {
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
-        DataWord value;
-
         ActivationConfig.ForBlock activations = program.getActivations();
+
+        MessageCall msg = getMessageCall(gas, codeAddress, activations);
+
+        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, codeAddress);
+
+        if (contract != null) {
+            program.callToPrecompiledAddress(msg, contract);
+        } else {
+            program.callToAddress(msg);
+        }
+
+        program.step();
+    }
+
+    private MessageCall getMessageCall(DataWord gas, DataWord codeAddress, ActivationConfig.ForBlock activations) {
+        DataWord value;
 
         if (activations.isActive(RSKIP103)) {
             // value is always zero in a DELEGATECALL or STATICCALL operation
@@ -1553,25 +1567,10 @@ public class VM {
 
         program.memoryExpand(outDataOffs, outDataSize);
 
-        MessageCall msg = new MessageCall(
+        return new MessageCall(
                 MsgType.fromOpcode(op),
                 DataWord.valueOf(calleeGas), codeAddress, value, inDataOffs, inDataSize,
                 outDataOffs, outDataSize);
-
-        callToAddress(codeAddress, msg);
-
-        program.step();
-    }
-
-    private void callToAddress(DataWord codeAddress, MessageCall msg) {
-        ActivationConfig.ForBlock activations = program.getActivations();
-        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, codeAddress);
-
-        if (contract != null) {
-            program.callToPrecompiledAddress(msg, contract);
-        } else {
-            program.callToAddress(msg);
-        }
     }
 
     private long computeCallGas(DataWord codeAddress,
