@@ -33,6 +33,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.server.Channel;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.Before;
 import org.junit.Test;
@@ -327,6 +328,63 @@ public class LightProcessorTest {
         LinkedList<BlockHeader> uncleList = new LinkedList<>();
 
         lightProcessor.processBlockBodyMessage(0, uncleList, transactionList,  lightPeer);
+    }
+
+    @Test
+    public void processGetStorageMessageAndShouldReturnsBlockBodyCorrectly() {
+        long id = 0;
+        final Block block = mock(Block.class);
+        RskAddress address = randomAddress();
+        DataWord storageKey = DataWord.valueOf(HashUtil.randomHash());
+        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
+        byte[] storageValue = HashUtil.randomHash();
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getHash()).thenReturn(blockHash);
+        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
+        when(repositorySnapshot.getStorageBytes(address, storageKey)).thenReturn(storageValue);
+
+        StorageMessage expectedMessage = new StorageMessage(id, new byte[] {0x00}, storageValue);
+
+        ArgumentCaptor<StorageMessage> argument = forClass(StorageMessage.class);
+        lightProcessor.processGetStorageMessage(id, blockHash.getBytes(), address.getBytes(),
+                storageKey.getData(), lightPeer);
+        verify(msgQueue).sendMessage(argument.capture());
+
+        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
+    public void processGetStorageMessageWithInvalidBlockHash() {
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
+
+        lightProcessor.processGetStorageMessage(100, blockHash.getBytes(), randomAddress().getBytes(),
+                new byte[] {0x00}, lightPeer);
+
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void processGetStorageMessageWithNullStorage() {
+        final Block block = mock(Block.class);
+        RskAddress address = randomAddress();
+        DataWord storageKey = DataWord.valueOf(HashUtil.randomHash());
+        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getHash()).thenReturn(blockHash);
+        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
+        when(repositorySnapshot.getStorageBytes(address, storageKey)).thenReturn(null);
+
+        lightProcessor.processGetStorageMessage(100, blockHash.getBytes(), randomAddress().getBytes(),
+                new byte[] {0x00}, lightPeer);
+
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void processStorageMessageAndShouldThrowAnException() {
+        lightProcessor.processStorageMessage(0, new byte[] {0x00}, new byte[] {0x00}, lightPeer);
     }
 
     // from TransactionTest
