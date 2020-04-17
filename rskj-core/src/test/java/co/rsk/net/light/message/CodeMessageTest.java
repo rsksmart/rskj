@@ -28,20 +28,19 @@ import static org.junit.Assert.*;
 
 public class CodeMessageTest {
 
-    private CodeMessage testMessage;
     private byte[] codeHash;
-    private int id;
 
     @Before
 
     public void setUp() {
-        id = 1;
         codeHash = randomHash();
-        testMessage = new CodeMessage(id, codeHash);
     }
 
     @Test
     public void messageCreationShouldBeCorrect() {
+        long id = 1;
+        CodeMessage testMessage = new CodeMessage(id, codeHash);
+
         assertEquals(id, testMessage.getId());
         assertArrayEquals(codeHash, testMessage.getCodeHash());
         assertEquals(CODE, testMessage.getCommand());
@@ -49,6 +48,19 @@ public class CodeMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        long id = 0;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id) {
+        CodeMessage testMessage = new CodeMessage(id, codeHash);
+
         byte[] encoded = testMessage.getEncoded();
         CodeMessage codeMessage = new CodeMessage(encoded);
 

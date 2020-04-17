@@ -31,25 +31,22 @@ import static org.mockito.Mockito.mock;
 
 public class AccountsMessageTest {
 
-    private long id;
     private byte[] merkleInclusionProof;
-    private long nonce;
-    private long balance;
     private byte[] codeHash;
     private byte[] storageRoot;
 
     @Before
     public void setUp() {
-        id = 1;
         merkleInclusionProof = HashUtil.randomHash();
-        nonce = 123;
-        balance = 100;
         codeHash = HashUtil.randomHash();
         storageRoot = HashUtil.randomHash();
     }
 
     @Test
     public void messageCreationShouldBeCorrect() {
+        long id = 1;
+        long nonce = 123;
+        long balance = 100;
         AccountsMessage testMessage = new AccountsMessage(id, merkleInclusionProof,
                 nonce, balance,
                 codeHash, storageRoot);
@@ -64,7 +61,21 @@ public class AccountsMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        long nonce = 123;
+        long balance = 100;
+        createMessageAndAssertEncodeDecode(id, nonce, balance);
+    }
 
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroParameters() {
+        long id = 0;
+        long nonce = 0;
+        long balance = 0;
+        createMessageAndAssertEncodeDecode(id, nonce, balance);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id, long nonce, long balance) {
         AccountsMessage testMessage = new AccountsMessage(id, merkleInclusionProof,
                 nonce, balance,
                 codeHash, storageRoot);

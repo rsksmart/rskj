@@ -30,23 +30,20 @@ import static org.mockito.Mockito.mock;
 
 public class TransactionIndexMessageTest {
 
-    private long id;
-    private long blockNumber;
     private byte[] blockHash;
-    private long txIndex;
     private BlockFactory blockFactory;
 
     @Before
     public void setUp() {
-        id = 1L;
-        blockNumber = 1000L;
         blockHash = HashUtil.randomHash();
-        txIndex = 1234L;
         blockFactory = mock(BlockFactory.class);
     }
 
     @Test
     public void createMessage() {
+        long id = 1L;
+        long blockNumber = 1000L;
+        long txIndex = 1234L;
         TransactionIndexMessage message = new TransactionIndexMessage(id, blockNumber, blockHash, txIndex);
 
         assertEquals(LightClientMessageCodes.TRANSACTION_INDEX, message.getCommand());
@@ -59,6 +56,21 @@ public class TransactionIndexMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1L;
+        long blockNumber = 1000L;
+        long txIndex = 1234L;
+        createMessageAndAssertEncodeDecode(id, blockNumber, txIndex);
+    }
+
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroParameters() {
+        long id = 0;
+        long blockNumber = 0;
+        long txIndex = 0;
+        createMessageAndAssertEncodeDecode(id, blockNumber, txIndex);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id, long blockNumber, long txIndex) {
         TransactionIndexMessage testMessage = new TransactionIndexMessage(id, blockNumber, blockHash, txIndex);
         byte[] encoded = testMessage.getEncoded();
 
@@ -75,6 +87,5 @@ public class TransactionIndexMessageTest {
         assertEquals(testMessage.getBlockNumber(), message.getBlockNumber());
         assertArrayEquals(testMessage.getBlockHash(), message.getBlockHash());
         assertEquals(testMessage.getTransactionIndex(), message.getTransactionIndex());
-
     }
 }
