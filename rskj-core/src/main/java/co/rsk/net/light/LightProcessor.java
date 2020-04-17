@@ -60,7 +60,8 @@ public class LightProcessor {
      * @param lightPeer
      */
     public void processGetBlockReceiptsMessage(long requestId, byte[] blockHash, LightPeer lightPeer) {
-        logger.trace("Processing block receipts request {} block {}", requestId, Hex.toHexString(blockHash).substring(0,10));
+        String blockHashLog = Hex.toHexString(blockHash);
+        logger.trace("Processing block receipts request {} block {}", requestId, blockHashLog);
         final Block block = blockStore.getBlockByHash(blockHash);
 
         if (block == null) {
@@ -106,7 +107,9 @@ public class LightProcessor {
     }
 
     public void processGetCodeMessage(long requestId, byte[] blockHash, byte[] address, LightPeer lightPeer) {
-        logger.trace("Processing code request {} block {} code {}", requestId, Hex.toHexString(blockHash), Hex.toHexString(address));
+        String blockHashLog = Hex.toHexString(blockHash);
+        String addressLog = Hex.toHexString(address);
+        logger.trace("Processing code request {} block {} code {}", requestId, blockHashLog, addressLog);
 
         final Block block = blockStore.getBlockByHash(blockHash);
 
@@ -154,7 +157,8 @@ public class LightProcessor {
     }
 
     public void processGetBlockHeaderMessage(long id, byte[] blockHash, LightPeer lightPeer) {
-        logger.trace("Processing block header request {} block {}", id, Hex.toHexString(blockHash));
+        String blockHashLog = Hex.toHexString(blockHash);
+        logger.trace("Processing block header request {} block {}", id, blockHashLog);
 
         final Block block = blockStore.getBlockByHash(blockHash);
 
