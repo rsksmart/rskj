@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
@@ -23,6 +24,12 @@ import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.trie.Trie;
+import com.google.common.collect.Lists;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -36,6 +43,8 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -51,8 +60,12 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -70,12 +83,14 @@ public class BridgeSupportTest {
     private BridgeConstants bridgeConstants;
     private NetworkParameters btcParams;
     private ActivationConfig.ForBlock activationsBeforeForks;
+    private ActivationConfig.ForBlock activationsAfterForks;
 
     @Before
     public void setUpOnEachTest() {
         bridgeConstants = BridgeRegTestConstants.getInstance();
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
+        activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
     }
 
     @Test
@@ -4435,6 +4450,402 @@ public class BridgeSupportTest {
         Assert.assertTrue(bridgeSupport.validationsForRegisterBtcTransaction(tx.getHash(), height, pmt.bitcoinSerialize(), tx.bitcoinSerialize()));
     }
 
+    @Test
+    public void addSignature_fedPubKey_belongs_to_active_federation() throws Exception {
+        //Setup
+        FederationSupport mockFederationSupport = mock(FederationSupport.class);
+
+        // Creates new federation
+        List<BtcECKey> federation1Keys = Arrays.asList(
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")));
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        Federation activeFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys), Instant.ofEpochMilli(1000L), 0L, btcParams);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                bridgeConstants,
+                provider,
+                mock(BridgeEventLogger.class),
+                new BtcLockSenderProvider(),
+                mock(Repository.class),
+                mock(Block.class),
+                new Context(bridgeConstants.getBtcParams()),
+                mockFederationSupport,
+                null,
+                null
+        );
+
+        when(mockFederationSupport.getActiveFederation()).thenReturn(activeFederation);
+        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+
+        bridgeSupport.addSignature(BtcECKey.fromPrivate(Hex.decode("fa01")), null, PegTestUtils.createHash3(1).getBytes());
+        verify(provider, times(1)).getRskTxsWaitingForSignatures();
+    }
+
+    @Test
+    public void addSignature_fedPubKey_belongs_to_retiring_federation() throws Exception {
+        //Setup
+        FederationSupport mockFederationSupport = mock(FederationSupport.class);
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                bridgeConstants,
+                provider,
+                mock(BridgeEventLogger.class),
+                new BtcLockSenderProvider(),
+                mock(Repository.class),
+                mock(Block.class),
+                new Context(bridgeConstants.getBtcParams()),
+                mockFederationSupport,
+                null,
+                null
+        );
+
+        // Creates retiring federation
+        List<BtcECKey> federation1Keys = Arrays.asList(
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")));
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        Federation retiringFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys), Instant.ofEpochMilli(1000L), 0L, btcParams);
+
+        // Creates active federation
+        List<BtcECKey> activeFederationKeys = Arrays.asList(
+                BtcECKey.fromPrivate(Hex.decode("fa03")),
+                BtcECKey.fromPrivate(Hex.decode("fa04")));
+        activeFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        Federation activeFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys), Instant.ofEpochMilli(1000L), 0L, btcParams);
+
+        when(mockFederationSupport.getActiveFederation()).thenReturn(activeFederation);
+        when(mockFederationSupport.getRetiringFederation()).thenReturn(retiringFederation);
+        when(provider.getRskTxsWaitingForSignatures()).thenReturn(new TreeMap<>());
+
+        bridgeSupport.addSignature(BtcECKey.fromPrivate(Hex.decode("fa01")), null, PegTestUtils.createHash3(1).getBytes());
+        verify(provider, times(1)).getRskTxsWaitingForSignatures();
+    }
+
+    @Test
+    public void addSignature_fedPubKey_no_belong_to_retiring_or_active_federation() throws Exception {
+        //Setup
+        FederationSupport mockFederationSupport = mock(FederationSupport.class);
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                bridgeConstants,
+                provider,
+                mock(BridgeEventLogger.class),
+                new BtcLockSenderProvider(),
+                mock(Repository.class),
+                mock(Block.class),
+                new Context(bridgeConstants.getBtcParams()),
+                mockFederationSupport,
+                null,
+                null
+        );
+
+        // Creates retiring federation
+        List<BtcECKey> federation1Keys = Arrays.asList(
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")));
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        Federation retiringFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys), Instant.ofEpochMilli(1000L), 0L, btcParams);
+
+        // Creates active federation
+        List<BtcECKey> activeFederationKeys = Arrays.asList(
+                BtcECKey.fromPrivate(Hex.decode("fa03")),
+                BtcECKey.fromPrivate(Hex.decode("fa04")));
+        activeFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        Federation activeFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys), Instant.ofEpochMilli(1000L), 0L, btcParams);
+
+        when(mockFederationSupport.getActiveFederation()).thenReturn(activeFederation);
+        when(mockFederationSupport.getRetiringFederation()).thenReturn(retiringFederation);
+
+        bridgeSupport.addSignature(BtcECKey.fromPrivate(Hex.decode("fa05")), null, PegTestUtils.createHash3(1).getBytes());
+        verify(provider, times(0)).getRskTxsWaitingForSignatures();
+    }
+
+    @Test
+    public void addSignature_fedPubKey_no_belong_to_active_federation_no_existing_retiring_fed() throws Exception {
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                mock(Repository.class),
+                mock(BridgeEventLogger.class),
+                mock(Block.class),
+                null
+        );
+
+        bridgeSupport.addSignature(BtcECKey.fromPrivate(Hex.decode("fa03")), null, PegTestUtils.createHash3(1).getBytes());
+        verify(provider, times(0)).getRskTxsWaitingForSignatures();
+    }
+
+    @Test
+    public void addSignatureToMissingTransaction() throws Exception {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider providerForSupport = new BridgeStorageProvider(
+                track,
+                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeConstants,
+                activationsBeforeForks
+        );
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, providerForSupport, track, mock(BridgeEventLogger.class), mock(Block.class), null);
+
+        bridgeSupport.addSignature(federation.getBtcPublicKeys().get(0), null, PegTestUtils.createHash().getBytes());
+        bridgeSupport.save();
+
+        track.commit();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
+
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+    }
+
+    @Test
+    public void addSignatureFromInvalidFederator() throws Exception {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants,
+                new BridgeStorageProvider(
+                    track,
+                    PrecompiledContracts.BRIDGE_ADDR,
+                    bridgeConstants,
+                    activationsBeforeForks),
+                track,
+                mock(BridgeEventLogger.class),
+                mock(Block.class), null);
+
+        bridgeSupport.addSignature(new BtcECKey(), null, PegTestUtils.createHash().getBytes());
+        bridgeSupport.save();
+
+        track.commit();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
+
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+    }
+
+    @Test
+    public void addSignatureWithInvalidSignature() throws Exception {
+        addSignatureFromValidFederator(Lists.newArrayList(new BtcECKey()), 1, true, false, "InvalidParameters");
+    }
+
+    @Test
+    public void addSignatureWithLessSignaturesThanExpected() throws Exception {
+        List<BtcECKey> keys = Arrays.asList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
+        addSignatureFromValidFederator(keys, 0, true, false, "InvalidParameters");
+    }
+
+    @Test
+    public void addSignatureWithMoreSignaturesThanExpected() throws Exception {
+        List<BtcECKey> keys = Arrays.asList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
+        addSignatureFromValidFederator(keys, 2, true, false, "InvalidParameters");
+    }
+
+    @Test
+    public void addSignatureNonCanonicalSignature() throws Exception {
+        List<BtcECKey> keys = Arrays.asList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
+        addSignatureFromValidFederator(keys, 1, false, false, "InvalidParameters");
+    }
+
+    @Test
+    public void addSignatureCreateEventLog() throws Exception {
+        // Setup
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Repository track = createRepository().startTracking();
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
+
+        // Build prev btc tx
+        BtcTransaction prevTx = new BtcTransaction(btcParams);
+        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
+        prevTx.addOutput(prevOut);
+
+        // Build btc tx to be signed
+        BtcTransaction btcTx = new BtcTransaction(btcParams);
+        btcTx.addInput(prevOut).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+        TransactionOutput output = new TransactionOutput(btcParams, btcTx, Coin.COIN, new BtcECKey().toAddress(btcParams));
+        btcTx.addOutput(output);
+
+        // Save btc tx to be signed
+        final Keccak256 rskTxHash = PegTestUtils.createHash3(1);
+        provider.getRskTxsWaitingForSignatures().put(rskTxHash, btcTx);
+        provider.save();
+        track.commit();
+
+        // Setup BridgeSupport
+        BridgeEventLogger eventLogger = mock(BridgeEventLogger.class);
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                track,
+                eventLogger,
+                mock(Block.class),
+                null
+        );
+
+        // Create signed hash of Btc tx
+        Script inputScript = btcTx.getInputs().get(0).getScriptSig();
+        List<ScriptChunk> chunks = inputScript.getChunks();
+        byte[] program = chunks.get(chunks.size() - 1).data;
+        Script redeemScript = new Script(program);
+        Sha256Hash sigHash = btcTx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        BtcECKey privateKeyToSignWith = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0);
+
+        BtcECKey.ECDSASignature sig = privateKeyToSignWith.sign(sigHash);
+        List derEncodedSigs = Collections.singletonList(sig.encodeToDER());
+
+        BtcECKey federatorPubKey = findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeyToSignWith);
+        bridgeSupport.addSignature(federatorPubKey, derEncodedSigs, rskTxHash.getBytes());
+
+        // Assert
+        verify(eventLogger, times(1)).logAddSignature(federatorPubKey, btcTx, rskTxHash.getBytes());
+    }
+
+    @Test
+    public void addSignatureTwice() throws Exception {
+        List<BtcECKey> keys = Arrays.asList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
+        addSignatureFromValidFederator(keys, 1, true, true, "PartiallySigned");
+    }
+
+    @Test
+    public void addSignatureOneSignature() throws Exception {
+        List<BtcECKey> keys = Arrays.asList(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0));
+        addSignatureFromValidFederator(keys, 1, true, false, "PartiallySigned");
+    }
+
+    @Test
+    public void addSignatureTwoSignatures() throws Exception {
+        List<BtcECKey> federatorPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
+        List<BtcECKey> keys = Arrays.asList(federatorPrivateKeys.get(0), federatorPrivateKeys.get(1));
+        addSignatureFromValidFederator(keys, 1, true, false, "FullySigned");
+    }
+
+    @Test
+    public void addSignatureMultipleInputsPartiallyValid() throws Exception {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Repository repository = createRepository();
+
+        final Keccak256 keccak256 = PegTestUtils.createHash3(1);
+
+        Repository track = repository.startTracking();
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
+
+        BtcTransaction prevTx1 = new BtcTransaction(btcParams);
+        TransactionOutput prevOut1 = new TransactionOutput(btcParams, prevTx1, Coin.FIFTY_COINS, federation.getAddress());
+        prevTx1.addOutput(prevOut1);
+        BtcTransaction prevTx2 = new BtcTransaction(btcParams);
+        TransactionOutput prevOut2 = new TransactionOutput(btcParams, prevTx1, Coin.FIFTY_COINS, federation.getAddress());
+        prevTx2.addOutput(prevOut2);
+        BtcTransaction prevTx3 = new BtcTransaction(btcParams);
+        TransactionOutput prevOut3 = new TransactionOutput(btcParams, prevTx1, Coin.FIFTY_COINS, federation.getAddress());
+        prevTx3.addOutput(prevOut3);
+
+        BtcTransaction t = new BtcTransaction(btcParams);
+        TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
+        t.addOutput(output);
+        t.addInput(prevOut1).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+        t.addInput(prevOut2).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+        t.addInput(prevOut3).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+        provider.getRskTxsWaitingForSignatures().put(keccak256, t);
+        provider.save();
+        track.commit();
+
+        track = repository.startTracking();
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> logs = new ArrayList<>();
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                new BridgeStorageProvider(
+                        track,
+                        contractAddress,
+                        bridgeConstants,
+                        activationsAfterForks
+                ),
+                track,
+                eventLogger,
+                mock(Block.class),
+                null
+        );
+
+        // Generate valid signatures for inputs
+        List<byte[]> derEncodedSigsFirstFed = new ArrayList<>();
+        List<byte[]> derEncodedSigsSecondFed = new ArrayList<>();
+        BtcECKey privateKeyOfFirstFed = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0);
+        BtcECKey privateKeyOfSecondFed = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(1);
+
+        BtcECKey.ECDSASignature lastSig = null;
+        for (int i = 0; i < 3; i++) {
+            Script inputScript = t.getInput(i).getScriptSig();
+            List<ScriptChunk> chunks = inputScript.getChunks();
+            byte[] program = chunks.get(chunks.size() - 1).data;
+            Script redeemScript = new Script(program);
+            Sha256Hash sighash = t.hashForSignature(i, redeemScript, BtcTransaction.SigHash.ALL, false);
+
+            // Sign the last input with a random key
+            // but keep the good signature for a subsequent call
+            BtcECKey.ECDSASignature sig = privateKeyOfFirstFed.sign(sighash);
+            if (i == 2) {
+                lastSig = sig;
+                sig = new BtcECKey().sign(sighash);
+            }
+            derEncodedSigsFirstFed.add(sig.encodeToDER());
+            derEncodedSigsSecondFed.add(privateKeyOfSecondFed.sign(sighash).encodeToDER());
+        }
+
+        // Sign with two valid signatuers and one invalid signature
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
+        bridgeSupport.save();
+        track.commit();
+
+        // Sign with two valid signatuers and one malformed signature
+        byte[] malformedSignature = new byte[lastSig.encodeToDER().length];
+        for (int i = 0; i < malformedSignature.length; i++) {
+            malformedSignature[i] = (byte) i;
+        }
+        derEncodedSigsFirstFed.set(2, malformedSignature);
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
+        bridgeSupport.save();
+        track.commit();
+
+        // Sign with fully valid signatures for same federator
+        derEncodedSigsFirstFed.set(2, lastSig.encodeToDER());
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
+        bridgeSupport.save();
+        track.commit();
+
+        // Sign with second federation
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, keccak256.getBytes());
+        bridgeSupport.save();
+        track.commit();
+
+        provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
+
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertThat(logs, is(not(empty())));
+        Assert.assertThat(logs, hasSize(5));
+        LogInfo releaseTxEvent = logs.get(4);
+        Assert.assertThat(releaseTxEvent.getTopics(), hasSize(1));
+        Assert.assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
+        BtcTransaction releaseTx = new BtcTransaction(btcParams, ((RLPList) RLP.decode2(releaseTxEvent.getData()).get(0)).get(1).getRLPData());
+        // Verify all inputs fully signed
+        for (int i = 0; i < releaseTx.getInputs().size(); i++) {
+            Script retrievedScriptSig = releaseTx.getInput(i).getScriptSig();
+            Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
+            Assert.assertEquals(true, retrievedScriptSig.getChunks().get(1).data.length > 0);
+            Assert.assertEquals(true, retrievedScriptSig.getChunks().get(2).data.length > 0);
+        }
+    }
+
     private void assertLockingCap(boolean shouldLock, boolean isLockingCapEnabled, Coin lockingCap, Coin amountSentToNewFed, Coin amountSentToOldFed,
                                   Coin amountInNewFed, Coin amountInOldFed) throws BlockStoreException, IOException {
         // Configure if locking cap should be evaluated
@@ -4613,6 +5024,130 @@ public class BridgeSupportTest {
         return new Federation(
                 FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
                 Instant.ofEpochMilli(1000L), 0L, bridgeConstants.getBtcParams());
+    }
+
+    /**
+     * Helper method to test addSignature() with a valid federatorPublicKey parameter and both valid/invalid signatures
+     *
+     * @param privateKeysToSignWith keys used to sign the tx. Federator key when we want to produce a valid signature, a random key when we want to produce an invalid signature
+     * @param numberOfInputsToSign  There is just 1 input. 1 when testing the happy case, other values to test attacks/bugs.
+     * @param signatureCanonical    Signature should be canonical. true when testing the happy case, false to test attacks/bugs.
+     * @param signTwice             Sign again with the same key
+     * @param expectedResult        "InvalidParameters", "PartiallySigned" or "FullySigned"
+     */
+    private void addSignatureFromValidFederator(List<BtcECKey> privateKeysToSignWith, int numberOfInputsToSign, boolean signatureCanonical, boolean signTwice, String expectedResult) throws Exception {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Repository repository = createRepository();
+
+        final Keccak256 keccak256 = PegTestUtils.createHash3();
+
+        Repository track = repository.startTracking();
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
+
+        BtcTransaction prevTx = new BtcTransaction(btcParams);
+        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
+        prevTx.addOutput(prevOut);
+
+        BtcTransaction t = new BtcTransaction(btcParams);
+        TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
+        t.addOutput(output);
+        t.addInput(prevOut).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+        provider.getRskTxsWaitingForSignatures().put(keccak256, t);
+        provider.save();
+        track.commit();
+
+        track = repository.startTracking();
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> logs = new ArrayList<>();
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                new BridgeStorageProvider(
+                        track,
+                        contractAddress,
+                        bridgeConstants,
+                        activationsAfterForks
+                ),
+                track,
+                eventLogger,
+                mock(Block.class),
+                null
+        );
+
+        Script inputScript = t.getInputs().get(0).getScriptSig();
+        List<ScriptChunk> chunks = inputScript.getChunks();
+        byte[] program = chunks.get(chunks.size() - 1).data;
+        Script redeemScript = new Script(program);
+        Sha256Hash sighash = t.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+
+        BtcECKey.ECDSASignature sig = privateKeysToSignWith.get(0).sign(sighash);
+        if (!signatureCanonical) {
+            sig = new BtcECKey.ECDSASignature(sig.r, BtcECKey.CURVE.getN().subtract(sig.s));
+        }
+        byte[] derEncodedSig = sig.encodeToDER();
+
+        List derEncodedSigs = new ArrayList();
+        for (int i = 0; i < numberOfInputsToSign; i++) {
+            derEncodedSigs.add(derEncodedSig);
+        }
+        bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, keccak256.getBytes());
+        if (signTwice) {
+            // Create another valid signature with the same private key
+            ECDSASigner signer = new ECDSASigner();
+            X9ECParameters CURVE_PARAMS = CustomNamedCurves.getByName("secp256k1");
+            ECDomainParameters CURVE = new ECDomainParameters(CURVE_PARAMS.getCurve(), CURVE_PARAMS.getG(), CURVE_PARAMS.getN(), CURVE_PARAMS.getH());
+            ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(privateKeysToSignWith.get(0).getPrivKey(), CURVE);
+            signer.init(true, privKey);
+            BigInteger[] components = signer.generateSignature(sighash.getBytes());
+            BtcECKey.ECDSASignature sig2 = new BtcECKey.ECDSASignature(components[0], components[1]).toCanonicalised();
+            bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeysToSignWith.get(0)), Lists.newArrayList(sig2.encodeToDER()), keccak256.getBytes());
+        }
+        if (privateKeysToSignWith.size() > 1) {
+            BtcECKey.ECDSASignature sig2 = privateKeysToSignWith.get(1).sign(sighash);
+            byte[] derEncodedSig2 = sig2.encodeToDER();
+            List derEncodedSigs2 = new ArrayList();
+            for (int i = 0; i < numberOfInputsToSign; i++) {
+                derEncodedSigs2.add(derEncodedSig2);
+            }
+            bridgeSupport.addSignature(findPublicKeySignedBy(federation.getBtcPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, keccak256.getBytes());
+        }
+        bridgeSupport.save();
+        track.commit();
+
+        provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
+
+        if ("FullySigned".equals(expectedResult)) {
+            Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+            Assert.assertThat(logs, is(not(empty())));
+            Assert.assertThat(logs, hasSize(3));
+            LogInfo releaseTxEvent = logs.get(2);
+            Assert.assertThat(releaseTxEvent.getTopics(), hasSize(1));
+            Assert.assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
+            BtcTransaction releaseTx = new BtcTransaction(btcParams, ((RLPList) RLP.decode2(releaseTxEvent.getData()).get(0)).get(1).getRLPData());
+            Script retrievedScriptSig = releaseTx.getInput(0).getScriptSig();
+            Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
+            Assert.assertEquals(true, retrievedScriptSig.getChunks().get(1).data.length > 0);
+            Assert.assertEquals(true, retrievedScriptSig.getChunks().get(2).data.length > 0);
+        } else {
+            Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(keccak256).getInput(0).getScriptSig();
+            Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
+            boolean expectSignatureToBePersisted = false; // for "InvalidParameters"
+            if ("PartiallySigned".equals(expectedResult)) {
+                expectSignatureToBePersisted = true;
+            }
+            Assert.assertEquals(expectSignatureToBePersisted, retrievedScriptSig.getChunks().get(1).data.length > 0);
+            Assert.assertEquals(false, retrievedScriptSig.getChunks().get(2).data.length > 0);
+        }
+    }
+
+    private BtcECKey findPublicKeySignedBy(List<BtcECKey> pubs, BtcECKey pk) {
+        for (BtcECKey pub : pubs) {
+            if (Arrays.equals(pk.getPubKey(), pub.getPubKey())) {
+                return pub;
+            }
+        }
+        return pk;
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider) {
