@@ -114,6 +114,7 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
                 logger.debug("Read message: {} BLOCK_BODY", msg);
                 BlockBodyMessage blockBodyMessage = (BlockBodyMessage) msg;
                 lightProcessor.processBlockBodyMessage(blockBodyMessage.getId(), blockBodyMessage.getUncles(), blockBodyMessage.getTransactions(), lightPeer);
+                break;
             case GET_STORAGE:
                 logger.debug("Read message: {} GET_STORAGE", msg);
                 GetStorageMessage getStorageMessage = (GetStorageMessage) msg;

@@ -26,7 +26,7 @@ import java.math.BigInteger;
 
 import static co.rsk.net.light.LightClientMessageCodes.GET_STORAGE;
 
-public class GetStorageMessage extends LightClientMessage{
+public class GetStorageMessage extends LightClientMessage {
 
     private final long id;
     private final byte[] blockHash;
