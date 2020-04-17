@@ -355,8 +355,26 @@ public class LightProcessorTest {
     }
 
     @Test
-    public void processGetStorageyMessageWithInvalidBlockHash() {
+    public void processGetStorageMessageWithInvalidBlockHash() {
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
+
+        lightProcessor.processGetStorageMessage(100, blockHash.getBytes(), randomAddress().getBytes(),
+                new byte[] {0x00}, lightPeer);
+
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void processGetStorageMessageWithNullStorage() {
+        final Block block = mock(Block.class);
+        RskAddress address = randomAddress();
+        DataWord storageKey = DataWord.valueOf(HashUtil.randomHash());
+        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getHash()).thenReturn(blockHash);
+        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
+        when(repositorySnapshot.getStorageBytes(address, storageKey)).thenReturn(null);
 
         lightProcessor.processGetStorageMessage(100, blockHash.getBytes(), randomAddress().getBytes(),
                 new byte[] {0x00}, lightPeer);

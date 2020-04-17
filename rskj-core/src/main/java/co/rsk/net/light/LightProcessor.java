@@ -188,6 +188,8 @@ public class LightProcessor {
     }
 
     public void processGetStorageMessage(long id, byte[] blockHash, byte[] addressHash, byte[] storageKeyHash, LightPeer lightPeer) {
+        logger.trace("Processing storage request {} block {} address {} storage key {}", id,
+                Hex.toHexString(blockHash), Hex.toHexString(addressHash), Hex.toHexString(storageKeyHash));
         final Block block = blockStore.getBlockByHash(blockHash);
 
         if (block == null) {
