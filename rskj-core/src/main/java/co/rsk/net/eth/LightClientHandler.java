@@ -64,12 +64,12 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
                 break;
             case GET_TRANSACTION_INDEX:
                 logger.debug("Read message: {} GET_TRANSACTION_INDEX.", msg);
-                GetTransactionIndexMessage getTxIndexMsg = new GetTransactionIndexMessage(msg.getEncoded());
+                GetTransactionIndexMessage getTxIndexMsg = (GetTransactionIndexMessage) msg;
                 lightProcessor.processGetTransactionIndex(getTxIndexMsg.getId(), getTxIndexMsg.getTxHash(), lightPeer);
                 break;
             case TRANSACTION_INDEX:
                 logger.debug("Read message: {} TRANSACTION_INDEX.", msg);
-                TransactionIndexMessage txIndexMsg = new TransactionIndexMessage(msg.getEncoded());
+                TransactionIndexMessage txIndexMsg = (TransactionIndexMessage) msg;
                 lightProcessor.processTransactionIndexMessage(txIndexMsg.getId(), txIndexMsg.getBlockNumber(),
                         txIndexMsg.getBlockHash(), txIndexMsg.getTransactionIndex(), lightPeer);
                 break;
@@ -114,6 +114,18 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
                 logger.debug("Read message: {} BLOCK_BODY", msg);
                 BlockBodyMessage blockBodyMessage = (BlockBodyMessage) msg;
                 lightProcessor.processBlockBodyMessage(blockBodyMessage.getId(), blockBodyMessage.getUncles(), blockBodyMessage.getTransactions(), lightPeer);
+                break;
+            case GET_STORAGE:
+                logger.debug("Read message: {} GET_STORAGE", msg);
+                GetStorageMessage getStorageMessage = (GetStorageMessage) msg;
+                lightProcessor.processGetStorageMessage(getStorageMessage.getId(), getStorageMessage.getBlockHash(),
+                        getStorageMessage.getAddressHash(), getStorageMessage.getStorageKeyHash(), lightPeer);
+                break;
+            case STORAGE:
+                logger.debug("Read message: {} STORAGE", msg);
+                StorageMessage storageMessage = (StorageMessage) msg;
+                lightProcessor.processStorageMessage(storageMessage.getId(), storageMessage.getMerkleInclusionProof(),
+                        storageMessage.getStorageValue(), lightPeer);
                 break;
             default:
                 break;

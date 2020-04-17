@@ -59,6 +59,10 @@ public class LCMessageFactory {
                 return new GetBlockBodyMessage(encoded);
             case BLOCK_BODY:
                 return new BlockBodyMessage(encoded, blockFactory);
+            case GET_STORAGE:
+                return new GetStorageMessage(encoded);
+            case STORAGE:
+                return new StorageMessage(encoded);
             default:
                 throw new IllegalArgumentException("No such message");
         }
