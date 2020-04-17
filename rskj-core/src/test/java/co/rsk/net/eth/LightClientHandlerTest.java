@@ -41,6 +41,7 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
+import org.ethereum.vm.DataWord;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -401,6 +402,41 @@ public class LightClientHandlerTest {
         LinkedList<Transaction> transactionList = new LinkedList<>();
         LinkedList<BlockHeader> uncleList = new LinkedList<>();
         BlockBodyMessage m = new BlockBodyMessage(id, transactionList, uncleList);
+
+        lightClientHandler.channelRead0(ctx, m);
+    }
+
+    @Test
+    public void lightClientHandlerSendsGetStorageToQueue() {
+        long id = 0;
+        final Block block = mock(Block.class);
+        Keccak256 blockHash = randomHash();
+        RskAddress address = randomAddress();
+        DataWord storageKey = DataWord.valueOf(HashUtil.randomHash());
+        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
+        byte[] storageValue = HashUtil.randomHash();
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(block.getHash()).thenReturn(blockHash);
+        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
+        when(repositorySnapshot.getStorageBytes(address, storageKey)).thenReturn(storageValue);
+
+        GetStorageMessage m = new GetStorageMessage(id, blockHash.getBytes(), address.getBytes(), storageKey.getData());
+        StorageMessage response = new StorageMessage(id, new byte[] {0x00}, storageValue);
+
+        lightClientHandler.channelRead0(ctx, m);
+
+        ArgumentCaptor<StorageMessage> argument = forClass(StorageMessage.class);
+        verify(messageQueue).sendMessage(argument.capture());
+        assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void lightClientHandlerSendStorageMsgToQueueAndShouldThrowAnException() {
+        long id = 0;
+        byte[] storageValue = HashUtil.randomHash();
+
+        StorageMessage m = new StorageMessage(id, new byte[] {0x00},storageValue);
 
         lightClientHandler.channelRead0(ctx, m);
     }
