@@ -845,11 +845,21 @@ public class BridgeSupport {
      */
     public void addSignature(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
         Context.propagate(btcContext);
+
         Federation retiringFederation = getRetiringFederation();
-        if (!getActiveFederation().getBtcPublicKeys().contains(federatorPublicKey) && (retiringFederation == null || !retiringFederation.getBtcPublicKeys().contains(federatorPublicKey))) {
+        Federation activeFederation = getActiveFederation();
+        Federation federation =
+                activeFederation.hasBtcPublicKey(federatorPublicKey) ?
+                        activeFederation :
+                        (retiringFederation != null && retiringFederation.hasBtcPublicKey(federatorPublicKey) ?
+                                retiringFederation:
+                                null);
+
+        if (federation == null) {
             logger.warn("Supplied federator public key {} does not belong to any of the federators.", federatorPublicKey);
             return;
         }
+
         BtcTransaction btcTx = provider.getRskTxsWaitingForSignatures().get(new Keccak256(rskTxHash));
         if (btcTx == null) {
             logger.warn("No tx waiting for signature for hash {}. Probably fully signed already.", new Keccak256(rskTxHash));
@@ -860,10 +870,10 @@ public class BridgeSupport {
             return;
         }
         eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
-        processSigning(federatorPublicKey, signatures, rskTxHash, btcTx);
+        processSigning(federatorPublicKey, signatures, rskTxHash, btcTx, federation);
     }
 
-    private void processSigning(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash, BtcTransaction btcTx) throws IOException {
+    private void processSigning(BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash, BtcTransaction btcTx, Federation federation) throws IOException {
         // Build input hashes for signatures
         int numInputs = btcTx.getInputs().size();
 
@@ -938,14 +948,18 @@ public class BridgeSupport {
             }
         }
 
+        int missingSignatures = BridgeUtils.countMissingSignatures(btcContext, btcTx);
+
         // If tx fully signed
-        if (hasEnoughSignatures(btcTx)) {
+        if (missingSignatures == 0) {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
             provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
 
             eventLogger.logReleaseBtc(btcTx, rskTxHash);
         } else {
-            logger.debug("Tx not yet fully signed {}.", new Keccak256(rskTxHash));
+            int neededSignatures = federation.getNumberOfSignaturesRequired();
+            int signaturesCount = neededSignatures - missingSignatures;
+            logger.debug("Tx {} not yet fully signed. Requires {}/{} signatures but has {}", new Keccak256(rskTxHash), neededSignatures, getFederationSize(), signaturesCount);
         }
     }
 
@@ -972,28 +986,6 @@ public class BridgeSupport {
             }
         }
         return false;
-    }
-
-    /**
-     * Checks whether a btc tx has been signed by the required number of federators.
-     * @param btcTx The btc tx to check
-     * @return True if was signed by the required number of federators, false otherwise
-     */
-    private boolean hasEnoughSignatures(BtcTransaction btcTx) {
-        // When the tx is constructed OP_0 are placed where signature should go.
-        // Check all OP_0 have been replaced with actual signatures in all inputs
-        Context.propagate(btcContext);
-        for (TransactionInput input : btcTx.getInputs()) {
-            Script scriptSig = input.getScriptSig();
-            List<ScriptChunk> chunks = scriptSig.getChunks();
-            for (int i = 1; i < chunks.size(); i++) {
-                ScriptChunk chunk = chunks.get(i);
-                if (!chunk.isOpCode() && chunk.data.length == 0) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     /**
