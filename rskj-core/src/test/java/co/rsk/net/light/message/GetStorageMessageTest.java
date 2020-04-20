@@ -31,14 +31,12 @@ import static org.mockito.Mockito.mock;
 
 public class GetStorageMessageTest {
 
-    private long id;
     private byte[] blockHash;
     private byte[] addressHash;
     private byte[] storageKeyHash;
 
     @Before
     public void setUp() {
-        id = 1;
         blockHash = HashUtil.randomHash();
         addressHash = HashUtil.randomHash();
         storageKeyHash = HashUtil.randomHash();
@@ -46,6 +44,7 @@ public class GetStorageMessageTest {
 
     @Test
     public void messageCreationShouldBeCorrect() {
+        long id = 1;
         GetStorageMessage testMessage = new GetStorageMessage(id, blockHash, addressHash, storageKeyHash);
         assertEquals(LightClientMessageCodes.GET_STORAGE, testMessage.getCommand());
         assertEquals(testMessage.getId(), id);
@@ -56,6 +55,17 @@ public class GetStorageMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        long id = 0;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id) {
         GetStorageMessage testMessage = new GetStorageMessage(id, blockHash, addressHash, storageKeyHash);
         byte[] encoded = testMessage.getEncoded();
         LCMessageFactory lcMessageFactory = new LCMessageFactory(mock(BlockFactory.class));

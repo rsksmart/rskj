@@ -31,19 +31,18 @@ import static org.mockito.Mockito.mock;
 
 public class GetAccountsMessageTest {
 
-    private long id;
     private byte[] blockHash;
     private byte[] addressHash;
 
     @Before
     public void setUp() {
-        id = 1;
         blockHash = HashUtil.randomHash();
         addressHash = HashUtil.randomHash();
     }
 
     @Test
     public void messageCreationShouldBeCorrect() {
+        long id = 1;
         GetAccountsMessage testMessage = new GetAccountsMessage(id, blockHash, addressHash);
         assertEquals(LightClientMessageCodes.GET_ACCOUNTS, testMessage.getCommand());
         assertEquals(testMessage.getId(), id);
@@ -53,7 +52,17 @@ public class GetAccountsMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        createMessageAndAssertEncodeDecode(id);
+    }
 
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        long id = 0;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id) {
         GetAccountsMessage testMessage = new GetAccountsMessage(id, blockHash, addressHash);
         byte[] encoded = testMessage.getEncoded();
         LCMessageFactory lcMessageFactory = new LCMessageFactory(mock(BlockFactory.class));
