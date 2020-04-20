@@ -35,14 +35,12 @@ import static org.mockito.Mockito.mock;
 
 public class BlockBodyMessageTest {
 
-    private long id;
     private LinkedList<Transaction> transactionList;
     private LinkedList<BlockHeader> uncleList;
     private BlockFactory blockFactory;
 
     @Before
     public void setup() {
-        id = 1;
         transactionList = createTransactionList();
         ActivationConfig activationConfig = mock(ActivationConfig.class);
         blockFactory = new BlockFactory(activationConfig);
@@ -51,7 +49,7 @@ public class BlockBodyMessageTest {
 
     @Test
     public void messageCreationShouldBeCorrect() {
-
+        long id = 1;
         BlockBodyMessage testMessage = new BlockBodyMessage(id, transactionList, uncleList);
         assertEquals(BLOCK_BODY, testMessage.getCommand());
         assertEquals(testMessage.getTransactions(), transactionList);
@@ -61,7 +59,17 @@ public class BlockBodyMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        createMessageAndAssertEncodeDecode(id);
+    }
 
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        long id = 0;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id) {
         LCMessageFactory lcMessageFactory = new LCMessageFactory(blockFactory);
         BlockBodyMessage testMessage = new BlockBodyMessage(id, transactionList, uncleList);
         byte[] encoded = testMessage.getEncoded();

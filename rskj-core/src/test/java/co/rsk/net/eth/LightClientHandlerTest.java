@@ -170,21 +170,19 @@ public class LightClientHandlerTest {
     @Test
     public void lightClientHandlerProcessStatusWithHigherBlockDifficulty() {
         long bestNumber = 10L;
-        BlockDifficulty blockDifficulty = BlockDifficulty.ONE;
-
-        BlockChainStatus blockChainStatus = mock(BlockChainStatus.class);
+        BlockDifficulty blockDifficulty = BlockDifficulty.ZERO;
+        Block bestBlock = mock(Block.class);
+        BlockChainStatus blockChainStatus = new BlockChainStatus(bestBlock, BlockDifficulty.ONE);
 
         when(genesis.getHash()).thenReturn(genesisHash);
         when(blockchain.getStatus()).thenReturn(blockChainStatus);
-        when(blockChainStatus.getTotalDifficulty()).thenReturn(BlockDifficulty.ZERO);
-
 
         LightStatus status = new LightStatus((byte) 0, 0, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
 
         StatusMessage m = new StatusMessage(0L, status);
         lightClientHandler.channelRead0(ctx, m);
 
-        verify(messageQueue, times(0)).sendMessage(m);
+        verify(messageQueue, times(0)).sendMessage(any());
     }
 
     @Test
@@ -359,7 +357,7 @@ public class LightClientHandlerTest {
 
         lightClientHandler.channelRead0(ctx, blockHeaderMessage);
 
-        verify(lightPeer, times(0)).receivedBlock(blockHeader);
+        verify(lightPeer, times(0)).receivedBlock(any());
 
     }
 

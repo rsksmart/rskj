@@ -32,21 +32,17 @@ import static org.mockito.Mockito.*;
 
 public class BlockHeaderMessageTest {
 
-    private long id;
     private byte[] blockHeaderHash;
     private BlockHeader blockHeader;
-    private BlockHeaderMessage testMessage;
     private LCMessageFactory messageFactory;
 
     @Before
     public void setUp() {
-        id = 1;
         blockHeaderHash = randomHash();
         byte[] fullBlockHeaderHash = randomHash();
         BlockFactory blockFactory = mock(BlockFactory.class);
         blockHeader = mock(BlockHeader.class);
         messageFactory = new LCMessageFactory(blockFactory);
-        testMessage = new BlockHeaderMessage(id, blockHeader);
         when(blockHeader.getEncoded()).thenReturn(blockHeaderHash);
         when(blockHeader.getFullEncoded()).thenReturn(fullBlockHeaderHash);
         when(blockFactory.decodeHeader(fullBlockHeaderHash)).thenReturn(blockHeader);
@@ -54,6 +50,9 @@ public class BlockHeaderMessageTest {
 
     @Test
     public void messageCreationShouldBeCorrect() {
+        long id = 1;
+        BlockHeaderMessage testMessage = new BlockHeaderMessage(id, blockHeader);
+
         assertEquals(id, testMessage.getId());
         assertArrayEquals(blockHeaderHash, testMessage.getBlockHeader().getEncoded());
         assertNull(testMessage.getAnswerMessage());
@@ -62,6 +61,18 @@ public class BlockHeaderMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        long id = 0;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id) {
+        BlockHeaderMessage testMessage = new BlockHeaderMessage(id, blockHeader);
         byte[] encoded = testMessage.getEncoded();
 
         BlockHeaderMessage blockHeaderMessage = (BlockHeaderMessage) messageFactory.create(BLOCK_HEADER.asByte(), encoded);
