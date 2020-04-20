@@ -63,7 +63,7 @@ public class AccountsMessageTest {
     public void messageEncodeDecodeShouldBeCorrect() {
         long id = 1;
         long nonce = 123;
-        long balance = 100;
+        long balance = 101;
         createMessageAndAssertEncodeDecode(id, nonce, balance);
     }
 
